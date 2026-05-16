@@ -4,6 +4,63 @@ Date and time operations
 
 ## Exports
 
+### `format-iso8601`
+
+```
+Syntax: (format-iso8601 unix-seconds)
+Library: (scm datetime)
+Description: Formats a Unix-seconds integer as an ISO 8601 UTC string
+  ('YYYY-MM-DDTHH:MM:SSZ'). Negative inputs (pre-1970) are not supported.
+Example:
+  (format-iso8601 1715862896) => "2024-05-16T12:34:56Z"
+  (format-iso8601 (parse-iso8601 "2024-05-16T14:34:56+02:00"))
+    => "2024-05-16T12:34:56Z"
+```
+
+### `parse-iso8601`
+
+```
+Syntax: (parse-iso8601 s)
+Library: (scm datetime)
+Description: Parses an ISO 8601 / RFC 3339 date string (e.g. used by Atom
+  feeds) and returns Unix seconds, or #f on failure. Accepts date-only
+  ('2024-05-16'), date+time with 'T' or space separator, and a trailing
+  timezone offset (Z, +02:00, -0500). Fractional seconds are ignored.
+Example:
+  (parse-iso8601 "2024-05-16T12:34:56Z")      => 1715862896
+  (parse-iso8601 "2024-05-16T14:34:56+02:00") => 1715862896
+  (parse-iso8601 "2024-05-16")                => 1715817600
+  (parse-iso8601 "bogus") => #f
+```
+
+### `parse-pubdate`
+
+```
+Syntax: (parse-pubdate s)
+Library: (scm datetime)
+Description: Best-effort date parser for feed pubdates. Tries ISO 8601 first
+  if s looks ISO-shaped (hyphen at position 4), otherwise RFC 822. Falls
+  back to the other format on failure. Returns Unix seconds, or #f.
+Example:
+  (parse-pubdate "2024-05-16T12:34:56Z")             => 1715862896
+  (parse-pubdate "Thu, 16 May 2024 12:34:56 +0000")  => 1715862896
+  (parse-pubdate "") => #f
+```
+
+### `parse-rfc822`
+
+```
+Syntax: (parse-rfc822 s)
+Library: (scm datetime)
+Description: Parses an RFC 822 / RFC 2822 date string (e.g. used by RSS 2.0
+  pubDate elements) and returns Unix seconds, or #f on failure. The leading
+  day-of-week prefix is optional. Two-digit years are mapped to 20XX.
+Example:
+  (parse-rfc822 "Thu, 16 May 2024 12:34:56 +0200") => 1715855696
+  (parse-rfc822 "16 May 2024 12:34:56 GMT")       => 1715862896
+  (parse-rfc822 "bogus") => #f
+```
+
 ### `string->date-days`
 
 ```

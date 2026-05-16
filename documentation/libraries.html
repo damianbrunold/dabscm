@@ -332,12 +332,14 @@
   <a href="#scm-compression" class="scm">(scm compression)</a>
   <a href="#scm-crypto" class="scm">(scm crypto)</a>
   <a href="#scm-csv" class="scm">(scm csv)</a>
+  <a href="#scm-database-migrations" class="scm">(scm database migrations)</a>
   <a href="#scm-database-postgres" class="scm">(scm database postgres)</a>
   <a href="#scm-database-sqlserver" class="scm">(scm database sqlserver)</a>
   <a href="#scm-datetime" class="scm">(scm datetime)</a>
   <a href="#scm-dict" class="scm">(scm dict)</a>
   <a href="#scm-doc" class="scm">(scm doc)</a>
   <a href="#scm-duration" class="scm">(scm duration)</a>
+  <a href="#scm-feed" class="scm">(scm feed)</a>
   <a href="#scm-fs" class="scm">(scm fs)</a>
   <a href="#scm-glob" class="scm">(scm glob)</a>
   <a href="#scm-html" class="scm">(scm html)</a>
@@ -2324,6 +2326,22 @@
   </div>
 </div>
 
+<div class="library scm" id="scm-database-migrations">
+  <div class="lib-header">
+    <span class="lib-name">(scm database migrations)</span>
+    <span class="lib-desc"></span>
+    <span class="lib-count" id="scm-database-migrations-count"></span>
+  </div>
+  <div class="lib-body">
+    <div class="exports" data-lib="scm-database-migrations">
+      migrations-applied
+      migrations-pending
+      run-migrations!
+    </div>
+    <div class="doc-panel" id="scm-database-migrations-doc-panel"></div>
+  </div>
+</div>
+
 <div class="library scm" id="scm-database-postgres">
   <div class="lib-header">
     <span class="lib-name">(scm database postgres)</span>
@@ -2341,6 +2359,8 @@
       pg-cursor-open
       pg-exec
       pg-query
+      pg-quote-int
+      pg-quote-literal
       pg-result-&gt;alist-list
       pg-result-columns
       pg-result-rows
@@ -2386,6 +2406,10 @@
   </div>
   <div class="lib-body">
     <div class="exports" data-lib="scm-datetime">
+      format-iso8601
+      parse-iso8601
+      parse-pubdate
+      parse-rfc822
       string-&gt;date-days
       string-&gt;date-seconds
       timestamp
@@ -2444,6 +2468,24 @@
       parse-duration
     </div>
     <div class="doc-panel" id="scm-duration-doc-panel"></div>
+  </div>
+</div>
+
+<div class="library scm" id="scm-feed">
+  <div class="lib-header">
+    <span class="lib-name">(scm feed)</span>
+    <span class="lib-desc"></span>
+    <span class="lib-count" id="scm-feed-count"></span>
+  </div>
+  <div class="lib-body">
+    <div class="exports" data-lib="scm-feed">
+      local-name
+      parse-feed-bytevector
+      parse-feed-file
+      parse-feed-string
+      qname-field
+    </div>
+    <div class="doc-panel" id="scm-feed-doc-panel"></div>
   </div>
 </div>
 
@@ -3933,6 +3975,11 @@ const docs = {
   "scm-csv": {
     "csv-line->fields": "Syntax: (csv-line->fields str sep) (csv-line->fields str sep 'trim)\nLibrary: (scm core)\nDescription: Splits a CSV line string using the given separator, stripping surrounding double-quotes from each field. When 'trim is given as a third argument, also trims whitespace from each field.\nExample:\n  (csv-line->fields \"a,b,c\" \",\") => (\"a\" \"b\" \"c\")\n  (csv-line->fields \"\\\"hello\\\",world\" \",\") => (\"hello\" \"world\")",
   },
+  "scm-database-migrations": {
+    "migrations-applied": "Syntax: (migrations-applied exec-sql! query-rows [options])\nLibrary: (scm database migrations)\nDescription: Returns the list of filenames already recorded as applied in the\n  tracking table, in their insertion order from the database. The tracking\n  table is created if it does not already exist. exec-sql! is a procedure\n  that runs one SQL statement; query-rows is a procedure that runs one\n  query and returns a list of row vectors. options is an optional alist\n  with keys 'table-name and 'create-table-sql (see run-migrations!).\nExample:\n  (migrations-applied\n    (lambda (sql) (pg-exec conn sql))\n    (lambda (sql) (pg-result-rows (pg-query conn sql))))\n  => (\"0001_init.sql\" \"0002_users.sql\")",
+    "migrations-pending": "Syntax: (migrations-pending exec-sql! query-rows dir [options])\nLibrary: (scm database migrations)\nDescription: Returns the list of .sql filenames in dir (lexical order) that\n  have not yet been applied. Use this to preview what run-migrations!\n  would do. See run-migrations! for the options alist.\nExample:\n  (migrations-pending exec-sql! query-rows \"./migrations\")\n  => (\"0003_add_index.sql\")",
+    "run-migrations!": "Syntax: (run-migrations! exec-sql! query-rows dir [options])\nLibrary: (scm database migrations)\nDescription: Applies pending .sql migrations from dir in lexical order.\n  Each migration runs inside its own transaction (BEGIN / COMMIT /\n  ROLLBACK on failure). The tracking table is created if it does not\n  exist. Idempotent: already-applied files are skipped silently.\n  options is an alist with keys:\n    'table-name        — tracking table name (default \"schema_migrations\")\n    'create-table-sql  — full CREATE TABLE statement for the tracking\n                         table (override for non-PostgreSQL databases)\n    'log-proc          — (lambda (msg) ...) called once per applied file\n                         and once at end of run. Default: no logging.\nExample:\n  (run-migrations!\n    (lambda (sql) (pg-exec conn sql))\n    (lambda (sql) (pg-result-rows (pg-query conn sql)))\n    \"./migrations\"\n    '((log-proc ,(lambda (m) (display m) (newline)))))",
+  },
   "scm-database-postgres": {
     "pg-close": "Syntax: (pg-close conn)\nLibrary: (scm database postgres)\nDescription: Closes the TCP connection to the PostgreSQL server.\nExample:\n  (pg-close conn)",
     "pg-connect": "Syntax: (pg-connect host port user password database)\nLibrary: (scm database postgres)\nDescription: Opens a TCP connection to a PostgreSQL server and performs authentication.\n  Supports trust, MD5, and SCRAM-SHA-256 authentication. Returns a connection object.\nExample:\n  (define conn (pg-connect \"localhost\" 5432 \"alice\" \"secret\" \"mydb\"))",
@@ -3943,6 +3990,8 @@ const docs = {
     "pg-cursor-open": "Syntax: (pg-cursor-open conn sql)\nLibrary: (scm database postgres)\nDescription: Opens a server-side cursor for the given SQL query. Returns a cursor object.\n  The query runs inside a transaction; call pg-cursor-close when done.\nExample:\n  (define cur (pg-cursor-open conn \"SELECT id, name FROM users ORDER BY id\"))",
     "pg-exec": "Syntax: (pg-exec conn sql)\nLibrary: (scm database postgres)\nDescription: Executes a SQL statement and discards the result. Suitable for DDL and DML\n  statements such as CREATE TABLE, INSERT, UPDATE, and DELETE.\nExample:\n  (pg-exec conn \"INSERT INTO users (name) VALUES ('alice')\")",
     "pg-query": "Syntax: (pg-query conn sql)\nLibrary: (scm database postgres)\nDescription: Executes a SQL query and returns a result object containing column names and rows.\n  Use pg-result-columns and pg-result-rows to access the result.\nExample:\n  (define result (pg-query conn \"SELECT id, name FROM users\"))",
+    "pg-quote-int": "Syntax: (pg-quote-int n)\nLibrary: (scm database postgres)\nDescription: Returns the decimal representation of an integer n, validated as\n  integer. Accepts an integer or a numeric string. Raises an error for any\n  other input, preventing callers from accidentally splicing arbitrary text\n  through what was intended to be a numeric parameter.\nExample:\n  (pg-quote-int 42)   => \"42\"\n  (pg-quote-int \"42\") => \"42\"\n  (pg-quote-int \"x\") raises an error",
+    "pg-quote-literal": "Syntax: (pg-quote-literal s)\nLibrary: (scm database postgres)\nDescription: Returns s wrapped in single quotes with internal single quotes\n  doubled — the SQL standard string-literal escape, safe under PostgreSQL's\n  default standard_conforming_strings=on (i.e. backslashes are literal).\n  Use for any user-controlled string interpolated into SQL.\nExample:\n  (pg-quote-literal \"O'Brien\") => \"'O''Brien'\"\n  (pg-quote-literal \"\\\\n\")    => \"'\\\\n'\"",
     "pg-result->alist-list": "Syntax: (pg-result->alist-list result)\nLibrary: (scm database postgres)\nDescription: Converts a query result to a list of association lists, one per row.\n  Each alist maps column name strings to value strings (or #f for NULL).\nExample:\n  (pg-result->alist-list result) => ((\"id\" . \"1\") (\"name\" . \"alice\")) ...)",
     "pg-result-columns": "Syntax: (pg-result-columns result)\nLibrary: (scm database postgres)\nDescription: Returns the column name vector from a query result.\nExample:\n  (pg-result-columns result) => #(\"id\" \"name\")",
     "pg-result-rows": "Syntax: (pg-result-rows result)\nLibrary: (scm database postgres)\nDescription: Returns the list of row vectors from a query result. Each row is a vector of\n  string values, or #f for NULL values.\nExample:\n  (pg-result-rows result) => (#(\"1\" \"alice\") #(\"2\" \"bob\"))",
@@ -3966,6 +4015,10 @@ const docs = {
     "with-ss-query": "Syntax: (with-ss-query host port user password database sql proc)\nLibrary: (scm database sqlserver)\nDescription: Opens a connection and cursor, calls (proc conn cursor), and closes both\n  on exit even if an exception is raised.\nExample:\n  (with-ss-query \"localhost\" 1433 \"sa\" \"pass\" \"master\" \"SELECT * FROM t\"\n    (lambda (conn cursor) (ss-cursor-for-each cursor display)))",
   },
   "scm-datetime": {
+    "format-iso8601": "Syntax: (format-iso8601 unix-seconds)\nLibrary: (scm datetime)\nDescription: Formats a Unix-seconds integer as an ISO 8601 UTC string\n  ('YYYY-MM-DDTHH:MM:SSZ'). Negative inputs (pre-1970) are not supported.\nExample:\n  (format-iso8601 1715862896) => \"2024-05-16T12:34:56Z\"\n  (format-iso8601 (parse-iso8601 \"2024-05-16T14:34:56+02:00\"))\n    => \"2024-05-16T12:34:56Z\"",
+    "parse-iso8601": "Syntax: (parse-iso8601 s)\nLibrary: (scm datetime)\nDescription: Parses an ISO 8601 / RFC 3339 date string (e.g. used by Atom\n  feeds) and returns Unix seconds, or #f on failure. Accepts date-only\n  ('2024-05-16'), date+time with 'T' or space separator, and a trailing\n  timezone offset (Z, +02:00, -0500). Fractional seconds are ignored.\nExample:\n  (parse-iso8601 \"2024-05-16T12:34:56Z\")      => 1715862896\n  (parse-iso8601 \"2024-05-16T14:34:56+02:00\") => 1715862896\n  (parse-iso8601 \"2024-05-16\")                => 1715817600\n  (parse-iso8601 \"bogus\") => #f",
+    "parse-pubdate": "Syntax: (parse-pubdate s)\nLibrary: (scm datetime)\nDescription: Best-effort date parser for feed pubdates. Tries ISO 8601 first\n  if s looks ISO-shaped (hyphen at position 4), otherwise RFC 822. Falls\n  back to the other format on failure. Returns Unix seconds, or #f.\nExample:\n  (parse-pubdate \"2024-05-16T12:34:56Z\")             => 1715862896\n  (parse-pubdate \"Thu, 16 May 2024 12:34:56 +0000\")  => 1715862896\n  (parse-pubdate \"\") => #f",
+    "parse-rfc822": "Syntax: (parse-rfc822 s)\nLibrary: (scm datetime)\nDescription: Parses an RFC 822 / RFC 2822 date string (e.g. used by RSS 2.0\n  pubDate elements) and returns Unix seconds, or #f on failure. The leading\n  day-of-week prefix is optional. Two-digit years are mapped to 20XX.\nExample:\n  (parse-rfc822 \"Thu, 16 May 2024 12:34:56 +0200\") => 1715855696\n  (parse-rfc822 \"16 May 2024 12:34:56 GMT\")       => 1715862896\n  (parse-rfc822 \"bogus\") => #f",
     "string->date-days": "Syntax: (string->date-days s format?)\nLibrary: (scm string)\nDescription: Parses the date string s in yyyyMMdd format and returns the number of days since the OLE Automation epoch (December 30, 1899). Returns #f if parsing fails.\nExample:\n  (string->date-days \"20240101\") => 45292\n  (string->date-days \"invalid\") => #f",
     "string->date-seconds": "Syntax: (string->date-seconds s format?)\nLibrary: (scm string)\nDescription: Parses the date/time string s (in formats like yyyyMMddHHmmss, yyyyMMddHHmm, yyyyMMddHH, or yyyyMMdd) and returns the number of seconds since the Unix epoch. Returns #f if parsing fails.\nExample:\n  (string->date-seconds \"20240101120000\") => 1704110400\n  (string->date-seconds \"invalid\") => #f",
     "timestamp": "Syntax: (timestamp)\nLibrary: (scm system)\nDescription: Returns the current time as the number of milliseconds since the epoch (January 1, year 1).\nExample:\n  (timestamp) => 63850000000000",
@@ -3989,6 +4042,11 @@ const docs = {
   "scm-duration": {
     "format-duration": "Syntax: (format-duration seconds)\nLibrary: (scm duration)\nDescription: Human-readable inverse of parse-duration. Emits a d/h/m suffix\n  when seconds divides evenly by 86400/3600/60; otherwise emits a plain\n  seconds value with the s suffix. Non-integer or negative input is\n  rendered as the integer itself (or empty string for non-numbers).\nExample:\n  (format-duration 3600)  => \"1h\"\n  (format-duration 86400) => \"1d\"\n  (format-duration 90)    => \"90s\"\n  (format-duration 0)     => \"0s\"",
     "parse-duration": "Syntax: (parse-duration s)\nLibrary: (scm duration)\nDescription: Parses a duration string into a non-negative integer number of\n  seconds. Accepts a bare integer (interpreted as seconds), or an integer\n  suffixed with one of s/m/h/d (seconds/minutes/hours/days). Returns #f\n  if s is not a string, is empty, or does not parse.\nExample:\n  (parse-duration \"30\")  => 30\n  (parse-duration \"30s\") => 30\n  (parse-duration \"10m\") => 600\n  (parse-duration \"3h\")  => 10800\n  (parse-duration \"1d\")  => 86400\n  (parse-duration \"x\")   => #f",
+  },
+  "scm-feed": {
+    "parse-feed-bytevector": "Syntax: (parse-feed-bytevector bv)\nLibrary: (scm feed)\nDescription: Parses an Atom or RSS 2.0 feed from an in-memory bytevector.\n  Same result shape as parse-feed-file. Use this when fetching feed bytes\n  over HTTP so the XML declaration's encoding is honoured.\nExample:\n  (parse-feed-bytevector (http-response-body resp))",
+    "parse-feed-file": "Syntax: (parse-feed-file path)\nLibrary: (scm feed)\nDescription: Parses an Atom or RSS 2.0 feed from a file. Returns a pair\n  (feed-title . entries), where entries is a list of alists with keys\n  'title', 'link', 'guid', 'summary', 'published' (all strings; missing\n  fields default to ''). Dates are returned verbatim — use parse-pubdate\n  from (scm datetime) to convert.\nExample:\n  (parse-feed-file \"/tmp/feed.xml\")\n    => (\"Example\" ((\"title\" . \"Post 1\") (\"link\" . \"...\") ...))",
+    "parse-feed-string": "Syntax: (parse-feed-string s)\nLibrary: (scm feed)\nDescription: Parses an Atom or RSS 2.0 feed from an in-memory string.\n  Same result shape as parse-feed-file.\nExample:\n  (parse-feed-string \"<rss>...</rss>\") => (\"Example\" (... ...))",
   },
   "scm-fs": {
     "absolute-path": "Syntax: (absolute-path path)\nLibrary: (scm system)\nDescription: Returns the absolute (fully qualified) form of the given path string.\nExample:\n  (absolute-path \".\") => \"/current/working/dir\"",

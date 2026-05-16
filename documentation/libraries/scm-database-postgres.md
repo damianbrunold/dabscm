@@ -101,6 +101,35 @@ Example:
   (define result (pg-query conn "SELECT id, name FROM users"))
 ```
 
+### `pg-quote-int`
+
+```
+Syntax: (pg-quote-int n)
+Library: (scm database postgres)
+Description: Returns the decimal representation of an integer n, validated as
+  integer. Accepts an integer or a numeric string. Raises an error for any
+  other input, preventing callers from accidentally splicing arbitrary text
+  through what was intended to be a numeric parameter.
+Example:
+  (pg-quote-int 42)   => "42"
+  (pg-quote-int "42") => "42"
+  (pg-quote-int "x") raises an error
+```
+
+### `pg-quote-literal`
+
+```
+Syntax: (pg-quote-literal s)
+Library: (scm database postgres)
+Description: Returns s wrapped in single quotes with internal single quotes
+  doubled — the SQL standard string-literal escape, safe under PostgreSQL's
+  default standard_conforming_strings=on (i.e. backslashes are literal).
+  Use for any user-controlled string interpolated into SQL.
+Example:
+  (pg-quote-literal "O'Brien") => "'O''Brien'"
+  (pg-quote-literal "\\n")    => "'\\n'"
+```
+
 ### `pg-result->alist-list`
 
 ```

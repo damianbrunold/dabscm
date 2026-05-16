@@ -57,12 +57,14 @@
 | [`(scm compression)`](libraries/scm-compression.md) | Data compression and decompression |
 | [`(scm crypto)`](libraries/scm-crypto.md) | Cryptographic hashing and encoding utilities |
 | [`(scm csv)`](libraries/scm-csv.md) | CSV parsing |
+| [`(scm database migrations)`](libraries/scm-database-migrations.md) |  |
 | [`(scm database postgres)`](libraries/scm-database-postgres.md) | PostgreSQL database connectivity |
 | [`(scm database sqlserver)`](libraries/scm-database-sqlserver.md) | SQL Server database connectivity |
 | [`(scm datetime)`](libraries/scm-datetime.md) | Date and time operations |
 | [`(scm dict)`](libraries/scm-dict.md) | Dictionary / associative map operations |
 | [`(scm doc)`](libraries/scm-doc.md) | Documentation access |
 | [`(scm duration)`](libraries/scm-duration.md) |  |
+| [`(scm feed)`](libraries/scm-feed.md) |  |
 | [`(scm fs)`](libraries/scm-fs.md) | Filesystem operations — paths, directories, files |
 | [`(scm glob)`](libraries/scm-glob.md) | Filename globbing and pattern matching |
 | [`(scm html)`](libraries/scm-html.md) |  |
