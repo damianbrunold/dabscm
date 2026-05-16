@@ -1,0 +1,314 @@
+============================================================================
+  SETS-OF-SCOPES — WORKED EXAMPLES
+============================================================================
+
+Table of Contents
+-----------------
+1.  Simple Example: swap! Macro
+2.  Cross-Module Example: my-cond with Library-Internal Helper
+
+Related files:
+  macro-algorithm.txt       — Theory and specification
+  macro-implementation.txt  — Implementation details (C# and Java)
+  macro-issues.txt          — Deviations from algorithm and R7RS
+
+
+============================================================================
+
+1. SIMPLE EXAMPLE: swap! MACRO
+===============================
+
+This example traces the full expansion of a simple hygiene-sensitive
+macro through the algorithm and implementation.
+
+Setup: In the "user main" module (scope M), the following macro is
+defined (via library.scm or user code):
+
+    (define-syntax swap!
+      (syntax-rules ()
+        ((_ a b)
+         (let ((tmp a))
+           (set! a b)
+           (set! b tmp)))))
+
+The transformer is a SyntaxRulesTransformer with:
+  Pattern: (_ a b)
+  Template: (let ((tmp a)) (set! a b) (set! b tmp))
+  Template identifiers (let, tmp, set!) have scope set {M}
+
+User code:
+
+    (let ((x 1) (y 2))
+      (swap! x y)
+      (list x y))
+
+
+Step 1: WRAP INPUT
+  The top-level form is wrapped with module scope M:
+
+    (let ((x{M} 1) (y{M} 2))
+      (swap!{M} x{M} y{M})
+      (list{M} x{M} y{M}))
+
+  Here x{M} means SyntaxObject("x", {M}).
+
+  Implementation: Expander.Expand() calls SyntaxObject.WrapDatum(form,
+  ScopeSet.Of(moduleScope), pos). Only symbols become SyntaxObjects;
+  numbers 1 and 2 pass through unwrapped.
+
+
+Step 2: EXPAND THE LET
+  The expander recognizes "let" as a core form (ExpandLet handler).
+  - Expand values 1 and 2 (self-quoting, unchanged)
+  - Generate fresh let-scope L
+  - Add L to parameters and body:
+
+    x{M,L}, y{M,L}
+
+  - Register x{M,L} and y{M,L} in binding table:
+    ("x", {M,L}) → Local(bindingVar: x{M,L})
+    ("y", {M,L}) → Local(bindingVar: y{M,L})
+
+  - Expand body with scoped identifiers:
+
+    (swap!{M,L} x{M,L} y{M,L})
+    (list{M,L} x{M,L} y{M,L})
+
+
+Step 3: EXPAND THE SWAP! CALL
+  The expander resolves swap!{M,L}:
+  - Binding table lookup: "swap!" with scopes {M,L}
+  - Finds entry: ("swap!", {M}) → Macro(transformer)
+    ({M} ⊆ {M,L}, so it matches)
+  - It's a Macro → ExpandMacroCall
+
+
+Step 4: MACRO EXPANSION PROTOCOL
+  Generate fresh scopes:
+    useSiteScope = U
+    introScope = I
+
+  4a. Add use-site scope and intro scope to the input:
+      (swap!{M,L,U,I} x{M,L,U,I} y{M,L,U,I})
+
+  4b. Extract args (cdr): (x{M,L,U,I} y{M,L,U,I})
+
+  4c. Pattern matching: (_ a b) against (swap!{M,L,U,I} x{M,L,U,I} y{M,L,U,I})
+      - _ matches swap!{M,L,U,I} (wildcard, discarded)
+      - a binds to x{M,L,U,I}
+      - b binds to y{M,L,U,I}
+
+      Implementation: SyntaxRulesTransformer.MatchInner traverses the
+      pattern tree. _ is identified as a wildcard (not in literals list).
+      a and b are pattern variables, bound to their matched values.
+
+  4d. Template expansion (raw):
+      Template: (let ((tmp a)) (set! a b) (set! b tmp))
+
+      Template identifiers (let, tmp, set!) are SyntaxObjects with
+      definition-site scopes {M}. Matched values (a, b) are
+      substituted directly.
+
+      Result:
+        (let{M} ((tmp{M} x{M,L,U,I}))
+          (set!{M} x{M,L,U,I} y{M,L,U,I})
+          (set!{M} y{M,L,U,I} tmp{M}))
+
+      Implementation: SyntaxRulesTransformer.ExpandRaw performs the
+      substitution. FindBindingByIdentity uses BoundIdEq to match
+      pattern variables in the template. Unmatched identifiers (let,
+      tmp, set!) are kept with their original SyntaxObject scopes.
+
+  4e. Flip intro scope I on the result:
+      Every identifier gets I flipped:
+        let{M,I}, tmp{M,I}, x{M,L,U}, set!{M,I}, y{M,L,U}
+
+      Note: x and y had I added in step 4a, then I was part of their
+      scopes when substituted. Flipping removes I from them. Template
+      identifiers (let, tmp, set!) did NOT have I, so flipping adds it.
+
+      Result:
+        (let{M,I} ((tmp{M,I} x{M,L,U}))
+          (set!{M,I} x{M,L,U} y{M,L,U})
+          (set!{M,I} y{M,L,U} tmp{M,I}))
+
+
+Step 5: RE-EXPAND THE RESULT
+  The expander processes the let form:
+  - let{M,I} resolves to CoreForm("let") (because {M} ⊆ {M,I})
+  - Expand value x{M,L,U} — it's an identifier, returned as-is
+  - Generate fresh let-scope L2
+  - Add L2 to parameter and body:
+    tmp{M,I,L2}
+  - Register: ("tmp", {M,I,L2}) → Local(bindingVar: tmp{M,I,L2})
+
+  Now the body references:
+    x{M,L,U,L2} — resolves to Local x{M,L} (via binding table:
+                    {M,L} ⊆ {M,L,U,L2})
+    y{M,L,U,L2} — resolves to Local y{M,L}
+    tmp{M,I,L2}   — resolves to Local tmp{M,I,L2}
+
+  HYGIENE VERIFIED: The user's x{M,L} and the macro's tmp{M,I,L2}
+  have different scope sets. Even if the user had a variable named
+  "tmp", the scope sets would distinguish them.
+
+
+Step 6: COMPILATION
+  The compiler sees:
+    (let ((tmp{M,I,L2} x{M,L,U,L2}))
+      (set! x{M,L,U,L2} y{M,L,U,L2})
+      (set! y{M,L,U,L2} tmp{M,I,L2}))
+
+  GenVar for x{M,L,U,L2}:
+    Stage 1: InEnvP in current frame? No (tmp is in current frame)
+             InEnvP in outer frame (L)? Check x{M,L} via BoundIdEq.
+             x{M,L,U,L2} ≠ x{M,L} (different scope sets). Fails.
+    Stage 2: Binding table: "x" with {M,L,U,L2}
+             Finds ("x", {M,L}) → Local(bindingVar: x{M,L})
+             Try InEnvP with x{M,L} → found in outer frame!
+             → LVAR 1, index-of-x
+
+  GenVar for tmp{M,I,L2}:
+    Stage 1: InEnvP with tmp{M,I,L2} in current frame.
+             Frame has tmp{M,I,L2}. BoundIdEq matches!
+             → LVAR 0, 0
+
+  Result: correct code, no variable capture.
+
+
+============================================================================
+
+2. CROSS-MODULE EXAMPLE: my-cond WITH LIBRARY-INTERNAL HELPER
+===============================================================
+
+This example shows how a macro defined in one library references
+internal definitions from that library, and how it all resolves
+when the macro is used from a different module.
+
+
+Step A: DEFINE THE LIBRARY
+
+    ;; File: example-macros.sld
+    (define-library (example macros)
+      (import (scheme base))
+      (export my-cond)
+      (begin
+        (define (helper x) (not (null? x)))
+        (define-syntax my-cond
+          (syntax-rules ()
+            ((_ test expr)
+             (if (helper test) expr #f))))))
+
+Processing in Scheme.cs:
+
+  A1. EvalDefineLibrary parses name → "example macros"
+  A2. SetCurrentModule("example macros") creates the module.
+      CreateModule copies root symbols from scm core.
+  A3. Import (scheme base): DoImportSet loads (scheme base),
+      copies all its bindings (not, null?, if, etc.) into
+      "example macros" module.
+  A4. Evaluate (begin ...):
+      This goes through Eval → Expand → Compile → Execute.
+      Module scope for "example macros" is E.
+
+  A5. Expand (define (helper x) (not (null? x))):
+      - Wrapped with scope E: helper{E}, x{E}, not{E}, null?{E}
+      - ExpandDefine detects function shorthand
+      - ExpandLambda: fresh scope L for parameter x
+        x{E,L}, body has not{E,L}, null?{E,L}
+      - RegisterTopLevelDefine: ("helper", {E}) → Global("example macros", "helper")
+      - Compiled and executed: "example macros" module now has helper bound
+
+  A6. Expand (define-syntax my-cond (syntax-rules () ...)):
+      - Wrapped with scope E: my-cond{E}
+      - EvalTransformerInExpander parses the syntax-rules
+      - The transformer's template is: (if (helper test) expr #f)
+        Template identifiers if{E}, helper{E} have scope set {E}
+      - Macro stored in module: ("my-cond" → MacroTransformer(transformer))
+      - Registered in binding table:
+        ("my-cond", {E}) → Macro("example macros", "my-cond", transformer)
+
+  A7. Export my-cond: module.Export("my-cond")
+  A8. Switch back to original module.
+
+
+Step B: USE THE MACRO FROM ANOTHER MODULE
+
+    ;; In user code (module "user main", scope U)
+    (import (example macros))
+    (my-cond '(1 2) "yes")
+
+  B1. Import (example macros):
+      - DoImportSet finds the module
+      - Copies exported binding my-cond into "user main"
+      - user main now has: my-cond → MacroTransformer(transformer)
+      - Provenance: "example macros"
+
+  B2. Expand (my-cond '(1 2) "yes"):
+      - Wrapped with user-main scope U:
+        my-cond{U}, quote{U}, ...
+      - Resolve my-cond{U}: finds Macro → ExpandMacroCall
+
+  B3. Macro expansion protocol:
+      - useSiteScope = S, introScope = I
+      - Add S and I to input: (my-cond{U,S,I} (quote{U,S,I} (1 2)) "yes")
+      - Extract args: ((quote{U,S,I} (1 2)) "yes")
+      - Pattern match: (_ test expr) against input
+        test binds to (quote{U,S,I} (1 2))  [a pair, not a SyntaxObject]
+        expr binds to "yes"
+
+      - Template expansion:
+        Template: (if (helper test) expr #f)
+        - if{E}: SyntaxObject with definition-site scope {E}
+        - helper{E}: SyntaxObject with definition-site scope {E}
+        - test: substituted → (quote{U,S,I} (1 2))
+        - expr: substituted → "yes"
+        - #f: constant, passed through
+
+        Result:
+          (if{E} (helper{E} (quote{U,S,I} (1 2))) "yes" #f)
+
+      - FlipScope with I:
+          (if{E,I} (helper{E,I} (quote{U,S} (1 2))) "yes" #f)
+
+        Note: quote had I added in the input step, so flip removes it.
+        if and helper did NOT have I (template identifiers), so flip adds it.
+
+  B4. Re-expand the result:
+      - Resolve if{E,I}: binding table has ("if", {U}) → CoreForm("if")
+        Is {U} ⊆ {E,I}? NO — U is not in {E,I}.
+        But also has ("if", {E}) → CoreForm("if") [from when library
+        was loaded and (scheme base) was imported into "example macros"]
+        Is {E} ⊆ {E,I}? YES!
+        → CoreForm("if") — REFERENTIAL TRANSPARENCY!
+
+      - ExpandIf: expand sub-forms
+
+      - Resolve helper{E,I}: binding table has
+        ("helper", {E}) → Global("example macros", "helper")
+        Is {E} ⊆ {E,I}? YES!
+        → Global("example macros", "helper")
+
+        This is the key referential transparency result: helper
+        resolves to the library-internal function, not to any
+        helper that might exist in "user main".
+
+  B5. Compilation:
+      GenVar for helper{E,I}:
+        Stage 1: not in local env
+        Stage 2: Resolve → Global("example macros", "helper")
+        → GVAR "helper", "example macros"
+
+      The VM will look up "helper" in the "example macros" module
+      at runtime, finding the correct function.
+
+  RESULT:
+
+    The macro correctly resolves:
+    - "if" to the core form (via definition-site scope E)
+    - "helper" to the library-internal function (via scope E)
+    - Input identifiers to the use-site context (via scope U)
+
+    Even if the user module has its own "helper" function, the macro
+    still refers to the library's helper because the scope sets are
+    different: {E} (library) vs {U} (user).

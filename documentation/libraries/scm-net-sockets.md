@@ -1,0 +1,130 @@
+# `(scm net sockets)`
+
+TCP socket operations — listen, accept, connect
+
+## Exports
+
+### `call-with-tcp-server`
+
+```
+Syntax: (call-with-tcp-server port proc)
+Library: (scm net sockets)
+Description: Creates a TCP listener on port, calls proc with it, then stops the
+  listener even if proc raises an error. Returns the result of proc.
+Example:
+  (call-with-tcp-server 8080
+    (lambda (listener) (tcp-accept listener)))
+```
+
+### `socket-binary-input-port`
+
+```
+Syntax: (socket-binary-input-port socket)
+Library: (scm net sockets)
+Description: Returns the binary input port for reading raw bytes from the socket.
+Example:
+  (read-u8 (socket-binary-input-port sock))
+```
+
+### `socket-binary-output-port`
+
+```
+Syntax: (socket-binary-output-port socket)
+Library: (scm net sockets)
+Description: Returns the binary output port for writing raw bytes to the socket.
+Example:
+  (write-u8 65 (socket-binary-output-port sock))
+```
+
+### `socket-close`
+
+```
+Syntax: (socket-close socket-or-listener)
+Library: (scm net sockets)
+Description: Closes a socket or TCP listener.
+Example:
+  (socket-close sock)
+```
+
+### `socket-input-port`
+
+```
+Syntax: (socket-input-port socket)
+Library: (scm net sockets)
+Description: Returns the textual input port for reading from the socket.
+Example:
+  (read-line (socket-input-port sock))
+```
+
+### `socket-output-port`
+
+```
+Syntax: (socket-output-port socket)
+Library: (scm net sockets)
+Description: Returns the textual output port for writing to the socket.
+Example:
+  (display "hello" (socket-output-port sock))
+```
+
+### `socket?`
+
+```
+Syntax: (socket? x)
+Library: (scm net sockets)
+Description: Returns #t if x is a TCP socket.
+Example:
+  (socket? (tcp-connect "localhost" 8080)) => #t
+```
+
+### `tcp-accept`
+
+```
+Syntax: (tcp-accept listener)
+Library: (scm net sockets)
+Description: Accepts an incoming TCP connection on the listener. Blocks until a connection arrives.
+Example:
+  (define sock (tcp-accept listener))
+```
+
+### `tcp-connect`
+
+```
+Syntax: (tcp-connect host port)
+Library: (scm net sockets)
+Description: Connects to a TCP server at the given host and port. Returns a socket.
+Example:
+  (define sock (tcp-connect "localhost" 8080))
+```
+
+### `tcp-listen`
+
+```
+Syntax: (tcp-listen port)
+Library: (scm net sockets)
+Description: Creates a TCP listener on the given port and starts listening for connections.
+Example:
+  (define l (tcp-listen 8080))
+```
+
+### `tcp-listener?`
+
+```
+Syntax: (tcp-listener? x)
+Library: (scm net sockets)
+Description: Returns #t if x is a TCP listener.
+Example:
+  (tcp-listener? (tcp-listen 8080)) => #t
+```
+
+### `with-tcp-connection`
+
+```
+Syntax: (with-tcp-connection host port proc)
+Library: (scm net sockets)
+Description: Connects to host:port, calls proc with the socket, then closes the
+  socket even if proc raises an error. Returns the result of proc.
+Example:
+  (with-tcp-connection "localhost" 8080
+    (lambda (sock) (display "hi" (socket-output-port sock))))
+```
+

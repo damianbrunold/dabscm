@@ -1,0 +1,565 @@
+============================================================================
+  SETS-OF-SCOPES — IMPLEMENTATION DETAILS
+============================================================================
+
+Table of Contents
+-----------------
+1.  Pipeline Overview
+2.  File-by-File Guide
+    2.1  ScopeSet — Immutable Sorted Int Arrays
+    2.2  SyntaxObject — Identifiers with Scope Sets
+    2.3  BindingTable — (Name, Scope Set) → ResolvedBinding
+    2.4  ResolvedBinding — Binding Classification
+    2.5  Expander — The Expansion Driver
+    2.6  SyntaxRulesTransformer — Pattern Matching and Template Expansion
+    2.7  Compiler — How It Uses Scope-Annotated Identifiers
+    2.8  Modules — Module Management
+    2.9  Scheme — Top-Level Evaluation and define-library
+3.  Compiler Identifier Resolution
+    3.1  GenVar: The Three-Stage Resolution
+    3.2  IdentifiersMatch: BoundIdEq vs Name Compare
+    3.3  InEnvP: Walking the Environment Chain
+    3.4  Intrinsic Optimization
+    3.5  GenSet: Parallel Resolution for Mutations
+4.  Key Implementation Decisions
+    4.1  Pairs Never Wrapped
+    4.2  Idempotent AddScope
+    4.3  Binding Table Populated Incrementally
+    4.4  PartialExpandBodyForm: Intro-Only Expansion
+5.  Java Differences
+
+Related files:
+  macro-algorithm.txt  — Theory and specification
+  macro-examples.txt   — Worked examples tracing through algorithm and code
+  macro-issues.txt     — Deviations from algorithm and R7RS
+
+All C# files are in scm/scm-csharp/scheme/. Parallel Java files are
+in scm/scm-java/src/main/scheme/.
+
+
+============================================================================
+
+1. PIPELINE OVERVIEW
+====================
+
+The processing pipeline for regular Scheme forms:
+
+    Input → Expander.Expand() → Compiler.Compile() → VM.Execute()
+
+define-library is an exception: it is intercepted in Scheme.Eval()
+BEFORE the expander and handled by EvalDefineLibrary(). Only the
+(begin ...) clauses inside a library go through the normal pipeline.
+See macro-issues.txt section 2.1.
+
+
+============================================================================
+
+2. FILE-BY-FILE GUIDE
+======================
+
+2.1  ScopeSet — Immutable Sorted Int Arrays
+    File: ScopeSet.cs (~150 lines)
+---------------------------------------------
+
+An immutable set of unique scope integers, stored as a sorted int array.
+
+Fields:
+  scopes: int[]          — sorted, immutable
+  scopeCounter: static int — thread-safe counter for generating IDs
+
+Key methods:
+  FreshScope(): int      — Thread-safe unique ID via Interlocked.Increment
+  Add(scope): ScopeSet   — Binary search insert; returns this if present
+  Remove(scope): ScopeSet — Binary search remove; returns this if absent
+  Flip(scope): ScopeSet  — Add if absent, Remove if present
+  Contains(scope): bool  — Binary search membership test
+  IsSubsetOf(other): bool — O(m+n) two-pointer walk on sorted arrays
+  SetEquals(other): bool — Element-wise equality
+  Of(scope): ScopeSet    — Factory for single-scope set
+  Of(params): ScopeSet   — Factory for multi-scope set (sorted)
+
+The Empty singleton represents the empty scope set.
+
+
+2.2  SyntaxObject — Identifiers with Scope Sets
+    File: SyntaxObject.cs (~300 lines)
+-------------------------------------------------
+
+Wraps a symbol with a scope set and optional source position.
+
+Fields:
+  Datum: object           — The underlying symbol
+  Scopes: ScopeSet        — Accumulated scopes
+  Pos: SourcePos?          — Source location
+
+Properties:
+  IsIdentifier            — True if Datum is a symbol
+  SymbolName              — The symbol's string name
+
+Static operations (all recursive on pairs/vectors):
+
+  WrapDatum(datum, scopes, pos)
+    Recursively wrap raw S-expression: symbols → SyntaxObject,
+    pairs → Pair of wrapped elements, constants → pass through.
+
+  AddScope(stx, scope)
+    Add scope to all identifiers. Pairs recurse with structural
+    sharing (returns same object if nothing changed).
+
+  FlipScope(stx, scope)
+    Flip scope on all identifiers. Same structural sharing.
+
+  Strip(stx, bindingTable)
+    Convert back to plain S-expressions. Identifiers are resolved
+    through the binding table and replaced with their ResolvedName.
+    Unresolved identifiers use their symbol name.
+
+  Strip(stx)
+    Simple version: identifiers → their symbol name (no resolution).
+
+  Resolve(id, bindingTable)
+    Look up an identifier: bindingTable.Resolve(name, scopes).
+
+  FreeIdEq(a, b, bindingTable)
+    Both unbound with same name → true.
+    Both bound with same label → true. Otherwise false.
+
+  BoundIdEq(a, b)
+    Same name AND same scope set → true.
+
+
+2.3  BindingTable — (Name, Scope Set) → ResolvedBinding
+    File: BindingTable.cs (~200 lines)
+---------------------------------------------------------
+
+Thread-safe mapping from (name, scope-set) to ResolvedBinding.
+
+Structure:
+  entries: Dictionary<string, List<Entry>>
+    Maps symbol name → list of (ScopeSet, ResolvedBinding) pairs
+
+Core methods:
+
+  Add(name, scopes, binding)
+    Append a new entry. If an entry with the same name and equal
+    scope set already exists, it is replaced (matching Flatt's model
+    where each (name, scope-set) pair maps to exactly one binding).
+    Multiple entries per name are allowed (different scope sets for
+    different binding contexts).
+
+  Resolve(name, refScopes): ResolvedBinding?
+    Find all entries where entry.Scopes ⊆ refScopes.
+    Return the one with the largest scope count (most specific).
+    Detects ambiguity when two candidates have equal scope counts.
+    Returns null if no entry found.
+    Thread-safe: snapshots the list under lock, iterates without lock.
+
+  RegisterCoreFormBindings(moduleScope)
+    Register all core form names with the given scope.
+    Idempotent per scope ID.
+    Uses shared global bindings so all modules share the same label
+    for each core form — this ensures free-identifier=? works for
+    core forms across module boundaries.
+
+The binding table is the single source of truth for the expander.
+It is populated incrementally by: bootstrap registration (Modules
+constructor and CreateModule), define (RegisterTopLevelDefine),
+define-syntax (ExpandDefineSyntax), import (%do-import-set handler),
+and core form registration (RegisterCoreFormBindings).
+
+
+2.4  ResolvedBinding — Binding Classification
+    File: ResolvedBinding.cs (~75 lines)
+-----------------------------------------------
+
+Describes what an identifier refers to.
+
+Kinds:
+  Local     — Local variable (lambda, let, letrec parameter)
+  Global    — Global variable (module-level define)
+  Macro     — Macro transformer (define-syntax)
+  PatternVar — Pattern variable (within syntax-rules)
+  CoreForm  — Built-in core form (if, lambda, etc.)
+
+Fields:
+  BindingKind   — One of the above
+  Label         — Unique string for identity comparison
+  ModuleName    — Which module defines this (Global/Macro)
+  SymbolName    — The name in that module
+  ResolvedName  — Name to use after stripping
+  Value         — For Macro: the transformer. For Local: the binding
+                  SyntaxObject (used by compiler for env lookup)
+
+Factory methods:
+  MakeLocalRef(name, bindingVar)  — stores the SyntaxObject so the
+                                     compiler can find it in the env
+  MakeGlobal(moduleName, name)
+  MakeMacro(moduleName, name, transformer)
+  MakeCoreForm(formName)
+  MakePatternVar(name, depth, value)
+
+
+2.5  Expander — The Expansion Driver
+    File: Expander.cs (~1670 lines)
+--------------------------------------
+
+The core of the sets-of-scopes implementation. Takes raw S-expressions
+and returns fully-expanded forms containing only core forms (if, lambda,
+set!, quote, begin, define) and function applications.
+
+Entry point — Expand(pos, form):
+  1. Get module scope: modules.GetCurrentModuleScope()
+  2. Register core forms: RegisterCoreFormBindings()
+  3. Wrap input: WrapDatum(form, {moduleScope})
+  4. Recursively expand: ExpandForm()
+
+ExpandForm — the dispatcher:
+  - Constants → pass through
+  - Identifier (SyntaxObject) → return as-is (compiler resolves later)
+  - Plain symbol → pass through
+  - Pair (list form):
+    - Resolve operator through binding table
+    - If CoreForm → ExpandCoreForm()
+    - If Macro → ExpandMacroCall()
+    - Otherwise → ExpandApplication() (expand all sub-forms)
+
+ExpandMacroCall — the hygiene protocol:
+  1. Generate useSiteScope and introScope
+  2. AddScope(input, useSiteScope), AddScope(input, introScope)
+  3. Run transformer.TransformRaw(args)
+  4. FlipScope(result, introScope)
+  5. Recursively ExpandForm(result)
+
+Core form handlers:
+  ExpandIf          — Expand test, then, else sub-forms
+  ExpandSet         — Keep variable as SyntaxObject, expand value
+  ExpandBegin       — Expand sequentially, splice nested begins
+  ExpandLambda      — Fresh scope for params + body, register params
+  ExpandDefine      — Handle simple and function shorthand
+  ExpandDefineSyntax — Evaluate transformer, register macro
+  ExpandLet         — Expand values in outer scope, fresh scope for body
+  ExpandLetStar     — Expand as nested lets (sequential scoping)
+  ExpandLetrec      — Scope applied to both bindings and body
+  ExpandLetSyntax   — Evaluate transformers, register with scope
+  ExpandLetrecSyntax — Two-pass: parse all, then register all
+  ExpandCondExpand   — Feature-based expansion at expansion time
+  ExpandQuasiquote   — Recursive quasiquote with unquote expansion
+
+ExpandBody — internal definitions (R7RS 5.3.2):
+  Phase 1: PartialExpandBodyForm discovers defines (intro-only expansion)
+  Phase 2: Separate leading defines from expressions
+  Phase 3: If no defines, expand all forms normally
+  Phase 4: Create letrec* scope, register names, expand with scope,
+           re-add scope after expansion
+
+PartialExpandBodyForm — discovery loop:
+  Expands macros one step at a time (intro scope only, no use-site scope).
+  Splices begin forms. Evaluates define-syntax (side effect needed for
+  subsequent forms). Splices let-syntax/letrec-syntax bodies. Stops when
+  a form is classified as either a define or an expression.
+
+ExpandDefineSyntax:
+  - In body contexts: uses the name's actual scope set (including body
+    scopes) so the macro is visible only in that scope
+  - At top level: uses only the module scope for global visibility
+  - Evaluates transformer via EvalTransformerInExpander (requires literal
+    syntax-rules form)
+  - Registers in binding table AND Module.Bindings (the latter for
+    cross-module import propagation)
+  - Produces a (define name (quote macro-pair)) for runtime persistence
+
+
+2.6  SyntaxRulesTransformer — Pattern Matching and Template Expansion
+    File: SyntaxRulesTransformer.cs (~830 lines)
+----------------------------------------------------------------------
+
+Implements R7RS syntax-rules pattern matching and template expansion.
+Used by the expander when a macro call is detected.
+
+Key method — TransformRaw(form, modules):
+  Tries each rule's pattern against the input. On first match,
+  expands the template with matched bindings. Returns raw syntax
+  objects (not stripped) — the expander applies FlipScope afterward.
+
+Parse(args, defModule, modules):
+  - Extract optional custom ellipsis identifier
+  - Parse literals list
+  - Parse pattern-template rule pairs
+  - Store all as arrays for matching
+
+Pattern matching (MatchInner):
+  - Wildcards: _ matches anything (unless in literals list)
+  - Literals: matched by free-identifier=? semantics
+  - Pattern variables: bind to the matched sub-expression
+  - Ellipsis: (pat ... rest) matches zero or more
+  - Mid-list ellipsis: (a b ... c d) matches with ellipsis in middle
+  - Vectors: converted to lists, matched recursively
+
+Template expansion (ExpandRaw):
+  - SyntaxObject identifiers: looked up in bindings by identity
+    (FindBindingByIdentity uses BoundIdEq for SyntaxObject matching)
+  - Plain symbol identifiers: looked up by name (FindBinding)
+  - Ellipsis iteration: sub-template expanded for each matched value
+  - Ellipsis escape: (... template) treats template literally
+  - Unmatched identifiers: kept as SyntaxObjects with definition scopes
+
+This is where hygiene happens at the template level: template identifiers
+retain their definition-site scope sets, while matched input retains
+its use-site scope sets. The expander's FlipScope step then adds the
+intro scope to distinguish them further.
+
+
+2.7  Compiler — How It Uses Scope-Annotated Identifiers
+    File: Compiler.cs (~1420 lines)
+---------------------------------------------------------------
+
+After expansion, the compiler receives forms where identifiers are
+SyntaxObjects carrying scope sets. The compiler does NOT expand macros —
+that's already done. It only needs to:
+
+1. Determine if an identifier is local (in the lambda/let env) or
+   global (in a module).
+2. Generate the correct LVAR or GVAR instruction.
+
+The compiler uses both direct environment lookup and binding table
+resolution. See Section 3 for details.
+
+
+2.8  Modules — Module Management
+    File: Modules.cs (~280 lines)
+----------------------------------
+
+Manages named modules, their bindings, and scope assignment.
+
+Key responsibilities:
+  - Module creation with root symbol inheritance from scm core
+  - Module scope assignment (GetModuleScope)
+  - Module switching for library loading
+  - Module variable tracking (*modules*)
+  - Deep cloning for snapshots (REPL reset)
+
+The BindingTable is owned by Modules and shared across all expansion
+and compilation. It is a session-lifetime object.
+
+
+2.9  Scheme — Top-Level Evaluation and define-library
+    File: Scheme.cs
+------------------------------------------------------
+
+The top-level evaluation loop. Intercepts define-library before
+compilation and handles it specially. Regular forms go through:
+
+    Expand → Compile → Execute
+
+define-library goes through:
+
+    EvalDefineLibrary → ProcessLibraryDeclaration:
+      export → collect names
+      import → DoImportSet → copy bindings
+      begin  → Eval (which triggers Expand → Compile → Execute)
+      include → EvalFile
+
+
+============================================================================
+
+3. COMPILER IDENTIFIER RESOLUTION
+===================================
+
+3.1  GenVar: The Three-Stage Resolution
+-----------------------------------------
+
+GenVar(pos, identifier, env) resolves an identifier to a bytecode
+instruction. It uses a three-stage process:
+
+STAGE 1: Direct env lookup
+  Call InEnvP(identifier, env) to search the lambda/let environment
+  chain. If found, generate LVAR with (frame-depth, index).
+
+  InEnvP compares identifiers using IdentifiersMatch, which uses
+  BoundIdEq for SyntaxObject-to-SyntaxObject comparison (same name
+  AND same scope set).
+
+STAGE 2: Binding table resolution
+  If Stage 1 fails and the identifier is a SyntaxObject, resolve
+  through the binding table:
+
+    binding = SyntaxObject.Resolve(idStx, bindingTable)
+
+  If the binding is Local and its Value is a SyntaxObject (the
+  binding variable), try InEnvP again with the binding variable.
+  This handles cases where a macro-expanded reference has different
+  scope sets than the direct env variable but resolves to the same
+  binding.
+
+  If the binding is Global, generate GVAR with the binding's module
+  name and symbol name.
+
+STAGE 3: Fallback
+  If both stages fail, generate GVAR with the identifier's name and
+  the current module. This handles legacy code paths and identifiers
+  that weren't wrapped in SyntaxObject.
+
+(See Compiler.cs lines 166-189)
+
+
+3.2  IdentifiersMatch: BoundIdEq vs Name Compare
+--------------------------------------------------
+
+    IdentifiersMatch(a, b):
+      Both SyntaxObjects → SyntaxObject.BoundIdEq(a, b)
+                           (same name + same scope set)
+      Otherwise → compare by name (GetIdName)
+
+This is used by InFrameP when searching lambda/let parameter lists.
+When the expander creates a lambda with scoped parameters, the
+parameters in the env are SyntaxObjects with scope sets. References
+in the body are also SyntaxObjects with the same scope sets. BoundIdEq
+matches them correctly.
+
+(See Compiler.cs lines 62-69)
+
+
+3.3  InEnvP: Walking the Environment Chain
+--------------------------------------------
+
+The environment is a Pair list of frames:
+
+    env = ((param1 param2 ...) (outer-param1 ...) ...)
+
+Each frame is a flat list of identifiers (SyntaxObjects or symbols).
+InEnvP walks frames from inner to outer:
+
+    InEnvP(identifier, env):
+      For each frame:
+        InFrameP(identifier, frame) → index or #f
+        If found: return (frame-depth, index)
+      Return #f
+
+InFrameP walks a frame sequentially, comparing with IdentifiersMatch.
+Returns the index (0-based) or #f.
+
+
+3.4  Intrinsic Optimization
+-----------------------------
+
+For known primitives (car, cdr, cons, +, -, *, /, =, <, >, etc.),
+the compiler can generate specialized opcodes (CAR, CDR, ADD, etc.)
+instead of the generic SAVE/GVAR/CALLJ sequence.
+
+Before applying this optimization, the compiler checks:
+1. The operator is not locally bound (InEnvP returns #f)
+2. The operator resolves to a Primitive object in the module
+
+If the operator has been shadowed by a local variable, the intrinsic
+optimization is skipped and the generic call sequence is used.
+
+
+3.5  GenSet: Parallel Resolution for Mutations
+------------------------------------------------
+
+GenSet follows the same three-stage process as GenVar:
+1. Direct env lookup → LSET
+2. Binding table resolution → GSET with module name
+3. Fallback → GSET with current module
+
+
+============================================================================
+
+4. KEY IMPLEMENTATION DECISIONS
+================================
+
+4.1  Pairs Never Wrapped
+--------------------------
+
+Only symbols (identifiers) become SyntaxObjects. Pairs and vectors
+are never wrapped — scope operations recurse into their elements
+directly. This simplifies the implementation: list operations (car,
+cdr, cons) work normally on expanded code, and scope manipulation
+is confined to leaf identifiers.
+
+
+4.2  Idempotent AddScope
+--------------------------
+
+ScopeSet.Add returns the same ScopeSet if the scope is already present.
+This means AddScope can be applied multiple times with the same scope
+without creating duplicate entries. This property is essential for
+ExpandBody Phase 4, where the letrec* scope is re-added to
+already-expanded forms: identifiers that already carry the scope
+from the pre-expansion phase are unaffected.
+
+
+4.3  Binding Table Populated Incrementally
+-------------------------------------------
+
+The binding table is populated by specific events during expansion,
+not by bulk copying from Module.Bindings:
+
+- Bootstrap: Modules constructor and CreateModule register initial bindings
+- define: RegisterTopLevelDefine adds a Global entry
+- define-syntax: ExpandDefineSyntax adds a Macro entry
+- import: The %do-import-set core form handler adds entries directly
+- Core forms: RegisterCoreFormBindings adds CoreForm entries
+
+This matches Flatt's model where the binding table is the single
+source of truth, populated during expansion.
+
+
+4.4  PartialExpandBodyForm: Intro-Only Expansion
+--------------------------------------------------
+
+During body expansion Phase 1, macros are expanded one step at a time
+using only an intro scope (no use-site scope). This is important
+because:
+
+- Pass-through identifiers (input identifiers that appear in the
+  macro's output) have the intro scope added before transformation,
+  then flipped (removed) after transformation. They retain their
+  original scopes.
+
+- Template-introduced identifiers get the intro scope added by the
+  flip. This distinguishes them from user code.
+
+- Not adding a use-site scope during discovery means that the
+  extracted define names have their natural scope sets. These names
+  are then pre-registered with the letrec* scope in Phase 4.
+
+Full expansion (with use-site scopes) happens later in Phase 4
+after the letrec* scope and bindings are established.
+
+
+============================================================================
+
+5. JAVA DIFFERENCES
+====================
+
+The Java implementation in scm/scm-java/src/main/scheme/ mirrors the
+C# implementation closely. The macro system architecture (Expander,
+SyntaxObject, ScopeSet, BindingTable, SyntaxRulesTransformer) is the
+same. The following differences exist:
+
+
+5.1  let* Expansion Strategy
+------------------------------
+
+C# (ExpandLetStarAsNestedLets in Expander.cs, lines 991-1033):
+  Directly handles scoping for each binding sequentially. For each
+  binding: expand the init expression in the current scope, generate
+  a fresh scope, register the binding, add the scope to remaining
+  bindings and body, then recurse. Returns nested (let ...) forms.
+
+Java (expandLetStarAsNestedLets in Expander.java, lines 880-901):
+  Builds a (let ((first-binding)) (let* (rest...) body)) form and
+  delegates to expandLet for processing. Each expandLet call creates
+  its own scope. The result is functionally equivalent but the
+  expansion takes a different path through the code.
+
+
+5.2  Missing WrapBegin Helper
+-------------------------------
+
+The C# Expander has a WrapBegin helper method (lines 1039-1046) that
+wraps a list of expanded body forms as a single expression (single
+form returned as-is, multiple forms wrapped in begin). The Java
+implementation does not have this helper; the equivalent logic is
+inlined at call sites.

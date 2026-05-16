@@ -1,0 +1,1 @@
+define-syntax: expected (syntax-rules ...) transformer (test2_macro_error.scm 4:1)

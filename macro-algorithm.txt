@@ -1,0 +1,762 @@
+============================================================================
+  SETS-OF-SCOPES MACRO ALGORITHM — THEORY & SPECIFICATION
+============================================================================
+
+Table of Contents
+-----------------
+1.  Macro Hygiene
+    1.1  What Hygiene Means
+    1.2  What Referential Transparency Means
+2.  Expander vs Compiler/Interpreter Roles
+3.  The Sets-of-Scopes Algorithm (Flatt 2016)
+    3.1  Syntax Objects, Scope Sets, and the Binding Table
+    3.2  The Three Scope Operations: Add, Remove, Flip
+    3.3  Binding Resolution: Subset Test and Most-Specific Wins
+    3.4  The Macro Expansion Protocol
+    3.5  How Binding Forms Create Scopes
+    3.6  free-identifier=? and bound-identifier=?
+4.  Core Forms in Sets-of-Scopes
+    4.1  Core Forms as Bindings
+    4.2  Primitive Registration Through Modules
+    4.3  The scm core Bootstrap Sequence
+    4.4  Module Scopes
+5.  Modules and Libraries
+    5.1  The define-library Pipeline
+    5.2  Library Declarations
+    5.3  How Imports Become Binding Table Entries
+    5.4  How Exports Work
+    5.5  Module Scope Creation and the Binding Table
+6.  R7RS Specification References
+    6.1  Libraries (R7RS 5.6)
+    6.2  Bodies and Internal Definitions (R7RS 5.3.2)
+    6.3  syntax-rules (R7RS 4.3.2)
+    6.4  define-syntax (R7RS 5.4)
+7.  Body Expansion Algorithm
+
+Related files:
+  macro-implementation.txt — Implementation details (C# and Java)
+  macro-examples.txt       — Worked examples tracing through algorithm and code
+  macro-issues.txt         — Deviations from algorithm and R7RS
+
+
+============================================================================
+
+1. MACRO HYGIENE
+================
+
+1.1  What Hygiene Means
+------------------------
+
+Scheme macros rewrite source code before it runs. A macro takes a piece
+of code as input and produces a different piece of code as output. The
+challenge is *hygiene*: making sure that names introduced by the macro
+don't accidentally collide with names at the place where the macro is
+used, and vice versa.
+
+Example of the problem (in a hypothetical unhygienic system):
+
+    (define-syntax swap!
+      (syntax-rules ()
+        ((_ a b)
+         (let ((tmp a))
+           (set! a b)
+           (set! b tmp)))))
+
+    (let ((tmp 1) (y 2))
+      (swap! tmp y)
+      (list tmp y))
+
+Without hygiene, the "tmp" introduced by swap! would collide with the
+user's variable named "tmp", producing wrong results. A hygienic macro
+system ensures this can never happen.
+
+
+1.2  What Referential Transparency Means
+-----------------------------------------
+
+Names used in the macro's template should refer to the bindings visible
+where the macro was defined, not where it is used. If swap! uses "set!",
+that should refer to the "set!" from the macro's definition environment,
+even if the user has shadowed "set!" at the use site.
+
+
+============================================================================
+
+2. EXPANDER vs COMPILER/INTERPRETER ROLES
+==========================================
+
+The macro system operates in a pipeline with clear separation of
+concerns:
+
+  EXPANDER:  Rewrites source code, expanding all macros into core forms.
+             After expansion, no macros remain — only core forms (if,
+             lambda, set!, quote, begin, define) and function applications.
+             Handles hygiene through scope manipulation and the binding
+             table.
+
+  COMPILER:  Translates expanded core forms into bytecode instructions.
+             Does NOT expand macros. Resolves identifiers to local
+             variables (LVAR) or global variables (GVAR) using scope
+             information left by the expander.
+
+  VM:        Executes bytecode. Completely unaware of macros, scopes,
+             or syntax objects.
+
+The key insight is that all macro complexity is confined to the expander.
+The compiler only needs to resolve identifiers, and the VM only needs to
+execute bytecode.
+
+
+============================================================================
+
+3. THE SETS-OF-SCOPES ALGORITHM (Flatt 2016)
+=============================================
+
+The dabscm interpreter implements the "sets-of-scopes" algorithm described
+by Matthew Flatt in "Binding as Sets of Scopes" (POPL 2016).
+
+
+3.1  Core Concepts: Syntax Objects, Scope Sets, and the Binding Table
+---------------------------------------------------------------------
+
+The algorithm operates on SYNTAX OBJECTS rather than plain S-expressions.
+
+- A SYNTAX OBJECT wraps a single symbol (identifier) together with a
+  SET OF SCOPES — a set of unique integer IDs that record which binding
+  contexts this identifier has passed through.
+
+- Only symbols are wrapped. Pairs (cons cells) and vectors are NOT
+  wrapped — scope operations recurse into their elements directly.
+  Constants (numbers, booleans, chars, strings) pass through unwrapped.
+
+- A SCOPE is a unique integer tag. Each binding context — every lambda,
+  let, letrec, module, macro expansion — generates a fresh scope.
+
+- A SCOPE SET is an immutable set of scope integers attached to each
+  identifier. As code passes through binding contexts, scopes are
+  added to (or flipped on) the identifiers.
+
+- A BINDING TABLE is a global mapping from (name, scope-set) pairs to
+  bindings. When a binding form (lambda, let, define, etc.) introduces
+  a variable, it records an entry in the binding table:
+
+      (name, scope-set) → binding
+
+  The scope-set in the entry is the scope set of the identifier AT THE
+  POINT WHERE IT WAS BOUND.
+
+The sets-of-scopes model tracks the CURRENT STATE (which scopes are
+present) rather than the history of expansions. History doesn't
+matter — only the final set of scopes.
+
+
+3.2  The Three Scope Operations: Add, Remove, Flip
+----------------------------------------------------
+
+Three operations manipulate scope sets on syntax objects:
+
+  ADD(stx, scope)   — Add scope to every identifier in stx.
+                       Used when entering a binding context.
+
+  REMOVE(stx, scope) — Remove scope from every identifier in stx.
+                        Rarely used directly.
+
+  FLIP(stx, scope)   — If an identifier has the scope, remove it.
+                        If it doesn't, add it.
+                        Used in macro expansion for the intro scope.
+
+All three operations recurse into pairs and vectors, applying the
+scope change to every identifier in the tree.
+
+The key insight of sets-of-scopes is that FLIP achieves the same
+separation between input and template identifiers that older algorithms
+achieve with more complex mechanisms. A single toggle operation
+distinguishes macro-introduced identifiers from use-site identifiers.
+
+
+3.3  Binding Resolution: Subset Test and Most-Specific Wins
+------------------------------------------------------------
+
+When an identifier with name N and scope set S needs to be resolved:
+
+  1. Find all entries in the binding table for name N whose scope set
+     is a SUBSET of S.
+
+  2. Among those, pick the one with the LARGEST scope set (the most
+     specific binding).
+
+  3. If two entries have equal-sized scope sets and both are subsets
+     of S, this is an AMBIGUITY and should signal an error.
+
+WHY THIS WORKS: When a lambda introduces parameter x with scope set
+{module, lambda}, and the body references x with scope set
+{module, lambda}, the binding's {module, lambda} is a subset of the
+reference's {module, lambda}, so it resolves. A module-level x with
+scope set {module} is also a subset, but {module, lambda} is more
+specific (larger set), so the local binding wins.
+
+This naturally implements lexical scoping: inner bindings have more
+scopes than outer bindings, so they always win.
+
+
+3.4  The Macro Expansion Protocol
+----------------------------------
+
+When the expander encounters a macro call (the operator resolves to
+a macro binding), it follows this protocol:
+
+  1. Generate two fresh scopes:
+     - USE-SITE SCOPE (u): marks the context where the macro is invoked
+     - INTRO SCOPE (i): will distinguish macro-introduced identifiers
+
+  2. Add both scopes to the input form:
+        input' = AddScope(input, u)
+        input'' = AddScope(input', i)
+
+  3. Run the transformer:
+        output = transform(input'')
+
+     The transformer matches patterns against the input and substitutes
+     matched sub-expressions into the template. Template identifiers
+     retain their definition-site scopes. Input identifiers retain
+     their use-site scopes (including u and i).
+
+  4. FLIP the intro scope on the output:
+        result = FlipScope(output, i)
+
+     This is the key hygiene step:
+     - Input identifiers that passed through the template HAVE the
+       intro scope (added in step 2), so FLIP REMOVES it.
+     - Template identifiers from the macro definition DON'T have the
+       intro scope, so FLIP ADDS it.
+
+     After the flip:
+     - Input identifiers have: {original scopes, u} (no i)
+     - Template identifiers have: {definition scopes, i} (no u)
+
+     These are DIFFERENT scope sets, which prevents capture.
+
+  5. Recursively expand the result.
+
+The use-site scope prevents the macro's output from capturing bindings
+at the use site. The intro scope (via flip) prevents bindings at the
+use site from capturing macro-introduced identifiers.
+
+
+3.5  How Binding Forms Create Scopes
+--------------------------------------
+
+Each binding form generates a fresh scope and adds it to the bound
+identifiers and their region of visibility:
+
+LAMBDA: (lambda (x y) body)
+  - Fresh scope S
+  - AddScope(x, S), AddScope(y, S), AddScope(body, S)
+  - Register x and y in binding table with their scope sets
+  - Expand body
+
+LET: (let ((x e1)) body)
+  - Expand e1 in the OUTER scope (before adding S)
+  - Fresh scope S
+  - AddScope(x, S), AddScope(body, S)
+  - Register x in binding table
+  - Expand body
+
+LET*: (let* ((x e1) (y e2)) body)
+  - Each binding gets its own fresh scope
+  - Binding y can see x, but x cannot see y
+
+LETREC/LETREC*: (letrec ((x e1) (y e2)) body)
+  - Fresh scope S
+  - AddScope(x, S), AddScope(y, S), AddScope(e1, S), AddScope(e2, S),
+    AddScope(body, S)
+  - Register x and y BEFORE expanding e1 and e2
+  - All expressions can see all bindings
+
+DEFINE: (define x expr)
+  - Register x in the binding table with the module scope
+  - Expand expr
+
+DEFINE-SYNTAX: (define-syntax name (syntax-rules ...))
+  - Evaluate the transformer at expansion time
+  - Register name as a macro binding in the binding table
+  - Store the transformer in the module
+
+INTERNAL DEFINITIONS: Defines at the start of a lambda/let body are
+  collected and converted to letrec*, following R7RS 5.3.2.
+  See Section 7 for the body expansion algorithm.
+
+
+3.6  free-identifier=? and bound-identifier=?
+----------------------------------------------
+
+R7RS defines two identifier comparison predicates:
+
+  (free-identifier=? a b)
+    True if a and b resolve to the SAME BINDING. Both are resolved
+    through the binding table; if both resolve to entries with the
+    same label (binding identity), they are free-identifier=?.
+    If both are unbound and have the same name, they are also equal.
+
+  (bound-identifier=? a b)
+    True if a and b have the SAME NAME and the SAME SCOPE SET.
+    This is a purely syntactic comparison — it doesn't resolve through
+    the binding table. Used in syntax-rules to determine if two
+    identifiers would "capture" each other in a binding position.
+
+
+============================================================================
+
+4. CORE FORMS IN SETS-OF-SCOPES
+=================================
+
+4.1  Core Forms as Bindings
+----------------------------
+
+Core forms (if, lambda, let, define, etc.) are not macros — they are
+built-in syntactic forms handled directly by the expander. In the
+sets-of-scopes model, they are registered in the binding table as
+CoreForm bindings.
+
+When the expander starts processing a module, it calls:
+
+    bindingTable.RegisterCoreFormBindings(moduleScope)
+
+This registers each core form name with the module's scope set:
+
+    ("if",     {moduleScope}) → CoreForm("if")
+    ("lambda", {moduleScope}) → CoreForm("lambda")
+    ("let",    {moduleScope}) → CoreForm("let")
+    ... etc.
+
+The full list of core forms:
+    quote, quasiquote, if, set!, begin, lambda, define, define-syntax,
+    let, let*, letrec, letrec*, let-syntax, letrec-syntax, cond-expand,
+    %do-import-set
+
+When the expander resolves the operator of a form and finds a CoreForm
+binding, it dispatches to the appropriate core form handler (ExpandIf,
+ExpandLambda, ExpandLet, etc.) rather than treating it as a macro call
+or function application.
+
+Because core forms are registered in the binding table with the module
+scope, they CAN be shadowed by more specific bindings (bindings with
+more scopes). For example, a local variable named "if" would have
+{moduleScope, lambdaScope}, which is more specific than the core form's
+{moduleScope}, so the local variable wins.
+
+
+4.2  Primitive Registration Through Modules
+---------------------------------------------
+
+Primitives (car, cdr, +, -, etc.) are C#/Java methods registered in
+the "scm core" module. They are NOT core forms — they are ordinary
+global bindings that happen to have native implementations.
+
+The registration flow:
+1. Modules constructor creates "scm core" module
+2. Primitives.Init() binds 150+ primitives into "scm core"
+3. library.scm is evaluated, which defines Scheme wrappers:
+       (define car (%primitive "car"))
+4. These definitions populate "scm core" further
+
+When a module is loaded, its bindings are registered in the binding
+table as Global bindings:
+
+    ("car", {moduleScope}) → Global(moduleName: "scm core", symbolName: "car")
+    ("+",   {moduleScope}) → Global(moduleName: "scm core", symbolName: "+")
+
+The compiler can then resolve these through the binding table and
+generate GVAR instructions with the correct module reference.
+
+
+4.3  The scm core Bootstrap Sequence
+--------------------------------------
+
+The bootstrap is minimal and carefully ordered:
+
+Step 1: Modules constructor
+  - Creates "scm core" module
+  - Binds only 5 primitives needed for library.scm to load:
+    %primitive, %module-export-bindings, %do-import-set,
+    %load-module, read
+  - Registers these 5 primitives directly in the binding table with
+    scm core's module scope
+
+Step 2: library.scm evaluation
+  - Evaluated in "scm core" module
+  - Each top-level form goes through Expand → Compile → Execute
+  - The expander registers core form bindings on first expansion
+  - First section binds 50+ primitives via (%primitive "name"):
+        (define car (%primitive "car"))
+    The expander's ExpandDefine calls RegisterTopLevelDefine, which
+    adds each name to the binding table with scm core's scope.
+  - Second section defines macros via define-syntax:
+        (define-syntax and (syntax-rules () ...))
+    ExpandDefineSyntax registers these as Macro bindings in the
+    binding table and also stores them in Module.Bindings (for
+    cross-module import propagation).
+
+Step 3: New module creation
+  - When a new module is created (e.g. "user main"), CreateModule()
+    copies "root symbols" from scm core into the new module's
+    Module.Bindings (for the VM runtime) AND directly registers
+    them in the binding table with the new module's scope.
+  - Root symbols include: %do-import-set, %load-module, %primitive,
+    and, append, apply, car, case, cdr, cond, cons, define, import,
+    list, or, quasiquote, syntax-rules
+  - Additional bindings arrive via explicit imports (e.g. user main
+    imports (scheme base), (scheme write), etc.)
+
+The binding table is populated incrementally by specific events:
+define, define-syntax, import, and module creation — not by bulk
+copying from Module.Bindings.
+
+
+4.4  Module Scopes
+-------------------
+
+Each module gets a unique scope ID, assigned by Modules.GetModuleScope().
+This scope is stored in a dictionary (moduleScopes) and created on first
+access via ScopeSet.FreshScope().
+
+When code is expanded in a module context:
+1. The input is wrapped with the module's scope: WrapDatum(form, {moduleScope})
+2. Core forms are registered with {moduleScope} in the binding table
+   (idempotent — only done once per module scope)
+
+Bindings enter the table through specific events:
+- Bootstrap: Modules constructor and CreateModule register initial bindings
+- define: RegisterTopLevelDefine adds a Global entry
+- define-syntax: ExpandDefineSyntax adds a Macro entry
+- import: The %do-import-set core form handler adds entries directly
+
+This means every identifier in the module starts with at least the
+module scope. Additional scopes are added as the identifier passes
+through binding forms (lambda, let, etc.) and macro expansions.
+
+
+============================================================================
+
+5. MODULES AND LIBRARIES
+=========================
+
+5.1  The define-library Pipeline
+----------------------------------
+
+Library processing happens OUTSIDE the macro expander, in Scheme.cs.
+
+When Eval() encounters a (define-library ...) form, it is intercepted
+BEFORE compilation and handled by EvalDefineLibrary(). This is a
+special-case dispatch, not part of the normal Expand → Compile → Execute
+pipeline.
+
+    Scheme.Eval(form):
+      if form starts with "define-library":
+        → EvalDefineLibrary(form)      // special path
+      else:
+        → compiler.Compile(form)       // normal path
+        → vm.Execute(compiled)
+
+EvalDefineLibrary does:
+1. Parse the library name: (scheme base) → "scheme base"
+2. Switch to the library's module: modules.SetCurrentModule(name)
+3. Process each library declaration in order
+4. Process exports
+5. Switch back to the original module
+
+
+5.2  Library Declarations
+--------------------------
+
+ProcessLibraryDeclaration handles each clause:
+
+  (export name ...)
+    Collect export names. Supports (rename src dest).
+
+  (import (lib-name) ...)
+    For each import spec, call PrimitiveDoImportSet to:
+    - Find the module (loading it if necessary)
+    - Apply import modifiers (only, except, prefix, rename)
+    - Copy bindings into the current module
+
+  (begin expr ...)
+    Evaluate the (begin ...) form. This goes through the normal
+    Eval path, which calls Expand → Compile → Execute. This is how
+    defines and define-syntax forms inside libraries are processed.
+
+  (include "file.scm" ...)
+    Read and evaluate each file's forms in the library's module.
+
+  (include-ci "file.scm" ...)
+    Same as include, but case-folding during read.
+
+  (include-library-declarations "file.scm" ...)
+    Read file and process each form as a library declaration.
+
+  (cond-expand clause ...)
+    Evaluate feature requirements and process matching clause's
+    declarations recursively.
+
+
+5.3  How Imports Become Binding Table Entries
+----------------------------------------------
+
+When a library imports another library, the expander's %do-import-set
+core form handler processes the import directly:
+
+1. The handler calls PrimitiveDoImportSet.DoImportSet() to get an
+   ImportResult containing the filtered bindings and their provenance.
+
+2. Import modifiers (only, except, prefix, rename) are applied
+   recursively by DoImportSet.
+
+3. For each imported binding, two things happen:
+   a. module.ImportBinding() stores the binding in Module.Bindings
+      (for VM runtime use — GVAR/GSET opcodes)
+   b. bindingTable.Add() registers the binding directly in the
+      binding table with the importing module's scope:
+
+       ("car", {importingModuleScope}) → Global("scheme base", "car")
+
+   The provenance tracking means the binding table entry correctly
+   identifies the ORIGIN module, not just the importing module.
+
+This direct registration approach (per Flatt's algorithm) means bindings
+enter the table as a specific event during expansion, not via bulk copying.
+
+
+5.4  How Exports Work
+----------------------
+
+Exports in define-library are collected during processing and then
+applied via module.Export(). An export creates a mapping from the
+internal name to the external name. When another module imports this
+library, it sees the exported names.
+
+Rename exports — (rename internal-name external-name) — allow a library
+to export a binding under a different name than it was defined with.
+
+Exports don't affect the binding table directly. They control which
+bindings are visible to importers via the Module.Exports dictionary.
+
+
+5.5  Module Scope Creation and the Binding Table
+--------------------------------------------------
+
+When a library is loaded:
+
+1. Modules.SetCurrentModule(name) creates the module if it doesn't
+   exist. CreateModule() copies "root symbols" from scm core into
+   both Module.Bindings (for VM runtime) and the binding table
+   (for expansion/compilation):
+     %do-import-set, %load-module, %primitive, and, append, apply,
+     car, case, cdr, cond, cons, define, import, list, or,
+     quasiquote, syntax-rules
+
+2. A fresh scope is assigned to the module: GetModuleScope(name).
+   The root symbols are registered with this scope in the binding table.
+
+3. When begin forms are evaluated, the expander wraps input with
+   the module scope. Core forms are registered on first expansion.
+
+4. Each define-syntax creates a macro binding in both the module
+   and the binding table. Each define registers a global binding
+   in the binding table via RegisterTopLevelDefine.
+
+5. Each import registers bindings directly in the binding table
+   from the expander's %do-import-set handler.
+
+This means library-internal macros can reference library-internal
+definitions because they share the same module scope.
+
+
+============================================================================
+
+6. R7RS SPECIFICATION REFERENCES
+=================================
+
+This section summarizes what the R7RS standard requires regarding
+macros, libraries, and related features.
+
+
+6.1  Libraries (R7RS 5.6)
+---------------------------
+
+R7RS defines libraries via (define-library ...) with these declaration
+forms: export, import, begin, include, include-ci,
+include-library-declarations, and cond-expand.
+
+Key requirements:
+- The expressions and definitions in a library body are evaluated in
+  the library's own environment, which includes bindings from imports.
+- Bindings defined in one library are only visible to other libraries
+  if explicitly exported.
+- Import modifiers (only, except, prefix, rename) allow fine-grained
+  control over which bindings are imported and under what names.
+- The order of library declarations matters: imports must precede
+  uses of imported bindings in begin clauses.
+- Libraries may be loaded lazily; an implementation need not load
+  a library until its bindings are actually referenced.
+
+
+6.2  Bodies and Internal Definitions (R7RS 5.3.2)
+--------------------------------------------------
+
+R7RS specifies that the body of a lambda, let, let*, letrec, letrec*,
+let-syntax, letrec-syntax, or any derived expression type that has a
+body follows these rules:
+
+- A body consists of zero or more definitions followed by one or more
+  expressions.
+- The definitions at the beginning of a body are treated as if they
+  were letrec* bindings. That is, all names are visible to all init
+  expressions (inside lambda bodies within the inits) and all body
+  expressions.
+- define-syntax is allowed in body contexts and binds a macro locally.
+- begin forms in definition context are spliced: their contents are
+  treated as if they appeared directly in the body.
+- let-syntax and letrec-syntax in definition context are also
+  "splicing": they establish syntax bindings and their body forms
+  are spliced into the enclosing body's definition context.
+
+The body expansion algorithm must discover which forms are definitions
+before expanding them. This requires a partial expansion step: macros
+are expanded one step at a time to see if they produce defines or
+begin forms. Only after all leading definitions are discovered can
+the body be converted to letrec* and fully expanded. See Section 7.
+
+
+6.3  syntax-rules (R7RS 4.3.2)
+--------------------------------
+
+R7RS specifies syntax-rules as the standard macro definition mechanism:
+
+    (syntax-rules (<literal> ...) <rule> ...)
+    (syntax-rules <ellipsis> (<literal> ...) <rule> ...)
+
+Each rule is: (<pattern> <template>)
+
+Pattern language:
+- Identifiers in the literal list are matched by free-identifier=?
+- The identifier _ is a wildcard (matches anything, not bound)
+- Other identifiers are pattern variables (match any form, bound)
+- (pattern ...) matches zero or more repetitions
+- (pattern ... . pattern) matches with a tail
+- #(pattern ...) matches vectors
+- Constants match by equal?
+- A custom ellipsis identifier can replace ...
+
+Template language:
+- Pattern variables are substituted with their matched values
+- Identifiers not in pattern variables are template identifiers
+  (they retain definition-site bindings — referential transparency)
+- (template ...) repeats the template for each ellipsis match
+- (... template) escapes: template is output literally (no ellipsis
+  processing)
+
+
+6.4  define-syntax (R7RS 5.4)
+-------------------------------
+
+    (define-syntax <keyword> <transformer spec>)
+
+R7RS says the transformer spec "is evaluated in some implementation-
+dependent way" to produce a transformer. It must support syntax-rules
+as a transformer spec but allows other forms.
+
+Key requirements:
+- The transformer is evaluated at expansion time, not runtime.
+- In body context, define-syntax creates a locally-scoped macro
+  (visible only in the remainder of the body).
+- A define-syntax in a body counts as a definition for the purpose
+  of the "definitions before expressions" rule.
+
+
+============================================================================
+
+7. BODY EXPANSION ALGORITHM
+============================
+
+The body expansion algorithm implements R7RS 5.3.2. It discovers
+internal definitions through partial expansion, then converts them
+to letrec* form.
+
+The algorithm proceeds in four phases:
+
+
+Phase 1: Discovery (Partial Expansion)
+---------------------------------------
+
+Each form in the body is partially expanded to classify it as a
+definition or an expression. Partial expansion uses only an intro
+scope (no use-site scope) and works as follows:
+
+For each form, loop:
+  - If the head resolves to "define": stop, record as a definition
+  - If the head resolves to "define-syntax": evaluate and register
+    the macro (side effect needed for subsequent forms), record the
+    resulting (define ...) form
+  - If the head resolves to "begin": splice sub-forms and process
+    each recursively
+  - If the head resolves to "let-syntax" or "letrec-syntax": expand
+    (evaluating syntax bindings), then splice and process body forms
+  - If the head resolves to a macro: expand one step with intro scope
+    only, flip the intro scope, and continue the loop with the result
+  - Otherwise: stop, record as an expression
+
+Using only the intro scope (not the use-site scope) during partial
+expansion is important: pass-through identifiers in macro-generated
+definitions retain their original scopes after the flip. This means
+the extracted define names have their natural scope sets, which can
+be correctly pre-registered in Phase 4.
+
+
+Phase 2: Separation
+---------------------
+
+Walk the discovered forms. Collect leading definitions (converting
+function shorthand `(define (f args) body)` to `(define f (lambda
+(args) body))`). Stop at the first non-definition form. All remaining
+forms are expressions.
+
+Validate: no definitions appear after the first expression. R7RS
+requires definitions to precede all expressions in a body.
+
+
+Phase 3: No-Definitions Case
+-------------------------------
+
+If no definitions were found, simply expand all forms normally and
+return them as the body.
+
+
+Phase 4: Letrec* Conversion
+-----------------------------
+
+If definitions were found:
+
+1. Generate a fresh letrec* scope.
+
+2. Add the scope to all define names and register them in the binding
+   table as local bindings. This makes all names visible to all
+   subsequent expansion.
+
+3. For each init expression:
+   a. Add the letrec* scope
+   b. Fully expand (macros are resolved with use-site scopes)
+   c. Re-add the letrec* scope to the expanded result
+   The re-add (step c) ensures that macro-introduced identifiers
+   in the expanded init also carry the letrec* scope, enabling
+   forward references through macros. AddScope is idempotent, so
+   identifiers that already have the scope are unaffected.
+
+4. For each body expression: same process (add scope, expand, re-add).
+
+5. Produce a (letrec* ((name init) ...) body ...) form directly
+   for the compiler. This form is NOT re-expanded — it goes straight
+   to compilation.
+
+The letrec* semantics match R7RS: init expressions are evaluated in
+order, and references to later bindings are only valid inside lambda
+bodies within the inits (not at the top level of an init expression).

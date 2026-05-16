@@ -1,0 +1,373 @@
+============================================================================
+  SETS-OF-SCOPES — DEVIATIONS & ISSUES
+============================================================================
+
+Table of Contents
+-----------------
+1.  Previously Fixed Deviations
+2.  Root Cause: Module System Outside the Expander
+    2.1  define-library Bypasses the Expander
+    2.2  import Implemented as a Macro
+    2.3  ExpandDefineSyntax Side-Effects Module.Bind()
+3.  Root Cause: Plain Symbols in Post-Expansion Code Paths
+    3.1  Compiler Creates Plain Symbols via Value.Intern
+    3.2  SyntaxRulesTransformer Mixed-Type Fallbacks
+4.  Independent Deviations
+    4.1  Only Literal syntax-rules Supported
+    4.2  ExpandBody Re-Scoping
+    4.3  BindingTable Grows Without Bound
+
+Related files:
+  macro-algorithm.txt       — Theory and specification
+  macro-implementation.txt  — Implementation details (C# and Java)
+  macro-examples.txt        — Worked examples tracing through algorithm and code
+
+
+============================================================================
+
+1. PREVIOUSLY FIXED DEVIATIONS
+================================
+
+The following deviations were identified and resolved:
+
+a) INTRO SCOPE ON INPUT: The intro scope is now correctly added to
+   the input BEFORE transformation, matching Flatt's protocol. After
+   the flip, input identifiers lose the intro scope and template
+   identifiers gain it.
+
+b) AMBIGUITY DETECTION: BindingTable.Resolve now detects when two
+   candidate bindings have equal scope counts and throws an error.
+   BindingTable.Add replaces existing entries with the same name and
+   equal scope set.
+
+c) LET-SYNTAX SCOPING: ExpandLetSyntax no longer calls module.Bind()
+   to store macros in the module's bindings. Macros are registered
+   only in the binding table with the let-syntax scope.
+
+d) LETREC-SYNTAX TWO-PASS: ExpandLetrecSyntax now has its own
+   implementation with a two-pass approach: parse all transformers,
+   then register all bindings. This enables mutual visibility.
+
+e) MODULE LOOKUP FALLBACK: The fallback path in ExpandForm that
+   checked module.Bindings directly (bypassing scope-based resolution)
+   has been removed. All identifier resolution goes through the binding
+   table.
+
+f) BINDING TABLE ARCHITECTURE: EnsureModuleBindings and
+   RefreshModuleBindings have been eliminated. The binding table is
+   now populated incrementally by specific events: bootstrap, define,
+   define-syntax, import, and core form registration.
+
+
+============================================================================
+
+2. ROOT CAUSE: MODULE SYSTEM OUTSIDE THE EXPANDER
+===================================================
+
+Deviations 2.1, 2.2, and 2.3 share a common root cause: define-library
+is handled in Scheme.cs rather than as a core form in the expander.
+This forces the import/export system to operate on Module.Bindings
+instead of the binding table.
+
+
+2.1  define-library Bypasses the Expander
+------------------------------------------
+
+WHAT THE ALGORITHM SAYS:
+  In a fully scope-based system, define-library would be processed
+  by the expander as a core form. The expander would handle import,
+  export, begin clauses with proper scope tracking.
+
+WHAT THE CODE DOES:
+  define-library is intercepted in Scheme.Eval() BEFORE the expander
+  is called. It is handled by EvalDefineLibrary, which processes
+  library declarations as a special case. Only the (begin ...) clause
+  goes through the normal Expand → Compile → Execute pipeline.
+
+  (See Scheme.cs EvalDefineLibrary)
+
+IMPACT: Low.
+  This works correctly for the common case because:
+  - Each (begin ...) form inside the library IS expanded with the
+    library's module scope
+  - Imports register bindings directly in the binding table from
+    the expander's %do-import-set handler
+  - Exports are processed after all begin forms, so all definitions
+    are available
+
+  The limitation is that import and export declarations are not
+  scope-tracked themselves. A macro that expands to (export ...)
+  or (import ...) inside a library would not work — but this is
+  not required by R7RS.
+
+
+2.2  import Implemented as a Macro
+------------------------------------
+
+WHAT R7RS SAYS:
+  import is a declaration form, not an expression. In a fully
+  scope-based system, the expander would recognize import directly
+  as a core form.
+
+WHAT THE CODE DOES:
+  import is defined as a syntax-rules macro in library.scm:
+
+    (define-syntax import
+      (syntax-rules ()
+        ((import spec ...)
+         (begin (%do-import-set 'spec) ...))))
+
+  It expands to calls to %do-import-set, which IS a core form in
+  the expander. The %do-import-set handler then calls
+  PrimitiveDoImportSet.DoImportSet() and registers imported bindings
+  directly in both Module.Bindings (for VM runtime) and the binding
+  table (for expansion/compilation).
+
+IMPACT: Low.
+  Functionally correct. The indirection (macro → core form) adds
+  one expansion step. However:
+  - The import macro must be pre-installed as a rootSymbol in every
+    new module, creating a bootstrap dependency
+  - The %do-import-set primitive and core form are implementation
+    details that leak into the user-visible namespace (prefixed
+    with % to discourage use)
+  - The import spec is quoted by the macro, then unquoted by the
+    expander — an unnecessary round-trip
+
+
+2.3  ExpandDefineSyntax Side-Effects Module.Bind()
+----------------------------------------------------
+
+WHAT THE ALGORITHM SAYS:
+  define-syntax should register the macro in the binding table.
+  The binding table is the single source of truth for the expander.
+
+WHAT THE CODE DOES:
+  ExpandDefineSyntax does two things:
+  1. Calls module.Bind(name, macroPair) — stores in Module.Bindings
+  2. Calls bindingTable.Add() — stores in the binding table
+
+  The Module.Bindings side-effect is needed because:
+  - When another module imports from this module, the import system
+    iterates Module.Exports (populated from Module.Bindings)
+  - The VM uses Module.Bindings for GVAR at runtime
+
+  (See Expander.cs ExpandDefineSyntax, lines ~1178-1185)
+
+IMPACT: Low.
+  Architecturally impure — the binding table should be the single
+  source of truth. But functionally necessary because the import/
+  export system and VM runtime use Module.Bindings.
+
+
+RESOLVED:
+
+  All three deviations in this section have been fixed:
+
+  - define-library is now a core form in the expander. The expander
+    handles import, export, begin, include, include-ci,
+    include-library-declarations, and cond-expand clauses with
+    proper scope tracking. (fixes 2.1)
+  - import is now a core form directly, eliminating the syntax-rules
+    macro, the rootSymbol dependency, and the %do-import-set
+    indirection. (fixes 2.2)
+  - %primitive is now a core form that resolves primitives at
+    expansion time rather than runtime.
+  - The Module.Bind side-effect in ExpandDefineSyntax remains for
+    now, as the VM still needs Module.Bindings for GVAR/GSET at
+    runtime. (2.3 partially addressed — the architectural concern
+    is reduced since the module system now lives in the expander)
+
+
+============================================================================
+
+3. ROOT CAUSE: PLAIN SYMBOLS IN POST-EXPANSION CODE PATHS
+============================================================
+
+Deviations 3.1 and 3.2 share a common root cause: some code paths
+create or handle plain symbols where SyntaxObjects are expected.
+
+
+3.1  Compiler Creates Plain Symbols via Value.Intern
+------------------------------------------------------
+
+WHAT THE ALGORITHM SAYS:
+  In a fully scope-based system, all identifiers should be
+  SyntaxObjects with scope sets, even in compiler-generated forms.
+
+WHAT THE CODE DOES:
+  The compiler constructs synthetic forms using Value.Intern(),
+  which creates plain symbols with no scope information:
+
+  - CompDefine rewrites (define (f args...) body...) into lambda
+    forms using Value.Intern("lambda"), Value.Intern("define"), etc.
+  - CompLet rewrites named let into letrec using Value.Intern()
+  - CompSet rewrites set! using Value.Intern("set!")
+
+  (See Compiler.cs CompDefine, CompLet, CompSet)
+
+IMPACT: Low.
+
+3.2  SyntaxRulesTransformer Mixed-Type Fallbacks
+--------------------------------------------------
+
+WHAT THE ALGORITHM SAYS:
+  Literal comparison in syntax-rules should use free-identifier=?
+  (scope-based binding identity). Pattern variable lookup should
+  use bound-identifier=? (exact scope set match).
+
+WHAT THE CODE DOES:
+  When comparing identifiers, the SyntaxRulesTransformer handles
+  three cases:
+  1. Both SyntaxObjects → uses FreeIdEq or BoundIdEq (correct)
+  2. Both plain symbols → uses name comparison
+  3. Mixed (one SyntaxObject, one plain) → falls back to name
+     comparison
+
+  Similarly, FindBindingByIdentity in template expansion falls back
+  to name matching when the binding was recorded with a plain symbol
+  identifier.
+
+  (See SyntaxRulesTransformer.cs IsLiteralIdentifier, FindBinding,
+  FindBindingByIdentity)
+
+IMPACT: Low.
+
+
+RESOLVED:
+
+  Both deviations in this section have been fixed:
+
+  - The Compiler now has a CoreFormId helper (mirroring the Expander)
+    that creates SyntaxObjects with the current module scope. CompDefine,
+    CompLet, and CompLetStar use CoreFormId for core form keywords
+    (lambda, define, set!, begin, quote, letrec, let*) and preserve
+    original SyntaxObject identifiers for variable names. (fixes 3.1)
+
+  - The Expander's quasiquote expansion now uses CoreFormId for runtime
+    function references (list, cons, append, apply, vector) instead of
+    plain symbols. CombineSkeletons detects the "list" head using
+    GetQQName, which handles both SyntaxObjects and plain symbols.
+
+  - The SyntaxRulesTransformer's plain-symbol fallback paths in
+    IsLiteralIdentifier and FindBindingByIdentity now throw errors
+    if plain symbols are encountered, detecting wrapping bugs upstream.
+    The Binding class propagates identifiers through ellipsis iteration
+    and accumulation. (fixes 3.2)
+
+  - Dead string overloads in the Compiler (InFrameP, InEnvP, GenVar,
+    GenSet) have been removed.
+
+  - The Compiler's Comp dispatch now throws an error if a plain symbol
+    appears in head position, catching any remaining wrapping bugs.
+
+  One known exception: ExpandDefineSyntax produces a runtime define
+  with a plain symbol variable name. This is intentional — the define
+  is an implementation detail for the module system, not a user-visible
+  binding that participates in scope-based resolution.
+
+
+============================================================================
+
+4. INDEPENDENT DEVIATIONS
+===========================
+
+4.1  Only Literal syntax-rules Supported
+------------------------------------------
+
+WHAT R7RS SAYS:
+  R7RS 5.4 says the transformer expression in define-syntax "is
+  evaluated in some implementation-dependent way" to produce a
+  transformer. The result must be a macro transformer, but it need
+  not be a literal (syntax-rules ...) form.
+
+WHAT THE CODE DOES:
+  EvalTransformerInExpander checks for a literal (syntax-rules ...)
+  form and rejects anything else. This means:
+
+    (define my-rules (syntax-rules () ...))
+    (define-syntax my-macro my-rules)   ; ERROR
+
+  The transformer must be a LITERAL (syntax-rules ...) form, not
+  an expression that evaluates to one.
+
+  (See Expander.cs EvalTransformerInExpander, lines ~1196-1217)
+
+IMPACT: Medium.
+  Technically non-conformant. Most Scheme code uses literal
+  syntax-rules forms, but some libraries and idioms pass
+  transformers as values (e.g., macro-generating procedures).
+
+FIX:
+  Evaluate the transformer expression in a sub-environment and
+  check if the result is a SyntaxRulesTransformer. This requires
+  a mini-eval step during expansion: expand the expression, compile
+  it, execute it, and verify the result type. Care must be taken
+  that this evaluation happens in the correct module context with
+  the correct bindings visible.
+
+
+4.2  ExpandBody Re-Scoping
+----------------------------
+
+WHAT THE ALGORITHM SAYS:
+  Internal definitions should be handled as part of body expansion.
+  The expander should pre-scan for defines, create a letrec* scope,
+  register all names, then expand with the scope in place.
+
+WHAT THE CODE DOES (CURRENT 4-PHASE APPROACH):
+  Phase 1: PartialExpandBodyForm discovers defines using intro-only
+           macro expansion (no use-site scope). Macros are expanded
+           one step at a time; begins are spliced; define-syntax is
+           evaluated and registered.
+  Phase 2: Separate leading defines from expressions.
+  Phase 3: If no defines, expand all forms normally.
+  Phase 4: Create letrec* scope, register names in binding table,
+           then expand init expressions and body with the scope in
+           place. Re-add scope after expansion to handle macro-
+           introduced identifiers.
+
+  This is substantially closer to the algorithm than an earlier
+  approach that fully expanded forms before creating the letrec*
+  scope. The current code pre-registers names (Phase 4, step 2)
+  before expanding inits (Phase 4, step 3), which means macros
+  expanded during init expressions can see forward-declared names.
+
+IMPACT: Low.
+  The re-add-after-expansion step (Phase 4, step 3c) handles the
+  common case of macro-introduced forward references. The remaining
+  edge case: if a macro produces a reference to a later definition
+  using a fresh identifier (one that was not in the input and does
+  not pass through the template), the re-add cannot help because
+  the fresh identifier never carried the letrec* scope. This is a
+  theoretical concern; no known test failures result from this.
+
+FIX:
+  None needed for practical purposes. A fully correct approach would
+  require the macro transformer itself to run within the letrec*
+  scope context, but this would require significant changes to how
+  transformers are invoked.
+
+
+4.3  BindingTable Grows Without Bound
+--------------------------------------
+
+WHAT THE ALGORITHM SAYS:
+  The binding table should be managed to prevent unbounded growth.
+  Racket's implementation uses a more sophisticated model with
+  phases and module-scoped tables.
+
+WHAT THE CODE DOES:
+  The BindingTable is a global data structure that only grows.
+  Entries are never removed.
+
+IMPACT: Low.
+  For batch compilation, this is fine — the process exits. For
+  long-running REPL sessions, memory usage could grow. The impact
+  is limited because each (name, scope-set) pair has exactly one
+  entry (the replace-on-duplicate behavior in Add).
+
+FIX:
+  Scope the binding table per-module or implement generation-based
+  cleanup with expansion counters. This is a performance optimization,
+  not a correctness issue.

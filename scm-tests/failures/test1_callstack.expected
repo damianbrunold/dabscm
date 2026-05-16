@@ -1,0 +1,4 @@
+Failed in car: wrong argument type (test1_callstack.scm 4:3)
+Scheme call stack:
+  at inner (test1_callstack.scm 4:3)
+  at <toplevel> (test1_callstack.scm 12:1)

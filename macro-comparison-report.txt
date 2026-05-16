@@ -1,0 +1,526 @@
+Scheme Macro Systems: A Comparative Survey
+==========================================
+
+1. The Five Major Algorithms
+============================
+
+1.1 syntax-rules (R5RS Pattern-Based)
+--------------------------------------
+
+Origin: Kohlbecker and Wand (1987); standardized in R4RS/R5RS, retained
+in R7RS.
+
+How it works: Pure pattern matching and template substitution. The
+programmer writes (syntax-rules (literals) (pattern template) ...)
+clauses. The expander matches the macro use against each pattern
+left-to-right, binds pattern variables, then transcribes the template.
+Hygiene is enforced automatically -- identifiers introduced by the
+template always refer to bindings at the macro's definition site, never
+the use site.
+
+The original KFFD algorithm (Kohlbecker et al. 1986) achieved this by
+"timestamping" introduced identifiers so they couldn't collide with
+user-supplied ones.
+
+Pros:
+  + Simple to understand and use -- no procedural code, just declarative
+    patterns
+  + Automatic hygiene with zero programmer burden
+  + Low implementation complexity
+  + Portable across all R5RS+ implementations
+  + Sufficient for the vast majority of macro use cases
+
+Cons:
+  - Cannot break hygiene intentionally (no anaphoric macros like aif)
+  - No computation at expand time beyond pattern matching
+  - Cannot construct identifiers programmatically
+  - Cannot inspect or compare identifiers
+  - While technically Turing-complete (via CPS tricks), this is
+    impractical
+  - No guard/fender expressions for conditional matching beyond literal
+    comparison
+
+Used by: Every R5RS+ Scheme as the baseline. Always available.
+
+Key references:
+  Kohlbecker et al., "Hygienic Macro Expansion" (1986)
+  Kohlbecker & Wand, "Macro-by-Example" (1987)
+  R5RS Section 4.3
+  R7RS Section 4.3.2
+
+
+1.2 syntax-case -- Marks and Substitutions (Dybvig)
+----------------------------------------------------
+
+Origin: Dybvig, Hieb, and Bruggeman (1993). Standardized in R6RS.
+
+How it works: Expressions are wrapped in syntax objects carrying
+metadata called "wraps", consisting of marks and substitutions:
+
+  Marks: Opaque tokens applied during expansion. Each transformer
+  invocation creates a fresh mark. An antimark is placed on the input
+  before calling the transformer, then the fresh mark is applied to the
+  entire output. On input-derived portions, the mark and antimark
+  cancel. On transformer-introduced portions, only the fresh mark
+  remains. This distinguishes introduced from input identifiers even
+  when they share the same symbolic name.
+
+  Substitutions: Map (name, mark-set) pairs to labels, which in turn
+  map to bindings (type + value). Created when the expander encounters
+  binding forms (let, lambda, define, etc.). Applied to the portions of
+  a form where the binding should be visible.
+
+  Wraps are layered on syntax objects and pushed down lazily toward
+  leaves only when needed -- this avoids the quadratic overhead of the
+  original KFFD algorithm, achieving linear expansion time.
+
+Substitutions are stored in ribcages: fixed (immutable vectors) for
+completed binding forms, extensible (hashtable-based) for definition
+contexts still being processed, and top-level for global environments.
+
+Identifier resolution: The expander searches an identifier's
+substitutions sequentially. For each ribcage, it checks name match and
+mark match below the substitution point. First match wins.
+
+  bound-identifier=? -- same name AND same marks (would one shadow the
+                        other?)
+  free-identifier=?  -- same resolved label (do they refer to the same
+                        binding?)
+  datum->syntax      -- copies a template identifier's wrap onto a new
+                        datum, enabling controlled hygiene-breaking
+
+Definition contexts: The expander makes a single left-to-right pass
+over lambda/library/module bodies. Syntax definitions are expanded and
+evaluated immediately; variable definition RHS expressions are deferred
+until all definitions are seen, then expanded in a second pass.
+
+Pros:
+  + Fully general -- supports everything syntax-rules can, plus
+    arbitrary expand-time computation
+  + Controlled hygiene-breaking via datum->syntax (composable unhygienic
+    macros)
+  + bound-identifier=? and free-identifier=? enable precise identifier
+    comparison
+  + Linear-time expansion (lazy wrapping)
+  + Well-studied with decades of use in Chez Scheme
+  + R6RS standard -- broad (if contested) adoption
+  + syntax-rules is trivially implementable as sugar on top
+
+Cons:
+  - High implementation complexity (syntax objects, wraps, marks,
+    antimarks, substitutions, ribcages)
+  - The marks/antimarks cancellation model is notoriously confusing
+    conceptually
+  - Debugging macro expansion is difficult -- hard to inspect wrap state
+  - Large specification surface -- the R6RS syntax-case chapter is
+    substantial
+  - Phase separation (R6RS) adds complexity; different implementations
+    disagree on phasing rules
+
+Used by: Chez Scheme (native), GNU Guile (via psyntax), Larceny,
+Ikarus, Vicare, Sagittarius, Kawa (partial).
+
+Key references:
+  Dybvig et al., "Syntactic Abstraction in Scheme" (1993)
+  Dybvig, "Syntactic Abstraction: The syntax-case Expander" in
+    Beautiful Code (2007)
+  R6RS Chapter 12
+  SRFI 93
+
+
+1.3 Explicit Renaming (ER) -- Clinger
+--------------------------------------
+
+Origin: William Clinger and Jonathan Rees, "Hygienic Macros Through
+Explicit Renaming" (1991).
+
+How it works: A macro transformer is a procedure receiving three
+arguments:
+
+  1. form    -- the raw s-expression of the macro use
+  2. rename  -- a procedure that maps a symbol to a fresh hygienic alias
+                referring to the binding visible at the macro's
+                definition site. Referentially transparent: multiple
+                calls with the same symbol return the same renamed
+                identifier.
+  3. compare -- (compare id1 id2) tests whether two (possibly renamed)
+                identifiers refer to the same binding.
+
+The macro writer explicitly renames every identifier that should be
+hygienic. Unrenamed symbols are captured by the expansion environment --
+intentional hygiene-breaking is simply "don't rename."
+
+Example:
+
+  (er-macro-transformer
+    (lambda (form rename compare)
+      (let ((x (cadr form)))
+        `(,(rename 'let) ((,(rename 'temp) ,x))
+          (,(rename 'if) ,(rename 'temp) ,(rename 'temp) #f)))))
+
+Variant -- Implicit Renaming (IR): Used in CHICKEN. Inverts ER: all
+identifiers are automatically renamed (hygienic by default), and the
+writer explicitly injects identifiers that should break hygiene. More
+convenient for mostly-hygienic macros but adds two extra traversals.
+
+Pros:
+  + Low implementation complexity -- no syntax objects, marks, or
+    substitutions; just two closure procedures
+  + Straightforward procedural model -- macro is just a function on
+    s-expressions
+  + Easy to break hygiene (just don't rename)
+  + Fast for simple macros
+  + Good fit for implementations that want a simple low-level macro
+    system
+
+Cons:
+  - Hygiene burden falls on the programmer -- forgetting to rename
+    causes subtle bugs
+  - Verbose for complex macros (every introduced identifier needs
+    explicit renaming)
+  - Cannot compose unhygienic macros -- no datum->syntax equivalent.
+    When one ER macro wraps output from another, there's no way to
+    inject identifiers into an arbitrary context
+  - No syntax objects -- less structured than syntax-case
+  - Pattern matching must be done manually (or via a separate library)
+  - The IR variant helps but adds overhead
+
+Used by: CHICKEN Scheme (ER + IR), MIT/GNU Scheme (ER on top of
+syntactic closures), many small implementations.
+
+Key references:
+  Clinger, "Hygienic Macros Through Explicit Renaming" (1991)
+
+
+1.4 Syntactic Closures (Bawden and Rees)
+-----------------------------------------
+
+Origin: Alan Bawden and Jonathan Rees, "Syntactic Closures" (LFP 1988).
+
+How it works: Environments are first-class objects. The key primitive
+is:
+
+  (make-syntactic-closure env free-names expr)
+
+This creates an expression where all free identifiers except those in
+free-names are resolved in env. A transformer receives the form, the
+definition environment, and the usage environment. To keep an identifier
+hygienic, close it over the definition environment. To allow capture,
+list it in free-names. To inject into caller scope, close over the usage
+environment.
+
+ER transformers can be implemented on top of syntactic closures:
+  (rename sym) is equivalent to (make-syntactic-closure def-env '() sym)
+
+Pros:
+  + Conceptually elegant -- closures over environments are a natural
+    model
+  + First-class environments enable fine-grained control
+  + Moderate implementation complexity -- piggybacks on existing
+    environment machinery
+  + Flexible -- can express both hygienic and unhygienic macros
+
+Cons:
+  - Fundamental problem with nested unhygienic macros: Bare symbols are
+    assumed to refer to the definition environment, but if that
+    environment already has renamed symbols from another macro, there's
+    no way to refer to them. Chibi's author (Alex Shinn) acknowledges
+    this makes it impossible to implement a fully compliant syntax-case
+    on top of syntactic closures.
+  - Same composability limitation as ER -- no datum->syntax equivalent
+  - Manual hygiene management (though less verbose than raw ER)
+  - Less widely adopted -- mainly MIT/GNU Scheme and Chibi
+  - First-class environments add complexity to the runtime
+
+Used by: MIT/GNU Scheme (native), Chibi Scheme (native).
+
+Key references:
+  Bawden and Rees, "Syntactic Closures" (1988)
+  MIT/GNU Scheme Reference Manual Section 2.3
+
+
+1.5 Sets of Scopes (Flatt)
+---------------------------
+
+Origin: Matthew Flatt, "Binding as Sets of Scopes" (POPL 2016).
+Implemented in Racket, replacing the earlier marks/substitutions
+expander.
+
+How it works: Every identifier carries a set of scopes. Every binding
+form and expansion step creates a new scope:
+
+  Scope: An opaque value representing a binding context (created by let,
+  lambda, define, module boundaries, macro expansion steps).
+
+  Scope set: The set of scopes accumulated on an identifier as it
+  passes through nested binding contexts.
+
+  Binding table: Maps (symbol, scope-set) to a binding. Distributed
+  across individual scopes for GC-friendliness.
+
+Binding resolution: To resolve identifier n with scope set S: find all
+bindings for n whose scope set is a subset of S. Select the one with
+the largest subset (most specific). If two candidates exist where
+neither is a subset of the other, that's an ambiguity error.
+
+How expansion works:
+  1. A fresh "use-site scope" and "macro-introduction scope" are
+     created.
+  2. The use-site scope is added to the macro use form.
+  3. The transformer runs, producing output.
+  4. The macro-introduction scope is flipped on every identifier in the
+     output: added if absent, removed if present.
+
+Input identifiers get the use-site scope; introduced identifiers get the
+macro-introduction scope. They become distinguishable through different
+scope sets.
+
+Pros:
+  + Simpler formal model than marks/substitutions -- no antimarks, no
+    layered wraps, no substitution chains
+  + Scopes only accumulate, never cancel -- easier to reason about
+  + Better ambiguity detection (subset relationships give clear error
+    messages)
+  + Cleaner handling of recursive definition contexts
+  + Easier serialization of syntax objects (important for compiled
+    macros)
+  + Fixed bugs in Racket's old expander that Flatt described as "too
+    difficult to repair"
+  + Full syntax-case expressiveness including datum->syntax
+
+Cons:
+  - Requires efficient scope-set operations (subset testing, union,
+    intersection)
+  - The "flip" mechanism is a new concept that takes getting used to
+  - Relatively new (2016) -- less battle-tested than marks/substitutions
+  - More complex than ER or syntactic closures to implement
+  - Currently only Racket and (recently) Gambit have adopted it
+  - Binding table lookups require subset enumeration, which needs
+    careful optimization
+
+Used by: Racket (since ~2016), Gambit (recent adoption, per 2023 thesis
+from Universite de Montreal).
+
+Key references:
+  Flatt, "Binding as Sets of Scopes" (POPL 2016)
+  Flatt, "Let's Build a Hygienic Macro Expander" (Strange Loop 2016)
+
+
+2. Implementation Survey
+=========================
+
+2.1 Chez Scheme
+---------------
+
+Algorithm: syntax-case with marks/substitutions (Dybvig's own
+implementation -- the reference).
+
+Details: The Chez expander performs recursive descent. A dispatcher
+(syntax-type) classifies each form; macros are invoked and results
+re-expanded. Wraps are accumulated lazily on syntax objects and pushed
+toward leaves on demand. Ribcages store substitutions efficiently:
+vectors for small scopes, hashtables for large definition contexts. The
+module system (Waddell & Dybvig, POPL 1999) is integrated into the same
+expansion pass. R6RS phase separation is supported with implicit phasing
+(Ghuloum & Dybvig).
+
+Unique aspects: "meta" definitions provide expand-time values. The
+expander is self-hosting (written in syntax-case Scheme). Performance is
+excellent -- linear expansion with careful sharing preservation.
+
+
+2.2 GNU Guile
+-------------
+
+Algorithm: psyntax (portable syntax-case), derived from
+Dybvig/Waddell/Hieb/Bruggeman's work, reworked by Ghuloum and Dybvig
+for R6RS.
+
+History: Early Guile used defmacro with optional syntax-case via (ice-9
+syncase). In ~2009 (Guile 2.0), Andy Wingo made psyntax the default
+expander for all code. defmacro is now deprecated but still supported --
+implemented as syntax-case under the hood.
+
+Details: psyntax is self-hosting (bootstrapped from pre-expanded
+psyntax-pp.scm). Expansion output is Tree-IL (not Scheme), which can
+represent distinct identifiers with the same name. Identifiers carry
+module information. All phases are imported simultaneously (no
+R6RS-style phase separation). Legacy defmacro works by wrapping the
+output back into syntax objects.
+
+
+2.3 Chibi Scheme
+----------------
+
+Algorithm: Syntactic closures (Bawden & Rees), with ER as a layer on
+top.
+
+Details: The hierarchy is sc-macro-transformer (lowest) ->
+er-macro-transformer (mid-level) -> syntax-rules (highest). All
+implemented in C (eval.c). "rename" in ER macros is syntactic sugar for
+make-syntactic-closure in the definition environment. Designed for
+small/embedded use.
+
+Known limitation: Cannot implement a fully compliant syntax-case due to
+fundamental issues with nested unhygienic macros in the syntactic
+closures model. Alex Shinn (Chibi's author) has acknowledged this.
+
+
+2.4 Racket
+----------
+
+Algorithm: Sets of scopes (since ~2016), replacing an older
+marks/substitutions expander.
+
+Details: The entire Racket language tower is built on macros -- class,
+match, for loops, contracts, etc. are all macros. Racket extends
+syntax-case with syntax-parse, which adds better pattern matching with
+error reporting, syntax classes, and attributes. The move to
+sets-of-scopes was motivated by unfixable bugs in the old expander
+related to recursive definition contexts.
+
+Unique aspects: Macro-extensible language. Phase-specific imports
+(for-syntax ...). syntax-local-value for expand-time communication
+between macros. Custom syntax properties. The most advanced macro system
+in any Scheme/Lisp.
+
+
+2.5 CHICKEN Scheme
+------------------
+
+Algorithm: Explicit renaming (primary), implicit renaming (variant).
+
+Details: No native syntax-case. ER is the low-level system;
+syntax-rules is the high-level one. IR macros invert the default: all
+identifiers are renamed unless explicitly injected, reducing verbosity
+for hygienic macros. The module system interacts directly with rename
+procedures.
+
+
+2.6 MIT/GNU Scheme
+------------------
+
+Algorithm: Syntactic closures (native), with ER layered on top.
+
+Details: sc-macro-transformer is the fundamental form.
+er-macro-transformer is syntactic sugar. No native syntax-case.
+First-class environments are central to the design.
+
+
+2.7 Gambit Scheme
+-----------------
+
+Algorithm: Historically define-macro only (unhygienic). Recently adopted
+sets of scopes.
+
+Details: A 2023 thesis from Universite de Montreal documented the
+transition to sets-of-scopes, choosing this model based on Racket's
+validation of the approach. Now supports define-syntax/syntax-rules with
+full hygiene.
+
+
+2.8 Kawa Scheme
+---------------
+
+Algorithm: syntax-case (partial) plus legacy defmacro.
+
+Details: Compiles to JVM bytecode. Some built-in forms (if, etc.) are
+implemented via syntax-case. Major expander rewrite has been done but
+syntax-case support is not 100% complete.
+
+
+3. Comparative Summary
+======================
+
+                      syntax-   syntax-case  Explicit   Syntactic  Sets of
+                      rules     (marks)      Renaming   Closures   Scopes
+                      --------  -----------  ---------  ---------  --------
+Hygiene               Auto,     Auto,        Manual     Manual     Auto,
+                      mandatory escapable    (rename)   (close)    escapable
+
+Break hygiene         Cannot    datum->      Don't      Close over datum->
+                                syntax       rename     usage-env  syntax
+
+Composable            N/A       Yes          No         No         Yes
+unhygienic
+
+Impl. complexity      Low       High         Low        Moderate   Mod-high
+
+Conceptual model      Patterns  Marks +      rename +   Envs +     Scope
+                      +         antimarks +  compare    closures   sets +
+                      templates substitutions procs                binding
+                                                                   table
+
+Debug/inspect         Easy      Hard         Moderate   Moderate   Moderate
+
+Performance           Good      Excellent    Good       Good       Good
+
+Maturity (years)      39        33           35         38         10
+
+
+Key Tradeoff Axes
+-----------------
+
+1. Automatic vs. manual hygiene: syntax-rules, syntax-case, and
+   sets-of-scopes handle hygiene automatically. ER and syntactic
+   closures require the programmer to manage it -- forgetting to
+   rename/close is a common source of bugs.
+
+2. Composability of unhygienic macros: The critical differentiator
+   between the "full" systems (syntax-case, sets-of-scopes) and the
+   "simpler" ones (ER, syntactic closures). When macro A's output wraps
+   output from macro B, only datum->syntax (or scope-set copying) can
+   correctly inject identifiers into the right context.
+
+3. Implementation simplicity vs. expressiveness: ER is by far the
+   simplest to implement but least expressive. syntax-case and
+   sets-of-scopes are the most complex but fully general. syntax-rules
+   occupies a sweet spot for most use cases but can't handle the hard
+   cases.
+
+4. Conceptual clarity: Sets of scopes is arguably the simplest model --
+   just set operations, no cancellation. Marks/antimarks with
+   cancellation are notoriously confusing. ER is procedurally simple but
+   requires understanding what to rename and when.
+
+5. Historical trajectory: KFFD (1986) -> syntax-rules (1987) ->
+   syntactic closures (1988) -> explicit renaming (1991) -> syntax-case
+   with marks/substitutions (1993) -> sets of scopes (2016). The trend
+   is toward automatic hygiene with clean escape hatches and simpler
+   formal models.
+
+
+4. Key Papers and References
+=============================
+
+Year  Paper/Work                                Authors
+----  ----------------------------------------  ----------------------------
+1986  "Hygienic Macro Expansion"                Kohlbecker, Friedman,
+                                                Felleisen, Duba
+      Original KFFD algorithm
+
+1987  "Macro-by-Example"                        Kohlbecker, Wand
+      Pattern-based syntax-rules
+
+1988  "Syntactic Closures"                      Bawden, Rees
+      Environment-based hygiene
+
+1991  "Hygienic Macros Through Explicit         Clinger
+      Renaming"
+      ER macro transformers
+
+1993  "Syntactic Abstraction in Scheme"         Dybvig, Hieb, Bruggeman
+      syntax-case, marks/substitutions
+
+1999  "Extending the Scope of Syntactic         Waddell, Dybvig
+      Abstraction"
+      Module system integration
+
+2007  Beautiful Code chapter                    Dybvig
+      Accessible syntax-case description
+
+2016  "Binding as Sets of Scopes"               Flatt
+      Sets-of-scopes model
+
+      SRFI 93: R6RS Syntax-Case Macros
+      Formal specification

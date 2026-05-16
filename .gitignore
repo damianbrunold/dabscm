@@ -1,0 +1,26 @@
+# Build artifacts
+/scm-known-good.jar
+/scm.jar
+/documentation/reference.pdf
+
+# C# build output
+bin/
+obj/
+
+# Java build output
+scm-java/build/
+scm-java/scm.jar
+
+# Python build cache
+__pycache__/
+*.pyc
+
+# IDE / editor
+.vs/
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db

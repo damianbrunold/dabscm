@@ -1,0 +1,4 @@
+Failed in car: wrong argument type (test5_eval_error.scm 4:8)
+Scheme call stack:
+  at <toplevel> (test5_eval_error.scm 4:8)
+  at <toplevel> (test5_eval_error.scm 4:8)

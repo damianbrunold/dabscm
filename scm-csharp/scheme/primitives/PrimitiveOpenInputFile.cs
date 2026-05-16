@@ -1,0 +1,96 @@
+using System.Text;
+using System.IO;
+using System.IO.Compression;
+
+namespace scheme;
+
+public class PrimitiveOpenInputFile : Primitive
+{
+    public override string Name()
+    {
+        return "open-input-file";
+    }
+
+    public override string Info()
+    {
+        return
+            "Syntax: (open-input-file filename)\n" +
+            "Library: (scheme file)\n" +
+            "Description: Takes a filename and returns a textual input port that reads characters from the named file. It is an error if the file cannot be opened.\n" +
+            "Example:\n" +
+            "  (define p (open-input-file \"data.txt\"))\n" +
+            "  (read-char p) => first character of file";
+    }
+    
+    public override object Apply(SourcePos? pos, object[] arguments)
+    {
+        CheckArgs(pos, arguments, 1, 3);
+        string filename = new String(Value.AsString(arguments[0]));
+        if (!File.Exists(filename))
+        {
+            throw new SchemeError(pos, new FileErrorObject("open-input-file: file not found", new object[] { filename }));
+        }
+        try
+        {
+            Encoding encoding = Encoding.UTF8;
+            bool deflate = false;
+            for (var i = 1; i < arguments.Length; i++)
+            {
+                string arg;
+                if (Value.IsSymbol(arguments[i]))
+                {
+                    arg = Value.AsSymbol(arguments[i]);
+                }
+                else
+                {
+                    arg = new String(Value.AsString(arguments[i]));
+                }
+                if (Encodings.IsEncoding(arg))
+                {
+                    encoding = Encodings.GetEncoding(arg);
+                }
+                else if (arg.Equals("deflate"))
+                {
+                    deflate = true;
+                }
+            }
+            if (deflate)
+            {
+                return new TextStream(
+                    new StreamReader(
+                        new DeflateStream(
+                            new FileStream(
+                                filename,
+                                FileMode.Open,
+                                FileAccess.Read,
+                                FileShare.ReadWrite
+                            ),
+                            CompressionMode.Decompress
+                        ),
+                        encoding
+                    ),
+                    filename
+                );
+            }
+            else
+            {
+                return new TextStream(
+                    new StreamReader(
+                        new FileStream(
+                            filename,
+                            FileMode.Open,
+                            FileAccess.Read,
+                            FileShare.ReadWrite
+                        ),
+                        encoding
+                    ),
+                    filename
+                );
+            }
+        }
+        catch (Exception)
+        {
+            throw new SchemeError(pos, new FileErrorObject("open-input-file: io error", new object[] { filename }));
+        }
+    }
+}
