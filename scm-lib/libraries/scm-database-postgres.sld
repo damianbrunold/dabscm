@@ -13,7 +13,9 @@
           pg-cursor-close
           pg-cursor-for-each
           with-pg-connection
-          with-pg-query)
+          with-pg-query
+          pg-quote-literal
+          pg-quote-int)
   (begin
 
     ;; --- Wire protocol helpers ---
@@ -656,5 +658,57 @@ Example:
               (let ((result (proc conn cursor)))
                 (pg-cursor-close cursor)
                 result))))))
+
+    ;; --- SQL quoting ---
+    ;;
+    ;; These are escape-then-concatenate helpers for callers who build SQL
+    ;; as strings. Always pass user-controlled values through these — never
+    ;; splice raw strings into SQL. When (scm database postgres) gains
+    ;; parameter binding (Parse/Bind/Execute via the Extended Query
+    ;; protocol), prefer that over quoting; these helpers will remain for
+    ;; the cases where building the SQL text dynamically is simpler.
+
+    (define (pg-quote-literal s)
+      "Syntax: (pg-quote-literal s)
+Library: (scm database postgres)
+Description: Returns s wrapped in single quotes with internal single quotes
+  doubled — the SQL standard string-literal escape, safe under PostgreSQL's
+  default standard_conforming_strings=on (i.e. backslashes are literal).
+  Use for any user-controlled string interpolated into SQL.
+Example:
+  (pg-quote-literal \"O'Brien\") => \"'O''Brien'\"
+  (pg-quote-literal \"\\\\n\")    => \"'\\\\n'\""
+      (let* ((n (string-length s))
+             (out (open-output-string)))
+        (write-char #\' out)
+        (let loop ((i 0))
+          (cond
+            ((= i n)
+             (write-char #\' out)
+             (get-output-string out))
+            (else
+             (let ((c (string-ref s i)))
+               (cond ((char=? c #\') (write-string "''" out))
+                     (else           (write-char c out)))
+               (loop (+ i 1))))))))
+
+    (define (pg-quote-int n)
+      "Syntax: (pg-quote-int n)
+Library: (scm database postgres)
+Description: Returns the decimal representation of an integer n, validated as
+  integer. Accepts an integer or a numeric string. Raises an error for any
+  other input, preventing callers from accidentally splicing arbitrary text
+  through what was intended to be a numeric parameter.
+Example:
+  (pg-quote-int 42)   => \"42\"
+  (pg-quote-int \"42\") => \"42\"
+  (pg-quote-int \"x\") raises an error"
+      (cond
+        ((integer? n) (number->string n))
+        ((string? n)
+         (let ((parsed (string->number n)))
+           (cond ((and parsed (integer? parsed)) (number->string parsed))
+                 (else (error "pg-quote-int: not an integer string" n)))))
+        (else (error "pg-quote-int: not an integer" n))))
 
 ))
