@@ -2282,12 +2282,16 @@
       aes-gcm-encrypt
       base64-decode
       base64-encode
+      bytevector-&gt;hex
       chacha20poly1305-decrypt
       chacha20poly1305-encrypt
+      constant-time-bytevector=?
+      hex-&gt;bytevector
       hmac-sha256
       md5-hash
       pbkdf2-sha256
       random-bytes
+      random-string
       rsa-decrypt
       rsa-encrypt
       rsa-generate-keypair
@@ -2668,16 +2672,24 @@
   </div>
   <div class="lib-body">
     <div class="exports" data-lib="scm-net-http-response">
+      html-response
       http-bad-request
+      http-forbidden
       http-internal-error
       http-not-found
       http-ok
+      http-permanent-redirect
+      http-redirect
       http-response-body
       http-response-header
       http-response-headers
       http-response-status
       http-response?
+      http-see-other
+      http-unauthorized
+      json-response
       make-http-response
+      text-response
     </div>
     <div class="doc-panel" id="scm-net-http-response-doc-panel"></div>
   </div>
@@ -2968,9 +2980,12 @@
   </div>
   <div class="lib-body">
     <div class="exports" data-lib="scm-string">
+      string-contains-from
       string-matches
       string-replace-all
       string-split
+      string-split-char
+      string-split-lines
       string-split-vector
       symbol-starts-with?
     </div>
@@ -3120,7 +3135,9 @@
   <div class="lib-body">
     <div class="exports" data-lib="scm-xml">
       close-xml
+      open-xml-bytevector
       open-xml-file
+      open-xml-string
       xml-attribute
       xml-name
       xml-node-type
@@ -3776,12 +3793,16 @@ const docs = {
     "aes-gcm-encrypt": "Syntax: (aes-gcm-encrypt key nonce plaintext [aad])\nLibrary: (scm crypto)\nDescription: Encrypts plaintext using AES-GCM. key must be 16, 24, or 32 bytes; nonce must be 12 bytes. Optional aad is additional authenticated data. Returns ciphertext concatenated with 16-byte authentication tag.\nExample:\n  (aes-gcm-encrypt key nonce plaintext) => #u8(...)",
     "base64-decode": "Syntax: (base64-decode string)\nLibrary: (scm crypto)\nDescription: Decodes a base64-encoded string and returns a bytevector.\nExample:\n  (base64-decode \"SGVsbG8=\") => #u8(72 101 108 108 111)",
     "base64-encode": "Syntax: (base64-encode bytevector)\nLibrary: (scm crypto)\nDescription: Returns the base64-encoded string of a bytevector.\nExample:\n  (base64-encode #u8(72 101 108 108 111)) => \"SGVsbG8=\"",
+    "bytevector->hex": "Syntax: (bytevector->hex bv)\nLibrary: (scm crypto)\nDescription: Returns the lowercase hexadecimal string representation of the\n  bytevector bv (two hex digits per byte, no separators).\nExample:\n  (bytevector->hex #u8(0 15 255)) => \"000fff\"",
     "chacha20poly1305-decrypt": "Syntax: (chacha20poly1305-decrypt key nonce ciphertext [aad])\nLibrary: (scm crypto)\nDescription: Decrypts ciphertext using ChaCha20-Poly1305. key must be 32 bytes; nonce must be 12 bytes. The ciphertext argument must include the 16-byte authentication tag appended at the end. Raises an error if authentication fails.\nExample:\n  (chacha20poly1305-decrypt key nonce ciphertext-with-tag) => #u8(...)",
     "chacha20poly1305-encrypt": "Syntax: (chacha20poly1305-encrypt key nonce plaintext [aad])\nLibrary: (scm crypto)\nDescription: Encrypts plaintext using ChaCha20-Poly1305. key must be 32 bytes; nonce must be 12 bytes. Optional aad is additional authenticated data. Returns ciphertext concatenated with 16-byte authentication tag.\nExample:\n  (chacha20poly1305-encrypt key nonce plaintext) => #u8(...)",
+    "constant-time-bytevector=?": "Syntax: (constant-time-bytevector=? a b)\nLibrary: (scm crypto)\nDescription: Compares two bytevectors in constant time relative to their\n  length when equal-length. Returns #f for different lengths (this does\n  leak length, just not content). Use for comparing MACs, password hashes,\n  or any secret-derived bytes.\nExample:\n  (constant-time-bytevector=? #u8(1 2 3) #u8(1 2 3)) => #t\n  (constant-time-bytevector=? #u8(1 2 3) #u8(1 2 4)) => #f",
+    "hex->bytevector": "Syntax: (hex->bytevector s)\nLibrary: (scm crypto)\nDescription: Parses a hexadecimal string (case-insensitive, no separators)\n  into a bytevector. Raises an error on odd length or non-hex characters.\nExample:\n  (hex->bytevector \"000fff\") => #u8(0 15 255)\n  (hex->bytevector \"DEADBEEF\") => #u8(222 173 190 239)",
     "hmac-sha256": "Syntax: (hmac-sha256 key data)\nLibrary: (scm crypto)\nDescription: Computes HMAC-SHA256 of data using key. Both key and data must be bytevectors. Returns a bytevector.\nExample:\n  (hmac-sha256 key-bv data-bv) => #u8(...)",
     "md5-hash": "Syntax: (md5-hash obj)\nLibrary: (scm crypto)\nDescription: Returns the MD5 hash of obj as a lowercase hex string. Accepts strings, symbols, or bytevectors.\nExample:\n  (md5-hash \"hello\") => \"5d41402abc4b2a76b9719d911017c592\"",
     "pbkdf2-sha256": "Syntax: (pbkdf2-sha256 password salt iterations length)\nLibrary: (scm crypto)\nDescription: Derives a key using PBKDF2-HMAC-SHA256. Password is a string or bytevector, salt is a bytevector. Returns a bytevector of given length.\nExample:\n  (pbkdf2-sha256 \"password\" salt-bv 4096 32) => #u8(...)",
     "random-bytes": "Syntax: (random-bytes n)\nLibrary: (scm crypto)\nDescription: Returns a fresh bytevector of n cryptographically random bytes.\nExample:\n  (random-bytes 16) => #u8(...)",
+    "random-string": "Syntax: (random-string charset length)\nLibrary: (scm crypto)\nDescription: Returns a random string of the given length drawn from charset,\n  using random-bytes as the entropy source. Each output character is the\n  byte taken modulo (string-length charset); for cryptographic uses prefer\n  a charset length that is a power of two to avoid modulo bias, or a\n  charset of length ≤ 64 (the bias is then ≲ 1 in 4 billion per char).\nExample:\n  (random-string \"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789\" 6) ; e.g. \"K3Z9PA\"\n  (random-string \"0123456789abcdef\" 32) ; 128 random bits as hex",
     "rsa-decrypt": "Syntax: (rsa-decrypt private-key ciphertext)\nLibrary: (scm crypto)\nDescription: Decrypts ciphertext using RSA with OAEP-SHA256 padding. private-key must be a bytevector in PKCS#8 DER format (as returned by rsa-generate-keypair). Returns a bytevector.\nExample:\n  (rsa-decrypt priv ciphertext) => #u8(...)",
     "rsa-encrypt": "Syntax: (rsa-encrypt public-key plaintext)\nLibrary: (scm crypto)\nDescription: Encrypts plaintext using RSA with OAEP-SHA256 padding. public-key must be a bytevector in SubjectPublicKeyInfo DER format (as returned by rsa-generate-keypair). Returns a bytevector.\nExample:\n  (rsa-encrypt pub plaintext) => #u8(...)",
     "rsa-generate-keypair": "Syntax: (rsa-generate-keypair bits)\nLibrary: (scm crypto)\nDescription: Generates an RSA key pair of the given bit size (e.g. 2048, 4096). Returns a list of two bytevectors: (list public-key private-key). The public key is in SubjectPublicKeyInfo DER format; the private key is in PKCS#8 DER format.\nExample:\n  (define kp (rsa-generate-keypair 2048))\n  (define pub (car kp))\n  (define priv (cadr kp))",
@@ -3947,16 +3968,24 @@ const docs = {
     "make-http-request": "Syntax: (make-http-request method url headers body)\nLibrary: (scm net http request)\nDescription: Creates an HTTP request object. headers is an alist of (name . value) pairs. body is a string or #f.\nExample:\n  (make-http-request \"GET\" \"/\" '() #f)",
   },
   "scm-net-http-response": {
+    "html-response": "Syntax: (html-response body)\nLibrary: (scm net http response)\nDescription: Creates a 200 OK response with Content-Type text/html; charset=utf-8.\nExample:\n  (html-response \"<h1>hi</h1>\")",
     "http-bad-request": "Syntax: (http-bad-request msg)\nLibrary: (scm net http response)\nDescription: Creates a 400 Bad Request HTTP response with msg as the body.\nExample:\n  (http-bad-request \"Missing field\")",
+    "http-forbidden": "Syntax: (http-forbidden [msg])\nLibrary: (scm net http response)\nDescription: Creates a 403 Forbidden HTTP response. msg defaults to \"Forbidden\".\nExample:\n  (http-forbidden)\n  (http-forbidden \"Admin only\")",
     "http-internal-error": "Syntax: (http-internal-error msg)\nLibrary: (scm net http response)\nDescription: Creates a 500 Internal Server Error HTTP response with msg as the body.\nExample:\n  (http-internal-error \"Unexpected error\")",
     "http-not-found": "Syntax: (http-not-found)\nLibrary: (scm net http response)\nDescription: Creates a 404 Not Found HTTP response.\nExample:\n  (http-not-found)",
     "http-ok": "Syntax: (http-ok body)\nLibrary: (scm net http response)\nDescription: Creates a 200 OK HTTP response with the given body string.\nExample:\n  (http-ok \"Hello, world!\")",
+    "http-permanent-redirect": "Syntax: (http-permanent-redirect location)\nLibrary: (scm net http response)\nDescription: Creates a 301 Moved Permanently HTTP response with the given Location header.\nExample:\n  (http-permanent-redirect \"https://example.com/new\")",
+    "http-redirect": "Syntax: (http-redirect location)\nLibrary: (scm net http response)\nDescription: Creates a 302 Found HTTP response with the given Location header.\n  Use for temporary redirects from GET requests.\nExample:\n  (http-redirect \"/login\")",
     "http-response-body": "Syntax: (http-response-body response)\nLibrary: (scm net http response)\nDescription: Returns the body of the HTTP response. If the response was created with a bytevector body, returns a bytevector; otherwise returns a string.\nExample:\n  (http-response-body resp) => \"Hello, world!\"",
     "http-response-header": "Syntax: (http-response-header resp name)\nLibrary: (scm net http response)\nDescription: Returns the value of the named header in resp, or #f if not present.\n  Header name comparison is case-insensitive.\nExample:\n  (http-response-header resp \"Content-Type\") => \"text/html\"",
     "http-response-headers": "Syntax: (http-response-headers response)\nLibrary: (scm net http response)\nDescription: Returns the headers of the HTTP response as an alist of (name . value) pairs.\nExample:\n  (http-response-headers resp) => ((\"Content-Type\" . \"text/html\"))",
     "http-response-status": "Syntax: (http-response-status response)\nLibrary: (scm net http response)\nDescription: Returns the HTTP status code of the response as an integer.\nExample:\n  (http-response-status resp) => 200",
     "http-response?": "Syntax: (http-response? x)\nLibrary: (scm net http response)\nDescription: Returns #t if x is an HTTP response object.\nExample:\n  (http-response? (make-http-response 200 '() \"ok\")) => #t",
+    "http-see-other": "Syntax: (http-see-other location)\nLibrary: (scm net http response)\nDescription: Creates a 303 See Other HTTP response with the given Location header.\n  Use after a successful POST to redirect to a GET (POST/Redirect/GET pattern).\nExample:\n  (http-see-other \"/items/42\")",
+    "http-unauthorized": "Syntax: (http-unauthorized [msg])\nLibrary: (scm net http response)\nDescription: Creates a 401 Unauthorized HTTP response. msg defaults to \"Unauthorized\".\nExample:\n  (http-unauthorized)",
+    "json-response": "Syntax: (json-response body)\nLibrary: (scm net http response)\nDescription: Creates a 200 OK response with Content-Type application/json; charset=utf-8.\n  body should already be a JSON-encoded string.\nExample:\n  (json-response \"{\\\"ok\\\":true}\")",
     "make-http-response": "Syntax: (make-http-response status headers body)\nLibrary: (scm net http response)\nDescription: Creates an HTTP response object. status is an integer, headers is an alist, body is a string or bytevector.\nExample:\n  (make-http-response 200 '() \"OK\")",
+    "text-response": "Syntax: (text-response body)\nLibrary: (scm net http response)\nDescription: Creates a 200 OK response with Content-Type text/plain; charset=utf-8.\nExample:\n  (text-response \"hello\")",
   },
   "scm-net-http-route": {
     "delete!": "Syntax: (delete! pattern handler)\nLibrary: (scm net http route)\nDescription: Registers a DELETE route on the default router.\nExample:\n  (delete! \"/users/:id\" (lambda (req params) (http-ok \"deleted\")))",
@@ -4135,9 +4164,12 @@ const docs = {
     "profile-uninstrument!": "Syntax: (profile-uninstrument!)\nLibrary: (scm profiling)\nDescription: Removes all instrumentation, restoring the original\nprocedures. Clears all profiling data.\nExample:\n  (profile-uninstrument!)",
   },
   "scm-string": {
+    "string-contains-from": "Syntax: (string-contains-from haystack needle start)\nLibrary: (scm string)\nDescription: Returns the index in haystack at or after start where needle\n  first occurs, or #f if it does not. Allocation-free char-by-char scan;\n  suitable for parsers operating on large strings.\nExample:\n  (string-contains-from \"hello world\" \"world\" 0) => 6\n  (string-contains-from \"abcabc\" \"bc\" 2) => 4\n  (string-contains-from \"abc\" \"xyz\" 0) => #f",
     "string-matches": "Syntax: (string-matches s pattern)\nLibrary: (scm string)\nDescription: Matches the string s against the regular expression pattern. Returns a list of match strings (the full match followed by any groups) if successful, or #f if there is no match.\nExample:\n  (string-matches \"hello\" \"hel+o\") => (\"hello\")\n  (string-matches \"abc123\" \"([a-z]+)([0-9]+)\") => (\"abc123\" \"abc\" \"123\")\n  (string-matches \"hello\" \"xyz\") => #f",
     "string-replace-all": "Syntax: (string-replace-all s pattern replacement)\nLibrary: (scm string)\nDescription: Returns a new string with all occurrences of pattern in s replaced by replacement.\nExample:\n  (string-replace-all \"hello world\" \"world\" \"there\") => \"hello there\"\n  (string-replace-all \"aabbcc\" \"b\" \"x\") => \"aaxxcc\"",
     "string-split": "Syntax: (string-split s pattern?)\nLibrary: (scm string)\nDescription: Splits the string s at occurrences of the regular expression pattern and returns a list of the resulting substrings. Defaults to splitting on whitespace.\nExample:\n  (string-split \"a b c\") => (\"a\" \"b\" \"c\")\n  (string-split \"a,b,c\" \",\") => (\"a\" \"b\" \"c\")",
+    "string-split-char": "Syntax: (string-split-char s ch)\nLibrary: (scm string)\nDescription: Splits string s into a list of substrings on every occurrence of\n  character ch. Adjacent delimiters produce empty strings; the result always\n  has at least one element.\nExample:\n  (string-split-char \"a,b,,c\" #\\,) => (\"a\" \"b\" \"\" \"c\")\n  (string-split-char \"\" #\\,) => (\"\")",
+    "string-split-lines": "Syntax: (string-split-lines s)\nLibrary: (scm string)\nDescription: Splits string s into lines on newline (LF), dropping a trailing\n  carriage return (CR) on each line. Empty lines are preserved.\nExample:\n  (string-split-lines \"a\\nb\\n\") => (\"a\" \"b\" \"\")\n  (string-split-lines \"a\\r\\nb\") => (\"a\" \"b\")",
     "string-split-vector": "Syntax: (string-split-vector s pattern?)\nLibrary: (scm string)\nDescription: Splits the string s at occurrences of the regular expression pattern and returns a vector of the resulting substrings. Defaults to splitting on whitespace.\nExample:\n  (string-split-vector \"a b c\") => #(\"a\" \"b\" \"c\")\n  (string-split-vector \"a,b,c\" \",\") => #(\"a\" \"b\" \"c\")",
     "symbol-starts-with?": "Syntax: (symbol-starts-with? sym str)\nLibrary: (scm string)\nDescription: Returns #t if the string representation of sym starts with str, #f otherwise. str may be a string or a symbol.\nExample:\n  (symbol-starts-with? 'foobar \"foo\") => #t\n  (symbol-starts-with? 'foobar \"bar\") => #f",
   },
@@ -4199,7 +4231,9 @@ const docs = {
   },
   "scm-xml": {
     "close-xml": "Syntax: (close-xml reader)\nLibrary: (scm core)\nDescription: Closes the given XML reader, releasing any underlying file or stream resources.\nExample:\n  (let ((r (open-xml-file \"data.xml\")))\n    (close-xml r))",
+    "open-xml-bytevector": "Syntax: (open-xml-bytevector bv)\nLibrary: (scm xml)\nDescription: Opens the XML document encoded in the given bytevector and returns an XML reader for forward-only reading of XML nodes. The byte stream is decoded using the XML declaration's encoding, defaulting to UTF-8.\nExample:\n  (define r (open-xml-bytevector (string->utf8 \"<a/>\")))\n  (xml-node-type r) => element",
     "open-xml-file": "Syntax: (open-xml-file filename)\nLibrary: (scm core)\nDescription: Opens the named XML file and returns an XML reader object for forward-only reading of XML nodes.\nExample:\n  (define r (open-xml-file \"data.xml\"))\n  (xml-node-type r) => node-type of first node",
+    "open-xml-string": "Syntax: (open-xml-string source)\nLibrary: (scm xml)\nDescription: Opens the given XML string and returns an XML reader object for forward-only reading of XML nodes.\nExample:\n  (define r (open-xml-string \"<a/>\"))\n  (xml-node-type r) => element",
     "xml-attribute": "Syntax: (xml-attribute xml-reader name)\nLibrary: (scm xml)\nDescription: Returns the value of the named attribute from the current element of xml-reader as a string, or #f if the attribute does not exist.\nExample:\n  (xml-attribute reader \"id\") => \"42\"\n  (xml-attribute reader 'class) => #f",
     "xml-name": "Syntax: (xml-name xml-reader)\nLibrary: (scm xml)\nDescription: Returns the qualified name of the current XML element or attribute node as a string.\nExample:\n  (xml-name reader) => \"Customer\"\n  (xml-name reader) => \"ns:Element\"",
     "xml-node-type": "Syntax: (xml-node-type xml-reader)\nLibrary: (scm xml)\nDescription: Returns a symbol identifying the type of the current XML node: element, end-element, text, cdata, comment, pi, xml-decl, doc, doc-type, entity-ref, or #f for unrecognized types.\nExample:\n  (xml-node-type reader) => element\n  (xml-node-type reader) => text",

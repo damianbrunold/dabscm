@@ -4,6 +4,16 @@ HTTP response construction and accessors
 
 ## Exports
 
+### `html-response`
+
+```
+Syntax: (html-response body)
+Library: (scm net http response)
+Description: Creates a 200 OK response with Content-Type text/html; charset=utf-8.
+Example:
+  (html-response "<h1>hi</h1>")
+```
+
 ### `http-bad-request`
 
 ```
@@ -12,6 +22,17 @@ Library: (scm net http response)
 Description: Creates a 400 Bad Request HTTP response with msg as the body.
 Example:
   (http-bad-request "Missing field")
+```
+
+### `http-forbidden`
+
+```
+Syntax: (http-forbidden [msg])
+Library: (scm net http response)
+Description: Creates a 403 Forbidden HTTP response. msg defaults to "Forbidden".
+Example:
+  (http-forbidden)
+  (http-forbidden "Admin only")
 ```
 
 ### `http-internal-error`
@@ -42,6 +63,27 @@ Library: (scm net http response)
 Description: Creates a 200 OK HTTP response with the given body string.
 Example:
   (http-ok "Hello, world!")
+```
+
+### `http-permanent-redirect`
+
+```
+Syntax: (http-permanent-redirect location)
+Library: (scm net http response)
+Description: Creates a 301 Moved Permanently HTTP response with the given Location header.
+Example:
+  (http-permanent-redirect "https://example.com/new")
+```
+
+### `http-redirect`
+
+```
+Syntax: (http-redirect location)
+Library: (scm net http response)
+Description: Creates a 302 Found HTTP response with the given Location header.
+  Use for temporary redirects from GET requests.
+Example:
+  (http-redirect "/login")
 ```
 
 ### `http-response-body`
@@ -95,6 +137,38 @@ Example:
   (http-response? (make-http-response 200 '() "ok")) => #t
 ```
 
+### `http-see-other`
+
+```
+Syntax: (http-see-other location)
+Library: (scm net http response)
+Description: Creates a 303 See Other HTTP response with the given Location header.
+  Use after a successful POST to redirect to a GET (POST/Redirect/GET pattern).
+Example:
+  (http-see-other "/items/42")
+```
+
+### `http-unauthorized`
+
+```
+Syntax: (http-unauthorized [msg])
+Library: (scm net http response)
+Description: Creates a 401 Unauthorized HTTP response. msg defaults to "Unauthorized".
+Example:
+  (http-unauthorized)
+```
+
+### `json-response`
+
+```
+Syntax: (json-response body)
+Library: (scm net http response)
+Description: Creates a 200 OK response with Content-Type application/json; charset=utf-8.
+  body should already be a JSON-encoded string.
+Example:
+  (json-response "{\"ok\":true}")
+```
+
 ### `make-http-response`
 
 ```
@@ -103,5 +177,15 @@ Library: (scm net http response)
 Description: Creates an HTTP response object. status is an integer, headers is an alist, body is a string or bytevector.
 Example:
   (make-http-response 200 '() "OK")
+```
+
+### `text-response`
+
+```
+Syntax: (text-response body)
+Library: (scm net http response)
+Description: Creates a 200 OK response with Content-Type text/plain; charset=utf-8.
+Example:
+  (text-response "hello")
 ```
 

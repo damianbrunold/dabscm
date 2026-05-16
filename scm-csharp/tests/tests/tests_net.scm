@@ -142,4 +142,25 @@
              (_ (server-stop server 0)))
         (http-response-body resp)))))
 
+(test-group "http-response-helpers"
+  (test-equal 401 (http-response-status (http-unauthorized)))
+  (test-equal "Unauthorized" (http-response-body (http-unauthorized)))
+  (test-equal "please log in" (http-response-body (http-unauthorized "please log in")))
+  (test-equal 403 (http-response-status (http-forbidden)))
+  (test-equal "Forbidden" (http-response-body (http-forbidden)))
+  (test-equal "admin only" (http-response-body (http-forbidden "admin only")))
+  (test-equal 302 (http-response-status (http-redirect "/x")))
+  (test-equal "/x" (http-response-header (http-redirect "/x") "Location"))
+  (test-equal 303 (http-response-status (http-see-other "/y")))
+  (test-equal "/y" (http-response-header (http-see-other "/y") "Location"))
+  (test-equal 301 (http-response-status (http-permanent-redirect "/z")))
+  (test-equal "/z" (http-response-header (http-permanent-redirect "/z") "Location"))
+  (test-equal "text/html; charset=utf-8"
+              (http-response-header (html-response "<p/>") "Content-Type"))
+  (test-equal "<p/>" (http-response-body (html-response "<p/>")))
+  (test-equal "application/json; charset=utf-8"
+              (http-response-header (json-response "{}") "Content-Type"))
+  (test-equal "text/plain; charset=utf-8"
+              (http-response-header (text-response "hi") "Content-Type")))
+
 (test-end "net")

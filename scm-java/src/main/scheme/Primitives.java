@@ -298,7 +298,9 @@ public class Primitives {
         bind(new PrimitiveOpenOutputString());
         bind(new PrimitiveOpenOutputZipBytevector());
         bind(new PrimitiveOpenOutputZipFile());
+        bind(new PrimitiveOpenXmlBytevector());
         bind(new PrimitiveOpenXmlFile());
+        bind(new PrimitiveOpenXmlString());
         bind(new PrimitiveOutputPortOpenP());
         bind(new PrimitiveOutputPortP());
         bind(new PrimitivePBKDF2SHA256());

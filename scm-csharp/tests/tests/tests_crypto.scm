@@ -93,4 +93,39 @@
   (test-equal #t (bytevector? (rsa-encrypt rpub #u8(1 2 3 4 5))))
   (test-equal #u8(1 2 3 4 5) (rsa-decrypt rpriv (rsa-encrypt rpub #u8(1 2 3 4 5)))))
 
+(test-group "bytevector->hex"
+  (test-equal "" (bytevector->hex #u8()))
+  (test-equal "00" (bytevector->hex #u8(0)))
+  (test-equal "000fff" (bytevector->hex #u8(0 15 255)))
+  (test-equal "deadbeef" (bytevector->hex #u8(222 173 190 239))))
+
+(test-group "hex->bytevector"
+  (test-equal #u8() (hex->bytevector ""))
+  (test-equal #u8(0 15 255) (hex->bytevector "000fff"))
+  (test-equal #u8(222 173 190 239) (hex->bytevector "DEADBEEF"))
+  (test-equal #u8(222 173 190 239) (hex->bytevector "deadbeef"))
+  (let ((bv (random-bytes 32)))
+    (test-equal bv (hex->bytevector (bytevector->hex bv)))))
+
+(test-group "constant-time-bytevector=?"
+  (test-equal #t (constant-time-bytevector=? #u8() #u8()))
+  (test-equal #t (constant-time-bytevector=? #u8(1 2 3) #u8(1 2 3)))
+  (test-equal #f (constant-time-bytevector=? #u8(1 2 3) #u8(1 2 4)))
+  (test-equal #f (constant-time-bytevector=? #u8(1 2 3) #u8(1 2)))
+  (test-equal #f (constant-time-bytevector=? #u8(1 2) #u8(1 2 3))))
+
+(test-group "random-string"
+  (test-equal 6 (string-length (random-string "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" 6)))
+  (test-equal 0 (string-length (random-string "abc" 0)))
+  (let* ((cs "ab")
+         (s  (random-string cs 64)))
+    (test-equal #t
+      (let loop ((i 0))
+        (cond
+          ((= i (string-length s)) #t)
+          ((or (char=? (string-ref s i) #\a)
+               (char=? (string-ref s i) #\b))
+           (loop (+ i 1)))
+          (else #f))))))
+
 (test-end "crypto")

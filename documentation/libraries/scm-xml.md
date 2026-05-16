@@ -15,6 +15,17 @@ Example:
     (close-xml r))
 ```
 
+### `open-xml-bytevector`
+
+```
+Syntax: (open-xml-bytevector bv)
+Library: (scm xml)
+Description: Opens the XML document encoded in the given bytevector and returns an XML reader for forward-only reading of XML nodes. The byte stream is decoded using the XML declaration's encoding, defaulting to UTF-8.
+Example:
+  (define r (open-xml-bytevector (string->utf8 "<a/>")))
+  (xml-node-type r) => element
+```
+
 ### `open-xml-file`
 
 ```
@@ -24,6 +35,17 @@ Description: Opens the named XML file and returns an XML reader object for forwa
 Example:
   (define r (open-xml-file "data.xml"))
   (xml-node-type r) => node-type of first node
+```
+
+### `open-xml-string`
+
+```
+Syntax: (open-xml-string source)
+Library: (scm xml)
+Description: Opens the given XML string and returns an XML reader object for forward-only reading of XML nodes.
+Example:
+  (define r (open-xml-string "<a/>"))
+  (xml-node-type r) => element
 ```
 
 ### `xml-attribute`

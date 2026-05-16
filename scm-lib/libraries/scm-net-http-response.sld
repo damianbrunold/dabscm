@@ -9,7 +9,15 @@
           http-ok
           http-not-found
           http-bad-request
-          http-internal-error)
+          http-forbidden
+          http-unauthorized
+          http-internal-error
+          http-redirect
+          http-see-other
+          http-permanent-redirect
+          html-response
+          json-response
+          text-response)
   (begin
     (define make-http-response   (%primitive "make-http-response"))
     (define http-response-status  (%primitive "http-response-status"))
@@ -62,4 +70,86 @@ Library: (scm net http response)
 Description: Creates a 500 Internal Server Error HTTP response with msg as the body.
 Example:
   (http-internal-error \"Unexpected error\")"
-      (make-http-response 500 '() msg))))
+      (make-http-response 500 '() msg))
+
+    (define (http-forbidden . opt)
+      "Syntax: (http-forbidden [msg])
+Library: (scm net http response)
+Description: Creates a 403 Forbidden HTTP response. msg defaults to \"Forbidden\".
+Example:
+  (http-forbidden)
+  (http-forbidden \"Admin only\")"
+      (make-http-response 403 '()
+                          (if (null? opt) "Forbidden" (car opt))))
+
+    (define (http-unauthorized . opt)
+      "Syntax: (http-unauthorized [msg])
+Library: (scm net http response)
+Description: Creates a 401 Unauthorized HTTP response. msg defaults to \"Unauthorized\".
+Example:
+  (http-unauthorized)"
+      (make-http-response 401 '()
+                          (if (null? opt) "Unauthorized" (car opt))))
+
+    (define (http-redirect location)
+      "Syntax: (http-redirect location)
+Library: (scm net http response)
+Description: Creates a 302 Found HTTP response with the given Location header.
+  Use for temporary redirects from GET requests.
+Example:
+  (http-redirect \"/login\")"
+      (make-http-response 302
+                          (list (cons "Location" location))
+                          ""))
+
+    (define (http-see-other location)
+      "Syntax: (http-see-other location)
+Library: (scm net http response)
+Description: Creates a 303 See Other HTTP response with the given Location header.
+  Use after a successful POST to redirect to a GET (POST/Redirect/GET pattern).
+Example:
+  (http-see-other \"/items/42\")"
+      (make-http-response 303
+                          (list (cons "Location" location))
+                          ""))
+
+    (define (http-permanent-redirect location)
+      "Syntax: (http-permanent-redirect location)
+Library: (scm net http response)
+Description: Creates a 301 Moved Permanently HTTP response with the given Location header.
+Example:
+  (http-permanent-redirect \"https://example.com/new\")"
+      (make-http-response 301
+                          (list (cons "Location" location))
+                          ""))
+
+    (define (html-response body)
+      "Syntax: (html-response body)
+Library: (scm net http response)
+Description: Creates a 200 OK response with Content-Type text/html; charset=utf-8.
+Example:
+  (html-response \"<h1>hi</h1>\")"
+      (make-http-response 200
+                          '(("Content-Type" . "text/html; charset=utf-8"))
+                          body))
+
+    (define (json-response body)
+      "Syntax: (json-response body)
+Library: (scm net http response)
+Description: Creates a 200 OK response with Content-Type application/json; charset=utf-8.
+  body should already be a JSON-encoded string.
+Example:
+  (json-response \"{\\\"ok\\\":true}\")"
+      (make-http-response 200
+                          '(("Content-Type" . "application/json; charset=utf-8"))
+                          body))
+
+    (define (text-response body)
+      "Syntax: (text-response body)
+Library: (scm net http response)
+Description: Creates a 200 OK response with Content-Type text/plain; charset=utf-8.
+Example:
+  (text-response \"hello\")"
+      (make-http-response 200
+                          '(("Content-Type" . "text/plain; charset=utf-8"))
+                          body))))

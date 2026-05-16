@@ -84,6 +84,17 @@ Example:
   (base64-encode #u8(72 101 108 108 111)) => "SGVsbG8="
 ```
 
+### `bytevector->hex`
+
+```
+Syntax: (bytevector->hex bv)
+Library: (scm crypto)
+Description: Returns the lowercase hexadecimal string representation of the
+  bytevector bv (two hex digits per byte, no separators).
+Example:
+  (bytevector->hex #u8(0 15 255)) => "000fff"
+```
+
 ### `chacha20poly1305-decrypt`
 
 ```
@@ -102,6 +113,32 @@ Library: (scm crypto)
 Description: Encrypts plaintext using ChaCha20-Poly1305. key must be 32 bytes; nonce must be 12 bytes. Optional aad is additional authenticated data. Returns ciphertext concatenated with 16-byte authentication tag.
 Example:
   (chacha20poly1305-encrypt key nonce plaintext) => #u8(...)
+```
+
+### `constant-time-bytevector=?`
+
+```
+Syntax: (constant-time-bytevector=? a b)
+Library: (scm crypto)
+Description: Compares two bytevectors in constant time relative to their
+  length when equal-length. Returns #f for different lengths (this does
+  leak length, just not content). Use for comparing MACs, password hashes,
+  or any secret-derived bytes.
+Example:
+  (constant-time-bytevector=? #u8(1 2 3) #u8(1 2 3)) => #t
+  (constant-time-bytevector=? #u8(1 2 3) #u8(1 2 4)) => #f
+```
+
+### `hex->bytevector`
+
+```
+Syntax: (hex->bytevector s)
+Library: (scm crypto)
+Description: Parses a hexadecimal string (case-insensitive, no separators)
+  into a bytevector. Raises an error on odd length or non-hex characters.
+Example:
+  (hex->bytevector "000fff") => #u8(0 15 255)
+  (hex->bytevector "DEADBEEF") => #u8(222 173 190 239)
 ```
 
 ### `hmac-sha256`
@@ -142,6 +179,21 @@ Library: (scm crypto)
 Description: Returns a fresh bytevector of n cryptographically random bytes.
 Example:
   (random-bytes 16) => #u8(...)
+```
+
+### `random-string`
+
+```
+Syntax: (random-string charset length)
+Library: (scm crypto)
+Description: Returns a random string of the given length drawn from charset,
+  using random-bytes as the entropy source. Each output character is the
+  byte taken modulo (string-length charset); for cryptographic uses prefer
+  a charset length that is a power of two to avoid modulo bias, or a
+  charset of length ≤ 64 (the bias is then ≲ 1 in 4 billion per char).
+Example:
+  (random-string "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" 6) ; e.g. "K3Z9PA"
+  (random-string "0123456789abcdef" 32) ; 128 random bits as hex
 ```
 
 ### `rsa-decrypt`

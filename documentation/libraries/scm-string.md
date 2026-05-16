@@ -4,6 +4,20 @@ Extended string operations — search, split, trim, convert
 
 ## Exports
 
+### `string-contains-from`
+
+```
+Syntax: (string-contains-from haystack needle start)
+Library: (scm string)
+Description: Returns the index in haystack at or after start where needle
+  first occurs, or #f if it does not. Allocation-free char-by-char scan;
+  suitable for parsers operating on large strings.
+Example:
+  (string-contains-from "hello world" "world" 0) => 6
+  (string-contains-from "abcabc" "bc" 2) => 4
+  (string-contains-from "abc" "xyz" 0) => #f
+```
+
 ### `string-matches`
 
 ```
@@ -36,6 +50,31 @@ Description: Splits the string s at occurrences of the regular expression patter
 Example:
   (string-split "a b c") => ("a" "b" "c")
   (string-split "a,b,c" ",") => ("a" "b" "c")
+```
+
+### `string-split-char`
+
+```
+Syntax: (string-split-char s ch)
+Library: (scm string)
+Description: Splits string s into a list of substrings on every occurrence of
+  character ch. Adjacent delimiters produce empty strings; the result always
+  has at least one element.
+Example:
+  (string-split-char "a,b,,c" #\,) => ("a" "b" "" "c")
+  (string-split-char "" #\,) => ("")
+```
+
+### `string-split-lines`
+
+```
+Syntax: (string-split-lines s)
+Library: (scm string)
+Description: Splits string s into lines on newline (LF), dropping a trailing
+  carriage return (CR) on each line. Empty lines are preserved.
+Example:
+  (string-split-lines "a\nb\n") => ("a" "b" "")
+  (string-split-lines "a\r\nb") => ("a" "b")
 ```
 
 ### `string-split-vector`

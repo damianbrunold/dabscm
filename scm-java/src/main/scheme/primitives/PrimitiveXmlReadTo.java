@@ -1,6 +1,6 @@
 package scheme.primitives;
 
-import javax.sql.rowset.spi.XmlReader;
+import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamReader;
 
 import scheme.*;
@@ -32,10 +32,13 @@ public class PrimitiveXmlReadTo extends Primitive {
             } else {
                 name = new String(Value.asString(arguments[1]));
             }
-            // TODO
-            //if (reader.ReadToFollowing(name)) {
-            //    return Value.T;
-            //}
+            while (reader.hasNext()) {
+                int event = reader.next();
+                if (event == XMLStreamConstants.START_ELEMENT
+                        && name.equals(reader.getLocalName())) {
+                    return Value.T;
+                }
+            }
             return Value.F;
         } catch (Exception e) {
             throw new SchemeError(pos, "xml-read-to failed: %s", e.getMessage());

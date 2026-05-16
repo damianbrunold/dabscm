@@ -290,7 +290,9 @@ public class Primitives
         Bind(new PrimitiveOpenOutputString());
         Bind(new PrimitiveOpenOutputZipBytevector());
         Bind(new PrimitiveOpenOutputZipFile());
+        Bind(new PrimitiveOpenXmlBytevector());
         Bind(new PrimitiveOpenXmlFile());
+        Bind(new PrimitiveOpenXmlString());
         Bind(new PrimitiveOutputPortOpenP());
         Bind(new PrimitiveOutputPortP());
         Bind(new PrimitivePBKDF2SHA256());
