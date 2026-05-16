@@ -62,16 +62,22 @@
 | [`(scm datetime)`](libraries/scm-datetime.md) | Date and time operations |
 | [`(scm dict)`](libraries/scm-dict.md) | Dictionary / associative map operations |
 | [`(scm doc)`](libraries/scm-doc.md) | Documentation access |
+| [`(scm duration)`](libraries/scm-duration.md) |  |
 | [`(scm fs)`](libraries/scm-fs.md) | Filesystem operations — paths, directories, files |
 | [`(scm glob)`](libraries/scm-glob.md) | Filename globbing and pattern matching |
+| [`(scm html)`](libraries/scm-html.md) |  |
 | [`(scm io)`](libraries/scm-io.md) | Extended I/O — formatting, port utilities, property lists |
 | [`(scm json)`](libraries/scm-json.md) | JSON file reading |
 | [`(scm list)`](libraries/scm-list.md) | Extended list operations — higher-order, sorting, accessors |
+| [`(scm log)`](libraries/scm-log.md) |  |
 | [`(scm macro)`](libraries/scm-macro.md) | Non-standard macros and meta-programming utilities |
 | [`(scm match)`](libraries/scm-match.md) | Pattern matching |
 | [`(scm math)`](libraries/scm-math.md) | Math constants and non-standard numeric operations |
 | [`(scm module)`](libraries/scm-module.md) | Module system — import, export, search paths, introspection |
 | [`(scm net http client)`](libraries/scm-net-http-client.md) | HTTP client — GET, POST, and other request methods |
+| [`(scm net http cookies)`](libraries/scm-net-http-cookies.md) |  |
+| [`(scm net http forms)`](libraries/scm-net-http-forms.md) |  |
+| [`(scm net http multipart)`](libraries/scm-net-http-multipart.md) |  |
 | [`(scm net http request)`](libraries/scm-net-http-request.md) | HTTP request construction and accessors |
 | [`(scm net http response)`](libraries/scm-net-http-response.md) | HTTP response construction and accessors |
 | [`(scm net http route)`](libraries/scm-net-http-route.md) | HTTP request routing for servers |
@@ -88,5 +94,6 @@
 | [`(scm templating)`](libraries/scm-templating.md) | Text templating with variable substitution |
 | [`(scm terminal)`](libraries/scm-terminal.md) | Terminal control — colors, cursor, raw mode |
 | [`(scm test)`](libraries/scm-test.md) |  |
+| [`(scm uri)`](libraries/scm-uri.md) |  |
 | [`(scm xml)`](libraries/scm-xml.md) | XML file reading and navigation |
 | [`(scm zip)`](libraries/scm-zip.md) | ZIP archive creation and entry writing |

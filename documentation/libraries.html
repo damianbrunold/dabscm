@@ -337,16 +337,22 @@
   <a href="#scm-datetime" class="scm">(scm datetime)</a>
   <a href="#scm-dict" class="scm">(scm dict)</a>
   <a href="#scm-doc" class="scm">(scm doc)</a>
+  <a href="#scm-duration" class="scm">(scm duration)</a>
   <a href="#scm-fs" class="scm">(scm fs)</a>
   <a href="#scm-glob" class="scm">(scm glob)</a>
+  <a href="#scm-html" class="scm">(scm html)</a>
   <a href="#scm-io" class="scm">(scm io)</a>
   <a href="#scm-json" class="scm">(scm json)</a>
   <a href="#scm-list" class="scm">(scm list)</a>
+  <a href="#scm-log" class="scm">(scm log)</a>
   <a href="#scm-macro" class="scm">(scm macro)</a>
   <a href="#scm-match" class="scm">(scm match)</a>
   <a href="#scm-math" class="scm">(scm math)</a>
   <a href="#scm-module" class="scm">(scm module)</a>
   <a href="#scm-net-http-client" class="scm">(scm net http client)</a>
+  <a href="#scm-net-http-cookies" class="scm">(scm net http cookies)</a>
+  <a href="#scm-net-http-forms" class="scm">(scm net http forms)</a>
+  <a href="#scm-net-http-multipart" class="scm">(scm net http multipart)</a>
   <a href="#scm-net-http-request" class="scm">(scm net http request)</a>
   <a href="#scm-net-http-response" class="scm">(scm net http response)</a>
   <a href="#scm-net-http-route" class="scm">(scm net http route)</a>
@@ -363,6 +369,7 @@
   <a href="#scm-templating" class="scm">(scm templating)</a>
   <a href="#scm-terminal" class="scm">(scm terminal)</a>
   <a href="#scm-test" class="scm">(scm test)</a>
+  <a href="#scm-uri" class="scm">(scm uri)</a>
   <a href="#scm-xml" class="scm">(scm xml)</a>
   <a href="#scm-zip" class="scm">(scm zip)</a>
 </nav>
@@ -2425,6 +2432,21 @@
   </div>
 </div>
 
+<div class="library scm" id="scm-duration">
+  <div class="lib-header">
+    <span class="lib-name">(scm duration)</span>
+    <span class="lib-desc"></span>
+    <span class="lib-count" id="scm-duration-count"></span>
+  </div>
+  <div class="lib-body">
+    <div class="exports" data-lib="scm-duration">
+      format-duration
+      parse-duration
+    </div>
+    <div class="doc-panel" id="scm-duration-doc-panel"></div>
+  </div>
+</div>
+
 <div class="library scm" id="scm-fs">
   <div class="lib-header">
     <span class="lib-name">(scm fs)</span>
@@ -2475,6 +2497,22 @@
       glob-match?
     </div>
     <div class="doc-panel" id="scm-glob-doc-panel"></div>
+  </div>
+</div>
+
+<div class="library scm" id="scm-html">
+  <div class="lib-header">
+    <span class="lib-name">(scm html)</span>
+    <span class="lib-desc"></span>
+    <span class="lib-count" id="scm-html-count"></span>
+  </div>
+  <div class="lib-body">
+    <div class="exports" data-lib="scm-html">
+      html-attr-escape
+      html-escape
+      strip-html-tags
+    </div>
+    <div class="doc-panel" id="scm-html-doc-panel"></div>
   </div>
 </div>
 
@@ -2538,6 +2576,24 @@
       zip-alist
     </div>
     <div class="doc-panel" id="scm-list-doc-panel"></div>
+  </div>
+</div>
+
+<div class="library scm" id="scm-log">
+  <div class="lib-header">
+    <span class="lib-name">(scm log)</span>
+    <span class="lib-desc"></span>
+    <span class="lib-count" id="scm-log-count"></span>
+  </div>
+  <div class="lib-body">
+    <div class="exports" data-lib="scm-log">
+      log-access
+      log-error
+      log-info
+      log-port
+      log-warn
+    </div>
+    <div class="doc-panel" id="scm-log-doc-panel"></div>
   </div>
 </div>
 
@@ -2640,6 +2696,55 @@
       http-send
     </div>
     <div class="doc-panel" id="scm-net-http-client-doc-panel"></div>
+  </div>
+</div>
+
+<div class="library scm" id="scm-net-http-cookies">
+  <div class="lib-header">
+    <span class="lib-name">(scm net http cookies)</span>
+    <span class="lib-desc"></span>
+    <span class="lib-count" id="scm-net-http-cookies-count"></span>
+  </div>
+  <div class="lib-body">
+    <div class="exports" data-lib="scm-net-http-cookies">
+      cookie-ref
+      format-set-cookie
+      parse-cookie-header
+    </div>
+    <div class="doc-panel" id="scm-net-http-cookies-doc-panel"></div>
+  </div>
+</div>
+
+<div class="library scm" id="scm-net-http-forms">
+  <div class="lib-header">
+    <span class="lib-name">(scm net http forms)</span>
+    <span class="lib-desc"></span>
+    <span class="lib-count" id="scm-net-http-forms-count"></span>
+  </div>
+  <div class="lib-body">
+    <div class="exports" data-lib="scm-net-http-forms">
+      form-ref
+      form-refs-by-prefix
+      parse-www-form
+    </div>
+    <div class="doc-panel" id="scm-net-http-forms-doc-panel"></div>
+  </div>
+</div>
+
+<div class="library scm" id="scm-net-http-multipart">
+  <div class="lib-header">
+    <span class="lib-name">(scm net http multipart)</span>
+    <span class="lib-desc"></span>
+    <span class="lib-count" id="scm-net-http-multipart-count"></span>
+  </div>
+  <div class="lib-body">
+    <div class="exports" data-lib="scm-net-http-multipart">
+      multipart-boundary
+      parse-multipart
+      parse-multipart-bytes
+      part-ref
+    </div>
+    <div class="doc-panel" id="scm-net-http-multipart-doc-panel"></div>
   </div>
 </div>
 
@@ -3123,6 +3228,21 @@
       test-with-runner
     </div>
     <div class="doc-panel" id="scm-test-doc-panel"></div>
+  </div>
+</div>
+
+<div class="library scm" id="scm-uri">
+  <div class="lib-header">
+    <span class="lib-name">(scm uri)</span>
+    <span class="lib-desc"></span>
+    <span class="lib-count" id="scm-uri-count"></span>
+  </div>
+  <div class="lib-body">
+    <div class="exports" data-lib="scm-uri">
+      percent-decode
+      percent-encode
+    </div>
+    <div class="doc-panel" id="scm-uri-doc-panel"></div>
   </div>
 </div>
 
@@ -3866,6 +3986,10 @@ const docs = {
     "doc": "Syntax: (doc obj)\nLibrary: (scm core)\nDescription: Prints documentation for obj to the current output port. obj may be\n  a procedure, primitive, macro, or symbol naming one. Returns unspecified.\nExample:\n  (doc car) => prints documentation for car",
     "procedure-doc": "Syntax: (procedure-doc obj)\nLibrary: (scm core)\nDescription: Returns the documentation string for obj as a Scheme string, or #f\n  if no documentation is available. obj may be a procedure, primitive, macro,\n  or symbol naming one.\nExample:\n  (string? (procedure-doc car)) => #t",
   },
+  "scm-duration": {
+    "format-duration": "Syntax: (format-duration seconds)\nLibrary: (scm duration)\nDescription: Human-readable inverse of parse-duration. Emits a d/h/m suffix\n  when seconds divides evenly by 86400/3600/60; otherwise emits a plain\n  seconds value with the s suffix. Non-integer or negative input is\n  rendered as the integer itself (or empty string for non-numbers).\nExample:\n  (format-duration 3600)  => \"1h\"\n  (format-duration 86400) => \"1d\"\n  (format-duration 90)    => \"90s\"\n  (format-duration 0)     => \"0s\"",
+    "parse-duration": "Syntax: (parse-duration s)\nLibrary: (scm duration)\nDescription: Parses a duration string into a non-negative integer number of\n  seconds. Accepts a bare integer (interpreted as seconds), or an integer\n  suffixed with one of s/m/h/d (seconds/minutes/hours/days). Returns #f\n  if s is not a string, is empty, or does not parse.\nExample:\n  (parse-duration \"30\")  => 30\n  (parse-duration \"30s\") => 30\n  (parse-duration \"10m\") => 600\n  (parse-duration \"3h\")  => 10800\n  (parse-duration \"1d\")  => 86400\n  (parse-duration \"x\")   => #f",
+  },
   "scm-fs": {
     "absolute-path": "Syntax: (absolute-path path)\nLibrary: (scm system)\nDescription: Returns the absolute (fully qualified) form of the given path string.\nExample:\n  (absolute-path \".\") => \"/current/working/dir\"",
     "base-name": "Syntax: (base-name path)\nLibrary: (scm system)\nDescription: Returns the file name (including extension) from the given path string, without the directory part.\nExample:\n  (base-name \"/usr/share/doc/readme.txt\") => \"readme.txt\"",
@@ -3896,6 +4020,11 @@ const docs = {
     "glob": "Syntax: (glob pattern)\nLibrary: (scm glob)\nDescription: Returns a sorted list of file and directory paths matching\n  the glob pattern. Supports * (any characters except path separator),\n  ? (single character), [...] character classes, and ** (recursive\n  globstar matching zero or more directory levels). Dotfiles are not\n  matched by *, ?, or ** unless the pattern segment explicitly starts\n  with a dot. Returns an empty list if no matches are found or the\n  base directory does not exist.\nExample:\n  (glob \"src/*.scm\") => (\"src/bar.scm\" \"src/foo.scm\")\n  (glob \"**/*.sld\") => (\"lib/a.sld\" \"lib/sub/b.sld\")",
     "glob-match?": "Syntax: (glob-match? pattern string)\nLibrary: (scm glob)\nDescription: Tests whether string matches the glob pattern. Supports *\n  (any characters except path separator), ? (single character except path\n  separator), [...] character classes with ranges and negation ([!...]),\n  and ** (matches zero or more path segments including separators).\n  This is a pure string operation with no filesystem access.\nExample:\n  (glob-match? \"*.scm\" \"foo.scm\")       => #t\n  (glob-match? \"src/**/*.scm\" \"src/lib/foo.scm\") => #t\n  (glob-match? \"[abc].txt\" \"b.txt\")     => #t",
   },
+  "scm-html": {
+    "html-attr-escape": "Syntax: (html-escape s)\nLibrary: (scm html)\nDescription: Escapes the five HTML metacharacters (&, <, >, \", ') in s so\n  the result is safe to splice into HTML text content or attribute values\n  (quoted with either single or double quotes).\nExample:\n  (html-escape \"a < b & c\") => \"a &lt; b &amp; c\"\n  (html-escape \"O'Brien\") => \"O&#39;Brien\"",
+    "html-escape": "Syntax: (html-escape s)\nLibrary: (scm html)\nDescription: Escapes the five HTML metacharacters (&, <, >, \", ') in s so\n  the result is safe to splice into HTML text content or attribute values\n  (quoted with either single or double quotes).\nExample:\n  (html-escape \"a < b & c\") => \"a &lt; b &amp; c\"\n  (html-escape \"O'Brien\") => \"O&#39;Brien\"",
+    "strip-html-tags": "Syntax: (strip-html-tags s)\nLibrary: (scm html)\nDescription: Removes anything that looks like an HTML tag (text from < to >)\n  and collapses runs of whitespace into single spaces. Intended for plain-text\n  contexts like tooltip values where you want a readable string. Does NOT\n  decode HTML entities — call html-escape afterwards if you re-emit into HTML.\nExample:\n  (strip-html-tags \"<p>hello   <b>world</b></p>\") => \"hello world\"\n  (strip-html-tags \"plain\") => \"plain\"",
+  },
   "scm-io": {
     "call-with-input-string": "Syntax: (call-with-input-string str proc)\nLibrary: (scm io)\nDescription: Opens a string input port on str and calls proc with it,\n  returning the result of proc. The port is closed after proc returns,\n  even if proc raises an error.\nExample:\n  (call-with-input-string \"42\" read) => 42",
     "call-with-output-bytevector": "Syntax: (call-with-output-bytevector proc)\nLibrary: (scm io)\nDescription: Calls proc with a fresh bytevector output port, then returns the\n  accumulated output as a bytevector. The port is closed after proc returns,\n  even if proc raises an error.\nExample:\n  (call-with-output-bytevector (lambda (p) (write-bytevector #u8(1 2 3) p)))\n  => #u8(1 2 3)",
@@ -3922,6 +4051,12 @@ const docs = {
     "unique": "Syntax: (unique list)\nLibrary: (scm list)\nDescription: Removes consecutive duplicate elements from list using equal? for\ncomparison. The list should be sorted if all duplicates are to be removed.\nExample:\n  (unique '(\"a\" \"a\" \"b\" \"b\")) => (\"a\" \"b\")",
     "univ": "Syntax: (univ list)\nLibrary: (scm list)\nDescription: Removes consecutive duplicate elements from list using eqv? for\ncomparison. The list should be sorted if all duplicates are to be removed.\nExample:\n  (univ '(1 1 2 2 3)) => (1 2 3)",
     "zip-alist": "Syntax: (zip-alist a b)\nLibrary: (scm list)\nDescription: Combines two lists of equal length into a single association list,\npairing each element from a with the corresponding element from b. Raises an\nerror if the lists have different lengths.\nExample:\n  (zip-alist '(1 2 3) '(a b c)) => ((1 . a) (2 . b) (3 . c))",
+  },
+  "scm-log": {
+    "log-access": "Syntax: (log-access method url status duration-ms)\nLibrary: (scm log)\nDescription: Writes a single access log line: an INFO line in the http\n  module of the form 'METHOD URL -> STATUS (Nms)'. status and duration-ms\n  are integers.\nExample:\n  (log-access \"GET\" \"/notes/42\" 200 14)",
+    "log-error": "Syntax: (log-error module msg)\nLibrary: (scm log)\nDescription: Writes a single ERROR-level log line tagged with module.\nExample:\n  (log-error \"db\" \"connection refused\")",
+    "log-info": "Syntax: (log-info module msg)\nLibrary: (scm log)\nDescription: Writes a single INFO-level log line tagged with module to\n  (log-port). module and msg are strings.\nExample:\n  (log-info \"auth\" \"login ok for user 42\")",
+    "log-warn": "Syntax: (log-warn module msg)\nLibrary: (scm log)\nDescription: Writes a single WARN-level log line tagged with module.\nExample:\n  (log-warn \"feeds\" \"fetch timed out, will retry\")",
   },
   "scm-macro": {
     "define-if-not-bound": "Syntax: (define-if-not-bound name value)\nLibrary: (scm macro)\nDescription: Defines name to value only if name is not already bound in\nthe current module. Useful for conditional initialization.\nExample:\n  (define-if-not-bound my-var 42)",
@@ -3956,6 +4091,22 @@ const docs = {
     "http-post-json": "Syntax: (http-post-json url body)\nLibrary: (scm net http client)\nDescription: Performs an HTTP POST with Content-Type: application/json. body should\n  be a JSON string. Returns an http-response.\nExample:\n  (http-post-json \"http://example.com/api\" \"{\\\"x\\\":1}\")",
     "http-put": "Syntax: (http-put url body)\nLibrary: (scm net http client)\nDescription: Performs an HTTP PUT request with the given body and returns an http-response.\nExample:\n  (http-put \"http://example.com/item/1\" \"updated\")",
     "http-send": "Syntax: (http-send request)\nLibrary: (scm net http client)\nDescription: Sends an HTTP request object and returns an http-response object.\nExample:\n  (http-send (make-http-request \"DELETE\" \"http://example.com/x\" '() #f))",
+  },
+  "scm-net-http-cookies": {
+    "cookie-ref": "Syntax: (cookie-ref cookies name)\nLibrary: (scm net http cookies)\nDescription: Returns the value of the named cookie in cookies (an alist from\n  parse-cookie-header), or #f if missing.\nExample:\n  (cookie-ref '((\"sid\" . \"abc\")) \"sid\") => \"abc\"",
+    "format-set-cookie": "Syntax: (format-set-cookie name value max-age path [flag ...])\nLibrary: (scm net http cookies)\nDescription: Builds a Set-Cookie header value. HttpOnly and SameSite=Strict\n  are always emitted. The Secure attribute is added unless 'no-secure' is\n  present in flags; this default is right for production but should be\n  disabled for local HTTP development. max-age may be #f to omit the\n  Max-Age attribute (session cookie).\nExample:\n  (format-set-cookie \"sid\" \"abc\" 3600 \"/\")\n  => \"sid=abc; Path=/; Max-Age=3600; HttpOnly; SameSite=Strict; Secure\"\n  (format-set-cookie \"sid\" \"abc\" #f \"/\" 'no-secure)\n  => \"sid=abc; Path=/; HttpOnly; SameSite=Strict\"",
+    "parse-cookie-header": "Syntax: (parse-cookie-header header)\nLibrary: (scm net http cookies)\nDescription: Parses an HTTP Cookie header value into an alist. Whitespace\n  around names and values is trimmed. Values are NOT percent-decoded — the\n  caller decides, because many cookie values are opaque tokens (base64,\n  hex, signed blobs). #f or empty → '().\nExample:\n  (parse-cookie-header \"sid=abc; pref=dark\")\n  => ((\"sid\" . \"abc\") (\"pref\" . \"dark\"))",
+  },
+  "scm-net-http-forms": {
+    "form-ref": "Syntax: (form-ref form key [default])\nLibrary: (scm net http forms)\nDescription: Returns the value of key in form (an alist from parse-www-form),\n  or default if missing, or #f if no default is supplied.\nExample:\n  (form-ref '((\"a\" . \"1\")) \"a\") => \"1\"\n  (form-ref '() \"a\" \"-\") => \"-\"",
+    "form-refs-by-prefix": "Syntax: (form-refs-by-prefix form prefix)\nLibrary: (scm net http forms)\nDescription: Returns all (key . value) pairs from form whose key starts with\n  prefix. Order is preserved.\nExample:\n  (form-refs-by-prefix '((\"opt-a\" . \"1\") (\"name\" . \"x\") (\"opt-b\" . \"2\")) \"opt-\")\n  => ((\"opt-a\" . \"1\") (\"opt-b\" . \"2\"))",
+    "parse-www-form": "Syntax: (parse-www-form body)\nLibrary: (scm net http forms)\nDescription: Parses an application/x-www-form-urlencoded body or query\n  string into an alist of decoded (key . value) string pairs. Empty body\n  or #f → '(). Keys with no '=' map to empty-string values.\nExample:\n  (parse-www-form \"name=Ada&age=37\") => ((\"name\" . \"Ada\") (\"age\" . \"37\"))\n  (parse-www-form \"\") => ()",
+  },
+  "scm-net-http-multipart": {
+    "multipart-boundary": "Syntax: (multipart-boundary content-type)\nLibrary: (scm net http multipart)\nDescription: Extracts the boundary= parameter from a Content-Type header\n  value. Returns the boundary string (without surrounding quotes), or #f\n  if content-type is not multipart/form-data or has no boundary.\nExample:\n  (multipart-boundary \"multipart/form-data; boundary=abc123\") => \"abc123\"\n  (multipart-boundary \"text/plain\") => #f",
+    "parse-multipart": "Syntax: (parse-multipart body boundary)\nLibrary: (scm net http multipart)\nDescription: Parses a multipart/form-data body (passed as a byte-per-char\n  string) with the given boundary string. Returns a list of part alists,\n  each with keys 'name, 'filename (or #f), 'content-type (or #f), 'body.\n  Use parse-multipart-bytes when handling binary uploads.\nExample:\n  (parse-multipart body (multipart-boundary (http-request-header req \"Content-Type\")))",
+    "parse-multipart-bytes": "Syntax: (parse-multipart-bytes body boundary)\nLibrary: (scm net http multipart)\nDescription: Like parse-multipart but operates on a bytevector body. Part\n  bodies in the result are bytevectors (subcopies of the input), so binary\n  uploads (images, PDFs, ...) round-trip exactly.\nExample:\n  (parse-multipart-bytes (http-request-body-bytes req)\n                         (multipart-boundary\n                           (http-request-header req \"Content-Type\")))",
+    "part-ref": "Syntax: (part-ref part key)\nLibrary: (scm net http multipart)\nDescription: Returns the value of key ('name, 'filename, 'content-type, 'body)\n  in a part alist, or #f if missing.\nExample:\n  (part-ref p 'name) => \"avatar\"\n  (part-ref p 'filename) => \"face.png\"",
   },
   "scm-net-http-request": {
     "http-request-body": "Syntax: (http-request-body request)\nLibrary: (scm net http request)\nDescription: Returns the body of the HTTP request as a string, or #f if there is no body.\nExample:\n  (http-request-body req) => \"hello\"",
@@ -4228,6 +4379,10 @@ const docs = {
     "terminal?": "Syntax: (terminal?)\nSyntax: (terminal? which)\nLibrary: (scm terminal)\nDescription: Returns #t if the process is connected to a terminal.\nIf which is 'input, checks only the input stream.\nIf which is 'output, checks only the output stream.\nWith no arguments, returns #t only if both input and output are terminals.\nExample:\n  (terminal?) => #t",
     "with-alternate-screen": "Syntax: (with-alternate-screen thunk)\nLibrary: (scm terminal)\nDescription: Calls thunk with the alternate screen buffer enabled.\nThe original screen is restored when thunk returns or when an exception\nis raised.\nExample:\n  (with-alternate-screen\n    (lambda ()\n      (clear-screen)\n      (cursor-position 1 1)\n      (display \"Hello from alternate screen!\")))",
     "with-terminal-raw": "Syntax: (with-terminal-raw thunk)\nLibrary: (scm terminal)\nDescription: Calls thunk with raw terminal mode enabled. The original\nterminal settings are restored when thunk returns or when an exception\nis raised. Returns the value returned by thunk.\nExample:\n  (with-terminal-raw\n    (lambda ()\n      (let ((key (terminal-read-key)))\n        (display key))))",
+  },
+  "scm-uri": {
+    "percent-decode": "Syntax: (percent-decode s [plus-as-space?])\nLibrary: (scm uri)\nDescription: Decodes percent-escaped UTF-8 in s. When plus-as-space? is\n  true (the default), '+' is treated as space — appropriate for\n  application/x-www-form-urlencoded bodies and query strings. Pass #f to\n  preserve '+' literally (e.g. for URL path segments).\nExample:\n  (percent-decode \"a%20b\") => \"a b\"\n  (percent-decode \"a+b\") => \"a b\"\n  (percent-decode \"a+b\" #f) => \"a+b\"",
+    "percent-encode": "Syntax: (percent-encode s)\nLibrary: (scm uri)\nDescription: Encodes string s as UTF-8 and percent-escapes every byte\n  outside the RFC 3986 unreserved set (A-Z a-z 0-9 - _ . ~). Suitable for\n  building query values and path segments.\nExample:\n  (percent-encode \"a b/c\") => \"a%20b%2Fc\"\n  (percent-encode \"hello\") => \"hello\"",
   },
   "scm-xml": {
     "close-xml": "Syntax: (close-xml reader)\nLibrary: (scm core)\nDescription: Closes the given XML reader, releasing any underlying file or stream resources.\nExample:\n  (let ((r (open-xml-file \"data.xml\")))\n    (close-xml r))",
