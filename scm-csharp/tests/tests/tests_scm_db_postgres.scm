@@ -87,9 +87,9 @@
               (pg-format-sql "a = $1 AND b IN $2" '("x" (1 2))))
   ;; Vectors are accepted with the same semantics.
   (test-equal "WHERE id IN (1, 2, 3)"
-              (pg-format-sql "WHERE id IN $1" (list #(1 2 3))))
+              (pg-format-sql "WHERE id IN $1" '(#(1 2 3))))
   (test-equal "WHERE id IN (NULL)"
-              (pg-format-sql "WHERE id IN $1" (list #()))))
+              (pg-format-sql "WHERE id IN $1" '(#()))))
 
 (test-group "pg-format-sql: multiple params, reuse, ordering"
   (test-equal "a = 'foo' AND b = 'bar' AND a = 'foo'"
