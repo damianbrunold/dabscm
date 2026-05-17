@@ -1,5 +1,5 @@
 (define-library (scm database postgres)
-  (import (scm core) (scheme base) (scm crypto) (scm net sockets) (srfi 18))
+  (import (scm core) (scheme base) (scheme inexact) (scm crypto) (scm net sockets) (srfi 18))
   (export pg-connect
           pg-close
           pg-query
@@ -16,6 +16,7 @@
           with-pg-query
           pg-quote-literal
           pg-quote-int
+          pg-format-sql
           ;; Connection pool
           make-pg-pool
           pg-pool?
@@ -464,14 +465,25 @@ Example:
     ;; --- Query execution ---
 
     ;; Execute a query and return a result object
-    (define (pg-query conn sql)
-      "Syntax: (pg-query conn sql)
+    (define (pg-query conn sql . params)
+      "Syntax: (pg-query conn sql [param ...])
 Library: (scm database postgres)
-Description: Executes a SQL query and returns a result object containing column names and rows.
-  Use pg-result-columns and pg-result-rows to access the result.
+Description: Executes a SQL query and returns a result object containing
+  column names and rows. Use pg-result-columns and pg-result-rows to
+  access the result.
+
+  If params are supplied, the sql string is treated as a template with
+  $1, $2, ... placeholders that are substituted with the corresponding
+  param values. See pg-format-sql for the conversion rules. With no
+  params, sql is sent verbatim.
 Example:
-  (define result (pg-query conn \"SELECT id, name FROM users\"))"
-      (let* ((in  (vector-ref conn 0))
+  (pg-query conn \"SELECT * FROM users\")
+  (pg-query conn \"SELECT * FROM users WHERE id = $1\" 42)
+  (pg-query conn \"SELECT * FROM users WHERE name = $1 AND age > $2\"
+            \"Ada\" 30)"
+      (let* ((sql (cond ((null? params) sql)
+                        (else (pg-format-sql sql params))))
+             (in  (vector-ref conn 0))
              (out (vector-ref conn 1))
              (bv  (open-output-bytevector)))
         (pg-write-string! sql bv)
@@ -479,14 +491,22 @@ Example:
         (pg-read-result! in)))
 
     ;; Execute a statement and discard the result (for DDL/DML)
-    (define (pg-exec conn sql)
-      "Syntax: (pg-exec conn sql)
+    (define (pg-exec conn sql . params)
+      "Syntax: (pg-exec conn sql [param ...])
 Library: (scm database postgres)
-Description: Executes a SQL statement and discards the result. Suitable for DDL and DML
-  statements such as CREATE TABLE, INSERT, UPDATE, and DELETE.
+Description: Executes a SQL statement and discards the result. Suitable
+  for DDL and DML statements such as CREATE TABLE, INSERT, UPDATE, and
+  DELETE.
+
+  If params are supplied, the sql string is a template with $1, $2, ...
+  placeholders substituted via pg-format-sql.
 Example:
-  (pg-exec conn \"INSERT INTO users (name) VALUES ('alice')\")"
-      (let* ((in  (vector-ref conn 0))
+  (pg-exec conn \"INSERT INTO users (name) VALUES ('alice')\")
+  (pg-exec conn \"INSERT INTO users (name, age) VALUES ($1, $2)\"
+           \"Ada\" 36)"
+      (let* ((sql (cond ((null? params) sql)
+                        (else (pg-format-sql sql params))))
+             (in  (vector-ref conn 0))
              (out (vector-ref conn 1))
              (bv  (open-output-bytevector)))
         (pg-write-string! sql bv)
@@ -717,6 +737,224 @@ Example:
            (cond ((and parsed (integer? parsed)) (number->string parsed))
                  (else (error "pg-quote-int: not an integer string" n)))))
         (else (error "pg-quote-int: not an integer" n))))
+
+    ;; ============================================================
+    ;; Parameterized SQL — library-side substitution
+    ;;
+    ;; pg-format-sql replaces $N placeholders in a SQL template with
+    ;; properly-escaped literals from the params list. It is the only
+    ;; documented way to interpolate user data into SQL; callers that
+    ;; use it cannot leak unescaped values through it.
+    ;;
+    ;; Conversion (Scheme value → SQL literal):
+    ;;   #f                 → NULL          (symmetric with reads)
+    ;;   #t                 → TRUE
+    ;;   integer            → 42
+    ;;   real / rational    → 3.14          (converted via inexact)
+    ;;   string             → 'doubled'     (pg-quote-literal style)
+    ;;   bytevector         → '\\xHEX'::bytea
+    ;;   anything else      → error
+    ;;
+    ;; The parser tracks string literals ('...' with '' escape),
+    ;; quoted identifiers ("..." with "" escape), line and block
+    ;; comments, and dollar-quoted strings ($tag$...$tag$ and $$...$$);
+    ;; $N inside any of those is passed through verbatim, not
+    ;; substituted. $0 raises; $N with N > param-count raises.
+    ;; ============================================================
+
+    (define (%pg-hex-nibble n)
+      (cond ((< n 10) (integer->char (+ (char->integer #\0) n)))
+            (else    (integer->char (+ (char->integer #\a) (- n 10))))))
+
+    (define (%pg-bytea-literal bv)
+      (let* ((n (bytevector-length bv))
+             (out (open-output-string)))
+        (write-string "'\\x" out)
+        (let loop ((i 0))
+          (cond
+            ((= i n) (write-string "'::bytea" out) (get-output-string out))
+            (else
+             (let* ((b  (bytevector-u8-ref bv i))
+                    (hi (quotient b 16))
+                    (lo (modulo b 16)))
+               (write-char (%pg-hex-nibble hi) out)
+               (write-char (%pg-hex-nibble lo) out)
+               (loop (+ i 1))))))))
+
+    (define (%pg-sql-literal v)
+      ;; Returns the SQL literal text for a Scheme value, or raises.
+      (cond
+        ((not v)            "NULL")            ; #f → NULL
+        ((eq? v #t)         "TRUE")
+        ((string? v)        (pg-quote-literal v))
+        ((integer? v)       (number->string v))
+        ((real? v)          (number->string (inexact v)))
+        ((bytevector? v)    (%pg-bytea-literal v))
+        (else (error "pg-format-sql: cannot encode as SQL literal" v))))
+
+    (define (pg-format-sql sql params)
+      "Syntax: (pg-format-sql sql params)
+Library: (scm database postgres)
+Description: Returns sql with $1, $2, ... placeholders substituted by
+  the corresponding (1-indexed) values from the params list, each
+  converted to a properly-escaped SQL literal. Substitution is skipped
+  inside string literals, quoted identifiers, comments, and dollar-
+  quoted strings. Raises on $0, $N out of range, or a param of an
+  unsupported type.
+Example:
+  (pg-format-sql \"WHERE slug = $1 AND age > $2\" '(\"a'b\" 18))
+  => \"WHERE slug = 'a''b' AND age > 18\""
+      (let* ((n         (string-length sql))
+             (params-vec (list->vector params))
+             (n-params  (vector-length params-vec))
+             (out       (open-output-string)))
+        (define (at i) (string-ref sql i))
+        (define (eq-at? i ch) (and (< i n) (char=? (at i) ch)))
+        (define (digit-at? i)
+          (and (< i n)
+               (let ((c (at i)))
+                 (and (char>=? c #\0) (char<=? c #\9)))))
+        (define (ident-start-at? i)
+          (and (< i n)
+               (let ((c (at i)))
+                 (or (and (char>=? c #\a) (char<=? c #\z))
+                     (and (char>=? c #\A) (char<=? c #\Z))
+                     (char=? c #\_)))))
+        (define (ident-char-at? i)
+          (and (< i n)
+               (let ((c (at i)))
+                 (or (and (char>=? c #\a) (char<=? c #\z))
+                     (and (char>=? c #\A) (char<=? c #\Z))
+                     (and (char>=? c #\0) (char<=? c #\9))
+                     (char=? c #\_)))))
+        (define (write-param! idx)
+          (cond
+            ((or (< idx 1) (> idx n-params))
+             (error (string-append "pg-format-sql: $"
+                                   (number->string idx)
+                                   " but only "
+                                   (number->string n-params)
+                                   " param(s) supplied")))
+            (else
+             (write-string (%pg-sql-literal (vector-ref params-vec (- idx 1)))
+                           out))))
+        (define (read-int! i)
+          ;; Reads consecutive digits at i. Returns (values num next-i).
+          ;; Caller has verified digit-at? i is #t.
+          (let loop ((i i) (acc 0))
+            (cond
+              ((digit-at? i)
+               (loop (+ i 1)
+                     (+ (* acc 10)
+                        (- (char->integer (at i)) (char->integer #\0)))))
+              (else (values acc i)))))
+        (define (read-dollar-tag! i)
+          ;; i is the position of `$`. Try to read `$tag$` or `$$`.
+          ;; On success: (values "$tag$" next-i). On failure: (values #f i).
+          (cond
+            ((eq-at? (+ i 1) #\$)
+             (values "$$" (+ i 2)))
+            ((ident-start-at? (+ i 1))
+             (let loop ((j (+ i 2)))
+               (cond
+                 ((>= j n) (values #f i))
+                 ((char=? (at j) #\$)
+                  (values (substring sql i (+ j 1)) (+ j 1)))
+                 ((ident-char-at? j) (loop (+ j 1)))
+                 (else (values #f i)))))
+            (else (values #f i))))
+        (let loop ((i 0) (state 'default) (dollar-tag #f))
+          (cond
+            ((>= i n)
+             (cond
+               ((or (eq? state 'default)
+                    (eq? state 'in-line-comment))
+                (get-output-string out))
+               (else
+                (error (string-append "pg-format-sql: unterminated "
+                                      (symbol->string state))))))
+            ((eq? state 'default)
+             (let ((c (at i)))
+               (cond
+                 ((char=? c #\')
+                  (write-char c out) (loop (+ i 1) 'in-single-quote #f))
+                 ((char=? c #\")
+                  (write-char c out) (loop (+ i 1) 'in-double-quote #f))
+                 ((and (char=? c #\-) (eq-at? (+ i 1) #\-))
+                  (write-char #\- out) (write-char #\- out)
+                  (loop (+ i 2) 'in-line-comment #f))
+                 ((and (char=? c #\/) (eq-at? (+ i 1) #\*))
+                  (write-char #\/ out) (write-char #\* out)
+                  (loop (+ i 2) 'in-block-comment #f))
+                 ((char=? c #\$)
+                  (cond
+                    ((digit-at? (+ i 1))
+                     (call-with-values
+                       (lambda () (read-int! (+ i 1)))
+                       (lambda (num next-i)
+                         (cond
+                           ((zero? num)
+                            (error "pg-format-sql: $0 is not a valid placeholder"))
+                           (else
+                            (write-param! num)
+                            (loop next-i 'default #f))))))
+                    (else
+                     (call-with-values
+                       (lambda () (read-dollar-tag! i))
+                       (lambda (tag next-i)
+                         (cond
+                           (tag
+                            (write-string tag out)
+                            (loop next-i 'in-dollar tag))
+                           (else
+                            (write-char #\$ out)
+                            (loop (+ i 1) 'default #f))))))))
+                 (else
+                  (write-char c out)
+                  (loop (+ i 1) 'default #f)))))
+            ((eq? state 'in-single-quote)
+             (let ((c (at i)))
+               (cond
+                 ((and (char=? c #\') (eq-at? (+ i 1) #\'))
+                  (write-char #\' out) (write-char #\' out)
+                  (loop (+ i 2) 'in-single-quote #f))
+                 ((char=? c #\')
+                  (write-char #\' out) (loop (+ i 1) 'default #f))
+                 (else (write-char c out) (loop (+ i 1) 'in-single-quote #f)))))
+            ((eq? state 'in-double-quote)
+             (let ((c (at i)))
+               (cond
+                 ((and (char=? c #\") (eq-at? (+ i 1) #\"))
+                  (write-char #\" out) (write-char #\" out)
+                  (loop (+ i 2) 'in-double-quote #f))
+                 ((char=? c #\")
+                  (write-char #\" out) (loop (+ i 1) 'default #f))
+                 (else (write-char c out) (loop (+ i 1) 'in-double-quote #f)))))
+            ((eq? state 'in-line-comment)
+             (let ((c (at i)))
+               (cond
+                 ((char=? c #\newline)
+                  (write-char c out) (loop (+ i 1) 'default #f))
+                 (else (write-char c out) (loop (+ i 1) 'in-line-comment #f)))))
+            ((eq? state 'in-block-comment)
+             (let ((c (at i)))
+               (cond
+                 ((and (char=? c #\*) (eq-at? (+ i 1) #\/))
+                  (write-char #\* out) (write-char #\/ out)
+                  (loop (+ i 2) 'default #f))
+                 (else (write-char c out) (loop (+ i 1) 'in-block-comment #f)))))
+            ((eq? state 'in-dollar)
+             (let ((tag-len (string-length dollar-tag)))
+               (cond
+                 ((and (char=? (at i) #\$)
+                       (<= (+ i tag-len) n)
+                       (string=? (substring sql i (+ i tag-len)) dollar-tag))
+                  (write-string dollar-tag out)
+                  (loop (+ i tag-len) 'default #f))
+                 (else (write-char (at i) out)
+                       (loop (+ i 1) 'in-dollar dollar-tag)))))
+            (else
+             (error "pg-format-sql: internal state error" state))))))
 
     ;; ============================================================
     ;; Connection pool
