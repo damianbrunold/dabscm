@@ -68,6 +68,24 @@
                 (pg-format-sql "$1" '(symbol))
                 #f)))
 
+(test-group "pg-format-sql: IN-lists from list params"
+  ;; A list expands to a parenthesised IN-list. Elements use the same
+  ;; conversion rules.
+  (test-equal "WHERE id IN (1, 2, 3)"
+              (pg-format-sql "WHERE id IN $1" '((1 2 3))))
+  (test-equal "WHERE name IN ('a', 'O''Brien')"
+              (pg-format-sql "WHERE name IN $1" '(("a" "O'Brien"))))
+  ;; Mixed types, including NULL via #f.
+  (test-equal "(1, NULL, 'x')"
+              (pg-format-sql "$1" '((1 #f "x"))))
+  ;; Empty list → (NULL) so `x IN $1` is always false rather than a
+  ;; SQL syntax error.
+  (test-equal "WHERE id IN (NULL)"
+              (pg-format-sql "WHERE id IN $1" '(())))
+  ;; List works as one positional param among others.
+  (test-equal "a = 'x' AND b IN (1, 2)"
+              (pg-format-sql "a = $1 AND b IN $2" '("x" (1 2)))))
+
 (test-group "pg-format-sql: multiple params, reuse, ordering"
   (test-equal "a = 'foo' AND b = 'bar' AND a = 'foo'"
               (pg-format-sql "a = $1 AND b = $2 AND a = $1"

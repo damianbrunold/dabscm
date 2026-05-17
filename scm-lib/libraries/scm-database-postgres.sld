@@ -783,13 +783,29 @@ Example:
 
     (define (%pg-sql-literal v)
       ;; Returns the SQL literal text for a Scheme value, or raises.
+      ;; A list is rendered as a parenthesised IN-list: (e1, e2, ...).
+      ;; Empty list becomes (NULL) so `x IN $1` is always false rather
+      ;; than a SQL syntax error.
       (cond
         ((not v)            "NULL")            ; #f → NULL
         ((eq? v #t)         "TRUE")
+        ((null? v)          "(NULL)")
         ((string? v)        (pg-quote-literal v))
         ((integer? v)       (number->string v))
         ((real? v)          (number->string (inexact v)))
         ((bytevector? v)    (%pg-bytea-literal v))
+        ((pair? v)
+         (let ((out (open-output-string)))
+           (write-char #\( out)
+           (let loop ((xs v) (first? #t))
+             (cond
+               ((null? xs) #t)
+               (else
+                (when (not first?) (write-string ", " out))
+                (write-string (%pg-sql-literal (car xs)) out)
+                (loop (cdr xs) #f))))
+           (write-char #\) out)
+           (get-output-string out)))
         (else (error "pg-format-sql: cannot encode as SQL literal" v))))
 
     (define (pg-format-sql sql params)
