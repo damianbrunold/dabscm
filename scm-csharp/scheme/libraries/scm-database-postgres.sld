@@ -1,5 +1,5 @@
 (define-library (scm database postgres)
-  (import (scm core) (scheme base) (scm crypto) (scm net sockets))
+  (import (scm core) (scheme base) (scm crypto) (scm net sockets) (srfi 18))
   (export pg-connect
           pg-close
           pg-query
@@ -15,7 +15,14 @@
           with-pg-connection
           with-pg-query
           pg-quote-literal
-          pg-quote-int)
+          pg-quote-int
+          ;; Connection pool
+          make-pg-pool
+          pg-pool?
+          pg-pool-checkout
+          pg-pool-checkin
+          pg-pool-close-all!
+          with-pg-pool-connection)
   (begin
 
     ;; --- Wire protocol helpers ---
@@ -711,4 +718,155 @@ Example:
                  (else (error "pg-quote-int: not an integer string" n)))))
         (else (error "pg-quote-int: not an integer" n))))
 
+    ;; ============================================================
+    ;; Connection pool
+    ;;
+    ;; A pg-pool is a fixed-capacity pool of idle pg-connect connections.
+    ;; Threads check out a connection for the duration of one logical
+    ;; unit of work and check it back in when done. Connections are
+    ;; serialized — a single connection is only used by one thread at
+    ;; a time, because pg-query/pg-exec are not safe to interleave on
+    ;; the same socket.
+    ;;
+    ;; The pool is lazy: connections are created on demand up to the
+    ;; capacity. If all connections are in use and capacity is reached,
+    ;; checkout waits on a condition variable until one is returned.
+    ;;
+    ;; The pool does NOT validate idle connections before handing them
+    ;; out. If postgres closes a connection from its side (idle
+    ;; timeout, restart), the next use will fail; callers can retry by
+    ;; closing the bad connection (pool-checkin pool conn #f) and
+    ;; checking out a fresh one. For long-lived pools, consider
+    ;; configuring postgres's idle_in_transaction_session_timeout and
+    ;; the application's own retry policy.
+    ;; ============================================================
+
+    (define-record-type pg-pool
+      (%make-pool host port user password database
+                  capacity idle in-use mutex cv shutdown?)
+      pg-pool?
+      (host     pool-host)
+      (port     pool-port)
+      (user     pool-user)
+      (password pool-password)
+      (database pool-database)
+      (capacity pool-capacity)
+      (idle     pool-idle     pool-idle-set!)
+      (in-use   pool-in-use   pool-in-use-set!)
+      (mutex    pool-mutex)
+      (cv       pool-cv)
+      (shutdown? pool-shutdown? pool-shutdown-set!))
+
+    (define (make-pg-pool host port user password database capacity)
+      "Syntax: (make-pg-pool host port user password database capacity)
+Library: (scm database postgres)
+Description: Creates an empty pg connection pool. Connections are created
+  lazily on first checkout, up to capacity. Use with-pg-pool-connection
+  to borrow a connection, and pg-pool-close-all! to tear it down.
+Example:
+  (define pool (make-pg-pool \"localhost\" 5432 \"u\" \"p\" \"db\" 8))"
+      (cond
+        ((not (and (integer? capacity) (> capacity 0)))
+         (error "make-pg-pool: capacity must be a positive integer" capacity))
+        (else
+         (%make-pool host port user password database
+                     capacity '() 0
+                     (make-mutex)
+                     (make-condition-variable)
+                     #f))))
+
+    (define (pg-pool-checkout pool)
+      "Syntax: (pg-pool-checkout pool)
+Library: (scm database postgres)
+Description: Borrows a connection from the pool. If an idle connection
+  is available, returns it immediately. Otherwise, opens a new one (up
+  to capacity), or waits on the pool's condition variable until a
+  checkin frees one up. Prefer with-pg-pool-connection — it handles
+  the matching checkin under exceptions."
+      (mutex-lock! (pool-mutex pool))
+      (let loop ()
+        (cond
+          ((pool-shutdown? pool)
+           (mutex-unlock! (pool-mutex pool))
+           (error "pg-pool: closed"))
+          ((pair? (pool-idle pool))
+           (let ((conn (car (pool-idle pool))))
+             (pool-idle-set!   pool (cdr (pool-idle pool)))
+             (pool-in-use-set! pool (+ 1 (pool-in-use pool)))
+             (mutex-unlock! (pool-mutex pool))
+             conn))
+          ((< (pool-in-use pool) (pool-capacity pool))
+           ;; Reserve a slot, then connect outside the lock — pg-connect
+           ;; takes ~100 ms with SCRAM, so we must not hold the mutex
+           ;; while doing it.
+           (pool-in-use-set! pool (+ 1 (pool-in-use pool)))
+           (mutex-unlock! (pool-mutex pool))
+           (guard (exn (#t
+                        ;; Connect failed — release the slot we reserved.
+                        (mutex-lock! (pool-mutex pool))
+                        (pool-in-use-set! pool (- (pool-in-use pool) 1))
+                        (condition-variable-signal! (pool-cv pool))
+                        (mutex-unlock! (pool-mutex pool))
+                        (raise exn)))
+             (pg-connect (pool-host pool)
+                         (pool-port pool)
+                         (pool-user pool)
+                         (pool-password pool)
+                         (pool-database pool))))
+          (else
+           ;; At capacity and nothing idle — wait. mutex-unlock! with a
+           ;; condition variable atomically releases the mutex and
+           ;; waits to be signaled.
+           (mutex-unlock! (pool-mutex pool) (pool-cv pool))
+           (mutex-lock!   (pool-mutex pool))
+           (loop)))))
+
+    (define (pg-pool-checkin pool conn ok?)
+      "Syntax: (pg-pool-checkin pool conn ok?)
+Library: (scm database postgres)
+Description: Returns conn to the pool. If ok? is #t, the connection
+  goes back on the idle list. If #f, the connection is closed and
+  discarded — use this when an exception suggests the connection is
+  in an unknown state. Prefer with-pg-pool-connection."
+      (mutex-lock! (pool-mutex pool))
+      (pool-in-use-set! pool (- (pool-in-use pool) 1))
+      (cond
+        ((and ok? (not (pool-shutdown? pool)))
+         (pool-idle-set! pool (cons conn (pool-idle pool)))
+         (condition-variable-signal! (pool-cv pool))
+         (mutex-unlock! (pool-mutex pool)))
+        (else
+         (condition-variable-signal! (pool-cv pool))
+         (mutex-unlock! (pool-mutex pool))
+         (guard (e (#t #f)) (pg-close conn)))))
+
+    (define (with-pg-pool-connection pool proc)
+      "Syntax: (with-pg-pool-connection pool proc)
+Library: (scm database postgres)
+Description: Checks out a connection, calls (proc conn), and checks
+  it back in. On normal return, the connection is returned to the
+  idle list. On exception, the connection is closed (not pooled) and
+  the exception is re-raised — assumes the connection's state is
+  suspect.
+Example:
+  (with-pg-pool-connection pool
+    (lambda (c) (pg-result-rows (pg-query c \"SELECT 1\"))))"
+      (let ((conn (pg-pool-checkout pool)))
+        (guard (exn (#t (pg-pool-checkin pool conn #f) (raise exn)))
+          (let ((result (proc conn)))
+            (pg-pool-checkin pool conn #t)
+            result))))
+
+    (define (pg-pool-close-all! pool)
+      "Syntax: (pg-pool-close-all! pool)
+Library: (scm database postgres)
+Description: Marks the pool as shut down and closes every idle
+  connection. Connections currently checked out will be closed when
+  they are checked back in. Subsequent checkouts raise."
+      (mutex-lock! (pool-mutex pool))
+      (pool-shutdown-set! pool #t)
+      (let ((idle (pool-idle pool)))
+        (pool-idle-set! pool '())
+        (mutex-unlock! (pool-mutex pool))
+        (for-each (lambda (c) (guard (e (#t #f)) (pg-close c))) idle)))
 ))
