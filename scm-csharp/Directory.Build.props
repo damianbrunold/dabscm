@@ -1,0 +1,10 @@
+<Project>
+  <!-- Single source of truth for the dabscm version: the VERSION file at
+       the repo root. Both the C# and Java builds read from it. -->
+  <PropertyGroup>
+    <DabscmVersion>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)../VERSION').Trim())</DabscmVersion>
+    <Version>$(DabscmVersion)</Version>
+    <FileVersion>$(DabscmVersion)</FileVersion>
+    <AssemblyVersion>$(DabscmVersion).0</AssemblyVersion>
+  </PropertyGroup>
+</Project>

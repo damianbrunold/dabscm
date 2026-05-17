@@ -102,7 +102,9 @@
                     ".")
 (copy-file (join-path "src" "main" "library.scm")
            (join-path "build" "build" "library.scm"))
-(copy-file (join-path "src" "version.txt")
+;; Version is read from the repo-root VERSION file — single source of
+;; truth shared with the C# build (see ../scm-csharp/Directory.Build.props).
+(copy-file (join-path ".." "VERSION")
            (join-path "build" "build" "version.txt"))
 (make-directory (join-path "build" "build" "libraries"))
 (for-each
