@@ -22,6 +22,13 @@ public class PrimitiveTcpConnect extends Primitive {
         int port = IntegerMath.toInt(arguments[1]);
         try {
             Socket client = new Socket(host, port);
+            // Disable Nagle's algorithm. Default-on Nagle interacts
+            // with the peer's delayed-ACK to add ~40 ms to every small
+            // request (typical of RPC-style protocols like postgres
+            // wire). Almost every TCP client in this runtime wants
+            // this off; the cost is a few more outgoing packets in
+            // bursty workloads.
+            client.setTcpNoDelay(true);
             return new NativeValue(new SchemeSocket(client));
         } catch (Exception e) {
             throw new SchemeError(pos, "tcp-connect: " + e.getMessage());

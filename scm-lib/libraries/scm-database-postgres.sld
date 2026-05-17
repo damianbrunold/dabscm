@@ -1,5 +1,6 @@
 (define-library (scm database postgres)
-  (import (scm core) (scheme base) (scm crypto) (scm net sockets) (srfi 18))
+  (import (scm core) (scheme base) (scheme time)
+          (scm crypto) (scm net sockets) (scm log) (srfi 18))
   (export pg-connect
           pg-close
           pg-query
@@ -471,12 +472,31 @@ Description: Executes a SQL query and returns a result object containing column 
   Use pg-result-columns and pg-result-rows to access the result.
 Example:
   (define result (pg-query conn \"SELECT id, name FROM users\"))"
+      ;; TEMPORARY instrumentation — splits pg-query time into:
+      ;;   send  : encoding + socket write
+      ;;   wait  : time from send-complete until first response byte
+      ;;           arrives (postgres server + network)
+      ;;   read  : reading + parsing the full response
+      ;; Remove this branch (revert to the simple body) once we've
+      ;; figured out which phase dominates.
       (let* ((in  (vector-ref conn 0))
              (out (vector-ref conn 1))
-             (bv  (open-output-bytevector)))
+             (bv  (open-output-bytevector))
+             (t0  (current-jiffy)))
         (pg-write-string! sql bv)
         (pg-send-message! out 81 (get-output-bytevector bv))   ; 'Q'
-        (pg-read-result! in)))
+        (let* ((t1 (current-jiffy))
+               (_  (peek-u8 in))   ; block until first byte arrives
+               (t2 (current-jiffy))
+               (result (pg-read-result! in))
+               (t3 (current-jiffy)))
+          (log-info "pg"
+                    (string-append
+                      "send=" (number->string (- t1 t0)) "us "
+                      "wait=" (number->string (- t2 t1)) "us "
+                      "read=" (number->string (- t3 t2)) "us "
+                      "sqllen=" (number->string (string-length sql))))
+          result)))
 
     ;; Execute a statement and discard the result (for DDL/DML)
     (define (pg-exec conn sql)

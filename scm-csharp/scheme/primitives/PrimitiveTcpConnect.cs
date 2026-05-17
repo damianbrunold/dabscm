@@ -19,6 +19,12 @@ public class PrimitiveTcpConnect : Primitive
         string host = new String(Value.AsString(arguments[0]));
         int port = IntegerMath.ToInt(arguments[1]);
         TcpClient client = new TcpClient(host, port);
+        // Disable Nagle's algorithm. Default-on Nagle interacts with
+        // the peer's delayed-ACK to add ~40 ms to every small request
+        // (typical of RPC-style protocols like postgres wire). Almost
+        // every TCP client in this runtime wants this off; the cost is
+        // a few more outgoing packets in bursty workloads.
+        client.NoDelay = true;
         return new NativeValue(new SchemeSocket(client));
     }
 }
