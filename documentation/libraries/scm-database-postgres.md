@@ -4,6 +4,18 @@ PostgreSQL database connectivity
 
 ## Exports
 
+### `make-pg-pool`
+
+```
+Syntax: (make-pg-pool host port user password database capacity)
+Library: (scm database postgres)
+Description: Creates an empty pg connection pool. Connections are created
+  lazily on first checkout, up to capacity. Use with-pg-pool-connection
+  to borrow a connection, and pg-pool-close-all! to tear it down.
+Example:
+  (define pool (make-pg-pool "localhost" 5432 "u" "p" "db" 8))
+```
+
 ### `pg-close`
 
 ```
@@ -82,23 +94,91 @@ Example:
 ### `pg-exec`
 
 ```
-Syntax: (pg-exec conn sql)
+Syntax: (pg-exec conn sql [param ...])
 Library: (scm database postgres)
-Description: Executes a SQL statement and discards the result. Suitable for DDL and DML
-  statements such as CREATE TABLE, INSERT, UPDATE, and DELETE.
+Description: Executes a SQL statement and discards the result. Suitable
+  for DDL and DML statements such as CREATE TABLE, INSERT, UPDATE, and
+  DELETE.
+
+  If params are supplied, the sql string is a template with $1, $2, ...
+  placeholders substituted via pg-format-sql.
 Example:
   (pg-exec conn "INSERT INTO users (name) VALUES ('alice')")
+  (pg-exec conn "INSERT INTO users (name, age) VALUES ($1, $2)"
+           "Ada" 36)
 ```
+
+### `pg-format-sql`
+
+```
+Syntax: (pg-format-sql sql params)
+Library: (scm database postgres)
+Description: Returns sql with $1, $2, ... placeholders substituted by
+  the corresponding (1-indexed) values from the params list, each
+  converted to a properly-escaped SQL literal. Substitution is skipped
+  inside string literals, quoted identifiers, comments, and dollar-
+  quoted strings. Raises on $0, $N out of range, or a param of an
+  unsupported type.
+Example:
+  (pg-format-sql "WHERE slug = $1 AND age > $2" '("a'b" 18))
+  => "WHERE slug = 'a''b' AND age > 18"
+```
+
+### `pg-pool-checkin`
+
+```
+Syntax: (pg-pool-checkin pool conn ok?)
+Library: (scm database postgres)
+Description: Returns conn to the pool. If ok? is #t, the connection
+  goes back on the idle list. If #f, the connection is closed and
+  discarded — use this when an exception suggests the connection is
+  in an unknown state. Prefer with-pg-pool-connection.
+```
+
+### `pg-pool-checkout`
+
+```
+Syntax: (pg-pool-checkout pool)
+Library: (scm database postgres)
+Description: Borrows a connection from the pool. If an idle connection
+  is available, returns it immediately. Otherwise, opens a new one (up
+  to capacity), or waits on the pool's condition variable until a
+  checkin frees one up. Prefer with-pg-pool-connection — it handles
+  the matching checkin under exceptions.
+```
+
+### `pg-pool-close-all!`
+
+```
+Syntax: (pg-pool-close-all! pool)
+Library: (scm database postgres)
+Description: Marks the pool as shut down and closes every idle
+  connection. Connections currently checked out will be closed when
+  they are checked back in. Subsequent checkouts raise.
+```
+
+### `pg-pool?`
+
+*(no documentation)*
 
 ### `pg-query`
 
 ```
-Syntax: (pg-query conn sql)
+Syntax: (pg-query conn sql [param ...])
 Library: (scm database postgres)
-Description: Executes a SQL query and returns a result object containing column names and rows.
-  Use pg-result-columns and pg-result-rows to access the result.
+Description: Executes a SQL query and returns a result object containing
+  column names and rows. Use pg-result-columns and pg-result-rows to
+  access the result.
+
+  If params are supplied, the sql string is treated as a template with
+  $1, $2, ... placeholders that are substituted with the corresponding
+  param values. See pg-format-sql for the conversion rules. With no
+  params, sql is sent verbatim.
 Example:
-  (define result (pg-query conn "SELECT id, name FROM users"))
+  (pg-query conn "SELECT * FROM users")
+  (pg-query conn "SELECT * FROM users WHERE id = $1" 42)
+  (pg-query conn "SELECT * FROM users WHERE name = $1 AND age > $2"
+            "Ada" 30)
 ```
 
 ### `pg-quote-int`
@@ -172,6 +252,21 @@ Description: Opens a connection, calls (proc conn), and closes the connection on
 Example:
   (with-pg-connection "localhost" 5432 "user" "pass" "db"
     (lambda (conn) (display (pg-result->alist-list (pg-query conn "SELECT 1")))))
+```
+
+### `with-pg-pool-connection`
+
+```
+Syntax: (with-pg-pool-connection pool proc)
+Library: (scm database postgres)
+Description: Checks out a connection, calls (proc conn), and checks
+  it back in. On normal return, the connection is returned to the
+  idle list. On exception, the connection is closed (not pooled) and
+  the exception is re-raised — assumes the connection's state is
+  suspect.
+Example:
+  (with-pg-pool-connection pool
+    (lambda (c) (pg-result-rows (pg-query c "SELECT 1"))))
 ```
 
 ### `with-pg-query`

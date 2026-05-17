@@ -2351,6 +2351,7 @@
   </div>
   <div class="lib-body">
     <div class="exports" data-lib="scm-database-postgres">
+      make-pg-pool
       pg-close
       pg-connect
       pg-cursor-close
@@ -2359,6 +2360,11 @@
       pg-cursor-for-each
       pg-cursor-open
       pg-exec
+      pg-format-sql
+      pg-pool-checkin
+      pg-pool-checkout
+      pg-pool-close-all!
+      pg-pool?
       pg-query
       pg-quote-int
       pg-quote-literal
@@ -2366,6 +2372,7 @@
       pg-result-columns
       pg-result-rows
       with-pg-connection
+      with-pg-pool-connection
       with-pg-query
     </div>
     <div class="doc-panel" id="scm-database-postgres-doc-panel"></div>
@@ -4001,6 +4008,7 @@ const docs = {
     "run-migrations!": "Syntax: (run-migrations! exec-sql! query-rows dir [options])\nLibrary: (scm database migrations)\nDescription: Applies pending .sql migrations from dir in lexical order.\n  Each migration runs inside its own transaction (BEGIN / COMMIT /\n  ROLLBACK on failure). The tracking table is created if it does not\n  exist. Idempotent: already-applied files are skipped silently.\n  options is an alist with keys:\n    'table-name        — tracking table name (default \"schema_migrations\")\n    'create-table-sql  — full CREATE TABLE statement for the tracking\n                         table (override for non-PostgreSQL databases)\n    'log-proc          — (lambda (msg) ...) called once per applied file\n                         and once at end of run. Default: no logging.\nExample:\n  (run-migrations!\n    (lambda (sql) (pg-exec conn sql))\n    (lambda (sql) (pg-result-rows (pg-query conn sql)))\n    \"./migrations\"\n    '((log-proc ,(lambda (m) (display m) (newline)))))",
   },
   "scm-database-postgres": {
+    "make-pg-pool": "Syntax: (make-pg-pool host port user password database capacity)\nLibrary: (scm database postgres)\nDescription: Creates an empty pg connection pool. Connections are created\n  lazily on first checkout, up to capacity. Use with-pg-pool-connection\n  to borrow a connection, and pg-pool-close-all! to tear it down.\nExample:\n  (define pool (make-pg-pool \"localhost\" 5432 \"u\" \"p\" \"db\" 8))",
     "pg-close": "Syntax: (pg-close conn)\nLibrary: (scm database postgres)\nDescription: Closes the TCP connection to the PostgreSQL server.\nExample:\n  (pg-close conn)",
     "pg-connect": "Syntax: (pg-connect host port user password database)\nLibrary: (scm database postgres)\nDescription: Opens a TCP connection to a PostgreSQL server and performs authentication.\n  Supports trust, MD5, and SCRAM-SHA-256 authentication. Returns a connection object.\nExample:\n  (define conn (pg-connect \"localhost\" 5432 \"alice\" \"secret\" \"mydb\"))",
     "pg-cursor-close": "Syntax: (pg-cursor-close cursor)\nLibrary: (scm database postgres)\nDescription: Closes the cursor and commits the transaction. Returns #t. Safe to call\n  multiple times; subsequent calls are no-ops.\nExample:\n  (pg-cursor-close cur)",
@@ -4008,14 +4016,19 @@ const docs = {
     "pg-cursor-fetch": "Syntax: (pg-cursor-fetch cursor [n])\nLibrary: (scm database postgres)\nDescription: Fetches up to n rows from cursor (default 1). Returns a list of row vectors.\n  Returns an empty list when the cursor is exhausted.\nExample:\n  (pg-cursor-fetch cur 100)",
     "pg-cursor-for-each": "Syntax: (pg-cursor-for-each cursor proc [batch-size])\nLibrary: (scm database postgres)\nDescription: Calls proc on each row vector from cursor in batches (default 100).\n  Automatically closes the cursor when all rows are consumed.\nExample:\n  (pg-cursor-for-each cur (lambda (row) (display (vector-ref row 0))) 50)",
     "pg-cursor-open": "Syntax: (pg-cursor-open conn sql)\nLibrary: (scm database postgres)\nDescription: Opens a server-side cursor for the given SQL query. Returns a cursor object.\n  The query runs inside a transaction; call pg-cursor-close when done.\nExample:\n  (define cur (pg-cursor-open conn \"SELECT id, name FROM users ORDER BY id\"))",
-    "pg-exec": "Syntax: (pg-exec conn sql)\nLibrary: (scm database postgres)\nDescription: Executes a SQL statement and discards the result. Suitable for DDL and DML\n  statements such as CREATE TABLE, INSERT, UPDATE, and DELETE.\nExample:\n  (pg-exec conn \"INSERT INTO users (name) VALUES ('alice')\")",
-    "pg-query": "Syntax: (pg-query conn sql)\nLibrary: (scm database postgres)\nDescription: Executes a SQL query and returns a result object containing column names and rows.\n  Use pg-result-columns and pg-result-rows to access the result.\nExample:\n  (define result (pg-query conn \"SELECT id, name FROM users\"))",
+    "pg-exec": "Syntax: (pg-exec conn sql [param ...])\nLibrary: (scm database postgres)\nDescription: Executes a SQL statement and discards the result. Suitable\n  for DDL and DML statements such as CREATE TABLE, INSERT, UPDATE, and\n  DELETE.\n\n  If params are supplied, the sql string is a template with $1, $2, ...\n  placeholders substituted via pg-format-sql.\nExample:\n  (pg-exec conn \"INSERT INTO users (name) VALUES ('alice')\")\n  (pg-exec conn \"INSERT INTO users (name, age) VALUES ($1, $2)\"\n           \"Ada\" 36)",
+    "pg-format-sql": "Syntax: (pg-format-sql sql params)\nLibrary: (scm database postgres)\nDescription: Returns sql with $1, $2, ... placeholders substituted by\n  the corresponding (1-indexed) values from the params list, each\n  converted to a properly-escaped SQL literal. Substitution is skipped\n  inside string literals, quoted identifiers, comments, and dollar-\n  quoted strings. Raises on $0, $N out of range, or a param of an\n  unsupported type.\nExample:\n  (pg-format-sql \"WHERE slug = $1 AND age > $2\" '(\"a'b\" 18))\n  => \"WHERE slug = 'a''b' AND age > 18\"",
+    "pg-pool-checkin": "Syntax: (pg-pool-checkin pool conn ok?)\nLibrary: (scm database postgres)\nDescription: Returns conn to the pool. If ok? is #t, the connection\n  goes back on the idle list. If #f, the connection is closed and\n  discarded — use this when an exception suggests the connection is\n  in an unknown state. Prefer with-pg-pool-connection.",
+    "pg-pool-checkout": "Syntax: (pg-pool-checkout pool)\nLibrary: (scm database postgres)\nDescription: Borrows a connection from the pool. If an idle connection\n  is available, returns it immediately. Otherwise, opens a new one (up\n  to capacity), or waits on the pool's condition variable until a\n  checkin frees one up. Prefer with-pg-pool-connection — it handles\n  the matching checkin under exceptions.",
+    "pg-pool-close-all!": "Syntax: (pg-pool-close-all! pool)\nLibrary: (scm database postgres)\nDescription: Marks the pool as shut down and closes every idle\n  connection. Connections currently checked out will be closed when\n  they are checked back in. Subsequent checkouts raise.",
+    "pg-query": "Syntax: (pg-query conn sql [param ...])\nLibrary: (scm database postgres)\nDescription: Executes a SQL query and returns a result object containing\n  column names and rows. Use pg-result-columns and pg-result-rows to\n  access the result.\n\n  If params are supplied, the sql string is treated as a template with\n  $1, $2, ... placeholders that are substituted with the corresponding\n  param values. See pg-format-sql for the conversion rules. With no\n  params, sql is sent verbatim.\nExample:\n  (pg-query conn \"SELECT * FROM users\")\n  (pg-query conn \"SELECT * FROM users WHERE id = $1\" 42)\n  (pg-query conn \"SELECT * FROM users WHERE name = $1 AND age > $2\"\n            \"Ada\" 30)",
     "pg-quote-int": "Syntax: (pg-quote-int n)\nLibrary: (scm database postgres)\nDescription: Returns the decimal representation of an integer n, validated as\n  integer. Accepts an integer or a numeric string. Raises an error for any\n  other input, preventing callers from accidentally splicing arbitrary text\n  through what was intended to be a numeric parameter.\nExample:\n  (pg-quote-int 42)   => \"42\"\n  (pg-quote-int \"42\") => \"42\"\n  (pg-quote-int \"x\") raises an error",
     "pg-quote-literal": "Syntax: (pg-quote-literal s)\nLibrary: (scm database postgres)\nDescription: Returns s wrapped in single quotes with internal single quotes\n  doubled — the SQL standard string-literal escape, safe under PostgreSQL's\n  default standard_conforming_strings=on (i.e. backslashes are literal).\n  Use for any user-controlled string interpolated into SQL.\nExample:\n  (pg-quote-literal \"O'Brien\") => \"'O''Brien'\"\n  (pg-quote-literal \"\\\\n\")    => \"'\\\\n'\"",
     "pg-result->alist-list": "Syntax: (pg-result->alist-list result)\nLibrary: (scm database postgres)\nDescription: Converts a query result to a list of association lists, one per row.\n  Each alist maps column name strings to value strings (or #f for NULL).\nExample:\n  (pg-result->alist-list result) => ((\"id\" . \"1\") (\"name\" . \"alice\")) ...)",
     "pg-result-columns": "Syntax: (pg-result-columns result)\nLibrary: (scm database postgres)\nDescription: Returns the column name vector from a query result.\nExample:\n  (pg-result-columns result) => #(\"id\" \"name\")",
     "pg-result-rows": "Syntax: (pg-result-rows result)\nLibrary: (scm database postgres)\nDescription: Returns the list of row vectors from a query result. Each row is a vector of\n  string values, or #f for NULL values.\nExample:\n  (pg-result-rows result) => (#(\"1\" \"alice\") #(\"2\" \"bob\"))",
     "with-pg-connection": "Syntax: (with-pg-connection host port user password database proc)\nLibrary: (scm database postgres)\nDescription: Opens a connection, calls (proc conn), and closes the connection on exit,\n  even if an exception is raised.\nExample:\n  (with-pg-connection \"localhost\" 5432 \"user\" \"pass\" \"db\"\n    (lambda (conn) (display (pg-result->alist-list (pg-query conn \"SELECT 1\")))))",
+    "with-pg-pool-connection": "Syntax: (with-pg-pool-connection pool proc)\nLibrary: (scm database postgres)\nDescription: Checks out a connection, calls (proc conn), and checks\n  it back in. On normal return, the connection is returned to the\n  idle list. On exception, the connection is closed (not pooled) and\n  the exception is re-raised — assumes the connection's state is\n  suspect.\nExample:\n  (with-pg-pool-connection pool\n    (lambda (c) (pg-result-rows (pg-query c \"SELECT 1\"))))",
     "with-pg-query": "Syntax: (with-pg-query host port user password database sql proc)\nLibrary: (scm database postgres)\nDescription: Opens a connection and cursor, calls (proc conn cursor), and closes both\n  on exit, even if an exception is raised.\nExample:\n  (with-pg-query \"localhost\" 5432 \"user\" \"pass\" \"db\" \"SELECT * FROM t\"\n    (lambda (conn cursor) (pg-cursor-for-each cursor display)))",
   },
   "scm-database-sqlserver": {
