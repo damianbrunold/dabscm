@@ -781,11 +781,27 @@ Example:
                (write-char (%pg-hex-nibble lo) out)
                (loop (+ i 1))))))))
 
+    (define (%pg-in-list-from-generator! n get out)
+      ;; Writes (e1, e2, ..., en) to `out` using (get i) for each element.
+      ;; n=0 emits (NULL) so `x IN $1` stays always-false rather than a
+      ;; SQL syntax error.
+      (cond
+        ((= n 0) (write-string "(NULL)" out))
+        (else
+         (write-char #\( out)
+         (let loop ((i 0))
+           (cond
+             ((= i n) (write-char #\) out))
+             (else
+              (when (> i 0) (write-string ", " out))
+              (write-string (%pg-sql-literal (get i)) out)
+              (loop (+ i 1))))))))
+
     (define (%pg-sql-literal v)
       ;; Returns the SQL literal text for a Scheme value, or raises.
-      ;; A list is rendered as a parenthesised IN-list: (e1, e2, ...).
-      ;; Empty list becomes (NULL) so `x IN $1` is always false rather
-      ;; than a SQL syntax error.
+      ;; A list or vector is rendered as a parenthesised IN-list:
+      ;; (e1, e2, ...). Empty becomes (NULL) so `x IN $1` is always
+      ;; false rather than a SQL syntax error.
       (cond
         ((not v)            "NULL")            ; #f → NULL
         ((eq? v #t)         "TRUE")
@@ -795,16 +811,19 @@ Example:
         ((real? v)          (number->string (inexact v)))
         ((bytevector? v)    (%pg-bytea-literal v))
         ((pair? v)
+         (let ((out (open-output-string))
+               (vec (list->vector v)))
+           (%pg-in-list-from-generator!
+             (vector-length vec)
+             (lambda (i) (vector-ref vec i))
+             out)
+           (get-output-string out)))
+        ((vector? v)
          (let ((out (open-output-string)))
-           (write-char #\( out)
-           (let loop ((xs v) (first? #t))
-             (cond
-               ((null? xs) #t)
-               (else
-                (when (not first?) (write-string ", " out))
-                (write-string (%pg-sql-literal (car xs)) out)
-                (loop (cdr xs) #f))))
-           (write-char #\) out)
+           (%pg-in-list-from-generator!
+             (vector-length v)
+             (lambda (i) (vector-ref v i))
+             out)
            (get-output-string out)))
         (else (error "pg-format-sql: cannot encode as SQL literal" v))))
 
