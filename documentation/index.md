@@ -67,6 +67,7 @@
 | [`(scm feed)`](libraries/scm-feed.md) |  |
 | [`(scm fs)`](libraries/scm-fs.md) | Filesystem operations — paths, directories, files |
 | [`(scm glob)`](libraries/scm-glob.md) | Filename globbing and pattern matching |
+| [`(scm html builder)`](libraries/scm-html-builder.md) |  |
 | [`(scm html)`](libraries/scm-html.md) |  |
 | [`(scm io)`](libraries/scm-io.md) | Extended I/O — formatting, port utilities, property lists |
 | [`(scm json)`](libraries/scm-json.md) | JSON file reading |

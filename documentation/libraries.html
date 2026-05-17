@@ -342,6 +342,7 @@
   <a href="#scm-feed" class="scm">(scm feed)</a>
   <a href="#scm-fs" class="scm">(scm fs)</a>
   <a href="#scm-glob" class="scm">(scm glob)</a>
+  <a href="#scm-html-builder" class="scm">(scm html builder)</a>
   <a href="#scm-html" class="scm">(scm html)</a>
   <a href="#scm-io" class="scm">(scm io)</a>
   <a href="#scm-json" class="scm">(scm json)</a>
@@ -2542,6 +2543,25 @@
   </div>
 </div>
 
+<div class="library scm" id="scm-html-builder">
+  <div class="lib-header">
+    <span class="lib-name">(scm html builder)</span>
+    <span class="lib-desc"></span>
+    <span class="lib-count" id="scm-html-builder-count"></span>
+  </div>
+  <div class="lib-body">
+    <div class="exports" data-lib="scm-html-builder">
+      html-&gt;port
+      html-&gt;string
+      html5
+      raw
+      raw-value
+      raw?
+    </div>
+    <div class="doc-panel" id="scm-html-builder-doc-panel"></div>
+  </div>
+</div>
+
 <div class="library scm" id="scm-html">
   <div class="lib-header">
     <span class="lib-name">(scm html)</span>
@@ -4077,6 +4097,12 @@ const docs = {
   "scm-glob": {
     "glob": "Syntax: (glob pattern)\nLibrary: (scm glob)\nDescription: Returns a sorted list of file and directory paths matching\n  the glob pattern. Supports * (any characters except path separator),\n  ? (single character), [...] character classes, and ** (recursive\n  globstar matching zero or more directory levels). Dotfiles are not\n  matched by *, ?, or ** unless the pattern segment explicitly starts\n  with a dot. Returns an empty list if no matches are found or the\n  base directory does not exist.\nExample:\n  (glob \"src/*.scm\") => (\"src/bar.scm\" \"src/foo.scm\")\n  (glob \"**/*.sld\") => (\"lib/a.sld\" \"lib/sub/b.sld\")",
     "glob-match?": "Syntax: (glob-match? pattern string)\nLibrary: (scm glob)\nDescription: Tests whether string matches the glob pattern. Supports *\n  (any characters except path separator), ? (single character except path\n  separator), [...] character classes with ranges and negation ([!...]),\n  and ** (matches zero or more path segments including separators).\n  This is a pure string operation with no filesystem access.\nExample:\n  (glob-match? \"*.scm\" \"foo.scm\")       => #t\n  (glob-match? \"src/**/*.scm\" \"src/lib/foo.scm\") => #t\n  (glob-match? \"[abc].txt\" \"b.txt\")     => #t",
+  },
+  "scm-html-builder": {
+    "html->port": "Syntax: (html->port port sxml)\nLibrary: (scm html builder)\nDescription: Walks sxml and writes the HTML5 representation to port.\n  Useful for streaming responses or appending to a larger string-port.\nExample:\n  (html->port (current-output-port) '(p \"hi\"))",
+    "html->string": "Syntax: (html->string sxml)\nLibrary: (scm html builder)\nDescription: Walks sxml and returns the HTML5 representation as a string.\n  String and number text is escaped automatically; (raw \"...\") wrappers\n  pass through verbatim. Attribute values follow the same rules; an\n  attribute whose value is #f is omitted, #t emits the name as a boolean\n  attribute.\nExample:\n  (html->string `(p (@ (class \"hi\")) \"hello \" ,user))\n  ;; → \"<p class=\\\"hi\\\">hello &lt;input&gt;</p>\" when user is \"<input>\"",
+    "html5": "Syntax: (html5 body ...)\nLibrary: (scm html builder)\nDescription: Returns SXML for a complete HTML5 document. The body\n  arguments are spliced into a single <html> element, prefixed by the\n  HTML5 doctype declaration. Render with html->string or html->port.\nExample:\n  (html->string\n    (html5 '(head (title \"hi\"))\n           '(body (p \"hello\"))))\n  ;; → \"<!doctype html>\\n<html><head><title>hi</title></head>...\"",
+    "raw": "Syntax: (raw s)\nLibrary: (scm html builder)\nDescription: Wraps a string so the HTML builder emits it verbatim, without\n  escaping. Use for trusted HTML fragments (rendered markdown, server-\n  generated SVG, content from another HTML builder pass). Passing user\n  input through raw defeats the library's XSS protection — only use it\n  with HTML you produced yourself.\nExample:\n  (html->string `(div ,(raw \"<b>bold</b>\"))) => \"<div><b>bold</b></div>\"",
   },
   "scm-html": {
     "html-attr-escape": "Syntax: (html-escape s)\nLibrary: (scm html)\nDescription: Escapes the five HTML metacharacters (&, <, >, \", ') in s so\n  the result is safe to splice into HTML text content or attribute values\n  (quoted with either single or double quotes).\nExample:\n  (html-escape \"a < b & c\") => \"a &lt; b &amp; c\"\n  (html-escape \"O'Brien\") => \"O&#39;Brien\"",
