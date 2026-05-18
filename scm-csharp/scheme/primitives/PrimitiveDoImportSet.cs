@@ -115,7 +115,9 @@ public class PrimitiveDoImportSet : Primitive
             }
         }
 
-        // Base case: plain library name — load and return its exports
+        // Base case: plain library name — load and return its exports.
+        // We propagate Cells (not values) so importers share the exporter's
+        // binding cells; `set!` in either module is visible in the other.
         new PrimitiveLoadModule(modules).Apply(pos, new object[] { importSpec });
         var plainModule = modules.GetModuleRequired(pos, Modules.AsModuleName(importSpec));
         var baseResult = new ImportResult();

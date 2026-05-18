@@ -10,9 +10,26 @@ import java.util.Set;
 public class Modules {
     private HashMap<String, Module> modules = new HashMap<>();
     private HashMap<String, String> moduleLoadPaths = new HashMap<>();
-    private Set<String> loadingModules = new HashSet<>();
-    private Module currentModule;
+    // currentModule and loadingModules are per-thread so that, once the
+    // bindings map is shared across threads (step 3), threads can have
+    // independent (module ...)/import state without racing. See
+    // notes/threading-shared-bindings.md. The Default field is what
+    // newly-arriving threads (i.e. threads that haven't set their own
+    // value yet) see — established at construction / deepClone time.
+    private final ThreadLocal<Module> currentModuleTLS = new ThreadLocal<>();
+    private Module currentModuleDefault;
+    private final ThreadLocal<Set<String>> loadingModules =
+        ThreadLocal.withInitial(HashSet::new);
     private Modules snapshot;
+
+    // Serializes library loading. Library load mutates `modules`,
+    // `moduleLoadPaths`, and the per-module bindings dicts (via bind/
+    // importBinding). Now that Modules is shared across threads, two
+    // threads importing the same library concurrently would race on
+    // these mutations. The lock is reentrant (synchronized) so nested
+    // %load-module calls during transitive imports are fine. See
+    // notes/threading-shared-bindings.md.
+    public final Object loadLock = new Object();
 
     public Primitives primitives;
     public IEvaluator evaluator;
@@ -35,16 +52,17 @@ public class Modules {
         return getModuleScope(getCurrentModule().getName());
     }
 
-    public boolean isLoading(String name) { return loadingModules.contains(name); }
-    public void markLoading(String name) { loadingModules.add(name); }
-    public void unmarkLoading(String name) { loadingModules.remove(name); }
+    public boolean isLoading(String name) { return loadingModules.get().contains(name); }
+    public void markLoading(String name) { loadingModules.get().add(name); }
+    public void unmarkLoading(String name) { loadingModules.get().remove(name); }
 
     public Modules() {
         this.bindingTable = new BindingTable();
         this.moduleScopes = new HashMap<>();
         var scm_core = new Module("scm core");
         this.modules.put("scm core", scm_core);
-        this.currentModule = scm_core;
+        this.currentModuleDefault = scm_core;
+        this.currentModuleTLS.set(scm_core);
 
         this.primitives = new Primitives();
         this.primitives.init(this);
@@ -84,7 +102,8 @@ public class Modules {
         for (var entry : src.moduleLoadPaths.entrySet()) {
             moduleLoadPaths.put(entry.getKey(), entry.getValue());
         }
-        this.currentModule = currentModule;
+        this.currentModuleDefault = currentModule;
+        this.currentModuleTLS.set(currentModule);
         this.primitives = src.primitives;
     }
 
@@ -100,12 +119,16 @@ public class Modules {
             clone.modules.put(kv.getKey(), kv.getValue().clone());
         for (var kv : moduleLoadPaths.entrySet())
             clone.moduleLoadPaths.put(kv.getKey(), kv.getValue());
-        clone.currentModule = clone.modules.get(currentModule.getName());
+        Module parentCurrent = getCurrentModule();
+        Module clonedCurrent = clone.modules.get(parentCurrent.getName());
+        clone.currentModuleDefault = clonedCurrent;
+        clone.currentModuleTLS.set(clonedCurrent);
         return clone;
     }
 
     public Module getCurrentModule() {
-        return this.currentModule;
+        Module m = currentModuleTLS.get();
+        return m != null ? m : currentModuleDefault;
     }
 
     public Module createModule(String name) {
@@ -120,8 +143,8 @@ public class Modules {
         if (module == null) {
             module = createModule(moduleName);
         }
-        this.currentModule = module;
-        return this.currentModule;
+        this.currentModuleTLS.set(module);
+        return module;
     }
 
     public boolean hasModule(String name) {
@@ -178,8 +201,10 @@ public class Modules {
             modules.put(kv.getKey(), kv.getValue().clone());
         moduleLoadPaths.clear();
         moduleLoadPaths.putAll(snapshot.moduleLoadPaths);
-        currentModule = modules.get(snapshot.currentModule.getName());
-        loadingModules.clear();
+        Module restored = modules.get(snapshot.currentModuleDefault.getName());
+        currentModuleDefault = restored;
+        currentModuleTLS.set(restored);
+        loadingModules.get().clear();
     }
 
     public void updateModuleVar() {

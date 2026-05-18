@@ -175,4 +175,47 @@
 (test-group "current-exception-handler"
   (test-assert (procedure? (current-exception-handler))))
 
+;;; ---- Shared top-level bindings across threads ----
+;; Regression for the threading-shared-bindings change: top-level set!
+;; must be visible across threads. Before the Cell + deepClone-removal
+;; refactor, thread-start! deep-cloned every module's bindings, so a
+;; worker thread's set! on a top-level variable was invisible to the
+;; spawning thread. See notes/threading-shared-bindings.md.
+
+(define shared-counter 0)
+(define shared-flag #f)
+
+(test-group "shared top-level set! visible across threads"
+  ;; Worker mutates a top-level binding; primordial thread observes it.
+  (test-equal 'observed
+    (begin
+      (set! shared-flag #f)
+      (let ((t (make-thread (lambda () (set! shared-flag 'observed)))))
+        (thread-start! t)
+        (thread-join! t)
+        shared-flag))))
+
+(test-group "shared counter under mutex"
+  ;; 4 workers each increment a shared top-level counter 250 times under
+  ;; a mutex. Final value must be 1000. Pre-fix this returned 0 because
+  ;; each thread had its own clone of the binding.
+  (test-equal 1000
+    (let ((m (make-mutex)))
+      (set! shared-counter 0)
+      (let ((ts (map (lambda (_)
+                       (let ((t (make-thread
+                                  (lambda ()
+                                    (let loop ((k 0))
+                                      (cond ((< k 250)
+                                             (mutex-lock! m)
+                                             (set! shared-counter
+                                                   (+ shared-counter 1))
+                                             (mutex-unlock! m)
+                                             (loop (+ k 1)))))))))
+                         (thread-start! t)
+                         t))
+                     '(0 1 2 3))))
+        (for-each thread-join! ts)
+        shared-counter))))
+
 (test-end "srfi-18")

@@ -1232,11 +1232,11 @@ Example:
   (define q (make-parameter 10 (lambda (x) (* x 2))))
   (q)      => 20"
       (let* ((convert (if (null? rest) (lambda (x) x) (car rest)))
-             (val (convert init)))
+             (p ((%primitive "%make-parameter") (convert init))))
         (lambda args
           (if (null? args)
-              val
-              (set! val (convert (car args)))))))
+              (p)
+              (p (convert (car args)))))))
 
     (define-syntax parameterize
       "Syntax: (parameterize ((param val) ...) body ...)

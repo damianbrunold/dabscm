@@ -29,7 +29,11 @@ public class PrimitiveThreadStartB : Primitive
             SchemeThread.CurrentThread = t;
             try
             {
-                VM vm = new VM(t.modules.DeepClone());
+                // Share Modules directly with the parent thread. Bindings
+                // are now Cell-indirected and currentModule/loadingModules
+                // are per-thread, so set! on top-level bindings is visible
+                // across threads. See notes/threading-shared-bindings.md.
+                VM vm = new VM(t.modules);
                 Lambda wrapper = new Lambda(Value.NIL, Instruction.Seq(
                     new Instruction(Opcode.ARGS, 0),
                     new Instruction(Opcode.CONST, lambda),

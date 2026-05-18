@@ -8,8 +8,8 @@ public class Module {
     private Object decl;
     private boolean autoExport = false;
 
-    public Map<String, Object> bindings = new HashMap<>();
-    public Map<String, Object> exports = new HashMap<>();
+    public Map<String, Cell> bindings = new HashMap<>();
+    public Map<String, Cell> exports = new HashMap<>();
     public Map<String, String> provenance = new HashMap<>();
 
     public Module(String name) {
@@ -36,15 +36,19 @@ public class Module {
     }
 
     public Object resolve(SourcePos pos, String symbol) {
-        Object result = bindings.get(Value.intern(symbol));
-        if (result == null) {
+        Cell cell = bindings.get(Value.intern(symbol));
+        if (cell == null) {
             throw new SchemeError(pos, name + ": ~a is not bound", symbol);
         }
-        return result;
+        return cell.value;
     }
 
     public Object resolve(String symbol) {
         return resolve(null, symbol);
+    }
+
+    public Cell resolveCell(String symbol) {
+        return bindings.get(Value.intern(symbol));
     }
 
     public void bind(String symbol, Object value) {
@@ -53,20 +57,28 @@ public class Module {
 
     public void bind(String symbol, Object value, String origin) {
         String interned = Value.intern(symbol);
-        bindings.put(interned, value);
+        Cell existing = bindings.get(interned);
+        if (existing != null) {
+            existing.value = value;
+        } else {
+            bindings.put(interned, new Cell(value));
+        }
         provenance.put(interned, origin);
         if (autoExport) {
-            exports.put(interned, value);
+            exports.put(interned, bindings.get(interned));
         }
     }
 
-    public void importBinding(SourcePos pos, String symbol, Object value, String origin) {
+    public void importBinding(SourcePos pos, String symbol, Cell cell, String origin) {
         String interned = Value.intern(symbol);
         String existingOrigin = provenance.get(interned);
         if (existingOrigin != null && !existingOrigin.equals(origin)) {
-            Object existingValue = bindings.get(interned);
-            if (existingValue != null && existingValue == value) {
-                // Same object — no conflict
+            Cell existingCell = bindings.get(interned);
+            if (existingCell != null &&
+                (existingCell == cell || existingCell.value == cell.value)) {
+                // Same cell, or two cells wrapping the same value
+                // (e.g. two libraries each binding the same primitive) —
+                // no conflict
             } else if ("scm core".equals(existingOrigin) || "scm core".equals(origin)) {
                 // scm core provides bootstrap versions that can be superseded
             } else if (Scheme.strictImports) {
@@ -75,24 +87,26 @@ public class Module {
                     symbol, existingOrigin, origin);
             }
         }
-        bindings.put(interned, value);
+        bindings.put(interned, cell);
         provenance.put(interned, origin);
     }
 
     public void export(String symbol) {
         String interned = Value.intern(symbol);
-        if (!bindings.containsKey(interned)) {
+        Cell cell = bindings.get(interned);
+        if (cell == null) {
             throw new SchemeError("library '~a': cannot export '~a': not defined or imported", name, symbol);
         }
-        exports.put(interned, bindings.get(interned));
+        exports.put(interned, cell);
     }
 
     public void export(String src, String dest) {
         String internedSrc = Value.intern(src);
-        if (!bindings.containsKey(internedSrc)) {
+        Cell cell = bindings.get(internedSrc);
+        if (cell == null) {
             throw new SchemeError("library '~a': cannot export '~a': not defined or imported", name, src);
         }
-        exports.put(Value.intern(dest), bindings.get(internedSrc));
+        exports.put(Value.intern(dest), cell);
     }
 
     @Override

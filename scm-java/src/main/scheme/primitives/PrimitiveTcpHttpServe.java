@@ -178,7 +178,7 @@ public class PrimitiveTcpHttpServe extends Primitive {
 
                                 SchemeHttpResponse resp;
                                 try {
-                                    VM vm = new VM(modules.deepClone());
+                                    VM vm = new VM(modules);
                                     Lambda wrapper = new Lambda(Value.NIL, Instruction.seq(
                                         new Instruction(Opcode.ARGS, 0),
                                         new Instruction(Opcode.CONST, reqNV),

@@ -35,7 +35,10 @@ public class PrimitiveModuleBind extends Primitive {
         String origin = module.provenance.getOrDefault(symbol, module.getName());
         module.bind(symbol, value, origin);
         if (module.exports.containsKey(symbol)) {
-            module.exports.put(symbol, value);
+            // bind mutated the existing cell in place (or created a fresh one);
+            // either way, point exports at the current cell so any sharing
+            // importers see the new value too.
+            module.exports.put(symbol, module.bindings.get(symbol));
         }
         return Value.T;
     }

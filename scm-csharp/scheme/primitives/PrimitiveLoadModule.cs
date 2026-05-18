@@ -24,6 +24,11 @@ public class PrimitiveLoadModule : Primitive
     {
         CheckArgs(pos, arguments, 1, 2);
         var moduleName = Modules.AsModuleName(arguments[0]);
+        // Serialize library loading so concurrent imports don't race on
+        // the modules dict and per-module bindings. Reentrant lock allows
+        // transitive (%load-module) calls from inside a load.
+        lock (modules.LoadLock)
+        {
         if (modules.HasModule(moduleName))
         {
             return Value.T;
@@ -90,5 +95,6 @@ public class PrimitiveLoadModule : Primitive
             modules.UnmarkLoading(moduleName);
             modules.SetCurrentModule(originalModule.Name);
         }
+        } // lock (modules.LoadLock)
     }
 }

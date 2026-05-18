@@ -39,6 +39,10 @@ public class PrimitiveLoadModule extends Primitive {
     public Object apply(SourcePos pos, Object[] arguments) {
         checkArgs(pos, arguments, 1, 2);
         var moduleName = Modules.asModuleName(arguments[0]);
+        // Serialize library loading so concurrent imports don't race on
+        // the modules dict and per-module bindings. Reentrant monitor
+        // allows transitive (%load-module) calls from inside a load.
+        synchronized (modules.loadLock) {
         if (modules.hasModule(moduleName))
             return Value.T;
         if (modules.isLoading(moduleName)) {
@@ -90,5 +94,6 @@ public class PrimitiveLoadModule extends Primitive {
             modules.unmarkLoading(moduleName);
             modules.setCurrentModule(originalModule.getName());
         }
+        } // synchronized (modules.loadLock)
     }
 }

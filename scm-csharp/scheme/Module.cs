@@ -4,8 +4,8 @@ public class Module
 {
     public string Name { get; }
     public object Decl { get; }
-    public Dictionary<string, object> Bindings = new();
-    public Dictionary<string, object> Exports = new();
+    public Dictionary<string, Cell> Bindings = new();
+    public Dictionary<string, Cell> Exports = new();
     public Dictionary<string, string> Provenance = new();
 
     private bool autoExport = false;
@@ -27,8 +27,15 @@ public class Module
 
     public object Resolve(SourcePos? pos, string symbol)
     {
-        return Bindings.GetValueOrDefault(symbol)
-            ?? throw new SchemeError(pos, Name + ": ~a is not bound", symbol);
+        if (!Bindings.TryGetValue(symbol, out var cell))
+            throw new SchemeError(pos, Name + ": ~a is not bound", symbol);
+        return cell.value;
+    }
+
+    public Cell? ResolveCell(string symbol)
+    {
+        Bindings.TryGetValue(symbol, out var cell);
+        return cell;
     }
 
     public void Bind(string symbol, object value)
@@ -38,27 +45,35 @@ public class Module
 
     public void Bind(string symbol, object value, string origin)
     {
-        Bindings[symbol] = value;
+        if (Bindings.TryGetValue(symbol, out var existing))
+        {
+            existing.value = value;
+        }
+        else
+        {
+            Bindings[symbol] = new Cell(value);
+        }
         Provenance[symbol] = origin;
         if (autoExport)
         {
-            Exports[symbol] = value;
+            Exports[symbol] = Bindings[symbol];
         }
     }
 
-    public void ImportBinding(SourcePos? pos, string symbol, object value, string origin)
+    public void ImportBinding(SourcePos? pos, string symbol, Cell cell, string origin)
     {
         if (Provenance.TryGetValue(symbol, out var existingOrigin))
         {
             if (existingOrigin != origin)
             {
-                // Allow if both bindings resolve to the same value
-                if (Bindings.TryGetValue(symbol, out var existingValue) &&
-                    ReferenceEquals(existingValue, value))
+                if (Bindings.TryGetValue(symbol, out var existingCell) &&
+                    (ReferenceEquals(existingCell, cell) ||
+                     ReferenceEquals(existingCell.value, cell.value)))
                 {
-                    // Same object — no conflict
+                    // Same cell, or two cells wrapping the same value
+                    // (e.g. two libraries each binding the same primitive) —
+                    // no conflict
                 }
-                // Allow scm core bootstrap bindings to be overridden in either direction
                 else if (existingOrigin == "scm core" || origin == "scm core")
                 {
                     // scm core provides bootstrap versions that can be superseded
@@ -71,26 +86,26 @@ public class Module
                 }
             }
         }
-        Bindings[symbol] = value;
+        Bindings[symbol] = cell;
         Provenance[symbol] = origin;
     }
-    
+
     public void Export(string symbol)
     {
-        if (!Bindings.TryGetValue(symbol, out var binding))
+        if (!Bindings.TryGetValue(symbol, out var cell))
         {
             throw new SchemeError("library '~a': cannot export '~a': not defined or imported", Name, symbol);
         }
-        Exports[symbol] = binding;
+        Exports[symbol] = cell;
     }
 
     public void Export(string src, string dest)
     {
-        if (!Bindings.TryGetValue(src, out var binding))
+        if (!Bindings.TryGetValue(src, out var cell))
         {
             throw new SchemeError("library '~a': cannot export '~a': not defined or imported", Name, src);
         }
-        Exports[dest] = binding;
+        Exports[dest] = cell;
     }
 
     public Module Clone()

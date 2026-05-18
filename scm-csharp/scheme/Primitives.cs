@@ -238,6 +238,7 @@ public class Primitives
         Bind(new PrimitiveMakeHttpResponse());
         Bind(new PrimitiveMakeInstruction());
         Bind(new PrimitiveMakeMutex());
+        Bind(new PrimitiveMakeParameterCore());
         Bind(new PrimitiveMakePolar());
         Bind(new PrimitiveMakeRecord());
         Bind(new PrimitiveMakeRectangular());

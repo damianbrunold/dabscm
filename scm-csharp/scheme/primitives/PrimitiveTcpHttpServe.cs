@@ -189,7 +189,7 @@ public class PrimitiveTcpHttpServe : Primitive
                                 SchemeHttpResponse schemeResp;
                                 try
                                 {
-                                    VM vm = new VM(modules.DeepClone());
+                                    VM vm = new VM(modules);
                                     Lambda wrapper = new Lambda(Value.NIL, Instruction.Seq(
                                         new Instruction(Opcode.ARGS, 0),
                                         new Instruction(Opcode.CONST, reqNV),

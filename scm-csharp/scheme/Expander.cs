@@ -1307,11 +1307,12 @@ public class Expander
         foreach (var kv in importResult.Bindings)
         {
             string name = kv.Key;
-            object value = kv.Value;
+            Cell cell = kv.Value;
+            object value = cell.value;
             string origin = importResult.Provenance[name];
 
-            // Register in Module.Bindings for VM runtime
-            module.ImportBinding(pos, name, value, origin);
+            // Register in Module.Bindings for VM runtime (shares the cell)
+            module.ImportBinding(pos, name, cell, origin);
 
             // Core form markers don't need binding table registration —
             // RegisterCoreFormBindings handles that per module scope

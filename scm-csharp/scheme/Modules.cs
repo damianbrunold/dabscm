@@ -6,9 +6,26 @@ public class Modules
 {
     private Dictionary<string, Module> modules = new();
     private Dictionary<string, string> moduleLoadPaths = new();
-    private HashSet<string> loadingModules = new();
-    private Module currentModule = null!;
+    // currentModule and loadingModules are per-thread so that, once the
+    // bindings dict is shared across threads (step 3), threads can have
+    // independent (module ...)/import state without racing. See
+    // notes/threading-shared-bindings.md. The Default field is what
+    // newly-arriving threads (i.e. threads that haven't set their own
+    // value yet) see — established at construction / DeepClone time.
+    private readonly ThreadLocal<Module?> currentModuleTLS = new();
+    private Module currentModuleDefault = null!;
+    private readonly ThreadLocal<HashSet<string>> loadingModules =
+        new(() => new HashSet<string>());
     private Modules? snapshot;
+
+    // Serializes library loading. Library load mutates `modules`,
+    // `moduleLoadPaths`, and the per-module bindings dicts (via Bind/
+    // ImportBinding). Now that Modules is shared across threads, two
+    // threads importing the same library concurrently would race on
+    // these mutations. The lock is reentrant (System.Threading.Monitor /
+    // synchronized) so nested %load-module calls during transitive
+    // imports are fine. See notes/threading-shared-bindings.md.
+    public readonly object LoadLock = new();
 
     public Primitives primitives = null!;
     public IEvaluator? Evaluator { get; set; }
@@ -31,9 +48,9 @@ public class Modules
     public int GetCurrentModuleScope()
         => GetModuleScope(GetCurrentModule().Name);
 
-    public bool IsLoading(string name) => loadingModules.Contains(name);
-    public void MarkLoading(string name) => loadingModules.Add(name);
-    public void UnmarkLoading(string name) => loadingModules.Remove(name);
+    public bool IsLoading(string name) => loadingModules.Value!.Contains(name);
+    public void MarkLoading(string name) => loadingModules.Value!.Add(name);
+    public void UnmarkLoading(string name) => loadingModules.Value!.Remove(name);
     
     public Modules()
     {
@@ -41,7 +58,8 @@ public class Modules
         this.moduleScopes = new Dictionary<string, int>();
         var scm_core = new Module("scm core");
         this.modules["scm core"] = scm_core;
-        this.currentModule = scm_core;
+        this.currentModuleDefault = scm_core;
+        this.currentModuleTLS.Value = scm_core;
 
         this.primitives = new Primitives();
         this.primitives.Init(this);
@@ -85,7 +103,8 @@ public class Modules
         {
             this.moduleLoadPaths[kv.Key] = kv.Value;
         }
-        this.currentModule = currentModule;
+        this.currentModuleDefault = currentModule;
+        this.currentModuleTLS.Value = currentModule;
         this.primitives = src.primitives;
     }
 
@@ -103,11 +122,14 @@ public class Modules
             clone.modules[kv.Key] = kv.Value.Clone();
         foreach (var kv in moduleLoadPaths)
             clone.moduleLoadPaths[kv.Key] = kv.Value;
-        clone.currentModule = clone.modules[currentModule.Name];
+        var parentCurrent = GetCurrentModule();
+        var clonedCurrent = clone.modules[parentCurrent.Name];
+        clone.currentModuleDefault = clonedCurrent;
+        clone.currentModuleTLS.Value = clonedCurrent;
         return clone;
     }
 
-    public Module GetCurrentModule() => currentModule;
+    public Module GetCurrentModule() => currentModuleTLS.Value ?? currentModuleDefault;
 
     public Module CreateModule(string name)
     {
@@ -123,8 +145,8 @@ public class Modules
         {
             module = CreateModule(moduleName);
         }
-        currentModule = module;
-        return currentModule;
+        currentModuleTLS.Value = module;
+        return module;
     }
 
     public bool HasModule(string name) => modules.ContainsKey(name);
@@ -178,8 +200,10 @@ public class Modules
         moduleLoadPaths.Clear();
         foreach (var kv in snapshot.moduleLoadPaths)
             moduleLoadPaths[kv.Key] = kv.Value;
-        currentModule = modules[snapshot.currentModule.Name];
-        loadingModules.Clear();
+        var restored = modules[snapshot.currentModuleDefault.Name];
+        currentModuleDefault = restored;
+        currentModuleTLS.Value = restored;
+        loadingModules.Value!.Clear();
     }
 
     public void UpdateModuleVar()

@@ -28,7 +28,10 @@ public class PrimitiveModuleBind : Primitive
         module.Bind(symbol, value, origin);
         if (module.Exports.ContainsKey(symbol))
         {
-            module.Exports[symbol] = value;
+            // Bind mutated the existing cell in place (or created a fresh one);
+            // either way, point Exports at the current cell so any sharing
+            // importers see the new value too.
+            module.Exports[symbol] = module.Bindings[symbol];
         }
         return Value.T;
     }

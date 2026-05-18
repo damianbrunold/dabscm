@@ -1164,13 +1164,14 @@ public class Expander {
         int modScope = modules.getCurrentModuleScope();
         ScopeSet scopeSet = ScopeSet.of(modScope);
 
-        for (java.util.Map.Entry<String, Object> kv : importResult.bindings.entrySet()) {
+        for (java.util.Map.Entry<String, Cell> kv : importResult.bindings.entrySet()) {
             String name = kv.getKey();
-            Object value = kv.getValue();
+            Cell cell = kv.getValue();
+            Object value = cell.value;
             String origin = importResult.provenance.get(name);
 
-            // Register in Module.bindings for VM runtime
-            module.importBinding(pos, name, value, origin);
+            // Register in Module.bindings for VM runtime (shares the cell)
+            module.importBinding(pos, name, cell, origin);
 
             // Core form markers don't need binding table registration —
             // registerCoreFormBindings handles that per module scope

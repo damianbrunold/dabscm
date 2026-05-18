@@ -27,7 +27,11 @@ public class PrimitiveThreadStartB extends Primitive {
         t.thread = new Thread(() -> {
             SchemeThread.currentThread.set(t);
             try {
-                VM vm = new VM(t.modules.deepClone());
+                // Share Modules directly with the parent thread. Bindings
+                // are now Cell-indirected and currentModule/loadingModules
+                // are per-thread, so set! on top-level bindings is visible
+                // across threads. See notes/threading-shared-bindings.md.
+                VM vm = new VM(t.modules);
                 Lambda wrapper = new Lambda(Value.NIL, Instruction.seq(
                     new Instruction(Opcode.ARGS, 0),
                     new Instruction(Opcode.CONST, lambda),

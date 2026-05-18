@@ -246,6 +246,7 @@ public class Primitives {
         bind(new PrimitiveMakeHttpResponse());
         bind(new PrimitiveMakeInstruction());
         bind(new PrimitiveMakeMutex());
+        bind(new PrimitiveMakeParameterCore());
         bind(new PrimitiveMakePolar());
         bind(new PrimitiveMakeRecord());
         bind(new PrimitiveMakeRectangular());

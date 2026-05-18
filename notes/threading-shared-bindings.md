@@ -2,7 +2,14 @@
 
 ## Status
 
-Proposal. Not implemented.
+Implemented (2026-05-18). All six numbered steps in "Implementation order"
+plus the lock-on-library-load mitigation landed; both C# and Java pass
+5119 tests. Cross-thread `set!` and per-thread `parameterize` are
+covered by regression tests in `tests_srfi_18.scm` and
+`tests_srfi_39.scm`. `Modules.DeepClone` / `Module.Clone` remain in
+the codebase only because `TakeSnapshot` / `RestoreFromSnapshot` (the
+single-threaded REPL state save/restore) still use them; the threading
+hot path no longer touches them.
 
 ## The current behaviour
 
@@ -74,8 +81,12 @@ These are mutated during execution and would race if shared:
    this is a one-line move.
 2. **`loadingModules`** — circular-import detector. Per-thread is
    correct.
-3. **SRFI 39 parameters / dynamic-wind state** — must already be
-   per-thread; verify they don't accidentally rely on the clone.
+3. **`dynamic-wind` state** — must be per-thread; verify it doesn't
+   accidentally rely on the clone.
+
+**SRFI 39 parameters are a separate problem — see below.** The
+original draft of this note assumed parameters already used
+thread-locals. They do not.
 
 ## Three pieces that stay shared (with care)
 
@@ -118,6 +129,12 @@ Each step is ~half a day. Run dabscm + dabsite tests after each.
    share). Any test that breaks was relying on accidental isolation.
 5. Add a regression test: two threads incrementing a shared counter
    under a mutex; assert the total.
+6. (Follow-up, separate change.) Add `%make-parameter` primitive
+   backed by a host thread-local; rewrite `make-parameter` in
+   `(scheme base)` to use it. Add a regression test: two threads each
+   `parameterize`-ing the same parameter to different values, assert
+   each thread sees its own value and the post-exit value is the
+   original default.
 
 ## Risks to flag
 
@@ -126,9 +143,86 @@ Each step is ~half a day. Run dabscm + dabsite tests after each.
   worker. Usually desirable.
 - Audit anything that `set!`s a binding from `(scm core)` or another
   shared service library. If a feature was implicitly relying on the
-  clone for isolation, it should switch to `make-parameter`.
-- Verify `make-parameter` already uses thread-locals; the clone may
-  have been masking a misimplementation.
+  clone for isolation, it should switch to a (fixed) `make-parameter`
+  — see below.
+- `make-parameter` does **not** use thread-locals today; the clone
+  was not masking it because the clone is shallow and the closure
+  environment is shared anyway. Parameters are already racy across
+  threads. This is a pre-existing bug, not a regression introduced by
+  this change, but it should be fixed alongside it.
+
+## SRFI 39 parameters: a separate fix
+
+`make-parameter` is implemented in pure Scheme in
+`scm-lib/libraries/scheme-base.sld`:
+
+```scheme
+(define (make-parameter init . rest)
+  (let* ((convert (if (null? rest) (lambda (x) x) (car rest)))
+         (val (convert init)))
+    (lambda args
+      (if (null? args) val (set! val (convert (car args)))))))
+```
+
+`val` is a let-bound local captured by a closure. `parameterize`
+mutates `val` in its prologue and restores it in its dynamic-wind
+epilogue.
+
+`Module.Clone()` (C#) and `Module.clone()` (Java) shallow-copy the
+bindings dict. Every thread's dict ends up holding *the same closure
+object*, which carries *the same captured environment frame*. So
+parameters are already shared mutable state across threads today —
+DeepClone never isolated them — and `parameterize` races on `val`:
+two threads parameterizing the same param can have one's epilogue
+restore the other's pre-prologue value.
+
+Switching the bindings dict to `Cell`s does not change this either
+way. Parameters need a separate fix.
+
+### Proposed primitive: thread-local parameter objects
+
+Introduce a primitive `%make-parameter` that returns a parameter
+object backed by a thread-local map. Rewrite `make-parameter` in
+`(scheme base)` to delegate to it.
+
+```csharp
+// C# — parameter is its own callable object
+public sealed class Parameter {
+    private readonly object defaultValue;
+    private readonly Func<object, object> convert;
+    private readonly ThreadLocal<object?> tls = new();
+
+    public Parameter(object init, Func<object, object> conv) {
+        convert = conv;
+        defaultValue = conv(init);
+    }
+    public object Get() => tls.IsValueCreated ? tls.Value! : defaultValue;
+    public void Set(object v) { tls.Value = convert(v); }
+}
+```
+
+```java
+// Java — same shape; ThreadLocal<Object> with a sentinel for "unset"
+```
+
+The VM's call dispatch recognises a `Parameter` and routes
+zero/one-arg calls to `Get` / `Set`. `parameterize`'s dynamic-wind
+prologue/epilogue then read and write a per-thread slot, so the
+restore logic can't be clobbered by another thread.
+
+Open call: whether `parameterize` should *snapshot* the default for
+threads that haven't touched the parameter, or fall through to the
+default until set. Snapshot is closer to "current value at entry" and
+matches the R7RS dynamic-wind wording; fall-through is simpler and
+matches what every Scheme that uses thread-local parameters does.
+Recommendation: fall-through.
+
+### Order relative to the Cell change
+
+The two changes are independent. Do the Cell change first (it's
+larger, structural, and benefits the most code), then add
+`%make-parameter` as a follow-up. The pre-existing parameter race is
+not made worse by the Cell change.
 
 ## Why this is worth doing
 
