@@ -109,6 +109,7 @@ public class Primitives {
         bind(new PrimitiveCopyDirectory());
         bind(new PrimitiveCopyFile());
         bind(new PrimitiveCos());
+        bind(new PrimitiveCrc32());
         bind(new PrimitiveCreateModule(modules));
         bind(new PrimitiveCsvLineToFields());
         bind(new PrimitiveCurrentDirectory());

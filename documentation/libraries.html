@@ -366,7 +366,9 @@
   <a href="#scm-odf-writer" class="scm">(scm odf writer)</a>
   <a href="#scm-ooxml-excel" class="scm">(scm ooxml excel)</a>
   <a href="#scm-ooxml-word" class="scm">(scm ooxml word)</a>
+  <a href="#scm-png" class="scm">(scm png)</a>
   <a href="#scm-profiling" class="scm">(scm profiling)</a>
+  <a href="#scm-qr" class="scm">(scm qr)</a>
   <a href="#scm-string" class="scm">(scm string)</a>
   <a href="#scm-system" class="scm">(scm system)</a>
   <a href="#scm-templating" class="scm">(scm templating)</a>
@@ -3128,6 +3130,25 @@
   </div>
 </div>
 
+<div class="library scm" id="scm-png">
+  <div class="lib-header">
+    <span class="lib-name">(scm png)</span>
+    <span class="lib-desc"></span>
+    <span class="lib-count" id="scm-png-count"></span>
+  </div>
+  <div class="lib-body">
+    <div class="exports" data-lib="scm-png">
+      crc32
+      png-encode
+      png-encode-grayscale
+      png-encode-rgb
+      png-encode-rgba
+      write-png-file
+    </div>
+    <div class="doc-panel" id="scm-png-doc-panel"></div>
+  </div>
+</div>
+
 <div class="library scm" id="scm-profiling">
   <div class="lib-header">
     <span class="lib-name">(scm profiling)</span>
@@ -3143,6 +3164,29 @@
       profile-uninstrument!
     </div>
     <div class="doc-panel" id="scm-profiling-doc-panel"></div>
+  </div>
+</div>
+
+<div class="library scm" id="scm-qr">
+  <div class="lib-header">
+    <span class="lib-name">(scm qr)</span>
+    <span class="lib-desc"></span>
+    <span class="lib-count" id="scm-qr-count"></span>
+  </div>
+  <div class="lib-body">
+    <div class="exports" data-lib="scm-qr">
+      qr-&gt;ascii
+      qr-&gt;png
+      qr-&gt;svg
+      qr-encode
+      qr-matrix-ec-level
+      qr-matrix-mask
+      qr-matrix-ref
+      qr-matrix-size
+      qr-matrix-version
+      qr-matrix?
+    </div>
+    <div class="doc-panel" id="scm-qr-doc-panel"></div>
   </div>
 </div>
 
@@ -4404,12 +4448,26 @@ const docs = {
     "register-color!": "Syntax: (register-color! name hex-string)\nLibrary: (scm ooxml word)\nDescription: Registers a new named color. name is a symbol; hex-string is an\n8-character ARGB hex string (e.g. \"FFFF0000\").\nExample:\n  (register-color! 'salmon \"FFFA8072\")",
     "resolve-color": "Syntax: (resolve-color color)\nLibrary: (scm ooxml word)\nDescription: Resolves a color to an 8-character ARGB hex string. color may be\na string (returned as-is) or a named symbol (black, white, red, etc.).\nExample:\n  (resolve-color 'red)       => \"FFFF0000\"\n  (resolve-color \"FFAABBCC\") => \"FFAABBCC\"",
   },
+  "scm-png": {
+    "crc32": "Syntax: (crc32 bytevector [start [end]])\nLibrary: (scm png)\nDescription: Computes the IEEE CRC-32 checksum (polynomial 0xEDB88320,\n  as used by PNG, gzip, zip) of bytevector and returns it as an exact\n  non-negative integer in [0, 2^32).\nExample:\n  (crc32 (string->utf8 \"123456789\")) => 3421780262",
+    "png-encode": "Syntax: (png-encode width height pixels color-type)\nLibrary: (scm png)\nDescription: Encodes an 8-bit-per-sample image as a PNG bytevector.\n  color-type is one of 0 (grayscale), 2 (RGB), 4 (grayscale+alpha), or\n  6 (RGBA). pixels is a row-major bytevector of length\n  width*height*samples-per-pixel.\nExample:\n  ;; 2x2 grayscale checkerboard\n  (png-encode 2 2 (bytevector 0 255 255 0) 0)",
+    "png-encode-grayscale": "Syntax: (png-encode-grayscale width height pixels)\nLibrary: (scm png)\nDescription: Encodes 8-bit grayscale pixels (one byte per pixel, 0=black,\n  255=white) as a PNG bytevector.\nExample:\n  (png-encode-grayscale 2 1 (bytevector 0 255))",
+    "png-encode-rgb": "Syntax: (png-encode-rgb width height pixels)\nLibrary: (scm png)\nDescription: Encodes 24-bit RGB pixels (three bytes per pixel in R,G,B\n  order) as a PNG bytevector.\nExample:\n  (png-encode-rgb 1 1 (bytevector 255 0 0))   ; single red pixel",
+    "png-encode-rgba": "Syntax: (png-encode-rgba width height pixels)\nLibrary: (scm png)\nDescription: Encodes 32-bit RGBA pixels (four bytes per pixel in R,G,B,A\n  order) as a PNG bytevector.\nExample:\n  (png-encode-rgba 1 1 (bytevector 255 0 0 128))",
+    "write-png-file": "Syntax: (write-png-file path png-bytevector)\nLibrary: (scm png)\nDescription: Writes a PNG bytevector (as produced by png-encode and\n  friends) to the named file.\nExample:\n  (write-png-file \"out.png\" (png-encode-grayscale 1 1 (bytevector 0)))",
+  },
   "scm-profiling": {
     "profile-data": "Syntax: (profile-data)\nLibrary: (scm profiling)\nDescription: Returns profiling data as a list of lists, each of the\nform (name calls total-jiffies), sorted by total-jiffies descending.\nExample:\n  (profile-data)\n  => ((\"(my lib):proc-a\" 1000 4523400) ...)",
     "profile-instrument!": "Syntax: (profile-instrument! spec ...)\nLibrary: (scm profiling)\nDescription: Instruments procedures for profiling. Each spec is a list\nwhose car is a library name (as a list of symbols). The remaining\nelements are symbols naming the procedures to instrument. If no\nsymbols are given, all procedures defined in the library are\ninstrumented (including primitives bound in the library, but\nexcluding imported bindings).\nExample:\n  (profile-instrument! '((scheme base) map for-each))\n  (profile-instrument! '((my lib)))",
     "profile-report": "Syntax: (profile-report)\n       (profile-report port)\nLibrary: (scm profiling)\nDescription: Prints a formatted profiling report showing procedure\nname, call count, total time in ms, average time in ms, and\npercentage of total time. Output goes to the current output port\nor to the given port.\nExample:\n  (profile-report)",
     "profile-reset!": "Syntax: (profile-reset!)\nLibrary: (scm profiling)\nDescription: Resets all profiling counters and durations to zero.\nInstrumented procedures remain in place.\nExample:\n  (profile-reset!)",
     "profile-uninstrument!": "Syntax: (profile-uninstrument!)\nLibrary: (scm profiling)\nDescription: Removes all instrumentation, restoring the original\nprocedures. Clears all profiling data.\nExample:\n  (profile-uninstrument!)",
+  },
+  "scm-qr": {
+    "qr->ascii": "Syntax: (qr->ascii matrix)\nLibrary: (scm qr)\nDescription: Renders a qr-matrix using two-character cells suitable for\n  terminal preview. Each module becomes '  ' (light) or '##' (dark).\n  Adds a 1-module quiet zone.\nExample:\n  (display (qr->ascii (qr-encode \"hi\")))",
+    "qr->png": "Syntax: (qr->png matrix [module-px [quiet-modules]])\nLibrary: (scm qr)\nDescription: Renders a qr-matrix as an 8-bit grayscale PNG bytevector.\n  module-px is the side length in pixels of one module (default 8).\n  quiet-modules is the border width in modules (default 4, per spec).\nExample:\n  (write-png-file \"qr.png\" (qr->png (qr-encode \"hello\")))",
+    "qr->svg": "Syntax: (qr->svg matrix [module-px [quiet-modules]])\nLibrary: (scm qr)\nDescription: Renders a qr-matrix as an SVG string. module-px sets the\n  width/height attribute scale (default 8 px per module). quiet-modules\n  is the border in modules (default 4).\nExample:\n  (display (qr->svg (qr-encode \"hi\")))",
+    "qr-encode": "Syntax: (qr-encode data [ec-level [version]])\nLibrary: (scm qr)\nDescription: Encodes data as a QR code and returns a qr-matrix record.\n  data may be a string (encoded as UTF-8) or a bytevector. ec-level\n  defaults to 'M and must be one of 'L 'M 'Q 'H. version defaults to\n  the smallest version that fits.\nExample:\n  (qr->svg (qr-encode \"https://example.org\") 4 4)",
   },
   "scm-string": {
     "string-contains-from": "Syntax: (string-contains-from haystack needle start)\nLibrary: (scm string)\nDescription: Returns the index in haystack at or after start where needle\n  first occurs, or #f if it does not. Allocation-free char-by-char scan;\n  suitable for parsers operating on large strings.\nExample:\n  (string-contains-from \"hello world\" \"world\" 0) => 6\n  (string-contains-from \"abcabc\" \"bc\" 2) => 4\n  (string-contains-from \"abc\" \"xyz\" 0) => #f",
