@@ -11,6 +11,12 @@ the codebase only because `TakeSnapshot` / `RestoreFromSnapshot` (the
 single-threaded REPL state save/restore) still use them; the threading
 hot path no longer touches them.
 
+`Module.Clone` was also updated to deep-copy cells through a
+cell-identity map shared across all modules in one `DeepClone` pass,
+so snapshot/restore now genuinely preserves binding values (a `(set!)`
+between snapshot and restore no longer leaks into the snapshot) while
+keeping share-cell import aliasing intact across the clone.
+
 ## The current behaviour
 
 `thread-start!` calls `Modules.DeepClone()` (both C# and Java), which
