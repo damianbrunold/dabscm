@@ -118,8 +118,12 @@ public class Modules
     {
         var clone = new Modules(false);
         clone.primitives = this.primitives;
+        // One cell-identity map shared across all modules so that two
+        // modules referencing the same cell (share-cell imports) keep
+        // that aliasing in the clone.
+        var cellMap = new Dictionary<Cell, Cell>(ReferenceEqualityComparer.Instance);
         foreach (var kv in modules)
-            clone.modules[kv.Key] = kv.Value.Clone();
+            clone.modules[kv.Key] = kv.Value.Clone(cellMap);
         foreach (var kv in moduleLoadPaths)
             clone.moduleLoadPaths[kv.Key] = kv.Value;
         var parentCurrent = GetCurrentModule();
@@ -195,8 +199,9 @@ public class Modules
     {
         if (snapshot == null) return;
         modules.Clear();
+        var cellMap = new Dictionary<Cell, Cell>(ReferenceEqualityComparer.Instance);
         foreach (var kv in snapshot.modules)
-            modules[kv.Key] = kv.Value.Clone();
+            modules[kv.Key] = kv.Value.Clone(cellMap);
         moduleLoadPaths.Clear();
         foreach (var kv in snapshot.moduleLoadPaths)
             moduleLoadPaths[kv.Key] = kv.Value;

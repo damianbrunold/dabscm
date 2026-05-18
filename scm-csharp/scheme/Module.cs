@@ -108,12 +108,31 @@ public class Module
         Exports[dest] = cell;
     }
 
-    public Module Clone()
+    // Clone with a cell-identity map so cross-module cell aliasing
+    // (e.g. a binding shared between an exporter and its importers) is
+    // preserved in the clone: every old cell maps to one new cell,
+    // looked up via `cellMap`. Used by Modules.DeepClone (which builds
+    // one map across all modules) for TakeSnapshot / RestoreFromSnapshot.
+    // The new cell wraps the current value, so mutations after the
+    // snapshot don't leak into the clone.
+    public Module Clone(Dictionary<Cell, Cell> cellMap)
     {
         var clone = new Module(Name, false);
-        foreach (var kv in Bindings) clone.Bindings[kv.Key] = kv.Value;
-        foreach (var kv in Exports)  clone.Exports[kv.Key]  = kv.Value;
+        foreach (var kv in Bindings)
+            clone.Bindings[kv.Key] = MapCell(kv.Value, cellMap);
+        foreach (var kv in Exports)
+            clone.Exports[kv.Key] = MapCell(kv.Value, cellMap);
         foreach (var kv in Provenance) clone.Provenance[kv.Key] = kv.Value;
         return clone;
+    }
+
+    private static Cell MapCell(Cell old, Dictionary<Cell, Cell> cellMap)
+    {
+        if (!cellMap.TryGetValue(old, out var fresh))
+        {
+            fresh = new Cell(old.value);
+            cellMap[old] = fresh;
+        }
+        return fresh;
     }
 }

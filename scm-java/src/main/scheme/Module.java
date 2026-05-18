@@ -109,13 +109,30 @@ public class Module {
         exports.put(Value.intern(dest), cell);
     }
 
-    @Override
-    public Module clone() {
+    // Clone with a cell-identity map so cross-module cell aliasing
+    // (e.g. a binding shared between an exporter and its importers) is
+    // preserved in the clone: every old cell maps to one new cell,
+    // looked up via `cellMap`. Used by Modules.deepClone (which builds
+    // one map across all modules) for takeSnapshot / restoreFromSnapshot.
+    // The new cell wraps the current value, so mutations after the
+    // snapshot don't leak into the clone.
+    public Module clone(java.util.IdentityHashMap<Cell, Cell> cellMap) {
         Module c = new Module(name);
-        c.bindings.putAll(bindings);
-        c.exports.putAll(exports);
+        for (var kv : bindings.entrySet())
+            c.bindings.put(kv.getKey(), mapCell(kv.getValue(), cellMap));
+        for (var kv : exports.entrySet())
+            c.exports.put(kv.getKey(), mapCell(kv.getValue(), cellMap));
         c.provenance.putAll(provenance);
         return c;
+    }
+
+    private static Cell mapCell(Cell old, java.util.IdentityHashMap<Cell, Cell> cellMap) {
+        Cell fresh = cellMap.get(old);
+        if (fresh == null) {
+            fresh = new Cell(old.value);
+            cellMap.put(old, fresh);
+        }
+        return fresh;
     }
 
 }

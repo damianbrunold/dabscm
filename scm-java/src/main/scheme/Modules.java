@@ -115,8 +115,12 @@ public class Modules {
     public Modules deepClone() {
         Modules clone = new Modules(false);
         clone.primitives = this.primitives;
+        // One cell-identity map shared across all modules so that two
+        // modules referencing the same cell (share-cell imports) keep
+        // that aliasing in the clone.
+        var cellMap = new java.util.IdentityHashMap<Cell, Cell>();
         for (var kv : modules.entrySet())
-            clone.modules.put(kv.getKey(), kv.getValue().clone());
+            clone.modules.put(kv.getKey(), kv.getValue().clone(cellMap));
         for (var kv : moduleLoadPaths.entrySet())
             clone.moduleLoadPaths.put(kv.getKey(), kv.getValue());
         Module parentCurrent = getCurrentModule();
@@ -197,8 +201,9 @@ public class Modules {
     public void restoreFromSnapshot() {
         if (snapshot == null) return;
         modules.clear();
+        var cellMap = new java.util.IdentityHashMap<Cell, Cell>();
         for (var kv : snapshot.modules.entrySet())
-            modules.put(kv.getKey(), kv.getValue().clone());
+            modules.put(kv.getKey(), kv.getValue().clone(cellMap));
         moduleLoadPaths.clear();
         moduleLoadPaths.putAll(snapshot.moduleLoadPaths);
         Module restored = modules.get(snapshot.currentModuleDefault.getName());
