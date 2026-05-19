@@ -35,6 +35,12 @@ public class Scheme implements IEvaluator {
         scheme.setupUserProgramModule();
         return scheme;
     }
+
+    public static Scheme forSysadmin() throws IOException {
+        var scheme = new Scheme();
+        scheme.setupUserSysadminModule();
+        return scheme;
+    }
         
     public Scheme() throws IOException {
         this.modules = new Modules();
@@ -65,7 +71,10 @@ public class Scheme implements IEvaluator {
             modules.restoreFromSnapshot();
             return;
         }
-        if (this.modules.hasModule("user main")) {
+        if (this.modules.hasModule("user sysadmin")) {
+            modules.resetModules();
+            setupUserSysadminModule();
+        } else if (this.modules.hasModule("user main")) {
             modules.resetModules();
             setupUserMainModule();
         } else if (this.modules.hasModule("user minimal")) {
@@ -198,6 +207,31 @@ public class Scheme implements IEvaluator {
         modules.setCurrentModule("user program");
     }
 
+    public void setupUserSysadminModule() {
+        var user_sysadmin = new Module("user sysadmin");
+        modules.setCurrentModule("user sysadmin");
+        var libs = new String[] {
+            "(scheme base)",
+            "(scheme file)",
+            "(scheme process-context)",
+            "(scheme read)",
+            "(scheme time)",
+            "(scheme write)",
+            "(scm sysadmin)",
+            "(scm io)",
+            "(scm glob)",
+            "(scm string)",
+            "(scm doc)",
+            "(srfi 1)",
+            "(srfi 13)"
+        };
+        for (var lib : libs) {
+            evalString("(import " + lib + ")", lib);
+        }
+        modules.updateModuleVar();
+        modules.setCurrentModule("user sysadmin");
+    }
+
     public void loadLibraries() throws IOException {
         evalFile(new TextStream(new PushbackReader(new InputStreamReader(Scheme.class.getResourceAsStream("/library.scm"), StandardCharsets.UTF_8)), "library.scm"), "{library}");
     }
@@ -237,9 +271,12 @@ public class Scheme implements IEvaluator {
 
     public static void main(String... args) throws IOException {
         List<String> filteredArgs = new ArrayList<>();
+        boolean sysadmin = false;
         for (String arg : args) {
             if (arg.equals("--strict")) {
                 strictImports = true;
+            } else if (arg.equals("--sysadmin")) {
+                sysadmin = true;
             } else {
                 filteredArgs.add(arg);
             }
@@ -316,7 +353,7 @@ public class Scheme implements IEvaluator {
         } else if (args.length > 0) {
             Scheme scheme = null;
             try {
-                scheme = Scheme.forProgram();
+                scheme = sysadmin ? Scheme.forSysadmin() : Scheme.forProgram();
                 var script = args[0];
                 Object arguments = Value.NIL;
                 for (var i = args.length - 1; i >= 1; i--) {
@@ -339,7 +376,7 @@ public class Scheme implements IEvaluator {
             if (scheme != null) scheme.flushOutputPorts();
         } else {
             try {
-                var scheme = Scheme.forRepl();
+                var scheme = sysadmin ? Scheme.forSysadmin() : Scheme.forRepl();
                 scheme.repl();
                 scheme.flushOutputPorts();
             } catch (SchemeError e) {

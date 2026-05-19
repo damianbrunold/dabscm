@@ -53,6 +53,7 @@
 
 | Library | Description |
 |---------|-------------|
+| [`(scm archive)`](libraries/scm-archive.md) |  |
 | [`(scm compile)`](libraries/scm-compile.md) | Compiler introspection, bytecode access, and type predicates |
 | [`(scm compression)`](libraries/scm-compression.md) | Data compression and decompression |
 | [`(scm crypto)`](libraries/scm-crypto.md) | Cryptographic hashing and encoding utilities |
@@ -65,6 +66,7 @@
 | [`(scm doc)`](libraries/scm-doc.md) | Documentation access |
 | [`(scm duration)`](libraries/scm-duration.md) |  |
 | [`(scm feed)`](libraries/scm-feed.md) |  |
+| [`(scm fs-find)`](libraries/scm-fs-find.md) |  |
 | [`(scm fs)`](libraries/scm-fs.md) | Filesystem operations — paths, directories, files |
 | [`(scm glob)`](libraries/scm-glob.md) | Filename globbing and pattern matching |
 | [`(scm html builder)`](libraries/scm-html-builder.md) |  |
@@ -85,6 +87,7 @@
 | [`(scm net http response)`](libraries/scm-net-http-response.md) | HTTP response construction and accessors |
 | [`(scm net http route)`](libraries/scm-net-http-route.md) | HTTP request routing for servers |
 | [`(scm net http server)`](libraries/scm-net-http-server.md) | HTTP server — listen, accept, and serve requests |
+| [`(scm net-remote)`](libraries/scm-net-remote.md) |  |
 | [`(scm net sockets)`](libraries/scm-net-sockets.md) | TCP socket operations — listen, accept, connect |
 | [`(scm net websocket)`](libraries/scm-net-websocket.md) | WebSocket client and server support |
 | [`(scm odf spreadsheet)`](libraries/scm-odf-spreadsheet.md) | ODF spreadsheet creation (ODS format) |
@@ -95,10 +98,12 @@
 | [`(scm profiling)`](libraries/scm-profiling.md) | Execution profiling and performance measurement |
 | [`(scm qr)`](libraries/scm-qr.md) |  |
 | [`(scm string)`](libraries/scm-string.md) | Extended string operations — search, split, trim, convert |
+| [`(scm sysadmin)`](libraries/scm-sysadmin.md) |  |
 | [`(scm system)`](libraries/scm-system.md) | System info, environment variables, process execution |
 | [`(scm templating)`](libraries/scm-templating.md) | Text templating with variable substitution |
 | [`(scm terminal)`](libraries/scm-terminal.md) | Terminal control — colors, cursor, raw mode |
 | [`(scm test)`](libraries/scm-test.md) |  |
+| [`(scm text)`](libraries/scm-text.md) |  |
 | [`(scm uri)`](libraries/scm-uri.md) |  |
 | [`(scm xml)`](libraries/scm-xml.md) | XML file reading and navigation |
 | [`(scm zip)`](libraries/scm-zip.md) | ZIP archive creation and entry writing |

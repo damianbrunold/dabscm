@@ -335,6 +335,7 @@ public class Primitives
         Bind(new PrimitiveRsaEncrypt());
         Bind(new PrimitiveRsaGenerateKeypair());
         Bind(new PrimitiveRunProgram(modules));
+        Bind(new PrimitiveRunProgramCapture());
         Bind(new PrimitiveSHA1Hash());
         Bind(new PrimitiveSHA256Hash());
         Bind(new PrimitiveSecond());
@@ -344,6 +345,7 @@ public class Primitives
         Bind(new PrimitiveSetCarB());
         Bind(new PrimitiveSetCdrB());
         Bind(new PrimitiveSetCodeB());
+        Bind(new PrimitiveSetCurrentDirectory());
         Bind(new PrimitiveSetCurrentModule(modules));
         Bind(new PrimitiveSin());
         Bind(new PrimitiveSocketBinaryInputPort());

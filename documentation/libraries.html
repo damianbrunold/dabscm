@@ -328,6 +328,7 @@
   <a href="#srfi-151" class="srfi">(srfi 151)</a>
   <a href="#srfi-158" class="srfi">(srfi 158)</a>
   <h2>Scm Extensions</h2>
+  <a href="#scm-archive" class="scm">(scm archive)</a>
   <a href="#scm-compile" class="scm">(scm compile)</a>
   <a href="#scm-compression" class="scm">(scm compression)</a>
   <a href="#scm-crypto" class="scm">(scm crypto)</a>
@@ -340,6 +341,7 @@
   <a href="#scm-doc" class="scm">(scm doc)</a>
   <a href="#scm-duration" class="scm">(scm duration)</a>
   <a href="#scm-feed" class="scm">(scm feed)</a>
+  <a href="#scm-fs-find" class="scm">(scm fs-find)</a>
   <a href="#scm-fs" class="scm">(scm fs)</a>
   <a href="#scm-glob" class="scm">(scm glob)</a>
   <a href="#scm-html-builder" class="scm">(scm html builder)</a>
@@ -360,6 +362,7 @@
   <a href="#scm-net-http-response" class="scm">(scm net http response)</a>
   <a href="#scm-net-http-route" class="scm">(scm net http route)</a>
   <a href="#scm-net-http-server" class="scm">(scm net http server)</a>
+  <a href="#scm-net-remote" class="scm">(scm net-remote)</a>
   <a href="#scm-net-sockets" class="scm">(scm net sockets)</a>
   <a href="#scm-net-websocket" class="scm">(scm net websocket)</a>
   <a href="#scm-odf-spreadsheet" class="scm">(scm odf spreadsheet)</a>
@@ -370,10 +373,12 @@
   <a href="#scm-profiling" class="scm">(scm profiling)</a>
   <a href="#scm-qr" class="scm">(scm qr)</a>
   <a href="#scm-string" class="scm">(scm string)</a>
+  <a href="#scm-sysadmin" class="scm">(scm sysadmin)</a>
   <a href="#scm-system" class="scm">(scm system)</a>
   <a href="#scm-templating" class="scm">(scm templating)</a>
   <a href="#scm-terminal" class="scm">(scm terminal)</a>
   <a href="#scm-test" class="scm">(scm test)</a>
+  <a href="#scm-text" class="scm">(scm text)</a>
   <a href="#scm-uri" class="scm">(scm uri)</a>
   <a href="#scm-xml" class="scm">(scm xml)</a>
   <a href="#scm-zip" class="scm">(scm zip)</a>
@@ -2229,6 +2234,44 @@
   <span class="badge badge-scm">scm</span>
 </div>
 
+<div class="library scm" id="scm-archive">
+  <div class="lib-header">
+    <span class="lib-name">(scm archive)</span>
+    <span class="lib-desc"></span>
+    <span class="lib-count" id="scm-archive-count"></span>
+  </div>
+  <div class="lib-body">
+    <div class="exports" data-lib="scm-archive">
+      bunzip2
+      bzip2
+      close-input-zip
+      close-output-zip
+      deflate-compress
+      deflate-decompress
+      gunzip
+      gzip
+      gzip-compress
+      gzip-decompress
+      open-input-zip-file
+      open-output-zip-file
+      tar-create
+      tar-extract
+      tar-list
+      unxz
+      xz
+      zip-add-binary-entry
+      zip-add-stored-entry
+      zip-add-text-entry
+      zip-entry-names
+      zip-files-equal?
+      zip-read-entry-bytevector
+      zlib-compress
+      zlib-decompress
+    </div>
+    <div class="doc-panel" id="scm-archive-doc-panel"></div>
+  </div>
+</div>
+
 <div class="library scm" id="scm-compile">
   <div class="lib-header">
     <span class="lib-name">(scm compile)</span>
@@ -2499,6 +2542,24 @@
   </div>
 </div>
 
+<div class="library scm" id="scm-fs-find">
+  <div class="lib-header">
+    <span class="lib-name">(scm fs-find)</span>
+    <span class="lib-desc"></span>
+    <span class="lib-count" id="scm-fs-find-count"></span>
+  </div>
+  <div class="lib-body">
+    <div class="exports" data-lib="scm-fs-find">
+      df
+      du
+      find
+      tree
+      xargs
+    </div>
+    <div class="doc-panel" id="scm-fs-find-doc-panel"></div>
+  </div>
+</div>
+
 <div class="library scm" id="scm-fs">
   <div class="lib-header">
     <span class="lib-name">(scm fs)</span>
@@ -2509,8 +2570,12 @@
     <div class="exports" data-lib="scm-fs">
       absolute-path
       base-name
+      cd
+      chmod
+      chown
       copy-directory
       copy-file
+      cp
       current-directory
       delete-directory
       delete-file
@@ -2523,14 +2588,22 @@
       file-modification-timestamp
       file-size
       join-path
+      ln
       make-directory
+      mktemp
+      mktempdir
       move-directory
       move-file
+      mv
       normalized-path
       path-sep
+      readlink
+      rm
       special-folder-application-data
       special-folder-documents
       special-folder-temp
+      stat
+      touch
       which
     </div>
     <div class="doc-panel" id="scm-fs-doc-panel"></div>
@@ -2920,6 +2993,24 @@
   </div>
 </div>
 
+<div class="library scm" id="scm-net-remote">
+  <div class="lib-header">
+    <span class="lib-name">(scm net-remote)</span>
+    <span class="lib-desc"></span>
+    <span class="lib-count" id="scm-net-remote-count"></span>
+  </div>
+  <div class="lib-body">
+    <div class="exports" data-lib="scm-net-remote">
+      curl
+      rsync
+      scp
+      ssh
+      wget
+    </div>
+    <div class="doc-panel" id="scm-net-remote-doc-panel"></div>
+  </div>
+</div>
+
 <div class="library scm" id="scm-net-sockets">
   <div class="lib-header">
     <span class="lib-name">(scm net sockets)</span>
@@ -3211,6 +3302,133 @@
   </div>
 </div>
 
+<div class="library scm" id="scm-sysadmin">
+  <div class="lib-header">
+    <span class="lib-name">(scm sysadmin)</span>
+    <span class="lib-desc"></span>
+    <span class="lib-count" id="scm-sysadmin-count"></span>
+  </div>
+  <div class="lib-body">
+    <div class="exports" data-lib="scm-sysadmin">
+      absolute-path
+      awk
+      base-name
+      bunzip2
+      bzip2
+      cat
+      cd
+      chmod
+      chown
+      close-input-zip
+      close-output-zip
+      copy-directory
+      copy-file
+      cp
+      curl
+      current-directory
+      cut
+      deflate-compress
+      deflate-decompress
+      delete-directory
+      delete-file
+      df
+      diff
+      directory-directories
+      directory-exists?
+      directory-files
+      directory-name
+      du
+      env-list
+      file-exists?
+      file-modification-date
+      file-modification-timestamp
+      file-size
+      find
+      get-bytes
+      get-environment-variable
+      getopt
+      grep
+      gunzip
+      gzip
+      gzip-compress
+      gzip-decompress
+      head
+      hexdump
+      join-path
+      ln
+      make-directory
+      mktemp
+      mktempdir
+      move-directory
+      move-file
+      mv
+      normalized-path
+      open-input-zip-file
+      open-output-zip-file
+      path-sep
+      process-alive?
+      process-kill
+      process-pid
+      process-wait
+      readlink
+      rm
+      rsync
+      run
+      run!
+      run-parallel
+      run-program
+      run-program/capture
+      run?
+      scp
+      sed
+      sh
+      sh-lines
+      shell-quote
+      sleep
+      sort-lines
+      special-folder-application-data
+      special-folder-documents
+      special-folder-temp
+      ssh
+      start-program
+      stat
+      sys-machine-name
+      sys-num-cpu-cores
+      sys-os-version
+      sys-platform
+      sys-scm-technology
+      sys-scm-version
+      sys-user-name
+      tail
+      tar-create
+      tar-extract
+      tar-list
+      tee
+      touch
+      tr
+      tree
+      uniq
+      unxz
+      uuidgen
+      watch
+      wc
+      wget
+      which
+      xargs
+      xz
+      zip-add-binary-entry
+      zip-add-stored-entry
+      zip-add-text-entry
+      zip-entry-names
+      zip-files-equal?
+      zip-read-entry-bytevector
+      zlib-compress
+      zlib-decompress
+    </div>
+    <div class="doc-panel" id="scm-sysadmin-doc-panel"></div>
+  </div>
+</div>
+
 <div class="library scm" id="scm-system">
   <div class="lib-header">
     <span class="lib-name">(scm system)</span>
@@ -3219,15 +3437,25 @@
   </div>
   <div class="lib-body">
     <div class="exports" data-lib="scm-system">
+      env-list
       get-bytes
       get-environment-variable
+      getopt
       modules
       process-alive?
       process-kill
       process-pid
       process-wait
+      run
+      run!
       run-parallel
       run-program
+      run-program/capture
+      run?
+      sh
+      sh-lines
+      shell-quote
+      sleep
       start-program
       sys-machine-name
       sys-num-cpu-cores
@@ -3236,6 +3464,8 @@
       sys-scm-technology
       sys-scm-version
       sys-user-name
+      uuidgen
+      watch
     </div>
     <div class="doc-panel" id="scm-system-doc-panel"></div>
   </div>
@@ -3341,6 +3571,33 @@
       test-with-runner
     </div>
     <div class="doc-panel" id="scm-test-doc-panel"></div>
+  </div>
+</div>
+
+<div class="library scm" id="scm-text">
+  <div class="lib-header">
+    <span class="lib-name">(scm text)</span>
+    <span class="lib-desc"></span>
+    <span class="lib-count" id="scm-text-count"></span>
+  </div>
+  <div class="lib-body">
+    <div class="exports" data-lib="scm-text">
+      awk
+      cat
+      cut
+      diff
+      grep
+      head
+      hexdump
+      sed
+      sort-lines
+      tail
+      tee
+      tr
+      uniq
+      wc
+    </div>
+    <div class="doc-panel" id="scm-text-doc-panel"></div>
   </div>
 </div>
 
@@ -3990,6 +4247,33 @@ const docs = {
     "write-shared": "Syntax: (write-shared obj port?)\nLibrary: (scheme write)\nDescription: Writes obj to the given port using datum labels (#N= and #N#) to represent all shared and cyclic structure.\nExample:\n  (let ((x (list 1 2))) (write-shared x)) => (1 2)\n  (write-shared '#0=(a . #0#)) => #0=(a . #0#)",
     "write-simple": "Syntax: (write-simple obj port?)\nLibrary: (scheme write)\nDescription: Writes obj to the given port without performing shared-structure detection, making it faster but unable to handle cyclic data.\nExample:\n  (write-simple '(1 2 3)) => (1 2 3)\n  (write-simple \"hello\") => \"hello\"",
   },
+  "scm-archive": {
+    "bunzip2": "Syntax: (bunzip2 path [option ...])\nLibrary: (scm archive)\nDescription: Decompresses path (which should end in .bz2) in place via\n  the native bunzip2 command. Option 'keep retains the .bz2 original.\nExample:\n  (bunzip2 \"big.log.bz2\")",
+    "bzip2": "Syntax: (bzip2 path [option ...])\nLibrary: (scm archive)\nDescription: Compresses path into path.bz2 using the native bzip2 command.\n  Option 'keep retains the original file (-k).\nExample:\n  (bzip2 \"big.log\")",
+    "close-input-zip": "Syntax: (close-input-zip zip)\nLibrary: (scm zip)\nDescription: Closes the given ZIP input archive, releasing all underlying resources.\nExample:\n  (let ((z (open-input-zip-file \"archive.zip\")))\n    (close-input-zip z))",
+    "close-output-zip": "Syntax: (close-output-zip zip)\nLibrary: (scm core)\nDescription: Closes the given zip output archive, flushing and releasing all underlying resources.\nExample:\n  (let ((z (open-output-zip-file \"archive.zip\")))\n    (close-output-zip z))",
+    "deflate-compress": "Syntax: (deflate-compress bytevector [level])\nLibrary: (scm compression)\nDescription: Compresses bytevector using raw DEFLATE (RFC 1951) and returns\n  a bytevector. The optional level is an integer 0-9: 0 = no compression,\n  1-3 = fastest, 4-6 = optimal (default), 7-9 = smallest size.\nExample:\n  (utf8->string (deflate-decompress (deflate-compress (string->utf8 \"hello\")))) => \"hello\"",
+    "deflate-decompress": "Syntax: (deflate-decompress bytevector)\nLibrary: (scm compression)\nDescription: Decompresses a raw DEFLATE-compressed (RFC 1951) bytevector\n  and returns the original bytevector.\nExample:\n  (utf8->string (deflate-decompress (deflate-compress (string->utf8 \"hello\")))) => \"hello\"",
+    "gunzip": "Syntax: (gunzip path [option ...])\nLibrary: (scm archive)\nDescription: Decompresses path (which should end in .gz) in place.\n  Option 'keep retains the .gz original (-k).\nExample:\n  (gunzip \"big.log.gz\")",
+    "gzip": "Syntax: (gzip path [option ...])\nLibrary: (scm archive)\nDescription: Compresses path into path.gz using the native gzip command\n  when available; falls back to gzip-compress on the file bytes.\n  Option 'keep retains the original file (-k).\nExample:\n  (gzip \"big.log\")",
+    "gzip-compress": "Syntax: (gzip-compress bytevector [level])\nLibrary: (scm compression)\nDescription: Compresses bytevector using GZip format (RFC 1952) and returns\n  a bytevector. The optional level is an integer 0-9: 0 = no compression,\n  1-3 = fastest, 4-6 = optimal (default), 7-9 = smallest size.\nExample:\n  (utf8->string (gzip-decompress (gzip-compress (string->utf8 \"hello\")))) => \"hello\"",
+    "gzip-decompress": "Syntax: (gzip-decompress bytevector)\nLibrary: (scm compression)\nDescription: Decompresses a GZip-compressed (RFC 1952) bytevector and returns\n  the original bytevector.\nExample:\n  (utf8->string (gzip-decompress (gzip-compress (string->utf8 \"hello\")))) => \"hello\"",
+    "open-input-zip-file": "Syntax: (open-input-zip-file filename)\nLibrary: (scm zip)\nDescription: Opens an existing ZIP archive at filename for reading and returns a ZIP reader object.\nExample:\n  (define z (open-input-zip-file \"archive.zip\"))\n  (zip-entry-names z)\n  (close-input-zip z)",
+    "open-output-zip-file": "Syntax: (open-output-zip-file filename)\nLibrary: (scm core)\nDescription: Creates a new ZIP archive at the given filename and returns a ZIP writer object. Entries can be added using zip-add-text-entry or zip-add-binary-entry.\nExample:\n  (define z (open-output-zip-file \"archive.zip\"))\n  (zip-add-text-entry z \"hello.txt\" \"Hello, world!\")\n  (close-output-zip z)",
+    "tar-create": "Syntax: (tar-create archive paths [option ...])\nLibrary: (scm archive)\nDescription: Creates a tar archive at path archive containing the listed\n  paths. archive's extension determines compression: .tar.gz/.tgz uses\n  gzip; .tar.bz2/.tbz uses bzip2; otherwise plain tar.\n  Options: 'gzip (force -z), 'bzip2 (force -j), 'verbose (-v),\n  '(work-dir . dir) (run as if cwd = dir).\n  Shells out to the native tar command.\nExample:\n  (tar-create \"backup.tar.gz\" '(\"src\" \"docs\"))",
+    "tar-extract": "Syntax: (tar-extract archive [option ...])\nLibrary: (scm archive)\nDescription: Extracts archive into the current directory (or 'work-dir).\n  Compression is auto-detected from extension or forced via 'gzip / 'bzip2.\n  Options: '(work-dir . dir), 'verbose.\nExample:\n  (tar-extract \"backup.tar.gz\" '(work-dir . \"/tmp/restore\"))",
+    "tar-list": "Syntax: (tar-list archive [option ...])\nLibrary: (scm archive)\nDescription: Returns a list of entry names contained in archive.\n  Compression is auto-detected; force with 'gzip or 'bzip2.\nExample:\n  (tar-list \"backup.tar.gz\")",
+    "unxz": "Syntax: (unxz path [option ...])\nLibrary: (scm archive)\nDescription: Decompresses path (which should end in .xz) in place via\n  the native unxz command. Option 'keep retains the .xz original.\nExample:\n  (unxz \"big.log.xz\")",
+    "xz": "Syntax: (xz path [option ...])\nLibrary: (scm archive)\nDescription: Compresses path into path.xz using the native xz command.\n  Option 'keep retains the original file (-k).\nExample:\n  (xz \"big.log\")",
+    "zip-add-binary-entry": "Syntax: (zip-add-binary-entry zip name [timestamp])\nLibrary: (scm zip)\nDescription: Creates a new binary entry named name in the ZIP archive zip and\n  returns an output binary port for writing to it. The optional timestamp is a\n  Unix epoch in seconds.\nExample:\n  (let ((port (zip-add-binary-entry zip \"data.bin\"))) (write-bytevector bv port))",
+    "zip-add-stored-entry": "Syntax: (zip-add-stored-entry zip name bytevector [timestamp])\nLibrary: (scm zip)\nDescription: Creates a new uncompressed (STORED) entry named name in the\n  ZIP archive zip and writes the entire bytevector as its content. Unlike\n  zip-add-binary-entry, the data is stored without compression and must be\n  provided in full. The optional timestamp is a Unix epoch in seconds.\n  Returns void.\nExample:\n  (zip-add-stored-entry zip \"mimetype\" (string->utf8 \"application/xml\") 0)",
+    "zip-add-text-entry": "Syntax: (zip-add-text-entry zip name [timestamp])\nLibrary: (scm zip)\nDescription: Creates a new text entry named name in the ZIP archive zip and\n  returns a UTF-8 textual output port for writing to it. The optional timestamp\n  is a Unix epoch in seconds.\nExample:\n  (let ((port (zip-add-text-entry zip \"readme.txt\"))) (display \"Hello\" port))",
+    "zip-entry-names": "Syntax: (zip-entry-names zip)\nLibrary: (scm zip)\nDescription: Returns a list of entry name strings in the ZIP archive zip.\nExample:\n  (zip-entry-names z) => (\"file1.txt\" \"dir/file2.txt\")",
+    "zip-files-equal?": "Syntax: (zip-files-equal? file1 file2)\nLibrary: (scm zip)\nDescription: Returns #t if the two ZIP files have the same entry names and identical\n  entry contents (compared as bytevectors), #f otherwise. Metadata differences such\n  as version-made-by or external attributes are ignored.\nExample:\n  (zip-files-equal? \"a.xlsx\" \"b.xlsx\") => #t",
+    "zip-read-entry-bytevector": "Syntax: (zip-read-entry-bytevector zip name)\nLibrary: (scm zip)\nDescription: Reads the contents of the entry named name from the ZIP archive zip and returns it as a bytevector.\nExample:\n  (zip-read-entry-bytevector z \"hello.txt\") => #u8(72 101 108 108 111)",
+    "zlib-compress": "Syntax: (zlib-compress bytevector [level])\nLibrary: (scm compression)\nDescription: Compresses bytevector using ZLib framing (RFC 1950) and returns\n  a bytevector. The optional level is an integer 0-9: 0 = no compression,\n  1-3 = fastest, 4-6 = optimal (default), 7-9 = smallest size.\nExample:\n  (utf8->string (zlib-decompress (zlib-compress (string->utf8 \"hello\")))) => \"hello\"",
+    "zlib-decompress": "Syntax: (zlib-decompress bytevector)\nLibrary: (scm compression)\nDescription: Decompresses a ZLib-framed (RFC 1950) bytevector and returns\n  the original bytevector.\nExample:\n  (utf8->string (zlib-decompress (zlib-compress (string->utf8 \"hello\")))) => \"hello\"",
+  },
   "scm-compile": {
     "atom?": "Syntax: (atom? obj)\nLibrary: (scm compile)\nDescription: Returns #t if obj is an atomic value: a number, boolean, char,\nstring, or symbol. Returns #f for pairs, vectors, and other compound objects.\nExample:\n  (atom? 42)   => #t\n  (atom? 'x)   => #t\n  (atom? '(1)) => #f",
     "bound?": "Syntax: (bound? symbol)\nLibrary: (scm core)\nDescription: Returns #t if the given symbol is bound to a value in the current module.\nExample:\n  (bound? 'car) => #t\n  (bound? 'undefined-name) => #f",
@@ -4125,11 +4409,22 @@ const docs = {
     "parse-feed-file": "Syntax: (parse-feed-file path)\nLibrary: (scm feed)\nDescription: Parses an Atom or RSS 2.0 feed from a file. Returns a pair\n  (feed-title . entries), where entries is a list of alists with keys\n  'title', 'link', 'guid', 'summary', 'published' (all strings; missing\n  fields default to ''). Dates are returned verbatim — use parse-pubdate\n  from (scm datetime) to convert.\nExample:\n  (parse-feed-file \"/tmp/feed.xml\")\n    => (\"Example\" ((\"title\" . \"Post 1\") (\"link\" . \"...\") ...))",
     "parse-feed-string": "Syntax: (parse-feed-string s)\nLibrary: (scm feed)\nDescription: Parses an Atom or RSS 2.0 feed from an in-memory string.\n  Same result shape as parse-feed-file.\nExample:\n  (parse-feed-string \"<rss>...</rss>\") => (\"Example\" (... ...))",
   },
+  "scm-fs-find": {
+    "df": "Syntax: (df [path])\nLibrary: (scm fs-find)\nDescription: Returns a list of alists describing mounted filesystems.\n  Each entry has keys: filesystem, size, used, available, use% (string),\n  mount. Shells out to the native df command; returns '() if unavailable.\n  When a path argument is given, restricts to that filesystem.\nExample:\n  (df)\n  (df \"/home\")",
+    "du": "Syntax: (du path [option ...])\nLibrary: (scm fs-find)\nDescription: Returns the total size in bytes of path. If path is a\n  directory the size is the recursive sum of all contained files.\n  Option 'apparent (default) counts file-size; 'block-size sums via\n  the native du command for filesystem block-aligned totals when\n  available.\nExample:\n  (du \"/var/log\")",
+    "find": "Syntax: (find root [option ...])\nLibrary: (scm fs-find)\nDescription: Recursively walks the filesystem starting at root and returns\n  the list of matching paths. Options:\n    '(name . glob)         — match the basename against a glob pattern\n    '(type . sym)          — restrict to 'file or 'directory\n    '(maxdepth . n)        — limit recursion depth (root is depth 0)\n    '(mindepth . n)        — exclude entries shallower than n\n    '(predicate . proc)    — additional (string -> bool) test\n    '(action . proc)       — invoke proc on each matching path\nExample:\n  (find \".\" '(name . \"*.scm\") '(type . file))\n  (find \"/var/log\" `(predicate . ,(lambda (p) (> (file-size p) 1024))))",
+    "tree": "Syntax: (tree root [option ...])\nLibrary: (scm fs-find)\nDescription: Returns a string with a pretty ASCII tree of the directory at\n  root, similar to the tree(1) command. Options:\n    '(maxdepth . n)  — limit depth shown (root is depth 0)\n    'dirs-only       — only show directories\nExample:\n  (display (tree \".\" '(maxdepth . 2)))",
+    "xargs": "Syntax: (xargs proc items [option ...])\nLibrary: (scm fs-find)\nDescription: Applies proc to chunks of items in turn. By default proc is\n  called once per item. Option '(batch-size . n) calls proc with sublists\n  of up to n items at a time. Returns the list of results.\nExample:\n  (xargs delete-file (find \"/tmp\" '(name . \"*.bak\")))\n  (xargs (lambda (batch) (run-program (cons \"rm\" batch)))\n         '(\"a\" \"b\" \"c\" \"d\") '(batch-size . 2))",
+  },
   "scm-fs": {
     "absolute-path": "Syntax: (absolute-path path)\nLibrary: (scm system)\nDescription: Returns the absolute (fully qualified) form of the given path string.\nExample:\n  (absolute-path \".\") => \"/current/working/dir\"",
     "base-name": "Syntax: (base-name path)\nLibrary: (scm system)\nDescription: Returns the file name (including extension) from the given path string, without the directory part.\nExample:\n  (base-name \"/usr/share/doc/readme.txt\") => \"readme.txt\"",
+    "cd": "Syntax: (set-current-directory! path)\nLibrary: (scm fs)\nDescription: Sets the process working directory hint to path. Returns the new directory as a string on success, #f on failure. Note: in the JVM the OS-level cwd cannot be changed for already-loaded native code; the value is recorded so that subsequent relative-path operations and child-process invocations behave as if cwd were path.\nExample:\n  (set-current-directory! \"/tmp\") => \"/tmp\"",
+    "chmod": "Syntax: (chmod path mode [option ...])\nLibrary: (scm fs)\nDescription: Changes file mode bits via the native chmod command. mode is\n  either an octal string (e.g. \"755\") or a symbolic spec (\"u+x\").\n  Options: 'recursive (-R). On Windows this is a best-effort no-op when\n  no native chmod is available.\nExample:\n  (chmod \"script.sh\" \"755\")\n  (chmod \"dir\" \"700\" 'recursive)",
+    "chown": "Syntax: (chown path owner [option ...])\nLibrary: (scm fs)\nDescription: Changes the owner (and optionally group) of path. owner is a\n  string like \"user\" or \"user:group\". Options: 'recursive (-R).\n  Returns #t on success, #f otherwise. Best-effort no-op on Windows.\nExample:\n  (chown \"file\" \"alice:staff\")",
     "copy-directory": "Syntax: (copy-directory src dest)\nLibrary: (scm system)\nDescription: Recursively copies the directory at src to dest. Returns unspecified on success, #f on failure.\nExample:\n  (copy-directory \"/src/dir\" \"/dst/dir\")",
     "copy-file": "Syntax: (copy-file src dest)\nLibrary: (scm system)\nDescription: Copies the file at src to dest, overwriting dest if it exists. Returns unspecified on success, #f on failure.\nExample:\n  (copy-file \"data.txt\" \"backup.txt\")",
+    "cp": "Syntax: (cp src dst [option ...])\nLibrary: (scm fs)\nDescription: Copies src to dst. Options: 'recursive (-r) to copy a directory.\n  When src is a directory and 'recursive is not given, signals an error.\nExample:\n  (cp \"a.txt\" \"b.txt\")\n  (cp \"src/\" \"dst/\" 'recursive)",
     "current-directory": "Syntax: (current-directory)\nLibrary: (scm system)\nDescription: Returns the current working directory as a string.\nExample:\n  (current-directory) => \"/home/user/projects\"",
     "delete-directory": "Syntax: (delete-directory dir)\nLibrary: (scm system)\nDescription: Recursively deletes the directory at dir. Returns unspecified on success, #f on failure.\nExample:\n  (delete-directory \"/tmp/old-dir\")",
     "delete-file": "Syntax: (delete-file filename)\nLibrary: (scheme file)\nDescription: Deletes the named file. Returns unspecified if successful, #f if the file could not be deleted.\nExample:\n  (delete-file \"temp.txt\")",
@@ -4142,13 +4437,21 @@ const docs = {
     "file-modification-timestamp": "Syntax: (file-modification-timestamp filename)\nLibrary: (scm system)\nDescription: Returns the last modification time of the file as a millisecond timestamp (milliseconds since the .NET epoch).\nExample:\n  (file-modification-timestamp \"data.txt\") => 1700000000000",
     "file-size": "Syntax: (file-size file)\nLibrary: (scm system)\nDescription: Returns the size of the named file in bytes as an exact integer, or #f if the file cannot be accessed.\nExample:\n  (file-size \"/etc/hosts\") => 221",
     "join-path": "Syntax: (join-path part ...)\nLibrary: (scm fs)\nDescription: Joins one or more path component strings into a single path\n  string using the platform's path separator character.\nExample:\n  (join-path \"/usr\" \"local\" \"bin\") => \"/usr/local/bin\"  ; on Unix",
+    "ln": "Syntax: (ln target name [option ...])\nLibrary: (scm fs)\nDescription: Creates a link at name pointing to target. Options:\n  'symbolic (-s) creates a symbolic link, otherwise a hard link;\n  'force (-f) replaces an existing destination.\nExample:\n  (ln \"/usr/bin/python3\" \"/usr/local/bin/python\" 'symbolic 'force)",
     "make-directory": "Syntax: (make-directory path)\nLibrary: (scm system)\nDescription: Creates the directory named by path, including all intermediate directories.\nExample:\n  (make-directory \"/tmp/new/dir\")",
+    "mktemp": "Syntax: (mktemp [option ...])\nLibrary: (scm fs)\nDescription: Creates a uniquely-named empty file in the temp directory and\n  returns its path. Option '(prefix . str) sets the filename prefix\n  (default \"tmp\").\nExample:\n  (mktemp) => \"/tmp/tmp-12345-1aff3...\"",
+    "mktempdir": "Syntax: (mktempdir [option ...])\nLibrary: (scm fs)\nDescription: Creates a uniquely-named empty directory in the temp directory\n  and returns its path. Option '(prefix . str) sets the dir-name prefix.\nExample:\n  (mktempdir) => \"/tmp/tmp-12345-1aff3...\"",
     "move-directory": "Syntax: (move-directory src dest)\nLibrary: (scm system)\nDescription: Moves (renames) the directory from src to dest. Returns unspecified on success, #f on failure.\nExample:\n  (move-directory \"/tmp/old\" \"/tmp/new\")",
     "move-file": "Syntax: (move-file src dest)\nLibrary: (scm system)\nDescription: Moves (renames) the file from src to dest, overwriting dest if it exists. Returns unspecified on success, #f on failure.\nExample:\n  (move-file \"old.txt\" \"new.txt\")",
+    "mv": "Syntax: (mv src dst [option ...])\nLibrary: (scm fs)\nDescription: Moves/renames src to dst. Works on files and directories.\nExample:\n  (mv \"old.txt\" \"new.txt\")",
     "normalized-path": "Syntax: (normalized-path path)\nLibrary: (scm system)\nDescription: Returns the normalized form of path. If absolute, returns the full path; if relative, returns the relative path from the current directory.\nExample:\n  (normalized-path \"./foo/../bar\") => \"bar\"",
+    "readlink": "Syntax: (readlink path)\nLibrary: (scm fs)\nDescription: Returns the target of the symbolic link at path as a string,\n  or #f if path is not a symlink or cannot be read. Uses native readlink.\nExample:\n  (readlink \"/usr/local/bin/python\") => \"/usr/bin/python3\"",
+    "rm": "Syntax: (rm path [option ...])\nLibrary: (scm fs)\nDescription: Removes path. Options: 'recursive (-r) to remove a directory\n  and its contents; 'force (-f) to suppress errors when path is missing.\nExample:\n  (rm \"foo.txt\")\n  (rm \"build\" 'recursive 'force)",
     "special-folder-application-data": "Syntax: (special-folder-application-data)\nLibrary: (scm system)\nDescription: Returns the path of the user's application data directory as a string.\nExample:\n  (special-folder-application-data) => \"/home/user/.config\"",
     "special-folder-documents": "Syntax: (special-folder-documents)\nLibrary: (scm system)\nDescription: Returns the path of the user's documents directory as a string.\nExample:\n  (special-folder-documents) => \"/home/user/Documents\"",
     "special-folder-temp": "Syntax: (special-folder-temp)\nLibrary: (scm fs)\nDescription: Returns the platform temp directory path as a string.\nExample: (special-folder-temp) => \"/tmp\"",
+    "stat": "Syntax: (stat path)\nLibrary: (scm fs)\nDescription: Returns an alist describing path with keys exists, type\n  (one of file/directory/missing), size, mtime, and mode (octal string\n  on Unix; #f on Windows or when stat is unavailable).\nExample:\n  (stat \"/etc/hosts\")",
+    "touch": "Syntax: (touch path [option ...])\nLibrary: (scm fs)\nDescription: Creates path as an empty file if it does not exist. When path\n  already exists and a native touch command is available on PATH, its\n  modification time is updated. Option 'no-create (-c) skips creation of\n  missing files. Returns #t on success, #f otherwise.\nExample:\n  (touch \"/tmp/foo\")",
     "which": "Syntax: (which program)\nLibrary: (scm system)\nDescription: Searches the directories in PATH for an executable named program and returns its full path as a string, or #f if not found.\nExample:\n  (which \"ls\") => \"/usr/bin/ls\"\n  (which \"nonexistent\") => #f",
   },
   "scm-glob": {
@@ -4305,6 +4608,13 @@ const docs = {
     "server-stop": "Syntax: (server-stop server [graceful-ms])\nLibrary: (scm net http server)\nDescription: Stops a running HTTP server. Stops accepting new connections, then waits up to graceful-ms for in-flight requests to complete (default: the server's configured graceful-stop-ms). Returns #t once the listener has been closed.\nExample:\n  (server-stop s)\n  (server-stop s 5000)",
     "server-wait": "Syntax: (server-wait server)\nLibrary: (scm net http server)\nDescription: Blocks the calling thread until the given HTTP server has stopped. Returns when the server's accept loop has exited, e.g. after server-stop.\nExample:\n  (server-wait s)",
     "tcp-http-serve": "Syntax: (tcp-http-serve port handler [max-threads [host [read-timeout-ms [max-body-bytes [graceful-stop-ms]]]]])\nLibrary: (scm net http server)\nDescription: Starts an HTTP server on the given port. handler is called with each incoming http-request and must return an http-response. Returns a server object. Use server-stop to shut it down. Notes: Transfer-Encoding: chunked is not supported (501); requests larger than max-body-bytes are rejected with 413; per-connection read-timeout-ms guards against slow clients; max-threads bounds concurrency (excess connections are rejected with 503). 0 or omitted parameters use defaults: max-threads=32, host=\"0.0.0.0\", read-timeout-ms=30000, max-body-bytes=4194304, graceful-stop-ms=10000.\nExample:\n  (define s (tcp-http-serve 8080 (lambda (req) (http-ok \"Hello\"))))\n  (define s (tcp-http-serve 8080 handler 16 \"127.0.0.1\"))",
+  },
+  "scm-net-remote": {
+    "curl": "Syntax: (curl url [option ...])\nLibrary: (scm net-remote)\nDescription: Performs an HTTP(S) request via the native curl command.\n  By default returns the response body as a string. Options:\n    '(method . str)        — HTTP method (default GET)\n    '(headers . list)      — list of header strings \"Name: value\"\n    '(data . str)          — request body (sets method to POST if unset)\n    '(output . path)       — write body to file; returns #t/#f\n    '(timeout . seconds)\n    'silent                — suppress progress (-s)\n    'follow-redirects      — -L\n    'fail-on-error         — -f (non-2xx exit non-zero)\n    'include-status        — return (status . body) instead of body\n    'pure                  — force pure-Scheme path (uses (scm net http client));\n                             does not honor follow-redirects, timeout, fail-on-error\nExample:\n  (curl \"https://example.com/api\"\n        '(method . \"POST\")\n        '(headers . (\"Content-Type: application/json\"))\n        '(data . \"{\\\"x\\\":1}\")\n        'silent)",
+    "rsync": "Syntax: (rsync src dst [option ...])\nLibrary: (scm net-remote)\nDescription: Invokes rsync to synchronise src to dst. Either may be a\n  local path or a remote spec (user@host:/path or rsync://...). Options:\n    'archive         — -a (recursive + preserve everything)\n    'recursive       — -r\n    'delete          — --delete (remove dst files not in src)\n    'verbose         — -v\n    'dry-run         — -n\n    'compress        — -z\n    '(exclude . list) — list of patterns to pass as --exclude\n    '(rsh . cmd)     — remote-shell command, e.g. \"ssh -p 2222\"\nExample:\n  (rsync \"build/\" \"deploy@web1:/srv/app/\" 'archive 'delete 'verbose)",
+    "scp": "Syntax: (scp src dst [option ...])\nLibrary: (scm net-remote)\nDescription: Copies files between hosts via the native scp command.\n  src or dst may be local paths or remote specs of the form\n  user@host:/path. Options:\n    'recursive       — pass -r for directory copy\n    '(port . int)    — remote SSH port (-P)\n    '(key . path)    — identity file (-i)\n    'preserve        — preserve times/modes (-p)\n    'quiet           — suppress progress (-q)\nExample:\n  (scp \"build.tar.gz\" \"deploy@web1:/srv/releases/\" '(port . 2222))",
+    "ssh": "Syntax: (ssh host command [option ...])\nLibrary: (scm net-remote)\nDescription: Runs command (a string) on the remote host via the native\n  ssh command and returns (exit-code stdout stderr). host can be\n  \"hostname\" or \"user@hostname\". Options:\n    '(user . str)   — overrides user (alternative to user@host form)\n    '(port . int)   — SSH port (default 22)\n    '(key . path)   — identity file (-i)\n    '(stdin . str)  — fed to remote command's stdin\n    '(extra-args . list) — additional raw flags appended before host\nExample:\n  (ssh \"deploy@web1\" \"systemctl status nginx\" '(port . 2222))",
+    "wget": "Syntax: (wget url [option ...])\nLibrary: (scm net-remote)\nDescription: Downloads url via the native wget command. Options:\n    '(output . path)   — save as this filename (-O)\n    'quiet             — -q\n    'continue          — -c (resume partial)\n    'no-check-cert     — --no-check-certificate\n    '(timeout . secs)  — --timeout\n    'pure              — force pure-Scheme HTTP (uses (scm net http client));\n                         does not honor continue/no-check-cert/timeout\nExample:\n  (wget \"https://example.com/file.tar.gz\" '(output . \"/tmp/x.tgz\"))",
   },
   "scm-net-sockets": {
     "call-with-tcp-server": "Syntax: (call-with-tcp-server port proc)\nLibrary: (scm net sockets)\nDescription: Creates a TCP listener on port, calls proc with it, then stops the\n  listener even if proc raises an error. Returns the result of proc.\nExample:\n  (call-with-tcp-server 8080\n    (lambda (listener) (tcp-accept listener)))",
@@ -4479,15 +4789,140 @@ const docs = {
     "string-split-vector": "Syntax: (string-split-vector s pattern?)\nLibrary: (scm string)\nDescription: Splits the string s at occurrences of the regular expression pattern and returns a vector of the resulting substrings. Defaults to splitting on whitespace.\nExample:\n  (string-split-vector \"a b c\") => #(\"a\" \"b\" \"c\")\n  (string-split-vector \"a,b,c\" \",\") => #(\"a\" \"b\" \"c\")",
     "symbol-starts-with?": "Syntax: (symbol-starts-with? sym str)\nLibrary: (scm string)\nDescription: Returns #t if the string representation of sym starts with str, #f otherwise. str may be a string or a symbol.\nExample:\n  (symbol-starts-with? 'foobar \"foo\") => #t\n  (symbol-starts-with? 'foobar \"bar\") => #f",
   },
-  "scm-system": {
+  "scm-sysadmin": {
+    "absolute-path": "Syntax: (absolute-path path)\nLibrary: (scm system)\nDescription: Returns the absolute (fully qualified) form of the given path string.\nExample:\n  (absolute-path \".\") => \"/current/working/dir\"",
+    "awk": "Syntax: (awk action src [option ...])\nLibrary: (scm text)\nDescription: For each line of src, splits the line into fields and calls\n  action with three arguments: the field list, the 1-based line number,\n  and the original line. Returns the list of action results (with #f\n  results filtered out, matching awk's pattern-action style where lines\n  without a print produce no output).\n  Options:\n    '(delimiter . str) — field separator (default any run of whitespace)\n    '(filter . pred)   — only call action when (pred fields line-no line)\n                         returns true; equivalent to an awk pattern\nExample:\n  ;; print second field of each line\n  (awk (lambda (fs n l) (list-ref fs 1)) \"data.tsv\")\n  ;; filter and reformat /etc/passwd: name:uid for shells of /bin/bash\n  (awk (lambda (fs n l)\n         (string-append (list-ref fs 0) \":\" (list-ref fs 2)))\n       \"/etc/passwd\"\n       '(delimiter . \":\")\n       `(filter . ,(lambda (fs n l)\n                     (and (> (length fs) 6)\n                          (string=? (list-ref fs 6) \"/bin/bash\")))))",
+    "base-name": "Syntax: (base-name path)\nLibrary: (scm system)\nDescription: Returns the file name (including extension) from the given path string, without the directory part.\nExample:\n  (base-name \"/usr/share/doc/readme.txt\") => \"readme.txt\"",
+    "bunzip2": "Syntax: (bunzip2 path [option ...])\nLibrary: (scm archive)\nDescription: Decompresses path (which should end in .bz2) in place via\n  the native bunzip2 command. Option 'keep retains the .bz2 original.\nExample:\n  (bunzip2 \"big.log.bz2\")",
+    "bzip2": "Syntax: (bzip2 path [option ...])\nLibrary: (scm archive)\nDescription: Compresses path into path.bz2 using the native bzip2 command.\n  Option 'keep retains the original file (-k).\nExample:\n  (bzip2 \"big.log\")",
+    "cat": "Syntax: (cat src ...)\nLibrary: (scm text)\nDescription: Returns the concatenated contents of all src arguments as a\n  single string, joining lines with newline. Each src is a filename, port,\n  or list of strings.\nExample:\n  (cat \"a.txt\" \"b.txt\")",
+    "cd": "Syntax: (set-current-directory! path)\nLibrary: (scm fs)\nDescription: Sets the process working directory hint to path. Returns the new directory as a string on success, #f on failure. Note: in the JVM the OS-level cwd cannot be changed for already-loaded native code; the value is recorded so that subsequent relative-path operations and child-process invocations behave as if cwd were path.\nExample:\n  (set-current-directory! \"/tmp\") => \"/tmp\"",
+    "chmod": "Syntax: (chmod path mode [option ...])\nLibrary: (scm fs)\nDescription: Changes file mode bits via the native chmod command. mode is\n  either an octal string (e.g. \"755\") or a symbolic spec (\"u+x\").\n  Options: 'recursive (-R). On Windows this is a best-effort no-op when\n  no native chmod is available.\nExample:\n  (chmod \"script.sh\" \"755\")\n  (chmod \"dir\" \"700\" 'recursive)",
+    "chown": "Syntax: (chown path owner [option ...])\nLibrary: (scm fs)\nDescription: Changes the owner (and optionally group) of path. owner is a\n  string like \"user\" or \"user:group\". Options: 'recursive (-R).\n  Returns #t on success, #f otherwise. Best-effort no-op on Windows.\nExample:\n  (chown \"file\" \"alice:staff\")",
+    "close-input-zip": "Syntax: (close-input-zip zip)\nLibrary: (scm zip)\nDescription: Closes the given ZIP input archive, releasing all underlying resources.\nExample:\n  (let ((z (open-input-zip-file \"archive.zip\")))\n    (close-input-zip z))",
+    "close-output-zip": "Syntax: (close-output-zip zip)\nLibrary: (scm core)\nDescription: Closes the given zip output archive, flushing and releasing all underlying resources.\nExample:\n  (let ((z (open-output-zip-file \"archive.zip\")))\n    (close-output-zip z))",
+    "copy-directory": "Syntax: (copy-directory src dest)\nLibrary: (scm system)\nDescription: Recursively copies the directory at src to dest. Returns unspecified on success, #f on failure.\nExample:\n  (copy-directory \"/src/dir\" \"/dst/dir\")",
+    "copy-file": "Syntax: (copy-file src dest)\nLibrary: (scm system)\nDescription: Copies the file at src to dest, overwriting dest if it exists. Returns unspecified on success, #f on failure.\nExample:\n  (copy-file \"data.txt\" \"backup.txt\")",
+    "cp": "Syntax: (cp src dst [option ...])\nLibrary: (scm fs)\nDescription: Copies src to dst. Options: 'recursive (-r) to copy a directory.\n  When src is a directory and 'recursive is not given, signals an error.\nExample:\n  (cp \"a.txt\" \"b.txt\")\n  (cp \"src/\" \"dst/\" 'recursive)",
+    "curl": "Syntax: (curl url [option ...])\nLibrary: (scm net-remote)\nDescription: Performs an HTTP(S) request via the native curl command.\n  By default returns the response body as a string. Options:\n    '(method . str)        — HTTP method (default GET)\n    '(headers . list)      — list of header strings \"Name: value\"\n    '(data . str)          — request body (sets method to POST if unset)\n    '(output . path)       — write body to file; returns #t/#f\n    '(timeout . seconds)\n    'silent                — suppress progress (-s)\n    'follow-redirects      — -L\n    'fail-on-error         — -f (non-2xx exit non-zero)\n    'include-status        — return (status . body) instead of body\n    'pure                  — force pure-Scheme path (uses (scm net http client));\n                             does not honor follow-redirects, timeout, fail-on-error\nExample:\n  (curl \"https://example.com/api\"\n        '(method . \"POST\")\n        '(headers . (\"Content-Type: application/json\"))\n        '(data . \"{\\\"x\\\":1}\")\n        'silent)",
+    "current-directory": "Syntax: (current-directory)\nLibrary: (scm system)\nDescription: Returns the current working directory as a string.\nExample:\n  (current-directory) => \"/home/user/projects\"",
+    "cut": "Syntax: (cut src [option ...])\nLibrary: (scm text)\nDescription: Selects fields from each line of src. Options:\n  '(fields . (n ...)) — 1-based field indices to keep (required);\n  '(delimiter . str) — field separator (default tab).\nExample:\n  (cut \"/etc/passwd\" '(fields . (1 3)) '(delimiter . \":\"))",
+    "deflate-compress": "Syntax: (deflate-compress bytevector [level])\nLibrary: (scm compression)\nDescription: Compresses bytevector using raw DEFLATE (RFC 1951) and returns\n  a bytevector. The optional level is an integer 0-9: 0 = no compression,\n  1-3 = fastest, 4-6 = optimal (default), 7-9 = smallest size.\nExample:\n  (utf8->string (deflate-decompress (deflate-compress (string->utf8 \"hello\")))) => \"hello\"",
+    "deflate-decompress": "Syntax: (deflate-decompress bytevector)\nLibrary: (scm compression)\nDescription: Decompresses a raw DEFLATE-compressed (RFC 1951) bytevector\n  and returns the original bytevector.\nExample:\n  (utf8->string (deflate-decompress (deflate-compress (string->utf8 \"hello\")))) => \"hello\"",
+    "delete-directory": "Syntax: (delete-directory dir)\nLibrary: (scm system)\nDescription: Recursively deletes the directory at dir. Returns unspecified on success, #f on failure.\nExample:\n  (delete-directory \"/tmp/old-dir\")",
+    "delete-file": "Syntax: (delete-file filename)\nLibrary: (scheme file)\nDescription: Deletes the named file. Returns unspecified if successful, #f if the file could not be deleted.\nExample:\n  (delete-file \"temp.txt\")",
+    "df": "Syntax: (df [path])\nLibrary: (scm fs-find)\nDescription: Returns a list of alists describing mounted filesystems.\n  Each entry has keys: filesystem, size, used, available, use% (string),\n  mount. Shells out to the native df command; returns '() if unavailable.\n  When a path argument is given, restricts to that filesystem.\nExample:\n  (df)\n  (df \"/home\")",
+    "diff": "Syntax: (diff a b [option ...])\nLibrary: (scm text)\nDescription: Compares two text inputs a and b and returns a unified-diff\n  string (or #t when 'brief and inputs are identical, #f when different).\n  a and b may each be a filename string, an input port, or a list of\n  lines. Options:\n    'unified                 — produce unified diff (default; -u)\n    'brief                   — return #t/#f only (-q)\n    'ignore-case             — case-insensitive comparison (-i)\n    'ignore-whitespace       — ignore whitespace differences (-w, native only)\n    '(context-lines . n)     — n lines of context (default 3, -U n)\n    '(label-a . str)         — label for file a in the header\n    '(label-b . str)         — label for file b in the header\n    'pure                    — force pure-Scheme path (LCS-based)\n  When the native diff command is on PATH and both inputs are filenames,\n  diff shells out for full feature parity.\nExample:\n  (diff \"old.txt\" \"new.txt\")\n  (diff a-lines b-lines 'brief)",
+    "directory-directories": "Syntax: (directory-directories dirname)\nLibrary: (scm system)\nDescription: Returns a list of subdirectory names (not full paths) in the directory dirname.\nExample:\n  (directory-directories \"/usr\") => (\"bin\" \"lib\" \"share\" ...)",
+    "directory-exists?": "Syntax: (directory-exists? dirname)\nLibrary: (scm system)\nDescription: Returns #t if the given path names an existing directory, otherwise returns #f.\nExample:\n  (directory-exists? \"/tmp\") => #t\n  (directory-exists? \"/nonexistent\") => #f",
+    "directory-files": "Syntax: (directory-files dirname)\nLibrary: (scm system)\nDescription: Returns a list of file names (not full paths) in the directory dirname.\nExample:\n  (directory-files \"/tmp\") => (\"file1.txt\" \"file2.txt\" ...)",
+    "directory-name": "Syntax: (directory-name path)\nLibrary: (scm system)\nDescription: Returns the directory part of the given path as an absolute path string, or #f if there is no parent directory.\nExample:\n  (directory-name \"/usr/share/readme.txt\") => \"/usr/share\"",
+    "du": "Syntax: (du path [option ...])\nLibrary: (scm fs-find)\nDescription: Returns the total size in bytes of path. If path is a\n  directory the size is the recursive sum of all contained files.\n  Option 'apparent (default) counts file-size; 'block-size sums via\n  the native du command for filesystem block-aligned totals when\n  available.\nExample:\n  (du \"/var/log\")",
+    "env-list": "Syntax: (env-list)\nLibrary: (scm system)\nDescription: Returns an alist of all environment variables as (name . value)\n  pairs. Equivalent to SRFI-98 get-environment-variables.\nExample:\n  (env-list) => ((\"PATH\" . \"/usr/bin\") ...)",
+    "file-exists?": "Syntax: (file-exists? filename)\nLibrary: (scheme file)\nDescription: Returns #t if the named file exists, otherwise returns #f.\nExample:\n  (file-exists? \"/etc/hosts\") => #t\n  (file-exists? \"/nonexistent\") => #f",
+    "file-modification-date": "Syntax: (file-modification-date filename)\nLibrary: (scm fs)\nDescription: Returns the last modification time of the file as seconds since the Unix epoch (UTC).\nExample:\n  (file-modification-date \"data.txt\") => 1700000000",
+    "file-modification-timestamp": "Syntax: (file-modification-timestamp filename)\nLibrary: (scm system)\nDescription: Returns the last modification time of the file as a millisecond timestamp (milliseconds since the .NET epoch).\nExample:\n  (file-modification-timestamp \"data.txt\") => 1700000000000",
+    "file-size": "Syntax: (file-size file)\nLibrary: (scm system)\nDescription: Returns the size of the named file in bytes as an exact integer, or #f if the file cannot be accessed.\nExample:\n  (file-size \"/etc/hosts\") => 221",
+    "find": "Syntax: (find root [option ...])\nLibrary: (scm fs-find)\nDescription: Recursively walks the filesystem starting at root and returns\n  the list of matching paths. Options:\n    '(name . glob)         — match the basename against a glob pattern\n    '(type . sym)          — restrict to 'file or 'directory\n    '(maxdepth . n)        — limit recursion depth (root is depth 0)\n    '(mindepth . n)        — exclude entries shallower than n\n    '(predicate . proc)    — additional (string -> bool) test\n    '(action . proc)       — invoke proc on each matching path\nExample:\n  (find \".\" '(name . \"*.scm\") '(type . file))\n  (find \"/var/log\" `(predicate . ,(lambda (p) (> (file-size p) 1024))))",
     "get-bytes": "Syntax: (get-bytes obj [encoding])\nLibrary: (scm core)\nDescription: Returns the byte representation of obj (string, symbol, or bytevector) as a bytevector.\n  encoding is an optional string or symbol specifying the character encoding (default: utf-8).\n  Supported encodings: utf-8, utf-8-bom, latin-1, utf-16, utf-16-le.\nExample:\n  (get-bytes \"hello\")\n  (get-bytes \"hello\" \"latin-1\")",
     "get-environment-variable": "Syntax: (get-environment-variable name)\nLibrary: (scm system) (scheme process-context) (srfi 98)\nDescription: Returns the value of the environment variable named name as a string, or #f if it is not set.\nExample:\n  (get-environment-variable \"HOME\") => \"/home/user\"\n  (get-environment-variable \"UNDEFINED_VAR\") => #f",
+    "getopt": "Syntax: (getopt argv spec)\nLibrary: (scm system)\nDescription: Parses command-line arguments. argv is a list of strings;\n  spec is a list of option descriptors, each one of:\n    (long-name short-char takes-value? [default])\n  where long-name is a string (without the --), short-char is a character\n  (or #f), takes-value? is a boolean, and default is the value used when\n  the option is absent (defaults to #f for non-value flags, #f for\n  value-taking options). Returns (alist . positionals) where alist maps\n  long-name strings to the supplied values (#t for absent boolean flags\n  is replaced by the default). Unknown options raise an error.\nExample:\n  (getopt '(\"-v\" \"--name\" \"foo\" \"a\" \"b\")\n          '((\"verbose\" #\\v #f)\n            (\"name\"    #\\n #t \"anon\")))\n  => (((\"verbose\" . #t) (\"name\" . \"foo\")) . (\"a\" \"b\"))",
+    "grep": "Syntax: (grep pattern src [option ...])\nLibrary: (scm text)\nDescription: Returns the list of lines in src matching pattern. src may\n  be a filename string, a list of strings, or an input port. Options:\n  'ignore-case (-i), 'invert-match (-v), 'line-number (-n) (returns\n  (list line-no line) pairs), 'count (-c) (returns integer match count),\n  'fixed-strings (-F) (literal match; this is also the default in pure\n  mode), 'pure (force pure-Scheme path).\n  When 'pure is not set and the native grep command is on PATH and src\n  is a filename, grep shells out to it for full POSIX regex support.\nExample:\n  (grep \"ERROR\" \"log.txt\" 'ignore-case 'line-number)",
+    "gunzip": "Syntax: (gunzip path [option ...])\nLibrary: (scm archive)\nDescription: Decompresses path (which should end in .gz) in place.\n  Option 'keep retains the .gz original (-k).\nExample:\n  (gunzip \"big.log.gz\")",
+    "gzip": "Syntax: (gzip path [option ...])\nLibrary: (scm archive)\nDescription: Compresses path into path.gz using the native gzip command\n  when available; falls back to gzip-compress on the file bytes.\n  Option 'keep retains the original file (-k).\nExample:\n  (gzip \"big.log\")",
+    "gzip-compress": "Syntax: (gzip-compress bytevector [level])\nLibrary: (scm compression)\nDescription: Compresses bytevector using GZip format (RFC 1952) and returns\n  a bytevector. The optional level is an integer 0-9: 0 = no compression,\n  1-3 = fastest, 4-6 = optimal (default), 7-9 = smallest size.\nExample:\n  (utf8->string (gzip-decompress (gzip-compress (string->utf8 \"hello\")))) => \"hello\"",
+    "gzip-decompress": "Syntax: (gzip-decompress bytevector)\nLibrary: (scm compression)\nDescription: Decompresses a GZip-compressed (RFC 1952) bytevector and returns\n  the original bytevector.\nExample:\n  (utf8->string (gzip-decompress (gzip-compress (string->utf8 \"hello\")))) => \"hello\"",
+    "head": "Syntax: (head src [option ...])\nLibrary: (scm text)\nDescription: Returns the first n lines of src (default 10). Options:\n  '(lines . n) sets the count.\nExample:\n  (head \"log.txt\" '(lines . 5))",
+    "hexdump": "Syntax: (hexdump bv [option ...])\nLibrary: (scm text)\nDescription: Formats a bytevector as a canonical hex+ASCII dump (similar\n  to xxd or hexdump -C), returning a string. Options:\n    '(width . n)    — bytes per row (default 16)\n    '(offset . n)   — starting offset for the address column (default 0)\n    'no-ascii       — omit the trailing ASCII gutter\nExample:\n  (display (hexdump (string->utf8 \"hello world\")))",
+    "join-path": "Syntax: (join-path part ...)\nLibrary: (scm fs)\nDescription: Joins one or more path component strings into a single path\n  string using the platform's path separator character.\nExample:\n  (join-path \"/usr\" \"local\" \"bin\") => \"/usr/local/bin\"  ; on Unix",
+    "ln": "Syntax: (ln target name [option ...])\nLibrary: (scm fs)\nDescription: Creates a link at name pointing to target. Options:\n  'symbolic (-s) creates a symbolic link, otherwise a hard link;\n  'force (-f) replaces an existing destination.\nExample:\n  (ln \"/usr/bin/python3\" \"/usr/local/bin/python\" 'symbolic 'force)",
+    "make-directory": "Syntax: (make-directory path)\nLibrary: (scm system)\nDescription: Creates the directory named by path, including all intermediate directories.\nExample:\n  (make-directory \"/tmp/new/dir\")",
+    "mktemp": "Syntax: (mktemp [option ...])\nLibrary: (scm fs)\nDescription: Creates a uniquely-named empty file in the temp directory and\n  returns its path. Option '(prefix . str) sets the filename prefix\n  (default \"tmp\").\nExample:\n  (mktemp) => \"/tmp/tmp-12345-1aff3...\"",
+    "mktempdir": "Syntax: (mktempdir [option ...])\nLibrary: (scm fs)\nDescription: Creates a uniquely-named empty directory in the temp directory\n  and returns its path. Option '(prefix . str) sets the dir-name prefix.\nExample:\n  (mktempdir) => \"/tmp/tmp-12345-1aff3...\"",
+    "move-directory": "Syntax: (move-directory src dest)\nLibrary: (scm system)\nDescription: Moves (renames) the directory from src to dest. Returns unspecified on success, #f on failure.\nExample:\n  (move-directory \"/tmp/old\" \"/tmp/new\")",
+    "move-file": "Syntax: (move-file src dest)\nLibrary: (scm system)\nDescription: Moves (renames) the file from src to dest, overwriting dest if it exists. Returns unspecified on success, #f on failure.\nExample:\n  (move-file \"old.txt\" \"new.txt\")",
+    "mv": "Syntax: (mv src dst [option ...])\nLibrary: (scm fs)\nDescription: Moves/renames src to dst. Works on files and directories.\nExample:\n  (mv \"old.txt\" \"new.txt\")",
+    "normalized-path": "Syntax: (normalized-path path)\nLibrary: (scm system)\nDescription: Returns the normalized form of path. If absolute, returns the full path; if relative, returns the relative path from the current directory.\nExample:\n  (normalized-path \"./foo/../bar\") => \"bar\"",
+    "open-input-zip-file": "Syntax: (open-input-zip-file filename)\nLibrary: (scm zip)\nDescription: Opens an existing ZIP archive at filename for reading and returns a ZIP reader object.\nExample:\n  (define z (open-input-zip-file \"archive.zip\"))\n  (zip-entry-names z)\n  (close-input-zip z)",
+    "open-output-zip-file": "Syntax: (open-output-zip-file filename)\nLibrary: (scm core)\nDescription: Creates a new ZIP archive at the given filename and returns a ZIP writer object. Entries can be added using zip-add-text-entry or zip-add-binary-entry.\nExample:\n  (define z (open-output-zip-file \"archive.zip\"))\n  (zip-add-text-entry z \"hello.txt\" \"Hello, world!\")\n  (close-output-zip z)",
     "process-alive?": "Syntax: (process-alive? handle)\nLibrary: (scm system)\nDescription: Returns #t if the process started by start-program is still running, #f if it has exited.\nExample:\n  (process-alive? p) => #t",
     "process-kill": "Syntax: (process-kill handle [force?])\nLibrary: (scm system)\nDescription: Stops a process started by start-program. With force? = #f (default) requests a normal termination (SIGTERM on Unix, TerminateProcess on Windows via Process.destroy). With force? = #t kills forcefully (SIGKILL on Unix). Returns #t.\nExample:\n  (process-kill p)        ; graceful where supported\n  (process-kill p #t)     ; force",
     "process-pid": "Syntax: (process-pid handle)\nLibrary: (scm system)\nDescription: Returns the OS process id of a process handle returned by start-program.\nExample:\n  (process-pid p) => 12345",
     "process-wait": "Syntax: (process-wait handle [timeout-ms])\nLibrary: (scm system)\nDescription: Waits for the process to exit. Without timeout-ms, blocks until exit and returns the exit code as an integer. With timeout-ms, waits at most that long; returns the exit code on exit, or #f if the process is still running when the timeout elapses.\nExample:\n  (process-wait p)            => 0\n  (process-wait p 5000)       => 0 or #f",
+    "readlink": "Syntax: (readlink path)\nLibrary: (scm fs)\nDescription: Returns the target of the symbolic link at path as a string,\n  or #f if path is not a symlink or cannot be read. Uses native readlink.\nExample:\n  (readlink \"/usr/local/bin/python\") => \"/usr/bin/python3\"",
+    "rm": "Syntax: (rm path [option ...])\nLibrary: (scm fs)\nDescription: Removes path. Options: 'recursive (-r) to remove a directory\n  and its contents; 'force (-f) to suppress errors when path is missing.\nExample:\n  (rm \"foo.txt\")\n  (rm \"build\" 'recursive 'force)",
+    "rsync": "Syntax: (rsync src dst [option ...])\nLibrary: (scm net-remote)\nDescription: Invokes rsync to synchronise src to dst. Either may be a\n  local path or a remote spec (user@host:/path or rsync://...). Options:\n    'archive         — -a (recursive + preserve everything)\n    'recursive       — -r\n    'delete          — --delete (remove dst files not in src)\n    'verbose         — -v\n    'dry-run         — -n\n    'compress        — -z\n    '(exclude . list) — list of patterns to pass as --exclude\n    '(rsh . cmd)     — remote-shell command, e.g. \"ssh -p 2222\"\nExample:\n  (rsync \"build/\" \"deploy@web1:/srv/app/\" 'archive 'delete 'verbose)",
+    "run": "Syntax: (run prog arg ...)\nLibrary: (scm system)\nDescription: Varargs wrapper around run-program. Runs the external program\n  prog with the given arguments and returns its exit code.\nExample:\n  (run \"echo\" \"hello\") => 0",
+    "run!": "Syntax: (run! prog arg ...)\nLibrary: (scm system)\nDescription: Like run, but raises an error when the program exits non-zero\n  or fails to launch. Returns 0 on success.\nExample:\n  (run! \"true\") => 0",
     "run-parallel": "Syntax: (run-parallel fn values)\nLibrary: (scm system)\nDescription: Runs fn in parallel over each element of values using one thread per\n  element and returns the results as a list in the same order. Exceptions raised\n  in any thread are propagated when joining.\nExample:\n  (run-parallel (lambda (x) (* x x)) '(1 2 3 4)) => (1 4 9 16)",
     "run-program": "Syntax: (run-program cmd)\nLibrary: (scm system)\nDescription: Executes the external program specified as a list (program arg1 arg2 ...), waits for it to complete, and returns its exit code as an exact integer. Returns #f on failure.\nExample:\n  (run-program '(\"echo\" \"hello\")) => 0",
+    "run-program/capture": "Syntax: (run-program/capture cmd [options])\nLibrary: (scm system)\nDescription: Executes the external program specified as a list (program arg1 arg2 ...), waits for it to complete, and returns a list (exit-code stdout stderr) where stdout and stderr are captured as strings. options is an alist with optional keys: 'work-dir <path>, 'stdin <string> (text to write to the child's standard input). Returns #f on failure.\nExample:\n  (run-program/capture '(\"echo\" \"hello\")) => (0 \"hello\\n\" \"\")",
+    "run?": "Syntax: (run? prog arg ...)\nLibrary: (scm system)\nDescription: Returns #t when the program exits with status 0, #f otherwise.\n  Useful for predicates like (run? \"test\" \"-f\" path).\nExample:\n  (run? \"test\" \"-f\" \"/etc/hosts\") => #t",
+    "scp": "Syntax: (scp src dst [option ...])\nLibrary: (scm net-remote)\nDescription: Copies files between hosts via the native scp command.\n  src or dst may be local paths or remote specs of the form\n  user@host:/path. Options:\n    'recursive       — pass -r for directory copy\n    '(port . int)    — remote SSH port (-P)\n    '(key . path)    — identity file (-i)\n    'preserve        — preserve times/modes (-p)\n    'quiet           — suppress progress (-q)\nExample:\n  (scp \"build.tar.gz\" \"deploy@web1:/srv/releases/\" '(port . 2222))",
+    "sed": "Syntax: (sed pattern replacement src [option ...])\nLibrary: (scm text)\nDescription: Substitutes pattern with replacement in each line of src.\n  Options: 'global (g flag, replace all occurrences per line; default is\n  first occurrence only), 'ignore-case (i flag), 'pure (force pure path).\n  When the native sed command is on PATH and 'pure is not set, sed shells\n  out to it. The pure path treats pattern as a literal string.\nExample:\n  (sed \"foo\" \"bar\" \"in.txt\" 'global)",
+    "sh": "Syntax: (sh prog arg ...)\nLibrary: (scm system)\nDescription: Runs the program and returns its captured stdout as a string.\n  Raises an error on non-zero exit. Trailing newlines are preserved.\nExample:\n  (sh \"date\" \"+%Y\") => \"2026\\n\"",
+    "sh-lines": "Syntax: (sh-lines prog arg ...)\nLibrary: (scm system)\nDescription: Like sh but returns stdout split into a list of lines\n  (the trailing empty line from a final newline is dropped).\nExample:\n  (sh-lines \"ls\" \"/tmp\") => (\"file1\" \"file2\")",
+    "shell-quote": "Syntax: (shell-quote s)\nLibrary: (scm system)\nDescription: Returns s quoted such that it can be safely passed as a single\n  argument to a POSIX shell (e.g. via /bin/sh -c). Wraps the string in\n  single quotes and escapes any embedded single quotes.\nExample:\n  (shell-quote \"it's fine\") => \"'it'\\\\''s fine'\"",
+    "sleep": "Syntax: (sleep seconds)\nLibrary: (scm system)\nDescription: Pauses the current thread for the given number of seconds\n  (which may be fractional). Returns an unspecified value. Uses SRFI 18\n  thread-sleep! internally.\nExample:\n  (sleep 1.5)",
+    "sort-lines": "Syntax: (sort-lines src [option ...])\nLibrary: (scm text)\nDescription: Returns the lines of src sorted lexicographically. Options:\n  'reverse (-r), 'numeric (-n), 'unique (-u).\n  Named sort-lines (not sort) to avoid clashing with srfi 132 sort.\nExample:\n  (sort-lines \"names.txt\" 'reverse)",
+    "special-folder-application-data": "Syntax: (special-folder-application-data)\nLibrary: (scm system)\nDescription: Returns the path of the user's application data directory as a string.\nExample:\n  (special-folder-application-data) => \"/home/user/.config\"",
+    "special-folder-documents": "Syntax: (special-folder-documents)\nLibrary: (scm system)\nDescription: Returns the path of the user's documents directory as a string.\nExample:\n  (special-folder-documents) => \"/home/user/Documents\"",
+    "special-folder-temp": "Syntax: (special-folder-temp)\nLibrary: (scm fs)\nDescription: Returns the platform temp directory path as a string.\nExample: (special-folder-temp) => \"/tmp\"",
+    "ssh": "Syntax: (ssh host command [option ...])\nLibrary: (scm net-remote)\nDescription: Runs command (a string) on the remote host via the native\n  ssh command and returns (exit-code stdout stderr). host can be\n  \"hostname\" or \"user@hostname\". Options:\n    '(user . str)   — overrides user (alternative to user@host form)\n    '(port . int)   — SSH port (default 22)\n    '(key . path)   — identity file (-i)\n    '(stdin . str)  — fed to remote command's stdin\n    '(extra-args . list) — additional raw flags appended before host\nExample:\n  (ssh \"deploy@web1\" \"systemctl status nginx\" '(port . 2222))",
+    "start-program": "Syntax: (start-program cmd-and-args [options])\nLibrary: (scm system)\nDescription: Starts an external program without waiting for it to finish and returns a process handle (a native value). cmd-and-args is a list (program arg1 arg2 ...). options is an alist with optional keys: 'work-dir <path>, 'log-file <path> (redirects stdout+stderr to this file). Use process-pid, process-kill, process-wait, process-alive? on the handle.\nExample:\n  (define p (start-program '(\"sleep\" \"30\")))\n  (process-kill p)\n  (process-wait p)",
+    "stat": "Syntax: (stat path)\nLibrary: (scm fs)\nDescription: Returns an alist describing path with keys exists, type\n  (one of file/directory/missing), size, mtime, and mode (octal string\n  on Unix; #f on Windows or when stat is unavailable).\nExample:\n  (stat \"/etc/hosts\")",
+    "sys-machine-name": "Syntax: (sys-machine-name)\nLibrary: (scm system)\nDescription: Returns the hostname of the current machine as a string.\nExample:\n  (sys-machine-name) => \"myhost\"",
+    "sys-num-cpu-cores": "Syntax: (sys-num-cpu-cores)\nLibrary: (scm system)\nDescription: Returns the number of logical CPU cores available to the current process as an integer.\nExample:\n  (sys-num-cpu-cores) => 8",
+    "sys-os-version": "Syntax: (sys-os-version)\nLibrary: (scm system)\nDescription: Returns a list describing the operating system: (platform version-string major minor service-pack).\nExample:\n  (sys-os-version) => (linux \"Unix 5.15.0.0\" 5 15 \"\")",
+    "sys-platform": "Syntax: (sys-platform)\nLibrary: (scm system)\nDescription: Returns a symbol identifying the current operating system platform: windows, linux, or unknown.\nExample:\n  (sys-platform) => linux",
+    "sys-scm-technology": "Syntax: (sys-scm-technology)\nLibrary: (scm system)\nDescription: Returns a symbol identifying the SCM implementation technology: csharp or java.\nExample:\n  (sys-scm-technology) => java",
+    "sys-scm-version": "Syntax: (sys-scm-version)\nLibrary: (scm system)\nDescription: Returns the SCM interpreter version as a string.\nExample:\n  (sys-scm-version) => \"0.0.1\"",
+    "sys-user-name": "Syntax: (sys-user-name)\nLibrary: (scm system)\nDescription: Returns the name of the currently logged-in user as a string.\nExample:\n  (sys-user-name) => \"alice\"",
+    "tail": "Syntax: (tail src [option ...])\nLibrary: (scm text)\nDescription: Returns the last n lines of src (default 10). Options:\n  '(lines . n) sets the count.\nExample:\n  (tail \"log.txt\" '(lines . 5))",
+    "tar-create": "Syntax: (tar-create archive paths [option ...])\nLibrary: (scm archive)\nDescription: Creates a tar archive at path archive containing the listed\n  paths. archive's extension determines compression: .tar.gz/.tgz uses\n  gzip; .tar.bz2/.tbz uses bzip2; otherwise plain tar.\n  Options: 'gzip (force -z), 'bzip2 (force -j), 'verbose (-v),\n  '(work-dir . dir) (run as if cwd = dir).\n  Shells out to the native tar command.\nExample:\n  (tar-create \"backup.tar.gz\" '(\"src\" \"docs\"))",
+    "tar-extract": "Syntax: (tar-extract archive [option ...])\nLibrary: (scm archive)\nDescription: Extracts archive into the current directory (or 'work-dir).\n  Compression is auto-detected from extension or forced via 'gzip / 'bzip2.\n  Options: '(work-dir . dir), 'verbose.\nExample:\n  (tar-extract \"backup.tar.gz\" '(work-dir . \"/tmp/restore\"))",
+    "tar-list": "Syntax: (tar-list archive [option ...])\nLibrary: (scm archive)\nDescription: Returns a list of entry names contained in archive.\n  Compression is auto-detected; force with 'gzip or 'bzip2.\nExample:\n  (tar-list \"backup.tar.gz\")",
+    "tee": "Syntax: (tee text file ...)\nLibrary: (scm text)\nDescription: Writes text (a string, or a list of strings joined by\n  newline) to each file path, and returns text. Mirrors `tee` reading\n  stdin and writing to multiple destinations.\nExample:\n  (tee \"hello\\n\" \"/tmp/a\" \"/tmp/b\")",
+    "touch": "Syntax: (touch path [option ...])\nLibrary: (scm fs)\nDescription: Creates path as an empty file if it does not exist. When path\n  already exists and a native touch command is available on PATH, its\n  modification time is updated. Option 'no-create (-c) skips creation of\n  missing files. Returns #t on success, #f otherwise.\nExample:\n  (touch \"/tmp/foo\")",
+    "tr": "Syntax: (tr from to [option ...])\nLibrary: (scm text)\nDescription: Returns a procedure that translates characters in a string:\n  each char in `from` is replaced by the char at the same index in `to`.\n  When called on a string, returns the translated string. Option 'delete\n  drops chars in `from` instead (to may be \"\").\nExample:\n  ((tr \"abc\" \"xyz\") \"banana\") => \"yxnxnx\"",
+    "tree": "Syntax: (tree root [option ...])\nLibrary: (scm fs-find)\nDescription: Returns a string with a pretty ASCII tree of the directory at\n  root, similar to the tree(1) command. Options:\n    '(maxdepth . n)  — limit depth shown (root is depth 0)\n    'dirs-only       — only show directories\nExample:\n  (display (tree \".\" '(maxdepth . 2)))",
+    "uniq": "Syntax: (uniq lines)\nLibrary: (scm text)\nDescription: Returns lines with consecutive duplicates collapsed to a\n  single entry. Matches the behavior of Linux uniq (input should usually\n  be sorted first).\nExample:\n  (uniq '(\"a\" \"a\" \"b\" \"a\")) => (\"a\" \"b\" \"a\")",
+    "unxz": "Syntax: (unxz path [option ...])\nLibrary: (scm archive)\nDescription: Decompresses path (which should end in .xz) in place via\n  the native unxz command. Option 'keep retains the .xz original.\nExample:\n  (unxz \"big.log.xz\")",
+    "uuidgen": "Syntax: (uuidgen)\nLibrary: (scm system)\nDescription: Returns a random RFC 4122 version 4 UUID as a string in\n  canonical 8-4-4-4-12 hyphenated form. Uses cryptographically random\n  bytes; version and variant bits are set per the spec.\nExample:\n  (uuidgen) => \"e3b0c442-98fc-4c14-9afb-f4ca495991b9\"",
+    "watch": "Syntax: (watch thunk [option ...])\nLibrary: (scm system)\nDescription: Repeatedly invokes the zero-argument thunk, sleeping between\n  invocations. Returns when thunk raises or when the iteration limit is\n  reached. Options:\n    '(interval . seconds) — seconds between calls (default 2)\n    '(count . n)          — stop after n iterations (default: forever)\nExample:\n  (watch (lambda () (display (sh \"date\")) (newline))\n         '(interval . 5) '(count . 3))",
+    "wc": "Syntax: (wc src [option ...])\nLibrary: (scm text)\nDescription: Returns an alist with keys lines, words, chars for src.\n  Options: 'lines-only ('-l), 'words-only ('-w), 'chars-only ('-c) return\n  just that integer instead of the full alist.\nExample:\n  (wc \"log.txt\") => ((lines . 1234) (words . 9876) (chars . 54321))",
+    "wget": "Syntax: (wget url [option ...])\nLibrary: (scm net-remote)\nDescription: Downloads url via the native wget command. Options:\n    '(output . path)   — save as this filename (-O)\n    'quiet             — -q\n    'continue          — -c (resume partial)\n    'no-check-cert     — --no-check-certificate\n    '(timeout . secs)  — --timeout\n    'pure              — force pure-Scheme HTTP (uses (scm net http client));\n                         does not honor continue/no-check-cert/timeout\nExample:\n  (wget \"https://example.com/file.tar.gz\" '(output . \"/tmp/x.tgz\"))",
+    "which": "Syntax: (which program)\nLibrary: (scm system)\nDescription: Searches the directories in PATH for an executable named program and returns its full path as a string, or #f if not found.\nExample:\n  (which \"ls\") => \"/usr/bin/ls\"\n  (which \"nonexistent\") => #f",
+    "xargs": "Syntax: (xargs proc items [option ...])\nLibrary: (scm fs-find)\nDescription: Applies proc to chunks of items in turn. By default proc is\n  called once per item. Option '(batch-size . n) calls proc with sublists\n  of up to n items at a time. Returns the list of results.\nExample:\n  (xargs delete-file (find \"/tmp\" '(name . \"*.bak\")))\n  (xargs (lambda (batch) (run-program (cons \"rm\" batch)))\n         '(\"a\" \"b\" \"c\" \"d\") '(batch-size . 2))",
+    "xz": "Syntax: (xz path [option ...])\nLibrary: (scm archive)\nDescription: Compresses path into path.xz using the native xz command.\n  Option 'keep retains the original file (-k).\nExample:\n  (xz \"big.log\")",
+    "zip-add-binary-entry": "Syntax: (zip-add-binary-entry zip name [timestamp])\nLibrary: (scm zip)\nDescription: Creates a new binary entry named name in the ZIP archive zip and\n  returns an output binary port for writing to it. The optional timestamp is a\n  Unix epoch in seconds.\nExample:\n  (let ((port (zip-add-binary-entry zip \"data.bin\"))) (write-bytevector bv port))",
+    "zip-add-stored-entry": "Syntax: (zip-add-stored-entry zip name bytevector [timestamp])\nLibrary: (scm zip)\nDescription: Creates a new uncompressed (STORED) entry named name in the\n  ZIP archive zip and writes the entire bytevector as its content. Unlike\n  zip-add-binary-entry, the data is stored without compression and must be\n  provided in full. The optional timestamp is a Unix epoch in seconds.\n  Returns void.\nExample:\n  (zip-add-stored-entry zip \"mimetype\" (string->utf8 \"application/xml\") 0)",
+    "zip-add-text-entry": "Syntax: (zip-add-text-entry zip name [timestamp])\nLibrary: (scm zip)\nDescription: Creates a new text entry named name in the ZIP archive zip and\n  returns a UTF-8 textual output port for writing to it. The optional timestamp\n  is a Unix epoch in seconds.\nExample:\n  (let ((port (zip-add-text-entry zip \"readme.txt\"))) (display \"Hello\" port))",
+    "zip-entry-names": "Syntax: (zip-entry-names zip)\nLibrary: (scm zip)\nDescription: Returns a list of entry name strings in the ZIP archive zip.\nExample:\n  (zip-entry-names z) => (\"file1.txt\" \"dir/file2.txt\")",
+    "zip-files-equal?": "Syntax: (zip-files-equal? file1 file2)\nLibrary: (scm zip)\nDescription: Returns #t if the two ZIP files have the same entry names and identical\n  entry contents (compared as bytevectors), #f otherwise. Metadata differences such\n  as version-made-by or external attributes are ignored.\nExample:\n  (zip-files-equal? \"a.xlsx\" \"b.xlsx\") => #t",
+    "zip-read-entry-bytevector": "Syntax: (zip-read-entry-bytevector zip name)\nLibrary: (scm zip)\nDescription: Reads the contents of the entry named name from the ZIP archive zip and returns it as a bytevector.\nExample:\n  (zip-read-entry-bytevector z \"hello.txt\") => #u8(72 101 108 108 111)",
+    "zlib-compress": "Syntax: (zlib-compress bytevector [level])\nLibrary: (scm compression)\nDescription: Compresses bytevector using ZLib framing (RFC 1950) and returns\n  a bytevector. The optional level is an integer 0-9: 0 = no compression,\n  1-3 = fastest, 4-6 = optimal (default), 7-9 = smallest size.\nExample:\n  (utf8->string (zlib-decompress (zlib-compress (string->utf8 \"hello\")))) => \"hello\"",
+    "zlib-decompress": "Syntax: (zlib-decompress bytevector)\nLibrary: (scm compression)\nDescription: Decompresses a ZLib-framed (RFC 1950) bytevector and returns\n  the original bytevector.\nExample:\n  (utf8->string (zlib-decompress (zlib-compress (string->utf8 \"hello\")))) => \"hello\"",
+  },
+  "scm-system": {
+    "env-list": "Syntax: (env-list)\nLibrary: (scm system)\nDescription: Returns an alist of all environment variables as (name . value)\n  pairs. Equivalent to SRFI-98 get-environment-variables.\nExample:\n  (env-list) => ((\"PATH\" . \"/usr/bin\") ...)",
+    "get-bytes": "Syntax: (get-bytes obj [encoding])\nLibrary: (scm core)\nDescription: Returns the byte representation of obj (string, symbol, or bytevector) as a bytevector.\n  encoding is an optional string or symbol specifying the character encoding (default: utf-8).\n  Supported encodings: utf-8, utf-8-bom, latin-1, utf-16, utf-16-le.\nExample:\n  (get-bytes \"hello\")\n  (get-bytes \"hello\" \"latin-1\")",
+    "get-environment-variable": "Syntax: (get-environment-variable name)\nLibrary: (scm system) (scheme process-context) (srfi 98)\nDescription: Returns the value of the environment variable named name as a string, or #f if it is not set.\nExample:\n  (get-environment-variable \"HOME\") => \"/home/user\"\n  (get-environment-variable \"UNDEFINED_VAR\") => #f",
+    "getopt": "Syntax: (getopt argv spec)\nLibrary: (scm system)\nDescription: Parses command-line arguments. argv is a list of strings;\n  spec is a list of option descriptors, each one of:\n    (long-name short-char takes-value? [default])\n  where long-name is a string (without the --), short-char is a character\n  (or #f), takes-value? is a boolean, and default is the value used when\n  the option is absent (defaults to #f for non-value flags, #f for\n  value-taking options). Returns (alist . positionals) where alist maps\n  long-name strings to the supplied values (#t for absent boolean flags\n  is replaced by the default). Unknown options raise an error.\nExample:\n  (getopt '(\"-v\" \"--name\" \"foo\" \"a\" \"b\")\n          '((\"verbose\" #\\v #f)\n            (\"name\"    #\\n #t \"anon\")))\n  => (((\"verbose\" . #t) (\"name\" . \"foo\")) . (\"a\" \"b\"))",
+    "process-alive?": "Syntax: (process-alive? handle)\nLibrary: (scm system)\nDescription: Returns #t if the process started by start-program is still running, #f if it has exited.\nExample:\n  (process-alive? p) => #t",
+    "process-kill": "Syntax: (process-kill handle [force?])\nLibrary: (scm system)\nDescription: Stops a process started by start-program. With force? = #f (default) requests a normal termination (SIGTERM on Unix, TerminateProcess on Windows via Process.destroy). With force? = #t kills forcefully (SIGKILL on Unix). Returns #t.\nExample:\n  (process-kill p)        ; graceful where supported\n  (process-kill p #t)     ; force",
+    "process-pid": "Syntax: (process-pid handle)\nLibrary: (scm system)\nDescription: Returns the OS process id of a process handle returned by start-program.\nExample:\n  (process-pid p) => 12345",
+    "process-wait": "Syntax: (process-wait handle [timeout-ms])\nLibrary: (scm system)\nDescription: Waits for the process to exit. Without timeout-ms, blocks until exit and returns the exit code as an integer. With timeout-ms, waits at most that long; returns the exit code on exit, or #f if the process is still running when the timeout elapses.\nExample:\n  (process-wait p)            => 0\n  (process-wait p 5000)       => 0 or #f",
+    "run": "Syntax: (run prog arg ...)\nLibrary: (scm system)\nDescription: Varargs wrapper around run-program. Runs the external program\n  prog with the given arguments and returns its exit code.\nExample:\n  (run \"echo\" \"hello\") => 0",
+    "run!": "Syntax: (run! prog arg ...)\nLibrary: (scm system)\nDescription: Like run, but raises an error when the program exits non-zero\n  or fails to launch. Returns 0 on success.\nExample:\n  (run! \"true\") => 0",
+    "run-parallel": "Syntax: (run-parallel fn values)\nLibrary: (scm system)\nDescription: Runs fn in parallel over each element of values using one thread per\n  element and returns the results as a list in the same order. Exceptions raised\n  in any thread are propagated when joining.\nExample:\n  (run-parallel (lambda (x) (* x x)) '(1 2 3 4)) => (1 4 9 16)",
+    "run-program": "Syntax: (run-program cmd)\nLibrary: (scm system)\nDescription: Executes the external program specified as a list (program arg1 arg2 ...), waits for it to complete, and returns its exit code as an exact integer. Returns #f on failure.\nExample:\n  (run-program '(\"echo\" \"hello\")) => 0",
+    "run-program/capture": "Syntax: (run-program/capture cmd [options])\nLibrary: (scm system)\nDescription: Executes the external program specified as a list (program arg1 arg2 ...), waits for it to complete, and returns a list (exit-code stdout stderr) where stdout and stderr are captured as strings. options is an alist with optional keys: 'work-dir <path>, 'stdin <string> (text to write to the child's standard input). Returns #f on failure.\nExample:\n  (run-program/capture '(\"echo\" \"hello\")) => (0 \"hello\\n\" \"\")",
+    "run?": "Syntax: (run? prog arg ...)\nLibrary: (scm system)\nDescription: Returns #t when the program exits with status 0, #f otherwise.\n  Useful for predicates like (run? \"test\" \"-f\" path).\nExample:\n  (run? \"test\" \"-f\" \"/etc/hosts\") => #t",
+    "sh": "Syntax: (sh prog arg ...)\nLibrary: (scm system)\nDescription: Runs the program and returns its captured stdout as a string.\n  Raises an error on non-zero exit. Trailing newlines are preserved.\nExample:\n  (sh \"date\" \"+%Y\") => \"2026\\n\"",
+    "sh-lines": "Syntax: (sh-lines prog arg ...)\nLibrary: (scm system)\nDescription: Like sh but returns stdout split into a list of lines\n  (the trailing empty line from a final newline is dropped).\nExample:\n  (sh-lines \"ls\" \"/tmp\") => (\"file1\" \"file2\")",
+    "shell-quote": "Syntax: (shell-quote s)\nLibrary: (scm system)\nDescription: Returns s quoted such that it can be safely passed as a single\n  argument to a POSIX shell (e.g. via /bin/sh -c). Wraps the string in\n  single quotes and escapes any embedded single quotes.\nExample:\n  (shell-quote \"it's fine\") => \"'it'\\\\''s fine'\"",
+    "sleep": "Syntax: (sleep seconds)\nLibrary: (scm system)\nDescription: Pauses the current thread for the given number of seconds\n  (which may be fractional). Returns an unspecified value. Uses SRFI 18\n  thread-sleep! internally.\nExample:\n  (sleep 1.5)",
     "start-program": "Syntax: (start-program cmd-and-args [options])\nLibrary: (scm system)\nDescription: Starts an external program without waiting for it to finish and returns a process handle (a native value). cmd-and-args is a list (program arg1 arg2 ...). options is an alist with optional keys: 'work-dir <path>, 'log-file <path> (redirects stdout+stderr to this file). Use process-pid, process-kill, process-wait, process-alive? on the handle.\nExample:\n  (define p (start-program '(\"sleep\" \"30\")))\n  (process-kill p)\n  (process-wait p)",
     "sys-machine-name": "Syntax: (sys-machine-name)\nLibrary: (scm system)\nDescription: Returns the hostname of the current machine as a string.\nExample:\n  (sys-machine-name) => \"myhost\"",
     "sys-num-cpu-cores": "Syntax: (sys-num-cpu-cores)\nLibrary: (scm system)\nDescription: Returns the number of logical CPU cores available to the current process as an integer.\nExample:\n  (sys-num-cpu-cores) => 8",
@@ -4496,6 +4931,8 @@ const docs = {
     "sys-scm-technology": "Syntax: (sys-scm-technology)\nLibrary: (scm system)\nDescription: Returns a symbol identifying the SCM implementation technology: csharp or java.\nExample:\n  (sys-scm-technology) => java",
     "sys-scm-version": "Syntax: (sys-scm-version)\nLibrary: (scm system)\nDescription: Returns the SCM interpreter version as a string.\nExample:\n  (sys-scm-version) => \"0.0.1\"",
     "sys-user-name": "Syntax: (sys-user-name)\nLibrary: (scm system)\nDescription: Returns the name of the currently logged-in user as a string.\nExample:\n  (sys-user-name) => \"alice\"",
+    "uuidgen": "Syntax: (uuidgen)\nLibrary: (scm system)\nDescription: Returns a random RFC 4122 version 4 UUID as a string in\n  canonical 8-4-4-4-12 hyphenated form. Uses cryptographically random\n  bytes; version and variant bits are set per the spec.\nExample:\n  (uuidgen) => \"e3b0c442-98fc-4c14-9afb-f4ca495991b9\"",
+    "watch": "Syntax: (watch thunk [option ...])\nLibrary: (scm system)\nDescription: Repeatedly invokes the zero-argument thunk, sleeping between\n  invocations. Returns when thunk raises or when the iteration limit is\n  reached. Options:\n    '(interval . seconds) — seconds between calls (default 2)\n    '(count . n)          — stop after n iterations (default: forever)\nExample:\n  (watch (lambda () (display (sh \"date\")) (newline))\n         '(interval . 5) '(count . 3))",
   },
   "scm-terminal": {
     "alternate-screen-disable": "Syntax: (alternate-screen-disable)\nLibrary: (scm terminal)\nDescription: Switches back from the alternate screen buffer to the\nnormal screen, restoring the original screen content.\nExample:\n  (alternate-screen-disable)",
@@ -4534,6 +4971,22 @@ const docs = {
     "terminal?": "Syntax: (terminal?)\nSyntax: (terminal? which)\nLibrary: (scm terminal)\nDescription: Returns #t if the process is connected to a terminal.\nIf which is 'input, checks only the input stream.\nIf which is 'output, checks only the output stream.\nWith no arguments, returns #t only if both input and output are terminals.\nExample:\n  (terminal?) => #t",
     "with-alternate-screen": "Syntax: (with-alternate-screen thunk)\nLibrary: (scm terminal)\nDescription: Calls thunk with the alternate screen buffer enabled.\nThe original screen is restored when thunk returns or when an exception\nis raised.\nExample:\n  (with-alternate-screen\n    (lambda ()\n      (clear-screen)\n      (cursor-position 1 1)\n      (display \"Hello from alternate screen!\")))",
     "with-terminal-raw": "Syntax: (with-terminal-raw thunk)\nLibrary: (scm terminal)\nDescription: Calls thunk with raw terminal mode enabled. The original\nterminal settings are restored when thunk returns or when an exception\nis raised. Returns the value returned by thunk.\nExample:\n  (with-terminal-raw\n    (lambda ()\n      (let ((key (terminal-read-key)))\n        (display key))))",
+  },
+  "scm-text": {
+    "awk": "Syntax: (awk action src [option ...])\nLibrary: (scm text)\nDescription: For each line of src, splits the line into fields and calls\n  action with three arguments: the field list, the 1-based line number,\n  and the original line. Returns the list of action results (with #f\n  results filtered out, matching awk's pattern-action style where lines\n  without a print produce no output).\n  Options:\n    '(delimiter . str) — field separator (default any run of whitespace)\n    '(filter . pred)   — only call action when (pred fields line-no line)\n                         returns true; equivalent to an awk pattern\nExample:\n  ;; print second field of each line\n  (awk (lambda (fs n l) (list-ref fs 1)) \"data.tsv\")\n  ;; filter and reformat /etc/passwd: name:uid for shells of /bin/bash\n  (awk (lambda (fs n l)\n         (string-append (list-ref fs 0) \":\" (list-ref fs 2)))\n       \"/etc/passwd\"\n       '(delimiter . \":\")\n       `(filter . ,(lambda (fs n l)\n                     (and (> (length fs) 6)\n                          (string=? (list-ref fs 6) \"/bin/bash\")))))",
+    "cat": "Syntax: (cat src ...)\nLibrary: (scm text)\nDescription: Returns the concatenated contents of all src arguments as a\n  single string, joining lines with newline. Each src is a filename, port,\n  or list of strings.\nExample:\n  (cat \"a.txt\" \"b.txt\")",
+    "cut": "Syntax: (cut src [option ...])\nLibrary: (scm text)\nDescription: Selects fields from each line of src. Options:\n  '(fields . (n ...)) — 1-based field indices to keep (required);\n  '(delimiter . str) — field separator (default tab).\nExample:\n  (cut \"/etc/passwd\" '(fields . (1 3)) '(delimiter . \":\"))",
+    "diff": "Syntax: (diff a b [option ...])\nLibrary: (scm text)\nDescription: Compares two text inputs a and b and returns a unified-diff\n  string (or #t when 'brief and inputs are identical, #f when different).\n  a and b may each be a filename string, an input port, or a list of\n  lines. Options:\n    'unified                 — produce unified diff (default; -u)\n    'brief                   — return #t/#f only (-q)\n    'ignore-case             — case-insensitive comparison (-i)\n    'ignore-whitespace       — ignore whitespace differences (-w, native only)\n    '(context-lines . n)     — n lines of context (default 3, -U n)\n    '(label-a . str)         — label for file a in the header\n    '(label-b . str)         — label for file b in the header\n    'pure                    — force pure-Scheme path (LCS-based)\n  When the native diff command is on PATH and both inputs are filenames,\n  diff shells out for full feature parity.\nExample:\n  (diff \"old.txt\" \"new.txt\")\n  (diff a-lines b-lines 'brief)",
+    "grep": "Syntax: (grep pattern src [option ...])\nLibrary: (scm text)\nDescription: Returns the list of lines in src matching pattern. src may\n  be a filename string, a list of strings, or an input port. Options:\n  'ignore-case (-i), 'invert-match (-v), 'line-number (-n) (returns\n  (list line-no line) pairs), 'count (-c) (returns integer match count),\n  'fixed-strings (-F) (literal match; this is also the default in pure\n  mode), 'pure (force pure-Scheme path).\n  When 'pure is not set and the native grep command is on PATH and src\n  is a filename, grep shells out to it for full POSIX regex support.\nExample:\n  (grep \"ERROR\" \"log.txt\" 'ignore-case 'line-number)",
+    "head": "Syntax: (head src [option ...])\nLibrary: (scm text)\nDescription: Returns the first n lines of src (default 10). Options:\n  '(lines . n) sets the count.\nExample:\n  (head \"log.txt\" '(lines . 5))",
+    "hexdump": "Syntax: (hexdump bv [option ...])\nLibrary: (scm text)\nDescription: Formats a bytevector as a canonical hex+ASCII dump (similar\n  to xxd or hexdump -C), returning a string. Options:\n    '(width . n)    — bytes per row (default 16)\n    '(offset . n)   — starting offset for the address column (default 0)\n    'no-ascii       — omit the trailing ASCII gutter\nExample:\n  (display (hexdump (string->utf8 \"hello world\")))",
+    "sed": "Syntax: (sed pattern replacement src [option ...])\nLibrary: (scm text)\nDescription: Substitutes pattern with replacement in each line of src.\n  Options: 'global (g flag, replace all occurrences per line; default is\n  first occurrence only), 'ignore-case (i flag), 'pure (force pure path).\n  When the native sed command is on PATH and 'pure is not set, sed shells\n  out to it. The pure path treats pattern as a literal string.\nExample:\n  (sed \"foo\" \"bar\" \"in.txt\" 'global)",
+    "sort-lines": "Syntax: (sort-lines src [option ...])\nLibrary: (scm text)\nDescription: Returns the lines of src sorted lexicographically. Options:\n  'reverse (-r), 'numeric (-n), 'unique (-u).\n  Named sort-lines (not sort) to avoid clashing with srfi 132 sort.\nExample:\n  (sort-lines \"names.txt\" 'reverse)",
+    "tail": "Syntax: (tail src [option ...])\nLibrary: (scm text)\nDescription: Returns the last n lines of src (default 10). Options:\n  '(lines . n) sets the count.\nExample:\n  (tail \"log.txt\" '(lines . 5))",
+    "tee": "Syntax: (tee text file ...)\nLibrary: (scm text)\nDescription: Writes text (a string, or a list of strings joined by\n  newline) to each file path, and returns text. Mirrors `tee` reading\n  stdin and writing to multiple destinations.\nExample:\n  (tee \"hello\\n\" \"/tmp/a\" \"/tmp/b\")",
+    "tr": "Syntax: (tr from to [option ...])\nLibrary: (scm text)\nDescription: Returns a procedure that translates characters in a string:\n  each char in `from` is replaced by the char at the same index in `to`.\n  When called on a string, returns the translated string. Option 'delete\n  drops chars in `from` instead (to may be \"\").\nExample:\n  ((tr \"abc\" \"xyz\") \"banana\") => \"yxnxnx\"",
+    "uniq": "Syntax: (uniq lines)\nLibrary: (scm text)\nDescription: Returns lines with consecutive duplicates collapsed to a\n  single entry. Matches the behavior of Linux uniq (input should usually\n  be sorted first).\nExample:\n  (uniq '(\"a\" \"a\" \"b\" \"a\")) => (\"a\" \"b\" \"a\")",
+    "wc": "Syntax: (wc src [option ...])\nLibrary: (scm text)\nDescription: Returns an alist with keys lines, words, chars for src.\n  Options: 'lines-only ('-l), 'words-only ('-w), 'chars-only ('-c) return\n  just that integer instead of the full alist.\nExample:\n  (wc \"log.txt\") => ((lines . 1234) (words . 9876) (chars . 54321))",
   },
   "scm-uri": {
     "percent-decode": "Syntax: (percent-decode s [plus-as-space?])\nLibrary: (scm uri)\nDescription: Decodes percent-escaped UTF-8 in s. When plus-as-space? is\n  true (the default), '+' is treated as space — appropriate for\n  application/x-www-form-urlencoded bodies and query strings. Pass #f to\n  preserve '+' literally (e.g. for URL path segments).\nExample:\n  (percent-decode \"a%20b\") => \"a b\"\n  (percent-decode \"a+b\") => \"a b\"\n  (percent-decode \"a+b\" #f) => \"a+b\"",

@@ -14,6 +14,11 @@ class SchemeRepl
                 Scheme.StrictImports = true;
                 args = args.Where(a => a != "--strict").ToArray();
             }
+            bool sysadmin = args.Contains("--sysadmin");
+            if (sysadmin)
+            {
+                args = args.Where(a => a != "--sysadmin").ToArray();
+            }
             Scheme.CommandLineArgs = args;
             if (args.Length > 0 && (args[0] == "--version" || args[0] == "-v"))
             {
@@ -105,7 +110,7 @@ class SchemeRepl
                 try
                 {
                     var script = args[0];
-                    var scheme = Scheme.ForProgram();
+                    var scheme = sysadmin ? Scheme.ForSysadmin() : Scheme.ForProgram();
                     object arguments = Value.NIL;
                     for (int i = args.Length - 1; i >= 1; i--)
                     {
@@ -129,7 +134,7 @@ class SchemeRepl
             {
                 try
                 {
-                    var scheme = Scheme.ForRepl();
+                    var scheme = sysadmin ? Scheme.ForSysadmin() : Scheme.ForRepl();
                     var stdin = new TextStream(Console.In, "{stdin}");
                     var interactive = !Console.IsInputRedirected;
                     if (interactive) { Console.Write("> "); Console.Out.Flush(); }

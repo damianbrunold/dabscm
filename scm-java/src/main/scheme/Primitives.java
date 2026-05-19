@@ -343,6 +343,7 @@ public class Primitives {
         bind(new PrimitiveRsaEncrypt());
         bind(new PrimitiveRsaGenerateKeypair());
         bind(new PrimitiveRunProgram());
+        bind(new PrimitiveRunProgramCapture());
         bind(new PrimitiveSHA1Hash());
         bind(new PrimitiveSHA256Hash());
         bind(new PrimitiveSecond());
@@ -352,6 +353,7 @@ public class Primitives {
         bind(new PrimitiveSetCarB());
         bind(new PrimitiveSetCdrB());
         bind(new PrimitiveSetCodeB());
+        bind(new PrimitiveSetCurrentDirectory());
         bind(new PrimitiveSetCurrentModule(modules));
         bind(new PrimitiveSin());
         bind(new PrimitiveSocketBinaryInputPort());

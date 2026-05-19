@@ -32,6 +32,13 @@ public class Scheme : IEvaluator
         scheme.SetupUserProgramModule();
         return scheme;
     }
+
+    public static Scheme ForSysadmin()
+    {
+        var scheme = new Scheme();
+        scheme.SetupUserSysadminModule();
+        return scheme;
+    }
     
     public Scheme()
     {
@@ -73,7 +80,12 @@ public class Scheme : IEvaluator
             modules.RestoreFromSnapshot();
             return;
         }
-        if (this.modules.HasModule("user main"))
+        if (this.modules.HasModule("user sysadmin"))
+        {
+            this.modules.ResetModules();
+            SetupUserSysadminModule();
+        }
+        else if (this.modules.HasModule("user main"))
         {
             this.modules.ResetModules();
             SetupUserMainModule();
@@ -235,6 +247,33 @@ public class Scheme : IEvaluator
     {
         var scm_core = modules.GetModuleRequired(null, "scm core");
         modules.SetCurrentModule("user program");
+    }
+
+    public void SetupUserSysadminModule()
+    {
+        var user_sysadmin = new Module("user sysadmin");
+        modules.SetCurrentModule("user sysadmin");
+        var libs = new string[] {
+            "(scheme base)",
+            "(scheme file)",
+            "(scheme process-context)",
+            "(scheme read)",
+            "(scheme time)",
+            "(scheme write)",
+            "(scm sysadmin)",
+            "(scm io)",
+            "(scm glob)",
+            "(scm string)",
+            "(scm doc)",
+            "(srfi 1)",
+            "(srfi 13)"
+        };
+        foreach (var lib in libs)
+        {
+            EvalString("(import " + lib + ")", lib);
+        }
+        modules.UpdateModuleVar();
+        modules.SetCurrentModule("user sysadmin");
     }
 
     public void LoadLibraries()

@@ -24,6 +24,42 @@ Example:
   (base-name "/usr/share/doc/readme.txt") => "readme.txt"
 ```
 
+### `cd`
+
+```
+Syntax: (set-current-directory! path)
+Library: (scm fs)
+Description: Sets the process working directory hint to path. Returns the new directory as a string on success, #f on failure. Note: in the JVM the OS-level cwd cannot be changed for already-loaded native code; the value is recorded so that subsequent relative-path operations and child-process invocations behave as if cwd were path.
+Example:
+  (set-current-directory! "/tmp") => "/tmp"
+```
+
+### `chmod`
+
+```
+Syntax: (chmod path mode [option ...])
+Library: (scm fs)
+Description: Changes file mode bits via the native chmod command. mode is
+  either an octal string (e.g. "755") or a symbolic spec ("u+x").
+  Options: 'recursive (-R). On Windows this is a best-effort no-op when
+  no native chmod is available.
+Example:
+  (chmod "script.sh" "755")
+  (chmod "dir" "700" 'recursive)
+```
+
+### `chown`
+
+```
+Syntax: (chown path owner [option ...])
+Library: (scm fs)
+Description: Changes the owner (and optionally group) of path. owner is a
+  string like "user" or "user:group". Options: 'recursive (-R).
+  Returns #t on success, #f otherwise. Best-effort no-op on Windows.
+Example:
+  (chown "file" "alice:staff")
+```
+
 ### `copy-directory`
 
 ```
@@ -42,6 +78,18 @@ Library: (scm system)
 Description: Copies the file at src to dest, overwriting dest if it exists. Returns unspecified on success, #f on failure.
 Example:
   (copy-file "data.txt" "backup.txt")
+```
+
+### `cp`
+
+```
+Syntax: (cp src dst [option ...])
+Library: (scm fs)
+Description: Copies src to dst. Options: 'recursive (-r) to copy a directory.
+  When src is a directory and 'recursive is not given, signals an error.
+Example:
+  (cp "a.txt" "b.txt")
+  (cp "src/" "dst/" 'recursive)
 ```
 
 ### `current-directory`
@@ -167,6 +215,18 @@ Example:
   (join-path "/usr" "local" "bin") => "/usr/local/bin"  ; on Unix
 ```
 
+### `ln`
+
+```
+Syntax: (ln target name [option ...])
+Library: (scm fs)
+Description: Creates a link at name pointing to target. Options:
+  'symbolic (-s) creates a symbolic link, otherwise a hard link;
+  'force (-f) replaces an existing destination.
+Example:
+  (ln "/usr/bin/python3" "/usr/local/bin/python" 'symbolic 'force)
+```
+
 ### `make-directory`
 
 ```
@@ -175,6 +235,29 @@ Library: (scm system)
 Description: Creates the directory named by path, including all intermediate directories.
 Example:
   (make-directory "/tmp/new/dir")
+```
+
+### `mktemp`
+
+```
+Syntax: (mktemp [option ...])
+Library: (scm fs)
+Description: Creates a uniquely-named empty file in the temp directory and
+  returns its path. Option '(prefix . str) sets the filename prefix
+  (default "tmp").
+Example:
+  (mktemp) => "/tmp/tmp-12345-1aff3..."
+```
+
+### `mktempdir`
+
+```
+Syntax: (mktempdir [option ...])
+Library: (scm fs)
+Description: Creates a uniquely-named empty directory in the temp directory
+  and returns its path. Option '(prefix . str) sets the dir-name prefix.
+Example:
+  (mktempdir) => "/tmp/tmp-12345-1aff3..."
 ```
 
 ### `move-directory`
@@ -197,6 +280,16 @@ Example:
   (move-file "old.txt" "new.txt")
 ```
 
+### `mv`
+
+```
+Syntax: (mv src dst [option ...])
+Library: (scm fs)
+Description: Moves/renames src to dst. Works on files and directories.
+Example:
+  (mv "old.txt" "new.txt")
+```
+
 ### `normalized-path`
 
 ```
@@ -210,6 +303,29 @@ Example:
 ### `path-sep`
 
 *(no documentation)*
+
+### `readlink`
+
+```
+Syntax: (readlink path)
+Library: (scm fs)
+Description: Returns the target of the symbolic link at path as a string,
+  or #f if path is not a symlink or cannot be read. Uses native readlink.
+Example:
+  (readlink "/usr/local/bin/python") => "/usr/bin/python3"
+```
+
+### `rm`
+
+```
+Syntax: (rm path [option ...])
+Library: (scm fs)
+Description: Removes path. Options: 'recursive (-r) to remove a directory
+  and its contents; 'force (-f) to suppress errors when path is missing.
+Example:
+  (rm "foo.txt")
+  (rm "build" 'recursive 'force)
+```
 
 ### `special-folder-application-data`
 
@@ -238,6 +354,31 @@ Syntax: (special-folder-temp)
 Library: (scm fs)
 Description: Returns the platform temp directory path as a string.
 Example: (special-folder-temp) => "/tmp"
+```
+
+### `stat`
+
+```
+Syntax: (stat path)
+Library: (scm fs)
+Description: Returns an alist describing path with keys exists, type
+  (one of file/directory/missing), size, mtime, and mode (octal string
+  on Unix; #f on Windows or when stat is unavailable).
+Example:
+  (stat "/etc/hosts")
+```
+
+### `touch`
+
+```
+Syntax: (touch path [option ...])
+Library: (scm fs)
+Description: Creates path as an empty file if it does not exist. When path
+  already exists and a native touch command is available on PATH, its
+  modification time is updated. Option 'no-create (-c) skips creation of
+  missing files. Returns #t on success, #f otherwise.
+Example:
+  (touch "/tmp/foo")
 ```
 
 ### `which`
