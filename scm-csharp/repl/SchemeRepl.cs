@@ -3,6 +3,62 @@ using System.Reflection;
 
 namespace schemerepl;
 
+static class InteractiveRepl
+{
+    public static void Run(Scheme scheme)
+    {
+        var term = new Terminal();
+        if (!term.CanRaw()) { RunCooked(scheme); return; }
+        term.EnsureVt();
+        string? histFile = HistoryPath();
+        var history = new History(histFile);
+        var provider = new SchemeCompletionProvider(scheme);
+        var editor = new LineEditor(term, history, provider);
+        while (true)
+        {
+            string? input;
+            try { input = editor.ReadSexp("> "); }
+            catch (Exception) { break; }
+            if (input == null) break; // EOF
+            if (string.IsNullOrWhiteSpace(input)) continue;
+            try
+            {
+                var v = scheme.EvalString(input, "{stdin}");
+                Console.WriteLine(Value.PrintRep(v));
+            }
+            catch (SchemeError e) { e.PrintStackTrace(); }
+        }
+    }
+
+    public static void RunCooked(Scheme scheme)
+    {
+        var stdin = new TextStream(Console.In, "{stdin}");
+        var interactive = !Console.IsInputRedirected;
+        if (interactive) { Console.Write("> "); Console.Out.Flush(); }
+        while (true)
+        {
+            try
+            {
+                var expr = scheme.Read(stdin);
+                if (expr.Equals(Value.EOF)) break;
+                var v = scheme.Eval(expr);
+                Console.WriteLine(Value.PrintRep(v));
+            }
+            catch (SchemeError e) { e.PrintStackTrace(); }
+            if (interactive) { Console.Write("> "); Console.Out.Flush(); }
+        }
+    }
+
+    private static string? HistoryPath()
+    {
+        var custom = Environment.GetEnvironmentVariable("DABSCM_HISTORY");
+        if (!string.IsNullOrEmpty(custom)) return custom;
+        var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        if (string.IsNullOrEmpty(home)) return null;
+        return Path.Combine(home, ".dabscm-history");
+    }
+}
+
 class SchemeRepl
 {
     static int Main(string[] args)
@@ -80,25 +136,7 @@ class SchemeRepl
                     if (args[0] == "-f") scheme = Scheme.ForRepl();
                     else if (args[0] == "-b") scheme = Scheme.ForProgram();
                     else scheme = Scheme.ForMinimal();
-                    var stdin = new TextStream(Console.In, "{stdin}");
-                    var interactive = !Console.IsInputRedirected;
-                    if (interactive) { Console.Write("> "); Console.Out.Flush(); }
-
-                    while (true)
-                    {
-                        try
-                        {
-                            var expr = scheme.Read(stdin);
-                            if (expr.Equals(Value.EOF)) break;
-                            var value = scheme.Eval(expr);
-                            Console.WriteLine(Value.PrintRep(value));
-                        }
-                        catch (SchemeError e)
-                        {
-                            e.PrintStackTrace();
-                        }
-                        if (interactive) { Console.Write("> "); Console.Out.Flush(); }
-                    }
+                    InteractiveRepl.Run(scheme);
                 }
                 catch (SchemeError e)
                 {
@@ -135,25 +173,7 @@ class SchemeRepl
                 try
                 {
                     var scheme = sysadmin ? Scheme.ForSysadmin() : Scheme.ForRepl();
-                    var stdin = new TextStream(Console.In, "{stdin}");
-                    var interactive = !Console.IsInputRedirected;
-                    if (interactive) { Console.Write("> "); Console.Out.Flush(); }
-
-                    while (true)
-                    {
-                        try
-                        {
-                            var expr = scheme.Read(stdin);
-                            if (expr.Equals(Value.EOF)) break;
-                            var value = scheme.Eval(expr);
-                            Console.WriteLine(Value.PrintRep(value));
-                        }
-                        catch (SchemeError e)
-                        {
-                            e.PrintStackTrace();
-                        }
-                        if (interactive) { Console.Write("> "); Console.Out.Flush(); }
-                    }
+                    InteractiveRepl.Run(scheme);
                 }
                 catch (SchemeError e)
                 {

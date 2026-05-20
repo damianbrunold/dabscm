@@ -2,9 +2,15 @@ package scheme;
 
 import scheme.primitives.PrimitiveRead;
 import scheme.primitives.PrimitiveDisassemble;
+import scheme.repl.History;
+import scheme.repl.LineEditor;
+import scheme.repl.SchemeCompletionProvider;
+import scheme.repl.Terminal;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -253,6 +259,12 @@ public class Scheme implements IEvaluator {
 
     public void repl() throws IOException {
         boolean interactive = System.console() != null;
+        Terminal term = interactive ? new Terminal() : null;
+        if (interactive && term.canRaw()) {
+            interactiveRepl(term);
+            return;
+        }
+        // Cooked fallback: redirected stdin, dumb terminals, Windows, etc.
         if (interactive) { System.out.print("> "); System.out.flush(); }
         TextStream in = new TextStream(new PushbackReader(new InputStreamReader(System.in)), "{stdin}");
         while (true) {
@@ -267,6 +279,49 @@ public class Scheme implements IEvaluator {
             }
             if (interactive) { System.out.print("> "); System.out.flush(); }
         }
+    }
+
+    private void interactiveRepl(Terminal term) throws IOException {
+        Path histFile = historyPath();
+        History history = new History(histFile);
+        SchemeCompletionProvider provider = new SchemeCompletionProvider(this);
+        LineEditor editor = new LineEditor(term, history, provider);
+        try {
+            term.enterRaw();
+            while (true) {
+                String input;
+                try {
+                    input = editor.readSexp("> ");
+                } catch (IOException eof) {
+                    if ("EOF".equals(eof.getMessage())) break;
+                    throw eof;
+                }
+                if (input == null || input.trim().isEmpty()) continue;
+                // Drop raw mode while the user expression runs so its own I/O
+                // behaves normally (line buffering, signal delivery, etc.).
+                term.restore();
+                try {
+                    Object v = evalString(input, "{stdin}");
+                    flushOutputPorts();
+                    System.out.println(Value.printRep(v));
+                } catch (SchemeError e) {
+                    e.printStackTrace();
+                    flushOutputPorts();
+                } finally {
+                    term.enterRaw();
+                }
+            }
+        } finally {
+            term.restore();
+        }
+    }
+
+    private static Path historyPath() {
+        String custom = System.getenv("DABSCM_HISTORY");
+        if (custom != null && !custom.isEmpty()) return Paths.get(custom);
+        String home = System.getProperty("user.home");
+        if (home == null) return null;
+        return Paths.get(home, ".dabscm-history");
     }
 
     public static void main(String... args) throws IOException {
