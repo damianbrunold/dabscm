@@ -799,12 +799,25 @@ Example:
 
     (define (%pg-sql-literal v)
       ;; Returns the SQL literal text for a Scheme value, or raises.
-      ;; A list or vector is rendered as a parenthesised IN-list:
-      ;; (e1, e2, ...). Empty becomes (NULL) so `x IN $1` is always
-      ;; false rather than a SQL syntax error.
+      ;;
+      ;; Encoding rules:
+      ;;   #t              → TRUE
+      ;;   #f              → FALSE        (was NULL — that was unsafe for
+      ;;                                   NOT NULL boolean columns; for
+      ;;                                   SQL NULL pass 'null instead.)
+      ;;   'null           → NULL
+      ;;   '()             → (NULL)       (empty IN-list, so `x IN $1` is
+      ;;                                   always false rather than a
+      ;;                                   syntax error)
+      ;;   string          → 'escaped'
+      ;;   integer / real  → numeric literal
+      ;;   bytevector      → bytea literal
+      ;;   (a b …)         → (a, b, …)    (IN-list)
+      ;;   #(a b …)        → (a, b, …)    (IN-list)
       (cond
-        ((not v)            "NULL")            ; #f → NULL
         ((eq? v #t)         "TRUE")
+        ((eq? v #f)         "FALSE")
+        ((eq? v 'null)      "NULL")
         ((null? v)          "(NULL)")
         ((string? v)        (pg-quote-literal v))
         ((integer? v)       (number->string v))

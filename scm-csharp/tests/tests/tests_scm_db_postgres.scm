@@ -51,21 +51,25 @@
   ;; Strings are quoted; embedded single quotes doubled.
   (test-equal "WHERE name = 'O''Brien'"
               (pg-format-sql "WHERE name = $1" '("O'Brien")))
-  ;; #f → NULL, #t → TRUE (symmetric with read-side: NULL is reported as #f)
-  (test-equal "WHERE x IS NULL OR y = NULL"
-              (pg-format-sql "WHERE x IS NULL OR y = $1" '(#f)))
+  ;; Booleans are encoded honestly so INSERTs into boolean columns
+  ;; work. SQL NULL is the explicit symbol 'null instead of #f.
+  (test-equal "WHERE enabled = FALSE"
+              (pg-format-sql "WHERE enabled = $1" '(#f)))
   (test-equal "WHERE enabled = TRUE"
               (pg-format-sql "WHERE enabled = $1" '(#t)))
+  (test-equal "WHERE x IS NULL OR y = NULL"
+              (pg-format-sql "WHERE x IS NULL OR y = $1" '(null)))
   ;; Real numbers convert via inexact.
   (test-equal "INSERT VALUES (0.5)"
               (pg-format-sql "INSERT VALUES ($1)" '(1/2)))
   ;; Bytevectors as bytea hex literals.
   (test-equal "INSERT VALUES ('\\x00ff'::bytea)"
               (pg-format-sql "INSERT VALUES ($1)" '(#u8(0 255))))
-  ;; Unsupported types raise.
+  ;; Unsupported types raise. (The symbol 'null is handled above; any
+  ;; other symbol is unsupported.)
   (test-equal #t
               (guard (exn (#t #t))
-                (pg-format-sql "$1" '(symbol))
+                (pg-format-sql "$1" '(some-other-symbol))
                 #f)))
 
 (test-group "pg-format-sql: IN-lists from list params"
@@ -75,9 +79,10 @@
               (pg-format-sql "WHERE id IN $1" '((1 2 3))))
   (test-equal "WHERE name IN ('a', 'O''Brien')"
               (pg-format-sql "WHERE name IN $1" '(("a" "O'Brien"))))
-  ;; Mixed types, including NULL via #f.
+  ;; Mixed types, including NULL via 'null. (#f would now mean boolean
+  ;; FALSE, not SQL NULL — see the encoding rules in %pg-sql-literal.)
   (test-equal "(1, NULL, 'x')"
-              (pg-format-sql "$1" '((1 #f "x"))))
+              (pg-format-sql "$1" '((1 null "x"))))
   ;; Empty list → (NULL) so `x IN $1` is always false rather than a
   ;; SQL syntax error.
   (test-equal "WHERE id IN (NULL)"
