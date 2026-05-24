@@ -23,13 +23,8 @@ public class PrimitiveReadBytevectorB extends Primitive {
             BinaryInputStream port = Value.asBinaryInputPort(arguments[1]);
             int start = arguments.length >= 3 ? IntegerMath.toInt(arguments[2]) : 0;
             int end = arguments.length >= 4 ? IntegerMath.toInt(arguments[3]) : bv.length;
-            int read = 0;
-            for (int i = start; i < end; i++) {
-                int b = port.readByte();
-                if (b == -1) break;
-                bv[i] = (byte) b;
-                read++;
-            }
+            int count = end - start;
+            int read = count > 0 ? port.read(bv, start, count) : 0;
             return read == 0 ? (Object) Value.EOF : (Object) (long) read;
         } catch (Exception e) {
             throw new SchemeError(pos, "read-bytevector!: io failure: ~a", e.getMessage());

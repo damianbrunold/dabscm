@@ -20,13 +20,7 @@ public class PrimitiveReadBytevector : Primitive
             BinaryInputStream port = Value.AsBinaryInputPort(arguments[1]);
             if (k == 0) return new byte[0];
             byte[] buf = new byte[k];
-            int read = 0;
-            while (read < k)
-            {
-                int b = port.ReadByte();
-                if (b == -1) break;
-                buf[read++] = (byte)b;
-            }
+            int read = port.Read(buf, 0, k);
             if (read == 0) return Value.EOF;
             if (read < k)
             {

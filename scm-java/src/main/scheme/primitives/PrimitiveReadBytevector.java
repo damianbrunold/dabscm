@@ -21,12 +21,7 @@ public class PrimitiveReadBytevector extends Primitive {
             BinaryInputStream port = Value.asBinaryInputPort(arguments[1]);
             if (k == 0) return new byte[0];
             byte[] buf = new byte[k];
-            int read = 0;
-            while (read < k) {
-                int b = port.readByte();
-                if (b == -1) break;
-                buf[read++] = (byte) b;
-            }
+            int read = port.read(buf, 0, k);
             if (read == 0) return Value.EOF;
             if (read < k) {
                 byte[] shorter = new byte[read];

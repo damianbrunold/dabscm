@@ -22,14 +22,8 @@ public class PrimitiveReadBytevectorB : Primitive
             BinaryInputStream port = Value.AsBinaryInputPort(arguments[1]);
             int start = arguments.Length >= 3 ? IntegerMath.ToInt(arguments[2]) : 0;
             int end = arguments.Length >= 4 ? IntegerMath.ToInt(arguments[3]) : bv.Length;
-            int read = 0;
-            for (int i = start; i < end; i++)
-            {
-                int b = port.ReadByte();
-                if (b == -1) break;
-                bv[i] = (byte)b;
-                read++;
-            }
+            int count = end - start;
+            int read = count > 0 ? port.Read(bv, start, count) : 0;
             return read == 0 ? (object)Value.EOF : (object)(long)read;
         }
         catch (Exception e)
