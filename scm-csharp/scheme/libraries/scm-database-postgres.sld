@@ -413,24 +413,21 @@ Example:
                      (_    (pg-read-bytes! 18 bv-in)))   ; skip: tableOID(4) colNum(2) typeOID(4) typeSize(2) typeMod(4) format(2)
                 (loop (+ i 1) (cons name names)))))))
 
-    ;; Parse a DataRow body; returns a vector of string values (or #f for NULL)
+    ;; Parse a DataRow body; returns a vector of string values (or #f for NULL).
+    ;; Backed by the pg-parse-datarow primitive (native UTF-8 decode + direct
+    ;; vector fill). cols is accepted for API compatibility but unused — the
+    ;; column count comes from the body's leading int16.
+    (define %pg-parse-datarow (%primitive "pg-parse-datarow"))
     (define (pg-parse-datarow cols body)
       "Syntax: (pg-parse-datarow cols body)
 Library: (scm database postgres)
-Description: Parses a DataRow message body given the column name vector cols. Returns a
-  vector of string values, one per column, with #f for NULL values and \"\" for zero-length values.
+Description: Parses a DataRow message body and returns a vector of string
+  values, one per column, with #f for NULL values and \"\" for zero-length
+  values. The cols argument is accepted for backward compatibility but is
+  not used; the column count is read from the body.
 Example:
   (pg-parse-datarow #(\"id\" \"name\") body) => #(\"1\" \"alice\")"
-      (let* ((bv-in (open-input-bytevector body))
-             (ncols (pg-read-u16! bv-in)))
-        (let loop ((i 0) (vals '()))
-          (if (= i ncols)
-              (list->vector (reverse vals))
-              (let* ((len (pg-read-i32! bv-in))
-                     (val (cond ((= len -1) #f)
-                               ((= len  0) "")
-                               (else (utf8->string (pg-read-bytes! len bv-in))))))
-                (loop (+ i 1) (cons val vals)))))))
+      (%pg-parse-datarow body))
 
     ;; Read messages until ReadyForQuery; returns a result vector #(cols-vector rows-list)
     (define (pg-read-result! in)

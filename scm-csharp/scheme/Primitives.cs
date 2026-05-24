@@ -302,6 +302,7 @@ public class Primitives
         Bind(new PrimitivePairSource());
         Bind(new PrimitivePeekChar(modules));
         Bind(new PrimitivePeekU8());
+        Bind(new PrimitivePgParseDatarow());
         Bind(new PrimitivePortPosition(modules));
         Bind(new PrimitivePrimitive(modules.primitives));
         Bind(new PrimitivePrimitiveP());
