@@ -97,6 +97,7 @@
 | [`(scm png)`](libraries/scm-png.md) |  |
 | [`(scm profiling)`](libraries/scm-profiling.md) | Execution profiling and performance measurement |
 | [`(scm qr)`](libraries/scm-qr.md) |  |
+| [`(scm repl)`](libraries/scm-repl.md) |  |
 | [`(scm string)`](libraries/scm-string.md) | Extended string operations — search, split, trim, convert |
 | [`(scm sysadmin)`](libraries/scm-sysadmin.md) |  |
 | [`(scm system)`](libraries/scm-system.md) | System info, environment variables, process execution |
