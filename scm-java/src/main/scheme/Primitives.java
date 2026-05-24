@@ -311,6 +311,7 @@ public class Primitives {
         bind(new PrimitivePeekChar(modules));
         bind(new PrimitivePeekU8());
         bind(new PrimitivePgParseDatarow());
+        bind(new PrimitivePgQuoteLiteral());
         bind(new PrimitivePortPosition(modules));
         bind(new PrimitivePrimitive(this));
         bind(new PrimitivePrimitiveP());
@@ -454,6 +455,7 @@ public class Primitives {
         bind(new PrimitiveWriteChar(modules));
         bind(new PrimitiveWriteShared(modules));
         bind(new PrimitiveWriteSimple(modules));
+        bind(new PrimitiveWriteString(modules));
         bind(new PrimitiveWriteU8());
         bind(new PrimitiveWsAccept());
         bind(new PrimitiveWsClose());

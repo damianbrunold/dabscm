@@ -23,8 +23,8 @@ public class PrimitiveWriteBytevector : Primitive
             BinaryOutputStream port = Value.AsBinaryOutputPort(arguments[1]);
             int start = arguments.Length >= 3 ? IntegerMath.ToInt(arguments[2]) : 0;
             int end = arguments.Length >= 4 ? IntegerMath.ToInt(arguments[3]) : bv.Length;
-            for (int i = start; i < end; i++)
-                port.WriteByte(bv[i]);
+            int count = end - start;
+            if (count > 0) port.Write(bv, start, count);
             return new Values();
         }
         catch (Exception e)

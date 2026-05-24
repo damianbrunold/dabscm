@@ -1125,26 +1125,12 @@ Example:
       (apply for-each f (map vector->list vecs)))
 
     ;; write-string
-    (define (write-string s . args)
-      "Syntax: (write-string string)
-       (write-string string port)
-       (write-string string port start)
-       (write-string string port start end)
-Library: (scheme base)
-Description: Writes the characters of string from start to end in left-to-right
-  order to the given port. port defaults to the current output port. start
-  defaults to 0 and end defaults to the length of string. The return value is
-  unspecified.
-Example:
-  (write-string \"hello\")          ; writes hello
-  (write-string \"hello\" (current-output-port) 1 3) ; writes el"
-      (let* ((port  (if (null? args) (current-output-port) (car args)))
-             (start (if (or (null? args) (null? (cdr args))) 0 (cadr args)))
-             (end   (if (or (null? args) (null? (cdr args)) (null? (cddr args)))
-                        (string-length s) (car (cddr args)))))
-        (do ((i start (+ i 1)))
-            ((= i end))
-          (write-char (string-ref s i) port))))
+    ;; Native primitive: single bulk Writer.Write(char[], start, count).
+    ;; The previous pure-Scheme per-char loop made write-string scale
+    ;; as O(n) × (Scheme→native transition cost), which put a multi-
+    ;; second floor on multi-MB writes (catalog_text payloads, large
+    ;; s-exp blobs).
+    (define write-string (%primitive "write-string"))
 
     ;; read-string
     (define (read-string k . args)

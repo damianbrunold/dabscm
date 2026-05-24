@@ -127,12 +127,14 @@ Example:
       "Syntax: (pg-send-message! out type-byte payload-bv)
 Library: (scm database postgres)
 Description: Sends a framed PostgreSQL frontend message: a single type byte, a 32-bit
-  length (4 + payload length), and the payload bytevector.
+  length (4 + payload length), and the payload bytevector. Flushes the
+  socket buffer at the end so the request actually reaches the server.
 Example:
   (pg-send-message! out 81 query-bv)"
       (write-u8 type-byte out)
       (pg-write-u32! (+ 4 (bytevector-length payload-bv)) out)
-      (write-bytevector payload-bv out))
+      (write-bytevector payload-bv out)
+      (flush-output-port out))
 
     ;; Read next message: returns (type-byte . body-bytevector)
     (define (pg-read-message! in)
@@ -166,7 +168,8 @@ Example:
         (let* ((payload (get-output-bytevector bv))
                (len (+ 4 (bytevector-length payload))))
           (pg-write-u32! len out)
-          (write-bytevector payload out))))
+          (write-bytevector payload out)
+          (flush-output-port out))))
 
     ;; --- Error response parsing ---
 
@@ -692,29 +695,11 @@ Example:
     ;; protocol), prefer that over quoting; these helpers will remain for
     ;; the cases where building the SQL text dynamically is simpler.
 
-    (define (pg-quote-literal s)
-      "Syntax: (pg-quote-literal s)
-Library: (scm database postgres)
-Description: Returns s wrapped in single quotes with internal single quotes
-  doubled — the SQL standard string-literal escape, safe under PostgreSQL's
-  default standard_conforming_strings=on (i.e. backslashes are literal).
-  Use for any user-controlled string interpolated into SQL.
-Example:
-  (pg-quote-literal \"O'Brien\") => \"'O''Brien'\"
-  (pg-quote-literal \"\\\\n\")    => \"'\\\\n'\""
-      (let* ((n (string-length s))
-             (out (open-output-string)))
-        (write-char #\' out)
-        (let loop ((i 0))
-          (cond
-            ((= i n)
-             (write-char #\' out)
-             (get-output-string out))
-            (else
-             (let ((c (string-ref s i)))
-               (cond ((char=? c #\') (write-string "''" out))
-                     (else           (write-char c out)))
-               (loop (+ i 1))))))))
+    ;; pg-quote-literal is a native primitive (single C#/Java pass over
+    ;; the char[] producing the quoted result). The pure-Scheme version
+    ;; was O(n) but its Scheme→native transition per char put a 4.5s
+    ;; floor on 4 MB inputs — too slow for catalog_text payloads.
+    (define pg-quote-literal (%primitive "pg-quote-literal"))
 
     (define (pg-quote-int n)
       "Syntax: (pg-quote-int n)

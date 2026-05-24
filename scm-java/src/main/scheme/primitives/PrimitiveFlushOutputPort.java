@@ -36,7 +36,14 @@ public class PrimitiveFlushOutputPort extends Primitive {
         }
         try {
             if (Value.isBinaryOutputPort(portObj)) {
-                // Binary output ports have no flush; treat as no-op
+                // Binary output ports now buffer (BinaryOutputStream
+                // wraps non-ByteArrayOutputStream sinks in a buffered
+                // stream so byte-at-a-time wire-protocol writers don't
+                // pay a syscall per byte). Flush so e.g. the postgres
+                // request actually reaches the server before we wait
+                // on the read.
+                BinaryOutputStream bp = Value.asBinaryOutputPort(portObj);
+                bp.flush();
                 return new Values();
             }
             Writer port = Value.asOutputPort(portObj);

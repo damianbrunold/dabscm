@@ -303,6 +303,7 @@ public class Primitives
         Bind(new PrimitivePeekChar(modules));
         Bind(new PrimitivePeekU8());
         Bind(new PrimitivePgParseDatarow());
+        Bind(new PrimitivePgQuoteLiteral());
         Bind(new PrimitivePortPosition(modules));
         Bind(new PrimitivePrimitive(modules.primitives));
         Bind(new PrimitivePrimitiveP());
@@ -446,6 +447,7 @@ public class Primitives
         Bind(new PrimitiveWriteChar(modules));
         Bind(new PrimitiveWriteShared(modules));
         Bind(new PrimitiveWriteSimple(modules));
+        Bind(new PrimitiveWriteString(modules));
         Bind(new PrimitiveWriteU8());
         Bind(new PrimitiveWsAccept());
         Bind(new PrimitiveWsClose());

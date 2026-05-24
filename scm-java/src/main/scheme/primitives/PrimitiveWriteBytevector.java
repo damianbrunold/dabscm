@@ -21,8 +21,8 @@ public class PrimitiveWriteBytevector extends Primitive {
             BinaryOutputStream port = Value.asBinaryOutputPort(arguments[1]);
             int start = arguments.length >= 3 ? IntegerMath.toInt(arguments[2]) : 0;
             int end = arguments.length >= 4 ? IntegerMath.toInt(arguments[3]) : bv.length;
-            for (int i = start; i < end; i++)
-                port.writeByte(bv[i]);
+            int count = end - start;
+            if (count > 0) port.write(bv, start, count);
             return new Values();
         } catch (Exception e) {
             throw new SchemeError(pos, "write-bytevector: io failure: ~a", e.getMessage());
