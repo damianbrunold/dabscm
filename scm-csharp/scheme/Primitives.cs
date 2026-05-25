@@ -98,6 +98,8 @@ public class Primitives
         Bind(new PrimitiveConditionVariableSignalB());
         Bind(new PrimitiveConditionVariableSpecific());
         Bind(new PrimitiveConditionVariableSpecificSetB());
+        Bind(new PrimitiveConsoleEchoB());
+        Bind(new PrimitiveConsoleReadPassword());
         Bind(new PrimitiveCons());
         Bind(new PrimitiveCopyDirectory());
         Bind(new PrimitiveCopyFile());

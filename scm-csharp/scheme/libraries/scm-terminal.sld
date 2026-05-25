@@ -8,9 +8,15 @@
     terminal-read-byte
     terminal-byte-ready?
     terminal-enable-ansi!
+    console-echo!
+    console-read-password
 
     ;; Raw mode convenience
     with-terminal-raw
+
+    ;; Echo / password convenience
+    with-console-echo-off
+    read-password
 
     ;; Key reading
     terminal-read-key
@@ -57,6 +63,8 @@
     (define terminal-read-byte   (%primitive "terminal-read-byte"))
     (define terminal-byte-ready? (%primitive "terminal-byte-ready?"))
     (define terminal-enable-ansi! (%primitive "terminal-enable-ansi!"))
+    (define console-echo!         (%primitive "console-echo!"))
+    (define console-read-password (%primitive "console-read-password"))
 
     ;; === Constants ===
 
@@ -80,6 +88,44 @@ Example:
         (lambda () (terminal-raw! #t))
         thunk
         (lambda () (terminal-raw! #f))))
+
+    ;; === Echo / password convenience ===
+
+    (define (with-console-echo-off thunk)
+      "Syntax: (with-console-echo-off thunk)
+Library: (scm terminal)
+Description: Calls thunk with terminal echo disabled. Echo is
+re-enabled when thunk returns or when an exception is raised.
+Returns the value returned by thunk. If echo cannot be disabled
+(e.g. stdin is not a terminal, or running under Java on Windows),
+thunk is still invoked but typed characters may be visible.
+Example:
+  (with-console-echo-off
+    (lambda ()
+      (display \"Password: \")
+      (let ((pw (read-line)))
+        (newline)
+        pw)))"
+      (dynamic-wind
+        (lambda () (console-echo! #f))
+        thunk
+        (lambda () (console-echo! #t))))
+
+    (define (read-password . args)
+      "Syntax: (read-password)
+Syntax: (read-password prompt)
+Library: (scm terminal)
+Description: Reads a password from the terminal without echoing
+typed characters. If prompt is given as a string, it is displayed
+before reading. Returns the entered string (without trailing
+newline), or the eof-object if input is closed. Works on Linux,
+macOS, and Windows for both the C# and Java implementations.
+Example:
+  (read-password \"Password: \")"
+      (cond
+        ((null? args)        (console-read-password))
+        ((null? (cdr args))  (console-read-password (car args)))
+        (else (error "read-password: expected 0 or 1 arguments"))))
 
     ;; === Cursor control ===
 

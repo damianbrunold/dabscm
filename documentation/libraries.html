@@ -3521,6 +3521,8 @@
       clear-screen
       clear-to-end-of-line
       clear-to-end-of-screen
+      console-echo!
+      console-read-password
       cursor-back
       cursor-down
       cursor-forward
@@ -3531,6 +3533,7 @@
       cursor-save
       cursor-show
       cursor-up
+      read-password
       sgr-bg
       sgr-blink
       sgr-bold
@@ -3550,6 +3553,7 @@
       terminal-size
       terminal?
       with-alternate-screen
+      with-console-echo-off
       with-terminal-raw
     </div>
     <div class="doc-panel" id="scm-terminal-doc-panel"></div>
@@ -4959,6 +4963,8 @@ const docs = {
     "clear-screen": "Syntax: (clear-screen)\nLibrary: (scm terminal)\nDescription: Clears the entire screen and moves the cursor to the\ntop-left corner.\nExample:\n  (clear-screen)",
     "clear-to-end-of-line": "Syntax: (clear-to-end-of-line)\nLibrary: (scm terminal)\nDescription: Clears from the cursor position to the end of the line.\nExample:\n  (clear-to-end-of-line)",
     "clear-to-end-of-screen": "Syntax: (clear-to-end-of-screen)\nLibrary: (scm terminal)\nDescription: Clears from the cursor position to the end of the screen.\nExample:\n  (clear-to-end-of-screen)",
+    "console-echo!": "Syntax: (console-echo! enable)\nLibrary: (scm terminal)\nDescription: Enables or disables echoing of typed characters\non the terminal. Unlike terminal-raw!, line buffering and\nsignal processing are left untouched, so the user can still\nedit the line and press enter before it is delivered. The\nprimary use is reading a password.\nReturns #t on success, #f if not supported (e.g. when stdin\nis not a terminal). On the Java implementation under\nWindows, console-echo! returns #f because stty is not\navailable there — use console-read-password instead.\nA shutdown hook restores echo on exit.\nExample:\n  (console-echo! #f)  ; disable echo\n  (read-line)         ; read password silently\n  (console-echo! #t)  ; re-enable echo",
+    "console-read-password": "Syntax: (console-read-password)\nSyntax: (console-read-password prompt)\nLibrary: (scm terminal)\nDescription: Reads a line from the terminal without echoing\nthe typed characters. If prompt is given, it is displayed\nbefore reading. Returns the entered string (without the\ntrailing newline), or the eof-object if input is closed.\nWhen stdin is redirected, this falls back to read-line\nbehaviour on the underlying stream.\nExample:\n  (console-read-password \"Password: \")",
     "cursor-back": "Syntax: (cursor-back n)\nLibrary: (scm terminal)\nDescription: Moves the cursor back (left) by n columns.\nExample:\n  (cursor-back 5)",
     "cursor-down": "Syntax: (cursor-down n)\nLibrary: (scm terminal)\nDescription: Moves the cursor down by n rows.\nExample:\n  (cursor-down 3)",
     "cursor-forward": "Syntax: (cursor-forward n)\nLibrary: (scm terminal)\nDescription: Moves the cursor forward (right) by n columns.\nExample:\n  (cursor-forward 5)",
@@ -4969,6 +4975,7 @@ const docs = {
     "cursor-save": "Syntax: (cursor-save)\nLibrary: (scm terminal)\nDescription: Saves the current cursor position. Use cursor-restore to\nreturn to the saved position.\nExample:\n  (cursor-save)",
     "cursor-show": "Syntax: (cursor-show)\nLibrary: (scm terminal)\nDescription: Shows the cursor.\nExample:\n  (cursor-show)",
     "cursor-up": "Syntax: (cursor-up n)\nLibrary: (scm terminal)\nDescription: Moves the cursor up by n rows.\nExample:\n  (cursor-up 3)",
+    "read-password": "Syntax: (read-password)\nSyntax: (read-password prompt)\nLibrary: (scm terminal)\nDescription: Reads a password from the terminal without echoing\ntyped characters. If prompt is given as a string, it is displayed\nbefore reading. Returns the entered string (without trailing\nnewline), or the eof-object if input is closed. Works on Linux,\nmacOS, and Windows for both the C# and Java implementations.\nExample:\n  (read-password \"Password: \")",
     "sgr-bg": "Syntax: (sgr-bg color-name)\nSyntax: (sgr-bg color-index)\nSyntax: (sgr-bg r g b)\nLibrary: (scm terminal)\nDescription: Returns the ANSI escape sequence string for setting the\nbackground color. Accepts the same arguments as sgr-fg: a named color\nsymbol, a 256-color index (0-255), or three integers for 24-bit RGB.\nExample:\n  (display (string-append (sgr-bg 'blue) \"info\" (sgr-reset)))\n  (display (string-append (sgr-bg 21) \"blue\" (sgr-reset)))\n  (display (string-append (sgr-bg 0 0 128) \"navy\" (sgr-reset)))",
     "sgr-blink": "Syntax: (sgr-blink)\nLibrary: (scm terminal)\nDescription: Returns the ANSI escape sequence string for blinking text.\nExample:\n  (display (string-append (sgr-blink) \"hello\" (sgr-reset)))",
     "sgr-bold": "Syntax: (sgr-bold)\nLibrary: (scm terminal)\nDescription: Returns the ANSI escape sequence string for bold text.\nExample:\n  (display (string-append (sgr-bold) \"hello\" (sgr-reset)))",
@@ -4988,6 +4995,7 @@ const docs = {
     "terminal-size": "Syntax: (terminal-size)\nLibrary: (scm terminal)\nDescription: Returns the terminal dimensions as a pair (cols . rows),\nor #f if the terminal size cannot be determined.\nExample:\n  (terminal-size) => (80 . 24)",
     "terminal?": "Syntax: (terminal?)\nSyntax: (terminal? which)\nLibrary: (scm terminal)\nDescription: Returns #t if the process is connected to a terminal.\nIf which is 'input, checks only the input stream.\nIf which is 'output, checks only the output stream.\nWith no arguments, returns #t only if both input and output are terminals.\nExample:\n  (terminal?) => #t",
     "with-alternate-screen": "Syntax: (with-alternate-screen thunk)\nLibrary: (scm terminal)\nDescription: Calls thunk with the alternate screen buffer enabled.\nThe original screen is restored when thunk returns or when an exception\nis raised.\nExample:\n  (with-alternate-screen\n    (lambda ()\n      (clear-screen)\n      (cursor-position 1 1)\n      (display \"Hello from alternate screen!\")))",
+    "with-console-echo-off": "Syntax: (with-console-echo-off thunk)\nLibrary: (scm terminal)\nDescription: Calls thunk with terminal echo disabled. Echo is\nre-enabled when thunk returns or when an exception is raised.\nReturns the value returned by thunk. If echo cannot be disabled\n(e.g. stdin is not a terminal, or running under Java on Windows),\nthunk is still invoked but typed characters may be visible.\nExample:\n  (with-console-echo-off\n    (lambda ()\n      (display \"Password: \")\n      (let ((pw (read-line)))\n        (newline)\n        pw)))",
     "with-terminal-raw": "Syntax: (with-terminal-raw thunk)\nLibrary: (scm terminal)\nDescription: Calls thunk with raw terminal mode enabled. The original\nterminal settings are restored when thunk returns or when an exception\nis raised. Returns the value returned by thunk.\nExample:\n  (with-terminal-raw\n    (lambda ()\n      (let ((key (terminal-read-key)))\n        (display key))))",
   },
   "scm-text": {

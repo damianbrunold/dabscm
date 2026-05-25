@@ -111,4 +111,12 @@
   ;; Should always succeed (no-op on Linux)
   (test-equal #t (terminal-enable-ansi!)))
 
+;; === console-echo! ===
+
+(test-group "console-echo!"
+  ;; When piped (no terminal), console-echo! should return #f
+  ;; rather than throw.
+  (test-equal #t (boolean? (console-echo! #f)))
+  (test-equal #t (boolean? (console-echo! #t))))
+
 (test-end "terminal")

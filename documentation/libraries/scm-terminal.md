@@ -68,6 +68,43 @@ Example:
   (clear-to-end-of-screen)
 ```
 
+### `console-echo!`
+
+```
+Syntax: (console-echo! enable)
+Library: (scm terminal)
+Description: Enables or disables echoing of typed characters
+on the terminal. Unlike terminal-raw!, line buffering and
+signal processing are left untouched, so the user can still
+edit the line and press enter before it is delivered. The
+primary use is reading a password.
+Returns #t on success, #f if not supported (e.g. when stdin
+is not a terminal). On the Java implementation under
+Windows, console-echo! returns #f because stty is not
+available there — use console-read-password instead.
+A shutdown hook restores echo on exit.
+Example:
+  (console-echo! #f)  ; disable echo
+  (read-line)         ; read password silently
+  (console-echo! #t)  ; re-enable echo
+```
+
+### `console-read-password`
+
+```
+Syntax: (console-read-password)
+Syntax: (console-read-password prompt)
+Library: (scm terminal)
+Description: Reads a line from the terminal without echoing
+the typed characters. If prompt is given, it is displayed
+before reading. Returns the entered string (without the
+trailing newline), or the eof-object if input is closed.
+When stdin is redirected, this falls back to read-line
+behaviour on the underlying stream.
+Example:
+  (console-read-password "Password: ")
+```
+
 ### `cursor-back`
 
 ```
@@ -167,6 +204,21 @@ Library: (scm terminal)
 Description: Moves the cursor up by n rows.
 Example:
   (cursor-up 3)
+```
+
+### `read-password`
+
+```
+Syntax: (read-password)
+Syntax: (read-password prompt)
+Library: (scm terminal)
+Description: Reads a password from the terminal without echoing
+typed characters. If prompt is given as a string, it is displayed
+before reading. Returns the entered string (without trailing
+newline), or the eof-object if input is closed. Works on Linux,
+macOS, and Windows for both the C# and Java implementations.
+Example:
+  (read-password "Password: ")
 ```
 
 ### `sgr-bg`
@@ -420,6 +472,25 @@ Example:
       (clear-screen)
       (cursor-position 1 1)
       (display "Hello from alternate screen!")))
+```
+
+### `with-console-echo-off`
+
+```
+Syntax: (with-console-echo-off thunk)
+Library: (scm terminal)
+Description: Calls thunk with terminal echo disabled. Echo is
+re-enabled when thunk returns or when an exception is raised.
+Returns the value returned by thunk. If echo cannot be disabled
+(e.g. stdin is not a terminal, or running under Java on Windows),
+thunk is still invoked but typed characters may be visible.
+Example:
+  (with-console-echo-off
+    (lambda ()
+      (display "Password: ")
+      (let ((pw (read-line)))
+        (newline)
+        pw)))
 ```
 
 ### `with-terminal-raw`

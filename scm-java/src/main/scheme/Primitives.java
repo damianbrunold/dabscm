@@ -105,6 +105,8 @@ public class Primitives {
         bind(new PrimitiveConditionVariableSignalB());
         bind(new PrimitiveConditionVariableSpecific());
         bind(new PrimitiveConditionVariableSpecificSetB());
+        bind(new PrimitiveConsoleEchoB());
+        bind(new PrimitiveConsoleReadPassword());
         bind(new PrimitiveCons());
         bind(new PrimitiveCopyDirectory());
         bind(new PrimitiveCopyFile());
