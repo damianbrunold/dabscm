@@ -24,7 +24,7 @@ public class PrimitiveStringSplitVector extends Primitive {
         String s = new String(Value.asString(arguments[0]));
         String regexp = "[ \\t\\r\\n]+";
         if (arguments.length > 1) regexp = new String(Value.asString(arguments[1]));
-        String[] parts = s.split(regexp, -1);
+        String[] parts = PrimitiveStringSplit.getSplitPattern(regexp).split(s, -1);
         Object[] result = new Object[parts.length];
         for (int i = 0; i < parts.length; i++) result[i] = parts[i].toCharArray();
         return result;

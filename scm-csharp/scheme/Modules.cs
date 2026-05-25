@@ -6,6 +6,11 @@ public class Modules
 {
     private Dictionary<string, Module> modules = new();
     private Dictionary<string, string> moduleLoadPaths = new();
+    // Bumped whenever modules/bindings are replaced wholesale
+    // (RestoreFromSnapshot / ResetModules). GVAR/GSET cache the
+    // resolved Cell together with the generation at the time of
+    // caching; on a mismatch the cache is dropped and resolved again.
+    public int CacheGeneration;
     // currentModule and loadingModules are per-thread so that, once the
     // bindings dict is shared across threads (step 3), threads can have
     // independent (module ...)/import state without racing. See
@@ -186,6 +191,7 @@ public class Modules
     {
         var toRemove = modules.Keys.Where(k => !k.StartsWith("scheme") && !k.StartsWith("scm") && !k.StartsWith("srfi")).ToList();
         foreach (var k in toRemove) modules.Remove(k);
+        CacheGeneration++;
     }
 
     public void TakeSnapshot()
@@ -198,6 +204,7 @@ public class Modules
     public void RestoreFromSnapshot()
     {
         if (snapshot == null) return;
+        CacheGeneration++;
         modules.Clear();
         var cellMap = new Dictionary<Cell, Cell>(ReferenceEqualityComparer.Instance);
         foreach (var kv in snapshot.modules)

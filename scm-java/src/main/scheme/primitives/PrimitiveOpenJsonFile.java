@@ -37,9 +37,9 @@ public class PrimitiveOpenJsonFile extends Primitive {
         }
         try {
             Charset encoding = Encoding.getEncoding("utf8");
-            var reader = new InputStreamReader(
+            var reader = new BufferedReader(new InputStreamReader(
                     new FileInputStream(filename),
-                    encoding);
+                    encoding), 8192);
             var parser = new JsonParser(reader);
             if (arguments.length == 2) {
                 if (Value.isSymbol(arguments[1])) {

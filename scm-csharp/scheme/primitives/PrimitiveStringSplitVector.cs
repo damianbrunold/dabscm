@@ -26,12 +26,7 @@ public class PrimitiveStringSplitVector : Primitive
         string s = new String(Value.AsString(arguments[0]));
         string regexp = "[ \\t\\r\\n]+";
         if (arguments.Length > 1) regexp = new String(Value.AsString(arguments[1]));
-        string[] parts = Regex.Split(
-            s,
-            regexp,
-            RegexOptions.IgnoreCase,
-            TimeSpan.FromMilliseconds(2000)
-        );
+        string[] parts = PrimitiveStringSplit.GetSplitRegex(regexp).Split(s);
         var result = new object[parts.Length];
         for (int i = 0; i < parts.Length; i++) result[i] = parts[i].ToCharArray();
         return result;

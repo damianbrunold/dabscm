@@ -14,10 +14,14 @@ public class Tokenizer
         ch == 'f' || ch == 'F' || ch == 'd' || ch == 'D' ||
         ch == 'l' || ch == 'L';
 
+    private static bool IsWhitespace(char ch) =>
+        ch == ' ' || ch == '\r' || ch == '\n' || ch == '\t';
+
+    private static bool IsDelim(char ch) =>
+        ch == '(' || ch == ')' || ch == '[' || ch == ']' || ch == '"' || IsWhitespace(ch);
+
     public static Token? ReadToken(TextStream reader)
     {
-        string whitespace = " \r\n\t";
-        string delim = "()[]\"" + whitespace;
         int c = reader.Peek();
         int state = 0;
         int nestDepth = 0;
@@ -68,7 +72,7 @@ public class Tokenizer
                     {
                         state = 7; // comment
                     }
-                    else if (whitespace.IndexOf(ch) != -1)
+                    else if (IsWhitespace(ch))
                     {
                         break;
                     }
@@ -116,7 +120,7 @@ public class Tokenizer
                         token.Append(ch);
                         state = 14; // exponent
                     }
-                    else if (delim.IndexOf(ch) != -1)
+                    else if (IsDelim(ch))
                     {
                         putback = true;
                         if (token.ToString().Equals("+"))
@@ -145,7 +149,7 @@ public class Tokenizer
                         // Speculatively consume 'i' to check delimiter
                         reader.Read();
                         int next = reader.Peek();
-                        if (IsDelimiterOrEnd(next, delim))
+                        if (IsDelimiterOrEnd(next))
                         {
                             string imagStr = token.ToString();
                             if (imagStr == "+" || imagStr == "-")
@@ -186,7 +190,7 @@ public class Tokenizer
                         // Pure imaginary rational: +3/4i
                         reader.Read();
                         int next = reader.Peek();
-                        if (IsDelimiterOrEnd(next, delim))
+                        if (IsDelimiterOrEnd(next))
                         {
                             return new Token("0|" + token.ToString(), TokenType.COMPLEX, pos);
                         }
@@ -238,7 +242,7 @@ public class Tokenizer
                         {
                             reader.Read();
                             int next = reader.Peek();
-                            if (IsDelimiterOrEnd(next, delim))
+                            if (IsDelimiterOrEnd(next))
                                 return new Token("0|" + rtok, TokenType.COMPLEX, pos);
                             token.Append('i');
                             state = 3;
@@ -459,7 +463,7 @@ public class Tokenizer
                     break;
 
                 case 3: // symbol
-                    if (delim.IndexOf(ch) != -1)
+                    if (IsDelim(ch))
                     {
                         putback = true;
                         string sym = Maybefold(reader, token.ToString());
@@ -632,7 +636,7 @@ public class Tokenizer
                         }
                         StringBuilder directive = new StringBuilder();
                         int dc = reader.Peek();
-                        while (dc != -1 && "()[]\" \r\n\t".IndexOf((char)dc) == -1)
+                        while (dc != -1 && !IsDelim((char)dc))
                         {
                             directive.Append((char)dc);
                             reader.Read();
@@ -664,7 +668,7 @@ public class Tokenizer
                     break;
 
                 case 56: // reading #t or #true
-                    if (delim.IndexOf(ch) != -1)
+                    if (IsDelim(ch))
                     {
                         putback = true;
                         string tv = token.ToString();
@@ -679,7 +683,7 @@ public class Tokenizer
                     break;
 
                 case 57: // reading #f or #false
-                    if (delim.IndexOf(ch) != -1)
+                    if (IsDelim(ch))
                     {
                         putback = true;
                         string fv = token.ToString();
@@ -770,7 +774,7 @@ public class Tokenizer
                     break;
 
                 case 61: // character
-                    if (delim.IndexOf(ch) != -1)
+                    if (IsDelim(ch))
                     {
                         putback = true;
                         return AsCharacterToken(token.ToString(), pos);
@@ -1268,9 +1272,9 @@ public class Tokenizer
         return new Token(result, TokenType.CHARACTER, pos);
     }
 
-    private static bool IsDelimiterOrEnd(int c, string delim)
+    private static bool IsDelimiterOrEnd(int c)
     {
-        return c == -1 || delim.IndexOf((char)c) != -1 || c == ';';
+        return c == -1 || c == ';' || IsDelim((char)c);
     }
 
     /// <summary>
@@ -1280,7 +1284,6 @@ public class Tokenizer
     /// </summary>
     private static Token ReadComplexImaginary(TextStream reader, string realPart, SourcePos pos)
     {
-        string delim = "()[]\"" + " \r\n\t";
         int c = reader.Peek();
         char sign = (char)c;
         reader.Read(); // consume the sign
@@ -1306,7 +1309,7 @@ public class Tokenizer
             // +i or -i (pure imaginary unit)
             if (s == "+i" || s == "-i")
             {
-                if (IsDelimiterOrEnd(c, delim))
+                if (IsDelimiterOrEnd(c))
                     return new Token(realPart + "|" + sign + "1", TokenType.COMPLEX, pos);
                 throw new SchemeError(pos, new ReadErrorObject("tokenizer: invalid complex number", Array.Empty<object>()));
             }
@@ -1317,7 +1320,7 @@ public class Tokenizer
             {
                 reader.Read(); // consume 'i'
                 int next = reader.Peek();
-                if (IsDelimiterOrEnd(next, delim))
+                if (IsDelimiterOrEnd(next))
                     return new Token(realPart + "|" + s, TokenType.COMPLEX, pos);
             }
             throw new SchemeError(pos, new ReadErrorObject("tokenizer: invalid complex number", Array.Empty<object>()));
@@ -1337,7 +1340,7 @@ public class Tokenizer
         {
             reader.Read();
             int next = reader.Peek();
-            if (IsDelimiterOrEnd(next, delim))
+            if (IsDelimiterOrEnd(next))
                 return new Token(realPart + "|" + imagDigits, TokenType.COMPLEX, pos);
             throw new SchemeError(pos, new ReadErrorObject("tokenizer: invalid complex number", Array.Empty<object>()));
         }
@@ -1358,7 +1361,7 @@ public class Tokenizer
             {
                 reader.Read();
                 int next = reader.Peek();
-                if (IsDelimiterOrEnd(next, delim))
+                if (IsDelimiterOrEnd(next))
                     return new Token(realPart + "|" + imagDigits, TokenType.COMPLEX, pos);
             }
             throw new SchemeError(pos, new ReadErrorObject("tokenizer: invalid complex number", Array.Empty<object>()));
@@ -1402,7 +1405,7 @@ public class Tokenizer
         {
             reader.Read();
             int next = reader.Peek();
-            if (IsDelimiterOrEnd(next, delim))
+            if (IsDelimiterOrEnd(next))
                 return new Token(realPart + "|" + imagDigits, TokenType.COMPLEX, pos);
         }
 

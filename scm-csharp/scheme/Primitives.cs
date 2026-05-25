@@ -190,6 +190,7 @@ public class Primitives
         Bind(new PrimitiveHashTableSize());
         Bind(new PrimitiveHashTableToAlist());
         Bind(new PrimitiveHashTableValues());
+        Bind(new PrimitiveHtmlEscape());
         Bind(new PrimitiveHttpGet());
         Bind(new PrimitiveHttpPost());
         Bind(new PrimitiveHttpRequestBody());

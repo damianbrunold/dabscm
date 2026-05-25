@@ -53,17 +53,17 @@ public class PrimitiveOpenOutputFile extends Primitive {
             }
             if (append) {
                 if (deflate) {
-                    return new TextOutputStream(new OutputStreamWriter(new DeflaterOutputStream(new FileOutputStream(filename, true), new Deflater(Deflater.DEFAULT_COMPRESSION, true)), encoding));
+                    return new TextOutputStream(new BufferedWriter(new OutputStreamWriter(new DeflaterOutputStream(new FileOutputStream(filename, true), new Deflater(Deflater.DEFAULT_COMPRESSION, true)), encoding), 8192));
                 } else {
                     // TODO handle BOM?
-                    return new TextOutputStream(new OutputStreamWriter(new FileOutputStream(filename, true), encoding));
+                    return new TextOutputStream(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(filename, true), encoding), 8192));
                 }
             } else {
                 if (deflate) {
-                    return new TextOutputStream(new OutputStreamWriter(new DeflaterOutputStream(new FileOutputStream(filename), new Deflater(Deflater.DEFAULT_COMPRESSION, true)), encoding));
+                    return new TextOutputStream(new BufferedWriter(new OutputStreamWriter(new DeflaterOutputStream(new FileOutputStream(filename), new Deflater(Deflater.DEFAULT_COMPRESSION, true)), encoding), 8192));
                 } else {
                     // TODO handle BOM?
-                    return new TextOutputStream(new OutputStreamWriter(new FileOutputStream(filename), encoding));
+                    return new TextOutputStream(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(filename), encoding), 8192));
                 }
             }
         } catch (Exception e) {

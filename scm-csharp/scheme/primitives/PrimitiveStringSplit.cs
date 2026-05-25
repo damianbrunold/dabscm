@@ -1,9 +1,20 @@
+using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 
 namespace scheme;
 
 public class PrimitiveStringSplit : Primitive
 {
+    internal static readonly ConcurrentDictionary<string, Regex> SplitCache = new();
+    internal static Regex GetSplitRegex(string pattern)
+    {
+        if (SplitCache.TryGetValue(pattern, out var r)) return r;
+        var fresh = new Regex(pattern, RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(2000));
+        if (SplitCache.Count > 256) SplitCache.Clear();
+        SplitCache.TryAdd(pattern, fresh);
+        return fresh;
+    }
+
     public override string Name()
     {
         return "string-split";
@@ -26,12 +37,7 @@ public class PrimitiveStringSplit : Primitive
         string s = new String(Value.AsString(arguments[0]));
         string regexp = "[ \\t\\r\\n]+";
         if (arguments.Length > 1) regexp = new String(Value.AsString(arguments[1]));
-        string[] parts = Regex.Split(
-            s,
-            regexp,
-            RegexOptions.IgnoreCase,
-            TimeSpan.FromMilliseconds(2000)
-        );
+        string[] parts = GetSplitRegex(regexp).Split(s);
         object result = Value.NIL;
         for (int i = parts.Length - 1; i >= 0; i--)
         {

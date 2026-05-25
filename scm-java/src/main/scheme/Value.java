@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Set;
 import java.io.ByteArrayInputStream;
 import java.math.BigInteger;
@@ -17,7 +18,7 @@ public class Value {
     public static final Boolean F = Boolean.FALSE;
     public static final Byte EOF = 1;
 
-    private static Map<String, String> symbols = new HashMap<>();
+    private static Map<String, String> symbols = new ConcurrentHashMap<>();
 
     public static String intern(String string) {
         // this ensures that symbols with identical names are
@@ -25,8 +26,8 @@ public class Value {
         // can compare symbols using the simple == operator.
         String result = symbols.get(string);
         if (result == null) {
-            result = string;
-            symbols.put(string, result);
+            String prev = symbols.putIfAbsent(string, string);
+            result = prev != null ? prev : string;
         }
         return result;
     }

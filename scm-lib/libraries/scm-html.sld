@@ -5,29 +5,7 @@
           strip-html-tags)
   (begin
 
-    (define (html-escape s)
-      "Syntax: (html-escape s)
-Library: (scm html)
-Description: Escapes the five HTML metacharacters (&, <, >, \", ') in s so
-  the result is safe to splice into HTML text content or attribute values
-  (quoted with either single or double quotes).
-Example:
-  (html-escape \"a < b & c\") => \"a &lt; b &amp; c\"
-  (html-escape \"O'Brien\") => \"O&#39;Brien\""
-      (let* ((n (string-length s))
-             (out (open-output-string)))
-        (let loop ((i 0))
-          (cond
-            ((= i n) (get-output-string out))
-            (else
-             (let ((c (string-ref s i)))
-               (cond ((char=? c #\<) (write-string "&lt;"   out))
-                     ((char=? c #\>) (write-string "&gt;"   out))
-                     ((char=? c #\&) (write-string "&amp;"  out))
-                     ((char=? c #\") (write-string "&quot;" out))
-                     ((char=? c #\') (write-string "&#39;"  out))
-                     (else           (write-char c out))))
-             (loop (+ i 1)))))))
+    (define html-escape (%primitive "html-escape"))
 
     ;; Alias for clarity at call sites that escape attribute values.
     ;; The escape rules are identical because html-escape escapes both

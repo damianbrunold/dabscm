@@ -229,10 +229,24 @@ public class VM
                     break;
 
                 case Opcode.GVAR:
+                {
+                    var cell = instruction.cachedCell;
+                    if (cell != null && instruction.cachedCellGeneration == modules.CacheGeneration)
+                    {
+                        Push(cell.value);
+                        break;
+                    }
                     try
                     {
                         var moduleName = (string)instruction.arg2!;
-                        Push(modules.GetModuleRequired(instruction.pos, moduleName).Resolve(instruction.pos, Value.AsSymbol(instruction.arg1!)));
+                        var symbol = Value.AsSymbol(instruction.arg1!);
+                        var module = modules.GetModuleRequired(instruction.pos, moduleName);
+                        var resolved = module.ResolveCell(symbol);
+                        if (resolved == null)
+                            throw new SchemeError(instruction.pos, module.Name + ": ~a is not bound", symbol);
+                        instruction.cachedCell = resolved;
+                        instruction.cachedCellGeneration = modules.CacheGeneration;
+                        Push(resolved.value);
                     }
                     catch (SchemeError)
                     {
@@ -246,9 +260,22 @@ public class VM
                         );
                     }
                     break;
+                }
 
                 case Opcode.GSET: {
                     object value = PrimaryValue(Top());
+                    var cachedCell = instruction.cachedCell;
+                    if (cachedCell != null
+                        && instruction.cachedCellGeneration == modules.CacheGeneration
+                        && !Scheme.StrictImports)
+                    {
+                        cachedCell.value = value;
+                        if (Value.IsLambda(value))
+                        {
+                            Value.AsLambda(value).name = instruction.arg1?.ToString() ?? "?";
+                        }
+                        break;
+                    }
                     var module = modules.GetModuleRequired(instruction.pos, (string) instruction.arg2!);
                     var symbol = Value.AsSymbol(instruction.arg1!);
                     if (Scheme.StrictImports && module.Name == "user program")
@@ -262,6 +289,8 @@ public class VM
                         }
                     }
                     module.Bind(symbol, value);
+                    instruction.cachedCell = module.ResolveCell(symbol);
+                    instruction.cachedCellGeneration = modules.CacheGeneration;
                     if (Value.IsLambda(value))
                     {
                         Value.AsLambda(value).name = instruction.arg1?.ToString() ?? "?";

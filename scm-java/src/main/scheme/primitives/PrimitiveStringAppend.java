@@ -20,10 +20,20 @@ public class PrimitiveStringAppend extends Primitive {
     
     @Override
     public Object apply(SourcePos pos, Object[] arguments) {
-        StringBuilder result = new StringBuilder();
-        for (Object argument : arguments) {
-            result.append(Value.asString(argument));
+        int total = 0;
+        char[][] parts = new char[arguments.length][];
+        for (int i = 0; i < arguments.length; i++) {
+            char[] part = Value.asString(arguments[i]);
+            parts[i] = part;
+            total += part.length;
         }
-        return result.toString().toCharArray();
+        char[] result = new char[total];
+        int offset = 0;
+        for (int i = 0; i < parts.length; i++) {
+            char[] part = parts[i];
+            System.arraycopy(part, 0, result, offset, part.length);
+            offset += part.length;
+        }
+        return result;
     }
 }

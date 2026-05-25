@@ -1,5 +1,3 @@
-using System.Text;
-
 namespace scheme;
 
 public class PrimitiveStringAppend : Primitive
@@ -22,11 +20,22 @@ public class PrimitiveStringAppend : Primitive
     
     public override object Apply(SourcePos? pos, object[] arguments)
     {
-        StringBuilder result = new StringBuilder();
-        foreach (object argument in arguments)
+        int total = 0;
+        char[][] parts = new char[arguments.Length][];
+        for (int i = 0; i < arguments.Length; i++)
         {
-            result.Append(Value.AsString(argument));
+            char[] part = Value.AsString(arguments[i]);
+            parts[i] = part;
+            total += part.Length;
         }
-        return result.ToString().ToCharArray();
+        char[] result = new char[total];
+        int offset = 0;
+        for (int i = 0; i < parts.Length; i++)
+        {
+            char[] part = parts[i];
+            Array.Copy(part, 0, result, offset, part.Length);
+            offset += part.Length;
+        }
+        return result;
     }
 }

@@ -17,9 +17,9 @@ public class SchemeSocket {
         this.networkInputStream = socket.getInputStream();
         this.networkOutputStream = socket.getOutputStream();
         this.inputPort = new TextStream(
-            new java.io.PushbackReader(new InputStreamReader(networkInputStream)),
+            new java.io.PushbackReader(new BufferedReader(new InputStreamReader(networkInputStream), 8192)),
             "{socket}");
-        this.outputPort = new TextOutputStream(new OutputStreamWriter(networkOutputStream));
+        this.outputPort = new TextOutputStream(new BufferedWriter(new OutputStreamWriter(networkOutputStream), 8192));
     }
 
     public SchemeSocket(Socket socket, InputStream in, OutputStream out) throws IOException {
@@ -27,9 +27,9 @@ public class SchemeSocket {
         this.networkInputStream = in;
         this.networkOutputStream = out;
         this.inputPort = new TextStream(
-            new java.io.PushbackReader(new InputStreamReader(in)),
+            new java.io.PushbackReader(new BufferedReader(new InputStreamReader(in), 8192)),
             "{socket}");
-        this.outputPort = new TextOutputStream(new OutputStreamWriter(out));
+        this.outputPort = new TextOutputStream(new BufferedWriter(new OutputStreamWriter(out), 8192));
     }
 
     @Override

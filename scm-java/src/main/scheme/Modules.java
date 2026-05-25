@@ -33,6 +33,11 @@ public class Modules {
 
     public Primitives primitives;
     public IEvaluator evaluator;
+    // Bumped whenever modules/bindings are replaced wholesale
+    // (restoreFromSnapshot / resetModules). GVAR/GSET cache the
+    // resolved Cell together with the generation at the time of
+    // caching; on a mismatch the cache is dropped and resolved again.
+    public int cacheGeneration;
 
     private BindingTable bindingTable;
     private HashMap<String, Integer> moduleScopes;
@@ -188,6 +193,7 @@ public class Modules {
         }
         modules.clear();
         modules = newModules;
+        cacheGeneration++;
     }
 
     public void takeSnapshot() {
@@ -200,6 +206,7 @@ public class Modules {
 
     public void restoreFromSnapshot() {
         if (snapshot == null) return;
+        cacheGeneration++;
         modules.clear();
         var cellMap = new java.util.IdentityHashMap<Cell, Cell>();
         for (var kv : snapshot.modules.entrySet())

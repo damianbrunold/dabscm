@@ -15,9 +15,15 @@ public class Tokenizer {
                ch == 'l' || ch == 'L';
     }
 
+    private static boolean isWhitespace(char ch) {
+        return ch == ' ' || ch == '\r' || ch == '\n' || ch == '\t';
+    }
+
+    private static boolean isDelim(char ch) {
+        return ch == '(' || ch == ')' || ch == '[' || ch == ']' || ch == '"' || isWhitespace(ch);
+    }
+
     public static Token readToken(TextStream in) throws IOException {
-        String whitespace = " \r\n\t";
-        String delim = "()[]\"" + whitespace;
         int c = in.peek();
         int state = 0;
         int nestDepth = 0;
@@ -51,7 +57,7 @@ public class Tokenizer {
                         token.append(ch);
                     } else if (ch == ';') {
                         state = 7; // comment
-                    } else if (whitespace.indexOf(ch) != -1) {
+                    } else if (isWhitespace(ch)) {
                         break;
                     } else if (('0' <= ch && ch <= '9') || ch == '+' || ch == '-') {
                         state = 1; // number, +, -
@@ -80,7 +86,7 @@ public class Tokenizer {
                     } else if (isExponentMarker(ch)) {
                         token.append(ch);
                         state = 14; // exponent
-                    } else if (delim.indexOf(ch) != -1) {
+                    } else if (isDelim(ch)) {
                         putback = true;
                         if (token.toString().equals("+")) {
                             return new Token(maybeFold(in, "+"), TokenType.SYMBOL, pos);
@@ -98,7 +104,7 @@ public class Tokenizer {
                         // Pure imaginary: +Ni, -Ni, +i, -i
                         in.read();
                         int next = in.peek();
-                        if (isDelimiterOrEnd(next, delim)) {
+                        if (isDelimiterOrEnd(next)) {
                             String imagStr = token.toString();
                             if (imagStr.equals("+") || imagStr.equals("-"))
                                 imagStr += "1";
@@ -128,7 +134,7 @@ public class Tokenizer {
                         // Pure imaginary rational: +3/4i
                         in.read();
                         int next = in.peek();
-                        if (isDelimiterOrEnd(next, delim)) {
+                        if (isDelimiterOrEnd(next)) {
                             return new Token("0|" + token.toString(), TokenType.COMPLEX, pos);
                         }
                         token.append('i');
@@ -163,7 +169,7 @@ public class Tokenizer {
                         } else if ((ch == 'i' || ch == 'I') && (rtok.charAt(0) == '+' || rtok.charAt(0) == '-')) {
                             in.read();
                             int next = in.peek();
-                            if (isDelimiterOrEnd(next, delim))
+                            if (isDelimiterOrEnd(next))
                                 return new Token("0|" + rtok, TokenType.COMPLEX, pos);
                             token.append('i');
                             state = 3;
@@ -315,7 +321,7 @@ public class Tokenizer {
                     break;
 
                 case 3: // symbol
-                    if (delim.indexOf(ch) != -1) {
+                    if (isDelim(ch)) {
                         putback = true;
                         String sym = maybeFold(in, token.toString());
                         String symLower = sym.toLowerCase();
@@ -438,7 +444,7 @@ public class Tokenizer {
                         }
                         StringBuilder directive = new StringBuilder();
                         int dc = in.peek();
-                        while (dc != -1 && "()[]\" \r\n\t".indexOf((char) dc) == -1) {
+                        while (dc != -1 && !isDelim((char) dc)) {
                             directive.append((char) dc);
                             in.read();
                             dc = in.peek();
@@ -462,7 +468,7 @@ public class Tokenizer {
                     break;
 
                 case 56: // reading #t or #true
-                    if (delim.indexOf(ch) != -1) {
+                    if (isDelim(ch)) {
                         putback = true;
                         String tv = token.toString();
                         if (tv.equals("t") || tv.equals("true"))
@@ -474,7 +480,7 @@ public class Tokenizer {
                     break;
 
                 case 57: // reading #f or #false
-                    if (delim.indexOf(ch) != -1) {
+                    if (isDelim(ch)) {
                         putback = true;
                         String fv = token.toString();
                         if (fv.equals("f") || fv.equals("false"))
@@ -547,7 +553,7 @@ public class Tokenizer {
                     break;
 
                 case 61: // character
-                    if (delim.indexOf(ch) != -1) {
+                    if (isDelim(ch)) {
                         putback = true;
                         return asCharacterToken(token.toString(), pos);
                     } else {
@@ -881,8 +887,8 @@ public class Tokenizer {
         return new Token(intVal.toString(), TokenType.INTEGER, pos);
     }
 
-    private static boolean isDelimiterOrEnd(int c, String delim) {
-        return c == -1 || delim.indexOf((char) c) != -1 || c == ';';
+    private static boolean isDelimiterOrEnd(int c) {
+        return c == -1 || c == ';' || isDelim((char) c);
     }
 
     private static Token readPrefixedNumberOrComplex(TextStream in, int radix, boolean forceExact, boolean forceInexact, SourcePos pos) throws IOException {
@@ -904,7 +910,6 @@ public class Tokenizer {
      * realPart is the string of the already-parsed real part.
      */
     private static Token readComplexImaginary(TextStream in, String realPart, SourcePos pos) throws IOException {
-        String delim = "()[]\"" + " \r\n\t";
         int c = in.peek();
         char sign = (char) c;
         in.read(); // consume the sign
@@ -927,7 +932,7 @@ public class Tokenizer {
 
             // +i or -i (pure imaginary unit)
             if (s.equals("+i") || s.equals("-i")) {
-                if (isDelimiterOrEnd(c, delim))
+                if (isDelimiterOrEnd(c))
                     return new Token(realPart + "|" + sign + "1", TokenType.COMPLEX, pos);
                 throw new SchemeError(pos, new ReadErrorObject("tokenizer: invalid complex number", new Object[0]));
             }
@@ -937,7 +942,7 @@ public class Tokenizer {
                 (c == 'i' || c == 'I')) {
                 in.read(); // consume 'i'
                 int next = in.peek();
-                if (isDelimiterOrEnd(next, delim))
+                if (isDelimiterOrEnd(next))
                     return new Token(realPart + "|" + s, TokenType.COMPLEX, pos);
             }
             throw new SchemeError(pos, new ReadErrorObject("tokenizer: invalid complex number", new Object[0]));
@@ -955,7 +960,7 @@ public class Tokenizer {
         if (c == 'i' || c == 'I') {
             in.read();
             int next = in.peek();
-            if (isDelimiterOrEnd(next, delim))
+            if (isDelimiterOrEnd(next))
                 return new Token(realPart + "|" + imagDigits, TokenType.COMPLEX, pos);
             throw new SchemeError(pos, new ReadErrorObject("tokenizer: invalid complex number", new Object[0]));
         }
@@ -973,7 +978,7 @@ public class Tokenizer {
             if (c == 'i' || c == 'I') {
                 in.read();
                 int next = in.peek();
-                if (isDelimiterOrEnd(next, delim))
+                if (isDelimiterOrEnd(next))
                     return new Token(realPart + "|" + imagDigits, TokenType.COMPLEX, pos);
             }
             throw new SchemeError(pos, new ReadErrorObject("tokenizer: invalid complex number", new Object[0]));
@@ -1011,7 +1016,7 @@ public class Tokenizer {
         if (c == 'i' || c == 'I') {
             in.read();
             int next = in.peek();
-            if (isDelimiterOrEnd(next, delim))
+            if (isDelimiterOrEnd(next))
                 return new Token(realPart + "|" + imagDigits, TokenType.COMPLEX, pos);
         }
 

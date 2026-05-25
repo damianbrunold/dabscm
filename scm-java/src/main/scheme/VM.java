@@ -212,18 +212,43 @@ public class VM {
                            primaryValue(top()));
                     break;
 
-                case GVAR:
+                case GVAR: {
+                    Cell cell = instruction.cachedCell;
+                    if (cell != null && instruction.cachedCellGeneration == modules.cacheGeneration) {
+                        push(cell.value);
+                        break;
+                    }
                     try {
-                        push(modules.getModuleRequired(instruction.pos, (String) instruction.arg2).resolve(instruction.pos, Value.asSymbol(instruction.arg1)));
+                        String moduleName = (String) instruction.arg2;
+                        String symbol = Value.asSymbol(instruction.arg1);
+                        Module module = modules.getModuleRequired(instruction.pos, moduleName);
+                        Cell resolved = module.resolveCell(symbol);
+                        if (resolved == null) {
+                            throw new SchemeError(instruction.pos, module.getName() + ": ~a is not bound", symbol);
+                        }
+                        instruction.cachedCell = resolved;
+                        instruction.cachedCellGeneration = modules.cacheGeneration;
+                        push(resolved.value);
                     } catch (SchemeError e) {
                         throw e;
                     } catch (Exception e) {
                         throw new SchemeError(instruction.pos, "internal error");
                     }
                     break;
+                }
 
                 case GSET: {
                     Object value = primaryValue(top());
+                    Cell cachedCell = instruction.cachedCell;
+                    if (cachedCell != null
+                        && instruction.cachedCellGeneration == modules.cacheGeneration
+                        && !Scheme.strictImports) {
+                        cachedCell.value = value;
+                        if (Value.isLambda(value)) {
+                            Value.asLambda(value).name = instruction.arg1.toString();
+                        }
+                        break;
+                    }
                     Module module = modules.getModuleRequired(instruction.pos, (String) instruction.arg2);
                     String symbol = Value.asSymbol(instruction.arg1);
                     if (Scheme.strictImports && "user program".equals(module.getName())) {
@@ -235,6 +260,8 @@ public class VM {
                         }
                     }
                     module.bind(symbol, value);
+                    instruction.cachedCell = module.resolveCell(symbol);
+                    instruction.cachedCellGeneration = modules.cacheGeneration;
                     if (Value.isLambda(value)) {
                         Value.asLambda(value).name = instruction.arg1.toString();
                     }

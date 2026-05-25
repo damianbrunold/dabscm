@@ -1,9 +1,20 @@
+using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 
 namespace scheme;
 
 public class PrimitiveStringMatches : Primitive
 {
+    private static readonly ConcurrentDictionary<string, Regex> cache = new();
+    private static Regex Get(string pattern)
+    {
+        if (cache.TryGetValue(pattern, out var r)) return r;
+        var fresh = new Regex(pattern);
+        if (cache.Count > 256) cache.Clear();
+        cache.TryAdd(pattern, fresh);
+        return fresh;
+    }
+
     public override string Name()
     {
         return "string-matches";
@@ -25,7 +36,7 @@ public class PrimitiveStringMatches : Primitive
     {
         CheckArgs(pos, arguments, 2, 2);
         var s = new String(Value.AsString(arguments[0]));
-        var regexp = new Regex(new String(Value.AsString(arguments[1])));
+        var regexp = Get(new String(Value.AsString(arguments[1])));
         var match = regexp.Match(s);
         if (match.Success)
         {

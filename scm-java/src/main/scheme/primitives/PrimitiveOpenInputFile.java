@@ -49,7 +49,7 @@ public class PrimitiveOpenInputFile extends Primitive {
             }
             InputStream strm = new FileInputStream(filename);
             if (deflate) {
-                return new TextStream(new PushbackReader(new InputStreamReader(new InflaterInputStream(strm, new Inflater(true)), encoding)), filename);
+                return new TextStream(new PushbackReader(new BufferedReader(new InputStreamReader(new InflaterInputStream(strm, new Inflater(true)), encoding), 8192)), filename);
             } else {
                 if (encoding.equals(StandardCharsets.UTF_8)) {
                     // check for BOM!
@@ -60,9 +60,9 @@ public class PrimitiveOpenInputFile extends Primitive {
                             pbstrm.unread(bom);
                         }
                     }
-                    return new TextStream(new PushbackReader(new InputStreamReader(pbstrm, encoding)), filename);
+                    return new TextStream(new PushbackReader(new BufferedReader(new InputStreamReader(pbstrm, encoding), 8192)), filename);
                 } else {
-                    return new TextStream(new PushbackReader(new InputStreamReader(strm, encoding)), filename);
+                    return new TextStream(new PushbackReader(new BufferedReader(new InputStreamReader(strm, encoding), 8192)), filename);
                 }
             }
         } catch (Exception e) {

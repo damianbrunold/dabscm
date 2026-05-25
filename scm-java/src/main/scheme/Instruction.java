@@ -10,6 +10,13 @@ public class Instruction {
     public Object arg1;
     public Object arg2;
     public SourcePos pos;
+    // Cached binding cell for GVAR/GSET fast path. Populated on first
+    // successful resolution. Once set, the cell reference is stable for
+    // ordinary use: Module.bind reuses the existing cell when rebinding
+    // an already-bound symbol. Bulk replacements via restoreFromSnapshot
+    // / resetModules invalidate the cache via Modules.cacheGeneration.
+    public Cell cachedCell;
+    public int cachedCellGeneration;
 
     public Instruction() {}
 

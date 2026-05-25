@@ -13,15 +13,11 @@ public class Value
     public static bool F = false;
     public static byte EOF = 1;
 
-    private static Dictionary<string, string> symbols = new();
+    private static System.Collections.Concurrent.ConcurrentDictionary<string, string> symbols = new();
 
     public static string Intern(string str)
     {
-        if (!symbols.ContainsKey(str))
-        {
-            symbols[str] = str;
-        }
-        return symbols[str];
+        return symbols.GetOrAdd(str, str);
     }
 
     public static Values AsValues(object value)
