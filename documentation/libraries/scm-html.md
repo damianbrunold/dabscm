@@ -7,12 +7,9 @@
 ```
 Syntax: (html-escape s)
 Library: (scm html)
-Description: Escapes the five HTML metacharacters (&, <, >, ", ') in s so
-  the result is safe to splice into HTML text content or attribute values
-  (quoted with either single or double quotes).
+Description: Escapes the five HTML metacharacters (&, <, >, ", ') in s so the result is safe to splice into HTML text content or attribute values.
 Example:
   (html-escape "a < b & c") => "a &lt; b &amp; c"
-  (html-escape "O'Brien") => "O&#39;Brien"
 ```
 
 ### `html-escape`
@@ -20,12 +17,9 @@ Example:
 ```
 Syntax: (html-escape s)
 Library: (scm html)
-Description: Escapes the five HTML metacharacters (&, <, >, ", ') in s so
-  the result is safe to splice into HTML text content or attribute values
-  (quoted with either single or double quotes).
+Description: Escapes the five HTML metacharacters (&, <, >, ", ') in s so the result is safe to splice into HTML text content or attribute values.
 Example:
   (html-escape "a < b & c") => "a &lt; b &amp; c"
-  (html-escape "O'Brien") => "O&#39;Brien"
 ```
 
 ### `strip-html-tags`

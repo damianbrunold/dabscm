@@ -2803,13 +2803,10 @@ Syntax: (write-string string)
        (write-string string port start)
        (write-string string port start end)
 Library: (scheme base)
-Description: Writes the characters of string from start to end in left-to-right
-  order to the given port. port defaults to the current output port. start
-  defaults to 0 and end defaults to the length of string. The return value is
-  unspecified.
+Description: Writes the characters of string from start to end in left-to-right order to the given port. port defaults to the current output port. start defaults to 0 and end defaults to the length of string. The native primitive does a single bulk Writer.write(char[], start, count) — large strings don't pay the Scheme→native transition per char.
 Example:
-  (write-string "hello")          ; writes hello
-  (write-string "hello" (current-output-port) 1 3) ; writes el
+  (write-string "hello")
+  (write-string "hello" port 1 3)
 ```
 
 ### `write-u8`

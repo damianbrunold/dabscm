@@ -201,13 +201,9 @@ Example:
 ```
 Syntax: (pg-quote-literal s)
 Library: (scm database postgres)
-Description: Returns s wrapped in single quotes with internal single quotes
-  doubled — the SQL standard string-literal escape, safe under PostgreSQL's
-  default standard_conforming_strings=on (i.e. backslashes are literal).
-  Use for any user-controlled string interpolated into SQL.
+Description: Returns s wrapped in single quotes with internal single quotes doubled — the SQL standard string-literal escape, safe under PostgreSQL's default standard_conforming_strings=on (backslashes stay literal). Use for any user-controlled string interpolated into SQL.
 Example:
   (pg-quote-literal "O'Brien") => "'O''Brien'"
-  (pg-quote-literal "\\n")    => "'\\n'"
 ```
 
 ### `pg-result->alist-list`
