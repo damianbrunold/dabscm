@@ -11,8 +11,8 @@ public class PrimitiveSpecialFolderApplicationData extends Primitive {
     @Override
     public String info() {
         return "Syntax: (special-folder-application-data)\n" +
-               "Library: (scm system)\n" +
-               "Description: Returns the path of the user's application data directory as a string.\n" +
+               "Library: (scm fs)\n" +
+               "Description: Returns the path of the user's application data or config directory as a string.\n" +
                "Example:\n" +
                "  (special-folder-application-data) => \"/home/user/.config\"";
     }

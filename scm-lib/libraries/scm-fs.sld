@@ -34,6 +34,7 @@
           special-folder-application-data
           special-folder-documents
           special-folder-temp
+          special-folder-user-home
           stat
           touch
           which)
@@ -63,6 +64,7 @@
     (define special-folder-application-data (%primitive "special-folder-application-data"))
     (define special-folder-documents (%primitive "special-folder-documents"))
     (define special-folder-temp (%primitive "special-folder-temp"))
+    (define special-folder-user-home (%primitive "special-folder-user-home"))
     (define which (%primitive "which"))
 
     (define %run-capture (%primitive "run-program/capture"))

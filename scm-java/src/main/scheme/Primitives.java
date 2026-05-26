@@ -370,6 +370,7 @@ public class Primitives {
         bind(new PrimitiveSpecialFolderApplicationData());
         bind(new PrimitiveSpecialFolderDocuments());
         bind(new PrimitiveSpecialFolderTemp());
+        bind(new PrimitiveSpecialFolderUserHome());
         bind(new PrimitiveSqrt());
         bind(new PrimitiveStartProgram());
         bind(new PrimitiveString());

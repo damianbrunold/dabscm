@@ -13,7 +13,7 @@ public class PrimitiveSpecialFolderDocuments extends Primitive {
     @Override
     public String info() {
         return "Syntax: (special-folder-documents)\n" +
-               "Library: (scm system)\n" +
+               "Library: (scm fs)\n" +
                "Description: Returns the path of the user's documents directory as a string.\n" +
                "Example:\n" +
                "  (special-folder-documents) => \"/home/user/Documents\"";

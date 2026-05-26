@@ -362,6 +362,7 @@ public class Primitives
         Bind(new PrimitiveSpecialFolderApplicationData());
         Bind(new PrimitiveSpecialFolderDocuments());
         Bind(new PrimitiveSpecialFolderTemp());
+        Bind(new PrimitiveSpecialFolderUserHome());
         Bind(new PrimitiveSqrt());
         Bind(new PrimitiveStartProgram());
         Bind(new PrimitiveString());
