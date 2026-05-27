@@ -2,6 +2,7 @@
         (scheme write)
         (scm test)
         (scm pdf)
+        (scm png)
         (scm compression))
 
 (test-runner-factory scm-test-runner)
@@ -541,5 +542,134 @@
       (let ((out (pdf->bytevector doc)))
         (test-assert (bv-contains-ascii? out "beginbfchar"))
         (test-assert (bv-contains-ascii? out "Adobe-Identity-UCS"))))))
+
+;; ── Images (phase 5) ───────────────────────────────────────────────────
+
+(test-group "embed-png basics"
+  (let* ((doc (make-pdf))
+         ;; 4x4 RGB checker via the (scm png) library.
+         (pixels (let ((bv (make-bytevector (* 4 4 3) 0)))
+                   (let loop ((i 0))
+                     (cond
+                       ((>= i (* 4 4)) bv)
+                       (else
+                        (when (odd? i)
+                          (bytevector-u8-set! bv (* 3 i) 255))
+                        (loop (+ i 1)))))))
+         (png-bv (png-encode-rgb 4 4 pixels))
+         (img (pdf-embed-png doc png-bv)))
+    (test-assert (pdf-image? img))
+    (test-equal 4 (pdf-image-width img))
+    (test-equal 4 (pdf-image-height img))))
+
+(test-group "embed-png produces XObject and FlateDecode + Predictor 15"
+  (let* ((doc (make-pdf))
+         (page (pdf-add-page! doc))
+         (px (make-bytevector (* 2 2 3) 64))
+         (img (pdf-embed-png doc (png-encode-rgb 2 2 px))))
+    (pdf-draw-image page img 0 0 100 100)
+    (let ((out (pdf->bytevector doc)))
+      (test-assert (bv-contains-ascii? out "/Subtype /Image"))
+      (test-assert (bv-contains-ascii? out "/ColorSpace /DeviceRGB"))
+      (test-assert (bv-contains-ascii? out "/Filter /FlateDecode"))
+      (test-assert (bv-contains-ascii? out "/Predictor 15"))
+      ;; XObject resource named /Im1 referenced by the page.
+      (test-assert (bv-contains-ascii? out "/XObject << /Im1")))))
+
+(test-group "draw-image emits cm + Do"
+  (let* ((doc (make-pdf))
+         (page (pdf-add-page! doc))
+         (px (make-bytevector (* 2 2 3) 0))
+         (img (pdf-embed-png doc (png-encode-rgb 2 2 px))))
+    (pdf-draw-image page img 50 100 200 150)
+    (let ((cs (extract-content-stream (pdf->bytevector doc))))
+      (test-assert (string-contains? cs "200 0 0 150 50 100 cm"))
+      (test-assert (string-contains? cs "/Im1 Do")))))
+
+(test-group "embed-jpeg validates SOI"
+  (let ((doc (make-pdf)))
+    ;; Bogus bytes — must reject.
+    (test-error (pdf-embed-jpeg doc (bytevector 0 1 2 3 4 5)))))
+
+;; ── Metadata (phase 6) ────────────────────────────────────────────────
+
+(test-group "metadata appears in /Info"
+  (let ((doc (make-pdf)))
+    (pdf-add-page! doc)
+    (pdf-set-metadata! doc 'title "T" 'author "A" 'producer "P")
+    (let ((out (pdf->bytevector doc)))
+      (test-assert (bv-contains-ascii? out "/Info"))
+      (test-assert (bv-contains-ascii? out "/Title (T)"))
+      (test-assert (bv-contains-ascii? out "/Author (A)"))
+      (test-assert (bv-contains-ascii? out "/Producer (P)")))))
+
+(test-group "metadata overrides existing key"
+  (let ((doc (make-pdf)))
+    (pdf-add-page! doc)
+    (pdf-set-metadata! doc 'title "Old")
+    (pdf-set-metadata! doc 'title "New")
+    (let ((out (pdf->bytevector doc)))
+      (test-assert (bv-contains-ascii? out "/Title (New)"))
+      (test-assert (not (bv-contains-ascii? out "/Title (Old)"))))))
+
+(test-group "no metadata → no /Info in trailer"
+  (let ((doc (make-pdf)))
+    (pdf-add-page! doc)
+    (let ((out (pdf->bytevector doc)))
+      (test-assert (not (bv-contains-ascii? out "/Info"))))))
+
+;; ── Links (phase 6) ───────────────────────────────────────────────────
+
+(test-group "add-link emits Link annotation"
+  (let* ((doc (make-pdf))
+         (page (pdf-add-page! doc)))
+    (pdf-add-link page '(50 100 200 120) "https://example.com")
+    (let ((out (pdf->bytevector doc)))
+      (test-assert (bv-contains-ascii? out "/Subtype /Link"))
+      (test-assert (bv-contains-ascii? out "/Rect [50 100 200 120]"))
+      (test-assert (bv-contains-ascii? out "/S /URI"))
+      (test-assert (bv-contains-ascii? out "/URI (https://example.com)"))
+      ;; Page must carry /Annots.
+      (test-assert (bv-contains-ascii? out "/Annots [")))))
+
+(test-group "no annotations → no /Annots"
+  (let* ((doc (make-pdf))
+         (page (pdf-add-page! doc)))
+    (let ((out (pdf->bytevector doc)))
+      (test-assert (not (bv-contains-ascii? out "/Annots"))))))
+
+;; ── Outlines (phase 6) ────────────────────────────────────────────────
+
+(test-group "add-outline emits Outlines tree"
+  (let* ((doc (make-pdf))
+         (p1 (pdf-add-page! doc))
+         (p2 (pdf-add-page! doc)))
+    (pdf-add-outline! doc p1 "First")
+    (pdf-add-outline! doc p2 "Second")
+    (let ((out (pdf->bytevector doc)))
+      (test-assert (bv-contains-ascii? out "/Type /Outlines"))
+      (test-assert (bv-contains-ascii? out "/PageMode /UseOutlines"))
+      (test-assert (bv-contains-ascii? out "/Title (First)"))
+      (test-assert (bv-contains-ascii? out "/Title (Second)")))))
+
+(test-group "nested outlines"
+  (let* ((doc (make-pdf))
+         (page (pdf-add-page! doc))
+         (top (pdf-add-outline! doc page "Top")))
+    (pdf-add-outline! doc page "Child1" 'parent top)
+    (pdf-add-outline! doc page "Child2" 'parent top)
+    (let ((out (pdf->bytevector doc)))
+      (test-assert (bv-contains-ascii? out "/Title (Top)"))
+      (test-assert (bv-contains-ascii? out "/Title (Child1)"))
+      (test-assert (bv-contains-ascii? out "/Title (Child2)"))
+      ;; Top outline must carry /First and /Last
+      (test-assert (bv-contains-ascii? out "/First "))
+      (test-assert (bv-contains-ascii? out "/Last ")))))
+
+(test-group "no outlines → no /Outlines"
+  (let ((doc (make-pdf)))
+    (pdf-add-page! doc)
+    (let ((out (pdf->bytevector doc)))
+      (test-assert (not (bv-contains-ascii? out "/Outlines"))))))
 
 (test-end "pdf")

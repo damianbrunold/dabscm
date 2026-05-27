@@ -84,6 +84,17 @@
     pdf-font-num-glyphs
     pdf-font-cmap-lookup
     pdf-font-units-per-em
+    ;; ── Images (phase 5) ────────────────────────────────────────────────
+    pdf-embed-jpeg
+    pdf-embed-png
+    pdf-draw-image
+    pdf-image?
+    pdf-image-width
+    pdf-image-height
+    ;; ── Metadata, links, outlines (phase 6) ─────────────────────────────
+    pdf-set-metadata!
+    pdf-add-link
+    pdf-add-outline!
     ;; PDF value constructors (low-level, used by later phases)
     pdf/name
     pdf/ref
@@ -221,21 +232,36 @@ Example: (pdf/literal (string->utf8 \"<< /Foo /Bar >>\"))"
     ;; ── Document and page records ─────────────────────────────────────────
 
     (define-record-type pdf-document
-      (%make-pdf-document pages fonts)
+      (%make-pdf-document pages fonts images metadata outlines)
       pdf-document?
-      (pages pdf-document-pages set-pdf-document-pages!)
+      (pages    pdf-document-pages    set-pdf-document-pages!)
       ;; Alist of font-symbol → pdf-font. Order is preserved so font
       ;; resource names (F1, F2, …) are stable across saves.
-      (fonts pdf-document-fonts set-pdf-document-fonts!))
+      (fonts    pdf-document-fonts    set-pdf-document-fonts!)
+      ;; List of pdf-image, in registration order; resource names are
+      ;; Im1, Im2, ….
+      (images   pdf-document-images   set-pdf-document-images!)
+      ;; Alist of metadata key (symbol: title author subject keywords
+      ;; creator producer creation-date mod-date) → string.
+      (metadata pdf-document-metadata set-pdf-document-metadata!)
+      ;; List of pdf-outline (in tree order; first-level items live at
+      ;; the document root, children hang off their parents).
+      (outlines pdf-document-outlines set-pdf-document-outlines!))
 
     (define-record-type pdf-page
-      (%make-pdf-page width height content)
+      (%make-pdf-page width height content annotations object-id)
       pdf-page?
-      (width   pdf-page-width)
-      (height  pdf-page-height)
+      (width       pdf-page-width)
+      (height      pdf-page-height)
       ;; Reversed list of bytevector chunks holding the content stream's
       ;; operators. Append with %pdf-page-add-chunk!; concatenate at save.
-      (content pdf-page-content set-pdf-page-content!))
+      (content     pdf-page-content     set-pdf-page-content!)
+      ;; List of pdf-annotation records attached to this page (link
+      ;; annotations, etc.). Order preserved; emitted into /Annots.
+      (annotations pdf-page-annotations set-pdf-page-annotations!)
+      ;; Indirect-object id assigned by pdf->bytevector; #f until then.
+      ;; Used by outline /Dest entries to refer to the page.
+      (object-id   pdf-page-object-id   set-pdf-page-object-id!))
 
     (define (%pdf-page-add-chunk! page bv)
       (set-pdf-page-content! page (cons bv (pdf-page-content page))))
@@ -257,7 +283,7 @@ Example:
   (define doc (make-pdf))
   (pdf-add-page! doc)
   (pdf-save doc \"blank.pdf\")"
-      (%make-pdf-document '() '()))
+      (%make-pdf-document '() '() '() '() '()))
 
     (define (pdf-page-count doc)
       "Syntax: (pdf-page-count doc)
@@ -290,7 +316,7 @@ Example:
            (set! h (cadr opts)))
           (else
            (error "pdf-add-page!: expected (), (size-pair), or (w h)" opts)))
-        (let ((page (%make-pdf-page w h '())))
+        (let ((page (%make-pdf-page w h '() '() #f)))
           (set-pdf-document-pages! doc
             (append (pdf-document-pages doc) (list page)))
           page)))
@@ -437,8 +463,9 @@ Example:
 
     ;; ── Trailer / xref ────────────────────────────────────────────────────
 
-    (define (pdf-writer-finish! w root-id)
-      (let* ((xref-offset (pdf-writer-length w))
+    (define (pdf-writer-finish! w root-id . opts)
+      (let* ((info-id     (if (null? opts) #f (car opts)))
+             (xref-offset (pdf-writer-length w))
              (size        (pdf-writer-next-id w))
              (offsets     (make-vector size 0)))
         (for-each
@@ -457,9 +484,12 @@ Example:
                              " 00000 n \n"))
             (loop (+ i 1))))
         (pdf-writer-emit-string! w "trailer\n")
-        (pdf-emit-value! w
-          (pdf/dict "Size" size
-                    "Root" (pdf/ref root-id)))
+        (let ((entries (list (cons "Size" size)
+                             (cons "Root" (pdf/ref root-id)))))
+          (when info-id
+            (set! entries
+              (append entries (list (cons "Info" (pdf/ref info-id))))))
+          (pdf-emit-value! w (%make-pdf-dict entries)))
         (pdf-writer-emit-string! w
           (string-append "\nstartxref\n"
                          (number->string xref-offset)
@@ -504,19 +534,40 @@ Example:
           (bytevector #x25 #xE2 #xE3 #xCF #xD3 #x0A))
         (let* ((pages      (pdf-document-pages doc))
                (fonts      (map cdr (pdf-document-fonts doc)))
+               (images     (pdf-document-images doc))
+               (outlines   (pdf-document-outlines doc))
+               (metadata   (pdf-document-metadata doc))
                (catalog-id (pdf-writer-allocate-id! w))
                (pages-id   (pdf-writer-allocate-id! w))
-               (page-ids   (map (lambda (_) (pdf-writer-allocate-id! w))
+               (page-ids   (map (lambda (page)
+                                  (let ((id (pdf-writer-allocate-id! w)))
+                                    (set-pdf-page-object-id! page id)
+                                    id))
                                 pages))
-               ;; Assign each font an indirect-object id up front so the
-               ;; /Resources dicts can reference them.
                (font-ids   (map (lambda (f)
                                   (let ((id (pdf-writer-allocate-id! w)))
                                     (set-pdf-font-object-id! f id)
                                     id))
                                 fonts))
-               ;; Shared /Resources dict referencing every registered font.
-               ;; Pages with no text still carry it — cheap and PDF allows it.
+               (image-ids  (map (lambda (i)
+                                  (let ((id (pdf-writer-allocate-id! w)))
+                                    (set-pdf-image-object-id! i id)
+                                    id))
+                                images))
+               ;; One indirect object per annotation, per page. We flatten
+               ;; into a parallel list of (page . list-of-annotation-ids).
+               (annotation-ids
+                (map (lambda (page)
+                       (map (lambda (_) (pdf-writer-allocate-id! w))
+                            (pdf-page-annotations page)))
+                     pages))
+               (outline-tree-ids
+                (and (not (null? outlines))
+                     (%outlines-allocate-ids! w outlines)))
+               (outlines-root-id
+                (and outline-tree-ids (pdf-writer-allocate-id! w)))
+               (info-id
+                (and (not (null? metadata)) (pdf-writer-allocate-id! w)))
                (font-subdict
                 (if (null? fonts)
                     #f
@@ -525,19 +576,40 @@ Example:
                              (cons (pdf-font-resource-name f)
                                    (pdf/ref (pdf-font-object-id f))))
                            fonts))))
+               (xobject-subdict
+                (if (null? images)
+                    #f
+                    (%make-pdf-dict
+                      (map (lambda (i)
+                             (cons (pdf-image-resource-name i)
+                                   (pdf/ref (pdf-image-object-id i))))
+                           images))))
                (page-resources
-                (if font-subdict
-                    (pdf/dict "Font" font-subdict)
-                    (pdf/dict))))
+                (cond
+                  ((and font-subdict xobject-subdict)
+                   (pdf/dict "Font" font-subdict "XObject" xobject-subdict))
+                  (font-subdict     (pdf/dict "Font"    font-subdict))
+                  (xobject-subdict  (pdf/dict "XObject" xobject-subdict))
+                  (else             (pdf/dict)))))
+          ;; Catalog (with optional /Outlines).
           (pdf-writer-define-object! w catalog-id
-            (pdf/dict "Type"  (pdf/name "Catalog")
-                      "Pages" (pdf/ref pages-id)))
+            (let ((entries
+                   (list (cons "Type"  (pdf/name "Catalog"))
+                         (cons "Pages" (pdf/ref pages-id)))))
+              (when outlines-root-id
+                (set! entries
+                  (append entries
+                          (list (cons "Outlines" (pdf/ref outlines-root-id))
+                                (cons "PageMode" (pdf/name "UseOutlines"))))))
+              (%make-pdf-dict entries)))
+          ;; Pages.
           (pdf-writer-define-object! w pages-id
             (pdf/dict "Type"  (pdf/name "Pages")
                       "Kids"  (pdf/array (map pdf/ref page-ids))
                       "Count" (length pages)))
+          ;; Each page + its content stream + its annotations.
           (for-each
-            (lambda (page id)
+            (lambda (page id annot-ids)
               (let* ((content-id
                       (and (pdf-page-has-content? page)
                            (pdf-writer-allocate-id! w)))
@@ -553,24 +625,45 @@ Example:
                   (set! page-dict-entries
                     (append page-dict-entries
                             (list (cons "Contents" (pdf/ref content-id))))))
+                (when (not (null? annot-ids))
+                  (set! page-dict-entries
+                    (append page-dict-entries
+                            (list (cons "Annots"
+                                        (pdf/array (map pdf/ref annot-ids)))))))
                 (pdf-writer-define-object! w id
                   (%make-pdf-dict page-dict-entries))
                 (when content-id
-                  (let* ((raw  (bytevector-concat
-                                 (reverse (pdf-page-content page))))
-                         (zbv  (zlib-compress raw)))
+                  (let* ((raw (bytevector-concat
+                                (reverse (pdf-page-content page))))
+                         (zbv (zlib-compress raw)))
                     (pdf-writer-define-object! w content-id
                       (pdf/stream
                         (pdf/dict "Filter" (pdf/name "FlateDecode"))
-                        zbv))))))
-            pages page-ids)
+                        zbv))))
+                ;; Emit each annotation object.
+                (for-each
+                  (lambda (annot aid)
+                    (%emit-annotation! w annot aid))
+                  (pdf-page-annotations page) annot-ids)))
+            pages page-ids annotation-ids)
+          ;; Fonts.
           (for-each
             (lambda (font id)
               (case (pdf-font-kind font)
                 ((truetype) (%emit-truetype-font! w font id))
                 (else       (%emit-core14-font! w font id))))
             fonts font-ids)
-          (pdf-writer-finish! w catalog-id))))
+          ;; Images.
+          (for-each (lambda (img) (%emit-image! w img)) images)
+          ;; Outlines (if any). The pre-allocated ids let us emit the
+          ;; root + each item with all sibling/child refs resolved.
+          (when outlines-root-id
+            (%emit-outlines! w outlines outlines-root-id))
+          ;; Info (metadata) object.
+          (when info-id
+            (pdf-writer-define-object! w info-id
+              (%build-info-dict metadata)))
+          (pdf-writer-finish! w catalog-id info-id))))
 
     (define (%emit-core14-font! w font id)
       (let ((base (pdf-font-base-name font))
@@ -2279,6 +2372,414 @@ Example:
                 (hi  (+ #xD800 (quotient c 1024)))
                 (lo  (+ #xDC00 (modulo c 1024))))
            (string-append (%pad-hex hi 4) (%pad-hex lo 4))))))
+
+    ;; ──────────────────────────────────────────────────────────────────────
+    ;; Images (phase 5)
+    ;;
+    ;; JPEG: pass-through via /Filter /DCTDecode (the PDF reader decodes
+    ;; the JPEG directly). Width/height/component-count are parsed from
+    ;; the first Start-Of-Frame marker.
+    ;;
+    ;; PNG: concatenated IDAT chunk payloads form one zlib stream — we
+    ;; emit them verbatim as a /FlateDecode stream with /DecodeParms
+    ;; /Predictor 15 so the PDF reader applies PNG filter rules. Only
+    ;; non-alpha color types (0 grayscale, 2 RGB) are supported in this
+    ;; phase; alpha channels require an /SMask.
+    ;; ──────────────────────────────────────────────────────────────────────
+
+    (define-record-type pdf-image
+      (%make-pdf-image resource-name object-id width height color-space
+                       bits-per-component filter decode-parms data)
+      pdf-image?
+      (resource-name      pdf-image-resource-name)
+      (object-id          pdf-image-object-id      set-pdf-image-object-id!)
+      (width              pdf-image-width)
+      (height             pdf-image-height)
+      (color-space        pdf-image-color-space)        ; pdf-name
+      (bits-per-component pdf-image-bits-per-component) ; integer
+      (filter             pdf-image-filter)             ; pdf-name
+      (decode-parms       pdf-image-decode-parms)       ; pdf-dict or #f
+      (data               pdf-image-data))              ; bytevector
+
+    (define (%register-image! doc img)
+      (set-pdf-document-images! doc
+        (append (pdf-document-images doc) (list img)))
+      img)
+
+    (define (%next-image-resource-name doc)
+      (string-append "Im"
+                     (number->string (+ 1 (length (pdf-document-images doc))))))
+
+    ;; ── JPEG ──────────────────────────────────────────────────────────────
+
+    (define (%jpeg-parse-dimensions bv)
+      ;; Returns (list width height components). Scans markers from the
+      ;; SOI until a Start-Of-Frame marker (SOFn, n in 0..F except
+      ;; 4=DHT, 8=JPG, 12=DAC) is found.
+      (unless (and (>= (bytevector-length bv) 4)
+                   (= (bytevector-u8-ref bv 0) #xFF)
+                   (= (bytevector-u8-ref bv 1) #xD8))
+        (error "pdf-embed-jpeg: not a JPEG (bad SOI)"))
+      (let loop ((i 2))
+        (cond
+          ((>= i (- (bytevector-length bv) 1))
+           (error "pdf-embed-jpeg: no SOF marker found"))
+          ((not (= (bytevector-u8-ref bv i) #xFF))
+           (loop (+ i 1)))
+          (else
+           (let ((m (bytevector-u8-ref bv (+ i 1))))
+             (cond
+               ((= m #xFF) (loop (+ i 1)))      ; fill byte
+               ;; Standalone (no length): SOI, EOI, RSTn, TEM
+               ((or (= m 0) (= m #xD8) (= m #xD9) (= m #x01)
+                    (and (>= m #xD0) (<= m #xD7)))
+                (loop (+ i 2)))
+               ;; SOF markers: C0..CF excluding C4 (DHT), C8 (JPG), CC (DAC)
+               ((and (>= m #xC0) (<= m #xCF)
+                     (not (= m #xC4)) (not (= m #xC8)) (not (= m #xCC)))
+                (let ((h (%u16 bv (+ i 5)))
+                      (w (%u16 bv (+ i 7)))
+                      (c (%u8  bv (+ i 9))))
+                  (list w h c)))
+               (else
+                (let ((len (%u16 bv (+ i 2))))
+                  (loop (+ i 2 len))))))))))
+
+    (define (pdf-embed-jpeg doc bv)
+      "Syntax: (pdf-embed-jpeg doc jpeg-bytevector)
+Library: (scm pdf)
+Description: Embeds a JPEG image in doc as an Image XObject using
+  /Filter /DCTDecode (pass-through — no re-encoding). Auto-detects
+  width, height and color space (gray / RGB / CMYK) from the JPEG's
+  Start-Of-Frame marker. Returns a pdf-image handle for use with
+  pdf-draw-image.
+Example:
+  (define j (pdf-embed-jpeg doc (pdf-read-binary-file \"photo.jpg\")))
+  (pdf-draw-image page j 50 600 200 150)"
+      (let* ((dims (%jpeg-parse-dimensions bv))
+             (w (list-ref dims 0))
+             (h (list-ref dims 1))
+             (c (list-ref dims 2))
+             (cs (cond ((= c 1) (pdf/name "DeviceGray"))
+                       ((= c 3) (pdf/name "DeviceRGB"))
+                       ((= c 4) (pdf/name "DeviceCMYK"))
+                       (else (error "pdf-embed-jpeg: unsupported component count" c))))
+             (rname (%next-image-resource-name doc))
+             (img (%make-pdf-image rname #f w h cs 8
+                                   (pdf/name "DCTDecode") #f bv)))
+        (%register-image! doc img)))
+
+    ;; ── PNG ───────────────────────────────────────────────────────────────
+
+    (define (%png-walk-chunks bv)
+      ;; Returns alist of tag-string → list of (offset . length).
+      (unless (and (>= (bytevector-length bv) 8)
+                   (= (%u8 bv 0) #x89) (= (%u8 bv 1) #x50)
+                   (= (%u8 bv 2) #x4E) (= (%u8 bv 3) #x47))
+        (error "pdf-embed-png: not a PNG (bad signature)"))
+      (let loop ((i 8) (acc '()))
+        (cond
+          ((>= (+ i 8) (bytevector-length bv)) (reverse acc))
+          (else
+           (let* ((len (%u32 bv i))
+                  (tag (let ((s (make-bytevector 4 0)))
+                         (bytevector-copy! s 0 bv (+ i 4) (+ i 8))
+                         (utf8->string s))))
+             (loop (+ i 8 len 4)
+                   (cons (list tag (+ i 8) len) acc)))))))
+
+    (define (pdf-embed-png doc bv)
+      "Syntax: (pdf-embed-png doc png-bytevector)
+Library: (scm pdf)
+Description: Embeds a PNG image in doc as an Image XObject. The PNG's
+  concatenated IDAT chunks are emitted verbatim as a /FlateDecode
+  stream with /DecodeParms /Predictor 15 so the reader applies the
+  PNG filter rules. Supports 8-bit color types 0 (grayscale) and 2
+  (RGB); types 4/6 (with alpha) are not yet supported. Returns a
+  pdf-image handle for use with pdf-draw-image.
+Example:
+  (define p (pdf-embed-png doc (pdf-read-binary-file \"logo.png\")))
+  (pdf-draw-image page p 50 600 100 100)"
+      (let* ((chunks (%png-walk-chunks bv))
+             (ihdr   (assoc "IHDR" chunks)))
+        (unless ihdr
+          (error "pdf-embed-png: missing IHDR chunk"))
+        (let* ((ihdr-off  (list-ref ihdr 1))
+               (width     (%u32 bv ihdr-off))
+               (height    (%u32 bv (+ ihdr-off 4)))
+               (bit-depth (%u8  bv (+ ihdr-off 8)))
+               (color-typ (%u8  bv (+ ihdr-off 9))))
+          (unless (= bit-depth 8)
+            (error "pdf-embed-png: only 8-bit depth supported" bit-depth))
+          (let-values
+              (((cs components)
+                (case color-typ
+                  ((0) (values (pdf/name "DeviceGray") 1))
+                  ((2) (values (pdf/name "DeviceRGB")  3))
+                  (else
+                   (error "pdf-embed-png: only color types 0 (gray) and 2 (RGB) are supported in this phase"
+                          color-typ)))))
+            (let* ((idat-chunks
+                    (let loop ((cs chunks) (acc '()))
+                      (cond
+                        ((null? cs) (reverse acc))
+                        ((string=? (car (car cs)) "IDAT")
+                         (loop (cdr cs) (cons (car cs) acc)))
+                        (else (loop (cdr cs) acc)))))
+                   (idat
+                    (bytevector-concat
+                      (map (lambda (c)
+                             (let* ((off (list-ref c 1))
+                                    (len (list-ref c 2))
+                                    (b (make-bytevector len 0)))
+                               (bytevector-copy! b 0 bv off (+ off len))
+                               b))
+                           idat-chunks)))
+                   (parms
+                    (pdf/dict "Predictor"        15
+                              "Columns"          width
+                              "Colors"           components
+                              "BitsPerComponent" 8))
+                   (rname (%next-image-resource-name doc))
+                   (img (%make-pdf-image rname #f width height cs 8
+                                         (pdf/name "FlateDecode") parms idat)))
+              (%register-image! doc img))))))
+
+    ;; ── Emit + draw ──────────────────────────────────────────────────────
+
+    (define (%emit-image! w img)
+      (let ((dict-entries
+             (list (cons "Type"             (pdf/name "XObject"))
+                   (cons "Subtype"          (pdf/name "Image"))
+                   (cons "Width"            (pdf-image-width  img))
+                   (cons "Height"           (pdf-image-height img))
+                   (cons "ColorSpace"       (pdf-image-color-space img))
+                   (cons "BitsPerComponent" (pdf-image-bits-per-component img))
+                   (cons "Filter"           (pdf-image-filter img)))))
+        (when (pdf-image-decode-parms img)
+          (set! dict-entries
+            (append dict-entries
+                    (list (cons "DecodeParms" (pdf-image-decode-parms img))))))
+        (pdf-writer-define-object! w (pdf-image-object-id img)
+          (pdf/stream (%make-pdf-dict dict-entries) (pdf-image-data img)))))
+
+    (define (pdf-draw-image page img x y w h)
+      "Syntax: (pdf-draw-image page image x y width height)
+Library: (scm pdf)
+Description: Places image on page at user-space coordinates (x, y) —
+  the lower-left corner — scaled to width × height points. Image
+  XObjects are defined in a 1×1 unit square, so this concatenates a
+  scale+translate matrix and emits the Do operator. Wrapped in a
+  q ... Q pair to localize state changes.
+Example:
+  (pdf-draw-image page logo 50 600 100 100)"
+      (emit-op! page "q")
+      (emit-op! page (n->s w) "0" "0" (n->s h) (n->s x) (n->s y) "cm")
+      (emit-op! page (string-append "/" (pdf-image-resource-name img)) "Do")
+      (emit-op! page "Q"))
+
+    ;; ──────────────────────────────────────────────────────────────────────
+    ;; Metadata, links, outlines (phase 6)
+    ;; ──────────────────────────────────────────────────────────────────────
+
+    (define (pdf-set-metadata! doc . pairs)
+      "Syntax: (pdf-set-metadata! doc key1 value1 key2 value2 ...)
+Library: (scm pdf)
+Description: Sets document metadata fields on the /Info dictionary.
+  Repeated keys overwrite earlier values. Recognised keys (symbols):
+    title author subject keywords creator producer
+    creation-date mod-date
+  Values are strings. Date strings should follow PDF format,
+  e.g. \"D:20260527120000+02'00\".
+Example:
+  (pdf-set-metadata! doc 'title \"My Report\"
+                         'author \"Damian\"
+                         'creator \"(scm pdf)\")"
+      (let loop ((args pairs))
+        (cond
+          ((null? args) doc)
+          ((null? (cdr args))
+           (error "pdf-set-metadata!: odd number of arguments"))
+          (else
+           (let* ((key (car args))
+                  (val (cadr args))
+                  (md  (pdf-document-metadata doc))
+                  (existing (assq key md)))
+             (set-pdf-document-metadata! doc
+               (cond
+                 (existing
+                  (map (lambda (e)
+                         (if (eq? (car e) key) (cons key val) e))
+                       md))
+                 (else (append md (list (cons key val))))))
+             (loop (cddr args)))))))
+
+    (define (%build-info-dict metadata)
+      (let ((key->name
+             (lambda (k)
+               (case k
+                 ((title)         "Title")
+                 ((author)        "Author")
+                 ((subject)       "Subject")
+                 ((keywords)      "Keywords")
+                 ((creator)       "Creator")
+                 ((producer)      "Producer")
+                 ((creation-date) "CreationDate")
+                 ((mod-date)      "ModDate")
+                 (else (symbol->string k))))))
+        (%make-pdf-dict
+          (map (lambda (e) (cons (key->name (car e)) (cdr e)))
+               metadata))))
+
+    ;; ── Annotations (link annotations) ───────────────────────────────────
+
+    (define-record-type pdf-annotation
+      (%make-pdf-annotation kind rect payload)
+      pdf-annotation?
+      (kind    pdf-annotation-kind)     ; symbol: 'link
+      (rect    pdf-annotation-rect)     ; (list llx lly urx ury)
+      (payload pdf-annotation-payload)) ; alist of (key . value) for /A etc.
+
+    (define (pdf-add-link page rect uri)
+      "Syntax: (pdf-add-link page rect uri-string)
+Library: (scm pdf)
+Description: Attaches a clickable URI link annotation to page. rect is
+  a 4-element list (llx lly urx ury) of user-space coordinates marking
+  the hot area; uri-string is the absolute URL to open. The annotation
+  has no visible border.
+Example:
+  (pdf-draw-text page helv 12 100 700 \"Click here\")
+  (pdf-add-link page '(100 695 200 712) \"https://example.com\")"
+      (let ((a (%make-pdf-annotation 'link rect (list (cons 'uri uri)))))
+        (set-pdf-page-annotations! page
+          (append (pdf-page-annotations page) (list a)))
+        a))
+
+    (define (%emit-annotation! w a id)
+      (case (pdf-annotation-kind a)
+        ((link)
+         (let* ((uri  (cdr (assq 'uri (pdf-annotation-payload a))))
+                (rect (pdf-annotation-rect a)))
+           (pdf-writer-define-object! w id
+             (pdf/dict
+               "Type"    (pdf/name "Annot")
+               "Subtype" (pdf/name "Link")
+               "Rect"    (pdf/array rect)
+               "Border"  (pdf/array (list 0 0 0))
+               "A"       (pdf/dict "Type" (pdf/name "Action")
+                                   "S"    (pdf/name "URI")
+                                   "URI"  uri)))))
+        (else (error "pdf: unknown annotation kind" (pdf-annotation-kind a)))))
+
+    ;; ── Outlines (bookmarks) ─────────────────────────────────────────────
+
+    (define-record-type pdf-outline
+      (%make-pdf-outline title page-ref y children object-id)
+      pdf-outline?
+      (title     pdf-outline-title)
+      (page-ref  pdf-outline-page-ref)
+      (y         pdf-outline-y)
+      (children  pdf-outline-children  set-pdf-outline-children!)
+      (object-id pdf-outline-object-id set-pdf-outline-object-id!))
+
+    (define (pdf-add-outline! doc page title . opts)
+      "Syntax: (pdf-add-outline! doc page title [option value]...)
+Library: (scm pdf)
+Description: Appends an outline (bookmark) entry that jumps to page.
+  Options (plist):
+    parent  another outline returned by pdf-add-outline! — creates a
+            nested child under that outline (default: top-level item)
+    y       baseline y-coord to scroll the page to (default: page top)
+  Returns the outline handle so it can be used as a parent in later
+  calls.
+Example:
+  (define ch1 (pdf-add-outline! doc page1 \"Chapter 1\"))
+  (pdf-add-outline! doc page1 \"Section 1.1\" 'parent ch1)"
+      (let* ((parent (%plist-ref opts 'parent #f))
+             (y      (%plist-ref opts 'y      #f))
+             (out    (%make-pdf-outline title page y '() #f)))
+        (cond
+          (parent
+           (set-pdf-outline-children! parent
+             (append (pdf-outline-children parent) (list out))))
+          (else
+           (set-pdf-document-outlines! doc
+             (append (pdf-document-outlines doc) (list out)))))
+        out))
+
+    (define (%outlines-allocate-ids! w items)
+      ;; Allocates an object id for every outline in the tree, in
+      ;; depth-first order. Returns the input items list unchanged (ids
+      ;; are stored on the records themselves).
+      (let walk ((items items))
+        (for-each
+          (lambda (o)
+            (set-pdf-outline-object-id! o (pdf-writer-allocate-id! w))
+            (walk (pdf-outline-children o)))
+          items))
+      items)
+
+    (define (%outlines-count items)
+      ;; Total visible descendant count (== children since we don't
+      ;; collapse anything in this phase).
+      (let loop ((xs items) (n 0))
+        (cond
+          ((null? xs) n)
+          (else
+           (loop (cdr xs)
+                 (+ n 1 (%outlines-count (pdf-outline-children (car xs)))))))))
+
+    (define (%emit-outlines! w top-items root-id)
+      ;; Emit the root /Outlines dict, then each item.
+      (let* ((first  (car top-items))
+             (last   (car (reverse top-items)))
+             (count  (%outlines-count top-items)))
+        (pdf-writer-define-object! w root-id
+          (pdf/dict "Type"  (pdf/name "Outlines")
+                    "First" (pdf/ref (pdf-outline-object-id first))
+                    "Last"  (pdf/ref (pdf-outline-object-id last))
+                    "Count" count))
+        (let recurse ((parent-id root-id) (items top-items))
+          (let* ((prev-ids (cons #f (map pdf-outline-object-id items)))
+                 (next-ids (append (cdr (map pdf-outline-object-id items))
+                                   (list #f))))
+            (for-each
+              (lambda (item prev-id next-id)
+                (%emit-outline-item! w item parent-id prev-id next-id)
+                (when (not (null? (pdf-outline-children item)))
+                  (recurse (pdf-outline-object-id item)
+                           (pdf-outline-children item))))
+              items prev-ids next-ids)))))
+
+    (define (%emit-outline-item! w item parent-id prev-id next-id)
+      (let* ((page     (pdf-outline-page-ref item))
+             (page-id  (pdf-page-object-id page))
+             (children (pdf-outline-children item))
+             (y        (or (pdf-outline-y item) (pdf-page-height page)))
+             ;; /Dest [page /XYZ 0 y null] — null = retain current zoom.
+             (dest     (pdf/array
+                         (list (pdf/ref page-id)
+                               (pdf/name "XYZ") 0 y 'null)))
+             (entries
+              (list (cons "Title"  (pdf-outline-title item))
+                    (cons "Parent" (pdf/ref parent-id))
+                    (cons "Dest"   dest))))
+        (when prev-id
+          (set! entries
+            (append entries (list (cons "Prev" (pdf/ref prev-id))))))
+        (when next-id
+          (set! entries
+            (append entries (list (cons "Next" (pdf/ref next-id))))))
+        (when (not (null? children))
+          (set! entries
+            (append entries
+                    (list (cons "First" (pdf/ref (pdf-outline-object-id
+                                                   (car children))))
+                          (cons "Last"  (pdf/ref (pdf-outline-object-id
+                                                   (car (reverse children)))))
+                          (cons "Count" (%outlines-count children))))))
+        (pdf-writer-define-object! w (pdf-outline-object-id item)
+          (%make-pdf-dict entries))))
 
     (define (pdf-save doc path)
       "Syntax: (pdf-save doc path)
