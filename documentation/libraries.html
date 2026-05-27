@@ -369,6 +369,7 @@
   <a href="#scm-odf-writer" class="scm">(scm odf writer)</a>
   <a href="#scm-ooxml-excel" class="scm">(scm ooxml excel)</a>
   <a href="#scm-ooxml-word" class="scm">(scm ooxml word)</a>
+  <a href="#scm-pdf" class="scm">(scm pdf)</a>
   <a href="#scm-png" class="scm">(scm png)</a>
   <a href="#scm-profiling" class="scm">(scm profiling)</a>
   <a href="#scm-qr" class="scm">(scm qr)</a>
@@ -3226,6 +3227,99 @@
   </div>
 </div>
 
+<div class="library scm" id="scm-pdf">
+  <div class="lib-header">
+    <span class="lib-name">(scm pdf)</span>
+    <span class="lib-desc"></span>
+    <span class="lib-count" id="scm-pdf-count"></span>
+  </div>
+  <div class="lib-body">
+    <div class="exports" data-lib="scm-pdf">
+      make-pdf
+      pdf-&gt;bytevector
+      pdf-add-page!
+      pdf-array?
+      pdf-clip
+      pdf-clip-even-odd
+      pdf-close-path
+      pdf-close-stroke
+      pdf-curve-to
+      pdf-dict?
+      pdf-draw-text
+      pdf-embed-truetype-font
+      pdf-end-path
+      pdf-fill
+      pdf-fill-and-stroke
+      pdf-fill-and-stroke-even-odd
+      pdf-fill-even-odd
+      pdf-flow-text
+      pdf-font-ascender
+      pdf-font-base-name
+      pdf-font-cap-height
+      pdf-font-cmap-lookup
+      pdf-font-descender
+      pdf-font-encoding
+      pdf-font-kind
+      pdf-font-num-glyphs
+      pdf-font-ttf-bytes
+      pdf-font-units-per-em
+      pdf-font-x-height
+      pdf-font?
+      pdf-line-cap-butt
+      pdf-line-cap-round
+      pdf-line-cap-square
+      pdf-line-join-bevel
+      pdf-line-join-miter
+      pdf-line-join-round
+      pdf-line-to
+      pdf-move-to
+      pdf-name?
+      pdf-page-count
+      pdf-page-has-content?
+      pdf-page-height
+      pdf-page-size-a4
+      pdf-page-size-a5
+      pdf-page-size-legal
+      pdf-page-size-letter
+      pdf-page-width
+      pdf-page?
+      pdf-read-binary-file
+      pdf-rect
+      pdf-ref?
+      pdf-restore-state
+      pdf-rotate
+      pdf-save
+      pdf-save-state
+      pdf-scale
+      pdf-set-dash
+      pdf-set-fill-cmyk
+      pdf-set-fill-gray
+      pdf-set-fill-rgb
+      pdf-set-line-cap
+      pdf-set-line-join
+      pdf-set-line-width
+      pdf-set-miter-limit
+      pdf-set-stroke-cmyk
+      pdf-set-stroke-gray
+      pdf-set-stroke-rgb
+      pdf-stream?
+      pdf-stroke
+      pdf-text-width
+      pdf-transform
+      pdf-translate
+      pdf-use-font
+      pdf-with-state
+      pdf/array
+      pdf/dict
+      pdf/literal
+      pdf/name
+      pdf/ref
+      pdf/stream
+    </div>
+    <div class="doc-panel" id="scm-pdf-doc-panel"></div>
+  </div>
+</div>
+
 <div class="library scm" id="scm-png">
   <div class="lib-header">
     <span class="lib-name">(scm png)</span>
@@ -4821,6 +4915,62 @@ const docs = {
     "paragraph-set-tab-stops!": "Syntax: (paragraph-set-tab-stops! para stops)\nLibrary: (scm ooxml word)\nDescription: Sets tab stops for para. stops is a list of (pos-pt alignment)\nwhere pos-pt is in points and alignment is a symbol ('left 'center 'right\n'decimal). Points are converted to twips.\nExample:\n  (paragraph-set-tab-stops! para '((2.5 left) (5.0 center)))",
     "register-color!": "Syntax: (register-color! name hex-string)\nLibrary: (scm ooxml word)\nDescription: Registers a new named color. name is a symbol; hex-string is an\n8-character ARGB hex string (e.g. \"FFFF0000\").\nExample:\n  (register-color! 'salmon \"FFFA8072\")",
     "resolve-color": "Syntax: (resolve-color color)\nLibrary: (scm ooxml word)\nDescription: Resolves a color to an 8-character ARGB hex string. color may be\na string (returned as-is) or a named symbol (black, white, red, etc.).\nExample:\n  (resolve-color 'red)       => \"FFFF0000\"\n  (resolve-color \"FFAABBCC\") => \"FFAABBCC\"",
+  },
+  "scm-pdf": {
+    "make-pdf": "Syntax: (make-pdf)\nLibrary: (scm pdf)\nDescription: Creates a new empty PDF document. Pages are appended with\n  pdf-add-page! and the finished document is serialized with pdf-save\n  or pdf->bytevector.\nExample:\n  (define doc (make-pdf))\n  (pdf-add-page! doc)\n  (pdf-save doc \"blank.pdf\")",
+    "pdf->bytevector": "Syntax: (pdf->bytevector doc)\nLibrary: (scm pdf)\nDescription: Serializes doc to a bytevector containing a complete PDF\n  file (header, all objects, xref table, trailer, %%EOF). Pages with\n  no content render as blank pages of the requested size.\nExample:\n  (define doc (make-pdf))\n  (pdf-add-page! doc)\n  (pdf->bytevector doc)",
+    "pdf-add-page!": "Syntax: (pdf-add-page! doc)\n       (pdf-add-page! doc size-pair)\n       (pdf-add-page! doc width-pt height-pt)\nLibrary: (scm pdf)\nDescription: Appends a new page to doc and returns the page record.\n  With no extra arguments the page is A4 (595x842 points). A size pair\n  is a (cons width height); the page-size presets (pdf-page-size-a4\n  etc.) are such pairs. Or pass explicit width and height in points.\nExample:\n  (pdf-add-page! doc)                       ; A4\n  (pdf-add-page! doc pdf-page-size-letter)  ; US Letter\n  (pdf-add-page! doc 200 100)               ; custom size",
+    "pdf-clip": "Syntax: (pdf-clip page)\nLibrary: (scm pdf)\nDescription: Modifies the current clipping path by intersecting it with\n  the current path (non-zero rule). Per the PDF spec this must be\n  followed by a painting or pdf-end-path operator. Emits 'W'.\nExample: (pdf-rect page 0 0 100 100) (pdf-clip page) (pdf-end-path page)",
+    "pdf-clip-even-odd": "Syntax: (pdf-clip-even-odd page)\nLibrary: (scm pdf)\nDescription: Like pdf-clip but uses the even-odd rule. Emits 'W*'.\nExample: (pdf-clip-even-odd page)",
+    "pdf-close-path": "Syntax: (pdf-close-path page)\nLibrary: (scm pdf)\nDescription: Closes the current subpath with a straight line back to its\n  start. Emits the PDF 'h' operator.\nExample: (pdf-close-path page)",
+    "pdf-close-stroke": "Syntax: (pdf-close-stroke page)\nLibrary: (scm pdf)\nDescription: Closes and strokes the current path. Emits 's'.\nExample: (pdf-close-stroke page)",
+    "pdf-curve-to": "Syntax: (pdf-curve-to page cx1 cy1 cx2 cy2 x y)\nLibrary: (scm pdf)\nDescription: Appends a cubic Bezier curve from the current point to\n  (x, y) using control points (cx1, cy1) and (cx2, cy2). Emits 'c'.\nExample: (pdf-curve-to page 100 100 200 200 300 100)",
+    "pdf-draw-text": "Syntax: (pdf-draw-text page font size x y string)\nLibrary: (scm pdf)\nDescription: Draws string on page at user-space coordinates (x, y) — the\n  baseline origin — in font at size points. Emits a self-contained\n  q ... BT ... ET ... Q block so any current graphics state is\n  preserved. To rotate or scale text, wrap the call in pdf-with-state\n  and concat your own CTM.\nExample:\n  (define helv (pdf-use-font doc 'helvetica))\n  (pdf-draw-text page helv 12 100 700 \"Hello, world!\")",
+    "pdf-embed-truetype-font": "Syntax: (pdf-embed-truetype-font doc ttf-bytes [base-name])\nLibrary: (scm pdf)\nDescription: Parses the TrueType font in ttf-bytes (a bytevector, e.g.\n  from pdf-read-binary-file), registers it on doc as an embedded Type0\n  composite font with /Encoding /Identity-H, and returns a font handle\n  usable with pdf-draw-text, pdf-text-width and pdf-flow-text. Supports\n  the full Unicode BMP (cmap format 4) or beyond (format 12). The whole\n  TTF is embedded — no subsetting; expect a few hundred KB per font.\n  An optional base-name overrides the PostScript name used for the\n  PDF /BaseFont entry (defaults to \"EmbeddedTTF<n>\").\nExample:\n  (define bv (pdf-read-binary-file \"/path/to/DejaVuSans.ttf\"))\n  (define dj (pdf-embed-truetype-font doc bv \"DejaVuSans\"))\n  (pdf-draw-text page dj 14 50 700 \"Hello, мир, 日本語, ✓\")",
+    "pdf-end-path": "Syntax: (pdf-end-path page)\nLibrary: (scm pdf)\nDescription: Ends the current path without filling or stroking. Used\n  after pdf-clip / pdf-clip-even-odd. Emits 'n'.\nExample: (pdf-end-path page)",
+    "pdf-fill": "Syntax: (pdf-fill page)\nLibrary: (scm pdf)\nDescription: Fills the current path using the non-zero winding rule.\n  Emits the PDF 'f' operator.\nExample: (pdf-fill page)",
+    "pdf-fill-and-stroke": "Syntax: (pdf-fill-and-stroke page)\nLibrary: (scm pdf)\nDescription: Fills (non-zero) and strokes the current path. Emits 'B'.\nExample: (pdf-fill-and-stroke page)",
+    "pdf-fill-and-stroke-even-odd": "Syntax: (pdf-fill-and-stroke-even-odd page)\nLibrary: (scm pdf)\nDescription: Fills (even-odd) and strokes the current path. Emits 'B*'.\nExample: (pdf-fill-and-stroke-even-odd page)",
+    "pdf-fill-even-odd": "Syntax: (pdf-fill-even-odd page)\nLibrary: (scm pdf)\nDescription: Fills the current path using the even-odd rule. Emits 'f*'.\nExample: (pdf-fill-even-odd page)",
+    "pdf-flow-text": "Syntax: (pdf-flow-text page font size rect text [option value]...)\nLibrary: (scm pdf)\nDescription: Lays out text into a rectangular region using greedy word\n  wrapping and the font's AFM widths. Returns two values via `values`:\n  the leftover text (or \"\" if everything fit) and the y-coordinate\n  where the next line would have been placed (useful for continuing\n  below the block).\n  rect is a 4-element list: (x y width height), where (x, y) is the\n  rectangle's lower-left corner in user-space (PDF) points.\n  Options (plist style):\n    align    one of 'left (default), 'right, 'center, 'justify\n    leading  line spacing in points (default: size * 1.2)\n  Newline characters in text force hard line breaks; the line that ends\n  at a hard break is never justified. Words wider than rect width are\n  placed on a line by themselves (and will overflow horizontally).\nExample:\n  (define helv (pdf-use-font doc 'helvetica))\n  (call-with-values\n    (lambda () (pdf-flow-text page helv 11 '(72 72 200 400)\n                              \"Lorem ipsum dolor sit amet ...\"\n                              'align 'justify))\n    (lambda (rest final-y)\n      (when (not (string=? rest \"\"))\n        ...flow rest into a second column...)))",
+    "pdf-font-ascender": "Syntax: (pdf-font-ascender font)\nLibrary: (scm pdf)\nDescription: Returns the font's ascender height in 1/1000 em units\n  (multiply by font size and divide by 1000 to get a user-space value).\nExample: (pdf-font-ascender (pdf-use-font doc 'helvetica))",
+    "pdf-font-cap-height": "Syntax: (pdf-font-cap-height font)\nLibrary: (scm pdf)\nDescription: Returns the font's capital-letter height in 1/1000 em\n  units.",
+    "pdf-font-descender": "Syntax: (pdf-font-descender font)\nLibrary: (scm pdf)\nDescription: Returns the font's descender depth in 1/1000 em units\n  (a negative number for most fonts).",
+    "pdf-font-x-height": "Syntax: (pdf-font-x-height font)\nLibrary: (scm pdf)\nDescription: Returns the font's x-height in 1/1000 em units.",
+    "pdf-line-to": "Syntax: (pdf-line-to page x y)\nLibrary: (scm pdf)\nDescription: Appends a straight line segment from the current point to\n  (x, y). Emits the PDF 'l' operator.\nExample: (pdf-line-to page 300 400)",
+    "pdf-move-to": "Syntax: (pdf-move-to page x y)\nLibrary: (scm pdf)\nDescription: Begins a new subpath at (x, y). Emits the PDF 'm' operator.\nExample: (pdf-move-to page 100 200)",
+    "pdf-page-count": "Syntax: (pdf-page-count doc)\nLibrary: (scm pdf)\nDescription: Returns the number of pages currently in doc.\nExample: (pdf-page-count (make-pdf))  ; => 0",
+    "pdf-page-has-content?": "Syntax: (pdf-page-has-content? page)\nLibrary: (scm pdf)\nDescription: True if any drawing operators have been emitted to page.\n  Pages without content are written without a /Contents entry.",
+    "pdf-read-binary-file": "Syntax: (pdf-read-binary-file path)\nLibrary: (scm pdf)\nDescription: Convenience wrapper that opens path as a binary file,\n  reads its full contents into a bytevector, and returns the bytevector.\n  Intended for loading TTF files before calling pdf-embed-truetype-font.\nExample:\n  (pdf-read-binary-file \"/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf\")",
+    "pdf-rect": "Syntax: (pdf-rect page x y width height)\nLibrary: (scm pdf)\nDescription: Appends a complete rectangular subpath with its lower-left\n  corner at (x, y). Emits the PDF 're' operator. No painting is done.\nExample: (pdf-rect page 50 50 100 200)",
+    "pdf-restore-state": "Syntax: (pdf-restore-state page)\nLibrary: (scm pdf)\nDescription: Pops the most recently saved graphics state. Emits 'Q'.\nExample: (pdf-restore-state page)",
+    "pdf-rotate": "Syntax: (pdf-rotate page degrees)\nLibrary: (scm pdf)\nDescription: Concatenates a rotation about the origin (in degrees,\n  counter-clockwise) onto the CTM. Translate first to rotate about a\n  different point.\nExample:\n  (pdf-with-state page\n    (lambda ()\n      (pdf-translate page 100 100)\n      (pdf-rotate page 45)\n      (pdf-rect page -25 -25 50 50)\n      (pdf-stroke page)))",
+    "pdf-save": "Syntax: (pdf-save doc path)\nLibrary: (scm pdf)\nDescription: Serializes doc with pdf->bytevector and writes the result\n  to the file at path. Overwrites an existing file.\nExample:\n  (define doc (make-pdf))\n  (pdf-add-page! doc)\n  (pdf-save doc \"blank.pdf\")",
+    "pdf-save-state": "Syntax: (pdf-save-state page)\nLibrary: (scm pdf)\nDescription: Pushes the current graphics state onto the stack (CTM,\n  colors, line attributes, clip path). Emits the PDF 'q' operator. Must\n  be paired with pdf-restore-state. Prefer pdf-with-state to keep them\n  balanced.\nExample: (pdf-save-state page)",
+    "pdf-scale": "Syntax: (pdf-scale page sx sy)\nLibrary: (scm pdf)\nDescription: Concatenates an axis-aligned scale by (sx, sy) onto the CTM.\nExample: (pdf-scale page 2 2)",
+    "pdf-set-dash": "Syntax: (pdf-set-dash page pattern-list phase)\nLibrary: (scm pdf)\nDescription: Sets the dash pattern. pattern-list is a list of numbers\n  alternating dash/gap lengths; an empty list resets to a solid line.\n  phase is the offset into the pattern at which to start. Emits 'd'.\nExample:\n  (pdf-set-dash page '(5 3) 0)   ; 5-on 3-off\n  (pdf-set-dash page '() 0)      ; solid",
+    "pdf-set-fill-cmyk": "Syntax: (pdf-set-fill-cmyk page c m y k)\nLibrary: (scm pdf)\nDescription: Sets the non-stroking color to CMYK (each in [0, 1]).\n  Emits 'k'.\nExample: (pdf-set-fill-cmyk page 1 0 0 0)   ; cyan",
+    "pdf-set-fill-gray": "Syntax: (pdf-set-fill-gray page g)\nLibrary: (scm pdf)\nDescription: Sets the non-stroking color to gray (g in [0, 1]).\n  Emits 'g'.\nExample: (pdf-set-fill-gray page 0.9)",
+    "pdf-set-fill-rgb": "Syntax: (pdf-set-fill-rgb page r g b)\nLibrary: (scm pdf)\nDescription: Sets the non-stroking color to RGB (each in [0, 1]).\n  Emits 'rg'.\nExample: (pdf-set-fill-rgb page 0 0 1)   ; blue",
+    "pdf-set-line-cap": "Syntax: (pdf-set-line-cap page cap)\nLibrary: (scm pdf)\nDescription: Sets the line cap style. cap is 0 (butt), 1 (round) or\n  2 (projecting square) — see pdf-line-cap-butt etc. Emits 'J'.\nExample: (pdf-set-line-cap page pdf-line-cap-round)",
+    "pdf-set-line-join": "Syntax: (pdf-set-line-join page join)\nLibrary: (scm pdf)\nDescription: Sets the line join style. join is 0 (miter), 1 (round) or\n  2 (bevel) — see pdf-line-join-miter etc. Emits 'j'.\nExample: (pdf-set-line-join page pdf-line-join-round)",
+    "pdf-set-line-width": "Syntax: (pdf-set-line-width page width)\nLibrary: (scm pdf)\nDescription: Sets the line width in user units. Emits 'w'.\nExample: (pdf-set-line-width page 1.5)",
+    "pdf-set-miter-limit": "Syntax: (pdf-set-miter-limit page miter-limit)\nLibrary: (scm pdf)\nDescription: Sets the miter limit. Emits 'M'.\nExample: (pdf-set-miter-limit page 10)",
+    "pdf-set-stroke-cmyk": "Syntax: (pdf-set-stroke-cmyk page c m y k)\nLibrary: (scm pdf)\nDescription: Sets the stroking color to CMYK (each in [0, 1]).\n  Emits 'K'.\nExample: (pdf-set-stroke-cmyk page 0 1 1 0)   ; pure red",
+    "pdf-set-stroke-gray": "Syntax: (pdf-set-stroke-gray page g)\nLibrary: (scm pdf)\nDescription: Sets the stroking color to gray (g in [0, 1]). Emits 'G'.\nExample: (pdf-set-stroke-gray page 0.5)",
+    "pdf-set-stroke-rgb": "Syntax: (pdf-set-stroke-rgb page r g b)\nLibrary: (scm pdf)\nDescription: Sets the stroking color to RGB (each in [0, 1]).\n  Emits 'RG'.\nExample: (pdf-set-stroke-rgb page 1 0 0)   ; red",
+    "pdf-stroke": "Syntax: (pdf-stroke page)\nLibrary: (scm pdf)\nDescription: Strokes the current path. Emits the PDF 'S' operator.\nExample: (pdf-stroke page)",
+    "pdf-text-width": "Syntax: (pdf-text-width font size string)\nLibrary: (scm pdf)\nDescription: Returns the rendered width of string in user-space units\n  (points) when set in font at size, using the AFM/TTF glyph widths.\n  For core14 fonts, unmappable codepoints are treated as the '?' glyph;\n  for embedded TrueType fonts, codepoints without a glyph use GID 0\n  (which is .notdef, typically zero width or a blank box).\nExample:\n  (define helv (pdf-use-font doc 'helvetica))\n  (pdf-text-width helv 12 \"Hello\")",
+    "pdf-transform": "Syntax: (pdf-transform page a b c d e f)\nLibrary: (scm pdf)\nDescription: Concatenates the matrix [a b c d e f] onto the current\n  transformation matrix. The PDF CTM is a 3x3 affine matrix whose six\n  free entries are passed in column-major order. Emits 'cm'.\nExample: (pdf-transform page 1 0 0 1 100 200)   ; translate (100,200)",
+    "pdf-translate": "Syntax: (pdf-translate page tx ty)\nLibrary: (scm pdf)\nDescription: Concatenates a translation by (tx, ty) onto the CTM.\nExample: (pdf-translate page 100 200)",
+    "pdf-use-font": "Syntax: (pdf-use-font doc font-symbol)\nLibrary: (scm pdf)\nDescription: Registers one of the 14 standard PDF base fonts on doc\n  and returns a font handle suitable for pdf-text-width and\n  pdf-draw-text. Repeated calls with the same symbol return the same\n  handle.\n  font-symbol is one of:\n    helvetica  helvetica-bold  helvetica-oblique  helvetica-bold-oblique\n    times-roman  times-bold  times-italic  times-bold-italic\n    courier  courier-bold  courier-oblique  courier-bold-oblique\n    symbol  zapf-dingbats\nExample:\n  (define helv (pdf-use-font doc 'helvetica))",
+    "pdf-with-state": "Syntax: (pdf-with-state page thunk)\nLibrary: (scm pdf)\nDescription: Calls thunk between a save-state / restore-state pair so\n  any transforms, colors, or clip changes made inside do not leak out.\nExample:\n  (pdf-with-state page\n    (lambda ()\n      (pdf-translate page 100 100)\n      (pdf-set-fill-rgb page 1 0 0)\n      (pdf-rect page 0 0 50 50)\n      (pdf-fill page)))",
+    "pdf/array": "Syntax: (pdf/array list-of-values)\nLibrary: (scm pdf)\nDescription: Constructs a PDF array from a Scheme list of PDF values.\nExample: (pdf/array (list 0 0 595 842))",
+    "pdf/dict": "Syntax: (pdf/dict key1 value1 key2 value2 ...)\nLibrary: (scm pdf)\nDescription: Constructs a PDF dictionary from alternating string keys\n  and PDF values. Keys are bare strings (the leading / is added by the\n  serializer). Values may be other PDF values, numbers, booleans, the\n  symbol 'null, or plain strings (emitted as literal strings).\nExample:\n  (pdf/dict \"Type\" (pdf/name \"Catalog\")\n            \"Pages\" (pdf/ref 2))",
+    "pdf/literal": "Syntax: (pdf/literal bytevector)\nLibrary: (scm pdf)\nDescription: Wraps a bytevector so the PDF serializer splices it\n  verbatim into the output stream. Intended for already-formed PDF\n  fragments — most users should not need this.\nExample: (pdf/literal (string->utf8 \"<< /Foo /Bar >>\"))",
+    "pdf/name": "Syntax: (pdf/name string)\nLibrary: (scm pdf)\nDescription: Constructs a PDF name object (serialized as /string). Used\n  for dictionary keys' values, font names, type tags, etc.\nExample: (pdf/name \"Catalog\")",
+    "pdf/ref": "Syntax: (pdf/ref object-id)\nLibrary: (scm pdf)\nDescription: Constructs an indirect-object reference (serialized as\n  \"N 0 R\"). object-id is the integer id assigned by the writer.\nExample: (pdf/ref 3)",
+    "pdf/stream": "Syntax: (pdf/stream dict bytevector)\nLibrary: (scm pdf)\nDescription: Constructs a PDF stream object. dict is a pdf-dict (its\n  /Length entry is added automatically if missing). data is the raw\n  stream payload as a bytevector — callers are responsible for any\n  compression and for setting /Filter accordingly.\nExample:\n  (pdf/stream (pdf/dict) (string->utf8 \"q Q\"))",
   },
   "scm-png": {
     "crc32": "Syntax: (crc32 bytevector [start [end]])\nLibrary: (scm png)\nDescription: Computes the IEEE CRC-32 checksum (polynomial 0xEDB88320,\n  as used by PNG, gzip, zip) of bytevector and returns it as an exact\n  non-negative integer in [0, 2^32).\nExample:\n  (crc32 (string->utf8 \"123456789\")) => 3421780262",
