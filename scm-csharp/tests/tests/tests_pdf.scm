@@ -541,7 +541,49 @@
       (pdf-draw-text page ff 14 0 0 "AB")
       (let ((out (pdf->bytevector doc)))
         (test-assert (bv-contains-ascii? out "beginbfchar"))
-        (test-assert (bv-contains-ascii? out "Adobe-Identity-UCS"))))))
+        (test-assert (bv-contains-ascii? out "Adobe-Identity-UCS")))))
+
+  (test-group "TTF subset BaseFont carries 6-char tag prefix"
+    (let* ((doc (make-pdf))
+           (page (pdf-add-page! doc))
+           (bv  (pdf-read-binary-file ttf-path))
+           (ff  (pdf-embed-truetype-font doc bv "DejaVuSans")))
+      (pdf-draw-text page ff 14 0 0 "Hi")
+      (let ((out (pdf->bytevector doc)))
+        ;; First registered font → tag "AAAAAA".
+        (test-assert (bv-contains-ascii? out "/BaseFont /AAAAAA+DejaVuSans"))
+        ;; Original (untagged) name should not appear alone as BaseFont.
+        (test-assert (not (bv-contains-ascii? out "/BaseFont /DejaVuSans"))))))
+
+  (test-group "TTF subsetting shrinks the embedded font dramatically"
+    (let* ((orig-bv (pdf-read-binary-file ttf-path))
+           (orig-len (bytevector-length orig-bv))
+           (doc (make-pdf))
+           (page (pdf-add-page! doc))
+           (ff  (pdf-embed-truetype-font doc orig-bv "DejaVu")))
+      ;; Just a couple of ASCII characters — should subset to a few
+      ;; dozen glyphs of glyf data, vastly smaller than the full font.
+      (pdf-draw-text page ff 14 0 0 "AB")
+      (let ((out (pdf->bytevector doc)))
+        ;; Total PDF (compressed font + everything else) must be far
+        ;; less than the raw original TTF. Full embedding gave us a
+        ;; ~420 KB PDF for a 760 KB TTF; subsetting should land well
+        ;; under 50 KB.
+        (test-assert (< (bytevector-length out)
+                        (quotient orig-len 5))))))
+
+  (test-group "TTF subsetting per-font tag (F2 → AAAAAB)"
+    (let* ((doc (make-pdf))
+           (page (pdf-add-page! doc))
+           (bv  (pdf-read-binary-file ttf-path))
+           ;; First font registered as F1 → "AAAAAA"; second → "AAAAAB".
+           (ff1 (pdf-embed-truetype-font doc bv "DejaVuSans"))
+           (ff2 (pdf-embed-truetype-font doc bv "DejaVuSansAlt")))
+      (pdf-draw-text page ff1 12 0 0 "A")
+      (pdf-draw-text page ff2 12 0 0 "B")
+      (let ((out (pdf->bytevector doc)))
+        (test-assert (bv-contains-ascii? out "/BaseFont /AAAAAA+DejaVuSans"))
+        (test-assert (bv-contains-ascii? out "/BaseFont /AAAAAB+DejaVuSansAlt"))))))
 
 ;; ── Images (phase 5) ───────────────────────────────────────────────────
 

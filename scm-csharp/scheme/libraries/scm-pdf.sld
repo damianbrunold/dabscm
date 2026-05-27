@@ -2225,22 +2225,458 @@ Example:
 
     ;; ── Emitting a TTF font and its descendant objects ───────────────────
 
+    ;; ── TTF subsetting ────────────────────────────────────────────────────
+    ;;
+    ;; Strategy preserves GID numbering: the subset has GIDs 0..max-used,
+    ;; with unreferenced GIDs in that range emitted as zero-length glyph
+    ;; entries. This way the content streams (which already encode CIDs =
+    ;; original GIDs as hex) need no patching — composite glyph
+    ;; references stay correct because the GID space is unchanged.
+    ;;
+    ;; Tables rewritten: head (checkSumAdjustment + indexToLocFormat),
+    ;; hhea (numberOfHMetrics), maxp (numGlyphs), hmtx (truncated),
+    ;; loca (truncated), glyf (compacted), cmap (used codepoints only).
+    ;; name, post, OS/2 are passed through. Everything else (GSUB, GPOS,
+    ;; DSIG, hinting tables) is dropped.
+
+    (define (%u16be! bv off v)
+      (bytevector-u8-set! bv off       (bitwise-and (arithmetic-shift v -8) 255))
+      (bytevector-u8-set! bv (+ off 1) (bitwise-and v 255)))
+
+    (define (%u32be! bv off v)
+      (bytevector-u8-set! bv off       (bitwise-and (arithmetic-shift v -24) 255))
+      (bytevector-u8-set! bv (+ off 1) (bitwise-and (arithmetic-shift v -16) 255))
+      (bytevector-u8-set! bv (+ off 2) (bitwise-and (arithmetic-shift v -8) 255))
+      (bytevector-u8-set! bv (+ off 3) (bitwise-and v 255)))
+
+    (define (%simple-sort xs less?)
+      ;; Merge sort. (scheme base) has no sort and (srfi 132) would
+      ;; broaden imports.
+      (cond
+        ((or (null? xs) (null? (cdr xs))) xs)
+        (else
+         (let split ((slow xs) (fast xs) (left '()))
+           (cond
+             ((or (null? fast) (null? (cdr fast)))
+              (%simple-merge
+                (%simple-sort (reverse left) less?)
+                (%simple-sort slow less?)
+                less?))
+             (else
+              (split (cdr slow) (cddr fast) (cons (car slow) left))))))))
+
+    (define (%simple-merge a b less?)
+      (cond
+        ((null? a) b)
+        ((null? b) a)
+        ((less? (car a) (car b))
+         (cons (car a) (%simple-merge (cdr a) b less?)))
+        (else
+         (cons (car b) (%simple-merge a (cdr b) less?)))))
+
+    (define (%loca-read bv off num-glyphs format)
+      ;; head.indexToLocFormat: 0 = short (u16 * 2), 1 = long (u32).
+      (let ((out (make-vector (+ num-glyphs 1) 0)))
+        (let loop ((i 0))
+          (cond
+            ((> i num-glyphs) out)
+            (else
+             (let ((v (if (zero? format)
+                          (* 2 (%u16 bv (+ off (* 2 i))))
+                          (%u32 bv (+ off (* 4 i))))))
+               (vector-set! out i v)
+               (loop (+ i 1))))))))
+
+    (define (%ttf-close-composites bv loca glyf-off used num-glyphs)
+      ;; Fixed-point: for each used composite glyph, mark all components
+      ;; used. Repeat until no new entries are added. Composite glyph
+      ;; format documented in OpenType spec / glyf table.
+      (let outer ((changed? #t))
+        (cond
+          ((not changed?) used)
+          (else
+           (let scan ((g 0) (added? #f))
+             (cond
+               ((= g num-glyphs) (outer added?))
+               ((vector-ref used g)
+                (let* ((start (vector-ref loca g))
+                       (end   (vector-ref loca (+ g 1))))
+                  (cond
+                    ((= start end) (scan (+ g 1) added?))
+                    (else
+                     (let* ((goff      (+ glyf-off start))
+                            (ncontours (%s16 bv goff)))
+                       (cond
+                         ((>= ncontours 0) (scan (+ g 1) added?))
+                         (else
+                          ;; Composite: walk components.
+                          (let comp ((coff (+ goff 10)) (changed added?))
+                            (let* ((flags    (%u16 bv coff))
+                                   (comp-gid (%u16 bv (+ coff 2)))
+                                   (newly?
+                                    (and (< comp-gid num-glyphs)
+                                         (not (vector-ref used comp-gid))))
+                                   (arg-bytes
+                                    (if (zero? (bitwise-and flags 1)) 2 4))
+                                   (scale-bytes
+                                    (cond
+                                      ((not (zero? (bitwise-and flags 8))) 2)
+                                      ((not (zero? (bitwise-and flags #x40))) 4)
+                                      ((not (zero? (bitwise-and flags #x80))) 8)
+                                      (else 0)))
+                                   (next (+ coff 4 arg-bytes scale-bytes))
+                                   (more? (not (zero? (bitwise-and flags #x20)))))
+                              (when newly?
+                                (vector-set! used comp-gid #t))
+                              (cond
+                                (more? (comp next (or changed newly?)))
+                                (else (scan (+ g 1) (or changed newly?)))))))))))))
+               (else (scan (+ g 1) added?))))))))
+
+    (define (%ttf-pack-loca offsets long?)
+      (let* ((n (vector-length offsets))
+             (bytes-per (if long? 4 2))
+             (out (make-bytevector (* n bytes-per) 0)))
+        (let loop ((i 0))
+          (cond
+            ((= i n) out)
+            (else
+             (let ((v (vector-ref offsets i)))
+               (cond
+                 (long?  (%u32be! out (* i 4) v))
+                 (else   (%u16be! out (* i 2) (quotient v 2)))))
+             (loop (+ i 1)))))))
+
+    (define (%ttf-build-new-hmtx bv hmtx-off orig-num-hm new-num-glyphs)
+      ;; New hmtx: keep `new-num-glyphs` (advanceWidth, lsb) longs.
+      ;; For original GIDs < orig-num-hm: copy from the 4-byte run.
+      ;; For GIDs ≥ orig-num-hm: advance = last advance, lsb from the
+      ;; leftSideBearings tail.
+      (let ((last-adv (%u16 bv (+ hmtx-off (* 4 (- orig-num-hm 1)))))
+            (out (make-bytevector (* 4 new-num-glyphs) 0)))
+        (let loop ((g 0))
+          (cond
+            ((= g new-num-glyphs) out)
+            (else
+             (cond
+               ((< g orig-num-hm)
+                (bytevector-copy! out (* 4 g) bv (+ hmtx-off (* 4 g))
+                                  (+ hmtx-off (* 4 g) 4)))
+               (else
+                (%u16be! out (* 4 g) last-adv)
+                (let ((lsb (%s16 bv (+ hmtx-off (* 4 orig-num-hm)
+                                       (* 2 (- g orig-num-hm))))))
+                  (%u16be! out (+ (* 4 g) 2) (modulo lsb 65536)))))
+             (loop (+ g 1)))))))
+
+    (define (%ttf-build-new-cmap pairs)
+      ;; Emit a single format-12 subtable (full Unicode). Each pair is
+      ;; written as its own 12-byte group — simple, slightly wasteful.
+      ;; If pairs is empty we still emit a stub so readers don't reject.
+      (let* ((sorted (%simple-sort pairs (lambda (a b) (< (car a) (car b)))))
+             (n      (length sorted))
+             (sub-len (+ 16 (* 12 n)))
+             (out     (make-bytevector (+ 4 8 sub-len) 0)))
+        (%u16be! out 0  0)               ; cmap version
+        (%u16be! out 2  1)               ; numTables
+        (%u16be! out 4  3)               ; platformID = Windows
+        (%u16be! out 6  10)              ; encodingID = UCS-4
+        (%u32be! out 8  12)              ; subtable offset from start of cmap
+        (%u16be! out 12 12)              ; format = 12
+        (%u16be! out 14 0)               ; reserved
+        (%u32be! out 16 sub-len)         ; length
+        (%u32be! out 20 0)               ; language
+        (%u32be! out 24 n)               ; numGroups
+        (let loop ((i 0) (rest sorted))
+          (cond
+            ((null? rest) out)
+            (else
+             (let ((p   (car rest))
+                   (off (+ 28 (* 12 i))))
+               (%u32be! out off       (car p))   ; startCharCode
+               (%u32be! out (+ off 4) (car p))   ; endCharCode
+               (%u32be! out (+ off 8) (cdr p))   ; startGlyphID
+               (loop (+ i 1) (cdr rest))))))))
+
+    (define (%ttf-patch-head bv head-off long-loca?)
+      (let ((out (make-bytevector 54 0)))
+        (bytevector-copy! out 0 bv head-off (+ head-off 54))
+        (%u32be! out 8 0)                          ; checkSumAdjustment = 0
+        (%u16be! out 50 (if long-loca? 1 0))       ; indexToLocFormat
+        out))
+
+    (define (%ttf-patch-hhea bv hhea-off num-hm)
+      (let ((out (make-bytevector 36 0)))
+        (bytevector-copy! out 0 bv hhea-off (+ hhea-off 36))
+        (%u16be! out 34 num-hm)
+        out))
+
+    (define (%ttf-patch-maxp bv maxp-off maxp-len num-glyphs)
+      (let ((out (make-bytevector maxp-len 0)))
+        (bytevector-copy! out 0 bv maxp-off (+ maxp-off maxp-len))
+        (%u16be! out 4 num-glyphs)
+        out))
+
+    (define (%ttf-table-checksum bv padded-len)
+      ;; Per OpenType: sum of u32-be words, treating bytes past end of
+      ;; the table as zero (padding).
+      (let ((orig-len (bytevector-length bv)))
+        (let loop ((i 0) (sum 0))
+          (cond
+            ((>= i padded-len) (bitwise-and sum #xFFFFFFFF))
+            (else
+             (let* ((b0 (if (< i orig-len) (bytevector-u8-ref bv i) 0))
+                    (b1 (if (< (+ i 1) orig-len) (bytevector-u8-ref bv (+ i 1)) 0))
+                    (b2 (if (< (+ i 2) orig-len) (bytevector-u8-ref bv (+ i 2)) 0))
+                    (b3 (if (< (+ i 3) orig-len) (bytevector-u8-ref bv (+ i 3)) 0)))
+               (loop (+ i 4)
+                     (+ sum (+ (* b0 16777216) (* b1 65536) (* b2 256) b3)))))))))
+
+    (define (%ttf-pack-tables alist)
+      ;; alist: list of (tag . bytevector). Sorts by tag, computes
+      ;; padded offsets, writes the table directory + each table padded
+      ;; to a 4-byte boundary. Sets per-table checksums in directory
+      ;; entries. The whole-file checkSumAdjustment is fixed up by the
+      ;; caller after packing.
+      (let* ((sorted (%simple-sort alist
+                                    (lambda (a b) (string<? (car a) (car b)))))
+             (n (length sorted))
+             (dir-len (+ 12 (* 16 n)))
+             ;; (tag bv abs-off len padded-len)
+             (entries
+              (let loop ((rest sorted) (off dir-len) (acc '()))
+                (cond
+                  ((null? rest) (reverse acc))
+                  (else
+                   (let* ((p   (car rest))
+                          (tag (car p))
+                          (bv  (cdr p))
+                          (len (bytevector-length bv))
+                          (pad (* 4 (quotient (+ len 3) 4))))
+                     (loop (cdr rest) (+ off pad)
+                           (cons (list tag bv off len pad) acc)))))))
+             (total
+              (let sum ((rest entries) (acc dir-len))
+                (cond
+                  ((null? rest) acc)
+                  (else (sum (cdr rest) (+ acc (list-ref (car rest) 4)))))))
+             (out (make-bytevector total 0)))
+        ;; sfnt header
+        (%u32be! out 0 #x00010000)              ; TrueType outline marker
+        (%u16be! out 4 n)                       ; numTables
+        (let* ((sr/e (let pow ((p 1) (e 0))
+                       (cond
+                         ((> (* 2 p) n) (cons p e))
+                         (else (pow (* 2 p) (+ e 1))))))
+               (sr (car sr/e))
+               (es (cdr sr/e)))
+          (%u16be! out 6  (* 16 sr))            ; searchRange
+          (%u16be! out 8  es)                   ; entrySelector
+          (%u16be! out 10 (- (* 16 n) (* 16 sr))))   ; rangeShift
+        (let loop ((rest entries) (i 0))
+          (cond
+            ((null? rest) out)
+            (else
+             (let* ((e   (car rest))
+                    (tag (list-ref e 0))
+                    (bv  (list-ref e 1))
+                    (off (list-ref e 2))
+                    (len (list-ref e 3))
+                    (pad (list-ref e 4))
+                    (dir (+ 12 (* 16 i)))
+                    (tagbv (string->utf8 tag)))
+               (bytevector-copy! out dir tagbv 0 4)
+               (%u32be! out (+ dir 4)  (%ttf-table-checksum bv pad))
+               (%u32be! out (+ dir 8)  off)
+               (%u32be! out (+ dir 12) len)
+               (bytevector-copy! out off bv 0 len)
+               (loop (cdr rest) (+ i 1))))))))
+
+    (define (%ttf-fix-checksum-adjustment! bv)
+      ;; Locate the head table from the directory, then set
+      ;; head.checkSumAdjustment = 0xB1B0AFBA - whole-file checksum
+      ;; (mod 2^32). The whole-file checksum is computed with the
+      ;; adjustment field at zero, which we ensured in %ttf-patch-head.
+      (let ((n (%u16 bv 4)))
+        (let find ((i 0))
+          (cond
+            ((= i n) (error "subset: head table missing from packed font"))
+            (else
+             (let* ((dir (+ 12 (* 16 i)))
+                    (tag (let ((b (make-bytevector 4 0)))
+                           (bytevector-copy! b 0 bv dir (+ dir 4))
+                           (utf8->string b))))
+               (cond
+                 ((string=? tag "head")
+                  (let* ((head-off (%u32 bv (+ dir 8)))
+                         (file-cs  (%ttf-table-checksum
+                                     bv (bytevector-length bv)))
+                         (adj      (modulo (- #xB1B0AFBA file-cs)
+                                           #x100000000)))
+                    (%u32be! bv (+ head-off 8) adj)))
+                 (else (find (+ i 1))))))))))
+
+    (define (%ttf-subset bv used-codepoints)
+      ;; Build a subset TTF that keeps only GIDs needed to render the
+      ;; glyphs in used-codepoints (transitively via composite refs).
+      ;; Returns (cons subset-bytes new-num-glyphs).
+      (let* ((tables (%ttf-tables bv))
+             (head-off (car (%ttf-table-required tables "head")))
+             (loc-fmt  (%s16 bv (+ head-off 50)))
+             (maxp-info (%ttf-table-required tables "maxp"))
+             (maxp-off (car maxp-info))
+             (maxp-len (cdr maxp-info))
+             (orig-num (%u16 bv (+ maxp-off 4)))
+             (loca-off (car (%ttf-table-required tables "loca")))
+             (glyf-off (car (%ttf-table-required tables "glyf")))
+             (loca     (%loca-read bv loca-off orig-num loc-fmt))
+             ;; Initial used set: GID 0 + everything in used-codepoints.
+             (used     (let ((s (make-vector orig-num #f)))
+                         (vector-set! s 0 #t)
+                         (let loop ((i 0))
+                           (cond
+                             ((= i orig-num) s)
+                             (else
+                              (when (vector-ref used-codepoints i)
+                                (vector-set! s i #t))
+                              (loop (+ i 1)))))))
+             (closed   (%ttf-close-composites bv loca glyf-off used orig-num))
+             ;; Highest used GID. Preserve numbering up to this index;
+             ;; gaps inside become zero-length glyphs.
+             (max-gid  (let scan ((i (- orig-num 1)))
+                         (cond
+                           ((< i 0) 0)
+                           ((vector-ref closed i) i)
+                           (else (scan (- i 1))))))
+             (new-num  (+ max-gid 1))
+             ;; Rewrite glyf as compacted bytes; loca records the new
+             ;; offsets in lock-step.
+             (new-loca (make-vector (+ new-num 1) 0)))
+        (let* ((chunks-rev '())
+               (cur 0))
+          (let gloop ((g 0))
+            (cond
+              ((= g new-num)
+               (vector-set! new-loca g cur))
+              (else
+               (vector-set! new-loca g cur)
+               (cond
+                 ((vector-ref closed g)
+                  (let* ((start (vector-ref loca g))
+                         (end   (vector-ref loca (+ g 1)))
+                         (len   (- end start))
+                         ;; Pad to even length (TTF glyf convention).
+                         (pad   (if (odd? len) 1 0))
+                         (chunk (make-bytevector (+ len pad) 0)))
+                    (when (> len 0)
+                      (bytevector-copy! chunk 0 bv (+ glyf-off start)
+                                        (+ glyf-off end)))
+                    (set! chunks-rev (cons chunk chunks-rev))
+                    (set! cur (+ cur len pad))))
+                 (else #t))
+               (gloop (+ g 1)))))
+          (let* ((new-glyf (bytevector-concat (reverse chunks-rev)))
+                 (max-off  (vector-ref new-loca new-num))
+                 ;; Short loca format uses offset/2 stored as u16, so
+                 ;; valid only if max offset is even and fits in u16*2.
+                 (long?    (> max-off 131070))
+                 (new-loca-bv (%ttf-pack-loca new-loca long?))
+                 (hhea-off (car (%ttf-table-required tables "hhea")))
+                 (hmtx-off (car (%ttf-table-required tables "hmtx")))
+                 (orig-nh  (%u16 bv (+ hhea-off 34)))
+                 (new-hmtx (%ttf-build-new-hmtx bv hmtx-off orig-nh new-num))
+                 ;; Build cmap pairs from used-codepoints (cp → gid).
+                 (pairs    (let loop ((g 0) (acc '()))
+                             (cond
+                               ((= g orig-num) (reverse acc))
+                               (else
+                                (let ((cp (vector-ref used-codepoints g)))
+                                  (cond
+                                    (cp (loop (+ g 1)
+                                              (cons (cons cp g) acc)))
+                                    (else (loop (+ g 1) acc))))))))
+                 (new-cmap (%ttf-build-new-cmap pairs))
+                 (new-head (%ttf-patch-head bv head-off long?))
+                 (new-hhea (%ttf-patch-hhea bv hhea-off new-num))
+                 (new-maxp (%ttf-patch-maxp bv maxp-off maxp-len new-num))
+                 ;; Pass-through tables: name, post, OS/2 are required;
+                 ;; everything else (DSIG/GSUB/GPOS/cvt/fpgm/prep/kern…)
+                 ;; is dropped to minimize size and avoid stale GID
+                 ;; references in those tables.
+                 (passthrough
+                  (let walk ((rest tables) (acc '()))
+                    (cond
+                      ((null? rest) acc)
+                      (else
+                       (let ((tag (car (car rest))))
+                         (cond
+                           ((member tag '("name" "post" "OS/2"))
+                            (let* ((info (cdr (car rest)))
+                                   (o (car info))
+                                   (l (cdr info))
+                                   (b (make-bytevector l 0)))
+                              (bytevector-copy! b 0 bv o (+ o l))
+                              (walk (cdr rest) (cons (cons tag b) acc))))
+                           (else (walk (cdr rest) acc))))))))
+                 (alist (append
+                          (list (cons "head" new-head)
+                                (cons "hhea" new-hhea)
+                                (cons "maxp" new-maxp)
+                                (cons "hmtx" new-hmtx)
+                                (cons "loca" new-loca-bv)
+                                (cons "glyf" new-glyf)
+                                (cons "cmap" new-cmap))
+                          passthrough))
+                 (packed (%ttf-pack-tables alist)))
+            (%ttf-fix-checksum-adjustment! packed)
+            (cons packed new-num)))))
+
+    (define (%subset-tag font-resource-name)
+      ;; Per PDF spec, embedded font subsets get a 6-uppercase-letter
+      ;; tag + '+' prefix on the BaseFont. Derive a stable tag from
+      ;; the font's resource name (F1, F2, …) so the tag is consistent
+      ;; across saves of the same document.
+      (let* ((suffix (substring font-resource-name 1
+                                 (string-length font-resource-name)))
+             (idx    (- (or (string->number suffix) 1) 1)))
+        (let loop ((n idx) (i 0) (acc '()))
+          (cond
+            ((= i 6) (list->string acc))
+            (else
+             (loop (quotient n 26) (+ i 1)
+                   (cons (integer->char (+ 65 (modulo n 26))) acc)))))))
+
     (define (%emit-truetype-font! w font font-id)
       (let* ((desc-id  (pdf-writer-allocate-id! w))
              (fd-id    (pdf-writer-allocate-id! w))
              (ff2-id   (pdf-writer-allocate-id! w))
              (tu-id    (pdf-writer-allocate-id! w))
-             (base     (pdf-font-base-name font))
+             (orig-base (pdf-font-base-name font))
              (meta     (pdf-font-descriptor-meta font))
-             (num-g    (pdf-font-num-glyphs font))
-             (widths   (pdf-font-gid-widths font))
-             (ttf-bv   (pdf-font-ttf-bytes font))
              (italic?  (cdr (assq 'italic? meta)))
              (bbox     (cdr (assq 'font-bbox meta)))
-             ;; Symbolic (bit 3) so reader doesn't expect a Latin
-             ;; standard encoding; bit 7 (Italic) if applicable.
-             (flags    (+ 4 (if italic? 64 0))))
-        ;; Type0 outer font.
+             (flags    (+ 4 (if italic? 64 0)))
+             ;; Build the subset font from the populated used-codepoints
+             ;; vector. The original full TTF stays on the font record
+             ;; (so subsequent saves can re-subset with more glyphs).
+             (subset-pair (%ttf-subset (pdf-font-ttf-bytes font)
+                                        (pdf-font-used-codepoints font)))
+             (subset-bv   (car subset-pair))
+             (subset-num  (cdr subset-pair))
+             ;; PDF convention: prefix subsetted font names with a 6-char
+             ;; tag + '+'. The tag is purely informational for readers.
+             (base        (string-append (%subset-tag
+                                           (pdf-font-resource-name font))
+                                          "+" orig-base))
+             ;; Width array covers only the subset's GIDs.
+             (widths      (let* ((src (pdf-font-gid-widths font))
+                                 (v   (make-vector subset-num 0)))
+                            (let copy ((i 0))
+                              (cond
+                                ((= i subset-num) v)
+                                (else
+                                 (vector-set! v i (vector-ref src i))
+                                 (copy (+ i 1))))))))
         (pdf-writer-define-object! w font-id
           (pdf/dict
             "Type"            (pdf/name "Font")
@@ -2249,7 +2685,6 @@ Example:
             "Encoding"        (pdf/name "Identity-H")
             "DescendantFonts" (pdf/array (list (pdf/ref desc-id)))
             "ToUnicode"       (pdf/ref tu-id)))
-        ;; CIDFontType2 descendant.
         (pdf-writer-define-object! w desc-id
           (pdf/dict
             "Type"           (pdf/name "Font")
@@ -2260,9 +2695,8 @@ Example:
                                        "Supplement" 0)
             "FontDescriptor" (pdf/ref fd-id)
             "DW"             1000
-            "W"               (pdf/literal (%ttf-build-w-array widths num-g))
+            "W"              (pdf/literal (%ttf-build-w-array widths subset-num))
             "CIDToGIDMap"    (pdf/name "Identity")))
-        ;; FontDescriptor.
         (pdf-writer-define-object! w fd-id
           (pdf/dict
             "Type"        (pdf/name "FontDescriptor")
@@ -2275,14 +2709,12 @@ Example:
             "CapHeight"   (cdr (assq 'cap-height meta))
             "StemV"       (if (cdr (assq 'bold? meta)) 120 80)
             "FontFile2"   (pdf/ref ff2-id)))
-        ;; FontFile2: the entire TTF, Flate-compressed.
-        (let ((compressed (zlib-compress ttf-bv)))
+        (let ((compressed (zlib-compress subset-bv)))
           (pdf-writer-define-object! w ff2-id
             (pdf/stream
               (pdf/dict "Filter"  (pdf/name "FlateDecode")
-                        "Length1" (bytevector-length ttf-bv))
+                        "Length1" (bytevector-length subset-bv))
               compressed)))
-        ;; ToUnicode CMap (uncompressed; small).
         (pdf-writer-define-object! w tu-id
           (let ((cmap-bytes (%ttf-build-tounicode font)))
             (pdf/stream (pdf/dict) cmap-bytes)))))
