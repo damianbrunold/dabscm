@@ -55,4 +55,40 @@
               (format-iso8601
                 (parse-rfc822 "Thu, 16 May 2024 12:34:56 GMT"))))
 
+(test-group "today"
+  (let ((iso (today)))
+    (test-assert (string? iso))
+    (test-equal 10 (string-length iso))
+    (test-equal #\- (string-ref iso 4))
+    (test-equal #\- (string-ref iso 7)))
+  (let ((short (today 'short)))
+    (test-equal 8 (string-length short)))
+  (let ((dmy (today 'dmy)))
+    (test-equal 10 (string-length dmy))
+    (test-equal #\. (string-ref dmy 2))
+    (test-equal #\. (string-ref dmy 5))))
+
+(test-group "now"
+  (let ((iso (now)))
+    (test-assert (string? iso))
+    (test-equal 16 (string-length iso))
+    (test-equal #\space (string-ref iso 10))
+    (test-equal #\: (string-ref iso 13)))
+  (let ((short (now 'short)))
+    (test-equal 13 (string-length short))
+    (test-equal #\- (string-ref short 8)))
+  (let ((dmyhs (now 'dmyhs)))
+    (test-equal 16 (string-length dmyhs))
+    (test-equal #\. (string-ref dmyhs 2))
+    (test-equal #\space (string-ref dmyhs 10))
+    (test-equal #\. (string-ref dmyhs 13))))
+
+(test-group "time"
+  (let ((iso (time)))
+    (test-assert (string? iso))
+    (test-equal 5 (string-length iso))
+    (test-equal #\: (string-ref iso 2)))
+  (let ((short (time 'short)))
+    (test-equal 4 (string-length short))))
+
 (test-end "scm-datetime")

@@ -2461,13 +2461,16 @@
   <div class="lib-body">
     <div class="exports" data-lib="scm-datetime">
       format-iso8601
+      now
       parse-iso8601
       parse-pubdate
       parse-rfc822
       string-&gt;date-days
       string-&gt;date-seconds
+      time
       timestamp
       timestamp-&gt;string
+      today
     </div>
     <div class="doc-panel" id="scm-datetime-doc-panel"></div>
   </div>
@@ -4401,13 +4404,16 @@ const docs = {
   },
   "scm-datetime": {
     "format-iso8601": "Syntax: (format-iso8601 unix-seconds)\nLibrary: (scm datetime)\nDescription: Formats a Unix-seconds integer as an ISO 8601 UTC string\n  ('YYYY-MM-DDTHH:MM:SSZ'). Negative inputs (pre-1970) are not supported.\nExample:\n  (format-iso8601 1715862896) => \"2024-05-16T12:34:56Z\"\n  (format-iso8601 (parse-iso8601 \"2024-05-16T14:34:56+02:00\"))\n    => \"2024-05-16T12:34:56Z\"",
+    "now": "Syntax: (now)\nSyntax: (now format)\nLibrary: (scm datetime)\nDescription: Returns the current local date and time as a string. Time is\n  24-hour. Default format is ISO 'YYYY-MM-DD HH:MM'. format='short returns\n  'YYYYMMDD-HHMM'; format='dmyhs returns 'DD.MM.YYYY HH.MM'.\nExample:\n  (now)        => \"2026-05-27 07:32\"\n  (now 'short) => \"20260527-0732\"\n  (now 'dmyhs) => \"27.05.2026 07.32\"",
     "parse-iso8601": "Syntax: (parse-iso8601 s)\nLibrary: (scm datetime)\nDescription: Parses an ISO 8601 / RFC 3339 date string (e.g. used by Atom\n  feeds) and returns Unix seconds, or #f on failure. Accepts date-only\n  ('2024-05-16'), date+time with 'T' or space separator, and a trailing\n  timezone offset (Z, +02:00, -0500). Fractional seconds are ignored.\nExample:\n  (parse-iso8601 \"2024-05-16T12:34:56Z\")      => 1715862896\n  (parse-iso8601 \"2024-05-16T14:34:56+02:00\") => 1715862896\n  (parse-iso8601 \"2024-05-16\")                => 1715817600\n  (parse-iso8601 \"bogus\") => #f",
     "parse-pubdate": "Syntax: (parse-pubdate s)\nLibrary: (scm datetime)\nDescription: Best-effort date parser for feed pubdates. Tries ISO 8601 first\n  if s looks ISO-shaped (hyphen at position 4), otherwise RFC 822. Falls\n  back to the other format on failure. Returns Unix seconds, or #f.\nExample:\n  (parse-pubdate \"2024-05-16T12:34:56Z\")             => 1715862896\n  (parse-pubdate \"Thu, 16 May 2024 12:34:56 +0000\")  => 1715862896\n  (parse-pubdate \"\") => #f",
     "parse-rfc822": "Syntax: (parse-rfc822 s)\nLibrary: (scm datetime)\nDescription: Parses an RFC 822 / RFC 2822 date string (e.g. used by RSS 2.0\n  pubDate elements) and returns Unix seconds, or #f on failure. The leading\n  day-of-week prefix is optional. Two-digit years are mapped to 20XX.\nExample:\n  (parse-rfc822 \"Thu, 16 May 2024 12:34:56 +0200\") => 1715855696\n  (parse-rfc822 \"16 May 2024 12:34:56 GMT\")       => 1715862896\n  (parse-rfc822 \"bogus\") => #f",
     "string->date-days": "Syntax: (string->date-days s format?)\nLibrary: (scm datetime)\nDescription: Parses the date string s in yyyyMMdd format and returns the number of days since the OLE Automation epoch (December 30, 1899). Returns #f if parsing fails.\nExample:\n  (string->date-days \"20240101\") => 45292\n  (string->date-days \"invalid\") => #f",
     "string->date-seconds": "Syntax: (string->date-seconds s format?)\nLibrary: (scm datetime)\nDescription: Parses the date/time string s (in formats like yyyyMMddHHmmss, yyyyMMddHHmm, yyyyMMddHH, or yyyyMMdd) and returns the number of seconds since the Unix epoch. Returns #f if parsing fails.\nExample:\n  (string->date-seconds \"20240101120000\") => 1704110400\n  (string->date-seconds \"invalid\") => #f",
+    "time": "Syntax: (time)\nSyntax: (time format)\nLibrary: (scm datetime)\nDescription: Returns the current local time as a string. Time is 24-hour.\n  Default format is ISO 'HH:MM'. format='short returns 'HHMM'.\nExample:\n  (time)        => \"07:32\"\n  (time 'short) => \"0732\"",
     "timestamp": "Syntax: (timestamp)\nLibrary: (scm datetime)\nDescription: Returns the current time as the number of milliseconds since the epoch (January 1, year 1).\nExample:\n  (timestamp) => 63850000000000",
     "timestamp->string": "Syntax: (timestamp->string ms format?)\nLibrary: (scm datetime)\nDescription: Formats a timestamp (milliseconds) as a date string. The optional format may be isodatetime, isodate, datetime, date, or a custom .NET format string; defaults to isodatetime.\nExample:\n  (timestamp->string (timestamp)) => \"20260318-153045\"\n  (timestamp->string (timestamp) 'isodate) => \"20260318\"",
+    "today": "Syntax: (today)\nSyntax: (today format)\nLibrary: (scm datetime)\nDescription: Returns the current local date as a string. Default format is\n  ISO 'YYYY-MM-DD'. format='short returns 'YYYYMMDD' (no separators);\n  format='dmy returns 'DD.MM.YYYY'.\nExample:\n  (today)        => \"2026-05-27\"\n  (today 'short) => \"20260527\"\n  (today 'dmy)   => \"27.05.2026\"",
   },
   "scm-dict": {
     "dict-clear": "Syntax: (dict-clear d)\nLibrary: (scm core)\nDescription: Removes all key-value associations from the dictionary d, leaving it empty.\nExample:\n  (let ((d (make-dict)))\n    (dict-put d \"key\" 1)\n    (dict-clear d)\n    (dict-size d)) => 0",

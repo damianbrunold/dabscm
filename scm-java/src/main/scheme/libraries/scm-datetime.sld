@@ -12,12 +12,16 @@
           parse-rfc822
           parse-iso8601
           parse-pubdate
-          format-iso8601)
+          format-iso8601
+          today
+          now
+          time)
   (begin
     (define string->date-days (%primitive "string->date-days"))
     (define string->date-seconds (%primitive "string->date-seconds"))
     (define timestamp (%primitive "timestamp"))
     (define timestamp->string (%primitive "timestamp->string"))
+    (define %local-tz-offset (%primitive "%local-tz-offset"))
 
     ;; ============================================================
     ;; RFC 822 / ISO 8601 parsing helpers
@@ -289,4 +293,81 @@ Example:
            (lambda (y mo d h m s)
              (string-append (pad4 y) "-" (pad2 mo) "-" (pad2 d) "T"
                             (pad2 h) ":" (pad2 m) ":" (pad2 s) "Z"))))))
+
+    ;; ============================================================
+    ;; Current local date/time helpers
+    ;; ============================================================
+
+    (define (local-ymd-hms)
+      ;; Returns (values y mo d h m s) for the local wall-clock time.
+      (let ((local (+ (quotient (timestamp) 1000) (%local-tz-offset))))
+        (unix->ymd-hms local)))
+
+    (define (today . opts)
+      "Syntax: (today)
+Syntax: (today format)
+Library: (scm datetime)
+Description: Returns the current local date as a string. Default format is
+  ISO 'YYYY-MM-DD'. format='short returns 'YYYYMMDD' (no separators);
+  format='dmy returns 'DD.MM.YYYY'.
+Example:
+  (today)        => \"2026-05-27\"
+  (today 'short) => \"20260527\"
+  (today 'dmy)   => \"27.05.2026\""
+      (call-with-values local-ymd-hms
+        (lambda (y mo d h m s)
+          (let ((fmt (if (null? opts) 'iso (car opts))))
+            (cond
+              ((eq? fmt 'iso)
+               (string-append (pad4 y) "-" (pad2 mo) "-" (pad2 d)))
+              ((eq? fmt 'short)
+               (string-append (pad4 y) (pad2 mo) (pad2 d)))
+              ((eq? fmt 'dmy)
+               (string-append (pad2 d) "." (pad2 mo) "." (pad4 y)))
+              (else (error "today: unknown format" fmt)))))))
+
+    (define (now . opts)
+      "Syntax: (now)
+Syntax: (now format)
+Library: (scm datetime)
+Description: Returns the current local date and time as a string. Time is
+  24-hour. Default format is ISO 'YYYY-MM-DD HH:MM'. format='short returns
+  'YYYYMMDD-HHMM'; format='dmyhs returns 'DD.MM.YYYY HH.MM'.
+Example:
+  (now)        => \"2026-05-27 07:32\"
+  (now 'short) => \"20260527-0732\"
+  (now 'dmyhs) => \"27.05.2026 07.32\""
+      (call-with-values local-ymd-hms
+        (lambda (y mo d h m s)
+          (let ((fmt (if (null? opts) 'iso (car opts))))
+            (cond
+              ((eq? fmt 'iso)
+               (string-append (pad4 y) "-" (pad2 mo) "-" (pad2 d) " "
+                              (pad2 h) ":" (pad2 m)))
+              ((eq? fmt 'short)
+               (string-append (pad4 y) (pad2 mo) (pad2 d) "-"
+                              (pad2 h) (pad2 m)))
+              ((eq? fmt 'dmyhs)
+               (string-append (pad2 d) "." (pad2 mo) "." (pad4 y) " "
+                              (pad2 h) "." (pad2 m)))
+              (else (error "now: unknown format" fmt)))))))
+
+    (define (time . opts)
+      "Syntax: (time)
+Syntax: (time format)
+Library: (scm datetime)
+Description: Returns the current local time as a string. Time is 24-hour.
+  Default format is ISO 'HH:MM'. format='short returns 'HHMM'.
+Example:
+  (time)        => \"07:32\"
+  (time 'short) => \"0732\""
+      (call-with-values local-ymd-hms
+        (lambda (y mo d h m s)
+          (let ((fmt (if (null? opts) 'iso (car opts))))
+            (cond
+              ((eq? fmt 'iso)
+               (string-append (pad2 h) ":" (pad2 m)))
+              ((eq? fmt 'short)
+               (string-append (pad2 h) (pad2 m)))
+              (else (error "time: unknown format" fmt)))))))
 ))

@@ -17,6 +17,21 @@ Example:
     => "2024-05-16T12:34:56Z"
 ```
 
+### `now`
+
+```
+Syntax: (now)
+Syntax: (now format)
+Library: (scm datetime)
+Description: Returns the current local date and time as a string. Time is
+  24-hour. Default format is ISO 'YYYY-MM-DD HH:MM'. format='short returns
+  'YYYYMMDD-HHMM'; format='dmyhs returns 'DD.MM.YYYY HH.MM'.
+Example:
+  (now)        => "2026-05-27 07:32"
+  (now 'short) => "20260527-0732"
+  (now 'dmyhs) => "27.05.2026 07.32"
+```
+
 ### `parse-iso8601`
 
 ```
@@ -83,6 +98,19 @@ Example:
   (string->date-seconds "invalid") => #f
 ```
 
+### `time`
+
+```
+Syntax: (time)
+Syntax: (time format)
+Library: (scm datetime)
+Description: Returns the current local time as a string. Time is 24-hour.
+  Default format is ISO 'HH:MM'. format='short returns 'HHMM'.
+Example:
+  (time)        => "07:32"
+  (time 'short) => "0732"
+```
+
 ### `timestamp`
 
 ```
@@ -102,5 +130,20 @@ Description: Formats a timestamp (milliseconds) as a date string. The optional f
 Example:
   (timestamp->string (timestamp)) => "20260318-153045"
   (timestamp->string (timestamp) 'isodate) => "20260318"
+```
+
+### `today`
+
+```
+Syntax: (today)
+Syntax: (today format)
+Library: (scm datetime)
+Description: Returns the current local date as a string. Default format is
+  ISO 'YYYY-MM-DD'. format='short returns 'YYYYMMDD' (no separators);
+  format='dmy returns 'DD.MM.YYYY'.
+Example:
+  (today)        => "2026-05-27"
+  (today 'short) => "20260527"
+  (today 'dmy)   => "27.05.2026"
 ```
 
