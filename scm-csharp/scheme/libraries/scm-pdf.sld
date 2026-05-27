@@ -2389,7 +2389,7 @@ Example:
 
     (define-record-type pdf-image
       (%make-pdf-image resource-name object-id width height color-space
-                       bits-per-component filter decode-parms data)
+                       bits-per-component filter decode-parms data smask)
       pdf-image?
       (resource-name      pdf-image-resource-name)
       (object-id          pdf-image-object-id      set-pdf-image-object-id!)
@@ -2399,7 +2399,11 @@ Example:
       (bits-per-component pdf-image-bits-per-component) ; integer
       (filter             pdf-image-filter)             ; pdf-name
       (decode-parms       pdf-image-decode-parms)       ; pdf-dict or #f
-      (data               pdf-image-data))              ; bytevector
+      (data               pdf-image-data)               ; bytevector
+      ;; Optional pdf-image holding the alpha mask. Not registered on
+      ;; the document; emitted as a side-effect of the parent and
+      ;; referenced through the parent's /SMask entry.
+      (smask              pdf-image-smask))             ; pdf-image or #f
 
     (define (%register-image! doc img)
       (set-pdf-document-images! doc
@@ -2466,7 +2470,7 @@ Example:
                        (else (error "pdf-embed-jpeg: unsupported component count" c))))
              (rname (%next-image-resource-name doc))
              (img (%make-pdf-image rname #f w h cs 8
-                                   (pdf/name "DCTDecode") #f bv)))
+                                   (pdf/name "DCTDecode") #f bv #f)))
         (%register-image! doc img)))
 
     ;; ── PNG ───────────────────────────────────────────────────────────────
@@ -2494,9 +2498,12 @@ Library: (scm pdf)
 Description: Embeds a PNG image in doc as an Image XObject. The PNG's
   concatenated IDAT chunks are emitted verbatim as a /FlateDecode
   stream with /DecodeParms /Predictor 15 so the reader applies the
-  PNG filter rules. Supports 8-bit color types 0 (grayscale) and 2
-  (RGB); types 4/6 (with alpha) are not yet supported. Returns a
-  pdf-image handle for use with pdf-draw-image.
+  PNG filter rules. Color types 0 (grayscale) and 2 (RGB) pass through
+  the IDAT verbatim. Color types 4 (gray + alpha) and 6 (RGB + alpha)
+  are fully decoded, then the color and alpha channels are emitted as
+  two separate flate-compressed Image XObjects with the alpha as an
+  /SMask. 8-bit depth only. Returns a pdf-image handle for use with
+  pdf-draw-image.
 Example:
   (define p (pdf-embed-png doc (pdf-read-binary-file \"logo.png\")))
   (pdf-draw-image page p 50 600 100 100)"
@@ -2511,57 +2518,168 @@ Example:
                (color-typ (%u8  bv (+ ihdr-off 9))))
           (unless (= bit-depth 8)
             (error "pdf-embed-png: only 8-bit depth supported" bit-depth))
-          (let-values
-              (((cs components)
-                (case color-typ
-                  ((0) (values (pdf/name "DeviceGray") 1))
-                  ((2) (values (pdf/name "DeviceRGB")  3))
-                  (else
-                   (error "pdf-embed-png: only color types 0 (gray) and 2 (RGB) are supported in this phase"
-                          color-typ)))))
-            (let* ((idat-chunks
-                    (let loop ((cs chunks) (acc '()))
-                      (cond
-                        ((null? cs) (reverse acc))
-                        ((string=? (car (car cs)) "IDAT")
-                         (loop (cdr cs) (cons (car cs) acc)))
-                        (else (loop (cdr cs) acc)))))
-                   (idat
-                    (bytevector-concat
-                      (map (lambda (c)
-                             (let* ((off (list-ref c 1))
-                                    (len (list-ref c 2))
-                                    (b (make-bytevector len 0)))
-                               (bytevector-copy! b 0 bv off (+ off len))
-                               b))
-                           idat-chunks)))
-                   (parms
-                    (pdf/dict "Predictor"        15
+          (case color-typ
+            ((0) (%png-embed-verbatim doc bv chunks width height
+                                      (pdf/name "DeviceGray") 1))
+            ((2) (%png-embed-verbatim doc bv chunks width height
+                                      (pdf/name "DeviceRGB")  3))
+            ((4) (%png-embed-with-alpha doc bv chunks width height 1))
+            ((6) (%png-embed-with-alpha doc bv chunks width height 3))
+            (else
+             (error "pdf-embed-png: unsupported color type (only 0,2,4,6 with bit-depth 8)"
+                    color-typ))))))
+
+    (define (%png-collect-idat bv chunks)
+      (let loop ((rest chunks) (acc '()))
+        (cond
+          ((null? rest)
+           (bytevector-concat (reverse acc)))
+          ((string=? (car (car rest)) "IDAT")
+           (let* ((c (car rest))
+                  (off (list-ref c 1))
+                  (len (list-ref c 2))
+                  (b (make-bytevector len 0)))
+             (bytevector-copy! b 0 bv off (+ off len))
+             (loop (cdr rest) (cons b acc))))
+          (else (loop (cdr rest) acc)))))
+
+    (define (%png-embed-verbatim doc bv chunks width height cs components)
+      ;; Fast path for non-alpha PNGs: hand the IDAT zlib stream
+      ;; straight to PDF and let the reader apply Predictor 15.
+      (let* ((idat  (%png-collect-idat bv chunks))
+             (parms (pdf/dict "Predictor"        15
                               "Columns"          width
                               "Colors"           components
                               "BitsPerComponent" 8))
-                   (rname (%next-image-resource-name doc))
-                   (img (%make-pdf-image rname #f width height cs 8
-                                         (pdf/name "FlateDecode") parms idat)))
-              (%register-image! doc img))))))
+             (rname (%next-image-resource-name doc))
+             (img   (%make-pdf-image rname #f width height cs 8
+                                     (pdf/name "FlateDecode") parms idat #f)))
+        (%register-image! doc img)))
+
+    ;; ── Full PNG decoder (for alpha PNGs) ─────────────────────────────────
+
+    (define (%png-paeth a b c)
+      (let* ((p  (- (+ a b) c))
+             (pa (abs (- p a)))
+             (pb (abs (- p b)))
+             (pc (abs (- p c))))
+        (cond
+          ((and (<= pa pb) (<= pa pc)) a)
+          ((<= pb pc) b)
+          (else c))))
+
+    (define (%png-decode-pixels bv chunks width height samples)
+      ;; 8-bit only. Walks IDAT zlib stream, unfilters each scanline,
+      ;; and returns raw pixel bytes (height * width * samples).
+      (let* ((stride   (* width samples))
+             (bpp      samples)         ; bytes-per-pixel at 8-bit depth
+             (idat     (%png-collect-idat bv chunks))
+             (raw      (zlib-decompress idat))
+             (out      (make-bytevector (* height stride) 0))
+             (prev     (make-bytevector stride 0)))
+        (let loop ((y 0))
+          (cond
+            ((= y height) out)
+            (else
+             (let* ((src-off (* y (+ 1 stride)))
+                    (dst-off (* y stride))
+                    (ftype   (bytevector-u8-ref raw src-off)))
+               (let xloop ((x 0))
+                 (cond
+                   ((= x stride) #t)
+                   (else
+                    (let* ((cur  (bytevector-u8-ref raw (+ src-off 1 x)))
+                           (left (if (< x bpp) 0
+                                     (bytevector-u8-ref out (+ dst-off x (- bpp)))))
+                           (up   (bytevector-u8-ref prev x))
+                           (ul   (if (< x bpp) 0
+                                     (bytevector-u8-ref prev (- x bpp))))
+                           (recon
+                            (case ftype
+                              ((0) cur)
+                              ((1) (modulo (+ cur left) 256))
+                              ((2) (modulo (+ cur up)   256))
+                              ((3) (modulo (+ cur (quotient (+ left up) 2))
+                                           256))
+                              ((4) (modulo (+ cur (%png-paeth left up ul))
+                                           256))
+                              (else (error "PNG: unknown filter type" ftype)))))
+                      (bytevector-u8-set! out (+ dst-off x) recon)
+                      (xloop (+ x 1))))))
+               ;; Copy reconstructed row to prev for next iteration.
+               (bytevector-copy! prev 0 out dst-off (+ dst-off stride))
+               (loop (+ y 1))))))))
+
+    (define (%png-embed-with-alpha doc bv chunks width height color-comps)
+      ;; For color types 4 (gray+alpha) and 6 (RGB+alpha). Decodes
+      ;; pixels, splits color and alpha into two buffers, and emits a
+      ;; color XObject + grayscale /SMask XObject.
+      (let* ((samples (+ color-comps 1))
+             (npx     (* width height))
+             (pixels  (%png-decode-pixels bv chunks width height samples))
+             (color   (make-bytevector (* npx color-comps) 0))
+             (alpha   (make-bytevector npx 0)))
+        (let loop ((i 0))
+          (cond
+            ((= i npx) #t)
+            (else
+             (let ((src  (* i samples))
+                   (cdst (* i color-comps)))
+               (let cl ((j 0))
+                 (when (< j color-comps)
+                   (bytevector-u8-set! color (+ cdst j)
+                                       (bytevector-u8-ref pixels (+ src j)))
+                   (cl (+ j 1))))
+               (bytevector-u8-set! alpha i
+                                   (bytevector-u8-ref pixels (+ src color-comps)))
+               (loop (+ i 1))))))
+        (let* ((color-z (zlib-compress color))
+               (alpha-z (zlib-compress alpha))
+               (cs      (if (= color-comps 1)
+                            (pdf/name "DeviceGray")
+                            (pdf/name "DeviceRGB")))
+               ;; SMask isn't registered on the document — it lives on
+               ;; the parent image's smask slot and gets an object id
+               ;; allocated at write time.
+               (smask   (%make-pdf-image "" #f width height
+                                         (pdf/name "DeviceGray") 8
+                                         (pdf/name "FlateDecode") #f
+                                         alpha-z #f))
+               (rname   (%next-image-resource-name doc))
+               (img     (%make-pdf-image rname #f width height cs 8
+                                         (pdf/name "FlateDecode") #f
+                                         color-z smask)))
+          (%register-image! doc img))))
 
     ;; ── Emit + draw ──────────────────────────────────────────────────────
 
     (define (%emit-image! w img)
-      (let ((dict-entries
-             (list (cons "Type"             (pdf/name "XObject"))
-                   (cons "Subtype"          (pdf/name "Image"))
-                   (cons "Width"            (pdf-image-width  img))
-                   (cons "Height"           (pdf-image-height img))
-                   (cons "ColorSpace"       (pdf-image-color-space img))
-                   (cons "BitsPerComponent" (pdf-image-bits-per-component img))
-                   (cons "Filter"           (pdf-image-filter img)))))
+      ;; If the image carries an /SMask sibling, allocate its object id
+      ;; now and emit it after the parent. The sibling does not appear
+      ;; in any page's /XObject resources.
+      (let* ((smask    (pdf-image-smask img))
+             (smask-id (and smask (pdf-writer-allocate-id! w)))
+             (dict-entries
+              (list (cons "Type"             (pdf/name "XObject"))
+                    (cons "Subtype"          (pdf/name "Image"))
+                    (cons "Width"            (pdf-image-width  img))
+                    (cons "Height"           (pdf-image-height img))
+                    (cons "ColorSpace"       (pdf-image-color-space img))
+                    (cons "BitsPerComponent" (pdf-image-bits-per-component img))
+                    (cons "Filter"           (pdf-image-filter img)))))
         (when (pdf-image-decode-parms img)
           (set! dict-entries
             (append dict-entries
                     (list (cons "DecodeParms" (pdf-image-decode-parms img))))))
+        (when smask-id
+          (set-pdf-image-object-id! smask smask-id)
+          (set! dict-entries
+            (append dict-entries
+                    (list (cons "SMask" (pdf/ref smask-id))))))
         (pdf-writer-define-object! w (pdf-image-object-id img)
-          (pdf/stream (%make-pdf-dict dict-entries) (pdf-image-data img)))))
+          (pdf/stream (%make-pdf-dict dict-entries) (pdf-image-data img)))
+        (when smask
+          (%emit-image! w smask))))
 
     (define (pdf-draw-image page img x y w h)
       "Syntax: (pdf-draw-image page image x y width height)

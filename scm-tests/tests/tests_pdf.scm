@@ -591,6 +591,46 @@
     ;; Bogus bytes — must reject.
     (test-error (pdf-embed-jpeg doc (bytevector 0 1 2 3 4 5)))))
 
+(test-group "embed-png RGBA emits /SMask"
+  (let* ((doc (make-pdf))
+         (page (pdf-add-page! doc))
+         ;; 2x2 RGBA: opaque red, half-transparent green, transparent blue,
+         ;; opaque white.
+         (px (bytevector  255 0 0 255    0 255 0 128
+                          0 0 255 0    255 255 255 255))
+         (img (pdf-embed-png doc (png-encode-rgba 2 2 px))))
+    (pdf-draw-image page img 0 0 100 100)
+    (let ((out (pdf->bytevector doc)))
+      (test-assert (bv-contains-ascii? out "/SMask"))
+      ;; Main image gets DeviceRGB; mask is a second XObject (DeviceGray).
+      (test-assert (bv-contains-ascii? out "/ColorSpace /DeviceRGB"))
+      (test-assert (bv-contains-ascii? out "/ColorSpace /DeviceGray"))
+      ;; SMask is a sibling image, never referenced via /XObject resource
+      ;; — only /Im1 should appear in the resource subdict.
+      (test-assert (bv-contains-ascii? out "/XObject << /Im1 "))
+      (test-assert (not (bv-contains-ascii? out "/Im2"))))))
+
+(test-group "embed-png gray+alpha (color type 4)"
+  (let* ((doc (make-pdf))
+         (page (pdf-add-page! doc))
+         ;; png-encode supports color types 0,2,4,6 — type 4 is gray+alpha.
+         (px (bytevector 100 255  200 128  50 64  255 0))
+         (png-bv (png-encode 2 2 px 4))
+         (img (pdf-embed-png doc png-bv)))
+    (pdf-draw-image page img 0 0 10 10)
+    (test-assert (pdf-image? img))
+    (let ((out (pdf->bytevector doc)))
+      (test-assert (bv-contains-ascii? out "/SMask")))))
+
+(test-group "embed-png non-alpha PNGs have no /SMask"
+  (let* ((doc (make-pdf))
+         (page (pdf-add-page! doc))
+         (img (pdf-embed-png doc
+                (png-encode-rgb 2 2 (make-bytevector 12 0)))))
+    (pdf-draw-image page img 0 0 10 10)
+    (let ((out (pdf->bytevector doc)))
+      (test-assert (not (bv-contains-ascii? out "/SMask"))))))
+
 ;; ── Metadata (phase 6) ────────────────────────────────────────────────
 
 (test-group "metadata appears in /Info"
