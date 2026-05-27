@@ -685,6 +685,41 @@
       (test-assert (bv-contains-ascii? out "/Author (A)"))
       (test-assert (bv-contains-ascii? out "/Producer (P)")))))
 
+(test-group "non-ASCII metadata uses UTF-16BE+BOM hex string"
+  (let ((doc (make-pdf)))
+    (pdf-add-page! doc)
+    (pdf-set-metadata! doc 'title "Größe — Café")
+    (let ((out (pdf->bytevector doc)))
+      ;; Must start with FEFF BOM and contain the codepoints in
+      ;; UTF-16BE: G=0047 r=0072 ö=00F6 ß=00DF e=0065 sp=0020
+      ;; em-dash=2014 sp=0020 C=0043 a=0061 f=0066 é=00E9.
+      (test-assert (bv-contains-ascii? out "/Title <FEFF"))
+      (test-assert (bv-contains-ascii? out "00F6"))   ; ö
+      (test-assert (bv-contains-ascii? out "00DF"))   ; ß
+      (test-assert (bv-contains-ascii? out "2014"))   ; em-dash
+      (test-assert (bv-contains-ascii? out "00E9"))   ; é
+      ;; Must NOT have emitted the title as a literal — bytes between
+      ;; '(' and ')' would not be valid here. Check that the original
+      ;; UTF-8 sequence does not appear (the C3 B6 of 'ö').
+      (test-assert (not (bv-contains-ascii? out "Café"))))))
+
+(test-group "ASCII metadata still uses literal form"
+  (let ((doc (make-pdf)))
+    (pdf-add-page! doc)
+    (pdf-set-metadata! doc 'title "Plain Title")
+    (let ((out (pdf->bytevector doc)))
+      (test-assert (bv-contains-ascii? out "/Title (Plain Title)"))
+      ;; And no UTF-16 BOM
+      (test-assert (not (bv-contains-ascii? out "/Title <FEFF"))))))
+
+(test-group "non-ASCII outline title uses UTF-16BE"
+  (let* ((doc (make-pdf))
+         (page (pdf-add-page! doc)))
+    (pdf-add-outline! doc page "Kapitel 1 — Größe")
+    (let ((out (pdf->bytevector doc)))
+      (test-assert (bv-contains-ascii? out "/Title <FEFF"))
+      (test-assert (bv-contains-ascii? out "00F6")))))   ; ö
+
 (test-group "metadata overrides existing key"
   (let ((doc (make-pdf)))
     (pdf-add-page! doc)

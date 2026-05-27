@@ -426,14 +426,68 @@ Example:
         (pdf-writer-emit-string! w "\nendstream")))
 
     (define (pdf-emit-literal-string! w s)
-      (pdf-writer-emit-string! w "(")
-      (pdf-writer-emit-string! w (pdf-escape-literal s))
-      (pdf-writer-emit-string! w ")"))
+      ;; PDF strings in dict values (e.g. /Title, /URI, outline /Title)
+      ;; are PDFDocEncoding by default and UTF-16BE when prefixed by the
+      ;; byte-order mark FEFF. We pick automatically:
+      ;;   - pure printable-ASCII (codepoints 32..126) → emit as a literal
+      ;;     (...) with the usual ( ) \ escaping.
+      ;;   - anything else → emit as a hex string <FEFF...> in UTF-16BE.
+      ;; This is the difference between Unicode metadata that displays
+      ;; correctly in spec-compliant viewers and metadata that comes out
+      ;; as mojibake.
+      (cond
+        ((%string-printable-ascii? s)
+         (pdf-writer-emit-string! w "(")
+         (pdf-writer-emit-string! w (pdf-escape-literal s))
+         (pdf-writer-emit-string! w ")"))
+        (else
+         (pdf-writer-emit-string! w "<FEFF")
+         (pdf-writer-emit-string! w (%string->utf16be-hex s))
+         (pdf-writer-emit-string! w ">"))))
+
+    (define (%string-printable-ascii? s)
+      (let ((n (string-length s)))
+        (let loop ((i 0))
+          (cond
+            ((= i n) #t)
+            (else
+             (let ((cp (char->integer (string-ref s i))))
+               (cond
+                 ((and (>= cp 32) (<= cp 126)) (loop (+ i 1)))
+                 (else #f))))))))
+
+    (define (%string->utf16be-hex s)
+      ;; Each BMP codepoint becomes 4 hex digits; codepoints above U+FFFF
+      ;; are emitted as a UTF-16 surrogate pair (8 hex digits). Hand-roll
+      ;; uppercase output (number->string emits lowercase, and
+      ;; string-upcase is not in (scheme base)).
+      (define (hex4 n)
+        (define (d v)
+          (cond
+            ((< v 10) (integer->char (+ 48 v)))     ; 0-9
+            (else     (integer->char (+ 55 v)))))   ; A-F
+        (string (d (bitwise-and (arithmetic-shift n -12) 15))
+                (d (bitwise-and (arithmetic-shift n -8)  15))
+                (d (bitwise-and (arithmetic-shift n -4)  15))
+                (d (bitwise-and n 15))))
+      (let ((n (string-length s)))
+        (let loop ((i 0) (acc '()))
+          (cond
+            ((= i n) (apply string-append (reverse acc)))
+            (else
+             (let ((cp (char->integer (string-ref s i))))
+               (cond
+                 ((< cp #x10000)
+                  (loop (+ i 1) (cons (hex4 cp) acc)))
+                 (else
+                  (let* ((c  (- cp #x10000))
+                         (hi (+ #xD800 (quotient c 1024)))
+                         (lo (+ #xDC00 (modulo c 1024))))
+                    (loop (+ i 1)
+                          (cons (hex4 lo) (cons (hex4 hi) acc))))))))))))
 
     (define (pdf-escape-literal s)
-      ;; Escape ( ) and \ per the PDF spec. Non-ASCII bytes pass through
-      ;; — callers needing arbitrary Unicode should switch to hex strings
-      ;; or PDFDocEncoding (added in later phases).
+      ;; Escape ( ) and \ per the PDF spec.
       (let loop ((i 0) (acc '()))
         (if (>= i (string-length s))
             (list->string (reverse acc))
