@@ -11,7 +11,7 @@ public class PrimitiveTimestamp extends Primitive {
     @Override
     public String info() {
         return "Syntax: (timestamp)\n" +
-               "Library: (scm system)\n" +
+               "Library: (scm datetime)\n" +
                "Description: Returns the current time as the number of milliseconds since the epoch (January 1, year 1).\n" +
                "Example:\n" +
                "  (timestamp) => 63850000000000";

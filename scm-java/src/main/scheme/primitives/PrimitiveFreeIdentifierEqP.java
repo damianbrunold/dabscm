@@ -15,7 +15,7 @@ public class PrimitiveFreeIdentifierEqP extends Primitive {
     @Override
     public String info() {
         return "Syntax: (free-identifier=? id1 id2)\n" +
-               "Library: (scheme base)\n" +
+               "Library: (scm core)\n" +
                "Description: Returns #t if the two identifier syntax objects would resolve to " +
                "the same binding (i.e., they are free-identifier=? per R7RS 4.3.2).\n" +
                "Example:\n" +

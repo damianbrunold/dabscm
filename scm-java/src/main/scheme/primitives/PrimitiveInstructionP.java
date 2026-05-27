@@ -11,7 +11,7 @@ public class PrimitiveInstructionP extends Primitive {
     @Override
     public String info() {
         return "Syntax: (instruction? obj)\n" +
-               "Library: (scm compile)\n" +
+               "Library: (scm core)\n" +
                "Description: Returns #t if obj is a bytecode instruction object, otherwise returns #f.\n" +
                "Example:\n" +
                "  (instruction? (car (get-code (lambda () 42)))) => #t";

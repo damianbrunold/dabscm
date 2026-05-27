@@ -13,7 +13,7 @@ public class PrimitiveFileSize extends Primitive {
     @Override
     public String info() {
         return "Syntax: (file-size file)\n" +
-               "Library: (scm system)\n" +
+               "Library: (scm fs)\n" +
                "Description: Returns the size of the named file in bytes as an exact integer, or #f if the file cannot be accessed.\n" +
                "Example:\n" +
                "  (file-size \"/etc/hosts\") => 221";

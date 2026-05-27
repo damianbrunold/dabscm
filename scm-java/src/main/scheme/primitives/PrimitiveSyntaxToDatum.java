@@ -9,7 +9,7 @@ public class PrimitiveSyntaxToDatum extends Primitive {
     @Override
     public String info() {
         return "Syntax: (syntax->datum stx)\n" +
-               "Library: (scheme base)\n" +
+               "Library: (scm core)\n" +
                "Description: Strips all syntactic information from stx, returning the underlying datum. " +
                "Identifiers are converted to their symbolic names. Pairs and vectors are recursively stripped.\n" +
                "Example:\n" +

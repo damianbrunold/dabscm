@@ -15,7 +15,7 @@ public class PrimitiveNormalizedPath extends Primitive {
     @Override
     public String info() {
         return "Syntax: (normalized-path path)\n" +
-               "Library: (scm system)\n" +
+               "Library: (scm fs)\n" +
                "Description: Returns the normalized form of path. If absolute, returns the full path; if relative, returns the relative path from the current directory.\n" +
                "Example:\n" +
                "  (normalized-path \"./foo/../bar\") => \"bar\"";

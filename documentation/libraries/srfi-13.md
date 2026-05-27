@@ -504,7 +504,7 @@ Example:
 
 ```
 Syntax: (string-join strs delim grammar?)
-Library: (scm string)
+Library: (srfi 13)
 Description: Concatenates a list of strings strs with delim as the separator. The optional grammar argument may be 'infix (default), 'prefix, or 'suffix.
 Example:
   (string-join '("a" "b" "c") "-") => "a-b-c"

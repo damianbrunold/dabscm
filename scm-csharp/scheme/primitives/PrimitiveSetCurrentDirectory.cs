@@ -6,7 +6,7 @@ public class PrimitiveSetCurrentDirectory : Primitive
 
     public override string Info() =>
         "Syntax: (set-current-directory! path)\n" +
-        "Library: (scm fs)\n" +
+        "Library: (scm core)\n" +
         "Description: Sets the current working directory of the process to path. " +
         "Returns the new directory as a string on success, #f on failure.\n" +
         "Example:\n" +

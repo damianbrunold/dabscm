@@ -11,7 +11,7 @@ public class PrimitiveDatumToSyntax : Primitive
     {
         return
             "Syntax: (datum->syntax template-id datum)\n" +
-            "Library: (scheme base)\n" +
+            "Library: (scm core)\n" +
             "Description: Converts datum to a syntax object with the same lexical context " +
             "(wraps) as template-id. This allows the datum to be treated as if it appeared " +
             "in the same scope as the template identifier, enabling intentional hygiene-breaking.\n" +

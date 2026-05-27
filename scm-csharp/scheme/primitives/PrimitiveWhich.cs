@@ -11,7 +11,7 @@ public class PrimitiveWhich : Primitive
     {
         return
             "Syntax: (which program)\n" +
-            "Library: (scm system)\n" +
+            "Library: (scm fs)\n" +
             "Description: Searches the directories in PATH for an executable named program and returns its full path as a string, or #f if not found.\n" +
             "Example:\n" +
             "  (which \"ls\") => \"/usr/bin/ls\"\n" +

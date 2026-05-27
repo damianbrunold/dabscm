@@ -11,7 +11,7 @@ public class PrimitiveIdentifierP : Primitive
     {
         return
             "Syntax: (identifier? obj)\n" +
-            "Library: (scheme base)\n" +
+            "Library: (scm core)\n" +
             "Description: Returns #t if obj is a syntax object wrapping a symbol (an identifier), #f otherwise.\n" +
             "Example:\n" +
             "  (identifier? (syntax foo)) => #t\n" +

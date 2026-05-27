@@ -6,7 +6,7 @@ public class PrimitiveLocalTzOffset : Primitive
 
     public override string Info() =>
         "Syntax: (%local-tz-offset)\n" +
-        "Library: (srfi 19)\n" +
+        "Library: (scm core)\n" +
         "Description: Internal primitive. Returns the local timezone offset from UTC in seconds.\n" +
         "Example:\n" +
         "  (%local-tz-offset) => 3600  ; UTC+1";

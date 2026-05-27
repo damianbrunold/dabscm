@@ -13,7 +13,7 @@ public class PrimitiveTimestampToString : Primitive
     {
         return
             "Syntax: (timestamp->string ms format?)\n" +
-            "Library: (scm system)\n" +
+            "Library: (scm datetime)\n" +
             "Description: Formats a timestamp (milliseconds) as a date string. The optional format may be isodatetime, isodate, datetime, date, or a custom .NET format string; defaults to isodatetime.\n" +
             "Example:\n" +
             "  (timestamp->string (timestamp)) => \"20260318-153045\"\n" +

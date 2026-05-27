@@ -11,7 +11,7 @@ public class PrimitiveTdsConnect : Primitive
 
     public override string Info() =>
         "Syntax: (tds-connect host port)\n" +
-        "Library: (scm database sqlserver)\n" +
+        "Library: (scm core)\n" +
         "Description: Connects to a SQL Server at the given host and port using TDS with TLS.\n" +
         "  Performs the PreLogin exchange and TLS handshake (wrapped in TDS type 0x17 packets)\n" +
         "  then returns a socket suitable for use with the (scm database sqlserver) library.\n" +

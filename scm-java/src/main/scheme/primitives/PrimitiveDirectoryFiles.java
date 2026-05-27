@@ -13,7 +13,7 @@ public class PrimitiveDirectoryFiles extends Primitive {
     @Override
     public String info() {
         return "Syntax: (directory-files dirname)\n" +
-               "Library: (scm system)\n" +
+               "Library: (scm fs)\n" +
                "Description: Returns a list of file names (not full paths) in the directory dirname.\n" +
                "Example:\n" +
                "  (directory-files \"/tmp\") => (\"file1.txt\" \"file2.txt\" ...)";

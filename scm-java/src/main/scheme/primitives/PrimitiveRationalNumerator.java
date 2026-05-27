@@ -6,7 +6,7 @@ public class PrimitiveRationalNumerator extends Primitive {
     @Override public String name() { return "rational-numerator"; }
     @Override public String info() {
         return "Syntax: (rational-numerator q)\n" +
-               "Library: (scheme base)\n" +
+               "Library: (scm core)\n" +
                "Description: Returns the numerator of the rational number q in lowest terms. Returns q itself for integers.\n" +
                "  For inexact rational numbers, returns the numerator as an inexact number.\n" +
                "Example:\n" +

@@ -9,7 +9,7 @@ public class PrimitiveJiffy : Primitive
 
     public override string Info() =>
         "Syntax: (%jiffy)\n" +
-        "Library: (scheme time)\n" +
+        "Library: (scm core)\n" +
         "Description: Internal primitive. Returns the number of microseconds elapsed since the Unix epoch (1970-01-01 00:00:00 UTC).\n" +
         "Example:\n" +
         "  (%jiffy) => 1700000000000000";

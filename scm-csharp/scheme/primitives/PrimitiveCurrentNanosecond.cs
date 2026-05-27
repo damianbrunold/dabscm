@@ -9,7 +9,7 @@ public class PrimitiveCurrentNanosecond : Primitive
 
     public override string Info() =>
         "Syntax: (%current-nanosecond)\n" +
-        "Library: (srfi 19)\n" +
+        "Library: (scm core)\n" +
         "Description: Internal primitive. Returns the current UTC time as a pair (seconds . nanoseconds) since the Unix epoch.\n" +
         "Example:\n" +
         "  (%current-nanosecond) => (1700000000 . 123456789)";

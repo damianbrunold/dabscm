@@ -11,7 +11,7 @@ public class PrimitiveComplexRealPart : Primitive
     {
         return
             "Syntax: (complex-real-part z)\n" +
-            "Library: (scheme complex)\n" +
+            "Library: (scm core)\n" +
             "Description: Returns the real part of the complex number z.\n" +
             "Example:\n" +
             "  (complex-real-part 1+2i) => 1";

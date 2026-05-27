@@ -19,7 +19,7 @@ public class PrimitiveCopyDirectory extends Primitive {
     @Override
     public String info() {
         return "Syntax: (copy-directory src dest)\n" +
-               "Library: (scm system)\n" +
+               "Library: (scm fs)\n" +
                "Description: Recursively copies the directory at src to dest. Returns unspecified on success, #f on failure.\n" +
                "Example:\n" +
                "  (copy-directory \"/src/dir\" \"/dst/dir\")";

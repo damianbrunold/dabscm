@@ -13,7 +13,7 @@ public class PrimitiveAbsolutePath extends Primitive {
     @Override
     public String info() {
         return "Syntax: (absolute-path path)\n" +
-               "Library: (scm system)\n" +
+               "Library: (scm fs)\n" +
                "Description: Returns the absolute (fully qualified) form of the given path string.\n" +
                "Example:\n" +
                "  (absolute-path \".\") => \"/current/working/dir\"";

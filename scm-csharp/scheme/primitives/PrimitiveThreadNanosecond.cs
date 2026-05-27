@@ -8,7 +8,7 @@ public class PrimitiveThreadNanosecond : Primitive
 
     public override string Info() =>
         "Syntax: (%thread-nanosecond)\n" +
-        "Library: (srfi 19)\n" +
+        "Library: (scm core)\n" +
         "Description: Internal primitive. Returns current thread CPU time as a pair (seconds . nanoseconds). Falls back to process CPU time on platforms without per-thread measurement.\n" +
         "Example:\n" +
         "  (%thread-nanosecond) => (2 . 100000000)";

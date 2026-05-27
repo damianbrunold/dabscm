@@ -8,7 +8,7 @@ public class PrimitiveProcessNanosecond : Primitive
 
     public override string Info() =>
         "Syntax: (%process-nanosecond)\n" +
-        "Library: (srfi 19)\n" +
+        "Library: (scm core)\n" +
         "Description: Internal primitive. Returns process CPU time as a pair (seconds . nanoseconds).\n" +
         "Example:\n" +
         "  (%process-nanosecond) => (5 . 230000000)";

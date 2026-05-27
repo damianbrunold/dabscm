@@ -6,7 +6,7 @@ public class PrimitiveComplexMagnitude extends Primitive {
     @Override public String info() {
         return
             "Syntax: (complex-magnitude z)\n" +
-            "Library: (scheme complex)\n" +
+            "Library: (scm core)\n" +
             "Description: Returns the magnitude of the complex number z.\n" +
             "Example:\n" +
             "  (complex-magnitude 3+4i) => 5.0";

@@ -8,7 +8,7 @@ Timestamps and time formatting
 
 ```
 Syntax: (%jiffy)
-Library: (scheme time)
+Library: (scm core)
 Description: Internal primitive. Returns the number of microseconds elapsed since the Unix epoch (1970-01-01 00:00:00 UTC).
 Example:
   (%jiffy) => 1700000000000000

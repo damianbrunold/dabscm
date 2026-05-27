@@ -6,7 +6,7 @@
 
 ```
 Syntax: (absolute-path path)
-Library: (scm system)
+Library: (scm fs)
 Description: Returns the absolute (fully qualified) form of the given path string.
 Example:
   (absolute-path ".") => "/current/working/dir"
@@ -43,7 +43,7 @@ Example:
 
 ```
 Syntax: (base-name path)
-Library: (scm system)
+Library: (scm fs)
 Description: Returns the file name (including extension) from the given path string, without the directory part.
 Example:
   (base-name "/usr/share/doc/readme.txt") => "readme.txt"
@@ -87,7 +87,7 @@ Example:
 
 ```
 Syntax: (set-current-directory! path)
-Library: (scm fs)
+Library: (scm core)
 Description: Sets the process working directory hint to path. Returns the new directory as a string on success, #f on failure. Note: in the JVM the OS-level cwd cannot be changed for already-loaded native code; the value is recorded so that subsequent relative-path operations and child-process invocations behave as if cwd were path.
 Example:
   (set-current-directory! "/tmp") => "/tmp"
@@ -145,7 +145,7 @@ Example:
 
 ```
 Syntax: (copy-directory src dest)
-Library: (scm system)
+Library: (scm fs)
 Description: Recursively copies the directory at src to dest. Returns unspecified on success, #f on failure.
 Example:
   (copy-directory "/src/dir" "/dst/dir")
@@ -155,7 +155,7 @@ Example:
 
 ```
 Syntax: (copy-file src dest)
-Library: (scm system)
+Library: (scm fs)
 Description: Copies the file at src to dest, overwriting dest if it exists. Returns unspecified on success, #f on failure.
 Example:
   (copy-file "data.txt" "backup.txt")
@@ -203,7 +203,7 @@ Example:
 
 ```
 Syntax: (current-directory)
-Library: (scm system)
+Library: (scm fs)
 Description: Returns the current working directory as a string.
 Example:
   (current-directory) => "/home/user/projects"
@@ -248,7 +248,7 @@ Example:
 
 ```
 Syntax: (delete-directory dir)
-Library: (scm system)
+Library: (scm fs)
 Description: Recursively deletes the directory at dir. Returns unspecified on success, #f on failure.
 Example:
   (delete-directory "/tmp/old-dir")
@@ -306,7 +306,7 @@ Example:
 
 ```
 Syntax: (directory-directories dirname)
-Library: (scm system)
+Library: (scm fs)
 Description: Returns a list of subdirectory names (not full paths) in the directory dirname.
 Example:
   (directory-directories "/usr") => ("bin" "lib" "share" ...)
@@ -316,7 +316,7 @@ Example:
 
 ```
 Syntax: (directory-exists? dirname)
-Library: (scm system)
+Library: (scm fs)
 Description: Returns #t if the given path names an existing directory, otherwise returns #f.
 Example:
   (directory-exists? "/tmp") => #t
@@ -327,7 +327,7 @@ Example:
 
 ```
 Syntax: (directory-files dirname)
-Library: (scm system)
+Library: (scm fs)
 Description: Returns a list of file names (not full paths) in the directory dirname.
 Example:
   (directory-files "/tmp") => ("file1.txt" "file2.txt" ...)
@@ -337,7 +337,7 @@ Example:
 
 ```
 Syntax: (directory-name path)
-Library: (scm system)
+Library: (scm fs)
 Description: Returns the directory part of the given path as an absolute path string, or #f if there is no parent directory.
 Example:
   (directory-name "/usr/share/readme.txt") => "/usr/share"
@@ -393,8 +393,8 @@ Example:
 
 ```
 Syntax: (file-modification-timestamp filename)
-Library: (scm system)
-Description: Returns the last modification time of the file as a millisecond timestamp (milliseconds since the .NET epoch).
+Library: (scm fs)
+Description: Returns the last modification time of the file as a millisecond timestamp (milliseconds since the Unix epoch, UTC).
 Example:
   (file-modification-timestamp "data.txt") => 1700000000000
 ```
@@ -403,7 +403,7 @@ Example:
 
 ```
 Syntax: (file-size file)
-Library: (scm system)
+Library: (scm fs)
 Description: Returns the size of the named file in bytes as an exact integer, or #f if the file cannot be accessed.
 Example:
   (file-size "/etc/hosts") => 221
@@ -587,7 +587,7 @@ Example:
 
 ```
 Syntax: (make-directory path)
-Library: (scm system)
+Library: (scm fs)
 Description: Creates the directory named by path, including all intermediate directories.
 Example:
   (make-directory "/tmp/new/dir")
@@ -620,7 +620,7 @@ Example:
 
 ```
 Syntax: (move-directory src dest)
-Library: (scm system)
+Library: (scm fs)
 Description: Moves (renames) the directory from src to dest. Returns unspecified on success, #f on failure.
 Example:
   (move-directory "/tmp/old" "/tmp/new")
@@ -630,7 +630,7 @@ Example:
 
 ```
 Syntax: (move-file src dest)
-Library: (scm system)
+Library: (scm fs)
 Description: Moves (renames) the file from src to dest, overwriting dest if it exists. Returns unspecified on success, #f on failure.
 Example:
   (move-file "old.txt" "new.txt")
@@ -650,7 +650,7 @@ Example:
 
 ```
 Syntax: (normalized-path path)
-Library: (scm system)
+Library: (scm fs)
 Description: Returns the normalized form of path. If absolute, returns the full path; if relative, returns the relative path from the current directory.
 Example:
   (normalized-path "./foo/../bar") => "bar"
@@ -926,8 +926,8 @@ Example:
 
 ```
 Syntax: (special-folder-application-data)
-Library: (scm system)
-Description: Returns the path of the user's application data directory as a string.
+Library: (scm fs)
+Description: Returns the path of the user's application data or config directory as a string.
 Example:
   (special-folder-application-data) => "/home/user/.config"
 ```
@@ -936,7 +936,7 @@ Example:
 
 ```
 Syntax: (special-folder-documents)
-Library: (scm system)
+Library: (scm fs)
 Description: Returns the path of the user's documents directory as a string.
 Example:
   (special-folder-documents) => "/home/user/Documents"
@@ -949,6 +949,16 @@ Syntax: (special-folder-temp)
 Library: (scm fs)
 Description: Returns the platform temp directory path as a string.
 Example: (special-folder-temp) => "/tmp"
+```
+
+### `special-folder-user-home`
+
+```
+Syntax: (special-folder-user-home)
+Library: (scm fs)
+Description: Returns the path of the user home directory as a string.
+Example:
+  (special-folder-user-home) => "/home/user"
 ```
 
 ### `ssh`
@@ -1245,7 +1255,7 @@ Example:
 
 ```
 Syntax: (which program)
-Library: (scm system)
+Library: (scm fs)
 Description: Searches the directories in PATH for an executable named program and returns its full path as a string, or #f if not found.
 Example:
   (which "ls") => "/usr/bin/ls"

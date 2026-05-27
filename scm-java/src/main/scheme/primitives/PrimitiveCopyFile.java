@@ -16,7 +16,7 @@ public class PrimitiveCopyFile extends Primitive {
     @Override
     public String info() {
         return "Syntax: (copy-file src dest)\n" +
-               "Library: (scm system)\n" +
+               "Library: (scm fs)\n" +
                "Description: Copies the file at src to dest, overwriting dest if it exists. Returns unspecified on success, #f on failure.\n" +
                "Example:\n" +
                "  (copy-file \"data.txt\" \"backup.txt\")";

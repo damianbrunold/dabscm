@@ -9,7 +9,7 @@ public class PrimitiveSetCurrentDirectory extends Primitive {
     @Override
     public String info() {
         return "Syntax: (set-current-directory! path)\n" +
-               "Library: (scm fs)\n" +
+               "Library: (scm core)\n" +
                "Description: Sets the process working directory hint to path. Returns " +
                "the new directory as a string on success, #f on failure. Note: in the " +
                "JVM the OS-level cwd cannot be changed for already-loaded native code; " +

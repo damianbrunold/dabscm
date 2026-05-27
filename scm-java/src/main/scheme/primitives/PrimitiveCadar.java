@@ -11,7 +11,7 @@ public class PrimitiveCadar extends Primitive {
     @Override
     public String info() {
         return "Syntax: (cadar pair)\n" +
-               "Library: (scheme base)\n" +
+               "Library: (scheme cxr)\n" +
                "Description: Returns the car of the cdr of the car of pair. Equivalent to (car (cdr (car pair))).\n" +
                "Example:\n" +
                "  (cadar '((a b) c)) => b";

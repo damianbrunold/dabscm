@@ -6,7 +6,7 @@ public class PrimitiveRationalDenominator extends Primitive {
     @Override public String name() { return "rational-denominator"; }
     @Override public String info() {
         return "Syntax: (rational-denominator q)\n" +
-               "Library: (scheme base)\n" +
+               "Library: (scm core)\n" +
                "Description: Returns the denominator of the rational number q in lowest terms. Returns 1 for integers.\n" +
                "  For inexact rational numbers, returns the denominator as an inexact number.\n" +
                "Example:\n" +

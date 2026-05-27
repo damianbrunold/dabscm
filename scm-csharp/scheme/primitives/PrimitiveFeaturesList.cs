@@ -8,7 +8,7 @@ public class PrimitiveFeaturesList : Primitive
 
     public override string Info() =>
         "Syntax: (%features-list)\n" +
-        "Library: (scheme base)\n" +
+        "Library: (scm core)\n" +
         "Description: Internal primitive that returns the list of feature symbols for this implementation (used by (features)). Includes r7rs, scm, platform, and architecture identifiers.\n" +
         "Example:\n" +
         "  (%features-list) => (r7rs scm exact-closed ieee-float gnu-linux x86-64 little-endian)";

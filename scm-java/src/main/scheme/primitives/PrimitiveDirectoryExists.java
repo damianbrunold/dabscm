@@ -13,7 +13,7 @@ public class PrimitiveDirectoryExists extends Primitive {
     @Override
     public String info() {
         return "Syntax: (directory-exists? dirname)\n" +
-               "Library: (scm system)\n" +
+               "Library: (scm fs)\n" +
                "Description: Returns #t if the given path names an existing directory, otherwise returns #f.\n" +
                "Example:\n" +
                "  (directory-exists? \"/tmp\") => #t\n" +

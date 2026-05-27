@@ -15,7 +15,7 @@ public class PrimitiveStringToDateSeconds extends Primitive {
     @Override
     public String info() {
         return "Syntax: (string->date-seconds s format?)\n" +
-               "Library: (scm string)\n" +
+               "Library: (scm datetime)\n" +
                "Description: Parses the date/time string s (in formats like yyyyMMddHHmmss, yyyyMMddHHmm, yyyyMMddHH, or yyyyMMdd) and returns the number of seconds since the Unix epoch. Returns #f if parsing fails.\n" +
                "Example:\n" +
                "  (string->date-seconds \"20240101120000\") => 1704110400\n" +

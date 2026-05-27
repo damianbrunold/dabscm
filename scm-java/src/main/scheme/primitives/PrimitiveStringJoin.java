@@ -11,7 +11,7 @@ public class PrimitiveStringJoin extends Primitive {
     @Override
     public String info() {
         return "Syntax: (string-join strs delim grammar?)\n" +
-               "Library: (scm string)\n" +
+               "Library: (srfi 13)\n" +
                "Description: Concatenates a list of strings strs with delim as the separator. The optional grammar argument may be 'infix (default), 'prefix, or 'suffix.\n" +
                "Example:\n" +
                "  (string-join '(\"a\" \"b\" \"c\") \"-\") => \"a-b-c\"\n" +

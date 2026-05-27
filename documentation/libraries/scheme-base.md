@@ -933,7 +933,7 @@ Example:
 
 ```
 Syntax: (%features-list)
-Library: (scheme base)
+Library: (scm core)
 Description: Internal primitive that returns the list of feature symbols for this implementation (used by (features)). Includes r7rs, scm, platform, and architecture identifiers.
 Example:
   (%features-list) => (r7rs scm exact-closed ieee-float gnu-linux x86-64 little-endian)
@@ -943,7 +943,7 @@ Example:
 
 ```
 Syntax: (file-error? obj)
-Library: (scheme file)
+Library: (scheme base)
 Description: Returns #t if obj is a file error object (as raised by file operations), otherwise returns #f.
 Example:
   (guard (e (#t (file-error? e)))
@@ -1998,7 +1998,7 @@ Example:
 
 ```
 Syntax: (read-error? obj)
-Library: (scheme read)
+Library: (scheme base)
 Description: Returns #t if obj is an object representing an error that occurred while reading, otherwise returns #f.
 Example:
   (read-error? (guard (e (#t e)) (read (open-input-string "(")))) => #t

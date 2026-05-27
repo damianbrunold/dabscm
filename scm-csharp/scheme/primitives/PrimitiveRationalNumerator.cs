@@ -5,7 +5,7 @@ public class PrimitiveRationalNumerator : Primitive
     public override string Name() => "rational-numerator";
     public override string Info() =>
         "Syntax: (rational-numerator q)\n" +
-        "Library: (scheme base)\n" +
+        "Library: (scm core)\n" +
         "Description: Returns the numerator of the rational number q in lowest terms. Returns q itself for integers.\n" +
         "  For inexact rational numbers, returns the numerator as an inexact number.\n" +
         "Example:\n" +

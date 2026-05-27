@@ -9,7 +9,7 @@ public class PrimitiveBoundIdentifierEqP extends Primitive {
     @Override
     public String info() {
         return "Syntax: (bound-identifier=? id1 id2)\n" +
-               "Library: (scheme base)\n" +
+               "Library: (scm core)\n" +
                "Description: Returns #t if the two identifier syntax objects have the same name " +
                "and the same marks (i.e., they would bind the same variable if one appeared in " +
                "a binding position and the other in a reference position).\n" +

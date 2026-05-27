@@ -11,7 +11,7 @@ public class PrimitiveFileModificationTimestamp : Primitive
     {
         return
             "Syntax: (file-modification-timestamp filename)\n" +
-            "Library: (scm system)\n" +
+            "Library: (scm fs)\n" +
             "Description: Returns the last modification time of the file as a millisecond timestamp (milliseconds since the Unix epoch, UTC).\n" +
             "Example:\n" +
             "  (file-modification-timestamp \"data.txt\") => 1700000000000";

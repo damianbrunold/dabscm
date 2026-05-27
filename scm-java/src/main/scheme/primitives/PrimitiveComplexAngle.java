@@ -6,7 +6,7 @@ public class PrimitiveComplexAngle extends Primitive {
     @Override public String info() {
         return
             "Syntax: (complex-angle z)\n" +
-            "Library: (scheme complex)\n" +
+            "Library: (scm core)\n" +
             "Description: Returns the angle (argument) of the complex number z in radians.\n" +
             "Example:\n" +
             "  (complex-angle 1+1i) => 0.7853981633974483";

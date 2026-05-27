@@ -13,7 +13,7 @@ public class PrimitiveGenerateTemporaries extends Primitive {
     @Override
     public String info() {
         return "Syntax: (generate-temporaries list)\n" +
-               "Library: (scheme base)\n" +
+               "Library: (scm core)\n" +
                "Description: Returns a list of fresh identifiers (syntax objects wrapping unique symbols), " +
                "one for each element of list. The identifiers are guaranteed to be distinct from all " +
                "other identifiers. Used in syntax-case transformers for hygienic macro expansion.\n" +

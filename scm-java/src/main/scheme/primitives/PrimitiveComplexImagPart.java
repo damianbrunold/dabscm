@@ -6,7 +6,7 @@ public class PrimitiveComplexImagPart extends Primitive {
     @Override public String info() {
         return
             "Syntax: (complex-imag-part z)\n" +
-            "Library: (scheme complex)\n" +
+            "Library: (scm core)\n" +
             "Description: Returns the imaginary part of the complex number z.\n" +
             "Example:\n" +
             "  (complex-imag-part 1+2i) => 2";

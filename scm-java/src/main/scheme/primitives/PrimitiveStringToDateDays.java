@@ -16,7 +16,7 @@ public class PrimitiveStringToDateDays extends Primitive {
     @Override
     public String info() {
         return "Syntax: (string->date-days s format?)\n" +
-               "Library: (scm string)\n" +
+               "Library: (scm datetime)\n" +
                "Description: Parses the date string s in yyyyMMdd format and returns the number of days since the OLE Automation epoch (December 30, 1899). Returns #f if parsing fails.\n" +
                "Example:\n" +
                "  (string->date-days \"20240101\") => 45292\n" +

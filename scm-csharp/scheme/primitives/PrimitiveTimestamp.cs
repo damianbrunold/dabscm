@@ -11,7 +11,7 @@ public class PrimitiveTimestamp : Primitive
     {
         return
             "Syntax: (timestamp)\n" +
-            "Library: (scm system)\n" +
+            "Library: (scm datetime)\n" +
             "Description: Returns the current time as the number of milliseconds since the Unix epoch (January 1, 1970 UTC).\n" +
             "Example:\n" +
             "  (timestamp) => 1700000000000";

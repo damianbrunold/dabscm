@@ -13,7 +13,7 @@ public class PrimitiveDirectoryDirectories extends Primitive {
     @Override
     public String info() {
         return "Syntax: (directory-directories dirname)\n" +
-               "Library: (scm system)\n" +
+               "Library: (scm fs)\n" +
                "Description: Returns a list of subdirectory names (not full paths) in the directory dirname.\n" +
                "Example:\n" +
                "  (directory-directories \"/usr\") => (\"bin\" \"lib\" \"share\" ...)";

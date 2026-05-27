@@ -8,7 +8,7 @@ public class PrimitivePgParseDatarow extends Primitive {
     @Override public String name() { return "pg-parse-datarow"; }
     @Override public String info() {
         return "Syntax: (pg-parse-datarow body)\n" +
-               "Library: (scm database postgres)\n" +
+               "Library: (scm core)\n" +
                "Description: Parses a PostgreSQL DataRow message body bytevector " +
                "and returns a vector with one element per column. Each element is " +
                "a UTF-8 decoded string, an empty string for zero-length values, or " +

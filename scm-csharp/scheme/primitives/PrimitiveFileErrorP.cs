@@ -4,7 +4,7 @@ class PrimitiveFileErrorP : Primitive {
     public override string Name() => "file-error?";
     public override string Info() =>
         "Syntax: (file-error? obj)\n" +
-        "Library: (scheme file)\n" +
+        "Library: (scheme base)\n" +
         "Description: Returns #t if obj is a file error object (as raised by file operations), otherwise returns #f.\n" +
         "Example:\n" +
         "  (guard (e (#t (file-error? e)))\n" +

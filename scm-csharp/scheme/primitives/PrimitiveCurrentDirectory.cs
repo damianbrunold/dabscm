@@ -11,7 +11,7 @@ public class PrimitiveCurrentDirectory : Primitive
     {
         return
             "Syntax: (current-directory)\n" +
-            "Library: (scm system)\n" +
+            "Library: (scm fs)\n" +
             "Description: Returns the current working directory as a string.\n" +
             "Example:\n" +
             "  (current-directory) => \"/home/user/projects\"";

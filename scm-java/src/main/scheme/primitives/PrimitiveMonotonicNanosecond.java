@@ -13,7 +13,7 @@ public class PrimitiveMonotonicNanosecond extends Primitive {
     @Override
     public String info() {
         return "Syntax: (%monotonic-nanosecond)\n" +
-               "Library: (srfi 19)\n" +
+               "Library: (scm core)\n" +
                "Description: Internal primitive. Returns monotonic clock time as a pair (seconds . nanoseconds).\n" +
                "Example:\n" +
                "  (%monotonic-nanosecond) => (12345 . 678000000)";

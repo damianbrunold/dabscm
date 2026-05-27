@@ -13,7 +13,7 @@ public class PrimitiveMoveDirectory extends Primitive {
     @Override
     public String info() {
         return "Syntax: (move-directory src dest)\n" +
-               "Library: (scm system)\n" +
+               "Library: (scm fs)\n" +
                "Description: Moves (renames) the directory from src to dest. Returns unspecified on success, #f on failure.\n" +
                "Example:\n" +
                "  (move-directory \"/tmp/old\" \"/tmp/new\")";

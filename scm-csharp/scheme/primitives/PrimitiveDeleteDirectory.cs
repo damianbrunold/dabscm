@@ -11,7 +11,7 @@ public class PrimitiveDeleteDirectory : Primitive
     {
         return
             "Syntax: (delete-directory dir)\n" +
-            "Library: (scm system)\n" +
+            "Library: (scm fs)\n" +
             "Description: Recursively deletes the directory at dir. Returns unspecified on success, #f on failure.\n" +
             "Example:\n" +
             "  (delete-directory \"/tmp/old-dir\")";

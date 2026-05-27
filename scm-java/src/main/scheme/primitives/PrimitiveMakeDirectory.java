@@ -13,7 +13,7 @@ public class PrimitiveMakeDirectory extends Primitive {
     @Override
     public String info() {
         return "Syntax: (make-directory path)\n" +
-               "Library: (scm system)\n" +
+               "Library: (scm fs)\n" +
                "Description: Creates the directory named by path, including all intermediate directories.\n" +
                "Example:\n" +
                "  (make-directory \"/tmp/new/dir\")";

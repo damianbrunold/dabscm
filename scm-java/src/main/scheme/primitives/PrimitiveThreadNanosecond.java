@@ -15,7 +15,7 @@ public class PrimitiveThreadNanosecond extends Primitive {
     @Override
     public String info() {
         return "Syntax: (%thread-nanosecond)\n" +
-               "Library: (srfi 19)\n" +
+               "Library: (scm core)\n" +
                "Description: Internal primitive. Returns current thread CPU time as a pair (seconds . nanoseconds).\n" +
                "Example:\n" +
                "  (%thread-nanosecond) => (2 . 100000000)";

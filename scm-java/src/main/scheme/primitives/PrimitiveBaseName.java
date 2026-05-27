@@ -14,7 +14,7 @@ public class PrimitiveBaseName extends Primitive
     @Override
     public String info() {
         return "Syntax: (base-name path)\n" +
-               "Library: (scm system)\n" +
+               "Library: (scm fs)\n" +
                "Description: Returns the file name (including extension) from the given path string, without the directory part.\n" +
                "Example:\n" +
                "  (base-name \"/usr/share/doc/readme.txt\") => \"readme.txt\"";
