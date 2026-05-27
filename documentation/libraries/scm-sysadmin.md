@@ -49,6 +49,26 @@ Example:
   (base-name "/usr/share/doc/readme.txt") => "readme.txt"
 ```
 
+### `base64-decode`
+
+```
+Syntax: (base64-decode string)
+Library: (scm crypto)
+Description: Decodes a base64-encoded string and returns a bytevector.
+Example:
+  (base64-decode "SGVsbG8=") => #u8(72 101 108 108 111)
+```
+
+### `base64-encode`
+
+```
+Syntax: (base64-encode bytevector)
+Library: (scm crypto)
+Description: Returns the base64-encoded string of a bytevector.
+Example:
+  (base64-encode #u8(72 101 108 108 111)) => "SGVsbG8="
+```
+
 ### `bunzip2`
 
 ```
@@ -58,6 +78,17 @@ Description: Decompresses path (which should end in .bz2) in place via
   the native bunzip2 command. Option 'keep retains the .bz2 original.
 Example:
   (bunzip2 "big.log.bz2")
+```
+
+### `bytevector->hex`
+
+```
+Syntax: (bytevector->hex bv)
+Library: (scm crypto)
+Description: Returns the lowercase hexadecimal string representation of the
+  bytevector bv (two hex digits per byte, no separators).
+Example:
+  (bytevector->hex #u8(0 15 255)) => "000fff"
 ```
 
 ### `bzip2`
@@ -130,6 +161,17 @@ Example:
     (close-input-zip z))
 ```
 
+### `close-json`
+
+```
+Syntax: (close-json reader)
+Library: (scm core)
+Description: Closes the given JSON reader, releasing any underlying resources.
+Example:
+  (let ((r (open-json-file "data.json")))
+    (close-json r))
+```
+
 ### `close-output-zip`
 
 ```
@@ -171,6 +213,17 @@ Description: Copies src to dst. Options: 'recursive (-r) to copy a directory.
 Example:
   (cp "a.txt" "b.txt")
   (cp "src/" "dst/" 'recursive)
+```
+
+### `csv-line->fields`
+
+```
+Syntax: (csv-line->fields str sep) (csv-line->fields str sep 'trim)
+Library: (scm core)
+Description: Splits a CSV line string using the given separator, stripping surrounding double-quotes from each field. When 'trim is given as a third argument, also trims whitespace from each field.
+Example:
+  (csv-line->fields "a,b,c" ",") => ("a" "b" "c")
+  (csv-line->fields "\"hello\",world" ",") => ("hello" "world")
 ```
 
 ### `curl`
@@ -427,6 +480,35 @@ Example:
   (find "/var/log" `(predicate . ,(lambda (p) (> (file-size p) 1024))))
 ```
 
+### `format-duration`
+
+```
+Syntax: (format-duration seconds)
+Library: (scm duration)
+Description: Human-readable inverse of parse-duration. Emits a d/h/m suffix
+  when seconds divides evenly by 86400/3600/60; otherwise emits a plain
+  seconds value with the s suffix. Non-integer or negative input is
+  rendered as the integer itself (or empty string for non-numbers).
+Example:
+  (format-duration 3600)  => "1h"
+  (format-duration 86400) => "1d"
+  (format-duration 90)    => "90s"
+  (format-duration 0)     => "0s"
+```
+
+### `format-iso8601`
+
+```
+Syntax: (format-iso8601 unix-seconds)
+Library: (scm datetime)
+Description: Formats a Unix-seconds integer as an ISO 8601 UTC string
+  ('YYYY-MM-DDTHH:MM:SSZ'). Negative inputs (pre-1970) are not supported.
+Example:
+  (format-iso8601 1715862896) => "2024-05-16T12:34:56Z"
+  (format-iso8601 (parse-iso8601 "2024-05-16T14:34:56+02:00"))
+    => "2024-05-16T12:34:56Z"
+```
+
 ### `get-bytes`
 
 ```
@@ -470,6 +552,39 @@ Example:
           '(("verbose" #\v #f)
             ("name"    #\n #t "anon")))
   => ((("verbose" . #t) ("name" . "foo")) . ("a" "b"))
+```
+
+### `glob`
+
+```
+Syntax: (glob pattern)
+Library: (scm glob)
+Description: Returns a sorted list of file and directory paths matching
+  the glob pattern. Supports * (any characters except path separator),
+  ? (single character), [...] character classes, and ** (recursive
+  globstar matching zero or more directory levels). Dotfiles are not
+  matched by *, ?, or ** unless the pattern segment explicitly starts
+  with a dot. Returns an empty list if no matches are found or the
+  base directory does not exist.
+Example:
+  (glob "src/*.scm") => ("src/bar.scm" "src/foo.scm")
+  (glob "**/*.sld") => ("lib/a.sld" "lib/sub/b.sld")
+```
+
+### `glob-match?`
+
+```
+Syntax: (glob-match? pattern string)
+Library: (scm glob)
+Description: Tests whether string matches the glob pattern. Supports *
+  (any characters except path separator), ? (single character except path
+  separator), [...] character classes with ranges and negation ([!...]),
+  and ** (matches zero or more path segments including separators).
+  This is a pure string operation with no filesystem access.
+Example:
+  (glob-match? "*.scm" "foo.scm")       => #t
+  (glob-match? "src/**/*.scm" "src/lib/foo.scm") => #t
+  (glob-match? "[abc].txt" "b.txt")     => #t
 ```
 
 ### `grep`
@@ -546,6 +661,18 @@ Example:
   (head "log.txt" '(lines . 5))
 ```
 
+### `hex->bytevector`
+
+```
+Syntax: (hex->bytevector s)
+Library: (scm crypto)
+Description: Parses a hexadecimal string (case-insensitive, no separators)
+  into a bytevector. Raises an error on odd length or non-hex characters.
+Example:
+  (hex->bytevector "000fff") => #u8(0 15 255)
+  (hex->bytevector "DEADBEEF") => #u8(222 173 190 239)
+```
+
 ### `hexdump`
 
 ```
@@ -571,6 +698,28 @@ Example:
   (join-path "/usr" "local" "bin") => "/usr/local/bin"  ; on Unix
 ```
 
+### `json-attribute`
+
+```
+Syntax: (json-attribute object name) (json-attribute object name default)
+Library: (scm core)
+Description: Returns the value of the named attribute from a JSON object. Returns default (or #f) if the attribute does not exist.
+Example:
+  (let ((obj (json-next-object reader)))
+    (json-attribute obj 'name "unknown"))
+```
+
+### `json-next-object`
+
+```
+Syntax: (json-next-object reader)
+Library: (scm core)
+Description: Reads and returns the next JSON object from the given JSON reader, or #f if there are no more objects.
+Example:
+  (let ((r (open-json-file "data.json")))
+    (json-next-object r))
+```
+
 ### `ln`
 
 ```
@@ -583,6 +732,53 @@ Example:
   (ln "/usr/bin/python3" "/usr/local/bin/python" 'symbolic 'force)
 ```
 
+### `log-access`
+
+```
+Syntax: (log-access method url status duration-ms)
+Library: (scm log)
+Description: Writes a single access log line: an INFO line in the http
+  module of the form 'METHOD URL -> STATUS (Nms)'. status and duration-ms
+  are integers.
+Example:
+  (log-access "GET" "/notes/42" 200 14)
+```
+
+### `log-error`
+
+```
+Syntax: (log-error module msg)
+Library: (scm log)
+Description: Writes a single ERROR-level log line tagged with module.
+Example:
+  (log-error "db" "connection refused")
+```
+
+### `log-info`
+
+```
+Syntax: (log-info module msg)
+Library: (scm log)
+Description: Writes a single INFO-level log line tagged with module to
+  (log-port). module and msg are strings.
+Example:
+  (log-info "auth" "login ok for user 42")
+```
+
+### `log-port`
+
+*(no documentation)*
+
+### `log-warn`
+
+```
+Syntax: (log-warn module msg)
+Library: (scm log)
+Description: Writes a single WARN-level log line tagged with module.
+Example:
+  (log-warn "feeds" "fetch timed out, will retry")
+```
+
 ### `make-directory`
 
 ```
@@ -591,6 +787,16 @@ Library: (scm fs)
 Description: Creates the directory named by path, including all intermediate directories.
 Example:
   (make-directory "/tmp/new/dir")
+```
+
+### `md5-hash`
+
+```
+Syntax: (md5-hash obj)
+Library: (scm crypto)
+Description: Returns the MD5 hash of obj as a lowercase hex string. Accepts strings, symbols, or bytevectors.
+Example:
+  (md5-hash "hello") => "5d41402abc4b2a76b9719d911017c592"
 ```
 
 ### `mktemp`
@@ -656,6 +862,21 @@ Example:
   (normalized-path "./foo/../bar") => "bar"
 ```
 
+### `now`
+
+```
+Syntax: (now)
+Syntax: (now format)
+Library: (scm datetime)
+Description: Returns the current local date and time as a string. Time is
+  24-hour. Default format is ISO 'YYYY-MM-DD HH:MM'. format='short returns
+  'YYYYMMDD-HHMM'; format='dmyhs returns 'DD.MM.YYYY HH.MM'.
+Example:
+  (now)        => "2026-05-27 07:32"
+  (now 'short) => "20260527-0732"
+  (now 'dmyhs) => "27.05.2026 07.32"
+```
+
 ### `open-input-zip-file`
 
 ```
@@ -666,6 +887,28 @@ Example:
   (define z (open-input-zip-file "archive.zip"))
   (zip-entry-names z)
   (close-input-zip z)
+```
+
+### `open-json-file`
+
+```
+Syntax: (open-json-file filename)
+Library: (scm core)
+Description: Opens the named JSON file and returns a JSON reader object. An optional list-id symbol may be specified to identify list nodes.
+Example:
+  (define r (open-json-file "data.json"))
+  (json-next-object r) => next parsed JSON object
+```
+
+### `open-json-string`
+
+```
+Syntax: (open-json-string s)
+Library: (scm json)
+Description: Returns a JSON reader object that parses the JSON contained in the string s. An optional list-id symbol or string may be specified to identify list nodes.
+Example:
+  (define r (open-json-string "{\"a\": 1}"))
+  (json-next-object r) => parsed object
 ```
 
 ### `open-output-zip-file`
@@ -680,9 +923,99 @@ Example:
   (close-output-zip z)
 ```
 
+### `parse-duration`
+
+```
+Syntax: (parse-duration s)
+Library: (scm duration)
+Description: Parses a duration string into a non-negative integer number of
+  seconds. Accepts a bare integer (interpreted as seconds), or an integer
+  suffixed with one of s/m/h/d (seconds/minutes/hours/days). Returns #f
+  if s is not a string, is empty, or does not parse.
+Example:
+  (parse-duration "30")  => 30
+  (parse-duration "30s") => 30
+  (parse-duration "10m") => 600
+  (parse-duration "3h")  => 10800
+  (parse-duration "1d")  => 86400
+  (parse-duration "x")   => #f
+```
+
+### `parse-iso8601`
+
+```
+Syntax: (parse-iso8601 s)
+Library: (scm datetime)
+Description: Parses an ISO 8601 / RFC 3339 date string (e.g. used by Atom
+  feeds) and returns Unix seconds, or #f on failure. Accepts date-only
+  ('2024-05-16'), date+time with 'T' or space separator, and a trailing
+  timezone offset (Z, +02:00, -0500). Fractional seconds are ignored.
+Example:
+  (parse-iso8601 "2024-05-16T12:34:56Z")      => 1715862896
+  (parse-iso8601 "2024-05-16T14:34:56+02:00") => 1715862896
+  (parse-iso8601 "2024-05-16")                => 1715817600
+  (parse-iso8601 "bogus") => #f
+```
+
+### `parse-pubdate`
+
+```
+Syntax: (parse-pubdate s)
+Library: (scm datetime)
+Description: Best-effort date parser for feed pubdates. Tries ISO 8601 first
+  if s looks ISO-shaped (hyphen at position 4), otherwise RFC 822. Falls
+  back to the other format on failure. Returns Unix seconds, or #f.
+Example:
+  (parse-pubdate "2024-05-16T12:34:56Z")             => 1715862896
+  (parse-pubdate "Thu, 16 May 2024 12:34:56 +0000")  => 1715862896
+  (parse-pubdate "") => #f
+```
+
+### `parse-rfc822`
+
+```
+Syntax: (parse-rfc822 s)
+Library: (scm datetime)
+Description: Parses an RFC 822 / RFC 2822 date string (e.g. used by RSS 2.0
+  pubDate elements) and returns Unix seconds, or #f on failure. The leading
+  day-of-week prefix is optional. Two-digit years are mapped to 20XX.
+Example:
+  (parse-rfc822 "Thu, 16 May 2024 12:34:56 +0200") => 1715855696
+  (parse-rfc822 "16 May 2024 12:34:56 GMT")       => 1715862896
+  (parse-rfc822 "bogus") => #f
+```
+
 ### `path-sep`
 
 *(no documentation)*
+
+### `percent-decode`
+
+```
+Syntax: (percent-decode s [plus-as-space?])
+Library: (scm uri)
+Description: Decodes percent-escaped UTF-8 in s. When plus-as-space? is
+  true (the default), '+' is treated as space — appropriate for
+  application/x-www-form-urlencoded bodies and query strings. Pass #f to
+  preserve '+' literally (e.g. for URL path segments).
+Example:
+  (percent-decode "a%20b") => "a b"
+  (percent-decode "a+b") => "a b"
+  (percent-decode "a+b" #f) => "a+b"
+```
+
+### `percent-encode`
+
+```
+Syntax: (percent-encode s)
+Library: (scm uri)
+Description: Encodes string s as UTF-8 and percent-escapes every byte
+  outside the RFC 3986 unreserved set (A-Z a-z 0-9 - _ . ~). Suitable for
+  building query values and path segments.
+Example:
+  (percent-encode "a b/c") => "a%20b%2Fc"
+  (percent-encode "hello") => "hello"
+```
 
 ### `process-alive?`
 
@@ -884,6 +1217,26 @@ Description: Like sh but returns stdout split into a list of lines
   (the trailing empty line from a final newline is dropped).
 Example:
   (sh-lines "ls" "/tmp") => ("file1" "file2")
+```
+
+### `sha1-hash`
+
+```
+Syntax: (sha1-hash obj)
+Library: (scm crypto)
+Description: Returns the SHA-1 hash of obj as a lowercase hex string. Accepts strings, symbols, or bytevectors.
+Example:
+  (sha1-hash "hello") => "aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d"
+```
+
+### `sha256-hash`
+
+```
+Syntax: (sha256-hash obj)
+Library: (scm crypto)
+Description: Returns the SHA-256 hash of obj as a bytevector. Accepts strings, symbols, or bytevectors.
+Example:
+  (sha256-hash "hello") => #u8(...)
 ```
 
 ### `shell-quote`
@@ -1131,6 +1484,55 @@ Description: Writes text (a string, or a list of strings joined by
   stdin and writing to multiple destinations.
 Example:
   (tee "hello\n" "/tmp/a" "/tmp/b")
+```
+
+### `time`
+
+```
+Syntax: (time)
+Syntax: (time format)
+Library: (scm datetime)
+Description: Returns the current local time as a string. Time is 24-hour.
+  Default format is ISO 'HH:MM'. format='short returns 'HHMM'.
+Example:
+  (time)        => "07:32"
+  (time 'short) => "0732"
+```
+
+### `timestamp`
+
+```
+Syntax: (timestamp)
+Library: (scm datetime)
+Description: Returns the current time as the number of milliseconds since the epoch (January 1, year 1).
+Example:
+  (timestamp) => 63850000000000
+```
+
+### `timestamp->string`
+
+```
+Syntax: (timestamp->string ms format?)
+Library: (scm datetime)
+Description: Formats a timestamp (milliseconds) as a date string. The optional format may be isodatetime, isodate, datetime, date, or a custom .NET format string; defaults to isodatetime.
+Example:
+  (timestamp->string (timestamp)) => "20260318-153045"
+  (timestamp->string (timestamp) 'isodate) => "20260318"
+```
+
+### `today`
+
+```
+Syntax: (today)
+Syntax: (today format)
+Library: (scm datetime)
+Description: Returns the current local date as a string. Default format is
+  ISO 'YYYY-MM-DD'. format='short returns 'YYYYMMDD' (no separators);
+  format='dmy returns 'DD.MM.YYYY'.
+Example:
+  (today)        => "2026-05-27"
+  (today 'short) => "20260527"
+  (today 'dmy)   => "27.05.2026"
 ```
 
 ### `touch`

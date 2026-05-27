@@ -4,7 +4,15 @@
           (scm text)
           (scm archive)
           (scm net-remote)
-          (scm system))
+          (scm system)
+          (scm datetime)
+          (scm log)
+          (scm duration)
+          (scm glob)
+          (scm crypto)
+          (scm uri)
+          (scm json)
+          (scm csv))
   (export ;; (scm fs)
           absolute-path
           base-name
@@ -124,4 +132,45 @@
           sys-scm-version
           sys-user-name
           uuidgen
-          watch))
+          watch
+          ;; (scm datetime)
+          today
+          now
+          time
+          timestamp
+          timestamp->string
+          format-iso8601
+          parse-iso8601
+          parse-rfc822
+          parse-pubdate
+          ;; (scm log)
+          log-info
+          log-warn
+          log-error
+          log-access
+          log-port
+          ;; (scm duration)
+          parse-duration
+          format-duration
+          ;; (scm glob)
+          glob
+          glob-match?
+          ;; (scm crypto)
+          sha1-hash
+          md5-hash
+          sha256-hash
+          base64-encode
+          base64-decode
+          bytevector->hex
+          hex->bytevector
+          ;; (scm uri)
+          percent-encode
+          percent-decode
+          ;; (scm json)
+          open-json-file
+          open-json-string
+          json-next-object
+          json-attribute
+          close-json
+          ;; (scm csv)
+          csv-line->fields))

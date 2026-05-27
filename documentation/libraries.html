@@ -3335,17 +3335,22 @@
       absolute-path
       awk
       base-name
+      base64-decode
+      base64-encode
       bunzip2
+      bytevector-&gt;hex
       bzip2
       cat
       cd
       chmod
       chown
       close-input-zip
+      close-json
       close-output-zip
       copy-directory
       copy-file
       cp
+      csv-line-&gt;fields
       curl
       current-directory
       cut
@@ -3366,28 +3371,50 @@
       file-modification-timestamp
       file-size
       find
+      format-duration
+      format-iso8601
       get-bytes
       get-environment-variable
       getopt
+      glob
+      glob-match?
       grep
       gunzip
       gzip
       gzip-compress
       gzip-decompress
       head
+      hex-&gt;bytevector
       hexdump
       join-path
+      json-attribute
+      json-next-object
       ln
+      log-access
+      log-error
+      log-info
+      log-port
+      log-warn
       make-directory
+      md5-hash
       mktemp
       mktempdir
       move-directory
       move-file
       mv
       normalized-path
+      now
       open-input-zip-file
+      open-json-file
+      open-json-string
       open-output-zip-file
+      parse-duration
+      parse-iso8601
+      parse-pubdate
+      parse-rfc822
       path-sep
+      percent-decode
+      percent-encode
       process-alive?
       process-kill
       process-pid
@@ -3405,6 +3432,8 @@
       sed
       sh
       sh-lines
+      sha1-hash
+      sha256-hash
       shell-quote
       sleep
       sort-lines
@@ -3427,6 +3456,10 @@
       tar-extract
       tar-list
       tee
+      time
+      timestamp
+      timestamp-&gt;string
+      today
       touch
       tr
       tree
@@ -4824,17 +4857,22 @@ const docs = {
     "absolute-path": "Syntax: (absolute-path path)\nLibrary: (scm fs)\nDescription: Returns the absolute (fully qualified) form of the given path string.\nExample:\n  (absolute-path \".\") => \"/current/working/dir\"",
     "awk": "Syntax: (awk action src [option ...])\nLibrary: (scm text)\nDescription: For each line of src, splits the line into fields and calls\n  action with three arguments: the field list, the 1-based line number,\n  and the original line. Returns the list of action results (with #f\n  results filtered out, matching awk's pattern-action style where lines\n  without a print produce no output).\n  Options:\n    '(delimiter . str) — field separator (default any run of whitespace)\n    '(filter . pred)   — only call action when (pred fields line-no line)\n                         returns true; equivalent to an awk pattern\nExample:\n  ;; print second field of each line\n  (awk (lambda (fs n l) (list-ref fs 1)) \"data.tsv\")\n  ;; filter and reformat /etc/passwd: name:uid for shells of /bin/bash\n  (awk (lambda (fs n l)\n         (string-append (list-ref fs 0) \":\" (list-ref fs 2)))\n       \"/etc/passwd\"\n       '(delimiter . \":\")\n       `(filter . ,(lambda (fs n l)\n                     (and (> (length fs) 6)\n                          (string=? (list-ref fs 6) \"/bin/bash\")))))",
     "base-name": "Syntax: (base-name path)\nLibrary: (scm fs)\nDescription: Returns the file name (including extension) from the given path string, without the directory part.\nExample:\n  (base-name \"/usr/share/doc/readme.txt\") => \"readme.txt\"",
+    "base64-decode": "Syntax: (base64-decode string)\nLibrary: (scm crypto)\nDescription: Decodes a base64-encoded string and returns a bytevector.\nExample:\n  (base64-decode \"SGVsbG8=\") => #u8(72 101 108 108 111)",
+    "base64-encode": "Syntax: (base64-encode bytevector)\nLibrary: (scm crypto)\nDescription: Returns the base64-encoded string of a bytevector.\nExample:\n  (base64-encode #u8(72 101 108 108 111)) => \"SGVsbG8=\"",
     "bunzip2": "Syntax: (bunzip2 path [option ...])\nLibrary: (scm archive)\nDescription: Decompresses path (which should end in .bz2) in place via\n  the native bunzip2 command. Option 'keep retains the .bz2 original.\nExample:\n  (bunzip2 \"big.log.bz2\")",
+    "bytevector->hex": "Syntax: (bytevector->hex bv)\nLibrary: (scm crypto)\nDescription: Returns the lowercase hexadecimal string representation of the\n  bytevector bv (two hex digits per byte, no separators).\nExample:\n  (bytevector->hex #u8(0 15 255)) => \"000fff\"",
     "bzip2": "Syntax: (bzip2 path [option ...])\nLibrary: (scm archive)\nDescription: Compresses path into path.bz2 using the native bzip2 command.\n  Option 'keep retains the original file (-k).\nExample:\n  (bzip2 \"big.log\")",
     "cat": "Syntax: (cat src ...)\nLibrary: (scm text)\nDescription: Returns the concatenated contents of all src arguments as a\n  single string, joining lines with newline. Each src is a filename, port,\n  or list of strings.\nExample:\n  (cat \"a.txt\" \"b.txt\")",
     "cd": "Syntax: (set-current-directory! path)\nLibrary: (scm core)\nDescription: Sets the process working directory hint to path. Returns the new directory as a string on success, #f on failure. Note: in the JVM the OS-level cwd cannot be changed for already-loaded native code; the value is recorded so that subsequent relative-path operations and child-process invocations behave as if cwd were path.\nExample:\n  (set-current-directory! \"/tmp\") => \"/tmp\"",
     "chmod": "Syntax: (chmod path mode [option ...])\nLibrary: (scm fs)\nDescription: Changes file mode bits via the native chmod command. mode is\n  either an octal string (e.g. \"755\") or a symbolic spec (\"u+x\").\n  Options: 'recursive (-R). On Windows this is a best-effort no-op when\n  no native chmod is available.\nExample:\n  (chmod \"script.sh\" \"755\")\n  (chmod \"dir\" \"700\" 'recursive)",
     "chown": "Syntax: (chown path owner [option ...])\nLibrary: (scm fs)\nDescription: Changes the owner (and optionally group) of path. owner is a\n  string like \"user\" or \"user:group\". Options: 'recursive (-R).\n  Returns #t on success, #f otherwise. Best-effort no-op on Windows.\nExample:\n  (chown \"file\" \"alice:staff\")",
     "close-input-zip": "Syntax: (close-input-zip zip)\nLibrary: (scm zip)\nDescription: Closes the given ZIP input archive, releasing all underlying resources.\nExample:\n  (let ((z (open-input-zip-file \"archive.zip\")))\n    (close-input-zip z))",
+    "close-json": "Syntax: (close-json reader)\nLibrary: (scm core)\nDescription: Closes the given JSON reader, releasing any underlying resources.\nExample:\n  (let ((r (open-json-file \"data.json\")))\n    (close-json r))",
     "close-output-zip": "Syntax: (close-output-zip zip)\nLibrary: (scm core)\nDescription: Closes the given zip output archive, flushing and releasing all underlying resources.\nExample:\n  (let ((z (open-output-zip-file \"archive.zip\")))\n    (close-output-zip z))",
     "copy-directory": "Syntax: (copy-directory src dest)\nLibrary: (scm fs)\nDescription: Recursively copies the directory at src to dest. Returns unspecified on success, #f on failure.\nExample:\n  (copy-directory \"/src/dir\" \"/dst/dir\")",
     "copy-file": "Syntax: (copy-file src dest)\nLibrary: (scm fs)\nDescription: Copies the file at src to dest, overwriting dest if it exists. Returns unspecified on success, #f on failure.\nExample:\n  (copy-file \"data.txt\" \"backup.txt\")",
     "cp": "Syntax: (cp src dst [option ...])\nLibrary: (scm fs)\nDescription: Copies src to dst. Options: 'recursive (-r) to copy a directory.\n  When src is a directory and 'recursive is not given, signals an error.\nExample:\n  (cp \"a.txt\" \"b.txt\")\n  (cp \"src/\" \"dst/\" 'recursive)",
+    "csv-line->fields": "Syntax: (csv-line->fields str sep) (csv-line->fields str sep 'trim)\nLibrary: (scm core)\nDescription: Splits a CSV line string using the given separator, stripping surrounding double-quotes from each field. When 'trim is given as a third argument, also trims whitespace from each field.\nExample:\n  (csv-line->fields \"a,b,c\" \",\") => (\"a\" \"b\" \"c\")\n  (csv-line->fields \"\\\"hello\\\",world\" \",\") => (\"hello\" \"world\")",
     "curl": "Syntax: (curl url [option ...])\nLibrary: (scm net-remote)\nDescription: Performs an HTTP(S) request via the native curl command.\n  By default returns the response body as a string. Options:\n    '(method . str)        — HTTP method (default GET)\n    '(headers . list)      — list of header strings \"Name: value\"\n    '(data . str)          — request body (sets method to POST if unset)\n    '(output . path)       — write body to file; returns #t/#f\n    '(timeout . seconds)\n    'silent                — suppress progress (-s)\n    'follow-redirects      — -L\n    'fail-on-error         — -f (non-2xx exit non-zero)\n    'include-status        — return (status . body) instead of body\n    'pure                  — force pure-Scheme path (uses (scm net http client));\n                             does not honor follow-redirects, timeout, fail-on-error\nExample:\n  (curl \"https://example.com/api\"\n        '(method . \"POST\")\n        '(headers . (\"Content-Type: application/json\"))\n        '(data . \"{\\\"x\\\":1}\")\n        'silent)",
     "current-directory": "Syntax: (current-directory)\nLibrary: (scm fs)\nDescription: Returns the current working directory as a string.\nExample:\n  (current-directory) => \"/home/user/projects\"",
     "cut": "Syntax: (cut src [option ...])\nLibrary: (scm text)\nDescription: Selects fields from each line of src. Options:\n  '(fields . (n ...)) — 1-based field indices to keep (required);\n  '(delimiter . str) — field separator (default tab).\nExample:\n  (cut \"/etc/passwd\" '(fields . (1 3)) '(delimiter . \":\"))",
@@ -4855,27 +4893,48 @@ const docs = {
     "file-modification-timestamp": "Syntax: (file-modification-timestamp filename)\nLibrary: (scm fs)\nDescription: Returns the last modification time of the file as a millisecond timestamp (milliseconds since the Unix epoch, UTC).\nExample:\n  (file-modification-timestamp \"data.txt\") => 1700000000000",
     "file-size": "Syntax: (file-size file)\nLibrary: (scm fs)\nDescription: Returns the size of the named file in bytes as an exact integer, or #f if the file cannot be accessed.\nExample:\n  (file-size \"/etc/hosts\") => 221",
     "find": "Syntax: (find root [option ...])\nLibrary: (scm fs-find)\nDescription: Recursively walks the filesystem starting at root and returns\n  the list of matching paths. Options:\n    '(name . glob)         — match the basename against a glob pattern\n    '(type . sym)          — restrict to 'file or 'directory\n    '(maxdepth . n)        — limit recursion depth (root is depth 0)\n    '(mindepth . n)        — exclude entries shallower than n\n    '(predicate . proc)    — additional (string -> bool) test\n    '(action . proc)       — invoke proc on each matching path\nExample:\n  (find \".\" '(name . \"*.scm\") '(type . file))\n  (find \"/var/log\" `(predicate . ,(lambda (p) (> (file-size p) 1024))))",
+    "format-duration": "Syntax: (format-duration seconds)\nLibrary: (scm duration)\nDescription: Human-readable inverse of parse-duration. Emits a d/h/m suffix\n  when seconds divides evenly by 86400/3600/60; otherwise emits a plain\n  seconds value with the s suffix. Non-integer or negative input is\n  rendered as the integer itself (or empty string for non-numbers).\nExample:\n  (format-duration 3600)  => \"1h\"\n  (format-duration 86400) => \"1d\"\n  (format-duration 90)    => \"90s\"\n  (format-duration 0)     => \"0s\"",
+    "format-iso8601": "Syntax: (format-iso8601 unix-seconds)\nLibrary: (scm datetime)\nDescription: Formats a Unix-seconds integer as an ISO 8601 UTC string\n  ('YYYY-MM-DDTHH:MM:SSZ'). Negative inputs (pre-1970) are not supported.\nExample:\n  (format-iso8601 1715862896) => \"2024-05-16T12:34:56Z\"\n  (format-iso8601 (parse-iso8601 \"2024-05-16T14:34:56+02:00\"))\n    => \"2024-05-16T12:34:56Z\"",
     "get-bytes": "Syntax: (get-bytes obj [encoding])\nLibrary: (scm core)\nDescription: Returns the byte representation of obj (string, symbol, or bytevector) as a bytevector.\n  encoding is an optional string or symbol specifying the character encoding (default: utf-8).\n  Supported encodings: utf-8, utf-8-bom, latin-1, utf-16, utf-16-le.\nExample:\n  (get-bytes \"hello\")\n  (get-bytes \"hello\" \"latin-1\")",
     "get-environment-variable": "Syntax: (get-environment-variable name)\nLibrary: (scm system) (scheme process-context) (srfi 98)\nDescription: Returns the value of the environment variable named name as a string, or #f if it is not set.\nExample:\n  (get-environment-variable \"HOME\") => \"/home/user\"\n  (get-environment-variable \"UNDEFINED_VAR\") => #f",
     "getopt": "Syntax: (getopt argv spec)\nLibrary: (scm system)\nDescription: Parses command-line arguments. argv is a list of strings;\n  spec is a list of option descriptors, each one of:\n    (long-name short-char takes-value? [default])\n  where long-name is a string (without the --), short-char is a character\n  (or #f), takes-value? is a boolean, and default is the value used when\n  the option is absent (defaults to #f for non-value flags, #f for\n  value-taking options). Returns (alist . positionals) where alist maps\n  long-name strings to the supplied values (#t for absent boolean flags\n  is replaced by the default). Unknown options raise an error.\nExample:\n  (getopt '(\"-v\" \"--name\" \"foo\" \"a\" \"b\")\n          '((\"verbose\" #\\v #f)\n            (\"name\"    #\\n #t \"anon\")))\n  => (((\"verbose\" . #t) (\"name\" . \"foo\")) . (\"a\" \"b\"))",
+    "glob": "Syntax: (glob pattern)\nLibrary: (scm glob)\nDescription: Returns a sorted list of file and directory paths matching\n  the glob pattern. Supports * (any characters except path separator),\n  ? (single character), [...] character classes, and ** (recursive\n  globstar matching zero or more directory levels). Dotfiles are not\n  matched by *, ?, or ** unless the pattern segment explicitly starts\n  with a dot. Returns an empty list if no matches are found or the\n  base directory does not exist.\nExample:\n  (glob \"src/*.scm\") => (\"src/bar.scm\" \"src/foo.scm\")\n  (glob \"**/*.sld\") => (\"lib/a.sld\" \"lib/sub/b.sld\")",
+    "glob-match?": "Syntax: (glob-match? pattern string)\nLibrary: (scm glob)\nDescription: Tests whether string matches the glob pattern. Supports *\n  (any characters except path separator), ? (single character except path\n  separator), [...] character classes with ranges and negation ([!...]),\n  and ** (matches zero or more path segments including separators).\n  This is a pure string operation with no filesystem access.\nExample:\n  (glob-match? \"*.scm\" \"foo.scm\")       => #t\n  (glob-match? \"src/**/*.scm\" \"src/lib/foo.scm\") => #t\n  (glob-match? \"[abc].txt\" \"b.txt\")     => #t",
     "grep": "Syntax: (grep pattern src [option ...])\nLibrary: (scm text)\nDescription: Returns the list of lines in src matching pattern. src may\n  be a filename string, a list of strings, or an input port. Options:\n  'ignore-case (-i), 'invert-match (-v), 'line-number (-n) (returns\n  (list line-no line) pairs), 'count (-c) (returns integer match count),\n  'fixed-strings (-F) (literal match; this is also the default in pure\n  mode), 'pure (force pure-Scheme path).\n  When 'pure is not set and the native grep command is on PATH and src\n  is a filename, grep shells out to it for full POSIX regex support.\nExample:\n  (grep \"ERROR\" \"log.txt\" 'ignore-case 'line-number)",
     "gunzip": "Syntax: (gunzip path [option ...])\nLibrary: (scm archive)\nDescription: Decompresses path (which should end in .gz) in place.\n  Option 'keep retains the .gz original (-k).\nExample:\n  (gunzip \"big.log.gz\")",
     "gzip": "Syntax: (gzip path [option ...])\nLibrary: (scm archive)\nDescription: Compresses path into path.gz using the native gzip command\n  when available; falls back to gzip-compress on the file bytes.\n  Option 'keep retains the original file (-k).\nExample:\n  (gzip \"big.log\")",
     "gzip-compress": "Syntax: (gzip-compress bytevector [level])\nLibrary: (scm compression)\nDescription: Compresses bytevector using GZip format (RFC 1952) and returns\n  a bytevector. The optional level is an integer 0-9: 0 = no compression,\n  1-3 = fastest, 4-6 = optimal (default), 7-9 = smallest size.\nExample:\n  (utf8->string (gzip-decompress (gzip-compress (string->utf8 \"hello\")))) => \"hello\"",
     "gzip-decompress": "Syntax: (gzip-decompress bytevector)\nLibrary: (scm compression)\nDescription: Decompresses a GZip-compressed (RFC 1952) bytevector and returns\n  the original bytevector.\nExample:\n  (utf8->string (gzip-decompress (gzip-compress (string->utf8 \"hello\")))) => \"hello\"",
     "head": "Syntax: (head src [option ...])\nLibrary: (scm text)\nDescription: Returns the first n lines of src (default 10). Options:\n  '(lines . n) sets the count.\nExample:\n  (head \"log.txt\" '(lines . 5))",
+    "hex->bytevector": "Syntax: (hex->bytevector s)\nLibrary: (scm crypto)\nDescription: Parses a hexadecimal string (case-insensitive, no separators)\n  into a bytevector. Raises an error on odd length or non-hex characters.\nExample:\n  (hex->bytevector \"000fff\") => #u8(0 15 255)\n  (hex->bytevector \"DEADBEEF\") => #u8(222 173 190 239)",
     "hexdump": "Syntax: (hexdump bv [option ...])\nLibrary: (scm text)\nDescription: Formats a bytevector as a canonical hex+ASCII dump (similar\n  to xxd or hexdump -C), returning a string. Options:\n    '(width . n)    — bytes per row (default 16)\n    '(offset . n)   — starting offset for the address column (default 0)\n    'no-ascii       — omit the trailing ASCII gutter\nExample:\n  (display (hexdump (string->utf8 \"hello world\")))",
     "join-path": "Syntax: (join-path part ...)\nLibrary: (scm fs)\nDescription: Joins one or more path component strings into a single path\n  string using the platform's path separator character.\nExample:\n  (join-path \"/usr\" \"local\" \"bin\") => \"/usr/local/bin\"  ; on Unix",
+    "json-attribute": "Syntax: (json-attribute object name) (json-attribute object name default)\nLibrary: (scm core)\nDescription: Returns the value of the named attribute from a JSON object. Returns default (or #f) if the attribute does not exist.\nExample:\n  (let ((obj (json-next-object reader)))\n    (json-attribute obj 'name \"unknown\"))",
+    "json-next-object": "Syntax: (json-next-object reader)\nLibrary: (scm core)\nDescription: Reads and returns the next JSON object from the given JSON reader, or #f if there are no more objects.\nExample:\n  (let ((r (open-json-file \"data.json\")))\n    (json-next-object r))",
     "ln": "Syntax: (ln target name [option ...])\nLibrary: (scm fs)\nDescription: Creates a link at name pointing to target. Options:\n  'symbolic (-s) creates a symbolic link, otherwise a hard link;\n  'force (-f) replaces an existing destination.\nExample:\n  (ln \"/usr/bin/python3\" \"/usr/local/bin/python\" 'symbolic 'force)",
+    "log-access": "Syntax: (log-access method url status duration-ms)\nLibrary: (scm log)\nDescription: Writes a single access log line: an INFO line in the http\n  module of the form 'METHOD URL -> STATUS (Nms)'. status and duration-ms\n  are integers.\nExample:\n  (log-access \"GET\" \"/notes/42\" 200 14)",
+    "log-error": "Syntax: (log-error module msg)\nLibrary: (scm log)\nDescription: Writes a single ERROR-level log line tagged with module.\nExample:\n  (log-error \"db\" \"connection refused\")",
+    "log-info": "Syntax: (log-info module msg)\nLibrary: (scm log)\nDescription: Writes a single INFO-level log line tagged with module to\n  (log-port). module and msg are strings.\nExample:\n  (log-info \"auth\" \"login ok for user 42\")",
+    "log-warn": "Syntax: (log-warn module msg)\nLibrary: (scm log)\nDescription: Writes a single WARN-level log line tagged with module.\nExample:\n  (log-warn \"feeds\" \"fetch timed out, will retry\")",
     "make-directory": "Syntax: (make-directory path)\nLibrary: (scm fs)\nDescription: Creates the directory named by path, including all intermediate directories.\nExample:\n  (make-directory \"/tmp/new/dir\")",
+    "md5-hash": "Syntax: (md5-hash obj)\nLibrary: (scm crypto)\nDescription: Returns the MD5 hash of obj as a lowercase hex string. Accepts strings, symbols, or bytevectors.\nExample:\n  (md5-hash \"hello\") => \"5d41402abc4b2a76b9719d911017c592\"",
     "mktemp": "Syntax: (mktemp [option ...])\nLibrary: (scm fs)\nDescription: Creates a uniquely-named empty file in the temp directory and\n  returns its path. Option '(prefix . str) sets the filename prefix\n  (default \"tmp\").\nExample:\n  (mktemp) => \"/tmp/tmp-12345-1aff3...\"",
     "mktempdir": "Syntax: (mktempdir [option ...])\nLibrary: (scm fs)\nDescription: Creates a uniquely-named empty directory in the temp directory\n  and returns its path. Option '(prefix . str) sets the dir-name prefix.\nExample:\n  (mktempdir) => \"/tmp/tmp-12345-1aff3...\"",
     "move-directory": "Syntax: (move-directory src dest)\nLibrary: (scm fs)\nDescription: Moves (renames) the directory from src to dest. Returns unspecified on success, #f on failure.\nExample:\n  (move-directory \"/tmp/old\" \"/tmp/new\")",
     "move-file": "Syntax: (move-file src dest)\nLibrary: (scm fs)\nDescription: Moves (renames) the file from src to dest, overwriting dest if it exists. Returns unspecified on success, #f on failure.\nExample:\n  (move-file \"old.txt\" \"new.txt\")",
     "mv": "Syntax: (mv src dst [option ...])\nLibrary: (scm fs)\nDescription: Moves/renames src to dst. Works on files and directories.\nExample:\n  (mv \"old.txt\" \"new.txt\")",
     "normalized-path": "Syntax: (normalized-path path)\nLibrary: (scm fs)\nDescription: Returns the normalized form of path. If absolute, returns the full path; if relative, returns the relative path from the current directory.\nExample:\n  (normalized-path \"./foo/../bar\") => \"bar\"",
+    "now": "Syntax: (now)\nSyntax: (now format)\nLibrary: (scm datetime)\nDescription: Returns the current local date and time as a string. Time is\n  24-hour. Default format is ISO 'YYYY-MM-DD HH:MM'. format='short returns\n  'YYYYMMDD-HHMM'; format='dmyhs returns 'DD.MM.YYYY HH.MM'.\nExample:\n  (now)        => \"2026-05-27 07:32\"\n  (now 'short) => \"20260527-0732\"\n  (now 'dmyhs) => \"27.05.2026 07.32\"",
     "open-input-zip-file": "Syntax: (open-input-zip-file filename)\nLibrary: (scm zip)\nDescription: Opens an existing ZIP archive at filename for reading and returns a ZIP reader object.\nExample:\n  (define z (open-input-zip-file \"archive.zip\"))\n  (zip-entry-names z)\n  (close-input-zip z)",
+    "open-json-file": "Syntax: (open-json-file filename)\nLibrary: (scm core)\nDescription: Opens the named JSON file and returns a JSON reader object. An optional list-id symbol may be specified to identify list nodes.\nExample:\n  (define r (open-json-file \"data.json\"))\n  (json-next-object r) => next parsed JSON object",
+    "open-json-string": "Syntax: (open-json-string s)\nLibrary: (scm json)\nDescription: Returns a JSON reader object that parses the JSON contained in the string s. An optional list-id symbol or string may be specified to identify list nodes.\nExample:\n  (define r (open-json-string \"{\\\"a\\\": 1}\"))\n  (json-next-object r) => parsed object",
     "open-output-zip-file": "Syntax: (open-output-zip-file filename)\nLibrary: (scm core)\nDescription: Creates a new ZIP archive at the given filename and returns a ZIP writer object. Entries can be added using zip-add-text-entry or zip-add-binary-entry.\nExample:\n  (define z (open-output-zip-file \"archive.zip\"))\n  (zip-add-text-entry z \"hello.txt\" \"Hello, world!\")\n  (close-output-zip z)",
+    "parse-duration": "Syntax: (parse-duration s)\nLibrary: (scm duration)\nDescription: Parses a duration string into a non-negative integer number of\n  seconds. Accepts a bare integer (interpreted as seconds), or an integer\n  suffixed with one of s/m/h/d (seconds/minutes/hours/days). Returns #f\n  if s is not a string, is empty, or does not parse.\nExample:\n  (parse-duration \"30\")  => 30\n  (parse-duration \"30s\") => 30\n  (parse-duration \"10m\") => 600\n  (parse-duration \"3h\")  => 10800\n  (parse-duration \"1d\")  => 86400\n  (parse-duration \"x\")   => #f",
+    "parse-iso8601": "Syntax: (parse-iso8601 s)\nLibrary: (scm datetime)\nDescription: Parses an ISO 8601 / RFC 3339 date string (e.g. used by Atom\n  feeds) and returns Unix seconds, or #f on failure. Accepts date-only\n  ('2024-05-16'), date+time with 'T' or space separator, and a trailing\n  timezone offset (Z, +02:00, -0500). Fractional seconds are ignored.\nExample:\n  (parse-iso8601 \"2024-05-16T12:34:56Z\")      => 1715862896\n  (parse-iso8601 \"2024-05-16T14:34:56+02:00\") => 1715862896\n  (parse-iso8601 \"2024-05-16\")                => 1715817600\n  (parse-iso8601 \"bogus\") => #f",
+    "parse-pubdate": "Syntax: (parse-pubdate s)\nLibrary: (scm datetime)\nDescription: Best-effort date parser for feed pubdates. Tries ISO 8601 first\n  if s looks ISO-shaped (hyphen at position 4), otherwise RFC 822. Falls\n  back to the other format on failure. Returns Unix seconds, or #f.\nExample:\n  (parse-pubdate \"2024-05-16T12:34:56Z\")             => 1715862896\n  (parse-pubdate \"Thu, 16 May 2024 12:34:56 +0000\")  => 1715862896\n  (parse-pubdate \"\") => #f",
+    "parse-rfc822": "Syntax: (parse-rfc822 s)\nLibrary: (scm datetime)\nDescription: Parses an RFC 822 / RFC 2822 date string (e.g. used by RSS 2.0\n  pubDate elements) and returns Unix seconds, or #f on failure. The leading\n  day-of-week prefix is optional. Two-digit years are mapped to 20XX.\nExample:\n  (parse-rfc822 \"Thu, 16 May 2024 12:34:56 +0200\") => 1715855696\n  (parse-rfc822 \"16 May 2024 12:34:56 GMT\")       => 1715862896\n  (parse-rfc822 \"bogus\") => #f",
+    "percent-decode": "Syntax: (percent-decode s [plus-as-space?])\nLibrary: (scm uri)\nDescription: Decodes percent-escaped UTF-8 in s. When plus-as-space? is\n  true (the default), '+' is treated as space — appropriate for\n  application/x-www-form-urlencoded bodies and query strings. Pass #f to\n  preserve '+' literally (e.g. for URL path segments).\nExample:\n  (percent-decode \"a%20b\") => \"a b\"\n  (percent-decode \"a+b\") => \"a b\"\n  (percent-decode \"a+b\" #f) => \"a+b\"",
+    "percent-encode": "Syntax: (percent-encode s)\nLibrary: (scm uri)\nDescription: Encodes string s as UTF-8 and percent-escapes every byte\n  outside the RFC 3986 unreserved set (A-Z a-z 0-9 - _ . ~). Suitable for\n  building query values and path segments.\nExample:\n  (percent-encode \"a b/c\") => \"a%20b%2Fc\"\n  (percent-encode \"hello\") => \"hello\"",
     "process-alive?": "Syntax: (process-alive? handle)\nLibrary: (scm system)\nDescription: Returns #t if the process started by start-program is still running, #f if it has exited.\nExample:\n  (process-alive? p) => #t",
     "process-kill": "Syntax: (process-kill handle [force?])\nLibrary: (scm system)\nDescription: Stops a process started by start-program. With force? = #f (default) requests a normal termination (SIGTERM on Unix, TerminateProcess on Windows via Process.destroy). With force? = #t kills forcefully (SIGKILL on Unix). Returns #t.\nExample:\n  (process-kill p)        ; graceful where supported\n  (process-kill p #t)     ; force",
     "process-pid": "Syntax: (process-pid handle)\nLibrary: (scm system)\nDescription: Returns the OS process id of a process handle returned by start-program.\nExample:\n  (process-pid p) => 12345",
@@ -4893,6 +4952,8 @@ const docs = {
     "sed": "Syntax: (sed pattern replacement src [option ...])\nLibrary: (scm text)\nDescription: Substitutes pattern with replacement in each line of src.\n  Options: 'global (g flag, replace all occurrences per line; default is\n  first occurrence only), 'ignore-case (i flag), 'pure (force pure path).\n  When the native sed command is on PATH and 'pure is not set, sed shells\n  out to it. The pure path treats pattern as a literal string.\nExample:\n  (sed \"foo\" \"bar\" \"in.txt\" 'global)",
     "sh": "Syntax: (sh prog arg ...)\nLibrary: (scm system)\nDescription: Runs the program and returns its captured stdout as a string.\n  Raises an error on non-zero exit. Trailing newlines are preserved.\nExample:\n  (sh \"date\" \"+%Y\") => \"2026\\n\"",
     "sh-lines": "Syntax: (sh-lines prog arg ...)\nLibrary: (scm system)\nDescription: Like sh but returns stdout split into a list of lines\n  (the trailing empty line from a final newline is dropped).\nExample:\n  (sh-lines \"ls\" \"/tmp\") => (\"file1\" \"file2\")",
+    "sha1-hash": "Syntax: (sha1-hash obj)\nLibrary: (scm crypto)\nDescription: Returns the SHA-1 hash of obj as a lowercase hex string. Accepts strings, symbols, or bytevectors.\nExample:\n  (sha1-hash \"hello\") => \"aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d\"",
+    "sha256-hash": "Syntax: (sha256-hash obj)\nLibrary: (scm crypto)\nDescription: Returns the SHA-256 hash of obj as a bytevector. Accepts strings, symbols, or bytevectors.\nExample:\n  (sha256-hash \"hello\") => #u8(...)",
     "shell-quote": "Syntax: (shell-quote s)\nLibrary: (scm system)\nDescription: Returns s quoted such that it can be safely passed as a single\n  argument to a POSIX shell (e.g. via /bin/sh -c). Wraps the string in\n  single quotes and escapes any embedded single quotes.\nExample:\n  (shell-quote \"it's fine\") => \"'it'\\\\''s fine'\"",
     "sleep": "Syntax: (sleep seconds)\nLibrary: (scm system)\nDescription: Pauses the current thread for the given number of seconds\n  (which may be fractional). Returns an unspecified value. Uses SRFI 18\n  thread-sleep! internally.\nExample:\n  (sleep 1.5)",
     "sort-lines": "Syntax: (sort-lines src [option ...])\nLibrary: (scm text)\nDescription: Returns the lines of src sorted lexicographically. Options:\n  'reverse (-r), 'numeric (-n), 'unique (-u).\n  Named sort-lines (not sort) to avoid clashing with srfi 132 sort.\nExample:\n  (sort-lines \"names.txt\" 'reverse)",
@@ -4915,6 +4976,10 @@ const docs = {
     "tar-extract": "Syntax: (tar-extract archive [option ...])\nLibrary: (scm archive)\nDescription: Extracts archive into the current directory (or 'work-dir).\n  Compression is auto-detected from extension or forced via 'gzip / 'bzip2.\n  Options: '(work-dir . dir), 'verbose.\nExample:\n  (tar-extract \"backup.tar.gz\" '(work-dir . \"/tmp/restore\"))",
     "tar-list": "Syntax: (tar-list archive [option ...])\nLibrary: (scm archive)\nDescription: Returns a list of entry names contained in archive.\n  Compression is auto-detected; force with 'gzip or 'bzip2.\nExample:\n  (tar-list \"backup.tar.gz\")",
     "tee": "Syntax: (tee text file ...)\nLibrary: (scm text)\nDescription: Writes text (a string, or a list of strings joined by\n  newline) to each file path, and returns text. Mirrors `tee` reading\n  stdin and writing to multiple destinations.\nExample:\n  (tee \"hello\\n\" \"/tmp/a\" \"/tmp/b\")",
+    "time": "Syntax: (time)\nSyntax: (time format)\nLibrary: (scm datetime)\nDescription: Returns the current local time as a string. Time is 24-hour.\n  Default format is ISO 'HH:MM'. format='short returns 'HHMM'.\nExample:\n  (time)        => \"07:32\"\n  (time 'short) => \"0732\"",
+    "timestamp": "Syntax: (timestamp)\nLibrary: (scm datetime)\nDescription: Returns the current time as the number of milliseconds since the epoch (January 1, year 1).\nExample:\n  (timestamp) => 63850000000000",
+    "timestamp->string": "Syntax: (timestamp->string ms format?)\nLibrary: (scm datetime)\nDescription: Formats a timestamp (milliseconds) as a date string. The optional format may be isodatetime, isodate, datetime, date, or a custom .NET format string; defaults to isodatetime.\nExample:\n  (timestamp->string (timestamp)) => \"20260318-153045\"\n  (timestamp->string (timestamp) 'isodate) => \"20260318\"",
+    "today": "Syntax: (today)\nSyntax: (today format)\nLibrary: (scm datetime)\nDescription: Returns the current local date as a string. Default format is\n  ISO 'YYYY-MM-DD'. format='short returns 'YYYYMMDD' (no separators);\n  format='dmy returns 'DD.MM.YYYY'.\nExample:\n  (today)        => \"2026-05-27\"\n  (today 'short) => \"20260527\"\n  (today 'dmy)   => \"27.05.2026\"",
     "touch": "Syntax: (touch path [option ...])\nLibrary: (scm fs)\nDescription: Creates path as an empty file if it does not exist. When path\n  already exists and a native touch command is available on PATH, its\n  modification time is updated. Option 'no-create (-c) skips creation of\n  missing files. Returns #t on success, #f otherwise.\nExample:\n  (touch \"/tmp/foo\")",
     "tr": "Syntax: (tr from to [option ...])\nLibrary: (scm text)\nDescription: Returns a procedure that translates characters in a string:\n  each char in `from` is replaced by the char at the same index in `to`.\n  When called on a string, returns the translated string. Option 'delete\n  drops chars in `from` instead (to may be \"\").\nExample:\n  ((tr \"abc\" \"xyz\") \"banana\") => \"yxnxnx\"",
     "tree": "Syntax: (tree root [option ...])\nLibrary: (scm fs-find)\nDescription: Returns a string with a pretty ASCII tree of the directory at\n  root, similar to the tree(1) command. Options:\n    '(maxdepth . n)  — limit depth shown (root is depth 0)\n    'dirs-only       — only show directories\nExample:\n  (display (tree \".\" '(maxdepth . 2)))",
