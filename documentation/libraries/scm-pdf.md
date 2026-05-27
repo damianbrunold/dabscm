@@ -1,5 +1,7 @@
 # `(scm pdf)`
 
+PDF document creation — pages, drawing, fonts, text flow, TTF embedding, images, links, outlines
+
 ## Exports
 
 ### `make-pdf`
@@ -28,6 +30,37 @@ Example:
   (define doc (make-pdf))
   (pdf-add-page! doc)
   (pdf->bytevector doc)
+```
+
+### `pdf-add-link`
+
+```
+Syntax: (pdf-add-link page rect uri-string)
+Library: (scm pdf)
+Description: Attaches a clickable URI link annotation to page. rect is
+  a 4-element list (llx lly urx ury) of user-space coordinates marking
+  the hot area; uri-string is the absolute URL to open. The annotation
+  has no visible border.
+Example:
+  (pdf-draw-text page helv 12 100 700 "Click here")
+  (pdf-add-link page '(100 695 200 712) "https://example.com")
+```
+
+### `pdf-add-outline!`
+
+```
+Syntax: (pdf-add-outline! doc page title [option value]...)
+Library: (scm pdf)
+Description: Appends an outline (bookmark) entry that jumps to page.
+  Options (plist):
+    parent  another outline returned by pdf-add-outline! — creates a
+            nested child under that outline (default: top-level item)
+    y       baseline y-coord to scroll the page to (default: page top)
+  Returns the outline handle so it can be used as a parent in later
+  calls.
+Example:
+  (define ch1 (pdf-add-outline! doc page1 "Chapter 1"))
+  (pdf-add-outline! doc page1 "Section 1.1" 'parent ch1)
 ```
 
 ### `pdf-add-page!`
@@ -104,6 +137,20 @@ Example: (pdf-curve-to page 100 100 200 200 300 100)
 
 *(no documentation)*
 
+### `pdf-draw-image`
+
+```
+Syntax: (pdf-draw-image page image x y width height)
+Library: (scm pdf)
+Description: Places image on page at user-space coordinates (x, y) —
+  the lower-left corner — scaled to width × height points. Image
+  XObjects are defined in a 1×1 unit square, so this concatenates a
+  scale+translate matrix and emits the Do operator. Wrapped in a
+  q ... Q pair to localize state changes.
+Example:
+  (pdf-draw-image page logo 50 600 100 100)
+```
+
 ### `pdf-draw-text`
 
 ```
@@ -117,6 +164,40 @@ Description: Draws string on page at user-space coordinates (x, y) — the
 Example:
   (define helv (pdf-use-font doc 'helvetica))
   (pdf-draw-text page helv 12 100 700 "Hello, world!")
+```
+
+### `pdf-embed-jpeg`
+
+```
+Syntax: (pdf-embed-jpeg doc jpeg-bytevector)
+Library: (scm pdf)
+Description: Embeds a JPEG image in doc as an Image XObject using
+  /Filter /DCTDecode (pass-through — no re-encoding). Auto-detects
+  width, height and color space (gray / RGB / CMYK) from the JPEG's
+  Start-Of-Frame marker. Returns a pdf-image handle for use with
+  pdf-draw-image.
+Example:
+  (define j (pdf-embed-jpeg doc (pdf-read-binary-file "photo.jpg")))
+  (pdf-draw-image page j 50 600 200 150)
+```
+
+### `pdf-embed-png`
+
+```
+Syntax: (pdf-embed-png doc png-bytevector)
+Library: (scm pdf)
+Description: Embeds a PNG image in doc as an Image XObject. The PNG's
+  concatenated IDAT chunks are emitted verbatim as a /FlateDecode
+  stream with /DecodeParms /Predictor 15 so the reader applies the
+  PNG filter rules. Color types 0 (grayscale) and 2 (RGB) pass through
+  the IDAT verbatim. Color types 4 (gray + alpha) and 6 (RGB + alpha)
+  are fully decoded, then the color and alpha channels are emitted as
+  two separate flate-compressed Image XObjects with the alpha as an
+  /SMask. 8-bit depth only. Returns a pdf-image handle for use with
+  pdf-draw-image.
+Example:
+  (define p (pdf-embed-png doc (pdf-read-binary-file "logo.png")))
+  (pdf-draw-image page p 50 600 100 100)
 ```
 
 ### `pdf-embed-truetype-font`
@@ -279,6 +360,18 @@ Description: Returns the font's x-height in 1/1000 em units.
 ```
 
 ### `pdf-font?`
+
+*(no documentation)*
+
+### `pdf-image-height`
+
+*(no documentation)*
+
+### `pdf-image-width`
+
+*(no documentation)*
+
+### `pdf-image?`
 
 *(no documentation)*
 
@@ -531,6 +624,23 @@ Syntax: (pdf-set-line-width page width)
 Library: (scm pdf)
 Description: Sets the line width in user units. Emits 'w'.
 Example: (pdf-set-line-width page 1.5)
+```
+
+### `pdf-set-metadata!`
+
+```
+Syntax: (pdf-set-metadata! doc key1 value1 key2 value2 ...)
+Library: (scm pdf)
+Description: Sets document metadata fields on the /Info dictionary.
+  Repeated keys overwrite earlier values. Recognised keys (symbols):
+    title author subject keywords creator producer
+    creation-date mod-date
+  Values are strings. Date strings should follow PDF format,
+  e.g. "D:20260527120000+02'00".
+Example:
+  (pdf-set-metadata! doc 'title "My Report"
+                         'author "Damian"
+                         'creator "(scm pdf)")
 ```
 
 ### `pdf-set-miter-limit`

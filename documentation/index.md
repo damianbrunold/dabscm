@@ -94,7 +94,7 @@
 | [`(scm odf writer)`](libraries/scm-odf-writer.md) | ODF text document creation (ODT format) |
 | [`(scm ooxml excel)`](libraries/scm-ooxml-excel.md) | Excel workbook and worksheet creation (OOXML/XLSX format) |
 | [`(scm ooxml word)`](libraries/scm-ooxml-word.md) | Word document creation (OOXML/DOCX format) |
-| [`(scm pdf)`](libraries/scm-pdf.md) |  |
+| [`(scm pdf)`](libraries/scm-pdf.md) | PDF document creation — pages, drawing, fonts, text flow, TTF embedding, images, links, outlines |
 | [`(scm png)`](libraries/scm-png.md) |  |
 | [`(scm profiling)`](libraries/scm-profiling.md) | Execution profiling and performance measurement |
 | [`(scm qr)`](libraries/scm-qr.md) |  |

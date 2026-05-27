@@ -90,6 +90,7 @@
     ((scm ooxml word)          . "Word document creation (OOXML/DOCX format)")
     ((scm odf spreadsheet)     . "ODF spreadsheet creation (ODS format)")
     ((scm odf writer)          . "ODF text document creation (ODT format)")
+    ((scm pdf)                . "PDF document creation — pages, drawing, fonts, text flow, TTF embedding, images, links, outlines")
     ((scm fs)                 . "Filesystem operations — paths, directories, files")
     ((scm glob)               . "Filename globbing and pattern matching")
     ((scm io)                 . "Extended I/O — formatting, port utilities, property lists")

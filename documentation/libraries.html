@@ -3230,13 +3230,15 @@
 <div class="library scm" id="scm-pdf">
   <div class="lib-header">
     <span class="lib-name">(scm pdf)</span>
-    <span class="lib-desc"></span>
+    <span class="lib-desc">PDF document creation — pages, drawing, fonts, text flow, TTF embedding, images, links, outlines</span>
     <span class="lib-count" id="scm-pdf-count"></span>
   </div>
   <div class="lib-body">
     <div class="exports" data-lib="scm-pdf">
       make-pdf
       pdf-&gt;bytevector
+      pdf-add-link
+      pdf-add-outline!
       pdf-add-page!
       pdf-array?
       pdf-clip
@@ -3245,7 +3247,10 @@
       pdf-close-stroke
       pdf-curve-to
       pdf-dict?
+      pdf-draw-image
       pdf-draw-text
+      pdf-embed-jpeg
+      pdf-embed-png
       pdf-embed-truetype-font
       pdf-end-path
       pdf-fill
@@ -3265,6 +3270,9 @@
       pdf-font-units-per-em
       pdf-font-x-height
       pdf-font?
+      pdf-image-height
+      pdf-image-width
+      pdf-image?
       pdf-line-cap-butt
       pdf-line-cap-round
       pdf-line-cap-square
@@ -3298,6 +3306,7 @@
       pdf-set-line-cap
       pdf-set-line-join
       pdf-set-line-width
+      pdf-set-metadata!
       pdf-set-miter-limit
       pdf-set-stroke-cmyk
       pdf-set-stroke-gray
@@ -4919,13 +4928,18 @@ const docs = {
   "scm-pdf": {
     "make-pdf": "Syntax: (make-pdf)\nLibrary: (scm pdf)\nDescription: Creates a new empty PDF document. Pages are appended with\n  pdf-add-page! and the finished document is serialized with pdf-save\n  or pdf->bytevector.\nExample:\n  (define doc (make-pdf))\n  (pdf-add-page! doc)\n  (pdf-save doc \"blank.pdf\")",
     "pdf->bytevector": "Syntax: (pdf->bytevector doc)\nLibrary: (scm pdf)\nDescription: Serializes doc to a bytevector containing a complete PDF\n  file (header, all objects, xref table, trailer, %%EOF). Pages with\n  no content render as blank pages of the requested size.\nExample:\n  (define doc (make-pdf))\n  (pdf-add-page! doc)\n  (pdf->bytevector doc)",
+    "pdf-add-link": "Syntax: (pdf-add-link page rect uri-string)\nLibrary: (scm pdf)\nDescription: Attaches a clickable URI link annotation to page. rect is\n  a 4-element list (llx lly urx ury) of user-space coordinates marking\n  the hot area; uri-string is the absolute URL to open. The annotation\n  has no visible border.\nExample:\n  (pdf-draw-text page helv 12 100 700 \"Click here\")\n  (pdf-add-link page '(100 695 200 712) \"https://example.com\")",
+    "pdf-add-outline!": "Syntax: (pdf-add-outline! doc page title [option value]...)\nLibrary: (scm pdf)\nDescription: Appends an outline (bookmark) entry that jumps to page.\n  Options (plist):\n    parent  another outline returned by pdf-add-outline! — creates a\n            nested child under that outline (default: top-level item)\n    y       baseline y-coord to scroll the page to (default: page top)\n  Returns the outline handle so it can be used as a parent in later\n  calls.\nExample:\n  (define ch1 (pdf-add-outline! doc page1 \"Chapter 1\"))\n  (pdf-add-outline! doc page1 \"Section 1.1\" 'parent ch1)",
     "pdf-add-page!": "Syntax: (pdf-add-page! doc)\n       (pdf-add-page! doc size-pair)\n       (pdf-add-page! doc width-pt height-pt)\nLibrary: (scm pdf)\nDescription: Appends a new page to doc and returns the page record.\n  With no extra arguments the page is A4 (595x842 points). A size pair\n  is a (cons width height); the page-size presets (pdf-page-size-a4\n  etc.) are such pairs. Or pass explicit width and height in points.\nExample:\n  (pdf-add-page! doc)                       ; A4\n  (pdf-add-page! doc pdf-page-size-letter)  ; US Letter\n  (pdf-add-page! doc 200 100)               ; custom size",
     "pdf-clip": "Syntax: (pdf-clip page)\nLibrary: (scm pdf)\nDescription: Modifies the current clipping path by intersecting it with\n  the current path (non-zero rule). Per the PDF spec this must be\n  followed by a painting or pdf-end-path operator. Emits 'W'.\nExample: (pdf-rect page 0 0 100 100) (pdf-clip page) (pdf-end-path page)",
     "pdf-clip-even-odd": "Syntax: (pdf-clip-even-odd page)\nLibrary: (scm pdf)\nDescription: Like pdf-clip but uses the even-odd rule. Emits 'W*'.\nExample: (pdf-clip-even-odd page)",
     "pdf-close-path": "Syntax: (pdf-close-path page)\nLibrary: (scm pdf)\nDescription: Closes the current subpath with a straight line back to its\n  start. Emits the PDF 'h' operator.\nExample: (pdf-close-path page)",
     "pdf-close-stroke": "Syntax: (pdf-close-stroke page)\nLibrary: (scm pdf)\nDescription: Closes and strokes the current path. Emits 's'.\nExample: (pdf-close-stroke page)",
     "pdf-curve-to": "Syntax: (pdf-curve-to page cx1 cy1 cx2 cy2 x y)\nLibrary: (scm pdf)\nDescription: Appends a cubic Bezier curve from the current point to\n  (x, y) using control points (cx1, cy1) and (cx2, cy2). Emits 'c'.\nExample: (pdf-curve-to page 100 100 200 200 300 100)",
+    "pdf-draw-image": "Syntax: (pdf-draw-image page image x y width height)\nLibrary: (scm pdf)\nDescription: Places image on page at user-space coordinates (x, y) —\n  the lower-left corner — scaled to width × height points. Image\n  XObjects are defined in a 1×1 unit square, so this concatenates a\n  scale+translate matrix and emits the Do operator. Wrapped in a\n  q ... Q pair to localize state changes.\nExample:\n  (pdf-draw-image page logo 50 600 100 100)",
     "pdf-draw-text": "Syntax: (pdf-draw-text page font size x y string)\nLibrary: (scm pdf)\nDescription: Draws string on page at user-space coordinates (x, y) — the\n  baseline origin — in font at size points. Emits a self-contained\n  q ... BT ... ET ... Q block so any current graphics state is\n  preserved. To rotate or scale text, wrap the call in pdf-with-state\n  and concat your own CTM.\nExample:\n  (define helv (pdf-use-font doc 'helvetica))\n  (pdf-draw-text page helv 12 100 700 \"Hello, world!\")",
+    "pdf-embed-jpeg": "Syntax: (pdf-embed-jpeg doc jpeg-bytevector)\nLibrary: (scm pdf)\nDescription: Embeds a JPEG image in doc as an Image XObject using\n  /Filter /DCTDecode (pass-through — no re-encoding). Auto-detects\n  width, height and color space (gray / RGB / CMYK) from the JPEG's\n  Start-Of-Frame marker. Returns a pdf-image handle for use with\n  pdf-draw-image.\nExample:\n  (define j (pdf-embed-jpeg doc (pdf-read-binary-file \"photo.jpg\")))\n  (pdf-draw-image page j 50 600 200 150)",
+    "pdf-embed-png": "Syntax: (pdf-embed-png doc png-bytevector)\nLibrary: (scm pdf)\nDescription: Embeds a PNG image in doc as an Image XObject. The PNG's\n  concatenated IDAT chunks are emitted verbatim as a /FlateDecode\n  stream with /DecodeParms /Predictor 15 so the reader applies the\n  PNG filter rules. Color types 0 (grayscale) and 2 (RGB) pass through\n  the IDAT verbatim. Color types 4 (gray + alpha) and 6 (RGB + alpha)\n  are fully decoded, then the color and alpha channels are emitted as\n  two separate flate-compressed Image XObjects with the alpha as an\n  /SMask. 8-bit depth only. Returns a pdf-image handle for use with\n  pdf-draw-image.\nExample:\n  (define p (pdf-embed-png doc (pdf-read-binary-file \"logo.png\")))\n  (pdf-draw-image page p 50 600 100 100)",
     "pdf-embed-truetype-font": "Syntax: (pdf-embed-truetype-font doc ttf-bytes [base-name])\nLibrary: (scm pdf)\nDescription: Parses the TrueType font in ttf-bytes (a bytevector, e.g.\n  from pdf-read-binary-file), registers it on doc as an embedded Type0\n  composite font with /Encoding /Identity-H, and returns a font handle\n  usable with pdf-draw-text, pdf-text-width and pdf-flow-text. Supports\n  the full Unicode BMP (cmap format 4) or beyond (format 12). The whole\n  TTF is embedded — no subsetting; expect a few hundred KB per font.\n  An optional base-name overrides the PostScript name used for the\n  PDF /BaseFont entry (defaults to \"EmbeddedTTF<n>\").\nExample:\n  (define bv (pdf-read-binary-file \"/path/to/DejaVuSans.ttf\"))\n  (define dj (pdf-embed-truetype-font doc bv \"DejaVuSans\"))\n  (pdf-draw-text page dj 14 50 700 \"Hello, мир, 日本語, ✓\")",
     "pdf-end-path": "Syntax: (pdf-end-path page)\nLibrary: (scm pdf)\nDescription: Ends the current path without filling or stroking. Used\n  after pdf-clip / pdf-clip-even-odd. Emits 'n'.\nExample: (pdf-end-path page)",
     "pdf-fill": "Syntax: (pdf-fill page)\nLibrary: (scm pdf)\nDescription: Fills the current path using the non-zero winding rule.\n  Emits the PDF 'f' operator.\nExample: (pdf-fill page)",
@@ -4955,6 +4969,7 @@ const docs = {
     "pdf-set-line-cap": "Syntax: (pdf-set-line-cap page cap)\nLibrary: (scm pdf)\nDescription: Sets the line cap style. cap is 0 (butt), 1 (round) or\n  2 (projecting square) — see pdf-line-cap-butt etc. Emits 'J'.\nExample: (pdf-set-line-cap page pdf-line-cap-round)",
     "pdf-set-line-join": "Syntax: (pdf-set-line-join page join)\nLibrary: (scm pdf)\nDescription: Sets the line join style. join is 0 (miter), 1 (round) or\n  2 (bevel) — see pdf-line-join-miter etc. Emits 'j'.\nExample: (pdf-set-line-join page pdf-line-join-round)",
     "pdf-set-line-width": "Syntax: (pdf-set-line-width page width)\nLibrary: (scm pdf)\nDescription: Sets the line width in user units. Emits 'w'.\nExample: (pdf-set-line-width page 1.5)",
+    "pdf-set-metadata!": "Syntax: (pdf-set-metadata! doc key1 value1 key2 value2 ...)\nLibrary: (scm pdf)\nDescription: Sets document metadata fields on the /Info dictionary.\n  Repeated keys overwrite earlier values. Recognised keys (symbols):\n    title author subject keywords creator producer\n    creation-date mod-date\n  Values are strings. Date strings should follow PDF format,\n  e.g. \"D:20260527120000+02'00\".\nExample:\n  (pdf-set-metadata! doc 'title \"My Report\"\n                         'author \"Damian\"\n                         'creator \"(scm pdf)\")",
     "pdf-set-miter-limit": "Syntax: (pdf-set-miter-limit page miter-limit)\nLibrary: (scm pdf)\nDescription: Sets the miter limit. Emits 'M'.\nExample: (pdf-set-miter-limit page 10)",
     "pdf-set-stroke-cmyk": "Syntax: (pdf-set-stroke-cmyk page c m y k)\nLibrary: (scm pdf)\nDescription: Sets the stroking color to CMYK (each in [0, 1]).\n  Emits 'K'.\nExample: (pdf-set-stroke-cmyk page 0 1 1 0)   ; pure red",
     "pdf-set-stroke-gray": "Syntax: (pdf-set-stroke-gray page g)\nLibrary: (scm pdf)\nDescription: Sets the stroking color to gray (g in [0, 1]). Emits 'G'.\nExample: (pdf-set-stroke-gray page 0.5)",
