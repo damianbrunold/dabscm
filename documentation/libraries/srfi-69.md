@@ -226,38 +226,41 @@ Example:
 ### `hash-table/get`
 
 ```
-Syntax: (hash-table-ref/default ht key default)
+Syntax: (hash-table/get ht key default)
 Library: (srfi 69)
 Description: Returns the value associated with key in ht, or default if key is not found.
+Alias for hash-table-ref/default.
 Example:
   (define ht (make-hash-table equal?))
   (hash-table-set! ht 'x 42)
-  (hash-table-ref/default ht 'x 0) => 42
-  (hash-table-ref/default ht 'y 0) => 0
+  (hash-table/get ht 'x 0) => 42
+  (hash-table/get ht 'y 0) => 0
 ```
 
 ### `hash-table/put!`
 
 ```
-Syntax: (hash-table-set! ht key value)
+Syntax: (hash-table/put! ht key value)
 Library: (srfi 69)
 Description: Associates key with value in the hash table ht. If the key already exists, its value is updated.
+Alias for hash-table-set!.
 Example:
   (define ht (make-hash-table equal?))
-  (hash-table-set! ht 'x 42)
+  (hash-table/put! ht 'x 42)
   (hash-table-ref ht 'x) => 42
 ```
 
 ### `hash-table/remove!`
 
 ```
-Syntax: (hash-table-delete! ht key)
+Syntax: (hash-table/remove! ht key)
 Library: (srfi 69)
 Description: Removes the association for key from the hash table ht. Has no effect if key is not present.
+Alias for hash-table-delete!.
 Example:
   (define ht (make-hash-table equal?))
   (hash-table-set! ht 'x 42)
-  (hash-table-delete! ht 'x)
+  (hash-table/remove! ht 'x)
   (hash-table-exists? ht 'x) => #f
 ```
 

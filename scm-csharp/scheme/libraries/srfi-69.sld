@@ -87,9 +87,9 @@ Example:
   (hash-table-set! ht 'x 5)
   (hash-table-update! ht 'x (lambda (v) (+ v 1)))
   (hash-table-ref ht 'x) => 6"
-      (let ((old (if (null? rest)
-                     (hash-table-ref ht key)
-                     (hash-table-ref/default ht key ((car rest))))))
+      (let ((old (cond ((hash-table-exists? ht key) (hash-table-ref ht key))
+                       ((null? rest) (hash-table-ref ht key))
+                       (else ((car rest))))))
         (hash-table-set! ht key (proc old))))
 
     (define (hash-table-update!/default ht key proc default)
@@ -103,9 +103,40 @@ Example:
   (hash-table-ref ht 'x) => 1"
       (hash-table-set! ht key (proc (hash-table-ref/default ht key default))))
 
-    (define hash-table/get hash-table-ref/default)
-    (define hash-table/put! hash-table-set!)
-    (define hash-table/remove! hash-table-delete!)
+    (define (hash-table/get ht key default)
+      "Syntax: (hash-table/get ht key default)
+Library: (srfi 69)
+Description: Returns the value associated with key in ht, or default if key is not found.
+Alias for hash-table-ref/default.
+Example:
+  (define ht (make-hash-table equal?))
+  (hash-table-set! ht 'x 42)
+  (hash-table/get ht 'x 0) => 42
+  (hash-table/get ht 'y 0) => 0"
+      (hash-table-ref/default ht key default))
+
+    (define (hash-table/put! ht key value)
+      "Syntax: (hash-table/put! ht key value)
+Library: (srfi 69)
+Description: Associates key with value in the hash table ht. If the key already exists, its value is updated.
+Alias for hash-table-set!.
+Example:
+  (define ht (make-hash-table equal?))
+  (hash-table/put! ht 'x 42)
+  (hash-table-ref ht 'x) => 42"
+      (hash-table-set! ht key value))
+
+    (define (hash-table/remove! ht key)
+      "Syntax: (hash-table/remove! ht key)
+Library: (srfi 69)
+Description: Removes the association for key from the hash table ht. Has no effect if key is not present.
+Alias for hash-table-delete!.
+Example:
+  (define ht (make-hash-table equal?))
+  (hash-table-set! ht 'x 42)
+  (hash-table/remove! ht 'x)
+  (hash-table-exists? ht 'x) => #f"
+      (hash-table-delete! ht key))
 
     (define (string-hash s . rest)
       "Syntax: (string-hash s [bound])
