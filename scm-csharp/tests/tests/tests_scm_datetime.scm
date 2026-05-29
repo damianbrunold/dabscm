@@ -77,11 +77,11 @@
   (let ((short (now 'short)))
     (test-equal 13 (string-length short))
     (test-equal #\- (string-ref short 8)))
-  (let ((dmyhs (now 'dmyhs)))
-    (test-equal 16 (string-length dmyhs))
-    (test-equal #\. (string-ref dmyhs 2))
-    (test-equal #\space (string-ref dmyhs 10))
-    (test-equal #\. (string-ref dmyhs 13))))
+  (let ((dmyhm (now 'dmyhm)))
+    (test-equal 16 (string-length dmyhm))
+    (test-equal #\. (string-ref dmyhm 2))
+    (test-equal #\space (string-ref dmyhm 10))
+    (test-equal #\: (string-ref dmyhm 13))))
 
 (test-group "time"
   (let ((iso (time)))

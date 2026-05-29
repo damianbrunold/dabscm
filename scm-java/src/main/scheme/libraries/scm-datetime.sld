@@ -336,7 +336,7 @@ Description: Returns the current local date and time as a string. Time is
 Example:
   (now)        => \"2026-05-27 07:32\"
   (now 'short) => \"20260527-0732\"
-  (now 'dmyhs) => \"27.05.2026 07.32\""
+  (now 'dmyhm) => \"27.05.2026 07:32\""
       (call-with-values local-ymd-hms
         (lambda (y mo d h m s)
           (let ((fmt (if (null? opts) 'iso (car opts))))
@@ -347,9 +347,9 @@ Example:
               ((eq? fmt 'short)
                (string-append (pad4 y) (pad2 mo) (pad2 d) "-"
                               (pad2 h) (pad2 m)))
-              ((eq? fmt 'dmyhs)
+              ((eq? fmt 'dmyhm)
                (string-append (pad2 d) "." (pad2 mo) "." (pad4 y) " "
-                              (pad2 h) "." (pad2 m)))
+                              (pad2 h) ":" (pad2 m)))
               (else (error "now: unknown format" fmt)))))))
 
     (define (time . opts)
