@@ -874,7 +874,7 @@ Description: Returns the current local date and time as a string. Time is
 Example:
   (now)        => "2026-05-27 07:32"
   (now 'short) => "20260527-0732"
-  (now 'dmyhs) => "27.05.2026 07.32"
+  (now 'dmyhm) => "27.05.2026 07:32"
 ```
 
 ### `open-input-zip-file`
