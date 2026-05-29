@@ -3456,6 +3456,7 @@
       csv-line-&gt;fields
       curl
       current-directory
+      current-pid
       cut
       deflate-compress
       deflate-decompress
@@ -3492,6 +3493,7 @@
       join-path
       json-attribute
       json-next-object
+      kill
       ln
       log-access
       log-error
@@ -3511,6 +3513,7 @@
       open-json-file
       open-json-string
       open-output-zip-file
+      parent-pid
       parse-duration
       parse-iso8601
       parse-pubdate
@@ -3518,10 +3521,14 @@
       path-sep
       percent-decode
       percent-encode
+      pgrep
+      pkill
       process-alive?
       process-kill
       process-pid
       process-wait
+      ps
+      ps-info
       readlink
       rm
       rsync
@@ -3596,15 +3603,22 @@
   </div>
   <div class="lib-body">
     <div class="exports" data-lib="scm-system">
+      current-pid
       env-list
       get-bytes
       get-environment-variable
       getopt
+      kill
       modules
+      parent-pid
+      pgrep
+      pkill
       process-alive?
       process-kill
       process-pid
       process-wait
+      ps
+      ps-info
       run
       run!
       run-parallel
@@ -5040,6 +5054,7 @@ const docs = {
     "csv-line->fields": "Syntax: (csv-line->fields str sep) (csv-line->fields str sep 'trim)\nLibrary: (scm core)\nDescription: Splits a CSV line string using the given separator, stripping surrounding double-quotes from each field. When 'trim is given as a third argument, also trims whitespace from each field.\nExample:\n  (csv-line->fields \"a,b,c\" \",\") => (\"a\" \"b\" \"c\")\n  (csv-line->fields \"\\\"hello\\\",world\" \",\") => (\"hello\" \"world\")",
     "curl": "Syntax: (curl url [option ...])\nLibrary: (scm net-remote)\nDescription: Performs an HTTP(S) request via the native curl command.\n  By default returns the response body as a string. Options:\n    '(method . str)        — HTTP method (default GET)\n    '(headers . list)      — list of header strings \"Name: value\"\n    '(data . str)          — request body (sets method to POST if unset)\n    '(output . path)       — write body to file; returns #t/#f\n    '(timeout . seconds)\n    'silent                — suppress progress (-s)\n    'follow-redirects      — -L\n    'fail-on-error         — -f (non-2xx exit non-zero)\n    'include-status        — return (status . body) instead of body\n    'pure                  — force pure-Scheme path (uses (scm net http client));\n                             does not honor follow-redirects, timeout, fail-on-error\nExample:\n  (curl \"https://example.com/api\"\n        '(method . \"POST\")\n        '(headers . (\"Content-Type: application/json\"))\n        '(data . \"{\\\"x\\\":1}\")\n        'silent)",
     "current-directory": "Syntax: (current-directory)\nLibrary: (scm fs)\nDescription: Returns the current working directory as a string.\nExample:\n  (current-directory) => \"/home/user/projects\"",
+    "current-pid": "Syntax: (current-pid)\nLibrary: (scm system)\nDescription: Returns the OS process id of the current Scheme process.\nExample:\n  (current-pid) => 12345",
     "cut": "Syntax: (cut src [option ...])\nLibrary: (scm text)\nDescription: Selects fields from each line of src. Options:\n  '(fields . (n ...)) — 1-based field indices to keep (required);\n  '(delimiter . str) — field separator (default tab).\nExample:\n  (cut \"/etc/passwd\" '(fields . (1 3)) '(delimiter . \":\"))",
     "deflate-compress": "Syntax: (deflate-compress bytevector [level])\nLibrary: (scm compression)\nDescription: Compresses bytevector using raw DEFLATE (RFC 1951) and returns\n  a bytevector. The optional level is an integer 0-9: 0 = no compression,\n  1-3 = fastest, 4-6 = optimal (default), 7-9 = smallest size.\nExample:\n  (utf8->string (deflate-decompress (deflate-compress (string->utf8 \"hello\")))) => \"hello\"",
     "deflate-decompress": "Syntax: (deflate-decompress bytevector)\nLibrary: (scm compression)\nDescription: Decompresses a raw DEFLATE-compressed (RFC 1951) bytevector\n  and returns the original bytevector.\nExample:\n  (utf8->string (deflate-decompress (deflate-compress (string->utf8 \"hello\")))) => \"hello\"",
@@ -5076,6 +5091,7 @@ const docs = {
     "join-path": "Syntax: (join-path part ...)\nLibrary: (scm fs)\nDescription: Joins one or more path component strings into a single path\n  string using the platform's path separator character.\nExample:\n  (join-path \"/usr\" \"local\" \"bin\") => \"/usr/local/bin\"  ; on Unix",
     "json-attribute": "Syntax: (json-attribute object name) (json-attribute object name default)\nLibrary: (scm core)\nDescription: Returns the value of the named attribute from a JSON object. Returns default (or #f) if the attribute does not exist.\nExample:\n  (let ((obj (json-next-object reader)))\n    (json-attribute obj 'name \"unknown\"))",
     "json-next-object": "Syntax: (json-next-object reader)\nLibrary: (scm core)\nDescription: Reads and returns the next JSON object from the given JSON reader, or #f if there are no more objects.\nExample:\n  (let ((r (open-json-file \"data.json\")))\n    (json-next-object r))",
+    "kill": "Syntax: (kill pid [force?])\nLibrary: (scm system)\nDescription: Sends a termination request to the process with the given\n  pid. With force? = #f (default) requests a normal termination\n  (SIGTERM on Unix); with force? = #t kills forcefully (SIGKILL on Unix).\n  Returns #t if the request was delivered, #f if the process does not\n  exist or the caller lacks permission to signal it.\nExample:\n  (kill 12345)        ; graceful\n  (kill 12345 #t)     ; force",
     "ln": "Syntax: (ln target name [option ...])\nLibrary: (scm fs)\nDescription: Creates a link at name pointing to target. Options:\n  'symbolic (-s) creates a symbolic link, otherwise a hard link;\n  'force (-f) replaces an existing destination.\nExample:\n  (ln \"/usr/bin/python3\" \"/usr/local/bin/python\" 'symbolic 'force)",
     "log-access": "Syntax: (log-access method url status duration-ms)\nLibrary: (scm log)\nDescription: Writes a single access log line: an INFO line in the http\n  module of the form 'METHOD URL -> STATUS (Nms)'. status and duration-ms\n  are integers.\nExample:\n  (log-access \"GET\" \"/notes/42\" 200 14)",
     "log-error": "Syntax: (log-error module msg)\nLibrary: (scm log)\nDescription: Writes a single ERROR-level log line tagged with module.\nExample:\n  (log-error \"db\" \"connection refused\")",
@@ -5094,16 +5110,21 @@ const docs = {
     "open-json-file": "Syntax: (open-json-file filename)\nLibrary: (scm core)\nDescription: Opens the named JSON file and returns a JSON reader object. An optional list-id symbol may be specified to identify list nodes.\nExample:\n  (define r (open-json-file \"data.json\"))\n  (json-next-object r) => next parsed JSON object",
     "open-json-string": "Syntax: (open-json-string s)\nLibrary: (scm json)\nDescription: Returns a JSON reader object that parses the JSON contained in the string s. An optional list-id symbol or string may be specified to identify list nodes.\nExample:\n  (define r (open-json-string \"{\\\"a\\\": 1}\"))\n  (json-next-object r) => parsed object",
     "open-output-zip-file": "Syntax: (open-output-zip-file filename)\nLibrary: (scm core)\nDescription: Creates a new ZIP archive at the given filename and returns a ZIP writer object. Entries can be added using zip-add-text-entry or zip-add-binary-entry.\nExample:\n  (define z (open-output-zip-file \"archive.zip\"))\n  (zip-add-text-entry z \"hello.txt\" \"Hello, world!\")\n  (close-output-zip z)",
+    "parent-pid": "Syntax: (parent-pid)\nLibrary: (scm system)\nDescription: Returns the OS process id of the parent of the current\n  Scheme process, or #f if it cannot be determined.\nExample:\n  (parent-pid) => 12340",
     "parse-duration": "Syntax: (parse-duration s)\nLibrary: (scm duration)\nDescription: Parses a duration string into a non-negative integer number of\n  seconds. Accepts a bare integer (interpreted as seconds), or an integer\n  suffixed with one of s/m/h/d (seconds/minutes/hours/days). Returns #f\n  if s is not a string, is empty, or does not parse.\nExample:\n  (parse-duration \"30\")  => 30\n  (parse-duration \"30s\") => 30\n  (parse-duration \"10m\") => 600\n  (parse-duration \"3h\")  => 10800\n  (parse-duration \"1d\")  => 86400\n  (parse-duration \"x\")   => #f",
     "parse-iso8601": "Syntax: (parse-iso8601 s)\nLibrary: (scm datetime)\nDescription: Parses an ISO 8601 / RFC 3339 date string (e.g. used by Atom\n  feeds) and returns Unix seconds, or #f on failure. Accepts date-only\n  ('2024-05-16'), date+time with 'T' or space separator, and a trailing\n  timezone offset (Z, +02:00, -0500). Fractional seconds are ignored.\nExample:\n  (parse-iso8601 \"2024-05-16T12:34:56Z\")      => 1715862896\n  (parse-iso8601 \"2024-05-16T14:34:56+02:00\") => 1715862896\n  (parse-iso8601 \"2024-05-16\")                => 1715817600\n  (parse-iso8601 \"bogus\") => #f",
     "parse-pubdate": "Syntax: (parse-pubdate s)\nLibrary: (scm datetime)\nDescription: Best-effort date parser for feed pubdates. Tries ISO 8601 first\n  if s looks ISO-shaped (hyphen at position 4), otherwise RFC 822. Falls\n  back to the other format on failure. Returns Unix seconds, or #f.\nExample:\n  (parse-pubdate \"2024-05-16T12:34:56Z\")             => 1715862896\n  (parse-pubdate \"Thu, 16 May 2024 12:34:56 +0000\")  => 1715862896\n  (parse-pubdate \"\") => #f",
     "parse-rfc822": "Syntax: (parse-rfc822 s)\nLibrary: (scm datetime)\nDescription: Parses an RFC 822 / RFC 2822 date string (e.g. used by RSS 2.0\n  pubDate elements) and returns Unix seconds, or #f on failure. The leading\n  day-of-week prefix is optional. Two-digit years are mapped to 20XX.\nExample:\n  (parse-rfc822 \"Thu, 16 May 2024 12:34:56 +0200\") => 1715855696\n  (parse-rfc822 \"16 May 2024 12:34:56 GMT\")       => 1715862896\n  (parse-rfc822 \"bogus\") => #f",
     "percent-decode": "Syntax: (percent-decode s [plus-as-space?])\nLibrary: (scm uri)\nDescription: Decodes percent-escaped UTF-8 in s. When plus-as-space? is\n  true (the default), '+' is treated as space — appropriate for\n  application/x-www-form-urlencoded bodies and query strings. Pass #f to\n  preserve '+' literally (e.g. for URL path segments).\nExample:\n  (percent-decode \"a%20b\") => \"a b\"\n  (percent-decode \"a+b\") => \"a b\"\n  (percent-decode \"a+b\" #f) => \"a+b\"",
     "percent-encode": "Syntax: (percent-encode s)\nLibrary: (scm uri)\nDescription: Encodes string s as UTF-8 and percent-escapes every byte\n  outside the RFC 3986 unreserved set (A-Z a-z 0-9 - _ . ~). Suitable for\n  building query values and path segments.\nExample:\n  (percent-encode \"a b/c\") => \"a%20b%2Fc\"\n  (percent-encode \"hello\") => \"hello\"",
+    "pgrep": "Syntax: (pgrep pattern [full?])\nLibrary: (scm system)\nDescription: Returns a list of pids whose command matches the substring\n  pattern. By default matches against the process name. If full? is #t,\n  matches against the full command line (where the platform supplies it).\n  Pattern matching is case-sensitive substring.\nExample:\n  (pgrep \"java\") => (1234 5678)",
+    "pkill": "Syntax: (pkill pattern [force? [full?]])\nLibrary: (scm system)\nDescription: Sends a termination request to every process whose command\n  matches the substring pattern. By default matches against the process\n  name; if full? is #t, matches against the full command line. With\n  force? = #t kills forcefully (SIGKILL on Unix). Returns the number of\n  processes that were successfully signaled. Does NOT match the current\n  Scheme process.\nExample:\n  (pkill \"sleep\") => 2",
     "process-alive?": "Syntax: (process-alive? handle)\nLibrary: (scm system)\nDescription: Returns #t if the process started by start-program is still running, #f if it has exited.\nExample:\n  (process-alive? p) => #t",
     "process-kill": "Syntax: (process-kill handle [force?])\nLibrary: (scm system)\nDescription: Stops a process started by start-program. With force? = #f (default) requests a normal termination (SIGTERM on Unix, TerminateProcess on Windows via Process.destroy). With force? = #t kills forcefully (SIGKILL on Unix). Returns #t.\nExample:\n  (process-kill p)        ; graceful where supported\n  (process-kill p #t)     ; force",
     "process-pid": "Syntax: (process-pid handle)\nLibrary: (scm system)\nDescription: Returns the OS process id of a process handle returned by start-program.\nExample:\n  (process-pid p) => 12345",
     "process-wait": "Syntax: (process-wait handle [timeout-ms])\nLibrary: (scm system)\nDescription: Waits for the process to exit. Without timeout-ms, blocks until exit and returns the exit code as an integer. With timeout-ms, waits at most that long; returns the exit code on exit, or #f if the process is still running when the timeout elapses.\nExample:\n  (process-wait p)            => 0\n  (process-wait p 5000)       => 0 or #f",
+    "ps": "Syntax: (ps)\nLibrary: (scm system)\nDescription: Returns a list of alists describing the processes currently\n  visible on the system. Each alist has the keys:\n    pid         — process id (integer)\n    ppid        — parent pid (integer) or #f\n    command     — process command as a string, or #f\n    user        — owning user (string) or #f\n    start-time  — epoch milliseconds (integer) or #f\n    cpu-time    — accumulated cpu time in seconds (inexact) or #f\n  Fields the platform cannot supply or that the current user cannot\n  access are #f. Order is unspecified.\nExample:\n  (length (ps)) => 312",
+    "ps-info": "Syntax: (ps-info pid)\nLibrary: (scm system)\nDescription: Returns an alist describing the process with the given pid,\n  or #f if no such process exists or it cannot be inspected. See (ps)\n  for the field set.\nExample:\n  (cdr (assq 'command (ps-info (current-pid)))) => \"scm\"",
     "readlink": "Syntax: (readlink path)\nLibrary: (scm fs)\nDescription: Returns the target of the symbolic link at path as a string,\n  or #f if path is not a symlink or cannot be read. Uses native readlink.\nExample:\n  (readlink \"/usr/local/bin/python\") => \"/usr/bin/python3\"",
     "rm": "Syntax: (rm path [option ...])\nLibrary: (scm fs)\nDescription: Removes path. Options: 'recursive (-r) to remove a directory\n  and its contents; 'force (-f) to suppress errors when path is missing.\nExample:\n  (rm \"foo.txt\")\n  (rm \"build\" 'recursive 'force)",
     "rsync": "Syntax: (rsync src dst [option ...])\nLibrary: (scm net-remote)\nDescription: Invokes rsync to synchronise src to dst. Either may be a\n  local path or a remote spec (user@host:/path or rsync://...). Options:\n    'archive         — -a (recursive + preserve everything)\n    'recursive       — -r\n    'delete          — --delete (remove dst files not in src)\n    'verbose         — -v\n    'dry-run         — -n\n    'compress        — -z\n    '(exclude . list) — list of patterns to pass as --exclude\n    '(rsh . cmd)     — remote-shell command, e.g. \"ssh -p 2222\"\nExample:\n  (rsync \"build/\" \"deploy@web1:/srv/app/\" 'archive 'delete 'verbose)",
@@ -5167,14 +5188,21 @@ const docs = {
     "zlib-decompress": "Syntax: (zlib-decompress bytevector)\nLibrary: (scm compression)\nDescription: Decompresses a ZLib-framed (RFC 1950) bytevector and returns\n  the original bytevector.\nExample:\n  (utf8->string (zlib-decompress (zlib-compress (string->utf8 \"hello\")))) => \"hello\"",
   },
   "scm-system": {
+    "current-pid": "Syntax: (current-pid)\nLibrary: (scm system)\nDescription: Returns the OS process id of the current Scheme process.\nExample:\n  (current-pid) => 12345",
     "env-list": "Syntax: (env-list)\nLibrary: (scm system)\nDescription: Returns an alist of all environment variables as (name . value)\n  pairs. Equivalent to SRFI-98 get-environment-variables.\nExample:\n  (env-list) => ((\"PATH\" . \"/usr/bin\") ...)",
     "get-bytes": "Syntax: (get-bytes obj [encoding])\nLibrary: (scm core)\nDescription: Returns the byte representation of obj (string, symbol, or bytevector) as a bytevector.\n  encoding is an optional string or symbol specifying the character encoding (default: utf-8).\n  Supported encodings: utf-8, utf-8-bom, latin-1, utf-16, utf-16-le.\nExample:\n  (get-bytes \"hello\")\n  (get-bytes \"hello\" \"latin-1\")",
     "get-environment-variable": "Syntax: (get-environment-variable name)\nLibrary: (scm system) (scheme process-context) (srfi 98)\nDescription: Returns the value of the environment variable named name as a string, or #f if it is not set.\nExample:\n  (get-environment-variable \"HOME\") => \"/home/user\"\n  (get-environment-variable \"UNDEFINED_VAR\") => #f",
     "getopt": "Syntax: (getopt argv spec)\nLibrary: (scm system)\nDescription: Parses command-line arguments. argv is a list of strings;\n  spec is a list of option descriptors, each one of:\n    (long-name short-char takes-value? [default])\n  where long-name is a string (without the --), short-char is a character\n  (or #f), takes-value? is a boolean, and default is the value used when\n  the option is absent (defaults to #f for non-value flags, #f for\n  value-taking options). Returns (alist . positionals) where alist maps\n  long-name strings to the supplied values (#t for absent boolean flags\n  is replaced by the default). Unknown options raise an error.\nExample:\n  (getopt '(\"-v\" \"--name\" \"foo\" \"a\" \"b\")\n          '((\"verbose\" #\\v #f)\n            (\"name\"    #\\n #t \"anon\")))\n  => (((\"verbose\" . #t) (\"name\" . \"foo\")) . (\"a\" \"b\"))",
+    "kill": "Syntax: (kill pid [force?])\nLibrary: (scm system)\nDescription: Sends a termination request to the process with the given\n  pid. With force? = #f (default) requests a normal termination\n  (SIGTERM on Unix); with force? = #t kills forcefully (SIGKILL on Unix).\n  Returns #t if the request was delivered, #f if the process does not\n  exist or the caller lacks permission to signal it.\nExample:\n  (kill 12345)        ; graceful\n  (kill 12345 #t)     ; force",
+    "parent-pid": "Syntax: (parent-pid)\nLibrary: (scm system)\nDescription: Returns the OS process id of the parent of the current\n  Scheme process, or #f if it cannot be determined.\nExample:\n  (parent-pid) => 12340",
+    "pgrep": "Syntax: (pgrep pattern [full?])\nLibrary: (scm system)\nDescription: Returns a list of pids whose command matches the substring\n  pattern. By default matches against the process name. If full? is #t,\n  matches against the full command line (where the platform supplies it).\n  Pattern matching is case-sensitive substring.\nExample:\n  (pgrep \"java\") => (1234 5678)",
+    "pkill": "Syntax: (pkill pattern [force? [full?]])\nLibrary: (scm system)\nDescription: Sends a termination request to every process whose command\n  matches the substring pattern. By default matches against the process\n  name; if full? is #t, matches against the full command line. With\n  force? = #t kills forcefully (SIGKILL on Unix). Returns the number of\n  processes that were successfully signaled. Does NOT match the current\n  Scheme process.\nExample:\n  (pkill \"sleep\") => 2",
     "process-alive?": "Syntax: (process-alive? handle)\nLibrary: (scm system)\nDescription: Returns #t if the process started by start-program is still running, #f if it has exited.\nExample:\n  (process-alive? p) => #t",
     "process-kill": "Syntax: (process-kill handle [force?])\nLibrary: (scm system)\nDescription: Stops a process started by start-program. With force? = #f (default) requests a normal termination (SIGTERM on Unix, TerminateProcess on Windows via Process.destroy). With force? = #t kills forcefully (SIGKILL on Unix). Returns #t.\nExample:\n  (process-kill p)        ; graceful where supported\n  (process-kill p #t)     ; force",
     "process-pid": "Syntax: (process-pid handle)\nLibrary: (scm system)\nDescription: Returns the OS process id of a process handle returned by start-program.\nExample:\n  (process-pid p) => 12345",
     "process-wait": "Syntax: (process-wait handle [timeout-ms])\nLibrary: (scm system)\nDescription: Waits for the process to exit. Without timeout-ms, blocks until exit and returns the exit code as an integer. With timeout-ms, waits at most that long; returns the exit code on exit, or #f if the process is still running when the timeout elapses.\nExample:\n  (process-wait p)            => 0\n  (process-wait p 5000)       => 0 or #f",
+    "ps": "Syntax: (ps)\nLibrary: (scm system)\nDescription: Returns a list of alists describing the processes currently\n  visible on the system. Each alist has the keys:\n    pid         — process id (integer)\n    ppid        — parent pid (integer) or #f\n    command     — process command as a string, or #f\n    user        — owning user (string) or #f\n    start-time  — epoch milliseconds (integer) or #f\n    cpu-time    — accumulated cpu time in seconds (inexact) or #f\n  Fields the platform cannot supply or that the current user cannot\n  access are #f. Order is unspecified.\nExample:\n  (length (ps)) => 312",
+    "ps-info": "Syntax: (ps-info pid)\nLibrary: (scm system)\nDescription: Returns an alist describing the process with the given pid,\n  or #f if no such process exists or it cannot be inspected. See (ps)\n  for the field set.\nExample:\n  (cdr (assq 'command (ps-info (current-pid)))) => \"scm\"",
     "run": "Syntax: (run prog arg ...)\nLibrary: (scm system)\nDescription: Varargs wrapper around run-program. Runs the external program\n  prog with the given arguments and returns its exit code.\nExample:\n  (run \"echo\" \"hello\") => 0",
     "run!": "Syntax: (run! prog arg ...)\nLibrary: (scm system)\nDescription: Like run, but raises an error when the program exits non-zero\n  or fails to launch. Returns 0 on success.\nExample:\n  (run! \"true\") => 0",
     "run-parallel": "Syntax: (run-parallel fn values)\nLibrary: (scm system)\nDescription: Runs fn in parallel over each element of values using one thread per\n  element and returns the results as a list in the same order. Exceptions raised\n  in any thread are propagated when joining.\nExample:\n  (run-parallel (lambda (x) (* x x)) '(1 2 3 4)) => (1 4 9 16)",

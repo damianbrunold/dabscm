@@ -110,6 +110,7 @@ public class Primitives
         Bind(new PrimitiveCurrentDirectory());
         Bind(new PrimitiveCurrentModule(modules));
         Bind(new PrimitiveCurrentNanosecond());
+        Bind(new PrimitiveCurrentPid());
         Bind(new PrimitiveCurrentSourceLocation());
         Bind(new PrimitiveCurrentThread());
         Bind(new PrimitiveDatumToSyntax());
@@ -222,6 +223,7 @@ public class Primitives
         Bind(new PrimitiveJoinTimeoutExceptionP());
         Bind(new PrimitiveJsonAttribute());
         Bind(new PrimitiveJsonNextObject());
+        Bind(new PrimitiveKill());
         Bind(new PrimitiveLambdaP());
         Bind(new PrimitiveLength());
         Bind(new PrimitiveListP());
@@ -303,10 +305,13 @@ public class Primitives
         Bind(new PrimitivePBKDF2SHA256());
         Bind(new PrimitivePairP());
         Bind(new PrimitivePairSource());
+        Bind(new PrimitiveParentPid());
         Bind(new PrimitivePeekChar(modules));
         Bind(new PrimitivePeekU8());
         Bind(new PrimitivePgParseDatarow());
         Bind(new PrimitivePgQuoteLiteral());
+        Bind(new PrimitivePgrep());
+        Bind(new PrimitivePkill());
         Bind(new PrimitivePortPosition(modules));
         Bind(new PrimitivePrimitive(modules.primitives));
         Bind(new PrimitivePrimitiveP());
@@ -316,6 +321,8 @@ public class Primitives
         Bind(new PrimitiveProcessNanosecond());
         Bind(new PrimitiveProcessPid());
         Bind(new PrimitiveProcessWait());
+        Bind(new PrimitivePs());
+        Bind(new PrimitivePsInfo());
         Bind(new PrimitiveQuotient());
         Bind(new PrimitiveRaiseFatal());
         Bind(new PrimitiveRandomBytes());

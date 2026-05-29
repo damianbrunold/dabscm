@@ -2,15 +2,22 @@
   (import (only (scm core) modules)
           (scheme base)
           (srfi 18))
-  (export env-list
+  (export current-pid
+          env-list
           get-environment-variable
           get-bytes
           getopt
+          kill
           modules
+          parent-pid
+          pgrep
+          pkill
           process-alive?
           process-kill
           process-pid
           process-wait
+          ps
+          ps-info
           run
           run!
           run?
@@ -43,6 +50,13 @@
     (define process-kill   (%primitive "process-kill"))
     (define process-pid    (%primitive "process-pid"))
     (define process-wait   (%primitive "process-wait"))
+    (define current-pid    (%primitive "current-pid"))
+    (define parent-pid     (%primitive "parent-pid"))
+    (define ps             (%primitive "ps"))
+    (define ps-info        (%primitive "ps-info"))
+    (define pgrep          (%primitive "pgrep"))
+    (define pkill          (%primitive "pkill"))
+    (define kill           (%primitive "kill"))
     (define run-program (%primitive "run-program"))
     (define run-program/capture (%primitive "run-program/capture"))
     (define start-program (%primitive "start-program"))

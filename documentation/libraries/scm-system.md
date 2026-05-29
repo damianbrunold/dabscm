@@ -4,6 +4,16 @@ System info, environment variables, process execution
 
 ## Exports
 
+### `current-pid`
+
+```
+Syntax: (current-pid)
+Library: (scm system)
+Description: Returns the OS process id of the current Scheme process.
+Example:
+  (current-pid) => 12345
+```
+
 ### `env-list`
 
 ```
@@ -60,9 +70,63 @@ Example:
   => ((("verbose" . #t) ("name" . "foo")) . ("a" "b"))
 ```
 
+### `kill`
+
+```
+Syntax: (kill pid [force?])
+Library: (scm system)
+Description: Sends a termination request to the process with the given
+  pid. With force? = #f (default) requests a normal termination
+  (SIGTERM on Unix); with force? = #t kills forcefully (SIGKILL on Unix).
+  Returns #t if the request was delivered, #f if the process does not
+  exist or the caller lacks permission to signal it.
+Example:
+  (kill 12345)        ; graceful
+  (kill 12345 #t)     ; force
+```
+
 ### `modules`
 
 *(no documentation)*
+
+### `parent-pid`
+
+```
+Syntax: (parent-pid)
+Library: (scm system)
+Description: Returns the OS process id of the parent of the current
+  Scheme process, or #f if it cannot be determined.
+Example:
+  (parent-pid) => 12340
+```
+
+### `pgrep`
+
+```
+Syntax: (pgrep pattern [full?])
+Library: (scm system)
+Description: Returns a list of pids whose command matches the substring
+  pattern. By default matches against the process name. If full? is #t,
+  matches against the full command line (where the platform supplies it).
+  Pattern matching is case-sensitive substring.
+Example:
+  (pgrep "java") => (1234 5678)
+```
+
+### `pkill`
+
+```
+Syntax: (pkill pattern [force? [full?]])
+Library: (scm system)
+Description: Sends a termination request to every process whose command
+  matches the substring pattern. By default matches against the process
+  name; if full? is #t, matches against the full command line. With
+  force? = #t kills forcefully (SIGKILL on Unix). Returns the number of
+  processes that were successfully signaled. Does NOT match the current
+  Scheme process.
+Example:
+  (pkill "sleep") => 2
+```
 
 ### `process-alive?`
 
@@ -104,6 +168,37 @@ Description: Waits for the process to exit. Without timeout-ms, blocks until exi
 Example:
   (process-wait p)            => 0
   (process-wait p 5000)       => 0 or #f
+```
+
+### `ps`
+
+```
+Syntax: (ps)
+Library: (scm system)
+Description: Returns a list of alists describing the processes currently
+  visible on the system. Each alist has the keys:
+    pid         — process id (integer)
+    ppid        — parent pid (integer) or #f
+    command     — process command as a string, or #f
+    user        — owning user (string) or #f
+    start-time  — epoch milliseconds (integer) or #f
+    cpu-time    — accumulated cpu time in seconds (inexact) or #f
+  Fields the platform cannot supply or that the current user cannot
+  access are #f. Order is unspecified.
+Example:
+  (length (ps)) => 312
+```
+
+### `ps-info`
+
+```
+Syntax: (ps-info pid)
+Library: (scm system)
+Description: Returns an alist describing the process with the given pid,
+  or #f if no such process exists or it cannot be inspected. See (ps)
+  for the field set.
+Example:
+  (cdr (assq 'command (ps-info (current-pid)))) => "scm"
 ```
 
 ### `run`

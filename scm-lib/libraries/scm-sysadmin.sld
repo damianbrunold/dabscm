@@ -105,14 +105,21 @@
           ssh
           wget
           ;; (scm system)
+          current-pid
           env-list
           get-environment-variable
           get-bytes
           getopt
+          kill
+          parent-pid
+          pgrep
+          pkill
           process-alive?
           process-kill
           process-pid
           process-wait
+          ps
+          ps-info
           run
           run!
           run?
