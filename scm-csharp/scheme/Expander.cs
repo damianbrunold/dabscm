@@ -1458,7 +1458,7 @@ public class Expander
             while (filenames != Value.NIL)
             {
                 var filename = new string(Value.AsString(Value.AsPair(filenames).car));
-                evaluator.EvalFile(filename);
+                evaluator.EvalFile(ResolveIncludePath(pos, filename));
                 filenames = Value.AsPair(filenames).cdr;
             }
         }
@@ -1468,9 +1468,10 @@ public class Expander
             while (filenames != Value.NIL)
             {
                 var filename = new string(Value.AsString(Value.AsPair(filenames).car));
-                using var stream = new TextStream(new StreamReader(new FileStream(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite), Encoding.UTF8), filename);
+                var resolved = ResolveIncludePath(pos, filename);
+                using var stream = new TextStream(new StreamReader(new FileStream(resolved, FileMode.Open, FileAccess.Read, FileShare.ReadWrite), Encoding.UTF8), resolved);
                 stream.FoldCase = true;
-                evaluator.EvalFile(stream, filename);
+                evaluator.EvalFile(stream, resolved);
                 filenames = Value.AsPair(filenames).cdr;
             }
         }
@@ -1480,7 +1481,8 @@ public class Expander
             while (filenames != Value.NIL)
             {
                 var filename = new string(Value.AsString(Value.AsPair(filenames).car));
-                using var stream = new TextStream(new StreamReader(new FileStream(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite), Encoding.UTF8), filename);
+                var resolved = ResolveIncludePath(pos, filename);
+                using var stream = new TextStream(new StreamReader(new FileStream(resolved, FileMode.Open, FileAccess.Read, FileShare.ReadWrite), Encoding.UTF8), resolved);
                 object form = evaluator.Read(stream);
                 while (!form.Equals(Value.EOF))
                 {
@@ -1518,6 +1520,25 @@ public class Expander
         {
             evaluator.Eval(pos, current);
         }
+    }
+
+    /// <summary>
+    /// Resolve an include filename relative to the containing source file
+    /// (per R7RS §5.1), falling back to the CWD if not found there.
+    /// </summary>
+    private string ResolveIncludePath(SourcePos? pos, string filename)
+    {
+        if (Path.IsPathRooted(filename)) return filename;
+        if (pos != null && !string.IsNullOrEmpty(pos.filename))
+        {
+            var parent = Path.GetDirectoryName(Path.GetFullPath(pos.filename));
+            if (!string.IsNullOrEmpty(parent))
+            {
+                var candidate = Path.Combine(parent, filename);
+                if (File.Exists(candidate)) return candidate;
+            }
+        }
+        return filename;
     }
 
     /// <summary>

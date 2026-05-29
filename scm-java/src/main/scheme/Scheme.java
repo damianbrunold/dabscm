@@ -149,13 +149,13 @@ public class Scheme implements IEvaluator {
 
     public Object evalFile(File file) {
         try {
-            return evalFile(new FileInputStream(file), file.getName());
+            return evalFile(new FileInputStream(file), file.getPath());
         } catch (SchemeError e) {
             throw e;
         } catch (java.io.IOException e) {
-            throw new SchemeError("Cannot evaluate file ~a: io error", file.getName());
+            throw new SchemeError("Cannot evaluate file ~a: io error", file.getPath());
         } catch (Exception e) {
-            throw new SchemeError("Cannot evaluate file ~a: internal error", file.getName());
+            throw new SchemeError("Cannot evaluate file ~a: internal error", file.getPath());
         }
     }
 

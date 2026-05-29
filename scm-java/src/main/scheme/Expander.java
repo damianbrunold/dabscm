@@ -1297,17 +1297,18 @@ public class Expander {
             Object filenames = val;
             while (filenames != Value.NIL && Value.isPair(filenames)) {
                 String filename = new String(Value.asString(Value.asPair(filenames).car));
-                evaluator.evalFile(new java.io.File(filename));
+                evaluator.evalFile(resolveIncludePath(pos, filename));
                 filenames = Value.asPair(filenames).cdr;
             }
         } else if (what.equals("include-ci")) {
             Object filenames = val;
             while (filenames != Value.NIL && Value.isPair(filenames)) {
                 String filename = new String(Value.asString(Value.asPair(filenames).car));
+                java.io.File resolved = resolveIncludePath(pos, filename);
                 try {
-                    TextStream stream = new TextStream(new java.io.PushbackReader(new java.io.InputStreamReader(new java.io.FileInputStream(new java.io.File(filename)), java.nio.charset.StandardCharsets.UTF_8)), filename);
+                    TextStream stream = new TextStream(new java.io.PushbackReader(new java.io.InputStreamReader(new java.io.FileInputStream(resolved), java.nio.charset.StandardCharsets.UTF_8)), resolved.getPath());
                     stream.foldCase = true;
-                    evaluator.evalFile(stream, filename);
+                    evaluator.evalFile(stream, resolved.getPath());
                 } catch (java.io.IOException e) {
                     throw new SchemeError(pos, "include-ci: cannot open file ~a: ~a", filename, e.getMessage());
                 }
@@ -1317,8 +1318,9 @@ public class Expander {
             Object filenames = val;
             while (filenames != Value.NIL && Value.isPair(filenames)) {
                 String filename = new String(Value.asString(Value.asPair(filenames).car));
+                java.io.File resolved = resolveIncludePath(pos, filename);
                 try {
-                    TextStream stream = new TextStream(new java.io.PushbackReader(new java.io.InputStreamReader(new java.io.FileInputStream(new java.io.File(filename)), java.nio.charset.StandardCharsets.UTF_8)), filename);
+                    TextStream stream = new TextStream(new java.io.PushbackReader(new java.io.InputStreamReader(new java.io.FileInputStream(resolved), java.nio.charset.StandardCharsets.UTF_8)), resolved.getPath());
                     Object form = evaluator.read(stream);
                     while (form != Value.EOF) {
                         processLibraryDeclaration(stream.pos(), Value.asPair(form), module, exports);
@@ -1351,6 +1353,24 @@ public class Expander {
         } else if (what.equals("begin")) {
             evaluator.eval(pos, current);
         }
+    }
+
+    /**
+     * Resolve an include filename relative to the containing source file
+     * (per R7RS §5.1), falling back to the CWD if not found there.
+     */
+    private java.io.File resolveIncludePath(SourcePos pos, String filename) {
+        java.io.File f = new java.io.File(filename);
+        if (f.isAbsolute()) return f;
+        if (pos != null && pos.filename != null && !pos.filename.isEmpty()) {
+            java.io.File source = new java.io.File(pos.filename);
+            java.io.File parent = source.getAbsoluteFile().getParentFile();
+            if (parent != null) {
+                java.io.File candidate = new java.io.File(parent, filename);
+                if (candidate.exists()) return candidate;
+            }
+        }
+        return f;
     }
 
     /**
