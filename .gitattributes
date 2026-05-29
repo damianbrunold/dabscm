@@ -1,0 +1,28 @@
+# Normalize line endings: store LF in the repo and check out LF in the
+# working tree on every platform. Without this, Windows checkouts (with
+# the default core.autocrlf=true) get CRLF .sld files, and docstrings
+# read by update-documentation.scm end up containing CRLF — which then
+# leaks into the regenerated .md / .html files and shows them as
+# modified even when nothing else changed.
+
+* text=auto eol=lf
+
+# Binary files: never touch line endings or try to diff as text.
+*.docx     binary
+*.xlsx     binary
+*.pptx     binary
+*.odt      binary
+*.ods      binary
+*.pdf      binary
+*.zip      binary
+*.jar      binary
+*.class    binary
+*.png      binary
+*.jpg      binary
+*.jpeg     binary
+*.gif      binary
+*.ico      binary
+*.ttf      binary
+*.otf      binary
+*.woff     binary
+*.woff2    binary
