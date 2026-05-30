@@ -91,6 +91,7 @@ public class Primitives {
         bind(new PrimitiveCloseJson());
         bind(new PrimitiveCloseOutputPort());
         bind(new PrimitiveCloseOutputZip());
+        bind(new PrimitiveCloseRandomAccessFile());
         bind(new PrimitiveCloseXml());
         bind(new PrimitiveCommandLine());
         bind(new PrimitiveCompile(modules));
@@ -310,6 +311,7 @@ public class Primitives {
         bind(new PrimitiveOpenOutputString());
         bind(new PrimitiveOpenOutputZipBytevector());
         bind(new PrimitiveOpenOutputZipFile());
+        bind(new PrimitiveOpenRandomAccessFile());
         bind(new PrimitiveOpenXmlBytevector());
         bind(new PrimitiveOpenXmlFile());
         bind(new PrimitiveOpenXmlString());
@@ -339,6 +341,12 @@ public class Primitives {
         bind(new PrimitivePsInfo());
         bind(new PrimitiveQuotient());
         bind(new PrimitiveRaiseFatal());
+        bind(new PrimitiveRandomAccessFileFlush());
+        bind(new PrimitiveRandomAccessFileP());
+        bind(new PrimitiveRandomAccessFileRead());
+        bind(new PrimitiveRandomAccessFileSize());
+        bind(new PrimitiveRandomAccessFileTruncateB());
+        bind(new PrimitiveRandomAccessFileWriteB());
         bind(new PrimitiveRandomBytes());
         bind(new PrimitiveRationalDenominator());
         bind(new PrimitiveRationalNumerator());
