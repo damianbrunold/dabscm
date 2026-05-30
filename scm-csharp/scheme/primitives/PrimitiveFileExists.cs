@@ -21,7 +21,7 @@ public class PrimitiveFileExists : Primitive
     public override object Apply(SourcePos? pos, object[] arguments)
     {
         CheckArgs(pos, arguments, 1, 1);
-        var path = new String(Value.AsString(arguments[0]));
+        var path = LongPath.Wlp(new String(Value.AsString(arguments[0])));
         if (File.Exists(path)) return Value.T;
         return Value.F;
     }

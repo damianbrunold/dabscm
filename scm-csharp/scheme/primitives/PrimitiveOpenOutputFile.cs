@@ -26,6 +26,7 @@ public class PrimitiveOpenOutputFile : Primitive
     {
         CheckArgs(pos, arguments, 1, 4);
         string filename = new String(Value.AsString(arguments[0]));
+        string path = LongPath.Wlp(filename);
         try
         {
             Encoding encoding = Encodings.GetEncoding("utf-8");
@@ -62,7 +63,7 @@ public class PrimitiveOpenOutputFile : Primitive
                     return new TextOutputStream(new StreamWriter(
                         new DeflateStream(
                             new FileStream(
-                                filename,
+                                path,
                                 FileMode.Append,
                                 FileAccess.Write,
                                 FileShare.Read
@@ -77,7 +78,7 @@ public class PrimitiveOpenOutputFile : Primitive
                 {
                     return new TextOutputStream(new StreamWriter(
                         new FileStream(
-                            filename,
+                            path,
                             FileMode.Append,
                             FileAccess.Write,
                             FileShare.Read
@@ -94,7 +95,7 @@ public class PrimitiveOpenOutputFile : Primitive
                     return new TextOutputStream(new StreamWriter(
                         new DeflateStream(
                             new FileStream(
-                                filename,
+                                path,
                                 FileMode.Create,
                                 FileAccess.Write,
                                 FileShare.Read
@@ -109,7 +110,7 @@ public class PrimitiveOpenOutputFile : Primitive
                 {
                     return new TextOutputStream(new StreamWriter(
                         new FileStream(
-                            filename,
+                            path,
                             FileMode.Create,
                             FileAccess.Write,
                             FileShare.Read

@@ -1,6 +1,9 @@
 package scheme.primitives;
 
-import java.io.File;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
 
 import scheme.*;
 
@@ -18,16 +21,22 @@ public class PrimitiveDirectoryFiles extends Primitive {
                "Example:\n" +
                "  (directory-files \"/tmp\") => (\"file1.txt\" \"file2.txt\" ...)";
     }
-    
+
     @Override
     public Object apply(SourcePos pos, Object[] arguments) {
         checkArgs(pos, arguments, 1, 1);
-        File dir = new File(new String(Value.asString(arguments[0])));
-        File[] files = dir.listFiles();
+        var dir = new String(Value.asString(arguments[0]));
         Object result = Value.NIL;
-        for (int i = files.length - 1; i >= 0; i--) {
-            if (files[i].isDirectory()) continue;
-            result = new Pair(files[i].getName().toCharArray(), result);
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(LongPath.of(dir))) {
+            ArrayList<Path> entries = new ArrayList<>();
+            for (Path p : stream) entries.add(p);
+            for (int i = entries.size() - 1; i >= 0; i--) {
+                if (Files.isDirectory(entries.get(i))) continue;
+                result = new Pair(entries.get(i).getFileName().toString().toCharArray(), result);
+            }
+        } catch (Exception e) {
+            // listFiles() returned null (and NPE'd) on a non-directory before;
+            // return an empty list instead.
         }
         return result;
     }

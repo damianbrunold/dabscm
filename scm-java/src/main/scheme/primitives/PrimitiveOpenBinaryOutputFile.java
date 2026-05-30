@@ -2,7 +2,7 @@ package scheme.primitives;
 
 import scheme.*;
 
-import java.io.*;
+import java.nio.file.Files;
 
 public class PrimitiveOpenBinaryOutputFile extends Primitive {
     @Override public String name() { return "open-binary-output-file"; }
@@ -20,7 +20,7 @@ public class PrimitiveOpenBinaryOutputFile extends Primitive {
         checkArgs(pos, arguments, 1, 1);
         String filename = new String(Value.asString(arguments[0]));
         try {
-            return new BinaryOutputStream(new FileOutputStream(filename), false);
+            return new BinaryOutputStream(Files.newOutputStream(LongPath.of(filename)), false);
         } catch (Exception e) {
             throw new SchemeError(pos, new FileErrorObject("open-binary-output-file: io failure", new Object[] { filename }));
         }

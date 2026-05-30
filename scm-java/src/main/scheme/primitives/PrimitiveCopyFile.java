@@ -2,7 +2,6 @@ package scheme.primitives;
 
 import scheme.*;
 
-import java.io.File;
 import java.nio.file.Files;
 
 import static java.nio.file.StandardCopyOption.*;
@@ -21,7 +20,7 @@ public class PrimitiveCopyFile extends Primitive {
                "Example:\n" +
                "  (copy-file \"data.txt\" \"backup.txt\")";
     }
-    
+
     @Override
     public Object apply(SourcePos pos, Object[] arguments) {
         checkArgs(pos, arguments, 2, 2);
@@ -29,8 +28,8 @@ public class PrimitiveCopyFile extends Primitive {
         var dst = new String(Value.asString(arguments[1]));
         try {
             Files.copy(
-                new File(src).toPath(),
-                new File(dst).toPath(),
+                LongPath.of(src),
+                LongPath.of(dst),
                 REPLACE_EXISTING,
                 COPY_ATTRIBUTES
             );

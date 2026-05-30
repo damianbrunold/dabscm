@@ -20,7 +20,7 @@ public class PrimitiveFileModificationDate : Primitive
     public override object Apply(SourcePos? pos, object[] arguments)
     {
         CheckArgs(pos, arguments, 1, 1);
-        var file = new String(Value.AsString(arguments[0]));
+        var file = LongPath.Wlp(new String(Value.AsString(arguments[0])));
         var modified = File.GetLastWriteTimeUtc(file);
         return new DateTimeOffset(modified).ToUnixTimeSeconds();
     }

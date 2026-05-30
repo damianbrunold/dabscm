@@ -5,6 +5,7 @@ import scheme.*;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 
@@ -23,12 +24,12 @@ public class PrimitiveOpenInputFile extends Primitive {
                "  (define p (open-input-file \"data.txt\"))\n" +
                "  (read-char p) => first character of file";
     }
-    
+
     @Override
     public Object apply(SourcePos pos, Object[] arguments) {
         checkArgs(pos, arguments, 1, 3);
         String filename = new String(Value.asString(arguments[0]));
-        if (!new File(filename).exists()) {
+        if (!Files.exists(LongPath.of(filename))) {
             throw new SchemeError(pos, new FileErrorObject("open-input-file: file not found", new Object[] { filename }));
         }
         try {
@@ -47,7 +48,7 @@ public class PrimitiveOpenInputFile extends Primitive {
                     deflate = true;
                 }
             }
-            InputStream strm = new FileInputStream(filename);
+            InputStream strm = Files.newInputStream(LongPath.of(filename));
             if (deflate) {
                 return new TextStream(new PushbackReader(new BufferedReader(new InputStreamReader(new InflaterInputStream(strm, new Inflater(true)), encoding), 8192)), filename);
             } else {

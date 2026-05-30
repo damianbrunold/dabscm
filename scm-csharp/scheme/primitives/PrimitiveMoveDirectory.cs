@@ -20,8 +20,8 @@ public class PrimitiveMoveDirectory : Primitive
     public override object Apply(SourcePos? pos, object[] arguments)
     {
         CheckArgs(pos, arguments, 2, 2);
-        var src = new String(Value.AsString(arguments[0]));
-        var dst = new String(Value.AsString(arguments[1]));
+        var src = LongPath.Wlp(new String(Value.AsString(arguments[0])));
+        var dst = LongPath.Wlp(new String(Value.AsString(arguments[1])));
         try
         {
             Directory.Move(src, dst);

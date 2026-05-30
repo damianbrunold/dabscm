@@ -1,6 +1,6 @@
 package scheme.primitives;
 
-import java.io.File;
+import java.nio.file.Files;
 
 import scheme.*;
 
@@ -22,7 +22,11 @@ public class PrimitiveFileModificationDate extends Primitive {
     @Override
     public Object apply(SourcePos pos, Object[] arguments) {
         checkArgs(pos, arguments, 1, 1);
-        var file = new File(new String(Value.asString(arguments[0])));
-        return file.lastModified() / 1000L;
+        var file = new String(Value.asString(arguments[0]));
+        try {
+            return Files.getLastModifiedTime(LongPath.of(file)).toMillis() / 1000L;
+        } catch (Exception e) {
+            return 0L;
+        }
     }
 }

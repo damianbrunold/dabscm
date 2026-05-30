@@ -5,6 +5,8 @@ import scheme.*;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
 
@@ -23,7 +25,7 @@ public class PrimitiveOpenOutputFile extends Primitive {
                "  (define p (open-output-file \"out.txt\"))\n" +
                "  (write-char #\\A p)";
     }
-    
+
     @Override
     public Object apply(SourcePos pos, Object[] arguments) {
         checkArgs(pos, arguments, 1, 4);
@@ -43,7 +45,7 @@ public class PrimitiveOpenOutputFile extends Primitive {
                 }
                 if (Encoding.isEncoding(arg)) {
                     encoding = Encoding.getEncoding(arg);
-                    add_bom = arg.toLowerCase().equals("utf8bom") 
+                    add_bom = arg.toLowerCase().equals("utf8bom")
                         || arg.toLowerCase().equals("utf-8-bom");
                 } else if (arg.equals("deflate")) {
                     deflate = true;
@@ -51,20 +53,14 @@ public class PrimitiveOpenOutputFile extends Primitive {
                     append = true;
                 }
             }
-            if (append) {
-                if (deflate) {
-                    return new TextOutputStream(new BufferedWriter(new OutputStreamWriter(new DeflaterOutputStream(new FileOutputStream(filename, true), new Deflater(Deflater.DEFAULT_COMPRESSION, true)), encoding), 8192));
-                } else {
-                    // TODO handle BOM?
-                    return new TextOutputStream(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(filename, true), encoding), 8192));
-                }
+            OutputStream fos = append
+                ? Files.newOutputStream(LongPath.of(filename), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+                : Files.newOutputStream(LongPath.of(filename), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+            if (deflate) {
+                return new TextOutputStream(new BufferedWriter(new OutputStreamWriter(new DeflaterOutputStream(fos, new Deflater(Deflater.DEFAULT_COMPRESSION, true)), encoding), 8192));
             } else {
-                if (deflate) {
-                    return new TextOutputStream(new BufferedWriter(new OutputStreamWriter(new DeflaterOutputStream(new FileOutputStream(filename), new Deflater(Deflater.DEFAULT_COMPRESSION, true)), encoding), 8192));
-                } else {
-                    // TODO handle BOM?
-                    return new TextOutputStream(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(filename), encoding), 8192));
-                }
+                // TODO handle BOM?
+                return new TextOutputStream(new BufferedWriter(new OutputStreamWriter(fos, encoding), 8192));
             }
         } catch (Exception e) {
             throw new SchemeError(pos, new FileErrorObject("open-output-file: io failure", new Object[] { filename }));

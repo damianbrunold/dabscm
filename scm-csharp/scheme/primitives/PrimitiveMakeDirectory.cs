@@ -20,7 +20,7 @@ public class PrimitiveMakeDirectory : Primitive
     public override object Apply(SourcePos? pos, object[] arguments)
     {
         CheckArgs(pos, arguments, 1, 1);
-        var path = new String(Value.AsString(arguments[0]));
+        var path = LongPath.Wlp(new String(Value.AsString(arguments[0])));
         Directory.CreateDirectory(path);
         return new Values();
     }

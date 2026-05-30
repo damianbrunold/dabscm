@@ -17,9 +17,10 @@ public class PrimitiveOpenBinaryOutputFile : Primitive
     {
         CheckArgs(pos, arguments, 1, 1);
         string filename = new String(Value.AsString(arguments[0]));
+        string path = LongPath.Wlp(filename);
         try
         {
-            return new BinaryOutputStream(new FileStream(filename, FileMode.Create, FileAccess.Write, FileShare.Read));
+            return new BinaryOutputStream(new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read));
         }
         catch (Exception)
         {

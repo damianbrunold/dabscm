@@ -1,14 +1,17 @@
 package scheme.primitives;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 
 import scheme.Primitive;
 import scheme.SourcePos;
 import scheme.Value;
 import scheme.Values;
+import scheme.LongPath;
 
 public class PrimitiveCopyDirectory extends Primitive {
     @Override
@@ -28,8 +31,8 @@ public class PrimitiveCopyDirectory extends Primitive {
     @Override
     public Object apply(SourcePos pos, Object[] arguments) {
         checkArgs(pos, arguments, 2, 2);
-        var src = new File(new String(Value.asString(arguments[0])));
-        var dst = new File(new String(Value.asString(arguments[1])));
+        var src = LongPath.of(new String(Value.asString(arguments[0])));
+        var dst = LongPath.of(new String(Value.asString(arguments[1])));
         try {
             copyDirectory(src, dst);
             return new Values();
@@ -38,24 +41,21 @@ public class PrimitiveCopyDirectory extends Primitive {
         }
     }
 
-    static void copyDirectory(File src, File dest) throws IOException {
-        if (src.exists() && src.isDirectory()) {
-            if (!dest.exists()) dest.mkdir();
-            File[] files = src.listFiles();
-            for (File file : files) {
-                if (file.isDirectory()) {
-                    continue;
-                }
-                Files.copy(file.toPath(),
-                        new File(dest, file.getName()).toPath(),
-                        StandardCopyOption.REPLACE_EXISTING);
-            }
-            for (File file : files) {
-                if (!file.isDirectory()) {
-                    continue;
-                }
-                copyDirectory(file, new File(dest, file.getName()));
-            }
+    static void copyDirectory(Path src, Path dest) throws IOException {
+        if (!Files.isDirectory(src)) return;
+        if (!Files.exists(dest)) Files.createDirectories(dest);
+        ArrayList<Path> entries = new ArrayList<>();
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(src)) {
+            for (Path p : stream) entries.add(p);
+        }
+        for (Path p : entries) {
+            if (Files.isDirectory(p)) continue;
+            Files.copy(p, dest.resolve(p.getFileName().toString()),
+                       StandardCopyOption.REPLACE_EXISTING);
+        }
+        for (Path p : entries) {
+            if (!Files.isDirectory(p)) continue;
+            copyDirectory(p, dest.resolve(p.getFileName().toString()));
         }
     }
 }

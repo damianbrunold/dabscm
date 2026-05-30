@@ -2,7 +2,7 @@ package scheme.primitives;
 
 import scheme.*;
 
-import java.io.File;
+import java.nio.file.Files;
 
 public class PrimitiveFileSize extends Primitive {
     @Override
@@ -18,13 +18,13 @@ public class PrimitiveFileSize extends Primitive {
                "Example:\n" +
                "  (file-size \"/etc/hosts\") => 221";
     }
-    
+
     @Override
     public Object apply(SourcePos pos, Object[] arguments) {
         checkArgs(pos, arguments, 1, 1);
         var file = new String(Value.asString(arguments[0]));
         try {
-            return new File(file).length();
+            return Files.size(LongPath.of(file));
         } catch (Exception e) {
             return Value.F;
         }

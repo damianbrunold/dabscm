@@ -1,8 +1,9 @@
 package scheme.primitives;
 
-import scheme.*;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 
-import java.io.File;
+import scheme.*;
 
 public class PrimitiveMoveDirectory extends Primitive {
     @Override
@@ -18,14 +19,14 @@ public class PrimitiveMoveDirectory extends Primitive {
                "Example:\n" +
                "  (move-directory \"/tmp/old\" \"/tmp/new\")";
     }
-    
+
     @Override
     public Object apply(SourcePos pos, Object[] arguments) {
         checkArgs(pos, arguments, 2, 2);
         var src = new String(Value.asString(arguments[0]));
         var dst = new String(Value.asString(arguments[1]));
         try {
-            new File(src).renameTo(new File(dst));
+            Files.move(LongPath.of(src), LongPath.of(dst), StandardCopyOption.REPLACE_EXISTING);
             return new Values();
         } catch (Exception e) {
             return Value.F;

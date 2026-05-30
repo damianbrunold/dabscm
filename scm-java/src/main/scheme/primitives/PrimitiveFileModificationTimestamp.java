@@ -1,6 +1,6 @@
 package scheme.primitives;
 
-import java.io.File;
+import java.nio.file.Files;
 
 import scheme.*;
 
@@ -18,11 +18,15 @@ public class PrimitiveFileModificationTimestamp extends Primitive {
                "Example:\n" +
                "  (file-modification-timestamp \"data.txt\") => 1700000000000";
     }
-    
+
     @Override
     public Object apply(SourcePos pos, Object[] arguments) {
         checkArgs(pos, arguments, 1, 1);
-        var file = new File(new String(Value.asString(arguments[0])));
-        return file.lastModified();
+        var file = new String(Value.asString(arguments[0]));
+        try {
+            return Files.getLastModifiedTime(LongPath.of(file)).toMillis();
+        } catch (Exception e) {
+            return 0L;
+        }
     }
 }

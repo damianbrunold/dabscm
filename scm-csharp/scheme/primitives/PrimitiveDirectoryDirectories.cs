@@ -20,7 +20,7 @@ public class PrimitiveDirectoryDirectories : Primitive
     public override object Apply(SourcePos? pos, object[] arguments)
     {
         CheckArgs(pos, arguments, 1, 1);
-        var di = new DirectoryInfo(new String(Value.AsString(arguments[0])));
+        var di = new DirectoryInfo(LongPath.Wlp(new String(Value.AsString(arguments[0]))));
         var dirs = di.GetDirectories();
         object result = Value.NIL;
         for (int i = dirs.Length - 1; i >= 0; i--)

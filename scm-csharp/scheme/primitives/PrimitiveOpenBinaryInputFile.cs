@@ -17,11 +17,12 @@ public class PrimitiveOpenBinaryInputFile : Primitive
     {
         CheckArgs(pos, arguments, 1, 1);
         string filename = new String(Value.AsString(arguments[0]));
-        if (!File.Exists(filename))
+        string path = LongPath.Wlp(filename);
+        if (!File.Exists(path))
             throw new SchemeError(pos, new FileErrorObject("open-binary-input-file: file not found", new object[] { filename }));
         try
         {
-            return new BinaryInputStream(new FileStream(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
+            return new BinaryInputStream(new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
         }
         catch (Exception)
         {

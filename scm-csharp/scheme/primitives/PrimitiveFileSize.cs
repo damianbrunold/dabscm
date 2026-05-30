@@ -20,7 +20,7 @@ public class PrimitiveFileSize : Primitive
     public override object Apply(SourcePos? pos, object[] arguments)
     {
         CheckArgs(pos, arguments, 1, 1);
-        var file = new String(Value.AsString(arguments[0]));
+        var file = LongPath.Wlp(new String(Value.AsString(arguments[0])));
         try
         {
             return (long) new FileInfo(file).Length;

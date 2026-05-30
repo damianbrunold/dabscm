@@ -26,7 +26,8 @@ public class PrimitiveOpenInputFile : Primitive
     {
         CheckArgs(pos, arguments, 1, 3);
         string filename = new String(Value.AsString(arguments[0]));
-        if (!File.Exists(filename))
+        string path = LongPath.Wlp(filename);
+        if (!File.Exists(path))
         {
             throw new SchemeError(pos, new FileErrorObject("open-input-file: file not found", new object[] { filename }));
         }
@@ -60,7 +61,7 @@ public class PrimitiveOpenInputFile : Primitive
                     new StreamReader(
                         new DeflateStream(
                             new FileStream(
-                                filename,
+                                path,
                                 FileMode.Open,
                                 FileAccess.Read,
                                 FileShare.ReadWrite
@@ -77,7 +78,7 @@ public class PrimitiveOpenInputFile : Primitive
                 return new TextStream(
                     new StreamReader(
                         new FileStream(
-                            filename,
+                            path,
                             FileMode.Open,
                             FileAccess.Read,
                             FileShare.ReadWrite

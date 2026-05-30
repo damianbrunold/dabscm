@@ -20,11 +20,12 @@ public class PrimitiveDeleteFile : Primitive
     public override object Apply(SourcePos? pos, object[] arguments)
     {
         CheckArgs(pos, arguments, 1, 1);
-        var file = new String(Value.AsString(arguments[0]));
+        var raw = new String(Value.AsString(arguments[0]));
+        var file = LongPath.Wlp(raw);
         try
         {
             if (!File.Exists(file))
-                throw new SchemeError(pos, new FileErrorObject("delete-file: file does not exist: " + file, new object[] { Value.AsString(arguments[0]) }));
+                throw new SchemeError(pos, new FileErrorObject("delete-file: file does not exist: " + raw, new object[] { Value.AsString(arguments[0]) }));
             File.Delete(file);
             return new Values();
         }

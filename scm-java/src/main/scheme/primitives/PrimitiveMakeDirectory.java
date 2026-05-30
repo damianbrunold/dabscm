@@ -1,6 +1,6 @@
 package scheme.primitives;
 
-import java.io.File;
+import java.nio.file.Files;
 
 import scheme.*;
 
@@ -18,12 +18,16 @@ public class PrimitiveMakeDirectory extends Primitive {
                "Example:\n" +
                "  (make-directory \"/tmp/new/dir\")";
     }
-    
+
     @Override
     public Object apply(SourcePos pos, Object[] arguments) {
         checkArgs(pos, arguments, 1, 1);
         var path = new String(Value.asString(arguments[0]));
-        new File(path).mkdir();
+        try {
+            Files.createDirectories(LongPath.of(path));
+        } catch (Exception e) {
+            // mkdir() silently returned false on failure; preserve that.
+        }
         return new Values();
     }
 }

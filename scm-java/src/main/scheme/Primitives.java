@@ -136,6 +136,7 @@ public class Primitives {
         bind(new PrimitiveDictValues());
         bind(new PrimitiveDigitValue());
         bind(new PrimitiveDirectoryDirectories());
+        bind(new PrimitiveDirectoryEntries());
         bind(new PrimitiveDirectoryExists());
         bind(new PrimitiveDirectoryFiles());
         bind(new PrimitiveDirectoryName());
@@ -166,6 +167,7 @@ public class Primitives {
         bind(new PrimitiveFileModificationDate());
         bind(new PrimitiveFileModificationTimestamp());
         bind(new PrimitiveFileSize());
+        bind(new PrimitiveFileSymlinkP());
         bind(new PrimitiveFirst());
         bind(new PrimitiveFloor());
         bind(new PrimitiveFlushOutputPort(modules));
@@ -257,6 +259,7 @@ public class Primitives {
         bind(new PrimitiveMakeRecord());
         bind(new PrimitiveMakeRectangular());
         bind(new PrimitiveMakeString());
+        bind(new PrimitiveMakeSymlink());
         bind(new PrimitiveMakeThread(modules));
         bind(new PrimitiveMakeVector());
         bind(new PrimitiveMember());
@@ -313,6 +316,7 @@ public class Primitives {
         bind(new PrimitivePBKDF2SHA256());
         bind(new PrimitivePairP());
         bind(new PrimitivePairSource());
+        bind(new PrimitivePathExistsP());
         bind(new PrimitiveParentPid());
         bind(new PrimitivePeekChar(modules));
         bind(new PrimitivePeekU8());
@@ -343,6 +347,7 @@ public class Primitives {
         bind(new PrimitiveReadChars(modules));
         bind(new PrimitiveReadErrorP());
         bind(new PrimitiveReadLine(modules));
+        bind(new PrimitiveReadSymlink());
         bind(new PrimitiveReadU8());
         bind(new PrimitiveRealP());
         bind(new PrimitiveRecordP());
@@ -367,6 +372,7 @@ public class Primitives {
         bind(new PrimitiveSetCodeB());
         bind(new PrimitiveSetCurrentDirectory());
         bind(new PrimitiveSetCurrentModule(modules));
+        bind(new PrimitiveSetFileModificationTime());
         bind(new PrimitiveSin());
         bind(new PrimitiveSocketBinaryInputPort());
         bind(new PrimitiveSocketBinaryOutputPort());

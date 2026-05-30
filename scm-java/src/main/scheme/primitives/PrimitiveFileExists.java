@@ -1,6 +1,6 @@
 package scheme.primitives;
 
-import java.io.File;
+import java.nio.file.Files;
 
 import scheme.*;
 
@@ -19,11 +19,11 @@ public class PrimitiveFileExists extends Primitive {
                "  (file-exists? \"/etc/hosts\") => #t\n" +
                "  (file-exists? \"/nonexistent\") => #f";
     }
-    
+
     @Override
     public Object apply(SourcePos pos, Object[] arguments) {
         checkArgs(pos, arguments, 1, 1);
-        var path = new File(new String(Value.asString(arguments[0])));
-        return path.isFile();
+        var file = new String(Value.asString(arguments[0]));
+        return Files.isRegularFile(LongPath.of(file)) ? Value.T : Value.F;
     }
 }

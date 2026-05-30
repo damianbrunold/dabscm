@@ -2,7 +2,7 @@ package scheme.primitives;
 
 import scheme.*;
 
-import java.io.*;
+import java.nio.file.Files;
 
 public class PrimitiveOpenBinaryInputFile extends Primitive {
     @Override public String name() { return "open-binary-input-file"; }
@@ -19,10 +19,10 @@ public class PrimitiveOpenBinaryInputFile extends Primitive {
     public Object apply(SourcePos pos, Object[] arguments) {
         checkArgs(pos, arguments, 1, 1);
         String filename = new String(Value.asString(arguments[0]));
-        if (!new File(filename).exists())
+        if (!Files.exists(LongPath.of(filename)))
             throw new SchemeError(pos, new FileErrorObject("open-binary-input-file: file not found", new Object[] { filename }));
         try {
-            return new BinaryInputStream(new FileInputStream(filename));
+            return new BinaryInputStream(Files.newInputStream(LongPath.of(filename)));
         } catch (Exception e) {
             throw new SchemeError(pos, new FileErrorObject("open-binary-input-file: io error", new Object[] { filename }));
         }

@@ -1,8 +1,9 @@
 package scheme.primitives;
 
-import scheme.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
-import java.io.File;
+import scheme.*;
 
 public class PrimitiveDeleteFile extends Primitive {
     @Override
@@ -18,15 +19,16 @@ public class PrimitiveDeleteFile extends Primitive {
                "Example:\n" +
                "  (delete-file \"temp.txt\")";
     }
-    
+
     @Override
     public Object apply(SourcePos pos, Object[] arguments) {
         checkArgs(pos, arguments, 1, 1);
-        var file = new File(new String(Value.asString(arguments[0])));
+        var raw = new String(Value.asString(arguments[0]));
+        Path file = LongPath.of(raw);
         try {
-            if (!file.exists())
-                throw new SchemeError(pos, new FileErrorObject("delete-file: file does not exist: " + file, new Object[] { Value.asString(arguments[0]) }));
-            file.delete();
+            if (!Files.exists(file))
+                throw new SchemeError(pos, new FileErrorObject("delete-file: file does not exist: " + raw, new Object[] { Value.asString(arguments[0]) }));
+            Files.delete(file);
             return new Values();
         } catch (SchemeError e) { throw e; }
         catch (Exception e) {

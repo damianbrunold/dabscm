@@ -12,6 +12,7 @@
           delete-directory
           delete-file
           directory-directories
+          directory-entries
           directory-exists?
           directory-files
           directory-name
@@ -19,6 +20,11 @@
           file-modification-date
           file-modification-timestamp
           file-size
+          file-symlink?
+          make-symlink
+          path-exists?
+          read-symlink
+          set-file-modification-time!
           join-path
           ln
           make-directory
@@ -50,6 +56,7 @@
     (define delete-directory (%primitive "delete-directory"))
     (define delete-file (%primitive "delete-file"))
     (define directory-directories (%primitive "directory-directories"))
+    (define directory-entries (%primitive "directory-entries"))
     (define directory-exists? (%primitive "directory-exists?"))
     (define directory-files (%primitive "directory-files"))
     (define directory-name (%primitive "directory-name"))
@@ -57,6 +64,11 @@
     (define file-modification-date (%primitive "file-modification-date"))
     (define file-modification-timestamp (%primitive "file-modification-timestamp"))
     (define file-size (%primitive "file-size"))
+    (define file-symlink? (%primitive "file-symlink?"))
+    (define make-symlink (%primitive "make-symlink"))
+    (define path-exists? (%primitive "path-exists?"))
+    (define read-symlink (%primitive "read-symlink"))
+    (define set-file-modification-time! (%primitive "set-file-modification-time!"))
     (define make-directory (%primitive "make-directory"))
     (define move-directory (%primitive "move-directory"))
     (define move-file (%primitive "move-file"))

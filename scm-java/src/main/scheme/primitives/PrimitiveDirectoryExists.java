@@ -1,6 +1,6 @@
 package scheme.primitives;
 
-import java.io.File;
+import java.nio.file.Files;
 
 import scheme.*;
 
@@ -19,11 +19,11 @@ public class PrimitiveDirectoryExists extends Primitive {
                "  (directory-exists? \"/tmp\") => #t\n" +
                "  (directory-exists? \"/nonexistent\") => #f";
     }
-    
+
     @Override
     public Object apply(SourcePos pos, Object[] arguments) {
         checkArgs(pos, arguments, 1, 1);
-        var path = new File(new String(Value.asString(arguments[0])));
-        return path.exists() && path.isDirectory();
+        var dir = new String(Value.asString(arguments[0]));
+        return Files.isDirectory(LongPath.of(dir)) ? Value.T : Value.F;
     }
 }

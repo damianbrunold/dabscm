@@ -20,7 +20,7 @@ public class PrimitiveDirectoryFiles : Primitive
     public override object Apply(SourcePos? pos, object[] arguments)
     {
         CheckArgs(pos, arguments, 1, 1);
-        var di = new DirectoryInfo(new String(Value.AsString(arguments[0])));
+        var di = new DirectoryInfo(LongPath.Wlp(new String(Value.AsString(arguments[0]))));
         var files = di.GetFiles();
         object result = Value.NIL;
         for (int i = files.Length - 1; i >= 0; i--)

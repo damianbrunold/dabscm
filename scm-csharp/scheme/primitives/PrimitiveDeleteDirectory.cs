@@ -20,7 +20,7 @@ public class PrimitiveDeleteDirectory : Primitive
     public override object Apply(SourcePos? pos, object[] arguments)
     {
         CheckArgs(pos, arguments, 1, 1);
-        var dir = new String(Value.AsString(arguments[0]));
+        var dir = LongPath.Wlp(new String(Value.AsString(arguments[0])));
         try
         {
             Directory.Delete(dir, true);
