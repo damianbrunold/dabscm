@@ -132,6 +132,16 @@ Example:
   (directory-directories "/usr") => ("bin" "lib" "share" ...)
 ```
 
+### `directory-entries`
+
+```
+Syntax: (directory-entries dirname)
+Library: (scm fs)
+Description: Returns a list of (name . type) pairs for the entries in dirname, where name is the entry name (not a full path) and type is one of the symbols file, directory, or symlink. Symlinks are reported as symlink regardless of what they point to (they are not followed).
+Example:
+  (directory-entries "/tmp") => (("a.txt" . file) ("sub" . directory) ("link" . symlink) ...)
+```
+
 ### `directory-exists?`
 
 ```
@@ -204,6 +214,16 @@ Example:
   (file-size "/etc/hosts") => 221
 ```
 
+### `file-symlink?`
+
+```
+Syntax: (file-symlink? path)
+Library: (scm fs)
+Description: Returns #t if path names a symbolic link itself (without following it), otherwise #f. Returns #t even for a dangling link whose target is missing, and #f if path does not exist.
+Example:
+  (file-symlink? "/usr/local/bin/python") => #t
+```
+
 ### `join-path`
 
 ```
@@ -235,6 +255,16 @@ Library: (scm fs)
 Description: Creates the directory named by path, including all intermediate directories.
 Example:
   (make-directory "/tmp/new/dir")
+```
+
+### `make-symlink`
+
+```
+Syntax: (make-symlink target linkpath)
+Library: (scm fs)
+Description: Creates a symbolic link at linkpath whose target is the string target, stored verbatim (target need not exist). Does not replace an existing linkpath. Returns unspecified on success, #f on failure. On Windows, requires symlink-creation privilege (Developer Mode or elevation).
+Example:
+  (make-symlink "../bin/python3" "/usr/local/bin/python")
 ```
 
 ### `mktemp`
@@ -300,9 +330,29 @@ Example:
   (normalized-path "./foo/../bar") => "bar"
 ```
 
+### `path-exists?`
+
+```
+Syntax: (path-exists? path)
+Library: (scm fs)
+Description: Returns #t if path exists as a file, directory, or symbolic link (a dangling link still counts), without following links; otherwise #f. This is the lexists-style check.
+Example:
+  (path-exists? "/etc/hosts") => #t
+```
+
 ### `path-sep`
 
 *(no documentation)*
+
+### `read-symlink`
+
+```
+Syntax: (read-symlink path)
+Library: (scm fs)
+Description: Returns the raw target string stored in the symbolic link at path, exactly as recorded (not resolved or canonicalized). Returns #f if path is not a symbolic link or cannot be read.
+Example:
+  (read-symlink "/usr/local/bin/python") => "../bin/python3"
+```
 
 ### `readlink`
 
@@ -325,6 +375,16 @@ Description: Removes path. Options: 'recursive (-r) to remove a directory
 Example:
   (rm "foo.txt")
   (rm "build" 'recursive 'force)
+```
+
+### `set-file-modification-time!`
+
+```
+Syntax: (set-file-modification-time! path millis)
+Library: (scm fs)
+Description: Sets the last-modification time of the file or directory at path to millis (milliseconds since the Unix epoch, UTC). Returns unspecified on success, #f on failure. The unit matches the value returned by file-modification-timestamp.
+Example:
+  (set-file-modification-time! "dir" (file-modification-timestamp "src"))
 ```
 
 ### `special-folder-application-data`

@@ -56,9 +56,16 @@ public class PrimitiveOpenInputFile extends Primitive {
                     // check for BOM!
                     var pbstrm = new PushbackInputStream(strm, 3);
                     byte[] bom = new byte[3];
-                    if (pbstrm.read(bom) != -1) {
-                        if (!(bom[0] == (byte) 0xEF && bom[1] == (byte) 0xBB && bom[2] == (byte) 0xBF)) {
-                            pbstrm.unread(bom);
+                    int n = pbstrm.read(bom);
+                    if (n > 0) {
+                        boolean isBom = n >= 3
+                            && bom[0] == (byte) 0xEF
+                            && bom[1] == (byte) 0xBB
+                            && bom[2] == (byte) 0xBF;
+                        // Only push back the bytes actually read; unreading the
+                        // full array would inject garbage for files < 3 bytes.
+                        if (!isBom) {
+                            pbstrm.unread(bom, 0, n);
                         }
                     }
                     return new TextStream(new PushbackReader(new BufferedReader(new InputStreamReader(pbstrm, encoding), 8192)), filename);
