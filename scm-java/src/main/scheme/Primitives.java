@@ -166,8 +166,10 @@ public class Primitives {
         bind(new PrimitiveFileExists());
         bind(new PrimitiveFileModificationDate());
         bind(new PrimitiveFileModificationTimestamp());
+        bind(new PrimitiveFileLock());
         bind(new PrimitiveFileSize());
         bind(new PrimitiveFileSymlinkP());
+        bind(new PrimitiveFileUnlock());
         bind(new PrimitiveFirst());
         bind(new PrimitiveFloor());
         bind(new PrimitiveFlushOutputPort(modules));

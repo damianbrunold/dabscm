@@ -347,6 +347,7 @@
   <a href="#scm-html-builder" class="scm">(scm html builder)</a>
   <a href="#scm-html" class="scm">(scm html)</a>
   <a href="#scm-io" class="scm">(scm io)</a>
+  <a href="#scm-json-simple" class="scm">(scm json simple)</a>
   <a href="#scm-json" class="scm">(scm json)</a>
   <a href="#scm-list" class="scm">(scm list)</a>
   <a href="#scm-log" class="scm">(scm log)</a>
@@ -2590,10 +2591,12 @@
       directory-files
       directory-name
       file-exists?
+      file-lock
       file-modification-date
       file-modification-timestamp
       file-size
       file-symlink?
+      file-unlock
       join-path
       ln
       make-directory
@@ -2692,6 +2695,27 @@
       with-input-from-string
     </div>
     <div class="doc-panel" id="scm-io-doc-panel"></div>
+  </div>
+</div>
+
+<div class="library scm" id="scm-json-simple">
+  <div class="lib-header">
+    <span class="lib-name">(scm json simple)</span>
+    <span class="lib-desc"></span>
+    <span class="lib-count" id="scm-json-simple-count"></span>
+  </div>
+  <div class="lib-body">
+    <div class="exports" data-lib="scm-json-simple">
+      json-&gt;pretty-string
+      json-&gt;string
+      json-null?
+      json-parse
+      json-read
+      json-ref
+      json-write
+      json-write-pretty
+    </div>
+    <div class="doc-panel" id="scm-json-simple-doc-panel"></div>
   </div>
 </div>
 
@@ -4620,10 +4644,12 @@ const docs = {
     "directory-files": "Syntax: (directory-files dirname)\nLibrary: (scm fs)\nDescription: Returns a list of file names (not full paths) in the directory dirname.\nExample:\n  (directory-files \"/tmp\") => (\"file1.txt\" \"file2.txt\" ...)",
     "directory-name": "Syntax: (directory-name path)\nLibrary: (scm fs)\nDescription: Returns the directory part of the given path as an absolute path string, or #f if there is no parent directory.\nExample:\n  (directory-name \"/usr/share/readme.txt\") => \"/usr/share\"",
     "file-exists?": "Syntax: (file-exists? filename)\nLibrary: (scheme file)\nDescription: Returns #t if the named file exists, otherwise returns #f.\nExample:\n  (file-exists? \"/etc/hosts\") => #t\n  (file-exists? \"/nonexistent\") => #f",
+    "file-lock": "Syntax: (file-lock path)\nLibrary: (scm fs)\nDescription: Acquires an exclusive, OS-managed advisory lock on the file at\n  path, creating the file (and any parent directories) if needed. Returns a\n  lock handle on success, or #f if another process already holds the lock.\n  Release it with file-unlock; the lock is also released automatically when\n  the process exits, so it never goes stale.\nExample:\n  (define h (file-lock \"/tmp/app.lock\"))\n  (when h (file-unlock h))",
     "file-modification-date": "Syntax: (file-modification-date filename)\nLibrary: (scm fs)\nDescription: Returns the last modification time of the file as seconds since the Unix epoch (UTC).\nExample:\n  (file-modification-date \"data.txt\") => 1700000000",
     "file-modification-timestamp": "Syntax: (file-modification-timestamp filename)\nLibrary: (scm fs)\nDescription: Returns the last modification time of the file as a millisecond timestamp (milliseconds since the Unix epoch, UTC).\nExample:\n  (file-modification-timestamp \"data.txt\") => 1700000000000",
     "file-size": "Syntax: (file-size file)\nLibrary: (scm fs)\nDescription: Returns the size of the named file in bytes as an exact integer, or #f if the file cannot be accessed.\nExample:\n  (file-size \"/etc/hosts\") => 221",
     "file-symlink?": "Syntax: (file-symlink? path)\nLibrary: (scm fs)\nDescription: Returns #t if path names a symbolic link itself (without following it), otherwise #f. Returns #t even for a dangling link whose target is missing, and #f if path does not exist.\nExample:\n  (file-symlink? \"/usr/local/bin/python\") => #t",
+    "file-unlock": "Syntax: (file-unlock handle)\nLibrary: (scm fs)\nDescription: Releases a lock acquired by file-lock. Returns #t if handle was a\n  live file lock, #f otherwise.\nExample:\n  (file-unlock (file-lock \"/tmp/app.lock\")) => #t",
     "join-path": "Syntax: (join-path part ...)\nLibrary: (scm fs)\nDescription: Joins one or more path component strings into a single path\n  string using the platform's path separator character.\nExample:\n  (join-path \"/usr\" \"local\" \"bin\") => \"/usr/local/bin\"  ; on Unix",
     "ln": "Syntax: (ln target name [option ...])\nLibrary: (scm fs)\nDescription: Creates a link at name pointing to target. Options:\n  'symbolic (-s) creates a symbolic link, otherwise a hard link;\n  'force (-f) replaces an existing destination.\nExample:\n  (ln \"/usr/bin/python3\" \"/usr/local/bin/python\" 'symbolic 'force)",
     "make-directory": "Syntax: (make-directory path)\nLibrary: (scm fs)\nDescription: Creates the directory named by path, including all intermediate directories.\nExample:\n  (make-directory \"/tmp/new/dir\")",
@@ -4671,6 +4697,16 @@ const docs = {
     "port-position": "Syntax: (port-position port)\nLibrary: (scm core)\nDescription: Returns the current position of the textual input port as a list (filename line column).\nExample:\n  (define p (open-input-string \"hello\"))\n  (port-position p) => (\"{string}\" 1 1)",
     "read-chars": "Syntax: (read-chars n port)\nLibrary: (scm io)\nDescription: Reads up to n characters from the textual input port and returns them as a string. Returns an end-of-file object if no characters are available.\nExample:\n  (define p (open-input-string \"hello\"))\n  (read-chars 3 p) => \"hel\"",
     "with-input-from-string": "Syntax: (with-input-from-string str thunk)\nLibrary: (scm io)\nDescription: Temporarily redirects the current input port to a string input\n  port opened on str, calls thunk with no arguments, then restores the\n  original current input port and closes the string port. Returns the result\n  of thunk. The port is restored even if thunk raises an error.\nExample:\n  (with-input-from-string \"hello\" read) => hello",
+  },
+  "scm-json-simple": {
+    "json->pretty-string": "Syntax: (json->pretty-string val)\nLibrary: (scm json simple)\nDescription: Returns two-space-indented JSON text for val as a string\n  (see json-write-pretty).\nExample:\n  (json->pretty-string '((\"a\" . 1))) => \"{\\n  \\\"a\\\": 1\\n}\"",
+    "json->string": "Syntax: (json->string val)\nLibrary: (scm json simple)\nDescription: Returns compact JSON text for val as a string (see json-write).\nExample:\n  (json->string #(1 2 3)) => \"[1,2,3]\"",
+    "json-null?": "Syntax: (json-null? x)\nLibrary: (scm json simple)\nDescription: Returns #t if x is the value json-parse produces for JSON null\n  (the symbol 'null), #f otherwise.\nExample:\n  (json-null? (json-parse \"null\")) => #t\n  (json-null? #f) => #f",
+    "json-parse": "Syntax: (json-parse str)\nLibrary: (scm json simple)\nDescription: Parses the JSON text in string str and returns its Scheme\n  representation: objects as alists with string keys (order preserved),\n  arrays as vectors, strings as strings, integral numbers as exact\n  integers and fractional ones as inexact reals, true/false as #t/#f,\n  and null as the symbol 'null. Raises an error on malformed input.\nExample:\n  (json-parse \"{\\\"a\\\": [1, 2.5, true, null]}\")\n    => ((\"a\" . #(1 2.5 #t null)))",
+    "json-read": "Syntax: (json-read port)\nLibrary: (scm json simple)\nDescription: Reads the entire textual input port to a string and parses it\n  as a single JSON document (see json-parse). Returns the eof object if the\n  port is empty.\nExample:\n  (json-read (open-input-string \"[1, 2, 3]\")) => #(1 2 3)",
+    "json-ref": "Syntax: (json-ref obj key [default])\nLibrary: (scm json simple)\nDescription: Looks key (a string) up in obj, a parsed JSON object (alist).\n  Returns the associated value, or default if absent (or #f when no default\n  is given).\nExample:\n  (json-ref '((\"a\" . 1) (\"b\" . 2)) \"b\") => 2\n  (json-ref '((\"a\" . 1)) \"z\" 'missing) => missing",
+    "json-write": "Syntax: (json-write val port)\nLibrary: (scm json simple)\nDescription: Writes val to the output port as compact JSON (no insignificant\n  whitespace). val must use the representation documented for this library\n  (alists for objects, vectors for arrays, 'null for null).\nExample:\n  (json-write '((\"a\" . 1)) (current-output-port))  ; prints {\"a\":1}",
+    "json-write-pretty": "Syntax: (json-write-pretty val port)\nLibrary: (scm json simple)\nDescription: Writes val to the output port as indented JSON using two spaces\n  per level — byte-compatible with the common 2-space pretty style. Same\n  value representation as json-write.\nExample:\n  (json-write-pretty '((\"a\" . 1)) (current-output-port))\n    ; prints {\\n  \"a\": 1\\n}",
   },
   "scm-json": {
     "close-json": "Syntax: (close-json reader)\nLibrary: (scm core)\nDescription: Closes the given JSON reader, releasing any underlying resources.\nExample:\n  (let ((r (open-json-file \"data.json\")))\n    (close-json r))",

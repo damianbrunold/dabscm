@@ -17,10 +17,12 @@
           directory-files
           directory-name
           file-exists?
+          file-lock
           file-modification-date
           file-modification-timestamp
           file-size
           file-symlink?
+          file-unlock
           make-symlink
           path-exists?
           read-symlink
@@ -61,10 +63,12 @@
     (define directory-files (%primitive "directory-files"))
     (define directory-name (%primitive "directory-name"))
     (define file-exists? (%primitive "file-exists?"))
+    (define file-lock (%primitive "file-lock"))
     (define file-modification-date (%primitive "file-modification-date"))
     (define file-modification-timestamp (%primitive "file-modification-timestamp"))
     (define file-size (%primitive "file-size"))
     (define file-symlink? (%primitive "file-symlink?"))
+    (define file-unlock (%primitive "file-unlock"))
     (define make-symlink (%primitive "make-symlink"))
     (define path-exists? (%primitive "path-exists?"))
     (define read-symlink (%primitive "read-symlink"))

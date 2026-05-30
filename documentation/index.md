@@ -72,6 +72,7 @@
 | [`(scm html builder)`](libraries/scm-html-builder.md) |  |
 | [`(scm html)`](libraries/scm-html.md) |  |
 | [`(scm io)`](libraries/scm-io.md) | Extended I/O — formatting, port utilities, property lists |
+| [`(scm json simple)`](libraries/scm-json-simple.md) |  |
 | [`(scm json)`](libraries/scm-json.md) | JSON file reading |
 | [`(scm list)`](libraries/scm-list.md) | Extended list operations — higher-order, sorting, accessors |
 | [`(scm log)`](libraries/scm-log.md) |  |

@@ -184,6 +184,21 @@ Example:
   (file-exists? "/nonexistent") => #f
 ```
 
+### `file-lock`
+
+```
+Syntax: (file-lock path)
+Library: (scm fs)
+Description: Acquires an exclusive, OS-managed advisory lock on the file at
+  path, creating the file (and any parent directories) if needed. Returns a
+  lock handle on success, or #f if another process already holds the lock.
+  Release it with file-unlock; the lock is also released automatically when
+  the process exits, so it never goes stale.
+Example:
+  (define h (file-lock "/tmp/app.lock"))
+  (when h (file-unlock h))
+```
+
 ### `file-modification-date`
 
 ```
@@ -222,6 +237,17 @@ Library: (scm fs)
 Description: Returns #t if path names a symbolic link itself (without following it), otherwise #f. Returns #t even for a dangling link whose target is missing, and #f if path does not exist.
 Example:
   (file-symlink? "/usr/local/bin/python") => #t
+```
+
+### `file-unlock`
+
+```
+Syntax: (file-unlock handle)
+Library: (scm fs)
+Description: Releases a lock acquired by file-lock. Returns #t if handle was a
+  live file lock, #f otherwise.
+Example:
+  (file-unlock (file-lock "/tmp/app.lock")) => #t
 ```
 
 ### `join-path`
