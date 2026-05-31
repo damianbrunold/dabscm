@@ -1,8 +1,11 @@
 (import (scheme base)
         (scheme file)
+        (scheme write)
         (scm test)
         (scm fs)
-        (scm ooxml word))
+        (scm zip)
+        (scm ooxml word)
+        (scm ooxml word-reader))
 
 (test-runner-factory scm-test-runner)
 
@@ -263,5 +266,70 @@
       (let ((p (document-add-paragraph! doc)))
         (paragraph-add-run! p "Body text"))
       (document-save doc path))))
+
+;; ── Reader: round-trip via the writer ─────────────────────────────────────
+
+;; write a document with headings and paragraphs, read it back
+(test-group "reader-roundtrip"
+  (let* ((path (join-path (special-folder-temp) "test-scm-word-read.docx"))
+         (doc  (make-document)))
+    (document-add-heading! doc 1 "Introduction")
+    (let ((p (document-add-paragraph! doc)))
+      (paragraph-add-run! p "Hello ")
+      (paragraph-add-run! p "world"))
+    (document-add-heading! doc 2 "Details")
+    (paragraph-add-run! (document-add-paragraph! doc) "Final paragraph.")
+    (document-save doc path)
+    (let* ((rdoc (read-document path))
+           (paras (document-paragraphs rdoc)))
+      (test-equal 4 (length paras))
+      (test-equal '("Introduction" "Hello world" "Details" "Final paragraph.")
+                  (map paragraph-text paras))
+      (test-equal 1 (paragraph-heading-level (list-ref paras 0)))
+      (test-equal #f (paragraph-heading-level (list-ref paras 1)))
+      (test-equal 2 (paragraph-heading-level (list-ref paras 2)))
+      (test-equal '("Introduction" "Details")
+                  (map paragraph-text (document-headings rdoc)))
+      (test-equal "Introduction\nHello world\nDetails\nFinal paragraph."
+                  (document-text rdoc)))))
+
+;; round-trip through a bytevector
+(test-group "reader-from-bytevector"
+  (let ((doc (make-document)))
+    (paragraph-add-run! (document-add-paragraph! doc) "Just text.")
+    (let ((rdoc (read-document-from-bytevector (document-save-to-bytevector doc))))
+      (test-equal "Just text." (document-text rdoc)))))
+
+;; ── Reader: hand-built document for tables (writer has no table API) ───────
+
+(test-group "reader-tables"
+  (let* ((wns "http://schemas.openxmlformats.org/wordprocessingml/2006/main")
+         (bv (call-with-output-zip-bytevector
+               (lambda (z)
+                 (call-with-output-zip-entry z "word/document.xml"
+                   (lambda (p)
+                     (display (string-append
+                       "<?xml version=\"1.0\"?>"
+                       "<w:document xmlns:w=\"" wns "\"><w:body>"
+                       "<w:p><w:pPr><w:pStyle w:val=\"Heading1\"/></w:pPr>"
+                       "<w:r><w:t>Title</w:t></w:r></w:p>"
+                       "<w:p><w:r><w:t xml:space=\"preserve\">Hello </w:t></w:r>"
+                       "<w:r><w:t>world</w:t></w:r></w:p>"
+                       "<w:tbl><w:tr>"
+                       "<w:tc><w:p><w:r><w:t>Cell A</w:t></w:r></w:p></w:tc>"
+                       "<w:tc><w:p><w:r><w:t>Cell B</w:t></w:r></w:p></w:tc>"
+                       "</w:tr></w:tbl>"
+                       "<w:p><w:r><w:t>After</w:t></w:r></w:p>"
+                       "</w:body></w:document>") p))))))
+         (rdoc  (read-document-from-bytevector bv))
+         (paras (document-paragraphs rdoc)))
+    (test-equal '("Title" "Hello world" "Cell A" "Cell B" "After")
+                (map paragraph-text paras))
+    (test-equal 1 (paragraph-heading-level (list-ref paras 0)))
+    ;; table-cell paragraphs are flagged
+    (test-equal #f (paragraph-in-table? (list-ref paras 1)))
+    (test-equal #t (paragraph-in-table? (list-ref paras 2)))
+    (test-equal #t (paragraph-in-table? (list-ref paras 3)))
+    (test-equal #f (paragraph-in-table? (list-ref paras 4)))))
 
 (test-end "word")

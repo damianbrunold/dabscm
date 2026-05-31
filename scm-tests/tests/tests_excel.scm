@@ -1,4 +1,5 @@
-(import (scheme base) (scm fs) (scm ooxml excel) (scm zip) (srfi 13) (scm test))
+(import (scheme base) (scheme write) (scm fs) (scm ooxml excel) (scm ooxml excel-reader)
+        (scm zip) (srfi 13) (scm test))
 
 (test-runner-factory scm-test-runner)
 
@@ -163,5 +164,115 @@
             (and pos-1 pos-2 pos-3
                  (< pos-1 pos-2)
                  (< pos-2 pos-3))))))))
+
+;; ── Reader: round-trip via the writer ─────────────────────────────────────
+
+;; write a workbook, read it back, check values, types and layout
+(test-group "reader-roundtrip"
+  (let* ((path (join-path (special-folder-temp) "test-scm-excel-read.xlsx"))
+         (wb   (make-workbook))
+         (ws   (workbook-add-worksheet! wb "Data")))
+    (worksheet-set-cell! ws "A1" "Name" 'string #f)
+    (worksheet-set-cell! ws "B1" "Age" 'string #f)
+    (worksheet-set-cell! ws "A2" "Bob" 'string #f)
+    (worksheet-set-cell! ws "B2" 42 'num #f)
+    (worksheet-set-cell! ws "C5" 3.5 'num #f)
+    (workbook-save wb path)
+    (let* ((rwb   (read-workbook path))
+           (sheet (workbook-sheet rwb 0)))
+      (test-equal '("Data") (workbook-sheet-names rwb))
+      (test-equal "Data" (sheet-name sheet))
+      (test-equal "Name" (sheet-ref sheet 1 1))
+      (test-equal "Age"  (sheet-ref sheet 1 2))
+      (test-equal "Bob"  (sheet-ref sheet 2 1))
+      (test-equal 42     (sheet-ref sheet 2 2))
+      (test-equal 3.5    (sheet-ref sheet 5 3))
+      (test-equal #f     (sheet-ref sheet 3 1))
+      (test-equal '(5 . 3) (sheet-dimensions sheet))
+      ;; sheet-rows yields a dense matrix up to the maximum extent
+      (test-equal '("Name" "Age" #f) (car (sheet-rows sheet)))
+      ;; sheet-cells yields only populated cells, sorted
+      (test-equal '(((1 1) . "Name") ((1 2) . "Age") ((2 1) . "Bob")
+                    ((2 2) . 42) ((5 3) . 3.5))
+                  (sheet-cells sheet)))))
+
+;; multiple worksheets are resolved by name and index, in order
+(test-group "reader-multi-sheet"
+  (let* ((path (join-path (special-folder-temp) "test-scm-excel-read-multi.xlsx"))
+         (wb   (make-workbook))
+         (a    (workbook-add-worksheet! wb "Alpha"))
+         (b    (workbook-add-worksheet! wb "Beta")))
+    (worksheet-set-cell! a "A1" "in-alpha" 'string #f)
+    (worksheet-set-cell! b "A1" "in-beta" 'string #f)
+    (workbook-save wb path)
+    (let ((rwb (read-workbook path)))
+      (test-equal '("Alpha" "Beta") (workbook-sheet-names rwb))
+      (test-equal "in-alpha" (sheet-ref (workbook-sheet rwb "Alpha") 1 1))
+      (test-equal "in-beta"  (sheet-ref (workbook-sheet rwb "Beta") 1 1))
+      (test-equal "in-beta"  (sheet-ref (workbook-sheet rwb 1) 1 1))
+      (test-equal #f (workbook-sheet rwb "Nope")))))
+
+;; round-trip through a bytevector
+(test-group "reader-from-bytevector"
+  (let* ((wb (make-workbook))
+         (ws (workbook-add-worksheet! wb "S")))
+    (worksheet-set-cell! ws "A1" "hi" 'string #f)
+    (let* ((bv  (workbook-save-to-bytevector wb))
+           (rwb (read-workbook-from-bytevector bv)))
+      (test-equal "hi" (sheet-ref (workbook-sheet rwb 0) 1 1)))))
+
+;; ── Reader: hand-built workbook for types the writer cannot emit ───────────
+
+;; dates (style numFmt), booleans, inline strings and shared strings
+(test-group "reader-cell-types"
+  (let* ((ns "http://schemas.openxmlformats.org/spreadsheetml/2006/main")
+         (rns "http://schemas.openxmlformats.org/officeDocument/2006/relationships")
+         (bv (call-with-output-zip-bytevector
+               (lambda (z)
+                 (call-with-output-zip-entry z "xl/workbook.xml"
+                   (lambda (p)
+                     (display (string-append
+                       "<?xml version=\"1.0\"?>"
+                       "<workbook xmlns=\"" ns "\" xmlns:r=\"" rns "\">"
+                       "<sheets><sheet name=\"S\" sheetId=\"1\" r:id=\"rId1\"/></sheets>"
+                       "</workbook>") p)))
+                 (call-with-output-zip-entry z "xl/_rels/workbook.xml.rels"
+                   (lambda (p)
+                     (display (string-append
+                       "<?xml version=\"1.0\"?>"
+                       "<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">"
+                       "<Relationship Id=\"rId1\" Type=\"x\" Target=\"worksheets/sheet1.xml\"/>"
+                       "</Relationships>") p)))
+                 (call-with-output-zip-entry z "xl/styles.xml"
+                   (lambda (p)
+                     (display (string-append
+                       "<?xml version=\"1.0\"?>"
+                       "<styleSheet xmlns=\"" ns "\">"
+                       "<cellXfs count=\"2\"><xf numFmtId=\"0\"/><xf numFmtId=\"14\"/></cellXfs>"
+                       "</styleSheet>") p)))
+                 (call-with-output-zip-entry z "xl/sharedStrings.xml"
+                   (lambda (p)
+                     (display (string-append
+                       "<?xml version=\"1.0\"?>"
+                       "<sst xmlns=\"" ns "\" count=\"1\" uniqueCount=\"1\">"
+                       "<si><t>Hello</t></si></sst>") p)))
+                 (call-with-output-zip-entry z "xl/worksheets/sheet1.xml"
+                   (lambda (p)
+                     (display (string-append
+                       "<?xml version=\"1.0\"?>"
+                       "<worksheet xmlns=\"" ns "\"><sheetData>"
+                       "<row r=\"1\"><c r=\"A1\" t=\"s\"><v>0</v></c>"
+                       "<c r=\"B1\"><v>3.5</v></c></row>"
+                       "<row r=\"2\"><c r=\"A2\" s=\"1\"><v>44197</v></c>"
+                       "<c r=\"B2\" t=\"b\"><v>1</v></c></row>"
+                       "<row r=\"3\"><c r=\"A3\" t=\"inlineStr\"><is><t>inline</t></is></c></row>"
+                       "</sheetData></worksheet>") p))))))
+         (rwb   (read-workbook-from-bytevector bv))
+         (sheet (workbook-sheet rwb 0)))
+    (test-equal "Hello"      (sheet-ref sheet 1 1))   ; shared string
+    (test-equal 3.5          (sheet-ref sheet 1 2))   ; number
+    (test-equal "2021-01-01" (sheet-ref sheet 2 1))   ; date serial via numFmt 14
+    (test-equal #t           (sheet-ref sheet 2 2))   ; boolean
+    (test-equal "inline"     (sheet-ref sheet 3 1)))) ; inline string
 
 (test-end "excel")

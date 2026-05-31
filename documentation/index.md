@@ -93,7 +93,9 @@
 | [`(scm net websocket)`](libraries/scm-net-websocket.md) | WebSocket client and server support |
 | [`(scm odf spreadsheet)`](libraries/scm-odf-spreadsheet.md) | ODF spreadsheet creation (ODS format) |
 | [`(scm odf writer)`](libraries/scm-odf-writer.md) | ODF text document creation (ODT format) |
+| [`(scm ooxml excel-reader)`](libraries/scm-ooxml-excel-reader.md) |  |
 | [`(scm ooxml excel)`](libraries/scm-ooxml-excel.md) | Excel workbook and worksheet creation (OOXML/XLSX format) |
+| [`(scm ooxml word-reader)`](libraries/scm-ooxml-word-reader.md) |  |
 | [`(scm ooxml word)`](libraries/scm-ooxml-word.md) | Word document creation (OOXML/DOCX format) |
 | [`(scm pdf)`](libraries/scm-pdf.md) | PDF document creation — pages, drawing, fonts, text flow, TTF embedding, images, links, outlines |
 | [`(scm png)`](libraries/scm-png.md) |  |
