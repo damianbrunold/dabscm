@@ -332,4 +332,46 @@
     (test-equal #t (paragraph-in-table? (list-ref paras 3)))
     (test-equal #f (paragraph-in-table? (list-ref paras 4)))))
 
+;; ── Reader: localised heading styles via styles.xml ───────────────────────
+
+;; German Word uses style ids like "berschrift1" with a built-in name
+;; "heading 1"; the level must be picked up from styles.xml.
+(test-group "reader-localised-headings"
+  (let* ((wns "http://schemas.openxmlformats.org/wordprocessingml/2006/main")
+         (bv (call-with-output-zip-bytevector
+               (lambda (z)
+                 (call-with-output-zip-entry z "word/styles.xml"
+                   (lambda (p)
+                     (display (string-append
+                       "<?xml version=\"1.0\"?>"
+                       "<w:styles xmlns:w=\"" wns "\">"
+                       "<w:style w:type=\"paragraph\" w:styleId=\"berschrift1\">"
+                       "<w:name w:val=\"heading 1\"/><w:pPr><w:outlineLvl w:val=\"0\"/></w:pPr>"
+                       "</w:style>"
+                       "<w:style w:type=\"paragraph\" w:styleId=\"berschrift2\">"
+                       "<w:name w:val=\"heading 2\"/><w:pPr><w:outlineLvl w:val=\"1\"/></w:pPr>"
+                       "</w:style>"
+                       "<w:style w:type=\"paragraph\" w:styleId=\"Textkrper\">"
+                       "<w:name w:val=\"Body Text\"/></w:style>"
+                       "</w:styles>") p)))
+                 (call-with-output-zip-entry z "word/document.xml"
+                   (lambda (p)
+                     (display (string-append
+                       "<?xml version=\"1.0\"?>"
+                       "<w:document xmlns:w=\"" wns "\"><w:body>"
+                       "<w:p><w:pPr><w:pStyle w:val=\"berschrift1\"/></w:pPr>"
+                       "<w:r><w:t>Kapitel</w:t></w:r></w:p>"
+                       "<w:p><w:pPr><w:pStyle w:val=\"berschrift2\"/></w:pPr>"
+                       "<w:r><w:t>Abschnitt</w:t></w:r></w:p>"
+                       "<w:p><w:pPr><w:pStyle w:val=\"Textkrper\"/></w:pPr>"
+                       "<w:r><w:t>Flie&#223;text</w:t></w:r></w:p>"
+                       "</w:body></w:document>") p))))))
+         (rdoc  (read-document-from-bytevector bv))
+         (paras (document-paragraphs rdoc)))
+    (test-equal 1 (paragraph-heading-level (list-ref paras 0)))
+    (test-equal 2 (paragraph-heading-level (list-ref paras 1)))
+    (test-equal #f (paragraph-heading-level (list-ref paras 2)))
+    (test-equal '("Kapitel" "Abschnitt")
+                (map paragraph-text (document-headings rdoc)))))
+
 (test-end "word")

@@ -42,7 +42,8 @@
             (or (xml-attribute r (car ns)) (loop (cdr ns))))))
 
     (define (heading-level-from-style style)
-      ;; "Heading1" -> 1, "Heading2" -> 2, ...; #f otherwise.
+      ;; "Heading1" -> 1, "Heading2" -> 2, ...; #f otherwise. Matches the
+      ;; English built-in style id used by our own writer.
       (and (string? style)
            (let ((n (string-length style)))
              (and (> n 7)
@@ -51,14 +52,80 @@
                     (and (string-every char-numeric? rest)
                          (string->number rest)))))))
 
-    (define (make-paragraph text style outline in-table?)
-      (let ((level (or (heading-level-from-style style) outline)))
+    (define (heading-name->level name)
+      ;; A style's built-in name is the locale-independent English "heading N"
+      ;; (Word keeps it even when the style id is localised, e.g. "berschrift1"
+      ;; for German). Returns N, or #f for non-heading names.
+      (and (string? name)
+           (let* ((low (string-downcase name))
+                  (n (string-length low)))
+             (and (> n 7)
+                  (string=? (substring low 0 7) "heading")
+                  (let ((rest (string-trim (substring low 7 n))))
+                    (and (> (string-length rest) 0)
+                         (string-every char-numeric? rest)
+                         (string->number rest)))))))
+
+    (define (style-map-ref style-map style)
+      (and style
+           (let ((p (assoc style style-map)))
+             (and p (cdr p)))))
+
+    (define (make-paragraph text style outline in-table? style-map)
+      (let ((level (or (heading-level-from-style style)
+                       (style-map-ref style-map style)
+                       outline)))
         (list (cons "text" text)
               (cons "style" style)
               (cons "level" level)
               (cons "in-table" in-table?))))
 
-    (define (parse-body bv)
+    (define (parse-style-map bv)
+      ;; Read word/styles.xml into an alist mapping style id -> heading level.
+      ;; A style counts as a heading if its built-in name is "heading N" or it
+      ;; carries an outline level in its paragraph properties. Non-heading
+      ;; styles (body text, TOC entries, ...) are omitted.
+      (if (not bv)
+          '()
+          (let ((result '())
+                (cur-id #f)
+                (cur-name #f)
+                (cur-outline #f)
+                (r (open-xml-bytevector bv)))
+            (guard (exn (#t (close-xml r) (raise exn)))
+              (let loop ((cont #t))
+                (cond
+                  ((not cont) #t)
+                  (else
+                   (case (xml-node-type r)
+                     ((element)
+                      (let ((nm (local-name (xml-name r))))
+                        (cond
+                          ((string=? nm "style")
+                           (set! cur-id (attr r "w:styleId" "styleId"))
+                           (set! cur-name #f)
+                           (set! cur-outline #f)
+                           (loop (xml-read r)))
+                          ((and cur-id (string=? nm "name"))
+                           (set! cur-name (attr r "w:val" "val"))
+                           (loop (xml-read r)))
+                          ((and cur-id (string=? nm "outlineLvl"))
+                           (let ((v (string->number (or (attr r "w:val" "val") ""))))
+                             (when v (set! cur-outline (+ v 1))))
+                           (loop (xml-read r)))
+                          (else (loop (xml-read r))))))
+                     ((end-element)
+                      (when (string=? (local-name (xml-name r)) "style")
+                        (let ((level (or (heading-name->level cur-name) cur-outline)))
+                          (when (and cur-id level)
+                            (set! result (cons (cons cur-id level) result))))
+                        (set! cur-id #f))
+                      (loop (xml-read r)))
+                     (else (loop (xml-read r)))))))
+              (close-xml r))
+            (reverse result))))
+
+    (define (parse-body bv style-map)
       ;; Walk word/document.xml and return a list of paragraph records.
       (let ((paragraphs '())
             (table-depth 0)
@@ -70,7 +137,7 @@
         (define (append-text! s) (set! cur-text (string-append cur-text s)))
         (define (push!)
           (set! paragraphs
-                (cons (make-paragraph cur-text cur-style cur-outline cur-in-table)
+                (cons (make-paragraph cur-text cur-style cur-outline cur-in-table style-map)
                       paragraphs)))
         (let ((r (open-xml-bytevector bv)))
           (guard (exn (#t (close-xml r) (raise exn)))
@@ -135,9 +202,13 @@
                 (reverse paragraphs))))
 
     (define (read-document-from-zip z)
-      (let ((bv (and (member "word/document.xml" (zip-entry-names z))
-                     (zip-read-entry-bytevector z "word/document.xml"))))
-        (vector 'docx-document (if bv (parse-body bv) '()))))
+      (let* ((names (zip-entry-names z))
+             (style-map (parse-style-map
+                          (and (member "word/styles.xml" names)
+                               (zip-read-entry-bytevector z "word/styles.xml"))))
+             (bv (and (member "word/document.xml" names)
+                      (zip-read-entry-bytevector z "word/document.xml"))))
+        (vector 'docx-document (if bv (parse-body bv style-map) '()))))
 
     ;; ---- public API ----------------------------------------------
 
@@ -221,8 +292,11 @@ Example:
       "Syntax: (paragraph-heading-level p)
 Library: (scm ooxml word-reader)
 Description: Returns the heading level (1..n) of a heading paragraph, or #f if
-  the paragraph is not a heading. The level comes from a Heading<n> style or,
-  failing that, from the paragraph's outline level.
+  the paragraph is not a heading. The level is determined from the paragraph's
+  style: a Heading<n> style id, or the style's built-in "heading N" name or
+  outline level as defined in word/styles.xml (so localised heading styles such
+  as the German "berschrift1" are recognised), or the paragraph's own outline
+  level.
 Example:
   (paragraph-heading-level p) => 1"
       (cdr (assoc "level" p)))

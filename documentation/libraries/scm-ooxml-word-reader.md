@@ -43,10 +43,8 @@ Example:
 Syntax: (paragraph-heading-level p)
 Library: (scm ooxml word-reader)
 Description: Returns the heading level (1..n) of a heading paragraph, or #f if
-  the paragraph is not a heading. The level comes from a Heading<n> style or,
-  failing that, from the paragraph's outline level.
-Example:
-  (paragraph-heading-level p) => 1
+  the paragraph is not a heading. The level is determined from the paragraph's
+  style: a Heading<n> style id, or the style's built-in 
 ```
 
 ### `paragraph-in-table?`
