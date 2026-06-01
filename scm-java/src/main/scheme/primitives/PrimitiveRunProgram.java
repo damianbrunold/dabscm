@@ -42,7 +42,7 @@ public class PrimitiveRunProgram extends Primitive {
                 p = pp.cdr;
             }
 
-            var pb = new ProcessBuilder(cmd_args);
+            var pb = new ProcessBuilder(ProcessUtil.resolveBatchLauncher(cmd_args));
 
             if (options != Value.NIL) {
                 var val = PrimitiveGetProperty.getProperty(

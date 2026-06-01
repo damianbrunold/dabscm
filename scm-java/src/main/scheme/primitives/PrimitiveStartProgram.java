@@ -40,7 +40,7 @@ public class PrimitiveStartProgram extends Primitive {
         }
 
         try {
-            ProcessBuilder pb = new ProcessBuilder(argv);
+            ProcessBuilder pb = new ProcessBuilder(ProcessUtil.resolveBatchLauncher(argv));
 
             boolean logfileSet = false;
             if (options != Value.NIL) {

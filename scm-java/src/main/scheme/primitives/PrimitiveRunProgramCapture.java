@@ -44,7 +44,7 @@ public class PrimitiveRunProgramCapture extends Primitive {
                 p = pp.cdr;
             }
 
-            ProcessBuilder pb = new ProcessBuilder(argv);
+            ProcessBuilder pb = new ProcessBuilder(ProcessUtil.resolveBatchLauncher(argv));
             String stdinText = null;
             if (options != Value.NIL) {
                 Object workdirVal = PrimitiveGetProperty.getProperty(options, "work-dir", Value.F);
