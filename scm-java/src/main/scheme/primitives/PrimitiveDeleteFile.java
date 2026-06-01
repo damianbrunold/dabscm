@@ -24,8 +24,11 @@ public class PrimitiveDeleteFile extends Primitive {
     public Object apply(SourcePos pos, Object[] arguments) {
         checkArgs(pos, arguments, 1, 1);
         var raw = new String(Value.asString(arguments[0]));
-        Path file = LongPath.of(raw);
         try {
+            // LongPath.of can throw InvalidPathException for names the
+            // filesystem rejects (e.g. trailing spaces on Windows); the
+            // catch below turns those into a file error too.
+            Path file = LongPath.of(raw);
             if (!Files.exists(file))
                 throw new SchemeError(pos, new FileErrorObject("delete-file: file does not exist: " + raw, new Object[] { Value.asString(arguments[0]) }));
             Files.delete(file);

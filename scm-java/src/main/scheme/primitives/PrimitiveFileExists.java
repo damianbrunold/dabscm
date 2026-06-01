@@ -1,6 +1,7 @@
 package scheme.primitives;
 
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 
 import scheme.*;
 
@@ -24,6 +25,13 @@ public class PrimitiveFileExists extends Primitive {
     public Object apply(SourcePos pos, Object[] arguments) {
         checkArgs(pos, arguments, 1, 1);
         var file = new String(Value.asString(arguments[0]));
-        return Files.isRegularFile(LongPath.of(file)) ? Value.T : Value.F;
+        try {
+            return Files.isRegularFile(LongPath.of(file)) ? Value.T : Value.F;
+        } catch (InvalidPathException e) {
+            // A name the filesystem rejects (e.g. trailing spaces on Windows)
+            // cannot name an existing file. Matches .NET's File.Exists, which
+            // returns false rather than throwing for invalid paths.
+            return Value.F;
+        }
     }
 }

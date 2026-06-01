@@ -29,10 +29,13 @@ public class PrimitiveOpenInputFile extends Primitive {
     public Object apply(SourcePos pos, Object[] arguments) {
         checkArgs(pos, arguments, 1, 3);
         String filename = new String(Value.asString(arguments[0]));
-        if (!Files.exists(LongPath.of(filename))) {
-            throw new SchemeError(pos, new FileErrorObject("open-input-file: file not found", new Object[] { filename }));
-        }
         try {
+            // LongPath.of can throw InvalidPathException for names the
+            // filesystem rejects (e.g. trailing spaces on Windows); treat
+            // those as an unopenable file rather than a generic error.
+            if (!Files.exists(LongPath.of(filename))) {
+                throw new SchemeError(pos, new FileErrorObject("open-input-file: file not found", new Object[] { filename }));
+            }
             Charset encoding = StandardCharsets.UTF_8;
             boolean deflate = false;
             for (var i = 1; i < arguments.length; i++) {
@@ -73,6 +76,8 @@ public class PrimitiveOpenInputFile extends Primitive {
                     return new TextStream(new PushbackReader(new BufferedReader(new InputStreamReader(strm, encoding), 8192)), filename);
                 }
             }
+        } catch (SchemeError e) {
+            throw e;
         } catch (Exception e) {
             throw new SchemeError(pos, new FileErrorObject("open-input-file: io error", new Object[] { filename }));
         }
