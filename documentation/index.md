@@ -54,6 +54,7 @@
 | Library | Description |
 |---------|-------------|
 | [`(scm archive)`](libraries/scm-archive.md) |  |
+| [`(scm args)`](libraries/scm-args.md) |  |
 | [`(scm compile)`](libraries/scm-compile.md) | Compiler introspection, bytecode access, and type predicates |
 | [`(scm compression)`](libraries/scm-compression.md) | Data compression and decompression |
 | [`(scm crypto)`](libraries/scm-crypto.md) | Cryptographic hashing and encoding utilities |

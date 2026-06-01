@@ -329,6 +329,7 @@
   <a href="#srfi-158" class="srfi">(srfi 158)</a>
   <h2>Scm Extensions</h2>
   <a href="#scm-archive" class="scm">(scm archive)</a>
+  <a href="#scm-args" class="scm">(scm args)</a>
   <a href="#scm-compile" class="scm">(scm compile)</a>
   <a href="#scm-compression" class="scm">(scm compression)</a>
   <a href="#scm-crypto" class="scm">(scm crypto)</a>
@@ -2276,6 +2277,42 @@
       zlib-decompress
     </div>
     <div class="doc-panel" id="scm-archive-doc-panel"></div>
+  </div>
+</div>
+
+<div class="library scm" id="scm-args">
+  <div class="lib-header">
+    <span class="lib-name">(scm args)</span>
+    <span class="lib-desc"></span>
+    <span class="lib-count" id="scm-args-count"></span>
+  </div>
+  <div class="lib-body">
+    <div class="exports" data-lib="scm-args">
+      arg-parser?
+      arg-result?
+      arg-spec?
+      arg-type?
+      arg:boolean
+      arg:integer
+      arg:list
+      arg:number
+      arg:one-of
+      arg:string
+      arg:symbol
+      args-&gt;alist
+      args-ref
+      args-rest
+      coerce-type
+      define-cli
+      flag
+      format-help
+      make-arg-parser
+      make-arg-type
+      opt
+      parse-args
+      pos
+    </div>
+    <div class="doc-panel" id="scm-args-doc-panel"></div>
   </div>
 </div>
 
@@ -4577,6 +4614,21 @@ const docs = {
     "zip-read-entry-bytevector": "Syntax: (zip-read-entry-bytevector zip name)\nLibrary: (scm zip)\nDescription: Reads the contents of the entry named name from the ZIP archive zip and returns it as a bytevector.\nExample:\n  (zip-read-entry-bytevector z \"hello.txt\") => #u8(72 101 108 108 111)",
     "zlib-compress": "Syntax: (zlib-compress bytevector [level])\nLibrary: (scm compression)\nDescription: Compresses bytevector using ZLib framing (RFC 1950) and returns\n  a bytevector. The optional level is an integer 0-9: 0 = no compression,\n  1-3 = fastest, 4-6 = optimal (default), 7-9 = smallest size.\nExample:\n  (utf8->string (zlib-decompress (zlib-compress (string->utf8 \"hello\")))) => \"hello\"",
     "zlib-decompress": "Syntax: (zlib-decompress bytevector)\nLibrary: (scm compression)\nDescription: Decompresses a ZLib-framed (RFC 1950) bytevector and returns\n  the original bytevector.\nExample:\n  (utf8->string (zlib-decompress (zlib-compress (string->utf8 \"hello\")))) => \"hello\"",
+  },
+  "scm-args": {
+    "arg:list": "Syntax: (arg:list elem-type [separator])\nLibrary: (scm args)\nDescription: A type that splits the argument on separator (a char, default\n  #\\,) and converts each piece with elem-type, returning a list. elem-type\n  may be any type or bare converter procedure. Empty pieces are kept.\nExample:\n  (option nums (long \"nums\") (type (arg:list arg:integer)))\n  ;; --nums 1,2,3  =>  (1 2 3)",
+    "arg:one-of": "Syntax: (arg:one-of sym ...)\nLibrary: (scm args)\nDescription: A type accepting only one of the given symbols (an enumeration).\n  The argument string is read as a symbol and must be a member of syms;\n  otherwise a usage error listing the choices is reported. In --help the\n  placeholder renders as {sym|sym|...}. Note the symbols are evaluated, so\n  quote them: (arg:one-of 'fast 'slow).\nExample:\n  (option mode (long \"mode\") (type (arg:one-of 'fast 'slow)) (default 'fast))",
+    "args->alist": "Syntax: (args->alist result)\nLibrary: (scm args)\nDescription: Returns the full association list of (name . value) pairs from a\n  parse-args result. Handy for debugging or bulk processing.\nExample:\n  (args->alist r) => ((verbose . #t) (count . 3) (input . \"in.txt\"))",
+    "args-ref": "Syntax: (args-ref result name [fallback])\nLibrary: (scm args)\nDescription: Returns the value parsed for name (a symbol) from a parse-args\n  result. If name was not supplied and has no default, returns fallback (or\n  #f when no fallback is given). Flags return #t/#f; repeatable options\n  return a list.\nExample:\n  (args-ref r 'count) => 3\n  (args-ref r 'output \"-\") => \"-\"   ; not supplied, fallback used",
+    "args-rest": "Syntax: (args-rest result)\nLibrary: (scm args)\nDescription: Returns the list of leftover positional tokens. When the parser\n  declares no positional specs, every positional argument lands here; when\n  it does declare positionals, this is the empty list (use a repeat\n  positional to capture a variable tail by name instead).\nExample:\n  (args-rest r) => (\"a.txt\" \"b.txt\")",
+    "coerce-type": "Syntax: (coerce-type t)\nLibrary: (scm args)\nDescription: Normalizes a type designator to an arg-type: an arg-type is\n  returned unchanged; a bare procedure is wrapped as a string->value\n  converter with the placeholder \"VALUE\". Used internally and when writing\n  custom type combinators.\nExample:\n  (coerce-type string->number) => #<arg-type VALUE>",
+    "flag": "Syntax: (flag name key value ...)\nLibrary: (scm args)\nDescription: Builds a boolean flag spec (data form). Presence sets it to #t;\n  --no-<long> sets it to #f. Keys: short, long, default, help. Use inside\n  make-arg-parser's 'options list.\nExample:\n  (flag 'verbose 'short #\\v 'long \"verbose\" 'help \"Verbose output\")",
+    "format-help": "Syntax: (format-help parser)\nLibrary: (scm args)\nDescription: Renders the --help text for parser as a string: a usage line,\n  the description, an Arguments section for positionals, and an Options\n  section (including the auto-generated --help and --version entries).\n  parse-args prints this and exits 0 on --help/-h.\nExample:\n  (display (format-help cli))",
+    "make-arg-parser": "Syntax: (make-arg-parser key value ...)\nLibrary: (scm args)\nDescription: Builds an argument parser (data form). Keys: program (string),\n  description, version, epilog, options (list of opt/flag specs),\n  positionals (list of pos specs). The declarative define-cli macro is a\n  more readable front end producing the same object.\nExample:\n  (make-arg-parser 'program \"tool\"\n    'options (list (flag 'verbose 'short #\\v))\n    'positionals (list (pos 'file 'required #t)))",
+    "make-arg-type": "Syntax: (make-arg-type name convert)\nLibrary: (scm args)\nDescription: Builds a custom argument type. name is a short string shown in\n  --help as the value placeholder (e.g. \"PORT\"); convert is a procedure\n  taking the raw argument string and returning the converted value, raising\n  via error on invalid input (the message is surfaced to the user). Any\n  bare string->value procedure also works as a type — parse-args coerces it\n  with the placeholder \"VALUE\".\nExample:\n  (define arg:port\n    (make-arg-type \"PORT\"\n      (lambda (s)\n        (let ((n (string->number s)))\n          (if (and n (integer? n) (<= 1 n 65535)) n\n              (error (string-append \"bad port: \" s)))))))",
+    "opt": "Syntax: (opt name key value ...)\nLibrary: (scm args)\nDescription: Builds a key-value option spec (data form). Keys: short (a\n  char), long (a string), type (an arg-type, default arg:string), default,\n  required (boolean), repeat (boolean — collect repeats into a list), help,\n  metavar. Use inside make-arg-parser's 'options list.\nExample:\n  (opt 'count 'short #\\n 'long \"count\" 'type arg:integer 'default 1)",
+    "parse-args": "Syntax: (parse-args parser [args] ['on-error mode])\nLibrary: (scm args)\nDescription: Parses argument list args (default: (cdr (command-line)), i.e.\n  the script's arguments with the program path removed) against parser,\n  returning a result usable with args-ref / args->alist / args-rest. Values\n  are converted to their declared types. mode is 'exit (default) — on a\n  usage error print a diagnostic to (current-error-port) and exit 2 — or\n  'raise to signal a catchable error instead. --help and --version always\n  print to stdout and exit 0.\nExample:\n  (define r (parse-args cli '(\"-v\" \"--count\" \"3\" \"in.txt\")))\n  (args-ref r 'count) => 3",
+    "pos": "Syntax: (pos name key value ...)\nLibrary: (scm args)\nDescription: Builds a positional argument spec (data form). Keys: type,\n  required, default, repeat (variadic — collects all remaining positionals\n  into a list; must be the last positional), help. Use inside\n  make-arg-parser's 'positionals list.\nExample:\n  (pos 'input 'type arg:string 'required #t 'help \"Input file\")",
   },
   "scm-compile": {
     "atom?": "Syntax: (atom? obj)\nLibrary: (scm compile)\nDescription: Returns #t if obj is an atomic value: a number, boolean, char,\nstring, or symbol. Returns #f for pairs, vectors, and other compound objects.\nExample:\n  (atom? 42)   => #t\n  (atom? 'x)   => #t\n  (atom? '(1)) => #f",
