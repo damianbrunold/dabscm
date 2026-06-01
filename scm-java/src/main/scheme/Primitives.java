@@ -160,7 +160,7 @@ public class Primitives {
         bind(new PrimitiveExactP());
         bind(new PrimitiveExceptionHandlersGet());
         bind(new PrimitiveExceptionHandlersSet());
-        bind(new PrimitiveExit());
+        bind(new PrimitiveExit(modules));
         bind(new PrimitiveExpt());
         bind(new PrimitiveFeaturesList());
         bind(new PrimitiveFileErrorP());

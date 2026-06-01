@@ -45,7 +45,15 @@ public class Module
 
     public void Bind(string symbol, object value, string origin)
     {
-        if (Bindings.TryGetValue(symbol, out var existing))
+        // Mutate the existing cell in place only when redefining a binding
+        // this module already owns (same provenance). When a define shadows
+        // a name imported from another module, allocate a fresh cell so we
+        // don't clobber the source module's (shared) cell — otherwise e.g.
+        // (scm fs-find) defining its own `find` would overwrite the `find`
+        // it imported from (srfi 1), corrupting it for every other importer.
+        if (Bindings.TryGetValue(symbol, out var existing)
+            && Provenance.TryGetValue(symbol, out var existingOrigin)
+            && existingOrigin == origin)
         {
             existing.value = value;
         }

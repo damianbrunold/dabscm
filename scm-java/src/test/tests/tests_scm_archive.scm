@@ -39,7 +39,7 @@
          (let ((out (string-append base "/out")))
            (make-directory out)
            (test-equal #t (tar-extract tgz `(work-dir . ,out)))
-           (test-equal 2 (length (find out '(type . file)))))))
+           (test-equal 2 (length (find-file out '(type . file)))))))
       (else
        (test-equal #t #t))))
 

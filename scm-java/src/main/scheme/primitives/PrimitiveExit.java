@@ -3,6 +3,12 @@ package scheme.primitives;
 import scheme.*;
 
 public class PrimitiveExit extends Primitive {
+    private final Modules modules;
+
+    public PrimitiveExit(Modules modules) {
+        this.modules = modules;
+    }
+
     @Override
     public String name() {
         return "exit";
@@ -21,6 +27,11 @@ public class PrimitiveExit extends Primitive {
     @Override
     public Object apply(SourcePos pos, Object[] arguments) {
         checkArgs(pos, arguments, 0, 1);
+        // System.exit terminates the JVM without flushing the buffered
+        // stdout/stderr writers, so anything displayed just before (exit)
+        // would be lost. Flush the output ports first. (.NET's Console.Out
+        // auto-flushes, so the C# side needs no equivalent.)
+        flushOutputPorts();
         // TODO switch to throw new SchemeExit
         if (arguments.length == 0) {
             System.exit(1);
@@ -28,5 +39,18 @@ public class PrimitiveExit extends Primitive {
             System.exit(IntegerMath.toInt(arguments[0]));
         }
         return new Values();
+    }
+
+    private void flushOutputPorts() {
+        try {
+            scheme.Module core = modules.getModuleRequired(null, "scm core");
+            for (String portName : new String[] { "*output-port*", "*error-port*" }) {
+                Object port = core.resolve(portName);
+                if (Value.isOutputPort(port)) {
+                    Value.asOutputPort(port).flush();
+                }
+            }
+        } catch (Exception ignored) {
+        }
     }
 }

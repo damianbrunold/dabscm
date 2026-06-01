@@ -54,7 +54,7 @@
           ;; (scm fs-find)
           du
           df
-          find
+          find-file
           tree
           xargs
           ;; (scm text)

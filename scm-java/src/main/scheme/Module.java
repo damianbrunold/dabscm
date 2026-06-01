@@ -58,7 +58,13 @@ public class Module {
     public void bind(String symbol, Object value, String origin) {
         String interned = Value.intern(symbol);
         Cell existing = bindings.get(interned);
-        if (existing != null) {
+        // Mutate the existing cell in place only when redefining a binding
+        // this module already owns (same provenance). When a define shadows
+        // a name imported from another module, allocate a fresh cell so we
+        // don't clobber the source module's (shared) cell — otherwise e.g.
+        // (scm fs-find) defining its own `find` would overwrite the `find`
+        // it imported from (srfi 1), corrupting it for every other importer.
+        if (existing != null && origin.equals(provenance.get(interned))) {
             existing.value = value;
         } else {
             bindings.put(interned, new Cell(value));

@@ -16,7 +16,7 @@
   (test-equal #t (procedure? touch))
   (test-equal #t (procedure? rm))
   ;; (scm fs-find)
-  (test-equal #t (procedure? find))
+  (test-equal #t (procedure? find-file))
   (test-equal #t (procedure? du))
   ;; (scm text)
   (test-equal #t (procedure? grep))

@@ -21,26 +21,26 @@
 
 (test-group "find name pattern"
   (test-equal '("a.txt" "c.txt")
-              (basenames (find base '(name . "*.txt")))))
+              (basenames (find-file base '(name . "*.txt")))))
 
 (test-group "find type=file"
   (test-equal '("a.txt" "b.log" "c.txt" "d.log")
-              (basenames (find base '(type . file)))))
+              (basenames (find-file base '(type . file)))))
 
 (test-group "find maxdepth"
   (test-equal '("a.txt" "b.log")
-              (basenames (find base '(maxdepth . 1) '(type . file)))))
+              (basenames (find-file base '(maxdepth . 1) '(type . file)))))
 
 (test-group "find with predicate"
   ;; All files exist, so the predicate must accept everything.
   (test-equal 4
-              (length (find base
+              (length (find-file base
                             '(type . file)
                             `(predicate . ,(lambda (p) (file-exists? p)))))))
 
 (test-group "find with action"
   (let ((collected '()))
-    (find base
+    (find-file base
           '(type . file)
           `(action . ,(lambda (p) (set! collected (cons (base-name p) collected)))))
     (test-equal '("a.txt" "b.log" "c.txt" "d.log")

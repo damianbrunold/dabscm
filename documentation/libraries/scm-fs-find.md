@@ -30,10 +30,10 @@ Example:
   (du "/var/log")
 ```
 
-### `find`
+### `find-file`
 
 ```
-Syntax: (find root [option ...])
+Syntax: (find-file root [option ...])
 Library: (scm fs-find)
 Description: Recursively walks the filesystem starting at root and returns
   the list of matching paths. Options:
@@ -44,8 +44,8 @@ Description: Recursively walks the filesystem starting at root and returns
     '(predicate . proc)    — additional (string -> bool) test
     '(action . proc)       — invoke proc on each matching path
 Example:
-  (find "." '(name . "*.scm") '(type . file))
-  (find "/var/log" `(predicate . ,(lambda (p) (> (file-size p) 1024))))
+  (find-file "." '(name . "*.scm") '(type . file))
+  (find-file "/var/log" `(predicate . ,(lambda (p) (> (file-size p) 1024))))
 ```
 
 ### `tree`
@@ -70,7 +70,7 @@ Description: Applies proc to chunks of items in turn. By default proc is
   called once per item. Option '(batch-size . n) calls proc with sublists
   of up to n items at a time. Returns the list of results.
 Example:
-  (xargs delete-file (find "/tmp" '(name . "*.bak")))
+  (xargs delete-file (find-file "/tmp" '(name . "*.bak")))
   (xargs (lambda (batch) (run-program (cons "rm" batch)))
          '("a" "b" "c" "d") '(batch-size . 2))
 ```
