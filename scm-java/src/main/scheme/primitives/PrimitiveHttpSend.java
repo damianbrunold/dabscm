@@ -4,6 +4,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 
 public class PrimitiveHttpSend extends Primitive {
     @Override
@@ -29,6 +30,9 @@ public class PrimitiveHttpSend extends Primitive {
             var builder = HttpRequest.newBuilder()
                 .uri(URI.create(req.url))
                 .method(req.method, bodyPub);
+            if (req.timeoutSeconds > 0) {
+                builder.timeout(Duration.ofSeconds(req.timeoutSeconds));
+            }
             for (String[] h : req.headers) {
                 builder.header(h[0], h[1]);
             }

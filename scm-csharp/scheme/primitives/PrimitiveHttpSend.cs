@@ -20,6 +20,9 @@ public class PrimitiveHttpSend : Primitive
         CheckArgs(pos, arguments, 1, 1);
         SchemeHttpRequest req = (SchemeHttpRequest) Value.AsNativeValue(arguments[0]).value;
         using var client = new HttpClient();
+        client.Timeout = req.TimeoutSeconds > 0
+            ? System.TimeSpan.FromSeconds(req.TimeoutSeconds)
+            : System.Threading.Timeout.InfiniteTimeSpan;
         var message = new HttpRequestMessage(new HttpMethod(req.Method), req.Url);
         foreach (var (name, value) in req.Headers)
             message.Headers.TryAddWithoutValidation(name, value);

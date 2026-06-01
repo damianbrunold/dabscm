@@ -78,9 +78,10 @@ Example:
 ### `make-http-request`
 
 ```
-Syntax: (make-http-request method url headers body)
+Syntax: (make-http-request method url headers body) (make-http-request method url headers body timeout-seconds)
 Library: (scm net http request)
 Description: Creates an HTTP request object. headers is an alist of (name . value) pairs. body is a string or #f.
+  Optional timeout-seconds overrides the default request timeout (600s); <= 0 means no timeout.
 Example:
   (make-http-request "GET" "/" '() #f)
 ```

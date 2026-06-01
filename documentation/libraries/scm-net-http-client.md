@@ -17,9 +17,10 @@ Example:
 ### `http-get`
 
 ```
-Syntax: (http-get url) (http-get url headers)
+Syntax: (http-get url) (http-get url headers) (http-get url headers timeout-seconds)
 Library: (scm net http client)
 Description: Performs an HTTP GET request and returns an http-response object.
+  Optional timeout-seconds overrides the default request timeout (600s); <= 0 means no timeout.
 Example:
   (http-response-status (http-get "http://example.com/")) => 200
 ```
@@ -38,9 +39,10 @@ Example:
 ### `http-post`
 
 ```
-Syntax: (http-post url body) (http-post url body headers)
+Syntax: (http-post url body) (http-post url body headers) (http-post url body headers timeout-seconds)
 Library: (scm net http client)
 Description: Performs an HTTP POST request with the given body string and returns an http-response object.
+  Optional timeout-seconds overrides the default request timeout (600s); <= 0 means no timeout.
 Example:
   (http-post "http://example.com/api" "{}")
 ```
