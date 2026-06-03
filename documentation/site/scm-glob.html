@@ -135,6 +135,18 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm glob)</div>
 <p class="lib-sub">Filename globbing and pattern matching</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm glob)</code> provides filename globbing — matching paths against shell-style wildcard patterns (<code>*</code>, <code>?</code>, character classes) and expanding a pattern against the filesystem.</p>
+<h2>Common uses</h2>
+<p>Test a name against a pattern:</p>
+<pre><code class="language-scheme">(import (scm glob))
+
+(glob-match? "*.scm" "foo.scm")   ;; =&gt; #t
+(glob-match? "*.scm" "foo.txt")   ;; =&gt; #f</code></pre>
+<p>Expand a pattern against the filesystem (results are sorted):</p>
+<pre><code class="language-scheme">(glob "src/*.scm")   ;; =&gt; ("src/bar.scm" "src/foo.scm")</code></pre>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">2 bindings</p>
 

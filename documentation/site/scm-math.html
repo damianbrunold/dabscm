@@ -135,6 +135,19 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm math)</div>
 <p class="lib-sub">Math constants and non-standard numeric operations</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm math)</code> collects a few math constants and numeric helpers that aren't part of the standard numeric tower.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scm math))
+
+PI              ;; =&gt; 3.141592653589793
+E               ;; =&gt; 2.718281828459045
+(factorial 5)   ;; =&gt; 120
+(sign -5)       ;; =&gt; -1
+(sign 0)        ;; =&gt; 0
+(magnitude -3)  ;; =&gt; 3</code></pre>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">6 bindings</p>
 

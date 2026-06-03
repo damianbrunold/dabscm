@@ -135,6 +135,23 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm dict)</div>
 <p class="lib-sub">Dictionary / associative map operations</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm dict)</code> is a simple mutable dictionary (associative map) with a small, readable API. For richer hash-table functionality (custom comparators, folding, set operations) see <code>(srfi 69)</code> and <code>(srfi 125)</code>; <code>(scm dict)</code> is handy when you just want a quick mutable key/value store.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scm dict))
+
+(define d (make-dict))
+(dict-put d "a" 1)
+(dict-put d "b" 2)
+
+(dict-get d "a")        ;; =&gt; 1
+(dict-size d)           ;; =&gt; 2
+(dict-contains d "b")   ;; =&gt; #t
+(dict-keys d)           ;; =&gt; ("a" "b")
+(dict-values d)         ;; =&gt; (1 2)</code></pre>
+<p><code>dict-entries</code> returns the key/value pairs, and <code>dict-clear</code> empties the dictionary in place.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">9 bindings</p>
 

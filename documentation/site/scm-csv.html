@@ -135,6 +135,18 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm csv)</div>
 <p class="lib-sub">CSV parsing</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm csv)</code> splits a single line of CSV-style text into its fields. It takes the line and a separator, strips a pair of surrounding double-quotes from each field, and returns the fields as a <strong>vector</strong>.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scm csv))
+
+(csv-line-&gt;fields "a,b,c" ",")       ;; =&gt; #("a" "b" "c")
+(csv-line-&gt;fields "\"x\",\"y\",z" ",")  ;; =&gt; #("x" "y" "z")</code></pre>
+<p>Pass the symbol <code>trim</code> as a third argument to also trim whitespace from each field:</p>
+<pre><code class="language-scheme">(csv-line-&gt;fields "a, b , c" "," 'trim)   ;; =&gt; #("a" "b" "c")</code></pre>
+<p>It operates on one line at a time and splits purely on the separator, so a separator character <strong>inside</strong> a quoted field is not treated specially — use a fuller parser if your data embeds the separator in quoted values.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">1 bindings</p>
 

@@ -135,6 +135,23 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm string)</div>
 <p class="lib-sub">Extended string operations — search, split, trim, convert</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm string)</code> adds string operations that aren't in the SRFI-13 string library — regular-expression matching and splitting, literal replace-all, and convenience splitters. For standard, predicate-based string work prefer <code>(srfi 13)</code>; reach for this library when you need regex or the line/field helpers.</p>
+<h2>Common uses</h2>
+<p>Split on a regex (whitespace by default), or on a literal separator:</p>
+<pre><code class="language-scheme">(import (scm string))
+
+(string-split "a b c")          ;; =&gt; ("a" "b" "c")
+(string-split "a,b,c" ",")      ;; =&gt; ("a" "b" "c")
+(string-split-char "a,b,,c" #\,);; =&gt; ("a" "b" "" "c")
+(string-split-lines "a\nb\n")   ;; =&gt; ("a" "b" "")</code></pre>
+<p>Match a regular expression — the result is the full match followed by any groups, or <code>#f</code>:</p>
+<pre><code class="language-scheme">(string-matches "abc123" "([a-z]+)([0-9]+)")  ;; =&gt; ("abc123" "abc" "123")
+(string-matches "hello" "xyz")                ;; =&gt; #f</code></pre>
+<p>Replace every occurrence of a literal substring:</p>
+<pre><code class="language-scheme">(string-replace-all "a.b.c" "." "/")   ;; =&gt; "a/b/c"</code></pre>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">8 bindings</p>
 
