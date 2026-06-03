@@ -135,6 +135,19 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title r7rs">(scheme complex)</div>
 <p class="lib-sub">Complex number arithmetic</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scheme complex)</code> provides the operations specific to complex numbers: constructing them from rectangular or polar form and pulling out their parts.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scheme base) (scheme complex))
+
+(make-rectangular 3 4)   ;; =&gt; 3+4i
+(real-part 3+4i)         ;; =&gt; 3
+(imag-part 3+4i)         ;; =&gt; 4
+(magnitude 3+4i)         ;; =&gt; 5.0
+(angle 0+1i)             ;; =&gt; 1.5707963267948966  (π/2)</code></pre>
+<p><code>make-polar</code> builds a complex number from a magnitude and angle.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">6 bindings</p>
 

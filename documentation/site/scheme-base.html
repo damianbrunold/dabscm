@@ -135,6 +135,20 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title r7rs">(scheme base)</div>
 <p class="lib-sub">R7RS base library — core forms and procedures</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scheme base)</code> is the R7RS base library — the core of the language. It provides the fundamental syntax (<code>define</code>, <code>lambda</code>, <code>let</code> and friends, <code>cond</code>, <code>case</code>, <code>when</code>, <code>unless</code>, <code>do</code>, <code>quasiquote</code>, <code>define-record-type</code>, <code>parameterize</code>, …) and the everyday procedures over pairs/lists, numbers, characters, strings, vectors, bytevectors, symbols, control flow, and basic I/O (string ports, <code>read-line</code>, <code>write-string</code>, …).</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scheme base))
+
+(define (square x) (* x x))
+(square 5)                       ;; =&gt; 25
+
+(map square '(1 2 3))            ;; =&gt; (1 4 9)
+(let loop ((i 0) (acc '()))
+  (if (= i 3) (reverse acc) (loop (+ i 1) (cons i acc))))   ;; =&gt; (0 1 2)</code></pre>
+<p>This is the library almost every program imports first. The other <code>(scheme …)</code> libraries add specialized pieces (file I/O, inexact math, lazy evaluation, …) on top of it.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">232 bindings</p>
 

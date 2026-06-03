@@ -1,7 +1,3 @@
-# `(scheme read)`
-
-Reading Scheme data from ports
-
 ## Overview
 
 `(scheme read)` provides `read`, the datum reader: it parses one S-expression of
@@ -21,18 +17,3 @@ the eof object at end of input.
   (let ((x (read p)))
     (if (eof-object? x) (reverse acc) (loop p (cons x acc)))))   ;; => (1 2 3)
 ```
-
-
-## Exports
-
-### `read`
-
-```
-Syntax: (read)
-Library: (scheme read)
-Description: Reads an external representation of a Scheme object from the given port and returns the object. If no more objects are available, an end-of-file object is returned. If port is omitted, the current input port is used.
-Example:
-  (define p (open-input-string "(a b c)"))
-  (read p) => (a b c)
-```
-

@@ -135,6 +135,18 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title r7rs">(scheme cxr)</div>
 <p class="lib-sub">Compositions of car and cdr up to 4 levels deep</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scheme cxr)</code> provides the compositions of <code>car</code> and <code>cdr</code> two to four levels deep — <code>caar</code>, <code>cadr</code>, <code>cddr</code>, … up to <code>cddddr</code>. (The two-level <code>caar</code>/<code>cadr</code>/… are also in <code>(scheme base)</code>; this library adds the three- and four-level forms.)</p>
+<h2>Common uses</h2>
+<p>Each name reads right-to-left: <code>caddr</code> is <code>(car (cdr (cdr x)))</code> — the third element of a list.</p>
+<pre><code class="language-scheme">(import (scheme base) (scheme cxr))
+
+(cadr   '(1 2 3 4))   ;; =&gt; 2
+(caddr  '(1 2 3 4))   ;; =&gt; 3
+(cadddr '(1 2 3 4))   ;; =&gt; 4
+(cddr   '(1 2 3 4))   ;; =&gt; (3 4)</code></pre>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">24 bindings</p>
 

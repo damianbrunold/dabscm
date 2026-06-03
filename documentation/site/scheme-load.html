@@ -135,6 +135,15 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title r7rs">(scheme load)</div>
 <p class="lib-sub">Loading Scheme source files</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scheme load)</code> provides <code>load</code>, which reads and evaluates the expressions in a Scheme source file as if they were typed at the REPL.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scheme load))
+
+(load "helpers.scm")   ;; evaluate every form in the file</code></pre>
+<p><code>load</code> is convenient for scripts and interactive work. For structured code reuse, prefer libraries and <code>import</code>.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">1 bindings</p>
 

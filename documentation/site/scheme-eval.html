@@ -135,6 +135,16 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title r7rs">(scheme eval)</div>
 <p class="lib-sub">Evaluation of Scheme expressions</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scheme eval)</code> evaluates data as code: <code>eval</code> runs an expression in a given environment, and <code>environment</code> builds an environment from a set of import specs.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scheme base) (scheme eval))
+
+(eval '(+ 1 2 3)
+      (environment '(scheme base)))   ;; =&gt; 6</code></pre>
+<p>The environment argument controls which bindings the evaluated expression can see; construct it from the libraries you want to expose.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">2 bindings</p>
 

@@ -135,6 +135,20 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title r7rs">(scheme read)</div>
 <p class="lib-sub">Reading Scheme data from ports</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scheme read)</code> provides <code>read</code>, the datum reader: it parses one S-expression of external representation from a textual input port into a Scheme value, returning the eof object at end of input.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scheme base) (scheme read))
+
+(read (open-input-string "(1 2 3)"))   ;; =&gt; (1 2 3)
+(read (open-input-string "\"hi\""))    ;; =&gt; "hi"
+
+;; read every datum from a port
+(let loop ((p (open-input-string "1 2 3")) (acc '()))
+  (let ((x (read p)))
+    (if (eof-object? x) (reverse acc) (loop p (cons x acc)))))   ;; =&gt; (1 2 3)</code></pre>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">1 bindings</p>
 

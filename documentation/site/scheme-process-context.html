@@ -135,6 +135,19 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title r7rs">(scheme process-context)</div>
 <p class="lib-sub">Process exit and context</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scheme process-context)</code> connects a program to its operating-system process: the command-line arguments, environment variables, and process exit.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scheme base) (scheme process-context))
+
+(command-line)                       ;; =&gt; ("script.scm" "arg1" "arg2")
+(get-environment-variable "HOME")    ;; =&gt; "/home/you" (or #f)
+(get-environment-variables)          ;; =&gt; (("HOME" . "...") ...)
+
+(exit 0)        ;; exit cleanly with a status code</code></pre>
+<p><code>emergency-exit</code> exits immediately without running outstanding cleanup (dynamic-wind after-thunks).</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">5 bindings</p>
 

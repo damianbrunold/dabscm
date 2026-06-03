@@ -135,6 +135,23 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title r7rs">(scheme case-lambda)</div>
 <p class="lib-sub">Case-lambda for multi-arity procedures</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scheme case-lambda)</code> provides <code>case-lambda</code>, which builds a procedure that dispatches on the number of arguments it receives — a clean way to write arity-overloaded procedures.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scheme base) (scheme case-lambda))
+
+(define greet
+  (case-lambda
+    (()      "hello")
+    ((name)  (string-append "hello, " name))
+    ((g name) (string-append g ", " name))))
+
+(greet)              ;; =&gt; "hello"
+(greet "Ada")        ;; =&gt; "hello, Ada"
+(greet "hi" "Ada")   ;; =&gt; "hi, Ada"</code></pre>
+<p>Each clause is <code>(formals body …)</code>; the first whose formals accept the actual argument count is used.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">1 bindings</p>
 

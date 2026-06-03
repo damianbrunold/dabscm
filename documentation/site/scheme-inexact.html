@@ -135,6 +135,21 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title r7rs">(scheme inexact)</div>
 <p class="lib-sub">Inexact number operations and trigonometry</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scheme inexact)</code> provides the transcendental and inexact numeric operations: the trig and exponential/log functions, <code>sqrt</code>, and the predicates for special values (<code>nan?</code>, <code>infinite?</code>, <code>finite?</code>).</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scheme base) (scheme inexact))
+
+(sqrt 2)            ;; =&gt; 1.4142135623730951
+(sin 0)             ;; =&gt; 0.0
+(exp 1)             ;; =&gt; 2.718281828459045
+(log 100 10)        ;; =&gt; 2.0   (log base 10)
+
+(nan? +nan.0)       ;; =&gt; #t
+(infinite? +inf.0)  ;; =&gt; #t
+(finite? 1.0)       ;; =&gt; #t</code></pre>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">12 bindings</p>
 

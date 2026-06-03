@@ -135,6 +135,20 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title r7rs">(scheme char)</div>
 <p class="lib-sub">Character classification and case operations</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scheme char)</code> provides character and string operations that depend on Unicode character classification: case conversion, case-insensitive comparison, and predicates like alphabetic/numeric/whitespace.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scheme base) (scheme char))
+
+(char-upcase #\a)            ;; =&gt; #\A
+(char-alphabetic? #\7)       ;; =&gt; #f
+(char-numeric? #\7)          ;; =&gt; #t
+(char-ci=? #\A #\a)          ;; =&gt; #t
+(string-upcase "Hello")      ;; =&gt; "HELLO"
+(string-downcase "Hello")    ;; =&gt; "hello"</code></pre>
+<p>It also includes <code>char-foldcase</code> / <code>string-foldcase</code> for case-folding and the <code>char-ci…?</code> family for case-insensitive ordering.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">30 bindings</p>
 

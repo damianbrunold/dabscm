@@ -135,6 +135,18 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title r7rs">(scheme r5rs)</div>
 <p class="lib-sub">Full R5RS compatibility library</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scheme r5rs)</code> is the R5RS compatibility library: a single import that provides the procedures and syntax of the older R5RS standard, for running legacy code with minimal changes. It bundles the familiar arithmetic, list, character, string, and control operations under one name.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scheme r5rs))
+
+(map (lambda (x) (* x x)) '(1 2 3))     ;; =&gt; (1 4 9)
+(assoc 'b '((a . 1) (b . 2)))           ;; =&gt; (b . 2)
+(call-with-current-continuation
+  (lambda (k) (+ 1 (k 41))))            ;; =&gt; 41</code></pre>
+<p>New code should prefer <code>(scheme base)</code> and the other R7RS libraries; reach for <code>(scheme r5rs)</code> when porting existing R5RS programs.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">203 bindings</p>
 

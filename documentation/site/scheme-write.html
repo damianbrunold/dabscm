@@ -135,6 +135,18 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title r7rs">(scheme write)</div>
 <p class="lib-sub">Writing and displaying values to ports</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scheme write)</code> writes Scheme values to output ports. <code>display</code> produces human-readable output (no string quotes), <code>write</code> produces machine-readable output (re-readable, with quotes and escapes), and <code>newline</code> emits a line break.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scheme base) (scheme write))
+
+(display "hi\n")          ;; prints: hi
+(write "hi")             ;; prints: "hi"   (with quotes)
+(write '(1 "two" #\c))   ;; prints: (1 "two" #\c)
+(newline)</code></pre>
+<p><code>write-shared</code> and <code>write-simple</code> control how shared/cyclic structure is printed (with or without datum labels).</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">5 bindings</p>
 

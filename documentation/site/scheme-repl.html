@@ -135,6 +135,15 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title r7rs">(scheme repl)</div>
 <p class="lib-sub">REPL environment access</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scheme repl)</code> provides <code>interaction-environment</code> — the mutable environment the REPL evaluates in, suitable as the environment argument to <code>eval</code>.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scheme base) (scheme eval) (scheme repl))
+
+(eval '(+ 1 2) (interaction-environment))   ;; =&gt; 3</code></pre>
+<p>Use it when you want <code>eval</code> to run in the same environment as the interactive session (seeing its definitions) rather than a fresh one.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">1 bindings</p>
 

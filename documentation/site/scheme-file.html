@@ -135,6 +135,24 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title r7rs">(scheme file)</div>
 <p class="lib-sub">File-based port operations</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scheme file)</code> provides file-based ports: open files for input or output (textual or binary), the <code>call-with-…</code> / <code>with-…</code> forms that manage a port's lifetime, and file existence/deletion.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scheme base) (scheme file))
+
+;; write a file
+(call-with-output-file "greeting.txt"
+  (lambda (p) (write-string "hello" p)))
+
+;; read it back
+(call-with-input-file "greeting.txt"
+  (lambda (p) (read-line p)))        ;; =&gt; "hello"
+
+(file-exists? "greeting.txt")        ;; =&gt; #t
+(delete-file "greeting.txt")</code></pre>
+<p><code>with-input-from-file</code> / <code>with-output-to-file</code> rebind the current ports for the duration of a thunk; <code>open-binary-input-file</code> / <code>open-binary-output-file</code> open byte streams.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">12 bindings</p>
 

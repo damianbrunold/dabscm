@@ -135,6 +135,20 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title r7rs">(scheme time)</div>
 <p class="lib-sub">Timestamps and time formatting</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scheme time)</code> provides the R7RS time primitives: the current wall-clock time in seconds, and a high-resolution monotonic "jiffy" counter for measuring elapsed time.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scheme base) (scheme time))
+
+(current-second)        ;; =&gt; seconds since the epoch (an inexact number)
+
+;; measure elapsed time
+(let ((start (current-jiffy)))
+  (do-some-work)
+  (/ (- (current-jiffy) start) (jiffies-per-second)))   ;; =&gt; elapsed seconds</code></pre>
+<p><code>jiffies-per-second</code> gives the resolution of the jiffy clock.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">3 bindings</p>
 
