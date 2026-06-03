@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(srfi 128) — Scm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Scm Library Reference</a></h1>
+    <p>scm &mdash; libraries and their exports</p>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav>
+  <h2>R7RS Standard</h2>
+  <a href="scheme-base.html" class="r7rs">(scheme base)</a>
+  <a href="scheme-case-lambda.html" class="r7rs">(scheme case-lambda)</a>
+  <a href="scheme-char.html" class="r7rs">(scheme char)</a>
+  <a href="scheme-complex.html" class="r7rs">(scheme complex)</a>
+  <a href="scheme-cxr.html" class="r7rs">(scheme cxr)</a>
+  <a href="scheme-eval.html" class="r7rs">(scheme eval)</a>
+  <a href="scheme-file.html" class="r7rs">(scheme file)</a>
+  <a href="scheme-inexact.html" class="r7rs">(scheme inexact)</a>
+  <a href="scheme-lazy.html" class="r7rs">(scheme lazy)</a>
+  <a href="scheme-load.html" class="r7rs">(scheme load)</a>
+  <a href="scheme-process-context.html" class="r7rs">(scheme process-context)</a>
+  <a href="scheme-r5rs.html" class="r7rs">(scheme r5rs)</a>
+  <a href="scheme-read.html" class="r7rs">(scheme read)</a>
+  <a href="scheme-repl.html" class="r7rs">(scheme repl)</a>
+  <a href="scheme-time.html" class="r7rs">(scheme time)</a>
+  <a href="scheme-write.html" class="r7rs">(scheme write)</a>
+  <h2>SRFI Libraries</h2>
+  <a href="srfi-1.html" class="srfi">(srfi 1)</a>
+  <a href="srfi-2.html" class="srfi">(srfi 2)</a>
+  <a href="srfi-8.html" class="srfi">(srfi 8)</a>
+  <a href="srfi-9.html" class="srfi">(srfi 9)</a>
+  <a href="srfi-13.html" class="srfi">(srfi 13)</a>
+  <a href="srfi-14.html" class="srfi">(srfi 14)</a>
+  <a href="srfi-18.html" class="srfi">(srfi 18)</a>
+  <a href="srfi-19.html" class="srfi">(srfi 19)</a>
+  <a href="srfi-26.html" class="srfi">(srfi 26)</a>
+  <a href="srfi-28.html" class="srfi">(srfi 28)</a>
+  <a href="srfi-39.html" class="srfi">(srfi 39)</a>
+  <a href="srfi-48.html" class="srfi">(srfi 48)</a>
+  <a href="srfi-64.html" class="srfi">(srfi 64)</a>
+  <a href="srfi-69.html" class="srfi">(srfi 69)</a>
+  <a href="srfi-95.html" class="srfi">(srfi 95)</a>
+  <a href="srfi-98.html" class="srfi">(srfi 98)</a>
+  <a href="srfi-111.html" class="srfi">(srfi 111)</a>
+  <a href="srfi-125.html" class="srfi">(srfi 125)</a>
+  <a href="srfi-128.html" class="srfi active">(srfi 128)</a>
+  <a href="srfi-132.html" class="srfi">(srfi 132)</a>
+  <a href="srfi-133.html" class="srfi">(srfi 133)</a>
+  <a href="srfi-151.html" class="srfi">(srfi 151)</a>
+  <a href="srfi-158.html" class="srfi">(srfi 158)</a>
+  <h2>Scm Extensions</h2>
+  <a href="scm-archive.html" class="scm">(scm archive)</a>
+  <a href="scm-args.html" class="scm">(scm args)</a>
+  <a href="scm-compile.html" class="scm">(scm compile)</a>
+  <a href="scm-compression.html" class="scm">(scm compression)</a>
+  <a href="scm-crypto.html" class="scm">(scm crypto)</a>
+  <a href="scm-csv.html" class="scm">(scm csv)</a>
+  <a href="scm-database-migrations.html" class="scm">(scm database migrations)</a>
+  <a href="scm-database-postgres.html" class="scm">(scm database postgres)</a>
+  <a href="scm-database-sqlserver.html" class="scm">(scm database sqlserver)</a>
+  <a href="scm-datetime.html" class="scm">(scm datetime)</a>
+  <a href="scm-dict.html" class="scm">(scm dict)</a>
+  <a href="scm-doc.html" class="scm">(scm doc)</a>
+  <a href="scm-duration.html" class="scm">(scm duration)</a>
+  <a href="scm-feed.html" class="scm">(scm feed)</a>
+  <a href="scm-fs-find.html" class="scm">(scm fs-find)</a>
+  <a href="scm-fs.html" class="scm">(scm fs)</a>
+  <a href="scm-glob.html" class="scm">(scm glob)</a>
+  <a href="scm-html-builder.html" class="scm">(scm html builder)</a>
+  <a href="scm-html.html" class="scm">(scm html)</a>
+  <a href="scm-io.html" class="scm">(scm io)</a>
+  <a href="scm-json-simple.html" class="scm">(scm json simple)</a>
+  <a href="scm-json.html" class="scm">(scm json)</a>
+  <a href="scm-list.html" class="scm">(scm list)</a>
+  <a href="scm-log.html" class="scm">(scm log)</a>
+  <a href="scm-macro.html" class="scm">(scm macro)</a>
+  <a href="scm-markdown.html" class="scm">(scm markdown)</a>
+  <a href="scm-match.html" class="scm">(scm match)</a>
+  <a href="scm-math.html" class="scm">(scm math)</a>
+  <a href="scm-module.html" class="scm">(scm module)</a>
+  <a href="scm-net-http-client.html" class="scm">(scm net http client)</a>
+  <a href="scm-net-http-cookies.html" class="scm">(scm net http cookies)</a>
+  <a href="scm-net-http-forms.html" class="scm">(scm net http forms)</a>
+  <a href="scm-net-http-multipart.html" class="scm">(scm net http multipart)</a>
+  <a href="scm-net-http-request.html" class="scm">(scm net http request)</a>
+  <a href="scm-net-http-response.html" class="scm">(scm net http response)</a>
+  <a href="scm-net-http-route.html" class="scm">(scm net http route)</a>
+  <a href="scm-net-http-server.html" class="scm">(scm net http server)</a>
+  <a href="scm-net-remote.html" class="scm">(scm net-remote)</a>
+  <a href="scm-net-sockets.html" class="scm">(scm net sockets)</a>
+  <a href="scm-net-websocket.html" class="scm">(scm net websocket)</a>
+  <a href="scm-odf-spreadsheet.html" class="scm">(scm odf spreadsheet)</a>
+  <a href="scm-odf-writer.html" class="scm">(scm odf writer)</a>
+  <a href="scm-ooxml-excel-reader.html" class="scm">(scm ooxml excel-reader)</a>
+  <a href="scm-ooxml-excel.html" class="scm">(scm ooxml excel)</a>
+  <a href="scm-ooxml-word-reader.html" class="scm">(scm ooxml word-reader)</a>
+  <a href="scm-ooxml-word.html" class="scm">(scm ooxml word)</a>
+  <a href="scm-pdf.html" class="scm">(scm pdf)</a>
+  <a href="scm-png.html" class="scm">(scm png)</a>
+  <a href="scm-profiling.html" class="scm">(scm profiling)</a>
+  <a href="scm-qr.html" class="scm">(scm qr)</a>
+  <a href="scm-random-access.html" class="scm">(scm random access)</a>
+  <a href="scm-repl.html" class="scm">(scm repl)</a>
+  <a href="scm-store.html" class="scm">(scm store)</a>
+  <a href="scm-string.html" class="scm">(scm string)</a>
+  <a href="scm-sysadmin.html" class="scm">(scm sysadmin)</a>
+  <a href="scm-system.html" class="scm">(scm system)</a>
+  <a href="scm-templating.html" class="scm">(scm templating)</a>
+  <a href="scm-terminal.html" class="scm">(scm terminal)</a>
+  <a href="scm-test.html" class="scm">(scm test)</a>
+  <a href="scm-text.html" class="scm">(scm text)</a>
+  <a href="scm-toml.html" class="scm">(scm toml)</a>
+  <a href="scm-uri.html" class="scm">(scm uri)</a>
+  <a href="scm-xml.html" class="scm">(scm xml)</a>
+  <a href="scm-zip.html" class="scm">(scm zip)</a>
+</nav>
+
+<main>
+
+<a class="backlink" href="index.html">&larr; All libraries</a>
+<div class="lib-title srfi">(srfi 128)</div>
+<p class="lib-sub">SRFI-128 — Comparators: bundled type-test, equality, ordering, and hash procedures</p>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">35 bindings</p>
+
+<div class="entry" id="e0" data-name="&lt;=?">
+  <div class="entry-name">&lt;=?</div>
+  <pre class="entry-doc">Syntax: (&lt;=? comparator a b c ...)
+Library: (srfi 128)
+Description: Returns #t if each argument is less than or equal to the next.
+Example:
+  (&lt;=? (make-default-comparator) 1 1 2) =&gt; #t</pre>
+</div>
+<div class="entry" id="e1" data-name="&lt;?">
+  <div class="entry-name">&lt;?</div>
+  <pre class="entry-doc">Syntax: (&lt;? comparator a b c ...)
+Library: (srfi 128)
+Description: Returns #t if each argument is less than the next according to the comparator.
+Example:
+  (&lt;? (make-default-comparator) 1 2 3) =&gt; #t
+  (&lt;? (make-default-comparator) 1 1) =&gt; #f</pre>
+</div>
+<div class="entry" id="e2" data-name="=?">
+  <div class="entry-name">=?</div>
+  <pre class="entry-doc">Syntax: (=? comparator a b c ...)
+Library: (srfi 128)
+Description: Returns #t if all arguments are equal according to the comparator.
+Example:
+  (=? (make-default-comparator) 1 1 1) =&gt; #t
+  (=? (make-default-comparator) 1 2) =&gt; #f</pre>
+</div>
+<div class="entry" id="e3" data-name="&gt;=?">
+  <div class="entry-name">&gt;=?</div>
+  <pre class="entry-doc">Syntax: (&gt;=? comparator a b c ...)
+Library: (srfi 128)
+Description: Returns #t if each argument is greater than or equal to the next.
+Example:
+  (&gt;=? (make-default-comparator) 3 3 1) =&gt; #t</pre>
+</div>
+<div class="entry" id="e4" data-name="&gt;?">
+  <div class="entry-name">&gt;?</div>
+  <pre class="entry-doc">Syntax: (&gt;? comparator a b c ...)
+Library: (srfi 128)
+Description: Returns #t if each argument is greater than the next according to the comparator.
+Example:
+  (&gt;? (make-default-comparator) 3 2 1) =&gt; #t</pre>
+</div>
+<div class="entry" id="e5" data-name="boolean-hash">
+  <div class="entry-name">boolean-hash</div>
+  <pre class="entry-doc">Syntax: (boolean-hash obj)
+Library: (srfi 128)
+Description: Returns a hash value for a boolean.
+Example:
+  (integer? (boolean-hash #t)) =&gt; #t
+  (= (boolean-hash #t) (boolean-hash #t)) =&gt; #t</pre>
+</div>
+<div class="entry" id="e6" data-name="char-ci-hash">
+  <div class="entry-name">char-ci-hash</div>
+  <pre class="entry-doc">Syntax: (char-ci-hash obj)
+Library: (srfi 128)
+Description: Returns a case-insensitive hash value for a character.
+Example:
+  (= (char-ci-hash #\A) (char-ci-hash #\a)) =&gt; #t</pre>
+</div>
+<div class="entry" id="e7" data-name="char-hash">
+  <div class="entry-name">char-hash</div>
+  <pre class="entry-doc">Syntax: (char-hash obj)
+Library: (srfi 128)
+Description: Returns a hash value for a character.
+Example:
+  (integer? (char-hash #\a)) =&gt; #t
+  (= (char-hash #\a) (char-hash #\a)) =&gt; #t</pre>
+</div>
+<div class="entry" id="e8" data-name="comparator-check-type">
+  <div class="entry-name">comparator-check-type</div>
+  <pre class="entry-doc">Syntax: (comparator-check-type comparator obj)
+Library: (srfi 128)
+Description: Like comparator-test-type but raises an error if obj fails.
+Example:
+  (comparator-check-type (make-default-comparator) 42) =&gt; #t</pre>
+</div>
+<div class="entry" id="e9" data-name="comparator-equality-predicate">
+  <div class="entry-name">comparator-equality-predicate</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e10" data-name="comparator-hash-function">
+  <div class="entry-name">comparator-hash-function</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e11" data-name="comparator-hashable?">
+  <div class="entry-name">comparator-hashable?</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e12" data-name="comparator-if&lt;=&gt;">
+  <div class="entry-name">comparator-if&lt;=&gt;</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e13" data-name="comparator-ordered?">
+  <div class="entry-name">comparator-ordered?</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e14" data-name="comparator-ordering-predicate">
+  <div class="entry-name">comparator-ordering-predicate</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e15" data-name="comparator-register-default!">
+  <div class="entry-name">comparator-register-default!</div>
+  <pre class="entry-doc">Syntax: (comparator-register-default! comparator)
+Library: (srfi 128)
+Description: Registers a comparator to be used by the default comparator for types
+that satisfy the registered comparator's type test.
+Example:
+  (comparator-register-default!
+    (make-comparator string? string=? string&lt;? string-hash))</pre>
+</div>
+<div class="entry" id="e16" data-name="comparator-test-type">
+  <div class="entry-name">comparator-test-type</div>
+  <pre class="entry-doc">Syntax: (comparator-test-type comparator obj)
+Library: (srfi 128)
+Description: Returns #t if obj satisfies the type test of the comparator.
+Example:
+  (comparator-test-type (make-default-comparator) 42) =&gt; #t</pre>
+</div>
+<div class="entry" id="e17" data-name="comparator-type-test-predicate">
+  <div class="entry-name">comparator-type-test-predicate</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e18" data-name="comparator?">
+  <div class="entry-name">comparator?</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e19" data-name="default-comparator">
+  <div class="entry-name">default-comparator</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e20" data-name="default-hash">
+  <div class="entry-name">default-hash</div>
+  <pre class="entry-doc">Syntax: (default-hash obj)
+Library: (srfi 128)
+Description: Returns a hash value for any object using the default hashing strategy.
+Example:
+  (integer? (default-hash 42)) =&gt; #t
+  (integer? (default-hash "hello")) =&gt; #t</pre>
+</div>
+<div class="entry" id="e21" data-name="hash-bound">
+  <div class="entry-name">hash-bound</div>
+  <pre class="entry-doc">Syntax: (hash-bound)
+Library: (srfi 128)
+Description: Returns the upper exclusive bound for hash values. Implementation-defined.
+Example:
+  (&gt; (hash-bound) 0) =&gt; #t</pre>
+</div>
+<div class="entry" id="e22" data-name="hash-salt">
+  <div class="entry-name">hash-salt</div>
+  <pre class="entry-doc">Syntax: (hash-salt)
+Library: (srfi 128)
+Description: Returns a salt value for hash functions. Returns 0 in this implementation.
+Example:
+  (integer? (hash-salt)) =&gt; #t</pre>
+</div>
+<div class="entry" id="e23" data-name="make-comparator">
+  <div class="entry-name">make-comparator</div>
+  <pre class="entry-doc">Syntax: (make-comparator type-test equality ordering hash)
+Library: (srfi 128)
+Description: Creates a comparator from four procedures. type-test is a predicate
+that returns #t for valid arguments. equality is an equivalence predicate. ordering
+is an ordering predicate (or #f if not provided). hash is a hash function (or #f
+if not provided). If equality is #t, equal? is used.
+Example:
+  (define c (make-comparator string? string=? string&lt;? string-hash))
+  (comparator? c) =&gt; #t
+  (comparator-ordered? c) =&gt; #t</pre>
+</div>
+<div class="entry" id="e24" data-name="make-default-comparator">
+  <div class="entry-name">make-default-comparator</div>
+  <pre class="entry-doc">Syntax: (make-default-comparator)
+Library: (srfi 128)
+Description: Returns a comparator that handles booleans, characters, strings, symbols,
+numbers, null, pairs, and vectors, with ordering and hashing support.
+Example:
+  (define c (make-default-comparator))
+  (=? c 1 1) =&gt; #t
+  (&lt;? c 1 2) =&gt; #t
+  (&lt;? c "a" "b") =&gt; #t</pre>
+</div>
+<div class="entry" id="e25" data-name="make-eq-comparator">
+  <div class="entry-name">make-eq-comparator</div>
+  <pre class="entry-doc">Syntax: (make-eq-comparator)
+Library: (srfi 128)
+Description: Returns a comparator that uses eq? for equality.
+Example:
+  (define c (make-eq-comparator))
+  (comparator? c) =&gt; #t</pre>
+</div>
+<div class="entry" id="e26" data-name="make-equal-comparator">
+  <div class="entry-name">make-equal-comparator</div>
+  <pre class="entry-doc">Syntax: (make-equal-comparator)
+Library: (srfi 128)
+Description: Returns a comparator that uses equal? for equality and default-hash for hashing.
+Example:
+  (define c (make-equal-comparator))
+  (comparator? c) =&gt; #t
+  (comparator-hashable? c) =&gt; #t</pre>
+</div>
+<div class="entry" id="e27" data-name="make-eqv-comparator">
+  <div class="entry-name">make-eqv-comparator</div>
+  <pre class="entry-doc">Syntax: (make-eqv-comparator)
+Library: (srfi 128)
+Description: Returns a comparator that uses eqv? for equality.
+Example:
+  (define c (make-eqv-comparator))
+  (comparator? c) =&gt; #t</pre>
+</div>
+<div class="entry" id="e28" data-name="make-list-comparator">
+  <div class="entry-name">make-list-comparator</div>
+  <pre class="entry-doc">Syntax: (make-list-comparator element-comparator type-test empty? head tail)
+Library: (srfi 128)
+Description: Returns a comparator for list-like sequences using the given element
+comparator and sequence access procedures.
+Example:
+  (define c (make-list-comparator (make-default-comparator) list? null? car cdr))
+  (=? c '(1 2 3) '(1 2 3)) =&gt; #t</pre>
+</div>
+<div class="entry" id="e29" data-name="make-pair-comparator">
+  <div class="entry-name">make-pair-comparator</div>
+  <pre class="entry-doc">Syntax: (make-pair-comparator car-comparator cdr-comparator)
+Library: (srfi 128)
+Description: Returns a comparator for pairs that compares car and cdr using
+the given comparators.
+Example:
+  (define c (make-pair-comparator (make-default-comparator) (make-default-comparator)))
+  (=? c '(1 . 2) '(1 . 2)) =&gt; #t</pre>
+</div>
+<div class="entry" id="e30" data-name="make-vector-comparator">
+  <div class="entry-name">make-vector-comparator</div>
+  <pre class="entry-doc">Syntax: (make-vector-comparator element-comparator type-test length ref)
+Library: (srfi 128)
+Description: Returns a comparator for vector-like sequences using the given element
+comparator and vector access procedures.
+Example:
+  (define c (make-vector-comparator (make-default-comparator) vector? vector-length vector-ref))
+  (=? c #(1 2 3) #(1 2 3)) =&gt; #t</pre>
+</div>
+<div class="entry" id="e31" data-name="number-hash">
+  <div class="entry-name">number-hash</div>
+  <pre class="entry-doc">Syntax: (number-hash obj)
+Library: (srfi 128)
+Description: Returns a hash value for a number.
+Example:
+  (integer? (number-hash 42)) =&gt; #t
+  (= (number-hash 3.14) (number-hash 3.14)) =&gt; #t</pre>
+</div>
+<div class="entry" id="e32" data-name="string-ci-hash">
+  <div class="entry-name">string-ci-hash</div>
+  <pre class="entry-doc">Syntax: (string-ci-hash obj)
+Library: (srfi 128)
+Description: Returns a case-insensitive hash value for a string.
+Example:
+  (= (string-ci-hash "Hello") (string-ci-hash "hello")) =&gt; #t</pre>
+</div>
+<div class="entry" id="e33" data-name="string-hash">
+  <div class="entry-name">string-hash</div>
+  <pre class="entry-doc">Syntax: (string-hash obj)
+Library: (srfi 128)
+Description: Returns a hash value for a string.
+Example:
+  (integer? (string-hash "hello")) =&gt; #t
+  (= (string-hash "abc") (string-hash "abc")) =&gt; #t</pre>
+</div>
+<div class="entry" id="e34" data-name="symbol-hash">
+  <div class="entry-name">symbol-hash</div>
+  <pre class="entry-doc">Syntax: (symbol-hash obj)
+Library: (srfi 128)
+Description: Returns a hash value for a symbol.
+Example:
+  (integer? (symbol-hash 'foo)) =&gt; #t
+  (= (symbol-hash 'bar) (symbol-hash 'bar)) =&gt; #t</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

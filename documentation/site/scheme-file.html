@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scheme file) — Scm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Scm Library Reference</a></h1>
+    <p>scm &mdash; libraries and their exports</p>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav>
+  <h2>R7RS Standard</h2>
+  <a href="scheme-base.html" class="r7rs">(scheme base)</a>
+  <a href="scheme-case-lambda.html" class="r7rs">(scheme case-lambda)</a>
+  <a href="scheme-char.html" class="r7rs">(scheme char)</a>
+  <a href="scheme-complex.html" class="r7rs">(scheme complex)</a>
+  <a href="scheme-cxr.html" class="r7rs">(scheme cxr)</a>
+  <a href="scheme-eval.html" class="r7rs">(scheme eval)</a>
+  <a href="scheme-file.html" class="r7rs active">(scheme file)</a>
+  <a href="scheme-inexact.html" class="r7rs">(scheme inexact)</a>
+  <a href="scheme-lazy.html" class="r7rs">(scheme lazy)</a>
+  <a href="scheme-load.html" class="r7rs">(scheme load)</a>
+  <a href="scheme-process-context.html" class="r7rs">(scheme process-context)</a>
+  <a href="scheme-r5rs.html" class="r7rs">(scheme r5rs)</a>
+  <a href="scheme-read.html" class="r7rs">(scheme read)</a>
+  <a href="scheme-repl.html" class="r7rs">(scheme repl)</a>
+  <a href="scheme-time.html" class="r7rs">(scheme time)</a>
+  <a href="scheme-write.html" class="r7rs">(scheme write)</a>
+  <h2>SRFI Libraries</h2>
+  <a href="srfi-1.html" class="srfi">(srfi 1)</a>
+  <a href="srfi-2.html" class="srfi">(srfi 2)</a>
+  <a href="srfi-8.html" class="srfi">(srfi 8)</a>
+  <a href="srfi-9.html" class="srfi">(srfi 9)</a>
+  <a href="srfi-13.html" class="srfi">(srfi 13)</a>
+  <a href="srfi-14.html" class="srfi">(srfi 14)</a>
+  <a href="srfi-18.html" class="srfi">(srfi 18)</a>
+  <a href="srfi-19.html" class="srfi">(srfi 19)</a>
+  <a href="srfi-26.html" class="srfi">(srfi 26)</a>
+  <a href="srfi-28.html" class="srfi">(srfi 28)</a>
+  <a href="srfi-39.html" class="srfi">(srfi 39)</a>
+  <a href="srfi-48.html" class="srfi">(srfi 48)</a>
+  <a href="srfi-64.html" class="srfi">(srfi 64)</a>
+  <a href="srfi-69.html" class="srfi">(srfi 69)</a>
+  <a href="srfi-95.html" class="srfi">(srfi 95)</a>
+  <a href="srfi-98.html" class="srfi">(srfi 98)</a>
+  <a href="srfi-111.html" class="srfi">(srfi 111)</a>
+  <a href="srfi-125.html" class="srfi">(srfi 125)</a>
+  <a href="srfi-128.html" class="srfi">(srfi 128)</a>
+  <a href="srfi-132.html" class="srfi">(srfi 132)</a>
+  <a href="srfi-133.html" class="srfi">(srfi 133)</a>
+  <a href="srfi-151.html" class="srfi">(srfi 151)</a>
+  <a href="srfi-158.html" class="srfi">(srfi 158)</a>
+  <h2>Scm Extensions</h2>
+  <a href="scm-archive.html" class="scm">(scm archive)</a>
+  <a href="scm-args.html" class="scm">(scm args)</a>
+  <a href="scm-compile.html" class="scm">(scm compile)</a>
+  <a href="scm-compression.html" class="scm">(scm compression)</a>
+  <a href="scm-crypto.html" class="scm">(scm crypto)</a>
+  <a href="scm-csv.html" class="scm">(scm csv)</a>
+  <a href="scm-database-migrations.html" class="scm">(scm database migrations)</a>
+  <a href="scm-database-postgres.html" class="scm">(scm database postgres)</a>
+  <a href="scm-database-sqlserver.html" class="scm">(scm database sqlserver)</a>
+  <a href="scm-datetime.html" class="scm">(scm datetime)</a>
+  <a href="scm-dict.html" class="scm">(scm dict)</a>
+  <a href="scm-doc.html" class="scm">(scm doc)</a>
+  <a href="scm-duration.html" class="scm">(scm duration)</a>
+  <a href="scm-feed.html" class="scm">(scm feed)</a>
+  <a href="scm-fs-find.html" class="scm">(scm fs-find)</a>
+  <a href="scm-fs.html" class="scm">(scm fs)</a>
+  <a href="scm-glob.html" class="scm">(scm glob)</a>
+  <a href="scm-html-builder.html" class="scm">(scm html builder)</a>
+  <a href="scm-html.html" class="scm">(scm html)</a>
+  <a href="scm-io.html" class="scm">(scm io)</a>
+  <a href="scm-json-simple.html" class="scm">(scm json simple)</a>
+  <a href="scm-json.html" class="scm">(scm json)</a>
+  <a href="scm-list.html" class="scm">(scm list)</a>
+  <a href="scm-log.html" class="scm">(scm log)</a>
+  <a href="scm-macro.html" class="scm">(scm macro)</a>
+  <a href="scm-markdown.html" class="scm">(scm markdown)</a>
+  <a href="scm-match.html" class="scm">(scm match)</a>
+  <a href="scm-math.html" class="scm">(scm math)</a>
+  <a href="scm-module.html" class="scm">(scm module)</a>
+  <a href="scm-net-http-client.html" class="scm">(scm net http client)</a>
+  <a href="scm-net-http-cookies.html" class="scm">(scm net http cookies)</a>
+  <a href="scm-net-http-forms.html" class="scm">(scm net http forms)</a>
+  <a href="scm-net-http-multipart.html" class="scm">(scm net http multipart)</a>
+  <a href="scm-net-http-request.html" class="scm">(scm net http request)</a>
+  <a href="scm-net-http-response.html" class="scm">(scm net http response)</a>
+  <a href="scm-net-http-route.html" class="scm">(scm net http route)</a>
+  <a href="scm-net-http-server.html" class="scm">(scm net http server)</a>
+  <a href="scm-net-remote.html" class="scm">(scm net-remote)</a>
+  <a href="scm-net-sockets.html" class="scm">(scm net sockets)</a>
+  <a href="scm-net-websocket.html" class="scm">(scm net websocket)</a>
+  <a href="scm-odf-spreadsheet.html" class="scm">(scm odf spreadsheet)</a>
+  <a href="scm-odf-writer.html" class="scm">(scm odf writer)</a>
+  <a href="scm-ooxml-excel-reader.html" class="scm">(scm ooxml excel-reader)</a>
+  <a href="scm-ooxml-excel.html" class="scm">(scm ooxml excel)</a>
+  <a href="scm-ooxml-word-reader.html" class="scm">(scm ooxml word-reader)</a>
+  <a href="scm-ooxml-word.html" class="scm">(scm ooxml word)</a>
+  <a href="scm-pdf.html" class="scm">(scm pdf)</a>
+  <a href="scm-png.html" class="scm">(scm png)</a>
+  <a href="scm-profiling.html" class="scm">(scm profiling)</a>
+  <a href="scm-qr.html" class="scm">(scm qr)</a>
+  <a href="scm-random-access.html" class="scm">(scm random access)</a>
+  <a href="scm-repl.html" class="scm">(scm repl)</a>
+  <a href="scm-store.html" class="scm">(scm store)</a>
+  <a href="scm-string.html" class="scm">(scm string)</a>
+  <a href="scm-sysadmin.html" class="scm">(scm sysadmin)</a>
+  <a href="scm-system.html" class="scm">(scm system)</a>
+  <a href="scm-templating.html" class="scm">(scm templating)</a>
+  <a href="scm-terminal.html" class="scm">(scm terminal)</a>
+  <a href="scm-test.html" class="scm">(scm test)</a>
+  <a href="scm-text.html" class="scm">(scm text)</a>
+  <a href="scm-toml.html" class="scm">(scm toml)</a>
+  <a href="scm-uri.html" class="scm">(scm uri)</a>
+  <a href="scm-xml.html" class="scm">(scm xml)</a>
+  <a href="scm-zip.html" class="scm">(scm zip)</a>
+</nav>
+
+<main>
+
+<a class="backlink" href="index.html">&larr; All libraries</a>
+<div class="lib-title r7rs">(scheme file)</div>
+<p class="lib-sub">File-based port operations</p>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">12 bindings</p>
+
+<div class="entry" id="e0" data-name="call-with-input-file">
+  <div class="entry-name">call-with-input-file</div>
+  <pre class="entry-doc">Syntax: (call-with-input-file filename proc)
+Library: (scheme file)
+Description: Opens the file named by filename for input and calls proc with the resulting input port
+  as its sole argument. When proc returns, the port is closed automatically via dynamic-wind, even
+  if a non-local exit occurs. Returns the value(s) returned by proc. filename may also be a list
+  whose car is the filename and whose remaining elements are options passed to open-input-file.
+Example:
+  (call-with-input-file "data.txt"
+    (lambda (port) (read port))) =&gt; &lt;first datum from file&gt;</pre>
+</div>
+<div class="entry" id="e1" data-name="call-with-output-file">
+  <div class="entry-name">call-with-output-file</div>
+  <pre class="entry-doc">Syntax: (call-with-output-file filename proc)
+Library: (scheme file)
+Description: Opens the file named by filename for output and calls proc with the resulting output
+  port as its sole argument. When proc returns, the port is closed automatically via dynamic-wind,
+  even if a non-local exit occurs. Returns the value(s) returned by proc. filename may also be a
+  list whose car is the filename and whose remaining elements are options passed to open-output-file.
+Example:
+  (call-with-output-file "out.txt"
+    (lambda (port) (write 42 port))) =&gt; &lt;unspecified&gt;</pre>
+</div>
+<div class="entry" id="e2" data-name="close-input-port">
+  <div class="entry-name">close-input-port</div>
+  <pre class="entry-doc">Syntax: (close-input-port port)
+Library: (scheme base)
+Description: Closes the input port, releasing any resources. It is an error to read from a closed port.
+Example:
+  (let ((p (open-input-file "data.txt")))
+    (close-input-port p))</pre>
+</div>
+<div class="entry" id="e3" data-name="close-output-port">
+  <div class="entry-name">close-output-port</div>
+  <pre class="entry-doc">Syntax: (close-output-port port)
+Library: (scheme base)
+Description: Closes the output port, flushing any buffered output and releasing resources.
+Example:
+  (let ((p (open-output-file "out.txt")))
+    (close-output-port p))</pre>
+</div>
+<div class="entry" id="e4" data-name="delete-file">
+  <div class="entry-name">delete-file</div>
+  <pre class="entry-doc">Syntax: (delete-file filename)
+Library: (scheme file)
+Description: Deletes the named file. Returns unspecified if successful, #f if the file could not be deleted.
+Example:
+  (delete-file "temp.txt")</pre>
+</div>
+<div class="entry" id="e5" data-name="file-exists?">
+  <div class="entry-name">file-exists?</div>
+  <pre class="entry-doc">Syntax: (file-exists? filename)
+Library: (scheme file)
+Description: Returns #t if the named file exists, otherwise returns #f.
+Example:
+  (file-exists? "/etc/hosts") =&gt; #t
+  (file-exists? "/nonexistent") =&gt; #f</pre>
+</div>
+<div class="entry" id="e6" data-name="open-binary-input-file">
+  <div class="entry-name">open-binary-input-file</div>
+  <pre class="entry-doc">Syntax: (open-binary-input-file filename)
+Library: (scheme file)
+Description: Opens the named file for binary input and returns a binary input port. Raises a file-error if the file cannot be opened.
+Example:
+  (let ((p (open-binary-input-file "data.bin")))
+    (read-u8 p))</pre>
+</div>
+<div class="entry" id="e7" data-name="open-binary-output-file">
+  <div class="entry-name">open-binary-output-file</div>
+  <pre class="entry-doc">Syntax: (open-binary-output-file filename)
+Library: (scheme file)
+Description: Opens the named file for binary output and returns a binary output port. Creates or truncates the file. Raises a file-error on failure.
+Example:
+  (let ((p (open-binary-output-file "out.bin")))
+    (write-u8 42 p))</pre>
+</div>
+<div class="entry" id="e8" data-name="open-input-file">
+  <div class="entry-name">open-input-file</div>
+  <pre class="entry-doc">Syntax: (open-input-file filename)
+Library: (scheme file)
+Description: Takes a filename and returns a textual input port that reads characters from the named file. It is an error if the file cannot be opened.
+Example:
+  (define p (open-input-file "data.txt"))
+  (read-char p) =&gt; first character of file</pre>
+</div>
+<div class="entry" id="e9" data-name="open-output-file">
+  <div class="entry-name">open-output-file</div>
+  <pre class="entry-doc">Syntax: (open-output-file filename)
+Library: (scheme file)
+Description: Takes a filename and returns a textual output port that writes characters to the named file. The file is created or truncated. It is an error if the file cannot be opened.
+Example:
+  (define p (open-output-file "out.txt"))
+  (write-char #\A p)</pre>
+</div>
+<div class="entry" id="e10" data-name="with-input-from-file">
+  <div class="entry-name">with-input-from-file</div>
+  <pre class="entry-doc">Syntax: (with-input-from-file filename thunk)
+Library: (scheme file)
+Description: Opens the file named by filename for input, makes it the current input port, and calls
+  thunk with no arguments. When thunk returns, the original current input port is restored and the
+  opened port is closed, both managed via dynamic-wind so they occur even on non-local exits.
+  Returns the value(s) returned by thunk. filename may also be a list whose car is the filename
+  and whose remaining elements are options passed to open-input-file.
+Example:
+  (with-input-from-file "data.txt"
+    (lambda () (read))) =&gt; &lt;first datum from file&gt;</pre>
+</div>
+<div class="entry" id="e11" data-name="with-output-to-file">
+  <div class="entry-name">with-output-to-file</div>
+  <pre class="entry-doc">Syntax: (with-output-to-file filename thunk)
+Library: (scheme file)
+Description: Opens the file named by filename for output, makes it the current output port, and
+  calls thunk with no arguments. When thunk returns, the original current output port is restored
+  and the opened port is closed, both managed via dynamic-wind so they occur even on non-local
+  exits. Returns the value(s) returned by thunk. filename may also be a list whose car is the
+  filename and whose remaining elements are options passed to open-output-file.
+Example:
+  (with-output-to-file "out.txt"
+    (lambda () (display "hello"))) =&gt; &lt;unspecified&gt;</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

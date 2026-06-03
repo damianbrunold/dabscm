@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm system) — Scm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Scm Library Reference</a></h1>
+    <p>scm &mdash; libraries and their exports</p>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav>
+  <h2>R7RS Standard</h2>
+  <a href="scheme-base.html" class="r7rs">(scheme base)</a>
+  <a href="scheme-case-lambda.html" class="r7rs">(scheme case-lambda)</a>
+  <a href="scheme-char.html" class="r7rs">(scheme char)</a>
+  <a href="scheme-complex.html" class="r7rs">(scheme complex)</a>
+  <a href="scheme-cxr.html" class="r7rs">(scheme cxr)</a>
+  <a href="scheme-eval.html" class="r7rs">(scheme eval)</a>
+  <a href="scheme-file.html" class="r7rs">(scheme file)</a>
+  <a href="scheme-inexact.html" class="r7rs">(scheme inexact)</a>
+  <a href="scheme-lazy.html" class="r7rs">(scheme lazy)</a>
+  <a href="scheme-load.html" class="r7rs">(scheme load)</a>
+  <a href="scheme-process-context.html" class="r7rs">(scheme process-context)</a>
+  <a href="scheme-r5rs.html" class="r7rs">(scheme r5rs)</a>
+  <a href="scheme-read.html" class="r7rs">(scheme read)</a>
+  <a href="scheme-repl.html" class="r7rs">(scheme repl)</a>
+  <a href="scheme-time.html" class="r7rs">(scheme time)</a>
+  <a href="scheme-write.html" class="r7rs">(scheme write)</a>
+  <h2>SRFI Libraries</h2>
+  <a href="srfi-1.html" class="srfi">(srfi 1)</a>
+  <a href="srfi-2.html" class="srfi">(srfi 2)</a>
+  <a href="srfi-8.html" class="srfi">(srfi 8)</a>
+  <a href="srfi-9.html" class="srfi">(srfi 9)</a>
+  <a href="srfi-13.html" class="srfi">(srfi 13)</a>
+  <a href="srfi-14.html" class="srfi">(srfi 14)</a>
+  <a href="srfi-18.html" class="srfi">(srfi 18)</a>
+  <a href="srfi-19.html" class="srfi">(srfi 19)</a>
+  <a href="srfi-26.html" class="srfi">(srfi 26)</a>
+  <a href="srfi-28.html" class="srfi">(srfi 28)</a>
+  <a href="srfi-39.html" class="srfi">(srfi 39)</a>
+  <a href="srfi-48.html" class="srfi">(srfi 48)</a>
+  <a href="srfi-64.html" class="srfi">(srfi 64)</a>
+  <a href="srfi-69.html" class="srfi">(srfi 69)</a>
+  <a href="srfi-95.html" class="srfi">(srfi 95)</a>
+  <a href="srfi-98.html" class="srfi">(srfi 98)</a>
+  <a href="srfi-111.html" class="srfi">(srfi 111)</a>
+  <a href="srfi-125.html" class="srfi">(srfi 125)</a>
+  <a href="srfi-128.html" class="srfi">(srfi 128)</a>
+  <a href="srfi-132.html" class="srfi">(srfi 132)</a>
+  <a href="srfi-133.html" class="srfi">(srfi 133)</a>
+  <a href="srfi-151.html" class="srfi">(srfi 151)</a>
+  <a href="srfi-158.html" class="srfi">(srfi 158)</a>
+  <h2>Scm Extensions</h2>
+  <a href="scm-archive.html" class="scm">(scm archive)</a>
+  <a href="scm-args.html" class="scm">(scm args)</a>
+  <a href="scm-compile.html" class="scm">(scm compile)</a>
+  <a href="scm-compression.html" class="scm">(scm compression)</a>
+  <a href="scm-crypto.html" class="scm">(scm crypto)</a>
+  <a href="scm-csv.html" class="scm">(scm csv)</a>
+  <a href="scm-database-migrations.html" class="scm">(scm database migrations)</a>
+  <a href="scm-database-postgres.html" class="scm">(scm database postgres)</a>
+  <a href="scm-database-sqlserver.html" class="scm">(scm database sqlserver)</a>
+  <a href="scm-datetime.html" class="scm">(scm datetime)</a>
+  <a href="scm-dict.html" class="scm">(scm dict)</a>
+  <a href="scm-doc.html" class="scm">(scm doc)</a>
+  <a href="scm-duration.html" class="scm">(scm duration)</a>
+  <a href="scm-feed.html" class="scm">(scm feed)</a>
+  <a href="scm-fs-find.html" class="scm">(scm fs-find)</a>
+  <a href="scm-fs.html" class="scm">(scm fs)</a>
+  <a href="scm-glob.html" class="scm">(scm glob)</a>
+  <a href="scm-html-builder.html" class="scm">(scm html builder)</a>
+  <a href="scm-html.html" class="scm">(scm html)</a>
+  <a href="scm-io.html" class="scm">(scm io)</a>
+  <a href="scm-json-simple.html" class="scm">(scm json simple)</a>
+  <a href="scm-json.html" class="scm">(scm json)</a>
+  <a href="scm-list.html" class="scm">(scm list)</a>
+  <a href="scm-log.html" class="scm">(scm log)</a>
+  <a href="scm-macro.html" class="scm">(scm macro)</a>
+  <a href="scm-markdown.html" class="scm">(scm markdown)</a>
+  <a href="scm-match.html" class="scm">(scm match)</a>
+  <a href="scm-math.html" class="scm">(scm math)</a>
+  <a href="scm-module.html" class="scm">(scm module)</a>
+  <a href="scm-net-http-client.html" class="scm">(scm net http client)</a>
+  <a href="scm-net-http-cookies.html" class="scm">(scm net http cookies)</a>
+  <a href="scm-net-http-forms.html" class="scm">(scm net http forms)</a>
+  <a href="scm-net-http-multipart.html" class="scm">(scm net http multipart)</a>
+  <a href="scm-net-http-request.html" class="scm">(scm net http request)</a>
+  <a href="scm-net-http-response.html" class="scm">(scm net http response)</a>
+  <a href="scm-net-http-route.html" class="scm">(scm net http route)</a>
+  <a href="scm-net-http-server.html" class="scm">(scm net http server)</a>
+  <a href="scm-net-remote.html" class="scm">(scm net-remote)</a>
+  <a href="scm-net-sockets.html" class="scm">(scm net sockets)</a>
+  <a href="scm-net-websocket.html" class="scm">(scm net websocket)</a>
+  <a href="scm-odf-spreadsheet.html" class="scm">(scm odf spreadsheet)</a>
+  <a href="scm-odf-writer.html" class="scm">(scm odf writer)</a>
+  <a href="scm-ooxml-excel-reader.html" class="scm">(scm ooxml excel-reader)</a>
+  <a href="scm-ooxml-excel.html" class="scm">(scm ooxml excel)</a>
+  <a href="scm-ooxml-word-reader.html" class="scm">(scm ooxml word-reader)</a>
+  <a href="scm-ooxml-word.html" class="scm">(scm ooxml word)</a>
+  <a href="scm-pdf.html" class="scm">(scm pdf)</a>
+  <a href="scm-png.html" class="scm">(scm png)</a>
+  <a href="scm-profiling.html" class="scm">(scm profiling)</a>
+  <a href="scm-qr.html" class="scm">(scm qr)</a>
+  <a href="scm-random-access.html" class="scm">(scm random access)</a>
+  <a href="scm-repl.html" class="scm">(scm repl)</a>
+  <a href="scm-store.html" class="scm">(scm store)</a>
+  <a href="scm-string.html" class="scm">(scm string)</a>
+  <a href="scm-sysadmin.html" class="scm">(scm sysadmin)</a>
+  <a href="scm-system.html" class="scm active">(scm system)</a>
+  <a href="scm-templating.html" class="scm">(scm templating)</a>
+  <a href="scm-terminal.html" class="scm">(scm terminal)</a>
+  <a href="scm-test.html" class="scm">(scm test)</a>
+  <a href="scm-text.html" class="scm">(scm text)</a>
+  <a href="scm-toml.html" class="scm">(scm toml)</a>
+  <a href="scm-uri.html" class="scm">(scm uri)</a>
+  <a href="scm-xml.html" class="scm">(scm xml)</a>
+  <a href="scm-zip.html" class="scm">(scm zip)</a>
+</nav>
+
+<main>
+
+<a class="backlink" href="index.html">&larr; All libraries</a>
+<div class="lib-title scm">(scm system)</div>
+<p class="lib-sub">System info, environment variables, process execution</p>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">36 bindings</p>
+
+<div class="entry" id="e0" data-name="current-pid">
+  <div class="entry-name">current-pid</div>
+  <pre class="entry-doc">Syntax: (current-pid)
+Library: (scm system)
+Description: Returns the OS process id of the current Scheme process.
+Example:
+  (current-pid) =&gt; 12345</pre>
+</div>
+<div class="entry" id="e1" data-name="env-list">
+  <div class="entry-name">env-list</div>
+  <pre class="entry-doc">Syntax: (env-list)
+Library: (scm system)
+Description: Returns an alist of all environment variables as (name . value)
+  pairs. Equivalent to SRFI-98 get-environment-variables.
+Example:
+  (env-list) =&gt; (("PATH" . "/usr/bin") ...)</pre>
+</div>
+<div class="entry" id="e2" data-name="get-bytes">
+  <div class="entry-name">get-bytes</div>
+  <pre class="entry-doc">Syntax: (get-bytes obj [encoding])
+Library: (scm core)
+Description: Returns the byte representation of obj (string, symbol, or bytevector) as a bytevector.
+  encoding is an optional string or symbol specifying the character encoding (default: utf-8).
+  Supported encodings: utf-8, utf-8-bom, latin-1, utf-16, utf-16-le.
+Example:
+  (get-bytes "hello")
+  (get-bytes "hello" "latin-1")</pre>
+</div>
+<div class="entry" id="e3" data-name="get-environment-variable">
+  <div class="entry-name">get-environment-variable</div>
+  <pre class="entry-doc">Syntax: (get-environment-variable name)
+Library: (scm system) (scheme process-context) (srfi 98)
+Description: Returns the value of the environment variable named name as a string, or #f if it is not set.
+Example:
+  (get-environment-variable "HOME") =&gt; "/home/user"
+  (get-environment-variable "UNDEFINED_VAR") =&gt; #f</pre>
+</div>
+<div class="entry" id="e4" data-name="getopt">
+  <div class="entry-name">getopt</div>
+  <pre class="entry-doc">Syntax: (getopt argv spec)
+Library: (scm system)
+Description: Parses command-line arguments. argv is a list of strings;
+  spec is a list of option descriptors, each one of:
+    (long-name short-char takes-value? [default])
+  where long-name is a string (without the --), short-char is a character
+  (or #f), takes-value? is a boolean, and default is the value used when
+  the option is absent (defaults to #f for non-value flags, #f for
+  value-taking options). Returns (alist . positionals) where alist maps
+  long-name strings to the supplied values (#t for absent boolean flags
+  is replaced by the default). Unknown options raise an error.
+Example:
+  (getopt '("-v" "--name" "foo" "a" "b")
+          '(("verbose" #\v #f)
+            ("name"    #\n #t "anon")))
+  =&gt; ((("verbose" . #t) ("name" . "foo")) . ("a" "b"))</pre>
+</div>
+<div class="entry" id="e5" data-name="kill">
+  <div class="entry-name">kill</div>
+  <pre class="entry-doc">Syntax: (kill pid [force?])
+Library: (scm system)
+Description: Sends a termination request to the process with the given
+  pid. With force? = #f (default) requests a normal termination
+  (SIGTERM on Unix); with force? = #t kills forcefully (SIGKILL on Unix).
+  Returns #t if the request was delivered, #f if the process does not
+  exist or the caller lacks permission to signal it.
+Example:
+  (kill 12345)        ; graceful
+  (kill 12345 #t)     ; force</pre>
+</div>
+<div class="entry" id="e6" data-name="modules">
+  <div class="entry-name">modules</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e7" data-name="parent-pid">
+  <div class="entry-name">parent-pid</div>
+  <pre class="entry-doc">Syntax: (parent-pid)
+Library: (scm system)
+Description: Returns the OS process id of the parent of the current
+  Scheme process, or #f if it cannot be determined.
+Example:
+  (parent-pid) =&gt; 12340</pre>
+</div>
+<div class="entry" id="e8" data-name="pgrep">
+  <div class="entry-name">pgrep</div>
+  <pre class="entry-doc">Syntax: (pgrep pattern [full?])
+Library: (scm system)
+Description: Returns a list of pids whose command matches the substring
+  pattern. By default matches against the process name. If full? is #t,
+  matches against the full command line (where the platform supplies it).
+  Pattern matching is case-sensitive substring.
+Example:
+  (pgrep "java") =&gt; (1234 5678)</pre>
+</div>
+<div class="entry" id="e9" data-name="pkill">
+  <div class="entry-name">pkill</div>
+  <pre class="entry-doc">Syntax: (pkill pattern [force? [full?]])
+Library: (scm system)
+Description: Sends a termination request to every process whose command
+  matches the substring pattern. By default matches against the process
+  name; if full? is #t, matches against the full command line. With
+  force? = #t kills forcefully (SIGKILL on Unix). Returns the number of
+  processes that were successfully signaled. Does NOT match the current
+  Scheme process.
+Example:
+  (pkill "sleep") =&gt; 2</pre>
+</div>
+<div class="entry" id="e10" data-name="process-alive?">
+  <div class="entry-name">process-alive?</div>
+  <pre class="entry-doc">Syntax: (process-alive? handle)
+Library: (scm system)
+Description: Returns #t if the process started by start-program is still running, #f if it has exited.
+Example:
+  (process-alive? p) =&gt; #t</pre>
+</div>
+<div class="entry" id="e11" data-name="process-kill">
+  <div class="entry-name">process-kill</div>
+  <pre class="entry-doc">Syntax: (process-kill handle [force?])
+Library: (scm system)
+Description: Stops a process started by start-program. With force? = #f (default) requests a normal termination (SIGTERM on Unix, TerminateProcess on Windows via Process.destroy). With force? = #t kills forcefully (SIGKILL on Unix). Returns #t.
+Example:
+  (process-kill p)        ; graceful where supported
+  (process-kill p #t)     ; force</pre>
+</div>
+<div class="entry" id="e12" data-name="process-pid">
+  <div class="entry-name">process-pid</div>
+  <pre class="entry-doc">Syntax: (process-pid handle)
+Library: (scm system)
+Description: Returns the OS process id of a process handle returned by start-program.
+Example:
+  (process-pid p) =&gt; 12345</pre>
+</div>
+<div class="entry" id="e13" data-name="process-wait">
+  <div class="entry-name">process-wait</div>
+  <pre class="entry-doc">Syntax: (process-wait handle [timeout-ms])
+Library: (scm system)
+Description: Waits for the process to exit. Without timeout-ms, blocks until exit and returns the exit code as an integer. With timeout-ms, waits at most that long; returns the exit code on exit, or #f if the process is still running when the timeout elapses.
+Example:
+  (process-wait p)            =&gt; 0
+  (process-wait p 5000)       =&gt; 0 or #f</pre>
+</div>
+<div class="entry" id="e14" data-name="ps">
+  <div class="entry-name">ps</div>
+  <pre class="entry-doc">Syntax: (ps)
+Library: (scm system)
+Description: Returns a list of alists describing the processes currently
+  visible on the system. Each alist has the keys:
+    pid         — process id (integer)
+    ppid        — parent pid (integer) or #f
+    command     — process command as a string, or #f
+    user        — owning user (string) or #f
+    start-time  — epoch milliseconds (integer) or #f
+    cpu-time    — accumulated cpu time in seconds (inexact) or #f
+  Fields the platform cannot supply or that the current user cannot
+  access are #f. Order is unspecified.
+Example:
+  (length (ps)) =&gt; 312</pre>
+</div>
+<div class="entry" id="e15" data-name="ps-info">
+  <div class="entry-name">ps-info</div>
+  <pre class="entry-doc">Syntax: (ps-info pid)
+Library: (scm system)
+Description: Returns an alist describing the process with the given pid,
+  or #f if no such process exists or it cannot be inspected. See (ps)
+  for the field set.
+Example:
+  (cdr (assq 'command (ps-info (current-pid)))) =&gt; "scm"</pre>
+</div>
+<div class="entry" id="e16" data-name="run">
+  <div class="entry-name">run</div>
+  <pre class="entry-doc">Syntax: (run prog arg ...)
+Library: (scm system)
+Description: Varargs wrapper around run-program. Runs the external program
+  prog with the given arguments and returns its exit code.
+Example:
+  (run "echo" "hello") =&gt; 0</pre>
+</div>
+<div class="entry" id="e17" data-name="run!">
+  <div class="entry-name">run!</div>
+  <pre class="entry-doc">Syntax: (run! prog arg ...)
+Library: (scm system)
+Description: Like run, but raises an error when the program exits non-zero
+  or fails to launch. Returns 0 on success.
+Example:
+  (run! "true") =&gt; 0</pre>
+</div>
+<div class="entry" id="e18" data-name="run-parallel">
+  <div class="entry-name">run-parallel</div>
+  <pre class="entry-doc">Syntax: (run-parallel fn values)
+Library: (scm system)
+Description: Runs fn in parallel over each element of values using one thread per
+  element and returns the results as a list in the same order. Exceptions raised
+  in any thread are propagated when joining.
+Example:
+  (run-parallel (lambda (x) (* x x)) '(1 2 3 4)) =&gt; (1 4 9 16)</pre>
+</div>
+<div class="entry" id="e19" data-name="run-program">
+  <div class="entry-name">run-program</div>
+  <pre class="entry-doc">Syntax: (run-program cmd)
+Library: (scm system)
+Description: Executes the external program specified as a list (program arg1 arg2 ...), waits for it to complete, and returns its exit code as an exact integer. Returns #f on failure.
+Example:
+  (run-program '("echo" "hello")) =&gt; 0</pre>
+</div>
+<div class="entry" id="e20" data-name="run-program/capture">
+  <div class="entry-name">run-program/capture</div>
+  <pre class="entry-doc">Syntax: (run-program/capture cmd [options])
+Library: (scm system)
+Description: Executes the external program specified as a list (program arg1 arg2 ...), waits for it to complete, and returns a list (exit-code stdout stderr) where stdout and stderr are captured as strings. options is an alist with optional keys: 'work-dir &lt;path&gt;, 'stdin &lt;string&gt; (text to write to the child's standard input). Returns #f on failure.
+Example:
+  (run-program/capture '("echo" "hello")) =&gt; (0 "hello\n" "")</pre>
+</div>
+<div class="entry" id="e21" data-name="run?">
+  <div class="entry-name">run?</div>
+  <pre class="entry-doc">Syntax: (run? prog arg ...)
+Library: (scm system)
+Description: Returns #t when the program exits with status 0, #f otherwise.
+  Useful for predicates like (run? "test" "-f" path).
+Example:
+  (run? "test" "-f" "/etc/hosts") =&gt; #t</pre>
+</div>
+<div class="entry" id="e22" data-name="sh">
+  <div class="entry-name">sh</div>
+  <pre class="entry-doc">Syntax: (sh prog arg ...)
+Library: (scm system)
+Description: Runs the program and returns its captured stdout as a string.
+  Raises an error on non-zero exit. Trailing newlines are preserved.
+Example:
+  (sh "date" "+%Y") =&gt; "2026\n"</pre>
+</div>
+<div class="entry" id="e23" data-name="sh-lines">
+  <div class="entry-name">sh-lines</div>
+  <pre class="entry-doc">Syntax: (sh-lines prog arg ...)
+Library: (scm system)
+Description: Like sh but returns stdout split into a list of lines
+  (the trailing empty line from a final newline is dropped).
+Example:
+  (sh-lines "ls" "/tmp") =&gt; ("file1" "file2")</pre>
+</div>
+<div class="entry" id="e24" data-name="shell-quote">
+  <div class="entry-name">shell-quote</div>
+  <pre class="entry-doc">Syntax: (shell-quote s)
+Library: (scm system)
+Description: Returns s quoted such that it can be safely passed as a single
+  argument to a POSIX shell (e.g. via /bin/sh -c). Wraps the string in
+  single quotes and escapes any embedded single quotes.
+Example:
+  (shell-quote "it's fine") =&gt; "'it'\\''s fine'"</pre>
+</div>
+<div class="entry" id="e25" data-name="sleep">
+  <div class="entry-name">sleep</div>
+  <pre class="entry-doc">Syntax: (sleep seconds)
+Library: (scm system)
+Description: Pauses the current thread for the given number of seconds
+  (which may be fractional). Returns an unspecified value. Uses SRFI 18
+  thread-sleep! internally.
+Example:
+  (sleep 1.5)</pre>
+</div>
+<div class="entry" id="e26" data-name="start-program">
+  <div class="entry-name">start-program</div>
+  <pre class="entry-doc">Syntax: (start-program cmd-and-args [options])
+Library: (scm system)
+Description: Starts an external program without waiting for it to finish and returns a process handle (a native value). cmd-and-args is a list (program arg1 arg2 ...). options is an alist with optional keys: 'work-dir &lt;path&gt;, 'log-file &lt;path&gt; (redirects stdout+stderr to this file). Use process-pid, process-kill, process-wait, process-alive? on the handle.
+Example:
+  (define p (start-program '("sleep" "30")))
+  (process-kill p)
+  (process-wait p)</pre>
+</div>
+<div class="entry" id="e27" data-name="sys-machine-name">
+  <div class="entry-name">sys-machine-name</div>
+  <pre class="entry-doc">Syntax: (sys-machine-name)
+Library: (scm system)
+Description: Returns the hostname of the current machine as a string.
+Example:
+  (sys-machine-name) =&gt; "myhost"</pre>
+</div>
+<div class="entry" id="e28" data-name="sys-num-cpu-cores">
+  <div class="entry-name">sys-num-cpu-cores</div>
+  <pre class="entry-doc">Syntax: (sys-num-cpu-cores)
+Library: (scm system)
+Description: Returns the number of logical CPU cores available to the current process as an integer.
+Example:
+  (sys-num-cpu-cores) =&gt; 8</pre>
+</div>
+<div class="entry" id="e29" data-name="sys-os-version">
+  <div class="entry-name">sys-os-version</div>
+  <pre class="entry-doc">Syntax: (sys-os-version)
+Library: (scm system)
+Description: Returns a list describing the operating system: (platform version-string major minor service-pack).
+Example:
+  (sys-os-version) =&gt; (linux "Unix 5.15.0.0" 5 15 "")</pre>
+</div>
+<div class="entry" id="e30" data-name="sys-platform">
+  <div class="entry-name">sys-platform</div>
+  <pre class="entry-doc">Syntax: (sys-platform)
+Library: (scm system)
+Description: Returns a symbol identifying the current operating system platform: windows, linux, or unknown.
+Example:
+  (sys-platform) =&gt; linux</pre>
+</div>
+<div class="entry" id="e31" data-name="sys-scm-technology">
+  <div class="entry-name">sys-scm-technology</div>
+  <pre class="entry-doc">Syntax: (sys-scm-technology)
+Library: (scm system)
+Description: Returns a symbol identifying the SCM implementation technology: csharp or java.
+Example:
+  (sys-scm-technology) =&gt; java</pre>
+</div>
+<div class="entry" id="e32" data-name="sys-scm-version">
+  <div class="entry-name">sys-scm-version</div>
+  <pre class="entry-doc">Syntax: (sys-scm-version)
+Library: (scm system)
+Description: Returns the SCM interpreter version as a string.
+Example:
+  (sys-scm-version) =&gt; "0.0.1"</pre>
+</div>
+<div class="entry" id="e33" data-name="sys-user-name">
+  <div class="entry-name">sys-user-name</div>
+  <pre class="entry-doc">Syntax: (sys-user-name)
+Library: (scm system)
+Description: Returns the name of the currently logged-in user as a string.
+Example:
+  (sys-user-name) =&gt; "alice"</pre>
+</div>
+<div class="entry" id="e34" data-name="uuidgen">
+  <div class="entry-name">uuidgen</div>
+  <pre class="entry-doc">Syntax: (uuidgen)
+Library: (scm system)
+Description: Returns a random RFC 4122 version 4 UUID as a string in
+  canonical 8-4-4-4-12 hyphenated form. Uses cryptographically random
+  bytes; version and variant bits are set per the spec.
+Example:
+  (uuidgen) =&gt; "e3b0c442-98fc-4c14-9afb-f4ca495991b9"</pre>
+</div>
+<div class="entry" id="e35" data-name="watch">
+  <div class="entry-name">watch</div>
+  <pre class="entry-doc">Syntax: (watch thunk [option ...])
+Library: (scm system)
+Description: Repeatedly invokes the zero-argument thunk, sleeping between
+  invocations. Returns when thunk raises or when the iteration limit is
+  reached. Options:
+    '(interval . seconds) — seconds between calls (default 2)
+    '(count . n)          — stop after n iterations (default: forever)
+Example:
+  (watch (lambda () (display (sh "date")) (newline))
+         '(interval . 5) '(count . 3))</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

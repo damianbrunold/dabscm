@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scheme char) — Scm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Scm Library Reference</a></h1>
+    <p>scm &mdash; libraries and their exports</p>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav>
+  <h2>R7RS Standard</h2>
+  <a href="scheme-base.html" class="r7rs">(scheme base)</a>
+  <a href="scheme-case-lambda.html" class="r7rs">(scheme case-lambda)</a>
+  <a href="scheme-char.html" class="r7rs active">(scheme char)</a>
+  <a href="scheme-complex.html" class="r7rs">(scheme complex)</a>
+  <a href="scheme-cxr.html" class="r7rs">(scheme cxr)</a>
+  <a href="scheme-eval.html" class="r7rs">(scheme eval)</a>
+  <a href="scheme-file.html" class="r7rs">(scheme file)</a>
+  <a href="scheme-inexact.html" class="r7rs">(scheme inexact)</a>
+  <a href="scheme-lazy.html" class="r7rs">(scheme lazy)</a>
+  <a href="scheme-load.html" class="r7rs">(scheme load)</a>
+  <a href="scheme-process-context.html" class="r7rs">(scheme process-context)</a>
+  <a href="scheme-r5rs.html" class="r7rs">(scheme r5rs)</a>
+  <a href="scheme-read.html" class="r7rs">(scheme read)</a>
+  <a href="scheme-repl.html" class="r7rs">(scheme repl)</a>
+  <a href="scheme-time.html" class="r7rs">(scheme time)</a>
+  <a href="scheme-write.html" class="r7rs">(scheme write)</a>
+  <h2>SRFI Libraries</h2>
+  <a href="srfi-1.html" class="srfi">(srfi 1)</a>
+  <a href="srfi-2.html" class="srfi">(srfi 2)</a>
+  <a href="srfi-8.html" class="srfi">(srfi 8)</a>
+  <a href="srfi-9.html" class="srfi">(srfi 9)</a>
+  <a href="srfi-13.html" class="srfi">(srfi 13)</a>
+  <a href="srfi-14.html" class="srfi">(srfi 14)</a>
+  <a href="srfi-18.html" class="srfi">(srfi 18)</a>
+  <a href="srfi-19.html" class="srfi">(srfi 19)</a>
+  <a href="srfi-26.html" class="srfi">(srfi 26)</a>
+  <a href="srfi-28.html" class="srfi">(srfi 28)</a>
+  <a href="srfi-39.html" class="srfi">(srfi 39)</a>
+  <a href="srfi-48.html" class="srfi">(srfi 48)</a>
+  <a href="srfi-64.html" class="srfi">(srfi 64)</a>
+  <a href="srfi-69.html" class="srfi">(srfi 69)</a>
+  <a href="srfi-95.html" class="srfi">(srfi 95)</a>
+  <a href="srfi-98.html" class="srfi">(srfi 98)</a>
+  <a href="srfi-111.html" class="srfi">(srfi 111)</a>
+  <a href="srfi-125.html" class="srfi">(srfi 125)</a>
+  <a href="srfi-128.html" class="srfi">(srfi 128)</a>
+  <a href="srfi-132.html" class="srfi">(srfi 132)</a>
+  <a href="srfi-133.html" class="srfi">(srfi 133)</a>
+  <a href="srfi-151.html" class="srfi">(srfi 151)</a>
+  <a href="srfi-158.html" class="srfi">(srfi 158)</a>
+  <h2>Scm Extensions</h2>
+  <a href="scm-archive.html" class="scm">(scm archive)</a>
+  <a href="scm-args.html" class="scm">(scm args)</a>
+  <a href="scm-compile.html" class="scm">(scm compile)</a>
+  <a href="scm-compression.html" class="scm">(scm compression)</a>
+  <a href="scm-crypto.html" class="scm">(scm crypto)</a>
+  <a href="scm-csv.html" class="scm">(scm csv)</a>
+  <a href="scm-database-migrations.html" class="scm">(scm database migrations)</a>
+  <a href="scm-database-postgres.html" class="scm">(scm database postgres)</a>
+  <a href="scm-database-sqlserver.html" class="scm">(scm database sqlserver)</a>
+  <a href="scm-datetime.html" class="scm">(scm datetime)</a>
+  <a href="scm-dict.html" class="scm">(scm dict)</a>
+  <a href="scm-doc.html" class="scm">(scm doc)</a>
+  <a href="scm-duration.html" class="scm">(scm duration)</a>
+  <a href="scm-feed.html" class="scm">(scm feed)</a>
+  <a href="scm-fs-find.html" class="scm">(scm fs-find)</a>
+  <a href="scm-fs.html" class="scm">(scm fs)</a>
+  <a href="scm-glob.html" class="scm">(scm glob)</a>
+  <a href="scm-html-builder.html" class="scm">(scm html builder)</a>
+  <a href="scm-html.html" class="scm">(scm html)</a>
+  <a href="scm-io.html" class="scm">(scm io)</a>
+  <a href="scm-json-simple.html" class="scm">(scm json simple)</a>
+  <a href="scm-json.html" class="scm">(scm json)</a>
+  <a href="scm-list.html" class="scm">(scm list)</a>
+  <a href="scm-log.html" class="scm">(scm log)</a>
+  <a href="scm-macro.html" class="scm">(scm macro)</a>
+  <a href="scm-markdown.html" class="scm">(scm markdown)</a>
+  <a href="scm-match.html" class="scm">(scm match)</a>
+  <a href="scm-math.html" class="scm">(scm math)</a>
+  <a href="scm-module.html" class="scm">(scm module)</a>
+  <a href="scm-net-http-client.html" class="scm">(scm net http client)</a>
+  <a href="scm-net-http-cookies.html" class="scm">(scm net http cookies)</a>
+  <a href="scm-net-http-forms.html" class="scm">(scm net http forms)</a>
+  <a href="scm-net-http-multipart.html" class="scm">(scm net http multipart)</a>
+  <a href="scm-net-http-request.html" class="scm">(scm net http request)</a>
+  <a href="scm-net-http-response.html" class="scm">(scm net http response)</a>
+  <a href="scm-net-http-route.html" class="scm">(scm net http route)</a>
+  <a href="scm-net-http-server.html" class="scm">(scm net http server)</a>
+  <a href="scm-net-remote.html" class="scm">(scm net-remote)</a>
+  <a href="scm-net-sockets.html" class="scm">(scm net sockets)</a>
+  <a href="scm-net-websocket.html" class="scm">(scm net websocket)</a>
+  <a href="scm-odf-spreadsheet.html" class="scm">(scm odf spreadsheet)</a>
+  <a href="scm-odf-writer.html" class="scm">(scm odf writer)</a>
+  <a href="scm-ooxml-excel-reader.html" class="scm">(scm ooxml excel-reader)</a>
+  <a href="scm-ooxml-excel.html" class="scm">(scm ooxml excel)</a>
+  <a href="scm-ooxml-word-reader.html" class="scm">(scm ooxml word-reader)</a>
+  <a href="scm-ooxml-word.html" class="scm">(scm ooxml word)</a>
+  <a href="scm-pdf.html" class="scm">(scm pdf)</a>
+  <a href="scm-png.html" class="scm">(scm png)</a>
+  <a href="scm-profiling.html" class="scm">(scm profiling)</a>
+  <a href="scm-qr.html" class="scm">(scm qr)</a>
+  <a href="scm-random-access.html" class="scm">(scm random access)</a>
+  <a href="scm-repl.html" class="scm">(scm repl)</a>
+  <a href="scm-store.html" class="scm">(scm store)</a>
+  <a href="scm-string.html" class="scm">(scm string)</a>
+  <a href="scm-sysadmin.html" class="scm">(scm sysadmin)</a>
+  <a href="scm-system.html" class="scm">(scm system)</a>
+  <a href="scm-templating.html" class="scm">(scm templating)</a>
+  <a href="scm-terminal.html" class="scm">(scm terminal)</a>
+  <a href="scm-test.html" class="scm">(scm test)</a>
+  <a href="scm-text.html" class="scm">(scm text)</a>
+  <a href="scm-toml.html" class="scm">(scm toml)</a>
+  <a href="scm-uri.html" class="scm">(scm uri)</a>
+  <a href="scm-xml.html" class="scm">(scm xml)</a>
+  <a href="scm-zip.html" class="scm">(scm zip)</a>
+</nav>
+
+<main>
+
+<a class="backlink" href="index.html">&larr; All libraries</a>
+<div class="lib-title r7rs">(scheme char)</div>
+<p class="lib-sub">Character classification and case operations</p>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">30 bindings</p>
+
+<div class="entry" id="e0" data-name="char-&gt;integer">
+  <div class="entry-name">char-&gt;integer</div>
+  <pre class="entry-doc">Syntax: (char-&gt;integer char)
+Library: (scheme base)
+Description: Returns the Unicode scalar value (codepoint) of the given character as an exact integer.
+Example:
+  (char-&gt;integer #\a) =&gt; 97
+  (char-&gt;integer #\A) =&gt; 65</pre>
+</div>
+<div class="entry" id="e1" data-name="char-alphabetic?">
+  <div class="entry-name">char-alphabetic?</div>
+  <pre class="entry-doc">Syntax: (char-alphabetic? char)
+Library: (scheme char)
+Description: Returns #t if char is an alphabetic character.
+Example:
+  (char-alphabetic? #\a) =&gt; #t
+  (char-alphabetic? #\1) =&gt; #f</pre>
+</div>
+<div class="entry" id="e2" data-name="char-ci&lt;=?">
+  <div class="entry-name">char-ci&lt;=?</div>
+  <pre class="entry-doc">Syntax: (char-ci&lt;=? char1 char2 ...)
+Library: (scheme char)
+Description: Returns #t if the given characters are monotonically non-decreasing (less than or equal)
+  in a case-insensitive comparison, that is, after applying char-downcase to each.
+Example:
+  (char-ci&lt;=? #\a #\A) =&gt; #t
+  (char-ci&lt;=? #\A #\b #\B) =&gt; #t</pre>
+</div>
+<div class="entry" id="e3" data-name="char-ci&lt;?">
+  <div class="entry-name">char-ci&lt;?</div>
+  <pre class="entry-doc">Syntax: (char-ci&lt;? char1 char2 ...)
+Library: (scheme char)
+Description: Returns #t if the given characters are monotonically increasing (strictly less than)
+  in a case-insensitive comparison, that is, after applying char-downcase to each.
+Example:
+  (char-ci&lt;? #\a #\B) =&gt; #t
+  (char-ci&lt;? #\A #\b #\C) =&gt; #t</pre>
+</div>
+<div class="entry" id="e4" data-name="char-ci=?">
+  <div class="entry-name">char-ci=?</div>
+  <pre class="entry-doc">Syntax: (char-ci=? char1 char2 ...)
+Library: (scheme char)
+Description: Returns #t if all given characters are equal when compared in a case-insensitive manner,
+  that is, after applying char-downcase to each. Accepts one or more character arguments.
+Example:
+  (char-ci=? #\A #\a) =&gt; #t
+  (char-ci=? #\B #\b #\B) =&gt; #t</pre>
+</div>
+<div class="entry" id="e5" data-name="char-ci&gt;=?">
+  <div class="entry-name">char-ci&gt;=?</div>
+  <pre class="entry-doc">Syntax: (char-ci&gt;=? char1 char2 ...)
+Library: (scheme char)
+Description: Returns #t if the given characters are monotonically non-increasing (greater than or equal)
+  in a case-insensitive comparison, that is, after applying char-downcase to each.
+Example:
+  (char-ci&gt;=? #\A #\a) =&gt; #t
+  (char-ci&gt;=? #\C #\B #\a) =&gt; #t</pre>
+</div>
+<div class="entry" id="e6" data-name="char-ci&gt;?">
+  <div class="entry-name">char-ci&gt;?</div>
+  <pre class="entry-doc">Syntax: (char-ci&gt;? char1 char2 ...)
+Library: (scheme char)
+Description: Returns #t if the given characters are monotonically decreasing (strictly greater than)
+  in a case-insensitive comparison, that is, after applying char-downcase to each.
+Example:
+  (char-ci&gt;? #\B #\a) =&gt; #t
+  (char-ci&gt;? #\C #\b #\A) =&gt; #t</pre>
+</div>
+<div class="entry" id="e7" data-name="char-downcase">
+  <div class="entry-name">char-downcase</div>
+  <pre class="entry-doc">Syntax: (char-downcase char)
+Library: (scheme char)
+Description: Returns the lowercase equivalent of char if it exists, otherwise returns char.
+Example:
+  (char-downcase #\A) =&gt; #\a
+  (char-downcase #\a) =&gt; #\a</pre>
+</div>
+<div class="entry" id="e8" data-name="char-foldcase">
+  <div class="entry-name">char-foldcase</div>
+  <pre class="entry-doc">Syntax: (char-foldcase char)
+Library: (scheme char)
+Description: Returns the case-folded equivalent of char (for case-insensitive comparisons). Applies Unicode full case folding.
+Example:
+  (char-foldcase #\A) =&gt; #\a
+  (char-foldcase #\a) =&gt; #\a</pre>
+</div>
+<div class="entry" id="e9" data-name="char-lower-case?">
+  <div class="entry-name">char-lower-case?</div>
+  <pre class="entry-doc">Syntax: (char-lower-case? char)
+Library: (scheme char)
+Description: Returns #t if char is a lowercase character.
+Example:
+  (char-lower-case? #\a) =&gt; #t
+  (char-lower-case? #\A) =&gt; #f</pre>
+</div>
+<div class="entry" id="e10" data-name="char-numeric?">
+  <div class="entry-name">char-numeric?</div>
+  <pre class="entry-doc">Syntax: (char-numeric? char)
+Library: (scheme char)
+Description: Returns #t if char is a numeric character (digit).
+Example:
+  (char-numeric? #\5) =&gt; #t
+  (char-numeric? #\a) =&gt; #f</pre>
+</div>
+<div class="entry" id="e11" data-name="char-upcase">
+  <div class="entry-name">char-upcase</div>
+  <pre class="entry-doc">Syntax: (char-upcase char)
+Library: (scheme char)
+Description: Returns the uppercase equivalent of char if it exists, otherwise returns char.
+Example:
+  (char-upcase #\a) =&gt; #\A
+  (char-upcase #\A) =&gt; #\A</pre>
+</div>
+<div class="entry" id="e12" data-name="char-upper-case?">
+  <div class="entry-name">char-upper-case?</div>
+  <pre class="entry-doc">Syntax: (char-upper-case? char)
+Library: (scheme char)
+Description: Returns #t if char is an uppercase character.
+Example:
+  (char-upper-case? #\A) =&gt; #t
+  (char-upper-case? #\a) =&gt; #f</pre>
+</div>
+<div class="entry" id="e13" data-name="char-whitespace?">
+  <div class="entry-name">char-whitespace?</div>
+  <pre class="entry-doc">Syntax: (char-whitespace? char)
+Library: (scheme char)
+Description: Returns #t if char is a whitespace character (space, tab, newline, etc.).
+Example:
+  (char-whitespace? #\space) =&gt; #t
+  (char-whitespace? #\a) =&gt; #f</pre>
+</div>
+<div class="entry" id="e14" data-name="char&lt;=?">
+  <div class="entry-name">char&lt;=?</div>
+  <pre class="entry-doc">Syntax: (char&lt;=? char1 char2 char3 ...)
+Library: (scheme base)
+Description: Returns #t if the character arguments are monotonically non-decreasing.
+Example:
+  (char&lt;=? #\a #\b) =&gt; #t
+  (char&lt;=? #\a #\a) =&gt; #t</pre>
+</div>
+<div class="entry" id="e15" data-name="char&lt;?">
+  <div class="entry-name">char&lt;?</div>
+  <pre class="entry-doc">Syntax: (char&lt;? char1 char2 char3 ...)
+Library: (scheme base)
+Description: Returns #t if the character arguments are monotonically increasing.
+Example:
+  (char&lt;? #\a #\b) =&gt; #t
+  (char&lt;? #\a #\a) =&gt; #f</pre>
+</div>
+<div class="entry" id="e16" data-name="char=?">
+  <div class="entry-name">char=?</div>
+  <pre class="entry-doc">Syntax: (char=? char1 char2 char3 ...)
+Library: (scheme base)
+Description: Returns #t if all the given characters are the same (case-sensitive comparison).
+Example:
+  (char=? #\a #\a) =&gt; #t
+  (char=? #\a #\A) =&gt; #f</pre>
+</div>
+<div class="entry" id="e17" data-name="char&gt;=?">
+  <div class="entry-name">char&gt;=?</div>
+  <pre class="entry-doc">Syntax: (char&gt;=? char1 char2 char3 ...)
+Library: (scheme base)
+Description: Returns #t if the character arguments are monotonically non-increasing.
+Example:
+  (char&gt;=? #\b #\a) =&gt; #t
+  (char&gt;=? #\a #\a) =&gt; #t</pre>
+</div>
+<div class="entry" id="e18" data-name="char&gt;?">
+  <div class="entry-name">char&gt;?</div>
+  <pre class="entry-doc">Syntax: (char&gt;? char1 char2 char3 ...)
+Library: (scheme base)
+Description: Returns #t if the character arguments are monotonically decreasing.
+Example:
+  (char&gt;? #\b #\a) =&gt; #t
+  (char&gt;? #\a #\a) =&gt; #f</pre>
+</div>
+<div class="entry" id="e19" data-name="char?">
+  <div class="entry-name">char?</div>
+  <pre class="entry-doc">Syntax: (char? obj)
+Library: (scheme base)
+Description: Returns #t if obj is a character, otherwise returns #f.
+Example:
+  (char? #\a) =&gt; #t
+  (char? "a") =&gt; #f</pre>
+</div>
+<div class="entry" id="e20" data-name="digit-value">
+  <div class="entry-name">digit-value</div>
+  <pre class="entry-doc">Syntax: (digit-value char)
+Library: (scheme char)
+Description: Returns the numeric value (0-9) of a Unicode decimal digit character, or #f if the character is not a decimal digit.
+Example:
+  (digit-value #\3) =&gt; 3
+  (digit-value #\a) =&gt; #f</pre>
+</div>
+<div class="entry" id="e21" data-name="integer-&gt;char">
+  <div class="entry-name">integer-&gt;char</div>
+  <pre class="entry-doc">Syntax: (integer-&gt;char n)
+Library: (scheme base)
+Description: Returns the character corresponding to the given Unicode scalar value (codepoint).
+Example:
+  (integer-&gt;char 97) =&gt; #\a
+  (integer-&gt;char 65) =&gt; #\A</pre>
+</div>
+<div class="entry" id="e22" data-name="string-ci&lt;=?">
+  <div class="entry-name">string-ci&lt;=?</div>
+  <pre class="entry-doc">Syntax: (string-ci&lt;=? string1 string2 ...)
+Library: (scheme char)
+Description: Returns #t if the given strings are in non-decreasing lexicographic order when
+  compared in a case-insensitive manner, that is, after applying string-downcase to each.
+Example:
+  (string-ci&lt;=? "abc" "ABC") =&gt; #t
+  (string-ci&lt;=? "Apple" "apple" "Banana") =&gt; #t</pre>
+</div>
+<div class="entry" id="e23" data-name="string-ci&lt;?">
+  <div class="entry-name">string-ci&lt;?</div>
+  <pre class="entry-doc">Syntax: (string-ci&lt;? string1 string2 ...)
+Library: (scheme char)
+Description: Returns #t if the given strings are in strictly ascending lexicographic order when
+  compared in a case-insensitive manner, that is, after applying string-downcase to each.
+Example:
+  (string-ci&lt;? "apple" "Banana") =&gt; #t
+  (string-ci&lt;? "a" "B" "c") =&gt; #t</pre>
+</div>
+<div class="entry" id="e24" data-name="string-ci=?">
+  <div class="entry-name">string-ci=?</div>
+  <pre class="entry-doc">Syntax: (string-ci=? string1 string2 ...)
+Library: (scheme char)
+Description: Returns #t if all given strings are equal when compared in a case-insensitive manner,
+  that is, after applying string-downcase to each.
+Example:
+  (string-ci=? "Hello" "hello") =&gt; #t
+  (string-ci=? "ABC" "abc" "Abc") =&gt; #t</pre>
+</div>
+<div class="entry" id="e25" data-name="string-ci&gt;=?">
+  <div class="entry-name">string-ci&gt;=?</div>
+  <pre class="entry-doc">Syntax: (string-ci&gt;=? string1 string2 ...)
+Library: (scheme char)
+Description: Returns #t if the given strings are in non-increasing lexicographic order when
+  compared in a case-insensitive manner, that is, after applying string-downcase to each.
+Example:
+  (string-ci&gt;=? "ABC" "abc") =&gt; #t
+  (string-ci&gt;=? "Banana" "apple" "Apple") =&gt; #t</pre>
+</div>
+<div class="entry" id="e26" data-name="string-ci&gt;?">
+  <div class="entry-name">string-ci&gt;?</div>
+  <pre class="entry-doc">Syntax: (string-ci&gt;? string1 string2 ...)
+Library: (scheme char)
+Description: Returns #t if the given strings are in strictly descending lexicographic order when
+  compared in a case-insensitive manner, that is, after applying string-downcase to each.
+Example:
+  (string-ci&gt;? "Banana" "apple") =&gt; #t
+  (string-ci&gt;? "c" "B" "a") =&gt; #t</pre>
+</div>
+<div class="entry" id="e27" data-name="string-downcase">
+  <div class="entry-name">string-downcase</div>
+  <pre class="entry-doc">Syntax: (string-downcase string [start [end]])
+Library: (scheme char) (srfi 13)
+Description: Returns a newly allocated string that is the lowercase equivalent of string (or substring
+  s[start..end)), using full Unicode case mapping.
+Example:
+  (string-downcase "Hello World") =&gt; "hello world"
+  (string-downcase "HELLO" 1 3)   =&gt; "el"</pre>
+</div>
+<div class="entry" id="e28" data-name="string-foldcase">
+  <div class="entry-name">string-foldcase</div>
+  <pre class="entry-doc">Syntax: (string-foldcase s)
+Library: (scheme char)
+Description: Returns a string that is the result of applying Unicode case folding to s, which lowercases the string in a locale-independent manner.
+Example:
+  (string-foldcase "Hello") =&gt; "hello"
+  (string-foldcase "SCHEME") =&gt; "scheme"</pre>
+</div>
+<div class="entry" id="e29" data-name="string-upcase">
+  <div class="entry-name">string-upcase</div>
+  <pre class="entry-doc">Syntax: (string-upcase string [start [end]])
+Library: (scheme char) (srfi 13)
+Description: Returns a newly allocated string that is the uppercase equivalent of string (or substring
+  s[start..end)), using full Unicode case mapping (e.g. ß → SS).
+Example:
+  (string-upcase "hello world") =&gt; "HELLO WORLD"
+  (string-upcase "ßa") =&gt; "SSA"</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

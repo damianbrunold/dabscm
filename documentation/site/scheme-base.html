@@ -1,0 +1,2522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scheme base) — Scm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Scm Library Reference</a></h1>
+    <p>scm &mdash; libraries and their exports</p>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav>
+  <h2>R7RS Standard</h2>
+  <a href="scheme-base.html" class="r7rs active">(scheme base)</a>
+  <a href="scheme-case-lambda.html" class="r7rs">(scheme case-lambda)</a>
+  <a href="scheme-char.html" class="r7rs">(scheme char)</a>
+  <a href="scheme-complex.html" class="r7rs">(scheme complex)</a>
+  <a href="scheme-cxr.html" class="r7rs">(scheme cxr)</a>
+  <a href="scheme-eval.html" class="r7rs">(scheme eval)</a>
+  <a href="scheme-file.html" class="r7rs">(scheme file)</a>
+  <a href="scheme-inexact.html" class="r7rs">(scheme inexact)</a>
+  <a href="scheme-lazy.html" class="r7rs">(scheme lazy)</a>
+  <a href="scheme-load.html" class="r7rs">(scheme load)</a>
+  <a href="scheme-process-context.html" class="r7rs">(scheme process-context)</a>
+  <a href="scheme-r5rs.html" class="r7rs">(scheme r5rs)</a>
+  <a href="scheme-read.html" class="r7rs">(scheme read)</a>
+  <a href="scheme-repl.html" class="r7rs">(scheme repl)</a>
+  <a href="scheme-time.html" class="r7rs">(scheme time)</a>
+  <a href="scheme-write.html" class="r7rs">(scheme write)</a>
+  <h2>SRFI Libraries</h2>
+  <a href="srfi-1.html" class="srfi">(srfi 1)</a>
+  <a href="srfi-2.html" class="srfi">(srfi 2)</a>
+  <a href="srfi-8.html" class="srfi">(srfi 8)</a>
+  <a href="srfi-9.html" class="srfi">(srfi 9)</a>
+  <a href="srfi-13.html" class="srfi">(srfi 13)</a>
+  <a href="srfi-14.html" class="srfi">(srfi 14)</a>
+  <a href="srfi-18.html" class="srfi">(srfi 18)</a>
+  <a href="srfi-19.html" class="srfi">(srfi 19)</a>
+  <a href="srfi-26.html" class="srfi">(srfi 26)</a>
+  <a href="srfi-28.html" class="srfi">(srfi 28)</a>
+  <a href="srfi-39.html" class="srfi">(srfi 39)</a>
+  <a href="srfi-48.html" class="srfi">(srfi 48)</a>
+  <a href="srfi-64.html" class="srfi">(srfi 64)</a>
+  <a href="srfi-69.html" class="srfi">(srfi 69)</a>
+  <a href="srfi-95.html" class="srfi">(srfi 95)</a>
+  <a href="srfi-98.html" class="srfi">(srfi 98)</a>
+  <a href="srfi-111.html" class="srfi">(srfi 111)</a>
+  <a href="srfi-125.html" class="srfi">(srfi 125)</a>
+  <a href="srfi-128.html" class="srfi">(srfi 128)</a>
+  <a href="srfi-132.html" class="srfi">(srfi 132)</a>
+  <a href="srfi-133.html" class="srfi">(srfi 133)</a>
+  <a href="srfi-151.html" class="srfi">(srfi 151)</a>
+  <a href="srfi-158.html" class="srfi">(srfi 158)</a>
+  <h2>Scm Extensions</h2>
+  <a href="scm-archive.html" class="scm">(scm archive)</a>
+  <a href="scm-args.html" class="scm">(scm args)</a>
+  <a href="scm-compile.html" class="scm">(scm compile)</a>
+  <a href="scm-compression.html" class="scm">(scm compression)</a>
+  <a href="scm-crypto.html" class="scm">(scm crypto)</a>
+  <a href="scm-csv.html" class="scm">(scm csv)</a>
+  <a href="scm-database-migrations.html" class="scm">(scm database migrations)</a>
+  <a href="scm-database-postgres.html" class="scm">(scm database postgres)</a>
+  <a href="scm-database-sqlserver.html" class="scm">(scm database sqlserver)</a>
+  <a href="scm-datetime.html" class="scm">(scm datetime)</a>
+  <a href="scm-dict.html" class="scm">(scm dict)</a>
+  <a href="scm-doc.html" class="scm">(scm doc)</a>
+  <a href="scm-duration.html" class="scm">(scm duration)</a>
+  <a href="scm-feed.html" class="scm">(scm feed)</a>
+  <a href="scm-fs-find.html" class="scm">(scm fs-find)</a>
+  <a href="scm-fs.html" class="scm">(scm fs)</a>
+  <a href="scm-glob.html" class="scm">(scm glob)</a>
+  <a href="scm-html-builder.html" class="scm">(scm html builder)</a>
+  <a href="scm-html.html" class="scm">(scm html)</a>
+  <a href="scm-io.html" class="scm">(scm io)</a>
+  <a href="scm-json-simple.html" class="scm">(scm json simple)</a>
+  <a href="scm-json.html" class="scm">(scm json)</a>
+  <a href="scm-list.html" class="scm">(scm list)</a>
+  <a href="scm-log.html" class="scm">(scm log)</a>
+  <a href="scm-macro.html" class="scm">(scm macro)</a>
+  <a href="scm-markdown.html" class="scm">(scm markdown)</a>
+  <a href="scm-match.html" class="scm">(scm match)</a>
+  <a href="scm-math.html" class="scm">(scm math)</a>
+  <a href="scm-module.html" class="scm">(scm module)</a>
+  <a href="scm-net-http-client.html" class="scm">(scm net http client)</a>
+  <a href="scm-net-http-cookies.html" class="scm">(scm net http cookies)</a>
+  <a href="scm-net-http-forms.html" class="scm">(scm net http forms)</a>
+  <a href="scm-net-http-multipart.html" class="scm">(scm net http multipart)</a>
+  <a href="scm-net-http-request.html" class="scm">(scm net http request)</a>
+  <a href="scm-net-http-response.html" class="scm">(scm net http response)</a>
+  <a href="scm-net-http-route.html" class="scm">(scm net http route)</a>
+  <a href="scm-net-http-server.html" class="scm">(scm net http server)</a>
+  <a href="scm-net-remote.html" class="scm">(scm net-remote)</a>
+  <a href="scm-net-sockets.html" class="scm">(scm net sockets)</a>
+  <a href="scm-net-websocket.html" class="scm">(scm net websocket)</a>
+  <a href="scm-odf-spreadsheet.html" class="scm">(scm odf spreadsheet)</a>
+  <a href="scm-odf-writer.html" class="scm">(scm odf writer)</a>
+  <a href="scm-ooxml-excel-reader.html" class="scm">(scm ooxml excel-reader)</a>
+  <a href="scm-ooxml-excel.html" class="scm">(scm ooxml excel)</a>
+  <a href="scm-ooxml-word-reader.html" class="scm">(scm ooxml word-reader)</a>
+  <a href="scm-ooxml-word.html" class="scm">(scm ooxml word)</a>
+  <a href="scm-pdf.html" class="scm">(scm pdf)</a>
+  <a href="scm-png.html" class="scm">(scm png)</a>
+  <a href="scm-profiling.html" class="scm">(scm profiling)</a>
+  <a href="scm-qr.html" class="scm">(scm qr)</a>
+  <a href="scm-random-access.html" class="scm">(scm random access)</a>
+  <a href="scm-repl.html" class="scm">(scm repl)</a>
+  <a href="scm-store.html" class="scm">(scm store)</a>
+  <a href="scm-string.html" class="scm">(scm string)</a>
+  <a href="scm-sysadmin.html" class="scm">(scm sysadmin)</a>
+  <a href="scm-system.html" class="scm">(scm system)</a>
+  <a href="scm-templating.html" class="scm">(scm templating)</a>
+  <a href="scm-terminal.html" class="scm">(scm terminal)</a>
+  <a href="scm-test.html" class="scm">(scm test)</a>
+  <a href="scm-text.html" class="scm">(scm text)</a>
+  <a href="scm-toml.html" class="scm">(scm toml)</a>
+  <a href="scm-uri.html" class="scm">(scm uri)</a>
+  <a href="scm-xml.html" class="scm">(scm xml)</a>
+  <a href="scm-zip.html" class="scm">(scm zip)</a>
+</nav>
+
+<main>
+
+<a class="backlink" href="index.html">&larr; All libraries</a>
+<div class="lib-title r7rs">(scheme base)</div>
+<p class="lib-sub">R7RS base library — core forms and procedures</p>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">232 bindings</p>
+
+<div class="entry" id="e0" data-name="*">
+  <div class="entry-name">*</div>
+  <pre class="entry-doc">Syntax: (* z1 ...)
+Library: (scheme base)
+Description: Returns the product of its arguments. With no arguments, returns 1.
+Example:
+  (* 4 5) =&gt; 20
+  (* 3) =&gt; 3
+  (*) =&gt; 1</pre>
+</div>
+<div class="entry" id="e1" data-name="+">
+  <div class="entry-name">+</div>
+  <pre class="entry-doc">Syntax: (+ z1 ...)
+Library: (scheme base)
+Description: Returns the sum of its arguments. With no arguments, returns 0.
+Example:
+  (+ 3 4) =&gt; 7
+  (+ 3) =&gt; 3
+  (+) =&gt; 0</pre>
+</div>
+<div class="entry" id="e2" data-name="-">
+  <div class="entry-name">-</div>
+  <pre class="entry-doc">Syntax: (- z ...)
+Library: (scheme base)
+Description: With a single argument, returns the negation of z. With two or more arguments, returns the result of subtracting each successive argument from the first.
+Example:
+  (- 10 3 2) =&gt; 5
+  (- 5) =&gt; -5</pre>
+</div>
+<div class="entry" id="e3" data-name="/">
+  <div class="entry-name">/</div>
+  <pre class="entry-doc">Syntax: (/ z1 z2 ...)
+Library: (scheme base)
+Description: Returns the quotient of dividing z1 by the remaining arguments. With one argument, returns the multiplicative inverse 1/z1.
+Example:
+  (/ 10 2) =&gt; 5
+  (/ 10 2 5) =&gt; 1
+  (/ 4) =&gt; 1/4</pre>
+</div>
+<div class="entry" id="e4" data-name="&lt;">
+  <div class="entry-name">&lt;</div>
+  <pre class="entry-doc">Syntax: (&lt; z1 z2 z3 ...)
+Library: (scheme base)
+Description: Returns #t if the arguments are monotonically increasing.
+Example:
+  (&lt; 1 2 3) =&gt; #t
+  (&lt; 1 1) =&gt; #f</pre>
+</div>
+<div class="entry" id="e5" data-name="&lt;=">
+  <div class="entry-name">&lt;=</div>
+  <pre class="entry-doc">Syntax: (&lt;= z1 z2 z3 ...)
+Library: (scheme base)
+Description: Returns #t if the arguments are monotonically non-decreasing.
+Example:
+  (&lt;= 1 2 3) =&gt; #t
+  (&lt;= 1 1) =&gt; #t</pre>
+</div>
+<div class="entry" id="e6" data-name="=">
+  <div class="entry-name">=</div>
+  <pre class="entry-doc">Syntax: (= z1 z2 z3 ...)
+Library: (scheme base)
+Description: Returns #t if all arguments are numerically equal.
+Example:
+  (= 1 1 1) =&gt; #t
+  (= 1 2) =&gt; #f</pre>
+</div>
+<div class="entry" id="e7" data-name="&gt;">
+  <div class="entry-name">&gt;</div>
+  <pre class="entry-doc">Syntax: (&gt; z1 z2 z3 ...)
+Library: (scheme base)
+Description: Returns #t if the arguments are monotonically decreasing.
+Example:
+  (&gt; 3 2 1) =&gt; #t
+  (&gt; 3 3) =&gt; #f</pre>
+</div>
+<div class="entry" id="e8" data-name="&gt;=">
+  <div class="entry-name">&gt;=</div>
+  <pre class="entry-doc">Syntax: (&gt;= z1 z2 z3 ...)
+Library: (scheme base)
+Description: Returns #t if the arguments are monotonically non-increasing.
+Example:
+  (&gt;= 3 2 1) =&gt; #t
+  (&gt;= 3 3) =&gt; #t</pre>
+</div>
+<div class="entry" id="e9" data-name="abs">
+  <div class="entry-name">abs</div>
+  <pre class="entry-doc">Syntax: (abs x)
+Library: (scheme base)
+Description: Returns the absolute value of its argument.
+Example:
+  (abs -7) =&gt; 7
+  (abs 7)  =&gt; 7
+  (abs 0)  =&gt; 0</pre>
+</div>
+<div class="entry" id="e10" data-name="and">
+  <div class="entry-name">and</div>
+  <pre class="entry-doc">Syntax: (and expr ...)
+Library: (scheme base)
+Description: Evaluates expressions left to right. Returns #f if any expression evaluates to #f, otherwise returns the value of the last expression. With no arguments, returns #t.
+Example:
+  (and 1 2 3) =&gt; 3
+  (and 1 #f 3) =&gt; #f
+  (and) =&gt; #t</pre>
+</div>
+<div class="entry" id="e11" data-name="append">
+  <div class="entry-name">append</div>
+  <pre class="entry-doc">Syntax: (append list1 ... obj)
+Library: (scheme base)
+Description: Returns a list consisting of the elements of the first list followed by the elements of the other lists. The last argument may be any object.
+Example:
+  (append '(x) '(y)) =&gt; (x y)
+  (append '(a) '(b c d)) =&gt; (a b c d)
+  (append '(a b) '() '(c)) =&gt; (a b c)</pre>
+</div>
+<div class="entry" id="e12" data-name="apply">
+  <div class="entry-name">apply</div>
+  <pre class="entry-doc">Syntax: (apply proc arg1 ... args)
+Library: (scheme base)
+Description: Calls proc with the given arguments. The last argument must
+  be a list, whose elements are appended to the preceding arguments.
+Example:
+  (apply + 1 2 '(3 4)) =&gt; 10</pre>
+</div>
+<div class="entry" id="e13" data-name="assoc">
+  <div class="entry-name">assoc</div>
+  <pre class="entry-doc">Syntax: (assoc key alist)
+Library: (scheme base)
+Description: Searches association list alist for a pair whose car is equal? to key. Returns the first matching pair, or #f if none is found. An optional third argument may supply an alternative comparison procedure.
+Example:
+  (assoc "b" '(("a" 1) ("b" 2))) =&gt; (b 2)
+  (assoc 2.0 '((1 a) (2 b)) =) =&gt; (2 b)</pre>
+</div>
+<div class="entry" id="e14" data-name="assq">
+  <div class="entry-name">assq</div>
+  <pre class="entry-doc">Syntax: (assq key alist)
+Library: (scheme base)
+Description: Searches association list alist for a pair whose car is eq? to key. Returns the first matching pair, or #f if none is found.
+Example:
+  (assq 'b '((a 1) (b 2) (c 3))) =&gt; (b 2)
+  (assq 'd '((a 1) (b 2))) =&gt; #f</pre>
+</div>
+<div class="entry" id="e15" data-name="assv">
+  <div class="entry-name">assv</div>
+  <pre class="entry-doc">Syntax: (assv key alist)
+Library: (scheme base)
+Description: Searches association list alist for a pair whose car is eqv? to key. Returns the first matching pair, or #f if none is found. Similar to assq but uses eqv? for comparison.
+Example:
+  (assv 2 '((1 a) (2 b) (3 c))) =&gt; (2 b)
+  (assv 5 '((1 a) (2 b))) =&gt; #f</pre>
+</div>
+<div class="entry" id="e16" data-name="begin">
+  <div class="entry-name">begin</div>
+  <pre class="entry-doc">Syntax: (begin expression ...)
+Library: (scheme base)
+Description: Evaluates expressions sequentially from left to right. The
+  value of the last expression is returned. begin can also appear as a
+  splicing form at the top level or at the beginning of a body, in which
+  case the forms inside the begin are spliced into the surrounding body.
+Example:
+  (begin (define x 1) (+ x 2)) =&gt; 3</pre>
+</div>
+<div class="entry" id="e17" data-name="binary-port?">
+  <div class="entry-name">binary-port?</div>
+  <pre class="entry-doc">Syntax: (binary-port? obj)
+Library: (scheme base)
+Description: Returns #t if obj is a binary port, otherwise returns #f.
+Example:
+  (binary-port? (open-input-bytevector #u8(1 2 3))) =&gt; #t
+  (binary-port? (open-input-string "abc")) =&gt; #f</pre>
+</div>
+<div class="entry" id="e18" data-name="boolean=?">
+  <div class="entry-name">boolean=?</div>
+  <pre class="entry-doc">Syntax: (boolean=? boolean1 boolean2 ...)
+Library: (scheme base)
+Description: Returns #t if all the arguments are booleans with the same truth
+  value, #f otherwise.
+Example:
+  (boolean=? #t #t)    =&gt; #t
+  (boolean=? #f #f)    =&gt; #t
+  (boolean=? #t #f)    =&gt; #f
+  (boolean=? #t #t #t) =&gt; #t</pre>
+</div>
+<div class="entry" id="e19" data-name="boolean?">
+  <div class="entry-name">boolean?</div>
+  <pre class="entry-doc">Syntax: (boolean? obj)
+Library: (scheme base)
+Description: Returns #t if obj is either #t or #f, otherwise returns #f.
+Example:
+  (boolean? #f) =&gt; #t
+  (boolean? 0) =&gt; #f</pre>
+</div>
+<div class="entry" id="e20" data-name="bytevector">
+  <div class="entry-name">bytevector</div>
+  <pre class="entry-doc">Syntax: (bytevector byte ...)
+Library: (scheme base)
+Description: Returns a newly allocated bytevector containing the given byte values (each must be 0-255).
+Example:
+  (bytevector 1 2 3) =&gt; #u8(1 2 3)
+  (bytevector) =&gt; #u8()</pre>
+</div>
+<div class="entry" id="e21" data-name="bytevector-append">
+  <div class="entry-name">bytevector-append</div>
+  <pre class="entry-doc">Syntax: (bytevector-append bv ...)
+Library: (scheme base)
+Description: Returns a newly allocated bytevector whose elements are the concatenation of the elements of the given bytevectors.
+Example:
+  (bytevector-append #u8(0 1 2) #u8(3 4 5)) =&gt; #u8(0 1 2 3 4 5)</pre>
+</div>
+<div class="entry" id="e22" data-name="bytevector-copy">
+  <div class="entry-name">bytevector-copy</div>
+  <pre class="entry-doc">Syntax: (bytevector-copy bv) (bytevector-copy bv start) (bytevector-copy bv start end)
+Library: (scheme base)
+Description: Returns a newly allocated copy of the elements of bv from start (inclusive) to end (exclusive).
+Example:
+  (bytevector-copy #u8(1 2 3)) =&gt; #u8(1 2 3)
+  (bytevector-copy #u8(1 2 3) 1 2) =&gt; #u8(2)</pre>
+</div>
+<div class="entry" id="e23" data-name="bytevector-copy!">
+  <div class="entry-name">bytevector-copy!</div>
+  <pre class="entry-doc">Syntax: (bytevector-copy! to at from) (bytevector-copy! to at from start) (bytevector-copy! to at from start end)
+Library: (scheme base)
+Description: Copies bytes from bytevector from (from start to end) into bytevector to starting at at. It is an error if this would overwrite to's bounds.
+Example:
+  (let ((bv (bytevector 1 2 3 4 5)))
+    (bytevector-copy! bv 1 #u8(10 11) 0 2)
+    bv) =&gt; #u8(1 10 11 4 5)</pre>
+</div>
+<div class="entry" id="e24" data-name="bytevector-length">
+  <div class="entry-name">bytevector-length</div>
+  <pre class="entry-doc">Syntax: (bytevector-length bv)
+Library: (scheme base)
+Description: Returns the number of bytes in the given bytevector.
+Example:
+  (bytevector-length #u8(1 2 3)) =&gt; 3</pre>
+</div>
+<div class="entry" id="e25" data-name="bytevector-u8-ref">
+  <div class="entry-name">bytevector-u8-ref</div>
+  <pre class="entry-doc">Syntax: (bytevector-u8-ref bv k)
+Library: (scheme base)
+Description: Returns the byte at index k of bytevector bv as an exact integer in [0, 255].
+Example:
+  (bytevector-u8-ref #u8(1 2 3) 0) =&gt; 1
+  (bytevector-u8-ref #u8(10 20 30) 2) =&gt; 30</pre>
+</div>
+<div class="entry" id="e26" data-name="bytevector-u8-set!">
+  <div class="entry-name">bytevector-u8-set!</div>
+  <pre class="entry-doc">Syntax: (bytevector-u8-set! bv k byte)
+Library: (scheme base)
+Description: Stores byte (an exact integer in [0, 255]) into element k of bytevector bv.
+Example:
+  (let ((bv (bytevector 1 2 3)))
+    (bytevector-u8-set! bv 1 42)
+    bv) =&gt; #u8(1 42 3)</pre>
+</div>
+<div class="entry" id="e27" data-name="bytevector?">
+  <div class="entry-name">bytevector?</div>
+  <pre class="entry-doc">Syntax: (bytevector? obj)
+Library: (scheme base)
+Description: Returns #t if obj is a bytevector, otherwise returns #f.
+Example:
+  (bytevector? #u8(1 2 3)) =&gt; #t
+  (bytevector? "abc") =&gt; #f</pre>
+</div>
+<div class="entry" id="e28" data-name="caar">
+  <div class="entry-name">caar</div>
+  <pre class="entry-doc">Syntax: (caar pair)
+Library: (scheme base)
+Description: Returns the car of the car of pair. Equivalent to (car (car pair)).
+Example:
+  (caar '((a b) c)) =&gt; a</pre>
+</div>
+<div class="entry" id="e29" data-name="cadr">
+  <div class="entry-name">cadr</div>
+  <pre class="entry-doc">Syntax: (cadr pair)
+Library: (scheme base)
+Description: Returns the car of the cdr of pair. Equivalent to (car (cdr pair)).
+Example:
+  (cadr '(a b c)) =&gt; b</pre>
+</div>
+<div class="entry" id="e30" data-name="call-with-current-continuation">
+  <div class="entry-name">call-with-current-continuation</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e31" data-name="call-with-port">
+  <div class="entry-name">call-with-port</div>
+  <pre class="entry-doc">Syntax: (call-with-port port proc)
+Library: (scheme base)
+Description: Calls proc with port as an argument. If proc returns, then the
+  port is closed automatically and the values yielded by proc are returned.
+  If proc does not return, then the port will not be closed automatically,
+  unless it is possible to detect that the port will never again be used.
+Example:
+  (call-with-port (open-input-string "hello")
+    (lambda (p) (read-char p))) =&gt; #\h</pre>
+</div>
+<div class="entry" id="e32" data-name="call-with-values">
+  <div class="entry-name">call-with-values</div>
+  <pre class="entry-doc">Syntax: (call-with-values producer consumer)
+Library: (scheme base)
+Description: Calls producer with no arguments. The producer must return
+  zero or more values. The consumer is then called with those values as
+  arguments. Returns the result of consumer.
+Example:
+  (call-with-values (lambda () (values 1 2)) +) =&gt; 3</pre>
+</div>
+<div class="entry" id="e33" data-name="call/cc">
+  <div class="entry-name">call/cc</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e34" data-name="car">
+  <div class="entry-name">car</div>
+  <pre class="entry-doc">Syntax: (car pair)
+Library: (scheme base)
+Description: Returns the car of pair. It is an error if pair is not a pair.
+Example:
+  (car '(a b c)) =&gt; a
+  (car '((a) b)) =&gt; (a)</pre>
+</div>
+<div class="entry" id="e35" data-name="case">
+  <div class="entry-name">case</div>
+  <pre class="entry-doc">Syntax: (case key ((datum ...) expr ...) ... (else expr ...))
+Library: (scheme base)
+Description: Evaluates key, then finds the first clause whose datum list
+  contains a value eqv? to the key. Evaluates that clause's expressions and
+  returns the last. Supports (datum ... =&gt; proc) syntax which calls proc with
+  the key value. The else clause matches any key not matched by earlier clauses.
+Example:
+  (case (* 2 3)
+    ((2 3 5 7) 'prime)
+    ((1 4 6 8 9) 'composite)) =&gt; composite</pre>
+</div>
+<div class="entry" id="e36" data-name="cdar">
+  <div class="entry-name">cdar</div>
+  <pre class="entry-doc">Syntax: (cdar pair)
+Library: (scheme base)
+Description: Returns the cdr of the car of pair. Equivalent to (cdr (car pair)).
+Example:
+  (cdar '((1 2) 3)) =&gt; (2)</pre>
+</div>
+<div class="entry" id="e37" data-name="cddr">
+  <div class="entry-name">cddr</div>
+  <pre class="entry-doc">Syntax: (cddr pair)
+Library: (scheme base)
+Description: Returns the cdr of the cdr of pair. Equivalent to (cdr (cdr pair)).
+Example:
+  (cddr '(1 2 3)) =&gt; (3)</pre>
+</div>
+<div class="entry" id="e38" data-name="cdr">
+  <div class="entry-name">cdr</div>
+  <pre class="entry-doc">Syntax: (cdr pair)
+Library: (scheme base)
+Description: Returns the cdr of pair. It is an error if pair is not a pair.
+Example:
+  (cdr '((a) b c)) =&gt; (b c)
+  (cdr '(1 . 2)) =&gt; 2</pre>
+</div>
+<div class="entry" id="e39" data-name="ceiling">
+  <div class="entry-name">ceiling</div>
+  <pre class="entry-doc">Syntax: (ceiling z)
+Library: (scheme base)
+Description: Returns the smallest integer not smaller than z (rounds toward positive infinity).
+Example:
+  (ceiling 1.2) =&gt; 2.0
+  (ceiling -1.2) =&gt; -1.0
+  (ceiling 3) =&gt; 3</pre>
+</div>
+<div class="entry" id="e40" data-name="char-&gt;integer">
+  <div class="entry-name">char-&gt;integer</div>
+  <pre class="entry-doc">Syntax: (char-&gt;integer char)
+Library: (scheme base)
+Description: Returns the Unicode scalar value (codepoint) of the given character as an exact integer.
+Example:
+  (char-&gt;integer #\a) =&gt; 97
+  (char-&gt;integer #\A) =&gt; 65</pre>
+</div>
+<div class="entry" id="e41" data-name="char-ready?">
+  <div class="entry-name">char-ready?</div>
+  <pre class="entry-doc">Syntax: (char-ready?)
+       (char-ready? port)
+Library: (scheme base)
+Description: Returns #t if a character is ready on the input port and returns
+  #f if the function would have to wait. If char-ready returns #t then the
+  next read-char operation on the given port is guaranteed not to hang. If the
+  port is at end of file then char-ready? returns #t. This implementation
+  always returns #t.
+Example:
+  (char-ready?)         =&gt; #t
+  (char-ready? (current-input-port)) =&gt; #t</pre>
+</div>
+<div class="entry" id="e42" data-name="char&lt;=?">
+  <div class="entry-name">char&lt;=?</div>
+  <pre class="entry-doc">Syntax: (char&lt;=? char1 char2 char3 ...)
+Library: (scheme base)
+Description: Returns #t if the character arguments are monotonically non-decreasing.
+Example:
+  (char&lt;=? #\a #\b) =&gt; #t
+  (char&lt;=? #\a #\a) =&gt; #t</pre>
+</div>
+<div class="entry" id="e43" data-name="char&lt;?">
+  <div class="entry-name">char&lt;?</div>
+  <pre class="entry-doc">Syntax: (char&lt;? char1 char2 char3 ...)
+Library: (scheme base)
+Description: Returns #t if the character arguments are monotonically increasing.
+Example:
+  (char&lt;? #\a #\b) =&gt; #t
+  (char&lt;? #\a #\a) =&gt; #f</pre>
+</div>
+<div class="entry" id="e44" data-name="char=?">
+  <div class="entry-name">char=?</div>
+  <pre class="entry-doc">Syntax: (char=? char1 char2 char3 ...)
+Library: (scheme base)
+Description: Returns #t if all the given characters are the same (case-sensitive comparison).
+Example:
+  (char=? #\a #\a) =&gt; #t
+  (char=? #\a #\A) =&gt; #f</pre>
+</div>
+<div class="entry" id="e45" data-name="char&gt;=?">
+  <div class="entry-name">char&gt;=?</div>
+  <pre class="entry-doc">Syntax: (char&gt;=? char1 char2 char3 ...)
+Library: (scheme base)
+Description: Returns #t if the character arguments are monotonically non-increasing.
+Example:
+  (char&gt;=? #\b #\a) =&gt; #t
+  (char&gt;=? #\a #\a) =&gt; #t</pre>
+</div>
+<div class="entry" id="e46" data-name="char&gt;?">
+  <div class="entry-name">char&gt;?</div>
+  <pre class="entry-doc">Syntax: (char&gt;? char1 char2 char3 ...)
+Library: (scheme base)
+Description: Returns #t if the character arguments are monotonically decreasing.
+Example:
+  (char&gt;? #\b #\a) =&gt; #t
+  (char&gt;? #\a #\a) =&gt; #f</pre>
+</div>
+<div class="entry" id="e47" data-name="char?">
+  <div class="entry-name">char?</div>
+  <pre class="entry-doc">Syntax: (char? obj)
+Library: (scheme base)
+Description: Returns #t if obj is a character, otherwise returns #f.
+Example:
+  (char? #\a) =&gt; #t
+  (char? "a") =&gt; #f</pre>
+</div>
+<div class="entry" id="e48" data-name="close-input-port">
+  <div class="entry-name">close-input-port</div>
+  <pre class="entry-doc">Syntax: (close-input-port port)
+Library: (scheme base)
+Description: Closes the input port, releasing any resources. It is an error to read from a closed port.
+Example:
+  (let ((p (open-input-file "data.txt")))
+    (close-input-port p))</pre>
+</div>
+<div class="entry" id="e49" data-name="close-output-port">
+  <div class="entry-name">close-output-port</div>
+  <pre class="entry-doc">Syntax: (close-output-port port)
+Library: (scheme base)
+Description: Closes the output port, flushing any buffered output and releasing resources.
+Example:
+  (let ((p (open-output-file "out.txt")))
+    (close-output-port p))</pre>
+</div>
+<div class="entry" id="e50" data-name="close-port">
+  <div class="entry-name">close-port</div>
+  <pre class="entry-doc">Syntax: (close-port port)
+Library: (scheme base)
+Description: Closes the resource associated with port, rendering the port
+  incapable of delivering or accepting data. If port is an input port,
+  close-input-port is called on it; if port is an output port,
+  close-output-port is called on it. The return value is unspecified.
+Example:
+  (let ((p (open-input-string "hello")))
+    (close-port p))</pre>
+</div>
+<div class="entry" id="e51" data-name="complex?">
+  <div class="entry-name">complex?</div>
+  <pre class="entry-doc">Syntax: (complex? obj)
+Library: (scheme base)
+Description: Returns #t if obj is a complex number, #f otherwise.
+  In the R7RS numeric tower, all numbers are complex.
+Example:
+  (complex? 3+4i) =&gt; #t
+  (complex? 3)    =&gt; #t</pre>
+</div>
+<div class="entry" id="e52" data-name="cond">
+  <div class="entry-name">cond</div>
+  <pre class="entry-doc">Syntax: (cond (test expr ...) ... (else expr ...))
+Library: (scheme base)
+Description: Evaluates each test in order. When a test is true, evaluates its associated expressions and returns the last. The else clause matches unconditionally. Supports (test =&gt; proc) syntax, which calls proc with the test result.
+Example:
+  (cond ((= 1 2) 'no) ((= 1 1) 'yes) (else 'other)) =&gt; yes
+  (cond ((assv 2 '((1 a) (2 b))) =&gt; cdr) (else #f)) =&gt; (b)</pre>
+</div>
+<div class="entry" id="e53" data-name="cond-expand">
+  <div class="entry-name">cond-expand</div>
+  <pre class="entry-doc">Syntax: (cond-expand (feature-requirement body ...) ...)
+Library: (scheme base)
+Description: Evaluates the body of the first clause whose feature
+  requirement is satisfied. Feature requirements can be feature identifiers,
+  (library &lt;name&gt;) tests, or boolean combinations using and, or, and not.
+  An optional (else body ...) clause provides a default.
+Example:
+  (cond-expand
+    (r7rs "R7RS")
+    (else "unknown")) =&gt; "R7RS"</pre>
+</div>
+<div class="entry" id="e54" data-name="cons">
+  <div class="entry-name">cons</div>
+  <pre class="entry-doc">Syntax: (cons obj1 obj2)
+Library: (scheme base)
+Description: Returns a newly allocated pair whose car is obj1 and whose cdr is obj2.
+Example:
+  (cons 'a '()) =&gt; (a)
+  (cons 'a '(b c)) =&gt; (a b c)
+  (cons 1 2) =&gt; (1 . 2)</pre>
+</div>
+<div class="entry" id="e55" data-name="current-error-port">
+  <div class="entry-name">current-error-port</div>
+  <pre class="entry-doc">Syntax: (current-error-port)
+Library: (scheme base)
+Description: Returns the current default error output port. Error messages are written to this port. Initially bound to the standard error.
+Example:
+  (current-error-port) =&gt; #&lt;output-port&gt;</pre>
+</div>
+<div class="entry" id="e56" data-name="current-input-port">
+  <div class="entry-name">current-input-port</div>
+  <pre class="entry-doc">Syntax: (current-input-port)
+Library: (scheme base)
+Description: Returns the current default input port. Read operations that do not specify a port use this port. Initially bound to the standard input.
+Example:
+  (current-input-port) =&gt; #&lt;input-port&gt;</pre>
+</div>
+<div class="entry" id="e57" data-name="current-output-port">
+  <div class="entry-name">current-output-port</div>
+  <pre class="entry-doc">Syntax: (current-output-port)
+Library: (scheme base)
+Description: Returns the current default output port. Write and display operations that do not specify a port use this port. Initially bound to the standard output.
+Example:
+  (current-output-port) =&gt; #&lt;output-port&gt;</pre>
+</div>
+<div class="entry" id="e58" data-name="define">
+  <div class="entry-name">define</div>
+  <pre class="entry-doc">Syntax: (define variable expression) | (define (name formals) body)
+Library: (scheme base)
+Description: Defines a variable binding. The first form evaluates expression
+  and binds the result to variable. The second form is equivalent to
+  (define name (lambda (formals) body)) and creates a procedure binding.
+Example:
+  (define x 42)
+  (define (square n) (* n n))</pre>
+</div>
+<div class="entry" id="e59" data-name="define-record-type">
+  <div class="entry-name">define-record-type</div>
+  <pre class="entry-doc">Syntax: (define-record-type &lt;type&gt; (&lt;constructor&gt; &lt;field-name&gt; ...) &lt;predicate&gt; (&lt;field-name&gt; &lt;accessor&gt; &lt;modifier&gt;) ...)
+Library: (scheme base), (srfi 9)
+Description: Defines a new record type. &lt;type&gt; is bound to the record type descriptor.
+&lt;constructor&gt; is bound to a procedure that creates instances with the specified fields
+initialized from the corresponding arguments. &lt;predicate&gt; is bound to a procedure that
+returns #t for instances of this type. Each field clause binds &lt;accessor&gt; to a procedure
+that retrieves the field value; an optional &lt;modifier&gt; is bound to a procedure that sets it.
+Example:
+  (define-record-type &lt;point&gt;
+    (make-point x y)
+    point?
+    (x point-x)
+    (y point-y point-set-y!))
+  (define p (make-point 1 2))
+  (point? p) =&gt; #t
+  (point-x p) =&gt; 1
+  (point-set-y! p 42)
+  (point-y p) =&gt; 42</pre>
+</div>
+<div class="entry" id="e60" data-name="define-syntax">
+  <div class="entry-name">define-syntax</div>
+  <pre class="entry-doc">Syntax: (define-syntax keyword transformer)
+Library: (scheme base)
+Description: Defines a syntax binding, associating keyword with the given
+  macro transformer. transformer is typically a syntax-rules or
+  syntax-case expression.
+Example:
+  (define-syntax my-and
+    (syntax-rules ()
+      ((_) #t)
+      ((_ e) e)
+      ((_ e1 e2 ...) (if e1 (my-and e2 ...) #f))))</pre>
+</div>
+<div class="entry" id="e61" data-name="define-values">
+  <div class="entry-name">define-values</div>
+  <pre class="entry-doc">Syntax: (define-values formals expression)
+Library: (scheme base)
+Description: Defines variables whose names and number are determined by
+  formals in the same way as a lambda expression, and initializes them to
+  the return values of expression. It is an error if expression does not
+  return the correct number of values for the given formals. This form may
+  appear wherever other definition forms are allowed.
+Example:
+  (define-values (a b c) (values 1 2 3))
+  a =&gt; 1
+  b =&gt; 2
+  c =&gt; 3</pre>
+</div>
+<div class="entry" id="e62" data-name="denominator">
+  <div class="entry-name">denominator</div>
+  <pre class="entry-doc">Syntax: (denominator q)
+Library: (scheme base)
+Description: Returns the denominator of q, where q is a rational number. If q
+  is an integer, the denominator is 1. For inexact reals, returns the
+  denominator as an inexact number.
+Example:
+  (denominator (/ 6 4)) =&gt; 2
+  (denominator 7)       =&gt; 1
+  (denominator 1.5)     =&gt; 2.0</pre>
+</div>
+<div class="entry" id="e63" data-name="do">
+  <div class="entry-name">do</div>
+  <pre class="entry-doc">Syntax: (do ((var init step) ...) (test result ...) body ...)
+Library: (scheme base)
+Description: Iterates by initializing each var to init, then on each iteration evaluating test: if true, evaluates result expressions and returns the last; otherwise evaluates body expressions and steps each var to the value of its step expression.
+Example:
+  (do ((i 0 (+ i 1)) (s 0 (+ s i)))
+      ((= i 5) s)) =&gt; 10</pre>
+</div>
+<div class="entry" id="e64" data-name="dynamic-wind">
+  <div class="entry-name">dynamic-wind</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e65" data-name="eof-object">
+  <div class="entry-name">eof-object</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e66" data-name="eof-object?">
+  <div class="entry-name">eof-object?</div>
+  <pre class="entry-doc">Syntax: (eof-object? obj)
+Library: (scheme base)
+Description: Returns #t if obj is an end-of-file object, otherwise returns #f.
+Example:
+  (eof-object? (read (open-input-string ""))) =&gt; #t</pre>
+</div>
+<div class="entry" id="e67" data-name="eq?">
+  <div class="entry-name">eq?</div>
+  <pre class="entry-doc">Syntax: (eq? obj1 obj2)
+Library: (scheme base)
+Description: Returns #t if obj1 and obj2 are the same object. Equivalent to pointer equality for most types.
+Example:
+  (eq? 'a 'a) =&gt; #t
+  (eq? '() '()) =&gt; #t
+  (eq? (list 1) (list 1)) =&gt; #f</pre>
+</div>
+<div class="entry" id="e68" data-name="equal?">
+  <div class="entry-name">equal?</div>
+  <pre class="entry-doc">Syntax: (equal? obj1 obj2)
+Library: (scheme base)
+Description: Returns #t if obj1 and obj2 have the same structure and contents (deep equality). Recursively compares pairs, vectors, and strings.
+Example:
+  (equal? '(a b c) '(a b c)) =&gt; #t
+  (equal? "abc" "abc") =&gt; #t
+  (equal? '(a b) '(a c)) =&gt; #f</pre>
+</div>
+<div class="entry" id="e69" data-name="eqv?">
+  <div class="entry-name">eqv?</div>
+  <pre class="entry-doc">Syntax: (eqv? obj1 obj2)
+Library: (scheme base)
+Description: Returns #t if obj1 and obj2 are operationally equivalent. Numbers are eqv? if they have the same exactness and are numerically equal.
+Example:
+  (eqv? 'a 'a) =&gt; #t
+  (eqv? 1 1) =&gt; #t
+  (eqv? 1 1.0) =&gt; #f</pre>
+</div>
+<div class="entry" id="e70" data-name="error">
+  <div class="entry-name">error</div>
+  <pre class="entry-doc">Syntax: (error message obj ...)
+Library: (scheme base)
+Description: Raises an exception as if by calling raise on a newly allocated
+  error object which encapsulates the information provided. The message is a
+  string describing the error. The objects are arbitrary values which are
+  stored in the error object and can be retrieved using error-object-irritants.
+  Also accepts SRFI-23 style (error who message irritant ...) where who is a
+  symbol.
+Example:
+  (error "not a number" 42)
+  (error 'my-proc "invalid argument" 'foo)</pre>
+</div>
+<div class="entry" id="e71" data-name="error-object-irritants">
+  <div class="entry-name">error-object-irritants</div>
+  <pre class="entry-doc">Syntax: (error-object-irritants error-object)
+Library: (scheme base)
+Description: Returns the list of irritants (extra objects) of the given error object.
+Example:
+  (guard (e (#t (error-object-irritants e)))
+    (error "bad value" 42)) =&gt; (42)</pre>
+</div>
+<div class="entry" id="e72" data-name="error-object-message">
+  <div class="entry-name">error-object-message</div>
+  <pre class="entry-doc">Syntax: (error-object-message error-object)
+Library: (scheme base)
+Description: Returns the message string of the given error object.
+Example:
+  (guard (e (#t (error-object-message e)))
+    (error "bad value" 42)) =&gt; "bad value"</pre>
+</div>
+<div class="entry" id="e73" data-name="error-object?">
+  <div class="entry-name">error-object?</div>
+  <pre class="entry-doc">Syntax: (error-object? obj)
+Library: (scheme base)
+Description: Returns #t if obj is an error object (as raised by error), otherwise returns #f.
+Example:
+  (guard (e (#t (error-object? e)))
+    (error "oops")) =&gt; #t</pre>
+</div>
+<div class="entry" id="e74" data-name="even?">
+  <div class="entry-name">even?</div>
+  <pre class="entry-doc">Syntax: (even? n)
+Library: (scheme base)
+Description: Returns #t if n is an even integer, #f otherwise.
+Example:
+  (even? 4) =&gt; #t
+  (even? 3) =&gt; #f</pre>
+</div>
+<div class="entry" id="e75" data-name="exact">
+  <div class="entry-name">exact</div>
+  <pre class="entry-doc">Syntax: (exact z)
+Library: (scheme base)
+Description: Returns the exact number that is numerically equal to z.
+  For inexact integers, returns the integer. For non-integral inexact
+  numbers, returns the simplest exact rational whose inexact value
+  equals z (using continued fraction approximation).
+Example:
+  (exact 1.5) =&gt; 3/2
+  (exact 0.3) =&gt; 3/10
+  (exact 3.0) =&gt; 3
+  (exact 3) =&gt; 3</pre>
+</div>
+<div class="entry" id="e76" data-name="exact-integer-sqrt">
+  <div class="entry-name">exact-integer-sqrt</div>
+  <pre class="entry-doc">Syntax: (exact-integer-sqrt k)
+Library: (scheme base)
+Description: Returns two non-negative exact integer values s and r such that
+  k = s^2 + r and k &lt; (s+1)^2. In other words, s is the largest integer such
+  that s^2 is not greater than k, and r is the remainder.
+Example:
+  (exact-integer-sqrt 4) =&gt; 2 0
+  (exact-integer-sqrt 5) =&gt; 2 1
+  (exact-integer-sqrt 14) =&gt; 3 5</pre>
+</div>
+<div class="entry" id="e77" data-name="exact-integer?">
+  <div class="entry-name">exact-integer?</div>
+  <pre class="entry-doc">Syntax: (exact-integer? z)
+Library: (scheme base)
+Description: Returns #t if z is both exact and an integer, #f otherwise.
+Example:
+  (exact-integer? 1)   =&gt; #t
+  (exact-integer? 1.0) =&gt; #f
+  (exact-integer? 1/2) =&gt; #f</pre>
+</div>
+<div class="entry" id="e78" data-name="exact?">
+  <div class="entry-name">exact?</div>
+  <pre class="entry-doc">Syntax: (exact? z)
+Library: (scheme base)
+Description: Returns #t if z is an exact number (integer or rational), otherwise returns #f.
+Example:
+  (exact? 1) =&gt; #t
+  (exact? 1.0) =&gt; #f
+  (exact? 1/3) =&gt; #t</pre>
+</div>
+<div class="entry" id="e79" data-name="expt">
+  <div class="entry-name">expt</div>
+  <pre class="entry-doc">Syntax: (expt z1 z2)
+Library: (scheme base)
+Description: Returns z1 raised to the power z2. If z2 is exact 0, returns exact 1.
+Example:
+  (expt 2 10) =&gt; 1024
+  (expt 4 0) =&gt; 1
+  (expt 2.0 3) =&gt; 8.0</pre>
+</div>
+<div class="entry" id="e80" data-name="features">
+  <div class="entry-name">features</div>
+  <pre class="entry-doc">Syntax: (%features-list)
+Library: (scm core)
+Description: Internal primitive that returns the list of feature symbols for this implementation (used by (features)). Includes r7rs, scm, platform, and architecture identifiers.
+Example:
+  (%features-list) =&gt; (r7rs scm exact-closed ieee-float gnu-linux x86-64 little-endian)</pre>
+</div>
+<div class="entry" id="e81" data-name="file-error?">
+  <div class="entry-name">file-error?</div>
+  <pre class="entry-doc">Syntax: (file-error? obj)
+Library: (scheme base)
+Description: Returns #t if obj is a file error object (as raised by file operations), otherwise returns #f.
+Example:
+  (guard (e (#t (file-error? e)))
+    (open-input-file "nonexistent")) =&gt; #t</pre>
+</div>
+<div class="entry" id="e82" data-name="floor">
+  <div class="entry-name">floor</div>
+  <pre class="entry-doc">Syntax: (floor z)
+Library: (scheme base)
+Description: Returns the largest integer not larger than z (rounds toward negative infinity).
+Example:
+  (floor 1.8) =&gt; 1.0
+  (floor -1.2) =&gt; -2.0
+  (floor 3) =&gt; 3</pre>
+</div>
+<div class="entry" id="e83" data-name="floor-quotient">
+  <div class="entry-name">floor-quotient</div>
+  <pre class="entry-doc">Syntax: (floor-quotient n1 n2)
+Library: (scheme base)
+Description: Returns the floor quotient of n1 divided by n2. The floor
+  quotient is the largest integer not larger than the real-valued quotient
+  n1/n2. It satisfies n1 = q*n2 + r where q is the floor quotient.
+Example:
+  (floor-quotient 5 2)   =&gt; 2
+  (floor-quotient -5 2)  =&gt; -3
+  (floor-quotient 5 -2)  =&gt; -3</pre>
+</div>
+<div class="entry" id="e84" data-name="floor-remainder">
+  <div class="entry-name">floor-remainder</div>
+  <pre class="entry-doc">Syntax: (floor-remainder n1 n2)
+Library: (scheme base)
+Description: Returns the floor remainder of n1 divided by n2. The floor
+  remainder r satisfies n1 = (floor-quotient n1 n2)*n2 + r. The result has
+  the same sign as n2.
+Example:
+  (floor-remainder 5 2)   =&gt; 1
+  (floor-remainder -5 2)  =&gt; 1
+  (floor-remainder 5 -2)  =&gt; -1</pre>
+</div>
+<div class="entry" id="e85" data-name="floor/">
+  <div class="entry-name">floor/</div>
+  <pre class="entry-doc">Syntax: (floor/ n1 n2)
+Library: (scheme base)
+Description: Returns two values: the floor quotient and the floor remainder
+  of n1 divided by n2. Equivalent to calling floor-quotient and
+  floor-remainder separately, but potentially more efficient.
+Example:
+  (floor/ 5 2)  =&gt; 2 1
+  (floor/ -5 2) =&gt; -3 1</pre>
+</div>
+<div class="entry" id="e86" data-name="flush-output-port">
+  <div class="entry-name">flush-output-port</div>
+  <pre class="entry-doc">Syntax: (flush-output-port) (flush-output-port port)
+Library: (scheme base)
+Description: Flushes any buffered output in the given output port (or current output port if omitted).
+Example:
+  (flush-output-port)</pre>
+</div>
+<div class="entry" id="e87" data-name="for-each">
+  <div class="entry-name">for-each</div>
+  <pre class="entry-doc">Syntax: (for-each proc list1 list2 ...)
+Library: (scheme base)
+Description: The arguments to for-each are like the arguments to map, but
+  for-each calls proc for its side effects rather than for its values. Unlike
+  map, for-each is guaranteed to call proc on the elements of the lists in
+  order from the first element(s) to the last. The return values of for-each
+  are unspecified.
+Example:
+  (for-each display '(a b c))    ; displays abc
+  (for-each + '(1 2 3) '(4 5 6)) ; calls +, side effects only</pre>
+</div>
+<div class="entry" id="e88" data-name="gcd">
+  <div class="entry-name">gcd</div>
+  <pre class="entry-doc">Syntax: (gcd n1 ...)
+Library: (scheme base)
+Description: Returns the greatest common divisor of its arguments. The result
+  is always non-negative. With no arguments, returns 0.
+Example:
+  (gcd 32 -36) =&gt; 4
+  (gcd)        =&gt; 0
+  (gcd 32 -36 12) =&gt; 4</pre>
+</div>
+<div class="entry" id="e89" data-name="get-output-bytevector">
+  <div class="entry-name">get-output-bytevector</div>
+  <pre class="entry-doc">Syntax: (get-output-bytevector port)
+Library: (scheme base)
+Description: Returns a bytevector consisting of the bytes that have been output to the given bytevector output port (created with open-output-bytevector).
+Example:
+  (let ((p (open-output-bytevector)))
+    (write-u8 65 p)
+    (get-output-bytevector p)) =&gt; #u8(65)</pre>
+</div>
+<div class="entry" id="e90" data-name="get-output-string">
+  <div class="entry-name">get-output-string</div>
+  <pre class="entry-doc">Syntax: (get-output-string port)
+Library: (scheme base)
+Description: Returns a string consisting of the characters that have been output to the given string output port (created with open-output-string).
+Example:
+  (let ((p (open-output-string)))
+    (write-char #\A p)
+    (get-output-string p)) =&gt; "A"</pre>
+</div>
+<div class="entry" id="e91" data-name="guard">
+  <div class="entry-name">guard</div>
+  <pre class="entry-doc">Syntax: (guard (var clause ...) body ...)
+Library: (scheme base)
+Description: Evaluates body in a context where, if an exception is raised,
+  var is bound to the condition object and the clauses are evaluated as in a
+  cond expression. If a clause matches, its body is evaluated and the result
+  is returned. If no clause matches, the exception is re-raised. If an else
+  clause is present, it is used when no other clause matches. Clauses may use
+  =&gt; syntax.
+Example:
+  (guard (e ((string? (error-object-message e)) (error-object-message e)))
+    (error "oops")) =&gt; "oops"
+  (guard (e (#t 'caught))
+    (error "anything")) =&gt; caught</pre>
+</div>
+<div class="entry" id="e92" data-name="guard-aux">
+  <div class="entry-name">guard-aux</div>
+  <pre class="entry-doc">Syntax: (guard-aux reraise clause ...)
+Library: (scheme base)
+Description: Internal helper macro used by guard to process the cond-like
+  clauses. reraise is the expression to evaluate if no clause matches.
+  Clauses have the same form as in cond, including =&gt; and else support.
+  Not intended for direct use.</pre>
+</div>
+<div class="entry" id="e93" data-name="if">
+  <div class="entry-name">if</div>
+  <pre class="entry-doc">Syntax: (if test consequent) | (if test consequent alternate)
+Library: (scheme base)
+Description: Evaluates test. If the result is a true value, consequent is
+  evaluated and its value is returned. Otherwise, alternate is evaluated and
+  its value is returned. If test yields #f and no alternate is specified,
+  the result is unspecified.
+Example:
+  (if (&gt; 3 2) 'yes 'no) =&gt; yes
+  (if (&gt; 2 3) 'yes 'no) =&gt; no</pre>
+</div>
+<div class="entry" id="e94" data-name="include">
+  <div class="entry-name">include</div>
+  <pre class="entry-doc">Syntax: (include filename ...)
+Library: (scheme base)
+Description: Loads and evaluates one or more Scheme source files in the current module's environment.
+Example:
+  (include "helpers.scm" "utils.scm")</pre>
+</div>
+<div class="entry" id="e95" data-name="include-ci">
+  <div class="entry-name">include-ci</div>
+  <pre class="entry-doc">Syntax: (include-ci filename ...)
+Library: (scheme base)
+Description: Like include, but reads the files in case-insensitive mode (all identifiers are folded to lowercase).
+Example:
+  (include-ci "legacy.scm")</pre>
+</div>
+<div class="entry" id="e96" data-name="inexact">
+  <div class="entry-name">inexact</div>
+  <pre class="entry-doc">Syntax: (inexact z)
+Library: (scheme base)
+Description: Returns the inexact (floating-point) number that is numerically closest to z.
+Example:
+  (inexact 1) =&gt; 1.0
+  (inexact 1/3) =&gt; 0.3333333333333333</pre>
+</div>
+<div class="entry" id="e97" data-name="inexact?">
+  <div class="entry-name">inexact?</div>
+  <pre class="entry-doc">Syntax: (inexact? z)
+Library: (scheme base)
+Description: Returns #t if z is inexact (i.e., not exact), #f otherwise.
+Example:
+  (inexact? 1.0) =&gt; #t
+  (inexact? 1)   =&gt; #f</pre>
+</div>
+<div class="entry" id="e98" data-name="input-port-open?">
+  <div class="entry-name">input-port-open?</div>
+  <pre class="entry-doc">Syntax: (input-port-open? port)
+Library: (scheme base)
+Description: Returns #t if the input port is still open, otherwise returns #f.
+Example:
+  (let ((p (open-input-string "abc")))
+    (close-input-port p)
+    (input-port-open? p)) =&gt; #f</pre>
+</div>
+<div class="entry" id="e99" data-name="input-port?">
+  <div class="entry-name">input-port?</div>
+  <pre class="entry-doc">Syntax: (input-port? obj)
+Library: (scheme base)
+Description: Returns #t if obj is an input port, otherwise returns #f.
+Example:
+  (input-port? (open-input-string "abc")) =&gt; #t
+  (input-port? (open-output-string)) =&gt; #f</pre>
+</div>
+<div class="entry" id="e100" data-name="integer-&gt;char">
+  <div class="entry-name">integer-&gt;char</div>
+  <pre class="entry-doc">Syntax: (integer-&gt;char n)
+Library: (scheme base)
+Description: Returns the character corresponding to the given Unicode scalar value (codepoint).
+Example:
+  (integer-&gt;char 97) =&gt; #\a
+  (integer-&gt;char 65) =&gt; #\A</pre>
+</div>
+<div class="entry" id="e101" data-name="integer?">
+  <div class="entry-name">integer?</div>
+  <pre class="entry-doc">Syntax: (integer? obj)
+Library: (scheme base)
+Description: Returns #t if obj is an integer (exact or inexact with an integer value), otherwise returns #f.
+Example:
+  (integer? 1) =&gt; #t
+  (integer? 1.0) =&gt; #t
+  (integer? 1.5) =&gt; #f</pre>
+</div>
+<div class="entry" id="e102" data-name="lambda">
+  <div class="entry-name">lambda</div>
+  <pre class="entry-doc">Syntax: (lambda formals body)
+Library: (scheme base)
+Description: Creates a procedure. formals is a list of parameters, a single
+  symbol for a rest parameter, or a dotted pair for required plus rest
+  parameters. When the procedure is called, the arguments are bound to the
+  parameters and the body is evaluated. The value of the last expression in
+  the body is returned.
+Example:
+  ((lambda (x y) (+ x y)) 3 4) =&gt; 7
+  ((lambda xs xs) 1 2 3) =&gt; (1 2 3)</pre>
+</div>
+<div class="entry" id="e103" data-name="lcm">
+  <div class="entry-name">lcm</div>
+  <pre class="entry-doc">Syntax: (lcm n1 ...)
+Library: (scheme base)
+Description: Returns the least common multiple of its arguments. The result
+  is always non-negative. With no arguments, returns 1.
+Example:
+  (lcm 32 -36) =&gt; 288
+  (lcm)        =&gt; 1
+  (lcm 32 -36 12) =&gt; 288</pre>
+</div>
+<div class="entry" id="e104" data-name="length">
+  <div class="entry-name">length</div>
+  <pre class="entry-doc">Syntax: (length list)
+Library: (scheme base)
+Description: Returns the number of elements in the proper list. It is an error if the list is not a proper list.
+Example:
+  (length '(a b c)) =&gt; 3
+  (length '()) =&gt; 0</pre>
+</div>
+<div class="entry" id="e105" data-name="let">
+  <div class="entry-name">let</div>
+  <pre class="entry-doc">Syntax: (let ((variable init) ...) body) | (let name ((variable init) ...) body)
+Library: (scheme base)
+Description: Binds each variable to the value of the corresponding init
+  expression and evaluates body in the extended environment. The init
+  expressions are evaluated in the current environment (not the extended
+  one). Named let binds the variables and also binds name to a procedure
+  that, when called, rebinds the variables and re-evaluates the body.
+Example:
+  (let ((x 1) (y 2)) (+ x y)) =&gt; 3
+  (let loop ((n 5) (acc 1)) (if (= n 0) acc (loop (- n 1) (* acc n)))) =&gt; 120</pre>
+</div>
+<div class="entry" id="e106" data-name="let*">
+  <div class="entry-name">let*</div>
+  <pre class="entry-doc">Syntax: (let* ((variable init) ...) body)
+Library: (scheme base)
+Description: Like let, but the bindings are performed sequentially from
+  left to right, and each init expression is evaluated in an environment in
+  which the previous bindings are visible.
+Example:
+  (let* ((x 1) (y (+ x 1))) (+ x y)) =&gt; 3</pre>
+</div>
+<div class="entry" id="e107" data-name="let*-values">
+  <div class="entry-name">let*-values</div>
+  <pre class="entry-doc">Syntax: (let*-values (((var ...) expr) ...) body ...)
+Library: (scheme base)
+Description: Semantics like let-values, but the bindings are performed
+  sequentially from left to right, and the init expressions are evaluated
+  in the environment in which the preceding bindings are visible. Thus
+  each binding has access to all preceding bindings.
+Example:
+  (let*-values (((a b) (values 1 2))
+                ((c)   (values (+ a b))))
+    c) =&gt; 3</pre>
+</div>
+<div class="entry" id="e108" data-name="let-syntax">
+  <div class="entry-name">let-syntax</div>
+  <pre class="entry-doc">Syntax: (let-syntax ((keyword transformer) ...) body)
+Library: (scheme base)
+Description: Binds each keyword to the corresponding macro transformer
+  and evaluates body in the extended syntactic environment. The bindings
+  are not visible in the transformer expressions.
+Example:
+  (let-syntax ((swap! (syntax-rules ()
+                        ((_ a b) (let ((t a)) (set! a b) (set! b t))))))
+    (let ((x 1) (y 2)) (swap! x y) (list x y))) =&gt; (2 1)</pre>
+</div>
+<div class="entry" id="e109" data-name="let-values">
+  <div class="entry-name">let-values</div>
+  <pre class="entry-doc">Syntax: (let-values (((var ...) expr) ...) body ...)
+Library: (scheme base)
+Description: This form is analogous to let, but each var is bound to the
+  corresponding value returned by its init expression, which must return as
+  many values as there are variables. The formals for each binding may be
+  any &lt;formals&gt; list as in a lambda expression. The init expressions are
+  evaluated in the current environment and each var is bound to the
+  corresponding value in the body, which is evaluated in the extended
+  environment.
+Example:
+  (let-values (((a b) (values 1 2)))
+    (+ a b)) =&gt; 3
+  (let-values (((a b) (values 1 2))
+               ((c)   (values 3)))
+    (list a b c)) =&gt; (1 2 3)</pre>
+</div>
+<div class="entry" id="e110" data-name="letrec">
+  <div class="entry-name">letrec</div>
+  <pre class="entry-doc">Syntax: (letrec ((variable init) ...) body)
+Library: (scheme base)
+Description: Binds each variable and evaluates the init expressions in an
+  environment where all variables are bound. The order of evaluation of the
+  init expressions is unspecified. Useful for defining mutually recursive
+  procedures.
+Example:
+  (letrec ((even? (lambda (n) (if (= n 0) #t (odd? (- n 1)))))
+           (odd? (lambda (n) (if (= n 0) #f (even? (- n 1))))))
+    (even? 10)) =&gt; #t</pre>
+</div>
+<div class="entry" id="e111" data-name="letrec*">
+  <div class="entry-name">letrec*</div>
+  <pre class="entry-doc">Syntax: (letrec* ((variable init) ...) body)
+Library: (scheme base)
+Description: Like letrec, but the init expressions are evaluated
+  sequentially from left to right. Each init is evaluated in an environment
+  where all variables are bound, but only the preceding init values are
+  guaranteed to be available.
+Example:
+  (letrec* ((x 1) (y (+ x 1))) (+ x y)) =&gt; 3</pre>
+</div>
+<div class="entry" id="e112" data-name="letrec-syntax">
+  <div class="entry-name">letrec-syntax</div>
+  <pre class="entry-doc">Syntax: (letrec-syntax ((keyword transformer) ...) body)
+Library: (scheme base)
+Description: Like let-syntax, but the bindings are visible in the
+  transformer expressions, allowing mutually recursive macro definitions.
+Example:
+  (letrec-syntax ((my-or (syntax-rules ()
+                           ((_) #f)
+                           ((_ e) e)
+                           ((_ e1 e2 ...) (let ((t e1)) (if t t (my-or e2 ...)))))))
+    (my-or #f #f 42)) =&gt; 42</pre>
+</div>
+<div class="entry" id="e113" data-name="list">
+  <div class="entry-name">list</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e114" data-name="list-&gt;string">
+  <div class="entry-name">list-&gt;string</div>
+  <pre class="entry-doc">Syntax: (list-&gt;string list)
+Library: (scheme base) (srfi 13)
+Description: Returns a newly allocated string formed from the characters in
+  list. It is an error if any element of list is not a character.
+Example:
+  (list-&gt;string '(#\a #\b #\c)) =&gt; "abc"
+  (list-&gt;string '())              =&gt; ""</pre>
+</div>
+<div class="entry" id="e115" data-name="list-&gt;vector">
+  <div class="entry-name">list-&gt;vector</div>
+  <pre class="entry-doc">Syntax: (list-&gt;vector list)
+Library: (scheme base)
+Description: Returns a newly created vector initialized to the elements of
+  the argument list.
+Example:
+  (list-&gt;vector '(a b c)) =&gt; #(a b c)
+  (list-&gt;vector '())      =&gt; #()</pre>
+</div>
+<div class="entry" id="e116" data-name="list-copy">
+  <div class="entry-name">list-copy</div>
+  <pre class="entry-doc">Syntax: (list-copy obj)
+Library: (scheme base)
+Description: Returns a newly allocated copy of the given list. Only the pairs
+  themselves are copied; the cars of the result are the same (in the sense of
+  eqv?) as the cars of list. If the last cdr of the list is not the empty
+  list, the result is an improper list with the same final cdr as the
+  argument.
+Example:
+  (list-copy '(a b c)) =&gt; (a b c)
+  (list-copy '())      =&gt; ()
+  (list-copy '(a b . c)) =&gt; (a b . c)</pre>
+</div>
+<div class="entry" id="e117" data-name="list-ref">
+  <div class="entry-name">list-ref</div>
+  <pre class="entry-doc">Syntax: (list-ref list k)
+Library: (scheme base)
+Description: Returns the k-th element (zero-indexed) of list. It is an error if k is out of range.
+Example:
+  (list-ref '(a b c) 0) =&gt; a
+  (list-ref '(a b c) 2) =&gt; c</pre>
+</div>
+<div class="entry" id="e118" data-name="list-set!">
+  <div class="entry-name">list-set!</div>
+  <pre class="entry-doc">Syntax: (list-set! list k obj)
+Library: (scheme base)
+Description: Stores obj in element k of list. It is an error if k is not a
+  valid index of list. The result is unspecified.
+Example:
+  (let ((ls (list 'a 'b 'c)))
+    (list-set! ls 1 'x)
+    ls) =&gt; (a x c)</pre>
+</div>
+<div class="entry" id="e119" data-name="list-tail">
+  <div class="entry-name">list-tail</div>
+  <pre class="entry-doc">Syntax: (list-tail list k)
+Library: (scheme base)
+Description: Returns the sublist of list obtained by omitting the first k elements. It is an error if list has fewer than k elements.
+Example:
+  (list-tail '(a b c d) 2) =&gt; (c d)
+  (list-tail '(a b c) 0) =&gt; (a b c)</pre>
+</div>
+<div class="entry" id="e120" data-name="list?">
+  <div class="entry-name">list?</div>
+  <pre class="entry-doc">Syntax: (list? obj)
+Library: (scheme base)
+Description: Returns #t if obj is a proper list (a sequence of pairs terminated by the empty list), otherwise returns #f. Also detects circular lists.
+Example:
+  (list? '(a b c)) =&gt; #t
+  (list? '(a . b)) =&gt; #f
+  (list? '()) =&gt; #t</pre>
+</div>
+<div class="entry" id="e121" data-name="make-bytevector">
+  <div class="entry-name">make-bytevector</div>
+  <pre class="entry-doc">Syntax: (make-bytevector k) (make-bytevector k fill)
+Library: (scheme base)
+Description: Returns a newly allocated bytevector of k bytes. If fill is given, each byte is initialized to fill (0-255); otherwise each byte is 0.
+Example:
+  (make-bytevector 3) =&gt; #u8(0 0 0)
+  (make-bytevector 3 5) =&gt; #u8(5 5 5)</pre>
+</div>
+<div class="entry" id="e122" data-name="make-list">
+  <div class="entry-name">make-list</div>
+  <pre class="entry-doc">Syntax: (make-list k)
+       (make-list k fill)
+Library: (scheme base)
+Description: Returns a newly allocated list of k elements. If a second
+  argument is given, then each element is initialized to fill. Otherwise
+  the initial contents of each element is unspecified (defaults to #f).
+Example:
+  (make-list 3)      =&gt; (#f #f #f)
+  (make-list 3 'x)   =&gt; (x x x)
+  (make-list 0)      =&gt; ()</pre>
+</div>
+<div class="entry" id="e123" data-name="make-parameter">
+  <div class="entry-name">make-parameter</div>
+  <pre class="entry-doc">Syntax: (make-parameter init)
+       (make-parameter init converter)
+Library: (scheme base)
+Description: Returns a newly allocated parameter object, which is a procedure
+  that accepts zero or one argument. When called with no argument, the
+  parameter object returns its current value. When called with one argument,
+  the parameter is set to the new value after passing it through the optional
+  converter procedure. The converter is applied to init to produce the initial
+  value.
+Example:
+  (define p (make-parameter 10))
+  (p)      =&gt; 10
+  (p 20)
+  (p)      =&gt; 20
+  (define q (make-parameter 10 (lambda (x) (* x 2))))
+  (q)      =&gt; 20</pre>
+</div>
+<div class="entry" id="e124" data-name="make-string">
+  <div class="entry-name">make-string</div>
+  <pre class="entry-doc">Syntax: (make-string k) (make-string k char)
+Library: (scheme base) (srfi 13)
+Description: Returns a newly allocated mutable string of k characters. If char is given, all characters are initialized to char; otherwise they are spaces.
+Example:
+  (make-string 3 #\x) =&gt; "xxx"
+  (make-string 3) =&gt; "   "</pre>
+</div>
+<div class="entry" id="e125" data-name="make-vector">
+  <div class="entry-name">make-vector</div>
+  <pre class="entry-doc">Syntax: (make-vector k) (make-vector k fill)
+Library: (scheme base)
+Description: Returns a newly allocated vector of k elements. If fill is given, every element is initialized to fill; otherwise each element is 0.
+Example:
+  (make-vector 3 0) =&gt; #(0 0 0)
+  (make-vector 3 'a) =&gt; #(a a a)</pre>
+</div>
+<div class="entry" id="e126" data-name="map">
+  <div class="entry-name">map</div>
+  <pre class="entry-doc">Syntax: (map proc list1 list2 ...)
+Library: (scheme base)
+Description: The lists must be lists, and proc must be a procedure taking as
+  many arguments as there are lists and returning a single value. If more than
+  one list is given and not all lists have the same length, map terminates when
+  the shortest list runs out. Map applies proc element-wise to the elements of
+  the lists and returns a list of the results, in order.
+Example:
+  (map cadr '((a b) (d e) (g h))) =&gt; (b e h)
+  (map + '(1 2 3) '(4 5 6))      =&gt; (5 7 9)</pre>
+</div>
+<div class="entry" id="e127" data-name="max">
+  <div class="entry-name">max</div>
+  <pre class="entry-doc">Syntax: (max x ...)
+Library: (scheme base)
+Description: Returns the largest of the given real numbers. Requires at least one argument.
+Example:
+  (max 3 1 4 1 5) =&gt; 5
+  (max -1 -2 -3) =&gt; -1</pre>
+</div>
+<div class="entry" id="e128" data-name="member">
+  <div class="entry-name">member</div>
+  <pre class="entry-doc">Syntax: (member obj list)
+       (member obj list compare)
+Library: (scheme base)
+Description: Returns the first sublist of list whose car is obj, where the
+  sublists of list are the non-empty lists returned by (list-tail list k) for
+  k less than the length of list. If obj does not occur in list, #f is
+  returned. The optional compare argument specifies the equality predicate to
+  use; it defaults to equal?.
+Example:
+  (member 2 '(1 2 3))   =&gt; (2 3)
+  (member 'd '(a b c))  =&gt; #f
+  (member 2.0 '(1 2 3) =) =&gt; (2 3)</pre>
+</div>
+<div class="entry" id="e129" data-name="memq">
+  <div class="entry-name">memq</div>
+  <pre class="entry-doc">Syntax: (memq obj list)
+Library: (scheme base)
+Description: Returns the first sublist of list whose car is eq? to obj, or #f if no such sublist exists.
+Example:
+  (memq 'b '(a b c)) =&gt; (b c)
+  (memq 'z '(a b c)) =&gt; #f</pre>
+</div>
+<div class="entry" id="e130" data-name="memv">
+  <div class="entry-name">memv</div>
+  <pre class="entry-doc">Syntax: (memv obj list)
+Library: (scheme base)
+Description: Returns the first sublist of list whose car is eqv? to obj, or #f if no such sublist exists.
+Example:
+  (memv 2 '(1 2 3)) =&gt; (2 3)
+  (memv 5 '(1 2 3)) =&gt; #f</pre>
+</div>
+<div class="entry" id="e131" data-name="min">
+  <div class="entry-name">min</div>
+  <pre class="entry-doc">Syntax: (min x ...)
+Library: (scheme base)
+Description: Returns the smallest of the given real numbers. Requires at least one argument.
+Example:
+  (min 3 1 4 1 5) =&gt; 1
+  (min 0.5 1/2) =&gt; 0.5</pre>
+</div>
+<div class="entry" id="e132" data-name="modulo">
+  <div class="entry-name">modulo</div>
+  <pre class="entry-doc">Syntax: (modulo n1 n2)
+Library: (scheme base)
+Description: Returns the integer modulus of n1 divided by n2. The result has the same sign as n2.
+Example:
+  (modulo 13 4) =&gt; 1
+  (modulo -13 4) =&gt; 3
+  (modulo 13 -4) =&gt; -3</pre>
+</div>
+<div class="entry" id="e133" data-name="negative?">
+  <div class="entry-name">negative?</div>
+  <pre class="entry-doc">Syntax: (negative? x)
+Library: (scheme base)
+Description: Returns #t if x is negative, #f otherwise.
+Example:
+  (negative? -1) =&gt; #t
+  (negative? 1)  =&gt; #f
+  (negative? 0)  =&gt; #f</pre>
+</div>
+<div class="entry" id="e134" data-name="newline">
+  <div class="entry-name">newline</div>
+  <pre class="entry-doc">Syntax: (newline) (newline port)
+Library: (scheme write)
+Description: Writes a newline character to the current output port or to the given port.
+Example:
+  (newline)
+  (newline (open-output-string))</pre>
+</div>
+<div class="entry" id="e135" data-name="not">
+  <div class="entry-name">not</div>
+  <pre class="entry-doc">Syntax: (not obj)
+Library: (scheme base)
+Description: Returns #t if obj is #f, otherwise returns #f.
+Example:
+  (not #f) =&gt; #t
+  (not #t) =&gt; #f
+  (not 42) =&gt; #f</pre>
+</div>
+<div class="entry" id="e136" data-name="null?">
+  <div class="entry-name">null?</div>
+  <pre class="entry-doc">Syntax: (null? obj)
+Library: (scheme base)
+Description: Returns #t if obj is the empty list '(), otherwise returns #f.
+Example:
+  (null? '()) =&gt; #t
+  (null? '(1 2)) =&gt; #f</pre>
+</div>
+<div class="entry" id="e137" data-name="number-&gt;string">
+  <div class="entry-name">number-&gt;string</div>
+  <pre class="entry-doc">Syntax: (number-&gt;string z) (number-&gt;string z radix)
+Library: (scheme base)
+Description: Returns a string representation of z in the given radix (default 10). Exact integers support any radix.
+Example:
+  (number-&gt;string 42) =&gt; "42"
+  (number-&gt;string 255 16) =&gt; "ff"
+  (number-&gt;string 3.14) =&gt; "3.14"</pre>
+</div>
+<div class="entry" id="e138" data-name="number?">
+  <div class="entry-name">number?</div>
+  <pre class="entry-doc">Syntax: (number? obj)
+Library: (scheme base)
+Description: Returns #t if obj is a number (exact integer, rational, or inexact real), otherwise returns #f.
+Example:
+  (number? 3) =&gt; #t
+  (number? 3.5) =&gt; #t
+  (number? "3") =&gt; #f</pre>
+</div>
+<div class="entry" id="e139" data-name="numerator">
+  <div class="entry-name">numerator</div>
+  <pre class="entry-doc">Syntax: (numerator q)
+Library: (scheme base)
+Description: Returns the numerator of q, where q is a rational number. If q
+  is an integer, the numerator is q itself. For inexact reals, returns the
+  numerator as an inexact number.
+Example:
+  (numerator (/ 6 4)) =&gt; 3
+  (numerator 7)       =&gt; 7
+  (numerator 1.5)     =&gt; 3.0</pre>
+</div>
+<div class="entry" id="e140" data-name="odd?">
+  <div class="entry-name">odd?</div>
+  <pre class="entry-doc">Syntax: (odd? n)
+Library: (scheme base)
+Description: Returns #t if n is an odd integer, #f otherwise.
+Example:
+  (odd? 3) =&gt; #t
+  (odd? 4) =&gt; #f</pre>
+</div>
+<div class="entry" id="e141" data-name="open-input-bytevector">
+  <div class="entry-name">open-input-bytevector</div>
+  <pre class="entry-doc">Syntax: (open-input-bytevector bv)
+Library: (scheme base)
+Description: Returns a binary input port that reads bytes from the bytevector bv.
+Example:
+  (let ((p (open-input-bytevector #u8(1 2 3))))
+    (read-u8 p)) =&gt; 1</pre>
+</div>
+<div class="entry" id="e142" data-name="open-input-string">
+  <div class="entry-name">open-input-string</div>
+  <pre class="entry-doc">Syntax: (open-input-string string)
+Library: (scheme base)
+Description: Takes a string and returns a textual input port that delivers characters from the string.
+Example:
+  (define p (open-input-string "hello"))
+  (read-char p) =&gt; #\h</pre>
+</div>
+<div class="entry" id="e143" data-name="open-output-bytevector">
+  <div class="entry-name">open-output-bytevector</div>
+  <pre class="entry-doc">Syntax: (open-output-bytevector)
+Library: (scheme base)
+Description: Returns a binary output port that accumulates bytes in memory. Use get-output-bytevector to retrieve the accumulated bytes.
+Example:
+  (let ((p (open-output-bytevector)))
+    (write-u8 65 p)
+    (get-output-bytevector p)) =&gt; #u8(65)</pre>
+</div>
+<div class="entry" id="e144" data-name="open-output-string">
+  <div class="entry-name">open-output-string</div>
+  <pre class="entry-doc">Syntax: (open-output-string)
+Library: (scheme base)
+Description: Returns a textual output port that accumulates characters written to it. Use get-output-string to retrieve the accumulated string.
+Example:
+  (let ((p (open-output-string)))
+    (write-char #\h p)
+    (get-output-string p)) =&gt; "h"</pre>
+</div>
+<div class="entry" id="e145" data-name="or">
+  <div class="entry-name">or</div>
+  <pre class="entry-doc">Syntax: (or expr ...)
+Library: (scheme base)
+Description: Evaluates expressions left to right. Returns the value of the first expression that is not #f, or #f if all expressions are #f. With no arguments, returns #f.
+Example:
+  (or #f #f 3) =&gt; 3
+  (or #f #f #f) =&gt; #f
+  (or) =&gt; #f</pre>
+</div>
+<div class="entry" id="e146" data-name="output-port-open?">
+  <div class="entry-name">output-port-open?</div>
+  <pre class="entry-doc">Syntax: (output-port-open? port)
+Library: (scheme base)
+Description: Returns #t if port is still open, otherwise returns #f.
+Example:
+  (define p (open-output-string))
+  (output-port-open? p) =&gt; #t
+  (close-output-port p)
+  (output-port-open? p) =&gt; #f</pre>
+</div>
+<div class="entry" id="e147" data-name="output-port?">
+  <div class="entry-name">output-port?</div>
+  <pre class="entry-doc">Syntax: (output-port? obj)
+Library: (scheme base)
+Description: Returns #t if obj is an output port, otherwise returns #f.
+Example:
+  (output-port? (open-output-string)) =&gt; #t
+  (output-port? (current-output-port)) =&gt; #t
+  (output-port? 42) =&gt; #f</pre>
+</div>
+<div class="entry" id="e148" data-name="pair?">
+  <div class="entry-name">pair?</div>
+  <pre class="entry-doc">Syntax: (pair? obj)
+Library: (scheme base)
+Description: Returns #t if obj is a pair, otherwise returns #f.
+Example:
+  (pair? '(a b c)) =&gt; #t
+  (pair? '()) =&gt; #f
+  (pair? '(a . b)) =&gt; #t
+  (pair? 7) =&gt; #f</pre>
+</div>
+<div class="entry" id="e149" data-name="parameterize">
+  <div class="entry-name">parameterize</div>
+  <pre class="entry-doc">Syntax: (parameterize ((param val) ...) body ...)
+Library: (scheme base)
+Description: A parameterize expression is used to change the values returned
+  by specified parameter objects during the evaluation of the body. Each param
+  expression must evaluate to a parameter object. For each parameter binding,
+  the parameter object is called with the new value to update it. After the
+  body forms are evaluated (even via continuations or exceptions), each
+  parameter is restored to its previous value via dynamic-wind.
+  The result of the parameterize expression is the value of the last body form.
+Example:
+  (define p (make-parameter 1))
+  (parameterize ((p 2))
+    (p)) =&gt; 2
+  (p) =&gt; 1</pre>
+</div>
+<div class="entry" id="e150" data-name="peek-char">
+  <div class="entry-name">peek-char</div>
+  <pre class="entry-doc">Syntax: (peek-char)
+Library: (scheme base)
+Description: Returns the next character available from the input port without updating the port to point past the character. If no more characters are available, an end-of-file object is returned. If port is omitted, the current input port is used.
+Example:
+  (define p (open-input-string "ab"))
+  (peek-char p) =&gt; #\a
+  (read-char p) =&gt; #\a</pre>
+</div>
+<div class="entry" id="e151" data-name="peek-u8">
+  <div class="entry-name">peek-u8</div>
+  <pre class="entry-doc">Syntax: (peek-u8 port)
+Library: (scheme base)
+Description: Returns the next byte available from the binary input port without consuming it. Returns an end-of-file object if no bytes are available.
+Example:
+  (let ((p (open-input-bytevector #u8(10 20))))
+    (peek-u8 p)) =&gt; 10</pre>
+</div>
+<div class="entry" id="e152" data-name="port?">
+  <div class="entry-name">port?</div>
+  <pre class="entry-doc">Syntax: (port? obj)
+Library: (scheme base)
+Description: Returns #t if obj is a port (either an input port or an output
+  port), #f otherwise.
+Example:
+  (port? (current-input-port))  =&gt; #t
+  (port? (current-output-port)) =&gt; #t
+  (port? 42)                    =&gt; #f</pre>
+</div>
+<div class="entry" id="e153" data-name="positive?">
+  <div class="entry-name">positive?</div>
+  <pre class="entry-doc">Syntax: (positive? x)
+Library: (scheme base)
+Description: Returns #t if x is positive, #f otherwise.
+Example:
+  (positive? 1)  =&gt; #t
+  (positive? -1) =&gt; #f
+  (positive? 0)  =&gt; #f</pre>
+</div>
+<div class="entry" id="e154" data-name="procedure?">
+  <div class="entry-name">procedure?</div>
+  <pre class="entry-doc">Syntax: (procedure? obj)
+Library: (scheme base)
+Description: Returns #t if obj is a procedure, #f otherwise. A procedure is
+  either a lambda (user-defined closure) or a primitive (built-in procedure).
+Example:
+  (procedure? car)       =&gt; #t
+  (procedure? (lambda (x) x)) =&gt; #t
+  (procedure? 42)        =&gt; #f</pre>
+</div>
+<div class="entry" id="e155" data-name="quasiquote">
+  <div class="entry-name">quasiquote</div>
+  <pre class="entry-doc">Syntax: (quasiquote template) | `template
+Library: (scheme base)
+Description: Returns template with unquoted expressions evaluated. Use
+  ,expr to insert a value and ,@expr to splice a list. The reader
+  abbreviation `template is equivalent to (quasiquote template).
+Example:
+  (let ((x 1)) `(a ,x c)) =&gt; (a 1 c)
+  (let ((xs '(1 2))) `(a ,@xs c)) =&gt; (a 1 2 c)</pre>
+</div>
+<div class="entry" id="e156" data-name="quote">
+  <div class="entry-name">quote</div>
+  <pre class="entry-doc">Syntax: (quote datum) | 'datum
+Library: (scheme base)
+Description: Returns datum without evaluating it. The reader abbreviation
+  'datum is equivalent to (quote datum).
+Example:
+  (quote (1 2 3)) =&gt; (1 2 3)
+  'hello =&gt; hello</pre>
+</div>
+<div class="entry" id="e157" data-name="quotient">
+  <div class="entry-name">quotient</div>
+  <pre class="entry-doc">Syntax: (quotient n1 n2)
+Library: (scheme base)
+Description: Returns the integer quotient of n1 divided by n2, truncated toward zero.
+Example:
+  (quotient 13 4) =&gt; 3</pre>
+</div>
+<div class="entry" id="e158" data-name="raise">
+  <div class="entry-name">raise</div>
+  <pre class="entry-doc">Syntax: (raise obj)
+Library: (scheme base)
+Description: Raises an exception by invoking the current exception handler on obj.
+Example:
+  (guard (e (#t (error-object-message e)))
+    (raise (make-error-object "oops" '()))) =&gt; "oops"</pre>
+</div>
+<div class="entry" id="e159" data-name="raise-continuable">
+  <div class="entry-name">raise-continuable</div>
+  <pre class="entry-doc">Syntax: (raise-continuable obj)
+Library: (scheme base)
+Description: Like raise, but if the handler returns, its value becomes the return value.
+Example:
+  (with-exception-handler (lambda (e) 42) (lambda () (+ 1 (raise-continuable 'oops)))) =&gt; 43</pre>
+</div>
+<div class="entry" id="e160" data-name="rational?">
+  <div class="entry-name">rational?</div>
+  <pre class="entry-doc">Syntax: (rational? obj)
+Library: (scheme base)
+Description: Returns #t if obj is a rational number. All finite real numbers
+  (including inexact reals like 1.0 and 1.5) are rational. +inf.0, -inf.0,
+  and +nan.0 are not rational.
+Example:
+  (rational? 1)      =&gt; #t
+  (rational? 1/2)    =&gt; #t
+  (rational? 1.0)    =&gt; #t
+  (rational? +inf.0) =&gt; #f
+  (rational? +nan.0) =&gt; #f</pre>
+</div>
+<div class="entry" id="e161" data-name="rationalize">
+  <div class="entry-name">rationalize</div>
+  <pre class="entry-doc">Syntax: (rationalize x y)
+Library: (scheme base)
+Description: Returns the simplest rational number within y of x. The simplest
+  rational is the one with the smallest denominator. If x is exact, returns an
+  exact result; if inexact, returns an inexact result.
+Example:
+  (rationalize (exact .3) 1/10) =&gt; 1/3
+  (rationalize .3 1/10) =&gt; 0.3333333333333333</pre>
+</div>
+<div class="entry" id="e162" data-name="read-bytevector">
+  <div class="entry-name">read-bytevector</div>
+  <pre class="entry-doc">Syntax: (read-bytevector k port)
+Library: (scheme base)
+Description: Reads up to k bytes from the binary input port and returns them as a freshly allocated bytevector. Returns an end-of-file object if no bytes are available.
+Example:
+  (let ((p (open-input-bytevector #u8(1 2 3))))
+    (read-bytevector 2 p)) =&gt; #u8(1 2)</pre>
+</div>
+<div class="entry" id="e163" data-name="read-bytevector!">
+  <div class="entry-name">read-bytevector!</div>
+  <pre class="entry-doc">Syntax: (read-bytevector! bv port)
+Library: (scheme base)
+Description: Reads bytes from the binary input port into the bytevector bv, starting at start (default 0) and ending before end (default length of bv). Returns the number of bytes read, or an end-of-file object if no bytes were available.
+Example:
+  (let ((bv (make-bytevector 3 0))
+        (p (open-input-bytevector #u8(1 2 3))))
+    (read-bytevector! bv p)
+    bv) =&gt; #u8(1 2 3)</pre>
+</div>
+<div class="entry" id="e164" data-name="read-char">
+  <div class="entry-name">read-char</div>
+  <pre class="entry-doc">Syntax: (read-char)
+Library: (scheme base)
+Description: Returns the next character available from the input port, updating the port to point past the character. If no more characters are available, an end-of-file object is returned. If port is omitted, the current input port is used.
+Example:
+  (define p (open-input-string "ab"))
+  (read-char p) =&gt; #\a
+  (read-char p) =&gt; #\b</pre>
+</div>
+<div class="entry" id="e165" data-name="read-error?">
+  <div class="entry-name">read-error?</div>
+  <pre class="entry-doc">Syntax: (read-error? obj)
+Library: (scheme base)
+Description: Returns #t if obj is an object representing an error that occurred while reading, otherwise returns #f.
+Example:
+  (read-error? (guard (e (#t e)) (read (open-input-string "(")))) =&gt; #t</pre>
+</div>
+<div class="entry" id="e166" data-name="read-line">
+  <div class="entry-name">read-line</div>
+  <pre class="entry-doc">Syntax: (read-line)
+Library: (scheme base)
+Description: Returns the next line of text available from the input port as a string, discarding the newline. If end of file is reached before any characters are read, an end-of-file object is returned. If port is omitted, the current input port is used.
+Example:
+  (define p (open-input-string "hello\nworld"))
+  (read-line p) =&gt; "hello"
+  (read-line p) =&gt; "world"</pre>
+</div>
+<div class="entry" id="e167" data-name="read-string">
+  <div class="entry-name">read-string</div>
+  <pre class="entry-doc">Syntax: (read-string k)
+       (read-string k port)
+Library: (scheme base)
+Description: Reads the next k characters, or as many as are available before
+  the end of file, from the textual input port into a newly allocated string
+  in left-to-right order and returns the string. If no characters are
+  available before the end of file, an end-of-file object is returned. port
+  defaults to the current input port.
+Example:
+  (read-string 3 (open-input-string "hello")) =&gt; "hel"</pre>
+</div>
+<div class="entry" id="e168" data-name="read-u8">
+  <div class="entry-name">read-u8</div>
+  <pre class="entry-doc">Syntax: (read-u8 port)
+Library: (scheme base)
+Description: Returns the next byte available from the binary input port as an exact integer in the range 0 to 255. Returns an end-of-file object if no bytes are available.
+Example:
+  (let ((p (open-input-bytevector #u8(65 66))))
+    (read-u8 p)) =&gt; 65</pre>
+</div>
+<div class="entry" id="e169" data-name="real?">
+  <div class="entry-name">real?</div>
+  <pre class="entry-doc">Syntax: (real? obj)
+Library: (scheme base)
+Description: Returns #t if obj is a real number, otherwise returns #f. Integers and rationals are also real numbers.
+Example:
+  (real? 3) =&gt; #t
+  (real? 3.5) =&gt; #t
+  (real? 1/3) =&gt; #t
+  (real? "hello") =&gt; #f</pre>
+</div>
+<div class="entry" id="e170" data-name="remainder">
+  <div class="entry-name">remainder</div>
+  <pre class="entry-doc">Syntax: (remainder n1 n2)
+Library: (scheme base)
+Description: Returns the remainder of dividing n1 by n2. The result has the same sign as n1. It is an error if n2 is zero.
+Example:
+  (remainder 13 4) =&gt; 1
+  (remainder -13 4) =&gt; -1
+  (remainder 13 -4) =&gt; 1</pre>
+</div>
+<div class="entry" id="e171" data-name="reverse">
+  <div class="entry-name">reverse</div>
+  <pre class="entry-doc">Syntax: (reverse list)
+Library: (scheme base)
+Description: Returns a newly allocated list containing the elements of list in reverse order.
+Example:
+  (reverse '(1 2 3)) =&gt; (3 2 1)
+  (reverse '()) =&gt; ()</pre>
+</div>
+<div class="entry" id="e172" data-name="round">
+  <div class="entry-name">round</div>
+  <pre class="entry-doc">Syntax: (round z)
+Library: (scheme base)
+Description: Returns the integer closest to z. If z is halfway between two integers, rounds to the even one (banker's rounding).
+Example:
+  (round 3.5) =&gt; 4.0
+  (round 2.5) =&gt; 2.0
+  (round 7/2) =&gt; 4</pre>
+</div>
+<div class="entry" id="e173" data-name="set!">
+  <div class="entry-name">set!</div>
+  <pre class="entry-doc">Syntax: (set! variable expression)
+Library: (scheme base)
+Description: Evaluates expression and stores the result in the location to
+  which variable is bound. variable must be bound either in some enclosing
+  scope or at the top level. The result of the set! expression is
+  unspecified.
+Example:
+  (let ((x 1)) (set! x 2) x) =&gt; 2</pre>
+</div>
+<div class="entry" id="e174" data-name="set-car!">
+  <div class="entry-name">set-car!</div>
+  <pre class="entry-doc">Syntax: (set-car! pair obj)
+Library: (scheme base)
+Description: Stores obj in the car field of pair. It is an error if pair is not a pair.
+Example:
+  (define p (list 1 2 3))
+  (set-car! p 'a)
+  p =&gt; (a 2 3)</pre>
+</div>
+<div class="entry" id="e175" data-name="set-cdr!">
+  <div class="entry-name">set-cdr!</div>
+  <pre class="entry-doc">Syntax: (set-cdr! pair obj)
+Library: (scheme base)
+Description: Stores obj in the cdr field of pair. It is an error if pair is not a pair.
+Example:
+  (define p (list 1 2 3))
+  (set-cdr! p '(b c))
+  p =&gt; (1 b c)</pre>
+</div>
+<div class="entry" id="e176" data-name="square">
+  <div class="entry-name">square</div>
+  <pre class="entry-doc">Syntax: (square z)
+Library: (scheme base)
+Description: Returns the square of z. This is equivalent to (* z z).
+Example:
+  (square 5)   =&gt; 25
+  (square -3)  =&gt; 9
+  (square 2.0) =&gt; 4.0</pre>
+</div>
+<div class="entry" id="e177" data-name="string">
+  <div class="entry-name">string</div>
+  <pre class="entry-doc">Syntax: (string char ...)
+Library: (scheme base) (srfi 13)
+Description: Returns a newly allocated string composed of the given characters.
+Example:
+  (string #\a #\b #\c) =&gt; "abc"
+  (string) =&gt; ""</pre>
+</div>
+<div class="entry" id="e178" data-name="string-&gt;list">
+  <div class="entry-name">string-&gt;list</div>
+  <pre class="entry-doc">Syntax: (string-&gt;list string)
+       (string-&gt;list string start)
+       (string-&gt;list string start end)
+Library: (scheme base) (srfi 13)
+Description: Returns a newly allocated list of the characters of string
+  between start and end. start defaults to 0 and end defaults to the length
+  of string.
+Example:
+  (string-&gt;list "abc")     =&gt; (#\a #\b #\c)
+  (string-&gt;list "abc" 1)   =&gt; (#\b #\c)
+  (string-&gt;list "abc" 1 2) =&gt; (#\b)</pre>
+</div>
+<div class="entry" id="e179" data-name="string-&gt;number">
+  <div class="entry-name">string-&gt;number</div>
+  <pre class="entry-doc">Syntax: (string-&gt;number s radix?)
+Library: (scheme base)
+Description: Converts the string s to a number using the given radix (default 10). Returns #f if s cannot be parsed as a number.
+Example:
+  (string-&gt;number "42") =&gt; 42
+  (string-&gt;number "ff" 16) =&gt; 255
+  (string-&gt;number "abc") =&gt; #f</pre>
+</div>
+<div class="entry" id="e180" data-name="string-&gt;symbol">
+  <div class="entry-name">string-&gt;symbol</div>
+  <pre class="entry-doc">Syntax: (string-&gt;symbol s)
+Library: (scheme base)
+Description: Returns the interned symbol whose name is the string s. Two calls with equal strings return the same symbol.
+Example:
+  (string-&gt;symbol "hello") =&gt; hello
+  (eq? (string-&gt;symbol "foo") (string-&gt;symbol "foo")) =&gt; #t</pre>
+</div>
+<div class="entry" id="e181" data-name="string-&gt;utf8">
+  <div class="entry-name">string-&gt;utf8</div>
+  <pre class="entry-doc">Syntax: (string-&gt;utf8 s start? end?)
+Library: (scheme base)
+Description: Returns a bytevector containing the UTF-8 encoding of the string s. Optional start and end indices can be used to encode a substring.
+Example:
+  (string-&gt;utf8 "abc") =&gt; #u8(97 98 99)
+  (string-&gt;utf8 "hello" 1 3) =&gt; #u8(101 108)</pre>
+</div>
+<div class="entry" id="e182" data-name="string-&gt;vector">
+  <div class="entry-name">string-&gt;vector</div>
+  <pre class="entry-doc">Syntax: (string-&gt;vector string)
+       (string-&gt;vector string start)
+       (string-&gt;vector string start end)
+Library: (scheme base)
+Description: Returns a newly created vector initialized to the elements of
+  the string between start and end. start defaults to 0 and end defaults to
+  the length of the string.
+Example:
+  (string-&gt;vector "abc")     =&gt; #(#\a #\b #\c)
+  (string-&gt;vector "abc" 1)   =&gt; #(#\b #\c)
+  (string-&gt;vector "abc" 1 2) =&gt; #(#\b)</pre>
+</div>
+<div class="entry" id="e183" data-name="string-append">
+  <div class="entry-name">string-append</div>
+  <pre class="entry-doc">Syntax: (string-append string ...)
+Library: (scheme base) (srfi 13)
+Description: Returns a newly allocated string whose characters are the concatenation of the characters in the given strings.
+Example:
+  (string-append "foo" "bar") =&gt; "foobar"
+  (string-append "a" "b" "c") =&gt; "abc"</pre>
+</div>
+<div class="entry" id="e184" data-name="string-copy">
+  <div class="entry-name">string-copy</div>
+  <pre class="entry-doc">Syntax: (string-copy string)
+       (string-copy string start)
+       (string-copy string start end)
+Library: (scheme base) (srfi 13)
+Description: Returns a newly allocated copy of the part of the given string
+  between start and end. start defaults to 0 and end defaults to the length
+  of the string.
+Example:
+  (string-copy "abc")     =&gt; "abc"
+  (string-copy "abc" 1)   =&gt; "bc"
+  (string-copy "abc" 1 2) =&gt; "b"</pre>
+</div>
+<div class="entry" id="e185" data-name="string-copy!">
+  <div class="entry-name">string-copy!</div>
+  <pre class="entry-doc">Syntax: (string-copy! to at from)
+       (string-copy! to at from start)
+       (string-copy! to at from start end)
+Library: (scheme base) (srfi 13)
+Description: Copies the characters of string from between start and end to
+  string to, starting at at. The order in which characters are copied is
+  unspecified, except that if the source and destination overlap, copying
+  takes place as if the source is first copied into a temporary string and
+  then into the destination. start defaults to 0 and end defaults to the
+  length of from.
+Example:
+  (let ((s (string-copy "hello")))
+    (string-copy! s 1 "xyz" 0 2)
+    s) =&gt; "hxylo"</pre>
+</div>
+<div class="entry" id="e186" data-name="string-fill!">
+  <div class="entry-name">string-fill!</div>
+  <pre class="entry-doc">Syntax: (string-fill! string char)
+       (string-fill! string char start)
+       (string-fill! string char start end)
+Library: (scheme base) (srfi 13)
+Description: Stores char in every element of the given string between start
+  and end. start defaults to 0 and end defaults to the length of the string.
+Example:
+  (let ((s (make-string 3 #\a)))
+    (string-fill! s #\x)
+    s) =&gt; "xxx"
+  (let ((s (string-copy "hello")))
+    (string-fill! s #\x 1 3)
+    s) =&gt; "hxxlo"</pre>
+</div>
+<div class="entry" id="e187" data-name="string-for-each">
+  <div class="entry-name">string-for-each</div>
+  <pre class="entry-doc">Syntax: (string-for-each proc string1 string2 ...)
+       (string-for-each proc string [start [end]])
+Library: (scheme base) (srfi 13)
+Description: When given multiple strings, applies proc element-wise to the
+  characters of the strings in order for side effects (R7RS).
+  When given optional integer start/end indices, applies proc to each
+  character of string[start..end) in order (SRFI-13).
+Example:
+  (string-for-each display "abc") ; displays abc</pre>
+</div>
+<div class="entry" id="e188" data-name="string-length">
+  <div class="entry-name">string-length</div>
+  <pre class="entry-doc">Syntax: (string-length s)
+Library: (scheme base) (srfi 13)
+Description: Returns the number of characters in the string s.
+Example:
+  (string-length "hello") =&gt; 5
+  (string-length "") =&gt; 0</pre>
+</div>
+<div class="entry" id="e189" data-name="string-map">
+  <div class="entry-name">string-map</div>
+  <pre class="entry-doc">Syntax: (string-map proc string1 string2 ...)
+       (string-map proc string [start [end]])
+Library: (scheme base) (srfi 13)
+Description: When given multiple strings, applies proc element-wise to the
+  characters of the strings and returns a string of the results. If multiple
+  strings are given, they must all have the same length (R7RS).
+  When given optional integer start/end indices, maps proc over the characters
+  of string[start..end) and returns a new string (SRFI-13).
+Example:
+  (string-map char-upcase "hello")       =&gt; "HELLO"
+  (string-map char-upcase "hello" 1 3)   =&gt; "EL"
+  (string-map (lambda (c) c) "xyz")      =&gt; "xyz"</pre>
+</div>
+<div class="entry" id="e190" data-name="string-ref">
+  <div class="entry-name">string-ref</div>
+  <pre class="entry-doc">Syntax: (string-ref s k)
+Library: (scheme base) (srfi 13)
+Description: Returns the character at index k in the string s. It is an error if k is out of range.
+Example:
+  (string-ref "hello" 0) =&gt; #\h
+  (string-ref "hello" 4) =&gt; #\o</pre>
+</div>
+<div class="entry" id="e191" data-name="string-set!">
+  <div class="entry-name">string-set!</div>
+  <pre class="entry-doc">Syntax: (string-set! s k char)
+Library: (scheme base) (srfi 13)
+Description: Stores char in position k of the string s, mutating the string in place. It is an error if k is out of range.
+Example:
+  (let ((s (string-copy "hello")))
+    (string-set! s 0 #\H)
+    s) =&gt; "Hello"</pre>
+</div>
+<div class="entry" id="e192" data-name="string&lt;=?">
+  <div class="entry-name">string&lt;=?</div>
+  <pre class="entry-doc">Syntax: (string&lt;=? s1 s2 ...)
+Library: (scheme base)
+Description: Returns #t if the strings are monotonically non-increasing in lexicographic order, otherwise returns #f.
+Example:
+  (string&lt;=? "a" "b") =&gt; #t
+  (string&lt;=? "abc" "abc") =&gt; #t
+  (string&lt;=? "b" "a") =&gt; #f</pre>
+</div>
+<div class="entry" id="e193" data-name="string&lt;?">
+  <div class="entry-name">string&lt;?</div>
+  <pre class="entry-doc">Syntax: (string&lt;? s1 s2 ...)
+Library: (scheme base)
+Description: Returns #t if the strings are monotonically increasing in lexicographic order, otherwise returns #f.
+Example:
+  (string&lt;? "a" "b") =&gt; #t
+  (string&lt;? "abc" "abd") =&gt; #t
+  (string&lt;? "b" "a") =&gt; #f</pre>
+</div>
+<div class="entry" id="e194" data-name="string=?">
+  <div class="entry-name">string=?</div>
+  <pre class="entry-doc">Syntax: (string=? s1 s2 ...)
+Library: (scheme base)
+Description: Returns #t if all the given strings are equal to each other, otherwise returns #f.
+Example:
+  (string=? "abc" "abc") =&gt; #t
+  (string=? "abc" "def") =&gt; #f
+  (string=? "x" "x" "x") =&gt; #t</pre>
+</div>
+<div class="entry" id="e195" data-name="string&gt;=?">
+  <div class="entry-name">string&gt;=?</div>
+  <pre class="entry-doc">Syntax: (string&gt;=? s1 s2 ...)
+Library: (scheme base)
+Description: Returns #t if the strings are monotonically non-decreasing in lexicographic order, otherwise returns #f.
+Example:
+  (string&gt;=? "b" "a") =&gt; #t
+  (string&gt;=? "abc" "abc") =&gt; #t
+  (string&gt;=? "a" "b") =&gt; #f</pre>
+</div>
+<div class="entry" id="e196" data-name="string&gt;?">
+  <div class="entry-name">string&gt;?</div>
+  <pre class="entry-doc">Syntax: (string&gt;? s1 s2 ...)
+Library: (scheme base)
+Description: Returns #t if the strings are monotonically decreasing in lexicographic order, otherwise returns #f.
+Example:
+  (string&gt;? "b" "a") =&gt; #t
+  (string&gt;? "abc" "abc") =&gt; #f
+  (string&gt;? "c" "b" "a") =&gt; #t</pre>
+</div>
+<div class="entry" id="e197" data-name="string?">
+  <div class="entry-name">string?</div>
+  <pre class="entry-doc">Syntax: (string? obj)
+Library: (scheme base) (srfi 13)
+Description: Returns #t if obj is a string, otherwise returns #f.
+Example:
+  (string? "hello") =&gt; #t
+  (string? 42) =&gt; #f</pre>
+</div>
+<div class="entry" id="e198" data-name="substring">
+  <div class="entry-name">substring</div>
+  <pre class="entry-doc">Syntax: (substring s start end)
+Library: (scheme base)
+Description: Returns a newly allocated string containing the characters of s from index start (inclusive) to end (exclusive).
+Example:
+  (substring "hello" 1 3) =&gt; "el"
+  (substring "hello" 0 5) =&gt; "hello"</pre>
+</div>
+<div class="entry" id="e199" data-name="symbol-&gt;string">
+  <div class="entry-name">symbol-&gt;string</div>
+  <pre class="entry-doc">Syntax: (symbol-&gt;string sym)
+Library: (scheme base)
+Description: Returns the name of sym as a string.
+Example:
+  (symbol-&gt;string 'hello) =&gt; "hello"
+  (symbol-&gt;string 'foo-bar) =&gt; "foo-bar"</pre>
+</div>
+<div class="entry" id="e200" data-name="symbol=?">
+  <div class="entry-name">symbol=?</div>
+  <pre class="entry-doc">Syntax: (symbol=? symbol1 symbol2 ...)
+Library: (scheme base)
+Description: Returns #t if all the arguments are symbols with the same names,
+  in the sense of string=?. It is an error to apply symbol=? to anything other
+  than symbols.
+Example:
+  (symbol=? 'foo 'foo)      =&gt; #t
+  (symbol=? 'foo 'bar)      =&gt; #f
+  (symbol=? 'foo 'foo 'foo) =&gt; #t</pre>
+</div>
+<div class="entry" id="e201" data-name="symbol?">
+  <div class="entry-name">symbol?</div>
+  <pre class="entry-doc">Syntax: (symbol? obj)
+Library: (scheme base)
+Description: Returns #t if obj is a symbol, #f otherwise.
+Example:
+  (symbol? 'foo) =&gt; #t
+  (symbol? "foo") =&gt; #f</pre>
+</div>
+<div class="entry" id="e202" data-name="syntax-error">
+  <div class="entry-name">syntax-error</div>
+  <pre class="entry-doc">Syntax: (error message obj ...) (error who message obj ...)
+Library: (scheme base)
+Description: Raises an error. In R7RS form, message is a string and obj ... are irritants. In SRFI-23 form, who is a symbol identifying the caller.
+Example:
+  (error "out of range" 42)
+  (error 'my-proc "value out of range" 42)</pre>
+</div>
+<div class="entry" id="e203" data-name="textual-port?">
+  <div class="entry-name">textual-port?</div>
+  <pre class="entry-doc">Syntax: (textual-port? obj)
+Library: (scheme base)
+Description: Returns #t if obj is a textual port (i.e., a port that reads or writes characters), #f otherwise.
+Example:
+  (textual-port? (current-input-port)) =&gt; #t
+  (textual-port? (open-output-bytevector)) =&gt; #f</pre>
+</div>
+<div class="entry" id="e204" data-name="truncate">
+  <div class="entry-name">truncate</div>
+  <pre class="entry-doc">Syntax: (truncate x)
+Library: (scheme base)
+Description: Returns the integer closest to x whose absolute value is not larger than the absolute value of x (rounds toward zero).
+Example:
+  (truncate 3.7) =&gt; 3.0
+  (truncate -3.7) =&gt; -3.0</pre>
+</div>
+<div class="entry" id="e205" data-name="truncate-quotient">
+  <div class="entry-name">truncate-quotient</div>
+  <pre class="entry-doc">Syntax: (quotient n1 n2)
+Library: (scheme base)
+Description: Returns the integer quotient of n1 divided by n2, truncated toward zero.
+Example:
+  (quotient 13 4) =&gt; 3</pre>
+</div>
+<div class="entry" id="e206" data-name="truncate-remainder">
+  <div class="entry-name">truncate-remainder</div>
+  <pre class="entry-doc">Syntax: (remainder n1 n2)
+Library: (scheme base)
+Description: Returns the remainder of dividing n1 by n2. The result has the same sign as n1. It is an error if n2 is zero.
+Example:
+  (remainder 13 4) =&gt; 1
+  (remainder -13 4) =&gt; -1
+  (remainder 13 -4) =&gt; 1</pre>
+</div>
+<div class="entry" id="e207" data-name="truncate/">
+  <div class="entry-name">truncate/</div>
+  <pre class="entry-doc">Syntax: (truncate/ n1 n2)
+Library: (scheme base)
+Description: Returns two values: the truncate quotient and the truncate
+  remainder of n1 divided by n2. The truncate quotient is the integer of
+  largest absolute value that is not larger than the real-valued quotient n1/n2.
+  Equivalent to calling quotient and remainder separately.
+Example:
+  (truncate/ 5 2)  =&gt; 2 1
+  (truncate/ -5 2) =&gt; -2 -1</pre>
+</div>
+<div class="entry" id="e208" data-name="u8-ready?">
+  <div class="entry-name">u8-ready?</div>
+  <pre class="entry-doc">Syntax: (u8-ready?)
+       (u8-ready? port)
+Library: (scheme base)
+Description: Returns #t if a byte is ready on the binary input port and returns
+  #f otherwise. If the port is at end of file then u8-ready? returns #t. This
+  implementation always returns #t.
+Example:
+  (u8-ready? (open-input-bytevector #u8(1 2 3))) =&gt; #t</pre>
+</div>
+<div class="entry" id="e209" data-name="unless">
+  <div class="entry-name">unless</div>
+  <pre class="entry-doc">Syntax: (unless test body ...)
+Library: (scheme base)
+Description: Evaluates test. If the result is #f, evaluates each body expression in sequence and returns the last. If the test is true, does nothing and returns an unspecified value.
+Example:
+  (unless #f (display "yes")) =&gt; yes
+  (unless #t (display "no"))  =&gt; (nothing printed)</pre>
+</div>
+<div class="entry" id="e210" data-name="utf8-&gt;string">
+  <div class="entry-name">utf8-&gt;string</div>
+  <pre class="entry-doc">Syntax: (utf8-&gt;string bv start? end?)
+Library: (scheme base)
+Description: Decodes the UTF-8 encoded bytes in bytevector bv (optionally from start to end) and returns the result as a string.
+Example:
+  (utf8-&gt;string #u8(104 101 108 108 111)) =&gt; "hello"
+  (utf8-&gt;string #u8(104 101 108 108 111) 1 3) =&gt; "el"</pre>
+</div>
+<div class="entry" id="e211" data-name="values">
+  <div class="entry-name">values</div>
+  <pre class="entry-doc">Syntax: (values obj ...)
+Library: (scheme base)
+Description: Returns all of its arguments as multiple values. Used with call-with-values to pass multiple results between procedures.
+Example:
+  (values 1 2 3) =&gt; 1 2 3
+  (call-with-values (lambda () (values 4 5)) +) =&gt; 9</pre>
+</div>
+<div class="entry" id="e212" data-name="vector">
+  <div class="entry-name">vector</div>
+  <pre class="entry-doc">Syntax: (vector obj ...)
+Library: (scheme base)
+Description: Returns a newly allocated vector whose elements contain the given arguments.
+Example:
+  (vector 1 2 3) =&gt; #(1 2 3)
+  (vector 'a 'b 'c) =&gt; #(a b c)</pre>
+</div>
+<div class="entry" id="e213" data-name="vector-&gt;list">
+  <div class="entry-name">vector-&gt;list</div>
+  <pre class="entry-doc">Syntax: (vector-&gt;list vector)
+Library: (scheme base)
+Description: Returns a newly allocated list containing the elements of vector in order. Optional start and end indices (zero-based, exclusive end) may be supplied to convert a subrange.
+Example:
+  (vector-&gt;list #(a b c)) =&gt; (a b c)
+  (vector-&gt;list #(a b c d) 1 3) =&gt; (b c)</pre>
+</div>
+<div class="entry" id="e214" data-name="vector-&gt;string">
+  <div class="entry-name">vector-&gt;string</div>
+  <pre class="entry-doc">Syntax: (vector-&gt;string vector)
+       (vector-&gt;string vector start)
+       (vector-&gt;string vector start end)
+Library: (scheme base)
+Description: Returns a newly allocated string of the objects contained in the
+  elements of vector between start and end. It is an error if any element is
+  not a character. start defaults to 0 and end defaults to the length of the
+  vector.
+Example:
+  (vector-&gt;string #(#\a #\b #\c))     =&gt; "abc"
+  (vector-&gt;string #(#\a #\b #\c) 1)   =&gt; "bc"
+  (vector-&gt;string #(#\a #\b #\c) 1 2) =&gt; "b"</pre>
+</div>
+<div class="entry" id="e215" data-name="vector-append">
+  <div class="entry-name">vector-append</div>
+  <pre class="entry-doc">Syntax: (vector-append vector ...)
+Library: (scheme base)
+Description: Returns a newly allocated vector whose elements are the
+  concatenation of the elements of the given vectors. With no arguments,
+  returns an empty vector.
+Example:
+  (vector-append '#(a b) '#(c d)) =&gt; #(a b c d)
+  (vector-append '#(a) '#() '#(b c)) =&gt; #(a b c)</pre>
+</div>
+<div class="entry" id="e216" data-name="vector-copy">
+  <div class="entry-name">vector-copy</div>
+  <pre class="entry-doc">Syntax: (vector-copy vector)
+       (vector-copy vector start)
+       (vector-copy vector start end)
+Library: (scheme base)
+Description: Returns a newly allocated copy of the elements of the given
+  vector between start and end. start defaults to 0 and end defaults to the
+  length of the vector.
+Example:
+  (vector-copy '#(a b c d e) 2 4) =&gt; #(c d)
+  (vector-copy '#(a b c))         =&gt; #(a b c)</pre>
+</div>
+<div class="entry" id="e217" data-name="vector-copy!">
+  <div class="entry-name">vector-copy!</div>
+  <pre class="entry-doc">Syntax: (vector-copy! to at from)
+       (vector-copy! to at from start)
+       (vector-copy! to at from start end)
+Library: (scheme base)
+Description: Copies the elements of vector from between start and end to
+  vector to, starting at at. The order in which elements are copied is
+  unspecified, except that if the source and destination overlap, copying
+  takes place as if the source is first copied into a temporary vector and
+  then into the destination. start defaults to 0 and end defaults to the
+  length of from.
+Example:
+  (let ((v (vector 1 2 3 4 5)))
+    (vector-copy! v 1 '#(10 11 12) 1 3)
+    v) =&gt; #(1 11 12 4 5)</pre>
+</div>
+<div class="entry" id="e218" data-name="vector-fill!">
+  <div class="entry-name">vector-fill!</div>
+  <pre class="entry-doc">Syntax: (vector-fill! vector fill)
+       (vector-fill! vector fill start)
+       (vector-fill! vector fill start end)
+Library: (scheme base)
+Description: Stores fill in every element of vector between start and end.
+  start defaults to 0 and end defaults to the length of the vector.
+Example:
+  (let ((v (make-vector 3 0)))
+    (vector-fill! v 5)
+    v) =&gt; #(5 5 5)
+  (let ((v (vector 1 2 3 4 5)))
+    (vector-fill! v 0 1 3)
+    v) =&gt; #(1 0 0 4 5)</pre>
+</div>
+<div class="entry" id="e219" data-name="vector-for-each">
+  <div class="entry-name">vector-for-each</div>
+  <pre class="entry-doc">Syntax: (vector-for-each proc vector1 vector2 ...)
+Library: (scheme base)
+Description: It is an error if proc does not accept as many arguments as
+  there are vectors. Applies proc element-wise to the elements of the vectors
+  for its side effects, in order from the first element to the last. The
+  return value is unspecified.
+Example:
+  (vector-for-each display '#(a b c)) ; displays abc</pre>
+</div>
+<div class="entry" id="e220" data-name="vector-length">
+  <div class="entry-name">vector-length</div>
+  <pre class="entry-doc">Syntax: (vector-length v)
+Library: (scheme base)
+Description: Returns the number of elements in vector v.
+Example:
+  (vector-length #(1 2 3)) =&gt; 3
+  (vector-length (vector)) =&gt; 0</pre>
+</div>
+<div class="entry" id="e221" data-name="vector-map">
+  <div class="entry-name">vector-map</div>
+  <pre class="entry-doc">Syntax: (vector-map proc vector1 vector2 ...)
+Library: (scheme base)
+Description: It is an error if proc does not accept as many arguments as
+  there are vectors and return a single value. Applies proc element-wise to
+  the elements of the vectors and returns a vector of the results. The
+  dynamic order in which proc is applied to the elements is unspecified.
+Example:
+  (vector-map + '#(1 2 3) '#(4 5 6)) =&gt; #(5 7 9)
+  (vector-map cadr '#((a b) (d e) (g h))) =&gt; #(b e h)</pre>
+</div>
+<div class="entry" id="e222" data-name="vector-ref">
+  <div class="entry-name">vector-ref</div>
+  <pre class="entry-doc">Syntax: (vector-ref v k)
+Library: (scheme base)
+Description: Returns the element at index k in vector v. If k is out of range and a default is provided, returns the default instead of signalling an error.
+Example:
+  (vector-ref #(a b c) 1) =&gt; b
+  (vector-ref #(a b c) 5 'none) =&gt; none</pre>
+</div>
+<div class="entry" id="e223" data-name="vector-set!">
+  <div class="entry-name">vector-set!</div>
+  <pre class="entry-doc">Syntax: (vector-set! v k obj)
+Library: (scheme base)
+Description: Stores obj in element k of vector v. It is an error if k is not a valid index of v.
+Example:
+  (let ((v (vector 1 2 3))) (vector-set! v 1 99) v) =&gt; #(1 99 3)</pre>
+</div>
+<div class="entry" id="e224" data-name="vector?">
+  <div class="entry-name">vector?</div>
+  <pre class="entry-doc">Syntax: (vector? obj)
+Library: (scheme base)
+Description: Returns #t if obj is a vector, #f otherwise.
+Example:
+  (vector? #(1 2 3)) =&gt; #t
+  (vector? '(1 2 3)) =&gt; #f</pre>
+</div>
+<div class="entry" id="e225" data-name="when">
+  <div class="entry-name">when</div>
+  <pre class="entry-doc">Syntax: (when test body ...)
+Library: (scheme base)
+Description: Evaluates test. If the result is true, evaluates each body expression in sequence and returns the last. If the test is #f, does nothing and returns an unspecified value.
+Example:
+  (when #t (display "yes")) =&gt; yes
+  (when #f (display "no"))  =&gt; (nothing printed)</pre>
+</div>
+<div class="entry" id="e226" data-name="with-exception-handler">
+  <div class="entry-name">with-exception-handler</div>
+  <pre class="entry-doc">Syntax: (with-exception-handler handler thunk)
+Library: (scheme base)
+Description: Calls thunk with handler installed as the current exception handler.
+Example:
+  (with-exception-handler (lambda (e) 42) (lambda () (raise 'oops))) =&gt; 42</pre>
+</div>
+<div class="entry" id="e227" data-name="write-bytevector">
+  <div class="entry-name">write-bytevector</div>
+  <pre class="entry-doc">Syntax: (write-bytevector bv port? start? end?)
+Library: (scheme base)
+Description: Writes the bytes of bytevector bv to binary output port, optionally restricted to the range [start, end).
+Example:
+  (write-bytevector #u8(1 2 3) port)
+  (write-bytevector #u8(1 2 3 4 5) port 1 3)</pre>
+</div>
+<div class="entry" id="e228" data-name="write-char">
+  <div class="entry-name">write-char</div>
+  <pre class="entry-doc">Syntax: (write-char char port?)
+Library: (scheme base)
+Description: Writes the character char to the given textual output port, or to the current output port if no port is specified.
+Example:
+  (write-char #\A) =&gt; (outputs A)
+  (write-char #\newline port)</pre>
+</div>
+<div class="entry" id="e229" data-name="write-string">
+  <div class="entry-name">write-string</div>
+  <pre class="entry-doc">Syntax: (write-string string)
+       (write-string string port)
+       (write-string string port start)
+       (write-string string port start end)
+Library: (scheme base)
+Description: Writes the characters of string from start to end in left-to-right order to the given port. port defaults to the current output port. start defaults to 0 and end defaults to the length of string. The native primitive does a single bulk Writer.write(char[], start, count) — large strings don't pay the Scheme→native transition per char.
+Example:
+  (write-string "hello")
+  (write-string "hello" port 1 3)</pre>
+</div>
+<div class="entry" id="e230" data-name="write-u8">
+  <div class="entry-name">write-u8</div>
+  <pre class="entry-doc">Syntax: (write-u8 byte port?)
+Library: (scheme base)
+Description: Writes a single byte (an exact integer in the range 0-255) to the given binary output port.
+Example:
+  (write-u8 65 port)
+  (write-u8 0 port)</pre>
+</div>
+<div class="entry" id="e231" data-name="zero?">
+  <div class="entry-name">zero?</div>
+  <pre class="entry-doc">Syntax: (zero? z)
+Library: (scheme base)
+Description: Returns #t if z is zero, #f otherwise.
+Example:
+  (zero? 0)   =&gt; #t
+  (zero? 1)   =&gt; #f
+  (zero? 0.0) =&gt; #t</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

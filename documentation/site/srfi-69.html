@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(srfi 69) — Scm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Scm Library Reference</a></h1>
+    <p>scm &mdash; libraries and their exports</p>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav>
+  <h2>R7RS Standard</h2>
+  <a href="scheme-base.html" class="r7rs">(scheme base)</a>
+  <a href="scheme-case-lambda.html" class="r7rs">(scheme case-lambda)</a>
+  <a href="scheme-char.html" class="r7rs">(scheme char)</a>
+  <a href="scheme-complex.html" class="r7rs">(scheme complex)</a>
+  <a href="scheme-cxr.html" class="r7rs">(scheme cxr)</a>
+  <a href="scheme-eval.html" class="r7rs">(scheme eval)</a>
+  <a href="scheme-file.html" class="r7rs">(scheme file)</a>
+  <a href="scheme-inexact.html" class="r7rs">(scheme inexact)</a>
+  <a href="scheme-lazy.html" class="r7rs">(scheme lazy)</a>
+  <a href="scheme-load.html" class="r7rs">(scheme load)</a>
+  <a href="scheme-process-context.html" class="r7rs">(scheme process-context)</a>
+  <a href="scheme-r5rs.html" class="r7rs">(scheme r5rs)</a>
+  <a href="scheme-read.html" class="r7rs">(scheme read)</a>
+  <a href="scheme-repl.html" class="r7rs">(scheme repl)</a>
+  <a href="scheme-time.html" class="r7rs">(scheme time)</a>
+  <a href="scheme-write.html" class="r7rs">(scheme write)</a>
+  <h2>SRFI Libraries</h2>
+  <a href="srfi-1.html" class="srfi">(srfi 1)</a>
+  <a href="srfi-2.html" class="srfi">(srfi 2)</a>
+  <a href="srfi-8.html" class="srfi">(srfi 8)</a>
+  <a href="srfi-9.html" class="srfi">(srfi 9)</a>
+  <a href="srfi-13.html" class="srfi">(srfi 13)</a>
+  <a href="srfi-14.html" class="srfi">(srfi 14)</a>
+  <a href="srfi-18.html" class="srfi">(srfi 18)</a>
+  <a href="srfi-19.html" class="srfi">(srfi 19)</a>
+  <a href="srfi-26.html" class="srfi">(srfi 26)</a>
+  <a href="srfi-28.html" class="srfi">(srfi 28)</a>
+  <a href="srfi-39.html" class="srfi">(srfi 39)</a>
+  <a href="srfi-48.html" class="srfi">(srfi 48)</a>
+  <a href="srfi-64.html" class="srfi">(srfi 64)</a>
+  <a href="srfi-69.html" class="srfi active">(srfi 69)</a>
+  <a href="srfi-95.html" class="srfi">(srfi 95)</a>
+  <a href="srfi-98.html" class="srfi">(srfi 98)</a>
+  <a href="srfi-111.html" class="srfi">(srfi 111)</a>
+  <a href="srfi-125.html" class="srfi">(srfi 125)</a>
+  <a href="srfi-128.html" class="srfi">(srfi 128)</a>
+  <a href="srfi-132.html" class="srfi">(srfi 132)</a>
+  <a href="srfi-133.html" class="srfi">(srfi 133)</a>
+  <a href="srfi-151.html" class="srfi">(srfi 151)</a>
+  <a href="srfi-158.html" class="srfi">(srfi 158)</a>
+  <h2>Scm Extensions</h2>
+  <a href="scm-archive.html" class="scm">(scm archive)</a>
+  <a href="scm-args.html" class="scm">(scm args)</a>
+  <a href="scm-compile.html" class="scm">(scm compile)</a>
+  <a href="scm-compression.html" class="scm">(scm compression)</a>
+  <a href="scm-crypto.html" class="scm">(scm crypto)</a>
+  <a href="scm-csv.html" class="scm">(scm csv)</a>
+  <a href="scm-database-migrations.html" class="scm">(scm database migrations)</a>
+  <a href="scm-database-postgres.html" class="scm">(scm database postgres)</a>
+  <a href="scm-database-sqlserver.html" class="scm">(scm database sqlserver)</a>
+  <a href="scm-datetime.html" class="scm">(scm datetime)</a>
+  <a href="scm-dict.html" class="scm">(scm dict)</a>
+  <a href="scm-doc.html" class="scm">(scm doc)</a>
+  <a href="scm-duration.html" class="scm">(scm duration)</a>
+  <a href="scm-feed.html" class="scm">(scm feed)</a>
+  <a href="scm-fs-find.html" class="scm">(scm fs-find)</a>
+  <a href="scm-fs.html" class="scm">(scm fs)</a>
+  <a href="scm-glob.html" class="scm">(scm glob)</a>
+  <a href="scm-html-builder.html" class="scm">(scm html builder)</a>
+  <a href="scm-html.html" class="scm">(scm html)</a>
+  <a href="scm-io.html" class="scm">(scm io)</a>
+  <a href="scm-json-simple.html" class="scm">(scm json simple)</a>
+  <a href="scm-json.html" class="scm">(scm json)</a>
+  <a href="scm-list.html" class="scm">(scm list)</a>
+  <a href="scm-log.html" class="scm">(scm log)</a>
+  <a href="scm-macro.html" class="scm">(scm macro)</a>
+  <a href="scm-markdown.html" class="scm">(scm markdown)</a>
+  <a href="scm-match.html" class="scm">(scm match)</a>
+  <a href="scm-math.html" class="scm">(scm math)</a>
+  <a href="scm-module.html" class="scm">(scm module)</a>
+  <a href="scm-net-http-client.html" class="scm">(scm net http client)</a>
+  <a href="scm-net-http-cookies.html" class="scm">(scm net http cookies)</a>
+  <a href="scm-net-http-forms.html" class="scm">(scm net http forms)</a>
+  <a href="scm-net-http-multipart.html" class="scm">(scm net http multipart)</a>
+  <a href="scm-net-http-request.html" class="scm">(scm net http request)</a>
+  <a href="scm-net-http-response.html" class="scm">(scm net http response)</a>
+  <a href="scm-net-http-route.html" class="scm">(scm net http route)</a>
+  <a href="scm-net-http-server.html" class="scm">(scm net http server)</a>
+  <a href="scm-net-remote.html" class="scm">(scm net-remote)</a>
+  <a href="scm-net-sockets.html" class="scm">(scm net sockets)</a>
+  <a href="scm-net-websocket.html" class="scm">(scm net websocket)</a>
+  <a href="scm-odf-spreadsheet.html" class="scm">(scm odf spreadsheet)</a>
+  <a href="scm-odf-writer.html" class="scm">(scm odf writer)</a>
+  <a href="scm-ooxml-excel-reader.html" class="scm">(scm ooxml excel-reader)</a>
+  <a href="scm-ooxml-excel.html" class="scm">(scm ooxml excel)</a>
+  <a href="scm-ooxml-word-reader.html" class="scm">(scm ooxml word-reader)</a>
+  <a href="scm-ooxml-word.html" class="scm">(scm ooxml word)</a>
+  <a href="scm-pdf.html" class="scm">(scm pdf)</a>
+  <a href="scm-png.html" class="scm">(scm png)</a>
+  <a href="scm-profiling.html" class="scm">(scm profiling)</a>
+  <a href="scm-qr.html" class="scm">(scm qr)</a>
+  <a href="scm-random-access.html" class="scm">(scm random access)</a>
+  <a href="scm-repl.html" class="scm">(scm repl)</a>
+  <a href="scm-store.html" class="scm">(scm store)</a>
+  <a href="scm-string.html" class="scm">(scm string)</a>
+  <a href="scm-sysadmin.html" class="scm">(scm sysadmin)</a>
+  <a href="scm-system.html" class="scm">(scm system)</a>
+  <a href="scm-templating.html" class="scm">(scm templating)</a>
+  <a href="scm-terminal.html" class="scm">(scm terminal)</a>
+  <a href="scm-test.html" class="scm">(scm test)</a>
+  <a href="scm-text.html" class="scm">(scm text)</a>
+  <a href="scm-toml.html" class="scm">(scm toml)</a>
+  <a href="scm-uri.html" class="scm">(scm uri)</a>
+  <a href="scm-xml.html" class="scm">(scm xml)</a>
+  <a href="scm-zip.html" class="scm">(scm zip)</a>
+</nav>
+
+<main>
+
+<a class="backlink" href="index.html">&larr; All libraries</a>
+<div class="lib-title srfi">(srfi 69)</div>
+<p class="lib-sub">SRFI-69 — Basic hash tables with eq?/eqv?/equal? support</p>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">24 bindings</p>
+
+<div class="entry" id="e0" data-name="hash">
+  <div class="entry-name">hash</div>
+  <pre class="entry-doc">Syntax: (hash obj [bound])
+Library: (srfi 69)
+Description: Returns a non-negative integer hash suitable for any Scheme object, using
+equal?-based comparison semantics. Handles strings, symbols, numbers, chars, booleans,
+null, and pairs. If bound is given, the result is in [0, bound); otherwise [0, 2^32).
+Example:
+  (integer? (hash '(1 2 3))) =&gt; #t
+  (= (hash "abc") (hash "abc")) =&gt; #t
+  (&lt; (hash 'foo 100) 100) =&gt; #t</pre>
+</div>
+<div class="entry" id="e1" data-name="hash-by-identity">
+  <div class="entry-name">hash-by-identity</div>
+  <pre class="entry-doc">Syntax: (hash-by-identity obj [bound])
+Library: (srfi 69)
+Description: Returns a hash of obj using identity (eq?) comparison semantics. In this
+implementation it delegates to hash. If bound is given, the result is in [0, bound).
+Example:
+  (integer? (hash-by-identity 'foo)) =&gt; #t
+  (&lt; (hash-by-identity 42 100) 100) =&gt; #t</pre>
+</div>
+<div class="entry" id="e2" data-name="hash-table-&gt;alist">
+  <div class="entry-name">hash-table-&gt;alist</div>
+  <pre class="entry-doc">Syntax: (hash-table-&gt;alist ht)
+Library: (srfi 69)
+Description: Returns an association list of all key-value pairs in the hash table ht. The order is unspecified.
+Example:
+  (define ht (make-hash-table equal?))
+  (hash-table-set! ht 'a 1)
+  (hash-table-&gt;alist ht) =&gt; ((a . 1))</pre>
+</div>
+<div class="entry" id="e3" data-name="hash-table-copy">
+  <div class="entry-name">hash-table-copy</div>
+  <pre class="entry-doc">Syntax: (hash-table-copy ht)
+Library: (srfi 69)
+Description: Returns a copy of the hash table ht with the same equality mode and all the same key-value associations.
+Example:
+  (define ht (make-hash-table equal?))
+  (hash-table-set! ht 'a 1)
+  (define ht2 (hash-table-copy ht))
+  (hash-table-ref ht2 'a) =&gt; 1</pre>
+</div>
+<div class="entry" id="e4" data-name="hash-table-delete!">
+  <div class="entry-name">hash-table-delete!</div>
+  <pre class="entry-doc">Syntax: (hash-table-delete! ht key)
+Library: (srfi 69)
+Description: Removes the association for key from the hash table ht. Has no effect if key is not present.
+Example:
+  (define ht (make-hash-table equal?))
+  (hash-table-set! ht 'x 42)
+  (hash-table-delete! ht 'x)
+  (hash-table-exists? ht 'x) =&gt; #f</pre>
+</div>
+<div class="entry" id="e5" data-name="hash-table-exists?">
+  <div class="entry-name">hash-table-exists?</div>
+  <pre class="entry-doc">Syntax: (hash-table-exists? ht key)
+Library: (srfi 69)
+Description: Returns #t if key is associated with a value in ht, #f otherwise.
+Example:
+  (define ht (make-hash-table equal?))
+  (hash-table-set! ht 'x 42)
+  (hash-table-exists? ht 'x) =&gt; #t
+  (hash-table-exists? ht 'y) =&gt; #f</pre>
+</div>
+<div class="entry" id="e6" data-name="hash-table-fold">
+  <div class="entry-name">hash-table-fold</div>
+  <pre class="entry-doc">Syntax: (hash-table-fold ht f init)
+Library: (srfi 69)
+Description: Folds f over all key-value associations in ht, starting from init.
+f receives (key value accumulator) and returns the new accumulator.
+Example:
+  (define ht (make-hash-table equal?))
+  (hash-table-set! ht 'a 1)
+  (hash-table-fold ht (lambda (k v acc) (+ v acc)) 0) =&gt; 1</pre>
+</div>
+<div class="entry" id="e7" data-name="hash-table-keys">
+  <div class="entry-name">hash-table-keys</div>
+  <pre class="entry-doc">Syntax: (hash-table-keys ht)
+Library: (srfi 69)
+Description: Returns a list of all keys in the hash table ht. The order is unspecified.
+Example:
+  (define ht (make-hash-table equal?))
+  (hash-table-set! ht 'a 1)
+  (hash-table-set! ht 'b 2)
+  (list-sort symbol&lt;? (hash-table-keys ht)) =&gt; (a b)</pre>
+</div>
+<div class="entry" id="e8" data-name="hash-table-merge!">
+  <div class="entry-name">hash-table-merge!</div>
+  <pre class="entry-doc">Syntax: (hash-table-merge! ht1 ht2)
+Library: (srfi 69)
+Description: Adds all key-value associations from ht2 into ht1. Returns ht1.
+Example:
+  (define ht1 (make-hash-table equal?))
+  (define ht2 (make-hash-table equal?))
+  (hash-table-set! ht2 'a 1)
+  (hash-table-merge! ht1 ht2)
+  (hash-table-ref ht1 'a) =&gt; 1</pre>
+</div>
+<div class="entry" id="e9" data-name="hash-table-ref">
+  <div class="entry-name">hash-table-ref</div>
+  <pre class="entry-doc">Syntax: (hash-table-ref ht key [default-thunk])
+Library: (srfi 69)
+Description: Returns the value associated with key in ht. If the key is not found and default-thunk is provided, calls it and returns the result; otherwise raises an error.
+Example:
+  (define ht (make-hash-table equal?))
+  (hash-table-set! ht 'x 42)
+  (hash-table-ref ht 'x) =&gt; 42</pre>
+</div>
+<div class="entry" id="e10" data-name="hash-table-ref/default">
+  <div class="entry-name">hash-table-ref/default</div>
+  <pre class="entry-doc">Syntax: (hash-table-ref/default ht key default)
+Library: (srfi 69)
+Description: Returns the value associated with key in ht, or default if key is not found.
+Example:
+  (define ht (make-hash-table equal?))
+  (hash-table-set! ht 'x 42)
+  (hash-table-ref/default ht 'x 0) =&gt; 42
+  (hash-table-ref/default ht 'y 0) =&gt; 0</pre>
+</div>
+<div class="entry" id="e11" data-name="hash-table-set!">
+  <div class="entry-name">hash-table-set!</div>
+  <pre class="entry-doc">Syntax: (hash-table-set! ht key value)
+Library: (srfi 69)
+Description: Associates key with value in the hash table ht. If the key already exists, its value is updated.
+Example:
+  (define ht (make-hash-table equal?))
+  (hash-table-set! ht 'x 42)
+  (hash-table-ref ht 'x) =&gt; 42</pre>
+</div>
+<div class="entry" id="e12" data-name="hash-table-size">
+  <div class="entry-name">hash-table-size</div>
+  <pre class="entry-doc">Syntax: (hash-table-size ht)
+Library: (srfi 69)
+Description: Returns the number of associations in the hash table ht.
+Example:
+  (define ht (make-hash-table equal?))
+  (hash-table-set! ht 'x 1)
+  (hash-table-set! ht 'y 2)
+  (hash-table-size ht) =&gt; 2</pre>
+</div>
+<div class="entry" id="e13" data-name="hash-table-update!">
+  <div class="entry-name">hash-table-update!</div>
+  <pre class="entry-doc">Syntax: (hash-table-update! ht key proc [default-thunk])
+Library: (srfi 69)
+Description: Applies proc to the current value of key in ht and stores the result.
+If key is absent and default-thunk is provided, uses (default-thunk) as the initial value.
+Example:
+  (define ht (make-hash-table equal?))
+  (hash-table-set! ht 'x 5)
+  (hash-table-update! ht 'x (lambda (v) (+ v 1)))
+  (hash-table-ref ht 'x) =&gt; 6</pre>
+</div>
+<div class="entry" id="e14" data-name="hash-table-update!/default">
+  <div class="entry-name">hash-table-update!/default</div>
+  <pre class="entry-doc">Syntax: (hash-table-update!/default ht key proc default)
+Library: (srfi 69)
+Description: Applies proc to the current value of key in ht (or default if absent)
+and stores the result.
+Example:
+  (define ht (make-hash-table equal?))
+  (hash-table-update!/default ht 'x (lambda (v) (+ v 1)) 0)
+  (hash-table-ref ht 'x) =&gt; 1</pre>
+</div>
+<div class="entry" id="e15" data-name="hash-table-values">
+  <div class="entry-name">hash-table-values</div>
+  <pre class="entry-doc">Syntax: (hash-table-values ht)
+Library: (srfi 69)
+Description: Returns a list of all values in the hash table ht. The order is unspecified.
+Example:
+  (define ht (make-hash-table equal?))
+  (hash-table-set! ht 'a 1)
+  (hash-table-set! ht 'b 2)
+  (list-sort &lt; (hash-table-values ht)) =&gt; (1 2)</pre>
+</div>
+<div class="entry" id="e16" data-name="hash-table-walk">
+  <div class="entry-name">hash-table-walk</div>
+  <pre class="entry-doc">Syntax: (hash-table-walk ht proc)
+Library: (srfi 69)
+Description: Calls proc with each key and value in the hash table ht for side effects.
+Example:
+  (define ht (make-hash-table equal?))
+  (hash-table-set! ht 'a 1)
+  (hash-table-walk ht (lambda (k v) (display k) (display v)))</pre>
+</div>
+<div class="entry" id="e17" data-name="hash-table/get">
+  <div class="entry-name">hash-table/get</div>
+  <pre class="entry-doc">Syntax: (hash-table/get ht key default)
+Library: (srfi 69)
+Description: Returns the value associated with key in ht, or default if key is not found.
+Alias for hash-table-ref/default.
+Example:
+  (define ht (make-hash-table equal?))
+  (hash-table-set! ht 'x 42)
+  (hash-table/get ht 'x 0) =&gt; 42
+  (hash-table/get ht 'y 0) =&gt; 0</pre>
+</div>
+<div class="entry" id="e18" data-name="hash-table/put!">
+  <div class="entry-name">hash-table/put!</div>
+  <pre class="entry-doc">Syntax: (hash-table/put! ht key value)
+Library: (srfi 69)
+Description: Associates key with value in the hash table ht. If the key already exists, its value is updated.
+Alias for hash-table-set!.
+Example:
+  (define ht (make-hash-table equal?))
+  (hash-table/put! ht 'x 42)
+  (hash-table-ref ht 'x) =&gt; 42</pre>
+</div>
+<div class="entry" id="e19" data-name="hash-table/remove!">
+  <div class="entry-name">hash-table/remove!</div>
+  <pre class="entry-doc">Syntax: (hash-table/remove! ht key)
+Library: (srfi 69)
+Description: Removes the association for key from the hash table ht. Has no effect if key is not present.
+Alias for hash-table-delete!.
+Example:
+  (define ht (make-hash-table equal?))
+  (hash-table-set! ht 'x 42)
+  (hash-table/remove! ht 'x)
+  (hash-table-exists? ht 'x) =&gt; #f</pre>
+</div>
+<div class="entry" id="e20" data-name="hash-table?">
+  <div class="entry-name">hash-table?</div>
+  <pre class="entry-doc">Syntax: (hash-table? obj)
+Library: (srfi 69)
+Description: Returns #t if obj is a hash table, #f otherwise.
+Example:
+  (hash-table? (make-hash-table)) =&gt; #t
+  (hash-table? '()) =&gt; #f</pre>
+</div>
+<div class="entry" id="e21" data-name="make-hash-table">
+  <div class="entry-name">make-hash-table</div>
+  <pre class="entry-doc">Syntax: (make-hash-table [equality-proc [hash-proc]])
+Library: (srfi 69)
+Description: Creates a new empty hash table. The optional equality-proc determines key comparison: eq?, eqv?, or equal? (default). The optional hash-proc is accepted but ignored.
+Example:
+  (define ht (make-hash-table equal?))
+  (hash-table-set! ht 'a 1)
+  (hash-table-ref ht 'a) =&gt; 1</pre>
+</div>
+<div class="entry" id="e22" data-name="string-ci-hash">
+  <div class="entry-name">string-ci-hash</div>
+  <pre class="entry-doc">Syntax: (string-ci-hash s [bound])
+Library: (srfi 69)
+Description: Returns a non-negative integer hash of string s, case-insensitively. Equivalent
+to hashing the downcased version of s. If bound is given, the result is in [0, bound).
+Example:
+  (= (string-ci-hash "Hello") (string-ci-hash "hello")) =&gt; #t
+  (&lt; (string-ci-hash "World" 100) 100) =&gt; #t</pre>
+</div>
+<div class="entry" id="e23" data-name="string-hash">
+  <div class="entry-name">string-hash</div>
+  <pre class="entry-doc">Syntax: (string-hash s [bound])
+Library: (srfi 69)
+Description: Returns a non-negative integer hash of string s. If bound is given, the result
+is in the range [0, bound); otherwise it is in [0, 2^32). The hash is case-sensitive.
+Example:
+  (integer? (string-hash "hello")) =&gt; #t
+  (&lt; (string-hash "world" 100) 100) =&gt; #t
+  (= (string-hash "abc") (string-hash "abc")) =&gt; #t</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

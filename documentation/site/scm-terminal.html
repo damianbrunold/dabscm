@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm terminal) — Scm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Scm Library Reference</a></h1>
+    <p>scm &mdash; libraries and their exports</p>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav>
+  <h2>R7RS Standard</h2>
+  <a href="scheme-base.html" class="r7rs">(scheme base)</a>
+  <a href="scheme-case-lambda.html" class="r7rs">(scheme case-lambda)</a>
+  <a href="scheme-char.html" class="r7rs">(scheme char)</a>
+  <a href="scheme-complex.html" class="r7rs">(scheme complex)</a>
+  <a href="scheme-cxr.html" class="r7rs">(scheme cxr)</a>
+  <a href="scheme-eval.html" class="r7rs">(scheme eval)</a>
+  <a href="scheme-file.html" class="r7rs">(scheme file)</a>
+  <a href="scheme-inexact.html" class="r7rs">(scheme inexact)</a>
+  <a href="scheme-lazy.html" class="r7rs">(scheme lazy)</a>
+  <a href="scheme-load.html" class="r7rs">(scheme load)</a>
+  <a href="scheme-process-context.html" class="r7rs">(scheme process-context)</a>
+  <a href="scheme-r5rs.html" class="r7rs">(scheme r5rs)</a>
+  <a href="scheme-read.html" class="r7rs">(scheme read)</a>
+  <a href="scheme-repl.html" class="r7rs">(scheme repl)</a>
+  <a href="scheme-time.html" class="r7rs">(scheme time)</a>
+  <a href="scheme-write.html" class="r7rs">(scheme write)</a>
+  <h2>SRFI Libraries</h2>
+  <a href="srfi-1.html" class="srfi">(srfi 1)</a>
+  <a href="srfi-2.html" class="srfi">(srfi 2)</a>
+  <a href="srfi-8.html" class="srfi">(srfi 8)</a>
+  <a href="srfi-9.html" class="srfi">(srfi 9)</a>
+  <a href="srfi-13.html" class="srfi">(srfi 13)</a>
+  <a href="srfi-14.html" class="srfi">(srfi 14)</a>
+  <a href="srfi-18.html" class="srfi">(srfi 18)</a>
+  <a href="srfi-19.html" class="srfi">(srfi 19)</a>
+  <a href="srfi-26.html" class="srfi">(srfi 26)</a>
+  <a href="srfi-28.html" class="srfi">(srfi 28)</a>
+  <a href="srfi-39.html" class="srfi">(srfi 39)</a>
+  <a href="srfi-48.html" class="srfi">(srfi 48)</a>
+  <a href="srfi-64.html" class="srfi">(srfi 64)</a>
+  <a href="srfi-69.html" class="srfi">(srfi 69)</a>
+  <a href="srfi-95.html" class="srfi">(srfi 95)</a>
+  <a href="srfi-98.html" class="srfi">(srfi 98)</a>
+  <a href="srfi-111.html" class="srfi">(srfi 111)</a>
+  <a href="srfi-125.html" class="srfi">(srfi 125)</a>
+  <a href="srfi-128.html" class="srfi">(srfi 128)</a>
+  <a href="srfi-132.html" class="srfi">(srfi 132)</a>
+  <a href="srfi-133.html" class="srfi">(srfi 133)</a>
+  <a href="srfi-151.html" class="srfi">(srfi 151)</a>
+  <a href="srfi-158.html" class="srfi">(srfi 158)</a>
+  <h2>Scm Extensions</h2>
+  <a href="scm-archive.html" class="scm">(scm archive)</a>
+  <a href="scm-args.html" class="scm">(scm args)</a>
+  <a href="scm-compile.html" class="scm">(scm compile)</a>
+  <a href="scm-compression.html" class="scm">(scm compression)</a>
+  <a href="scm-crypto.html" class="scm">(scm crypto)</a>
+  <a href="scm-csv.html" class="scm">(scm csv)</a>
+  <a href="scm-database-migrations.html" class="scm">(scm database migrations)</a>
+  <a href="scm-database-postgres.html" class="scm">(scm database postgres)</a>
+  <a href="scm-database-sqlserver.html" class="scm">(scm database sqlserver)</a>
+  <a href="scm-datetime.html" class="scm">(scm datetime)</a>
+  <a href="scm-dict.html" class="scm">(scm dict)</a>
+  <a href="scm-doc.html" class="scm">(scm doc)</a>
+  <a href="scm-duration.html" class="scm">(scm duration)</a>
+  <a href="scm-feed.html" class="scm">(scm feed)</a>
+  <a href="scm-fs-find.html" class="scm">(scm fs-find)</a>
+  <a href="scm-fs.html" class="scm">(scm fs)</a>
+  <a href="scm-glob.html" class="scm">(scm glob)</a>
+  <a href="scm-html-builder.html" class="scm">(scm html builder)</a>
+  <a href="scm-html.html" class="scm">(scm html)</a>
+  <a href="scm-io.html" class="scm">(scm io)</a>
+  <a href="scm-json-simple.html" class="scm">(scm json simple)</a>
+  <a href="scm-json.html" class="scm">(scm json)</a>
+  <a href="scm-list.html" class="scm">(scm list)</a>
+  <a href="scm-log.html" class="scm">(scm log)</a>
+  <a href="scm-macro.html" class="scm">(scm macro)</a>
+  <a href="scm-markdown.html" class="scm">(scm markdown)</a>
+  <a href="scm-match.html" class="scm">(scm match)</a>
+  <a href="scm-math.html" class="scm">(scm math)</a>
+  <a href="scm-module.html" class="scm">(scm module)</a>
+  <a href="scm-net-http-client.html" class="scm">(scm net http client)</a>
+  <a href="scm-net-http-cookies.html" class="scm">(scm net http cookies)</a>
+  <a href="scm-net-http-forms.html" class="scm">(scm net http forms)</a>
+  <a href="scm-net-http-multipart.html" class="scm">(scm net http multipart)</a>
+  <a href="scm-net-http-request.html" class="scm">(scm net http request)</a>
+  <a href="scm-net-http-response.html" class="scm">(scm net http response)</a>
+  <a href="scm-net-http-route.html" class="scm">(scm net http route)</a>
+  <a href="scm-net-http-server.html" class="scm">(scm net http server)</a>
+  <a href="scm-net-remote.html" class="scm">(scm net-remote)</a>
+  <a href="scm-net-sockets.html" class="scm">(scm net sockets)</a>
+  <a href="scm-net-websocket.html" class="scm">(scm net websocket)</a>
+  <a href="scm-odf-spreadsheet.html" class="scm">(scm odf spreadsheet)</a>
+  <a href="scm-odf-writer.html" class="scm">(scm odf writer)</a>
+  <a href="scm-ooxml-excel-reader.html" class="scm">(scm ooxml excel-reader)</a>
+  <a href="scm-ooxml-excel.html" class="scm">(scm ooxml excel)</a>
+  <a href="scm-ooxml-word-reader.html" class="scm">(scm ooxml word-reader)</a>
+  <a href="scm-ooxml-word.html" class="scm">(scm ooxml word)</a>
+  <a href="scm-pdf.html" class="scm">(scm pdf)</a>
+  <a href="scm-png.html" class="scm">(scm png)</a>
+  <a href="scm-profiling.html" class="scm">(scm profiling)</a>
+  <a href="scm-qr.html" class="scm">(scm qr)</a>
+  <a href="scm-random-access.html" class="scm">(scm random access)</a>
+  <a href="scm-repl.html" class="scm">(scm repl)</a>
+  <a href="scm-store.html" class="scm">(scm store)</a>
+  <a href="scm-string.html" class="scm">(scm string)</a>
+  <a href="scm-sysadmin.html" class="scm">(scm sysadmin)</a>
+  <a href="scm-system.html" class="scm">(scm system)</a>
+  <a href="scm-templating.html" class="scm">(scm templating)</a>
+  <a href="scm-terminal.html" class="scm active">(scm terminal)</a>
+  <a href="scm-test.html" class="scm">(scm test)</a>
+  <a href="scm-text.html" class="scm">(scm text)</a>
+  <a href="scm-toml.html" class="scm">(scm toml)</a>
+  <a href="scm-uri.html" class="scm">(scm uri)</a>
+  <a href="scm-xml.html" class="scm">(scm xml)</a>
+  <a href="scm-zip.html" class="scm">(scm zip)</a>
+</nav>
+
+<main>
+
+<a class="backlink" href="index.html">&larr; All libraries</a>
+<div class="lib-title scm">(scm terminal)</div>
+<p class="lib-sub">Terminal control — colors, cursor, raw mode</p>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">40 bindings</p>
+
+<div class="entry" id="e0" data-name="alternate-screen-disable">
+  <div class="entry-name">alternate-screen-disable</div>
+  <pre class="entry-doc">Syntax: (alternate-screen-disable)
+Library: (scm terminal)
+Description: Switches back from the alternate screen buffer to the
+normal screen, restoring the original screen content.
+Example:
+  (alternate-screen-disable)</pre>
+</div>
+<div class="entry" id="e1" data-name="alternate-screen-enable">
+  <div class="entry-name">alternate-screen-enable</div>
+  <pre class="entry-doc">Syntax: (alternate-screen-enable)
+Library: (scm terminal)
+Description: Switches to the alternate screen buffer. The original
+screen content is preserved and restored when alternate-screen-disable
+is called.
+Example:
+  (alternate-screen-enable)</pre>
+</div>
+<div class="entry" id="e2" data-name="clear-line">
+  <div class="entry-name">clear-line</div>
+  <pre class="entry-doc">Syntax: (clear-line)
+Library: (scm terminal)
+Description: Clears the entire current line.
+Example:
+  (clear-line)</pre>
+</div>
+<div class="entry" id="e3" data-name="clear-screen">
+  <div class="entry-name">clear-screen</div>
+  <pre class="entry-doc">Syntax: (clear-screen)
+Library: (scm terminal)
+Description: Clears the entire screen and moves the cursor to the
+top-left corner.
+Example:
+  (clear-screen)</pre>
+</div>
+<div class="entry" id="e4" data-name="clear-to-end-of-line">
+  <div class="entry-name">clear-to-end-of-line</div>
+  <pre class="entry-doc">Syntax: (clear-to-end-of-line)
+Library: (scm terminal)
+Description: Clears from the cursor position to the end of the line.
+Example:
+  (clear-to-end-of-line)</pre>
+</div>
+<div class="entry" id="e5" data-name="clear-to-end-of-screen">
+  <div class="entry-name">clear-to-end-of-screen</div>
+  <pre class="entry-doc">Syntax: (clear-to-end-of-screen)
+Library: (scm terminal)
+Description: Clears from the cursor position to the end of the screen.
+Example:
+  (clear-to-end-of-screen)</pre>
+</div>
+<div class="entry" id="e6" data-name="console-echo!">
+  <div class="entry-name">console-echo!</div>
+  <pre class="entry-doc">Syntax: (console-echo! enable)
+Library: (scm terminal)
+Description: Enables or disables echoing of typed characters
+on the terminal. Unlike terminal-raw!, line buffering and
+signal processing are left untouched, so the user can still
+edit the line and press enter before it is delivered. The
+primary use is reading a password.
+Returns #t on success, #f if not supported (e.g. when stdin
+is not a terminal). On the Java implementation under
+Windows, console-echo! returns #f because stty is not
+available there — use console-read-password instead.
+A shutdown hook restores echo on exit.
+Example:
+  (console-echo! #f)  ; disable echo
+  (read-line)         ; read password silently
+  (console-echo! #t)  ; re-enable echo</pre>
+</div>
+<div class="entry" id="e7" data-name="console-read-password">
+  <div class="entry-name">console-read-password</div>
+  <pre class="entry-doc">Syntax: (console-read-password)
+Syntax: (console-read-password prompt)
+Library: (scm terminal)
+Description: Reads a line from the terminal without echoing
+the typed characters. If prompt is given, it is displayed
+before reading. Returns the entered string (without the
+trailing newline), or the eof-object if input is closed.
+When stdin is redirected, this falls back to read-line
+behaviour on the underlying stream.
+Example:
+  (console-read-password "Password: ")</pre>
+</div>
+<div class="entry" id="e8" data-name="cursor-back">
+  <div class="entry-name">cursor-back</div>
+  <pre class="entry-doc">Syntax: (cursor-back n)
+Library: (scm terminal)
+Description: Moves the cursor back (left) by n columns.
+Example:
+  (cursor-back 5)</pre>
+</div>
+<div class="entry" id="e9" data-name="cursor-down">
+  <div class="entry-name">cursor-down</div>
+  <pre class="entry-doc">Syntax: (cursor-down n)
+Library: (scm terminal)
+Description: Moves the cursor down by n rows.
+Example:
+  (cursor-down 3)</pre>
+</div>
+<div class="entry" id="e10" data-name="cursor-forward">
+  <div class="entry-name">cursor-forward</div>
+  <pre class="entry-doc">Syntax: (cursor-forward n)
+Library: (scm terminal)
+Description: Moves the cursor forward (right) by n columns.
+Example:
+  (cursor-forward 5)</pre>
+</div>
+<div class="entry" id="e11" data-name="cursor-hide">
+  <div class="entry-name">cursor-hide</div>
+  <pre class="entry-doc">Syntax: (cursor-hide)
+Library: (scm terminal)
+Description: Hides the cursor.
+Example:
+  (cursor-hide)</pre>
+</div>
+<div class="entry" id="e12" data-name="cursor-home">
+  <div class="entry-name">cursor-home</div>
+  <pre class="entry-doc">Syntax: (cursor-home)
+Library: (scm terminal)
+Description: Moves the cursor to the top-left corner (row 1, column 1).
+Example:
+  (cursor-home)</pre>
+</div>
+<div class="entry" id="e13" data-name="cursor-position">
+  <div class="entry-name">cursor-position</div>
+  <pre class="entry-doc">Syntax: (cursor-position row col)
+Library: (scm terminal)
+Description: Moves the cursor to the specified row and column (1-based).
+Example:
+  (cursor-position 1 1)  ; move to top-left corner</pre>
+</div>
+<div class="entry" id="e14" data-name="cursor-restore">
+  <div class="entry-name">cursor-restore</div>
+  <pre class="entry-doc">Syntax: (cursor-restore)
+Library: (scm terminal)
+Description: Restores the cursor to the position saved by cursor-save.
+Example:
+  (cursor-restore)</pre>
+</div>
+<div class="entry" id="e15" data-name="cursor-save">
+  <div class="entry-name">cursor-save</div>
+  <pre class="entry-doc">Syntax: (cursor-save)
+Library: (scm terminal)
+Description: Saves the current cursor position. Use cursor-restore to
+return to the saved position.
+Example:
+  (cursor-save)</pre>
+</div>
+<div class="entry" id="e16" data-name="cursor-show">
+  <div class="entry-name">cursor-show</div>
+  <pre class="entry-doc">Syntax: (cursor-show)
+Library: (scm terminal)
+Description: Shows the cursor.
+Example:
+  (cursor-show)</pre>
+</div>
+<div class="entry" id="e17" data-name="cursor-up">
+  <div class="entry-name">cursor-up</div>
+  <pre class="entry-doc">Syntax: (cursor-up n)
+Library: (scm terminal)
+Description: Moves the cursor up by n rows.
+Example:
+  (cursor-up 3)</pre>
+</div>
+<div class="entry" id="e18" data-name="read-password">
+  <div class="entry-name">read-password</div>
+  <pre class="entry-doc">Syntax: (read-password)
+Syntax: (read-password prompt)
+Library: (scm terminal)
+Description: Reads a password from the terminal without echoing
+typed characters. If prompt is given as a string, it is displayed
+before reading. Returns the entered string (without trailing
+newline), or the eof-object if input is closed. Works on Linux,
+macOS, and Windows for both the C# and Java implementations.
+Example:
+  (read-password "Password: ")</pre>
+</div>
+<div class="entry" id="e19" data-name="sgr-bg">
+  <div class="entry-name">sgr-bg</div>
+  <pre class="entry-doc">Syntax: (sgr-bg color-name)
+Syntax: (sgr-bg color-index)
+Syntax: (sgr-bg r g b)
+Library: (scm terminal)
+Description: Returns the ANSI escape sequence string for setting the
+background color. Accepts the same arguments as sgr-fg: a named color
+symbol, a 256-color index (0-255), or three integers for 24-bit RGB.
+Example:
+  (display (string-append (sgr-bg 'blue) "info" (sgr-reset)))
+  (display (string-append (sgr-bg 21) "blue" (sgr-reset)))
+  (display (string-append (sgr-bg 0 0 128) "navy" (sgr-reset)))</pre>
+</div>
+<div class="entry" id="e20" data-name="sgr-blink">
+  <div class="entry-name">sgr-blink</div>
+  <pre class="entry-doc">Syntax: (sgr-blink)
+Library: (scm terminal)
+Description: Returns the ANSI escape sequence string for blinking text.
+Example:
+  (display (string-append (sgr-blink) "hello" (sgr-reset)))</pre>
+</div>
+<div class="entry" id="e21" data-name="sgr-bold">
+  <div class="entry-name">sgr-bold</div>
+  <pre class="entry-doc">Syntax: (sgr-bold)
+Library: (scm terminal)
+Description: Returns the ANSI escape sequence string for bold text.
+Example:
+  (display (string-append (sgr-bold) "hello" (sgr-reset)))</pre>
+</div>
+<div class="entry" id="e22" data-name="sgr-dim">
+  <div class="entry-name">sgr-dim</div>
+  <pre class="entry-doc">Syntax: (sgr-dim)
+Library: (scm terminal)
+Description: Returns the ANSI escape sequence string for dim text.
+Example:
+  (display (string-append (sgr-dim) "hello" (sgr-reset)))</pre>
+</div>
+<div class="entry" id="e23" data-name="sgr-fg">
+  <div class="entry-name">sgr-fg</div>
+  <pre class="entry-doc">Syntax: (sgr-fg color-name)
+Syntax: (sgr-fg color-index)
+Syntax: (sgr-fg r g b)
+Library: (scm terminal)
+Description: Returns the ANSI escape sequence string for setting the
+foreground color. Accepts a named color symbol (black, red, green,
+yellow, blue, magenta, cyan, white, default, bright-black, bright-red,
+bright-green, bright-yellow, bright-blue, bright-magenta, bright-cyan,
+bright-white), a 256-color index (0-255), or three integers for 24-bit
+RGB color.
+Example:
+  (display (string-append (sgr-fg 'red) "error" (sgr-reset)))
+  (display (string-append (sgr-fg 196) "red" (sgr-reset)))
+  (display (string-append (sgr-fg 255 128 0) "orange" (sgr-reset)))</pre>
+</div>
+<div class="entry" id="e24" data-name="sgr-hidden">
+  <div class="entry-name">sgr-hidden</div>
+  <pre class="entry-doc">Syntax: (sgr-hidden)
+Library: (scm terminal)
+Description: Returns the ANSI escape sequence string for hidden text.
+Example:
+  (display (string-append (sgr-hidden) "secret" (sgr-reset)))</pre>
+</div>
+<div class="entry" id="e25" data-name="sgr-italic">
+  <div class="entry-name">sgr-italic</div>
+  <pre class="entry-doc">Syntax: (sgr-italic)
+Library: (scm terminal)
+Description: Returns the ANSI escape sequence string for italic text.
+Example:
+  (display (string-append (sgr-italic) "hello" (sgr-reset)))</pre>
+</div>
+<div class="entry" id="e26" data-name="sgr-reset">
+  <div class="entry-name">sgr-reset</div>
+  <pre class="entry-doc">Syntax: (sgr-reset)
+Library: (scm terminal)
+Description: Returns the ANSI escape sequence string that resets all
+text attributes to their defaults.
+Example:
+  (display (sgr-reset))</pre>
+</div>
+<div class="entry" id="e27" data-name="sgr-reverse">
+  <div class="entry-name">sgr-reverse</div>
+  <pre class="entry-doc">Syntax: (sgr-reverse)
+Library: (scm terminal)
+Description: Returns the ANSI escape sequence string for reverse video.
+Example:
+  (display (string-append (sgr-reverse) "hello" (sgr-reset)))</pre>
+</div>
+<div class="entry" id="e28" data-name="sgr-strikethrough">
+  <div class="entry-name">sgr-strikethrough</div>
+  <pre class="entry-doc">Syntax: (sgr-strikethrough)
+Library: (scm terminal)
+Description: Returns the ANSI escape sequence string for strikethrough text.
+Example:
+  (display (string-append (sgr-strikethrough) "hello" (sgr-reset)))</pre>
+</div>
+<div class="entry" id="e29" data-name="sgr-underline">
+  <div class="entry-name">sgr-underline</div>
+  <pre class="entry-doc">Syntax: (sgr-underline)
+Library: (scm terminal)
+Description: Returns the ANSI escape sequence string for underlined text.
+Example:
+  (display (string-append (sgr-underline) "hello" (sgr-reset)))</pre>
+</div>
+<div class="entry" id="e30" data-name="terminal-byte-ready?">
+  <div class="entry-name">terminal-byte-ready?</div>
+  <pre class="entry-doc">Syntax: (terminal-byte-ready?)
+Library: (scm terminal)
+Description: Returns #t if a byte is available for reading from
+standard input without blocking, #f otherwise.
+Intended for use in raw terminal mode to detect multi-byte
+escape sequences.
+Example:
+  (terminal-byte-ready?) =&gt; #f</pre>
+</div>
+<div class="entry" id="e31" data-name="terminal-enable-ansi!">
+  <div class="entry-name">terminal-enable-ansi!</div>
+  <pre class="entry-doc">Syntax: (terminal-enable-ansi!)
+Library: (scm terminal)
+Description: Enables ANSI escape sequence processing.
+On Windows, this enables virtual terminal processing for the
+console output and input handles. On Linux and macOS, this is
+a no-op since ANSI is natively supported.
+Returns #t on success, #f on failure.
+Note: In the Java implementation, this is always a no-op.
+Windows ANSI support requires a modern terminal emulator.
+Example:
+  (terminal-enable-ansi!) =&gt; #t</pre>
+</div>
+<div class="entry" id="e32" data-name="terminal-raw!">
+  <div class="entry-name">terminal-raw!</div>
+  <pre class="entry-doc">Syntax: (terminal-raw! enable)
+Library: (scm terminal)
+Description: Enables or disables raw terminal mode.
+When enable is #t, disables line buffering, echo, and signal
+processing so that individual keypresses can be read.
+When enable is #f, restores the original terminal settings.
+Returns #t on success, #f if raw mode is not supported.
+On Windows with Java, raw mode is not supported and returns #f.
+Example:
+  (terminal-raw! #t)  ; enable raw mode
+  (terminal-raw! #f)  ; restore original mode</pre>
+</div>
+<div class="entry" id="e33" data-name="terminal-read-byte">
+  <div class="entry-name">terminal-read-byte</div>
+  <pre class="entry-doc">Syntax: (terminal-read-byte)
+Library: (scm terminal)
+Description: Reads a single raw byte from standard input, bypassing
+the port system and any line buffering. Returns an integer 0-255,
+or an eof-object if the end of input has been reached.
+Intended for use in raw terminal mode.
+Example:
+  (terminal-read-byte) =&gt; 27  ; ESC key</pre>
+</div>
+<div class="entry" id="e34" data-name="terminal-read-key">
+  <div class="entry-name">terminal-read-key</div>
+  <pre class="entry-doc">Syntax: (terminal-read-key)
+Library: (scm terminal)
+Description: Reads a single keypress from the terminal in raw mode.
+Returns a character for printable keys, or a symbol for special keys.
+
+Special key symbols: up, down, left, right, home, end, page-up,
+page-down, insert, delete, f1 through f12, escape, enter, tab,
+backspace, shift-tab.
+
+Modifier prefixes: ctrl-, alt-, shift- (e.g. ctrl-a, alt-x, shift-up,
+ctrl-alt-delete).
+
+Must be called while raw mode is active (see terminal-raw! or
+with-terminal-raw).
+Example:
+  (with-terminal-raw
+    (lambda ()
+      (let loop ()
+        (let ((key (terminal-read-key)))
+          (cond
+            ((eq? key 'ctrl-q) (display "Bye!"))
+            ((char? key) (display key) (loop))
+            (else (display key) (display " ") (loop)))))))</pre>
+</div>
+<div class="entry" id="e35" data-name="terminal-size">
+  <div class="entry-name">terminal-size</div>
+  <pre class="entry-doc">Syntax: (terminal-size)
+Library: (scm terminal)
+Description: Returns the terminal dimensions as a pair (cols . rows),
+or #f if the terminal size cannot be determined.
+Example:
+  (terminal-size) =&gt; (80 . 24)</pre>
+</div>
+<div class="entry" id="e36" data-name="terminal?">
+  <div class="entry-name">terminal?</div>
+  <pre class="entry-doc">Syntax: (terminal?)
+Syntax: (terminal? which)
+Library: (scm terminal)
+Description: Returns #t if the process is connected to a terminal.
+If which is 'input, checks only the input stream.
+If which is 'output, checks only the output stream.
+With no arguments, returns #t only if both input and output are terminals.
+Example:
+  (terminal?) =&gt; #t</pre>
+</div>
+<div class="entry" id="e37" data-name="with-alternate-screen">
+  <div class="entry-name">with-alternate-screen</div>
+  <pre class="entry-doc">Syntax: (with-alternate-screen thunk)
+Library: (scm terminal)
+Description: Calls thunk with the alternate screen buffer enabled.
+The original screen is restored when thunk returns or when an exception
+is raised.
+Example:
+  (with-alternate-screen
+    (lambda ()
+      (clear-screen)
+      (cursor-position 1 1)
+      (display "Hello from alternate screen!")))</pre>
+</div>
+<div class="entry" id="e38" data-name="with-console-echo-off">
+  <div class="entry-name">with-console-echo-off</div>
+  <pre class="entry-doc">Syntax: (with-console-echo-off thunk)
+Library: (scm terminal)
+Description: Calls thunk with terminal echo disabled. Echo is
+re-enabled when thunk returns or when an exception is raised.
+Returns the value returned by thunk. If echo cannot be disabled
+(e.g. stdin is not a terminal, or running under Java on Windows),
+thunk is still invoked but typed characters may be visible.
+Example:
+  (with-console-echo-off
+    (lambda ()
+      (display "Password: ")
+      (let ((pw (read-line)))
+        (newline)
+        pw)))</pre>
+</div>
+<div class="entry" id="e39" data-name="with-terminal-raw">
+  <div class="entry-name">with-terminal-raw</div>
+  <pre class="entry-doc">Syntax: (with-terminal-raw thunk)
+Library: (scm terminal)
+Description: Calls thunk with raw terminal mode enabled. The original
+terminal settings are restored when thunk returns or when an exception
+is raised. Returns the value returned by thunk.
+Example:
+  (with-terminal-raw
+    (lambda ()
+      (let ((key (terminal-read-key)))
+        (display key))))</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

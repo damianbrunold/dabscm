@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(srfi 18) — Scm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Scm Library Reference</a></h1>
+    <p>scm &mdash; libraries and their exports</p>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav>
+  <h2>R7RS Standard</h2>
+  <a href="scheme-base.html" class="r7rs">(scheme base)</a>
+  <a href="scheme-case-lambda.html" class="r7rs">(scheme case-lambda)</a>
+  <a href="scheme-char.html" class="r7rs">(scheme char)</a>
+  <a href="scheme-complex.html" class="r7rs">(scheme complex)</a>
+  <a href="scheme-cxr.html" class="r7rs">(scheme cxr)</a>
+  <a href="scheme-eval.html" class="r7rs">(scheme eval)</a>
+  <a href="scheme-file.html" class="r7rs">(scheme file)</a>
+  <a href="scheme-inexact.html" class="r7rs">(scheme inexact)</a>
+  <a href="scheme-lazy.html" class="r7rs">(scheme lazy)</a>
+  <a href="scheme-load.html" class="r7rs">(scheme load)</a>
+  <a href="scheme-process-context.html" class="r7rs">(scheme process-context)</a>
+  <a href="scheme-r5rs.html" class="r7rs">(scheme r5rs)</a>
+  <a href="scheme-read.html" class="r7rs">(scheme read)</a>
+  <a href="scheme-repl.html" class="r7rs">(scheme repl)</a>
+  <a href="scheme-time.html" class="r7rs">(scheme time)</a>
+  <a href="scheme-write.html" class="r7rs">(scheme write)</a>
+  <h2>SRFI Libraries</h2>
+  <a href="srfi-1.html" class="srfi">(srfi 1)</a>
+  <a href="srfi-2.html" class="srfi">(srfi 2)</a>
+  <a href="srfi-8.html" class="srfi">(srfi 8)</a>
+  <a href="srfi-9.html" class="srfi">(srfi 9)</a>
+  <a href="srfi-13.html" class="srfi">(srfi 13)</a>
+  <a href="srfi-14.html" class="srfi">(srfi 14)</a>
+  <a href="srfi-18.html" class="srfi active">(srfi 18)</a>
+  <a href="srfi-19.html" class="srfi">(srfi 19)</a>
+  <a href="srfi-26.html" class="srfi">(srfi 26)</a>
+  <a href="srfi-28.html" class="srfi">(srfi 28)</a>
+  <a href="srfi-39.html" class="srfi">(srfi 39)</a>
+  <a href="srfi-48.html" class="srfi">(srfi 48)</a>
+  <a href="srfi-64.html" class="srfi">(srfi 64)</a>
+  <a href="srfi-69.html" class="srfi">(srfi 69)</a>
+  <a href="srfi-95.html" class="srfi">(srfi 95)</a>
+  <a href="srfi-98.html" class="srfi">(srfi 98)</a>
+  <a href="srfi-111.html" class="srfi">(srfi 111)</a>
+  <a href="srfi-125.html" class="srfi">(srfi 125)</a>
+  <a href="srfi-128.html" class="srfi">(srfi 128)</a>
+  <a href="srfi-132.html" class="srfi">(srfi 132)</a>
+  <a href="srfi-133.html" class="srfi">(srfi 133)</a>
+  <a href="srfi-151.html" class="srfi">(srfi 151)</a>
+  <a href="srfi-158.html" class="srfi">(srfi 158)</a>
+  <h2>Scm Extensions</h2>
+  <a href="scm-archive.html" class="scm">(scm archive)</a>
+  <a href="scm-args.html" class="scm">(scm args)</a>
+  <a href="scm-compile.html" class="scm">(scm compile)</a>
+  <a href="scm-compression.html" class="scm">(scm compression)</a>
+  <a href="scm-crypto.html" class="scm">(scm crypto)</a>
+  <a href="scm-csv.html" class="scm">(scm csv)</a>
+  <a href="scm-database-migrations.html" class="scm">(scm database migrations)</a>
+  <a href="scm-database-postgres.html" class="scm">(scm database postgres)</a>
+  <a href="scm-database-sqlserver.html" class="scm">(scm database sqlserver)</a>
+  <a href="scm-datetime.html" class="scm">(scm datetime)</a>
+  <a href="scm-dict.html" class="scm">(scm dict)</a>
+  <a href="scm-doc.html" class="scm">(scm doc)</a>
+  <a href="scm-duration.html" class="scm">(scm duration)</a>
+  <a href="scm-feed.html" class="scm">(scm feed)</a>
+  <a href="scm-fs-find.html" class="scm">(scm fs-find)</a>
+  <a href="scm-fs.html" class="scm">(scm fs)</a>
+  <a href="scm-glob.html" class="scm">(scm glob)</a>
+  <a href="scm-html-builder.html" class="scm">(scm html builder)</a>
+  <a href="scm-html.html" class="scm">(scm html)</a>
+  <a href="scm-io.html" class="scm">(scm io)</a>
+  <a href="scm-json-simple.html" class="scm">(scm json simple)</a>
+  <a href="scm-json.html" class="scm">(scm json)</a>
+  <a href="scm-list.html" class="scm">(scm list)</a>
+  <a href="scm-log.html" class="scm">(scm log)</a>
+  <a href="scm-macro.html" class="scm">(scm macro)</a>
+  <a href="scm-markdown.html" class="scm">(scm markdown)</a>
+  <a href="scm-match.html" class="scm">(scm match)</a>
+  <a href="scm-math.html" class="scm">(scm math)</a>
+  <a href="scm-module.html" class="scm">(scm module)</a>
+  <a href="scm-net-http-client.html" class="scm">(scm net http client)</a>
+  <a href="scm-net-http-cookies.html" class="scm">(scm net http cookies)</a>
+  <a href="scm-net-http-forms.html" class="scm">(scm net http forms)</a>
+  <a href="scm-net-http-multipart.html" class="scm">(scm net http multipart)</a>
+  <a href="scm-net-http-request.html" class="scm">(scm net http request)</a>
+  <a href="scm-net-http-response.html" class="scm">(scm net http response)</a>
+  <a href="scm-net-http-route.html" class="scm">(scm net http route)</a>
+  <a href="scm-net-http-server.html" class="scm">(scm net http server)</a>
+  <a href="scm-net-remote.html" class="scm">(scm net-remote)</a>
+  <a href="scm-net-sockets.html" class="scm">(scm net sockets)</a>
+  <a href="scm-net-websocket.html" class="scm">(scm net websocket)</a>
+  <a href="scm-odf-spreadsheet.html" class="scm">(scm odf spreadsheet)</a>
+  <a href="scm-odf-writer.html" class="scm">(scm odf writer)</a>
+  <a href="scm-ooxml-excel-reader.html" class="scm">(scm ooxml excel-reader)</a>
+  <a href="scm-ooxml-excel.html" class="scm">(scm ooxml excel)</a>
+  <a href="scm-ooxml-word-reader.html" class="scm">(scm ooxml word-reader)</a>
+  <a href="scm-ooxml-word.html" class="scm">(scm ooxml word)</a>
+  <a href="scm-pdf.html" class="scm">(scm pdf)</a>
+  <a href="scm-png.html" class="scm">(scm png)</a>
+  <a href="scm-profiling.html" class="scm">(scm profiling)</a>
+  <a href="scm-qr.html" class="scm">(scm qr)</a>
+  <a href="scm-random-access.html" class="scm">(scm random access)</a>
+  <a href="scm-repl.html" class="scm">(scm repl)</a>
+  <a href="scm-store.html" class="scm">(scm store)</a>
+  <a href="scm-string.html" class="scm">(scm string)</a>
+  <a href="scm-sysadmin.html" class="scm">(scm sysadmin)</a>
+  <a href="scm-system.html" class="scm">(scm system)</a>
+  <a href="scm-templating.html" class="scm">(scm templating)</a>
+  <a href="scm-terminal.html" class="scm">(scm terminal)</a>
+  <a href="scm-test.html" class="scm">(scm test)</a>
+  <a href="scm-text.html" class="scm">(scm text)</a>
+  <a href="scm-toml.html" class="scm">(scm toml)</a>
+  <a href="scm-uri.html" class="scm">(scm uri)</a>
+  <a href="scm-xml.html" class="scm">(scm xml)</a>
+  <a href="scm-zip.html" class="scm">(scm zip)</a>
+</nav>
+
+<main>
+
+<a class="backlink" href="index.html">&larr; All libraries</a>
+<div class="lib-title srfi">(srfi 18)</div>
+<p class="lib-sub">SRFI-18 — Multithreading: threads, mutexes, condition variables</p>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">38 bindings</p>
+
+<div class="entry" id="e0" data-name="abandoned-mutex-exception?">
+  <div class="entry-name">abandoned-mutex-exception?</div>
+  <pre class="entry-doc">Syntax: (abandoned-mutex-exception? obj)
+Library: (srfi 18)
+Description: Returns #t if obj is an abandoned-mutex exception.
+Example:
+  (abandoned-mutex-exception? exn)</pre>
+</div>
+<div class="entry" id="e1" data-name="condition-variable-broadcast!">
+  <div class="entry-name">condition-variable-broadcast!</div>
+  <pre class="entry-doc">Syntax: (condition-variable-broadcast! cv)
+Library: (srfi 18)
+Description: Broadcasts the condition variable, waking all waiting threads.
+Example:
+  (condition-variable-broadcast! cv)</pre>
+</div>
+<div class="entry" id="e2" data-name="condition-variable-name">
+  <div class="entry-name">condition-variable-name</div>
+  <pre class="entry-doc">Syntax: (condition-variable-name cv)
+Library: (srfi 18)
+Description: Returns the name of the condition variable.
+Example:
+  (condition-variable-name (make-condition-variable 'cv)) =&gt; cv</pre>
+</div>
+<div class="entry" id="e3" data-name="condition-variable-signal!">
+  <div class="entry-name">condition-variable-signal!</div>
+  <pre class="entry-doc">Syntax: (condition-variable-signal! cv)
+Library: (srfi 18)
+Description: Signals the condition variable, waking one waiting thread.
+Example:
+  (condition-variable-signal! cv)</pre>
+</div>
+<div class="entry" id="e4" data-name="condition-variable-specific">
+  <div class="entry-name">condition-variable-specific</div>
+  <pre class="entry-doc">Syntax: (condition-variable-specific cv)
+Library: (srfi 18)
+Description: Returns the condition-variable-specific data.
+Example:
+  (condition-variable-specific (make-condition-variable)) =&gt; ()</pre>
+</div>
+<div class="entry" id="e5" data-name="condition-variable-specific-set!">
+  <div class="entry-name">condition-variable-specific-set!</div>
+  <pre class="entry-doc">Syntax: (condition-variable-specific-set! cv obj)
+Library: (srfi 18)
+Description: Sets the condition-variable-specific data to obj.
+Example:
+  (condition-variable-specific-set! cv 42)</pre>
+</div>
+<div class="entry" id="e6" data-name="condition-variable?">
+  <div class="entry-name">condition-variable?</div>
+  <pre class="entry-doc">Syntax: (condition-variable? obj)
+Library: (srfi 18)
+Description: Returns #t if obj is a condition variable.
+Example:
+  (condition-variable? (make-condition-variable)) =&gt; #t</pre>
+</div>
+<div class="entry" id="e7" data-name="current-exception-handler">
+  <div class="entry-name">current-exception-handler</div>
+  <pre class="entry-doc">Syntax: (current-exception-handler)
+Library: (srfi 18)
+Description: Returns the current exception handler procedure. This is the handler
+  that would be called if raise were invoked.
+Example:
+  (procedure? (current-exception-handler)) =&gt; #t</pre>
+</div>
+<div class="entry" id="e8" data-name="current-thread">
+  <div class="entry-name">current-thread</div>
+  <pre class="entry-doc">Syntax: (current-thread)
+Library: (srfi 18)
+Description: Returns the current thread object.
+Example:
+  (thread? (current-thread)) =&gt; #t</pre>
+</div>
+<div class="entry" id="e9" data-name="current-time">
+  <div class="entry-name">current-time</div>
+  <pre class="entry-doc">Syntax: (current-time [time-type])
+Library: (srfi 19)
+Description: Returns the current time as a time object. Default type is time-utc.
+Example:
+  (time? (current-time)) =&gt; #t
+  (time-type (current-time time-tai)) =&gt; time-tai</pre>
+</div>
+<div class="entry" id="e10" data-name="join-timeout-exception?">
+  <div class="entry-name">join-timeout-exception?</div>
+  <pre class="entry-doc">Syntax: (join-timeout-exception? obj)
+Library: (srfi 18)
+Description: Returns #t if obj is a join-timeout exception.
+Example:
+  (guard (e ((join-timeout-exception? e) 'timeout)) (thread-join! t 0))</pre>
+</div>
+<div class="entry" id="e11" data-name="make-condition-variable">
+  <div class="entry-name">make-condition-variable</div>
+  <pre class="entry-doc">Syntax: (make-condition-variable [name])
+Library: (srfi 18)
+Description: Creates a new condition variable, optionally with a name.
+Example:
+  (make-condition-variable 'my-cv)</pre>
+</div>
+<div class="entry" id="e12" data-name="make-mutex">
+  <div class="entry-name">make-mutex</div>
+  <pre class="entry-doc">Syntax: (make-mutex [name])
+Library: (srfi 18)
+Description: Creates a new mutex (mutual exclusion lock), optionally with a name.
+Example:
+  (define m (make-mutex 'my-mutex))</pre>
+</div>
+<div class="entry" id="e13" data-name="make-thread">
+  <div class="entry-name">make-thread</div>
+  <pre class="entry-doc">Syntax: (make-thread thunk [name])
+Library: (srfi 18)
+Description: Creates a new thread that will run thunk when started. The thread is not started until thread-start! is called. An optional name can be provided. Note: continuations captured in one thread must not be invoked in another.
+Example:
+  (thread-join! (thread-start! (make-thread (lambda () (+ 1 2))))) =&gt; 3</pre>
+</div>
+<div class="entry" id="e14" data-name="mutex-lock!">
+  <div class="entry-name">mutex-lock!</div>
+  <pre class="entry-doc">Syntax: (mutex-lock! mutex [timeout [thread]])
+Library: (srfi 18)
+Description: Locks the mutex. timeout can be a time object or number.
+Example:
+  (mutex-lock! (make-mutex)) =&gt; #t</pre>
+</div>
+<div class="entry" id="e15" data-name="mutex-name">
+  <div class="entry-name">mutex-name</div>
+  <pre class="entry-doc">Syntax: (mutex-name mutex)
+Library: (srfi 18)
+Description: Returns the name of the mutex.
+Example:
+  (mutex-name (make-mutex 'my-mutex)) =&gt; my-mutex</pre>
+</div>
+<div class="entry" id="e16" data-name="mutex-specific">
+  <div class="entry-name">mutex-specific</div>
+  <pre class="entry-doc">Syntax: (mutex-specific mutex)
+Library: (srfi 18)
+Description: Returns the mutex-specific data of the mutex.
+Example:
+  (mutex-specific (make-mutex)) =&gt; ()</pre>
+</div>
+<div class="entry" id="e17" data-name="mutex-specific-set!">
+  <div class="entry-name">mutex-specific-set!</div>
+  <pre class="entry-doc">Syntax: (mutex-specific-set! mutex obj)
+Library: (srfi 18)
+Description: Sets the mutex-specific data of the mutex to obj.
+Example:
+  (mutex-specific-set! (make-mutex) 42)</pre>
+</div>
+<div class="entry" id="e18" data-name="mutex-state">
+  <div class="entry-name">mutex-state</div>
+  <pre class="entry-doc">Syntax: (mutex-state mutex)
+Library: (srfi 18)
+Description: Returns the state of the mutex: the symbol abandoned, not-owned, not-abandoned, or the owning thread object.
+Example:
+  (mutex-state (make-mutex)) =&gt; not-abandoned</pre>
+</div>
+<div class="entry" id="e19" data-name="mutex-unlock!">
+  <div class="entry-name">mutex-unlock!</div>
+  <pre class="entry-doc">Syntax: (mutex-unlock! mutex [condition-variable [timeout]])
+Library: (srfi 18)
+Description: Unlocks the mutex. If condition-variable and timeout are given, waits.
+Example:
+  (let ((m (make-mutex))) (mutex-lock! m) (mutex-unlock! m)) =&gt; #t</pre>
+</div>
+<div class="entry" id="e20" data-name="mutex?">
+  <div class="entry-name">mutex?</div>
+  <pre class="entry-doc">Syntax: (mutex? x)
+Library: (srfi 18)
+Description: Returns #t if x is a mutex object.
+Example:
+  (mutex? (make-mutex)) =&gt; #t</pre>
+</div>
+<div class="entry" id="e21" data-name="raise">
+  <div class="entry-name">raise</div>
+  <pre class="entry-doc">Syntax: (raise obj)
+Library: (scheme base)
+Description: Raises an exception by invoking the current exception handler on obj.
+Example:
+  (guard (e (#t (error-object-message e)))
+    (raise (make-error-object "oops" '()))) =&gt; "oops"</pre>
+</div>
+<div class="entry" id="e22" data-name="seconds-&gt;time">
+  <div class="entry-name">seconds-&gt;time</div>
+  <pre class="entry-doc">Syntax: (seconds-&gt;time seconds)
+Library: (srfi 18)
+Description: Creates a time-utc time object from seconds since the Unix epoch.
+Example:
+  (time? (seconds-&gt;time 100.0)) =&gt; #t</pre>
+</div>
+<div class="entry" id="e23" data-name="terminated-thread-exception?">
+  <div class="entry-name">terminated-thread-exception?</div>
+  <pre class="entry-doc">Syntax: (terminated-thread-exception? obj)
+Library: (srfi 18)
+Description: Returns #t if obj is a terminated-thread exception.
+Example:
+  (terminated-thread-exception? exn)</pre>
+</div>
+<div class="entry" id="e24" data-name="thread-join!">
+  <div class="entry-name">thread-join!</div>
+  <pre class="entry-doc">Syntax: (thread-join! thread [timeout [timeout-val]])
+Library: (srfi 18)
+Description: Waits for thread to terminate. timeout can be a time object or number.
+Example:
+  (thread-join! (thread-start! (make-thread (lambda () 42)))) =&gt; 42</pre>
+</div>
+<div class="entry" id="e25" data-name="thread-name">
+  <div class="entry-name">thread-name</div>
+  <pre class="entry-doc">Syntax: (thread-name thread)
+Library: (srfi 18)
+Description: Returns the name of the thread.
+Example:
+  (thread-name (make-thread (lambda () #t) 'my-thread)) =&gt; my-thread</pre>
+</div>
+<div class="entry" id="e26" data-name="thread-sleep!">
+  <div class="entry-name">thread-sleep!</div>
+  <pre class="entry-doc">Syntax: (thread-sleep! timeout)
+Library: (srfi 18)
+Description: Causes the current thread to sleep. timeout can be a time object (absolute deadline) or a number (relative seconds).
+Example:
+  (thread-sleep! 0.1)</pre>
+</div>
+<div class="entry" id="e27" data-name="thread-specific">
+  <div class="entry-name">thread-specific</div>
+  <pre class="entry-doc">Syntax: (thread-specific thread)
+Library: (srfi 18)
+Description: Returns the thread-specific data of the thread.
+Example:
+  (thread-specific (current-thread)) =&gt; ()</pre>
+</div>
+<div class="entry" id="e28" data-name="thread-specific-set!">
+  <div class="entry-name">thread-specific-set!</div>
+  <pre class="entry-doc">Syntax: (thread-specific-set! thread obj)
+Library: (srfi 18)
+Description: Sets the thread-specific data of the thread to obj.
+Example:
+  (thread-specific-set! (current-thread) 42)</pre>
+</div>
+<div class="entry" id="e29" data-name="thread-start!">
+  <div class="entry-name">thread-start!</div>
+  <pre class="entry-doc">Syntax: (thread-start! thread)
+Library: (srfi 18)
+Description: Makes thread runnable. The thread will execute its thunk in a new
+  execution context with its own dynamic environment inherited from the creating
+  thread. Returns the thread.
+Example:
+  (thread-start! (make-thread (lambda () 42)))</pre>
+</div>
+<div class="entry" id="e30" data-name="thread-terminate!">
+  <div class="entry-name">thread-terminate!</div>
+  <pre class="entry-doc">Syntax: (thread-terminate! thread)
+Library: (srfi 18)
+Description: Terminates the given thread.
+Example:
+  (thread-terminate! thread)</pre>
+</div>
+<div class="entry" id="e31" data-name="thread-yield!">
+  <div class="entry-name">thread-yield!</div>
+  <pre class="entry-doc">Syntax: (thread-yield!)
+Library: (srfi 18)
+Description: Causes the current thread to yield the processor.
+Example:
+  (thread-yield!)</pre>
+</div>
+<div class="entry" id="e32" data-name="thread?">
+  <div class="entry-name">thread?</div>
+  <pre class="entry-doc">Syntax: (thread? x)
+Library: (srfi 18)
+Description: Returns #t if x is a thread object.
+Example:
+  (thread? (make-thread (lambda () 1))) =&gt; #t</pre>
+</div>
+<div class="entry" id="e33" data-name="time-&gt;seconds">
+  <div class="entry-name">time-&gt;seconds</div>
+  <pre class="entry-doc">Syntax: (time-&gt;seconds time)
+Library: (srfi 18)
+Description: Returns the time as an inexact number of seconds since the Unix epoch.
+Example:
+  (&gt; (time-&gt;seconds (current-time)) 0) =&gt; #t</pre>
+</div>
+<div class="entry" id="e34" data-name="time?">
+  <div class="entry-name">time?</div>
+  <pre class="entry-doc">Syntax: (time? obj)
+Library: (srfi 19)
+Description: Returns #t if obj is a SRFI-19 time object, #f otherwise.
+Example:
+  (time? (current-time)) =&gt; #t</pre>
+</div>
+<div class="entry" id="e35" data-name="uncaught-exception-reason">
+  <div class="entry-name">uncaught-exception-reason</div>
+  <pre class="entry-doc">Syntax: (uncaught-exception-reason exn)
+Library: (srfi 18)
+Description: Returns the original exception from an uncaught-exception object.
+Example:
+  (uncaught-exception-reason exn)</pre>
+</div>
+<div class="entry" id="e36" data-name="uncaught-exception?">
+  <div class="entry-name">uncaught-exception?</div>
+  <pre class="entry-doc">Syntax: (uncaught-exception? obj)
+Library: (srfi 18)
+Description: Returns #t if obj is an uncaught exception.
+Example:
+  (guard (e ((uncaught-exception? e) (uncaught-exception-reason e)))
+    (thread-join! (thread-start! (make-thread (lambda () (error "oops"))))))</pre>
+</div>
+<div class="entry" id="e37" data-name="with-exception-handler">
+  <div class="entry-name">with-exception-handler</div>
+  <pre class="entry-doc">Syntax: (with-exception-handler handler thunk)
+Library: (scheme base)
+Description: Calls thunk with handler installed as the current exception handler.
+Example:
+  (with-exception-handler (lambda (e) 42) (lambda () (raise 'oops))) =&gt; 42</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(srfi 133) — Scm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Scm Library Reference</a></h1>
+    <p>scm &mdash; libraries and their exports</p>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav>
+  <h2>R7RS Standard</h2>
+  <a href="scheme-base.html" class="r7rs">(scheme base)</a>
+  <a href="scheme-case-lambda.html" class="r7rs">(scheme case-lambda)</a>
+  <a href="scheme-char.html" class="r7rs">(scheme char)</a>
+  <a href="scheme-complex.html" class="r7rs">(scheme complex)</a>
+  <a href="scheme-cxr.html" class="r7rs">(scheme cxr)</a>
+  <a href="scheme-eval.html" class="r7rs">(scheme eval)</a>
+  <a href="scheme-file.html" class="r7rs">(scheme file)</a>
+  <a href="scheme-inexact.html" class="r7rs">(scheme inexact)</a>
+  <a href="scheme-lazy.html" class="r7rs">(scheme lazy)</a>
+  <a href="scheme-load.html" class="r7rs">(scheme load)</a>
+  <a href="scheme-process-context.html" class="r7rs">(scheme process-context)</a>
+  <a href="scheme-r5rs.html" class="r7rs">(scheme r5rs)</a>
+  <a href="scheme-read.html" class="r7rs">(scheme read)</a>
+  <a href="scheme-repl.html" class="r7rs">(scheme repl)</a>
+  <a href="scheme-time.html" class="r7rs">(scheme time)</a>
+  <a href="scheme-write.html" class="r7rs">(scheme write)</a>
+  <h2>SRFI Libraries</h2>
+  <a href="srfi-1.html" class="srfi">(srfi 1)</a>
+  <a href="srfi-2.html" class="srfi">(srfi 2)</a>
+  <a href="srfi-8.html" class="srfi">(srfi 8)</a>
+  <a href="srfi-9.html" class="srfi">(srfi 9)</a>
+  <a href="srfi-13.html" class="srfi">(srfi 13)</a>
+  <a href="srfi-14.html" class="srfi">(srfi 14)</a>
+  <a href="srfi-18.html" class="srfi">(srfi 18)</a>
+  <a href="srfi-19.html" class="srfi">(srfi 19)</a>
+  <a href="srfi-26.html" class="srfi">(srfi 26)</a>
+  <a href="srfi-28.html" class="srfi">(srfi 28)</a>
+  <a href="srfi-39.html" class="srfi">(srfi 39)</a>
+  <a href="srfi-48.html" class="srfi">(srfi 48)</a>
+  <a href="srfi-64.html" class="srfi">(srfi 64)</a>
+  <a href="srfi-69.html" class="srfi">(srfi 69)</a>
+  <a href="srfi-95.html" class="srfi">(srfi 95)</a>
+  <a href="srfi-98.html" class="srfi">(srfi 98)</a>
+  <a href="srfi-111.html" class="srfi">(srfi 111)</a>
+  <a href="srfi-125.html" class="srfi">(srfi 125)</a>
+  <a href="srfi-128.html" class="srfi">(srfi 128)</a>
+  <a href="srfi-132.html" class="srfi">(srfi 132)</a>
+  <a href="srfi-133.html" class="srfi active">(srfi 133)</a>
+  <a href="srfi-151.html" class="srfi">(srfi 151)</a>
+  <a href="srfi-158.html" class="srfi">(srfi 158)</a>
+  <h2>Scm Extensions</h2>
+  <a href="scm-archive.html" class="scm">(scm archive)</a>
+  <a href="scm-args.html" class="scm">(scm args)</a>
+  <a href="scm-compile.html" class="scm">(scm compile)</a>
+  <a href="scm-compression.html" class="scm">(scm compression)</a>
+  <a href="scm-crypto.html" class="scm">(scm crypto)</a>
+  <a href="scm-csv.html" class="scm">(scm csv)</a>
+  <a href="scm-database-migrations.html" class="scm">(scm database migrations)</a>
+  <a href="scm-database-postgres.html" class="scm">(scm database postgres)</a>
+  <a href="scm-database-sqlserver.html" class="scm">(scm database sqlserver)</a>
+  <a href="scm-datetime.html" class="scm">(scm datetime)</a>
+  <a href="scm-dict.html" class="scm">(scm dict)</a>
+  <a href="scm-doc.html" class="scm">(scm doc)</a>
+  <a href="scm-duration.html" class="scm">(scm duration)</a>
+  <a href="scm-feed.html" class="scm">(scm feed)</a>
+  <a href="scm-fs-find.html" class="scm">(scm fs-find)</a>
+  <a href="scm-fs.html" class="scm">(scm fs)</a>
+  <a href="scm-glob.html" class="scm">(scm glob)</a>
+  <a href="scm-html-builder.html" class="scm">(scm html builder)</a>
+  <a href="scm-html.html" class="scm">(scm html)</a>
+  <a href="scm-io.html" class="scm">(scm io)</a>
+  <a href="scm-json-simple.html" class="scm">(scm json simple)</a>
+  <a href="scm-json.html" class="scm">(scm json)</a>
+  <a href="scm-list.html" class="scm">(scm list)</a>
+  <a href="scm-log.html" class="scm">(scm log)</a>
+  <a href="scm-macro.html" class="scm">(scm macro)</a>
+  <a href="scm-markdown.html" class="scm">(scm markdown)</a>
+  <a href="scm-match.html" class="scm">(scm match)</a>
+  <a href="scm-math.html" class="scm">(scm math)</a>
+  <a href="scm-module.html" class="scm">(scm module)</a>
+  <a href="scm-net-http-client.html" class="scm">(scm net http client)</a>
+  <a href="scm-net-http-cookies.html" class="scm">(scm net http cookies)</a>
+  <a href="scm-net-http-forms.html" class="scm">(scm net http forms)</a>
+  <a href="scm-net-http-multipart.html" class="scm">(scm net http multipart)</a>
+  <a href="scm-net-http-request.html" class="scm">(scm net http request)</a>
+  <a href="scm-net-http-response.html" class="scm">(scm net http response)</a>
+  <a href="scm-net-http-route.html" class="scm">(scm net http route)</a>
+  <a href="scm-net-http-server.html" class="scm">(scm net http server)</a>
+  <a href="scm-net-remote.html" class="scm">(scm net-remote)</a>
+  <a href="scm-net-sockets.html" class="scm">(scm net sockets)</a>
+  <a href="scm-net-websocket.html" class="scm">(scm net websocket)</a>
+  <a href="scm-odf-spreadsheet.html" class="scm">(scm odf spreadsheet)</a>
+  <a href="scm-odf-writer.html" class="scm">(scm odf writer)</a>
+  <a href="scm-ooxml-excel-reader.html" class="scm">(scm ooxml excel-reader)</a>
+  <a href="scm-ooxml-excel.html" class="scm">(scm ooxml excel)</a>
+  <a href="scm-ooxml-word-reader.html" class="scm">(scm ooxml word-reader)</a>
+  <a href="scm-ooxml-word.html" class="scm">(scm ooxml word)</a>
+  <a href="scm-pdf.html" class="scm">(scm pdf)</a>
+  <a href="scm-png.html" class="scm">(scm png)</a>
+  <a href="scm-profiling.html" class="scm">(scm profiling)</a>
+  <a href="scm-qr.html" class="scm">(scm qr)</a>
+  <a href="scm-random-access.html" class="scm">(scm random access)</a>
+  <a href="scm-repl.html" class="scm">(scm repl)</a>
+  <a href="scm-store.html" class="scm">(scm store)</a>
+  <a href="scm-string.html" class="scm">(scm string)</a>
+  <a href="scm-sysadmin.html" class="scm">(scm sysadmin)</a>
+  <a href="scm-system.html" class="scm">(scm system)</a>
+  <a href="scm-templating.html" class="scm">(scm templating)</a>
+  <a href="scm-terminal.html" class="scm">(scm terminal)</a>
+  <a href="scm-test.html" class="scm">(scm test)</a>
+  <a href="scm-text.html" class="scm">(scm text)</a>
+  <a href="scm-toml.html" class="scm">(scm toml)</a>
+  <a href="scm-uri.html" class="scm">(scm uri)</a>
+  <a href="scm-xml.html" class="scm">(scm xml)</a>
+  <a href="scm-zip.html" class="scm">(scm zip)</a>
+</nav>
+
+<main>
+
+<a class="backlink" href="index.html">&larr; All libraries</a>
+<div class="lib-title srfi">(srfi 133)</div>
+<p class="lib-sub">SRFI-133 — Vector libraries</p>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">43 bindings</p>
+
+<div class="entry" id="e0" data-name="list-&gt;vector">
+  <div class="entry-name">list-&gt;vector</div>
+  <pre class="entry-doc">Syntax: (list-&gt;vector list)
+Library: (scheme base)
+Description: Returns a newly created vector initialized to the elements of
+  the argument list.
+Example:
+  (list-&gt;vector '(a b c)) =&gt; #(a b c)
+  (list-&gt;vector '())      =&gt; #()</pre>
+</div>
+<div class="entry" id="e1" data-name="make-vector">
+  <div class="entry-name">make-vector</div>
+  <pre class="entry-doc">Syntax: (make-vector k) (make-vector k fill)
+Library: (scheme base)
+Description: Returns a newly allocated vector of k elements. If fill is given, every element is initialized to fill; otherwise each element is 0.
+Example:
+  (make-vector 3 0) =&gt; #(0 0 0)
+  (make-vector 3 'a) =&gt; #(a a a)</pre>
+</div>
+<div class="entry" id="e2" data-name="reverse-list-&gt;vector">
+  <div class="entry-name">reverse-list-&gt;vector</div>
+  <pre class="entry-doc">Syntax: (reverse-list-&gt;vector list)
+Library: (srfi 133)
+Description: Returns a newly allocated vector whose elements are the
+  elements of list in reverse order.
+Example:
+  (reverse-list-&gt;vector '(a b c)) =&gt; #(c b a)</pre>
+</div>
+<div class="entry" id="e3" data-name="reverse-vector-&gt;list">
+  <div class="entry-name">reverse-vector-&gt;list</div>
+  <pre class="entry-doc">Syntax: (reverse-vector-&gt;list vec)
+       (reverse-vector-&gt;list vec start)
+       (reverse-vector-&gt;list vec start end)
+Library: (srfi 133)
+Description: Returns a list of the elements of vec between start and end
+  in reverse order.
+Example:
+  (reverse-vector-&gt;list '#(a b c d e) 1 4) =&gt; (d c b)</pre>
+</div>
+<div class="entry" id="e4" data-name="string-&gt;vector">
+  <div class="entry-name">string-&gt;vector</div>
+  <pre class="entry-doc">Syntax: (string-&gt;vector string)
+       (string-&gt;vector string start)
+       (string-&gt;vector string start end)
+Library: (scheme base)
+Description: Returns a newly created vector initialized to the elements of
+  the string between start and end. start defaults to 0 and end defaults to
+  the length of the string.
+Example:
+  (string-&gt;vector "abc")     =&gt; #(#\a #\b #\c)
+  (string-&gt;vector "abc" 1)   =&gt; #(#\b #\c)
+  (string-&gt;vector "abc" 1 2) =&gt; #(#\b)</pre>
+</div>
+<div class="entry" id="e5" data-name="vector">
+  <div class="entry-name">vector</div>
+  <pre class="entry-doc">Syntax: (vector obj ...)
+Library: (scheme base)
+Description: Returns a newly allocated vector whose elements contain the given arguments.
+Example:
+  (vector 1 2 3) =&gt; #(1 2 3)
+  (vector 'a 'b 'c) =&gt; #(a b c)</pre>
+</div>
+<div class="entry" id="e6" data-name="vector-&gt;list">
+  <div class="entry-name">vector-&gt;list</div>
+  <pre class="entry-doc">Syntax: (vector-&gt;list vector)
+Library: (scheme base)
+Description: Returns a newly allocated list containing the elements of vector in order. Optional start and end indices (zero-based, exclusive end) may be supplied to convert a subrange.
+Example:
+  (vector-&gt;list #(a b c)) =&gt; (a b c)
+  (vector-&gt;list #(a b c d) 1 3) =&gt; (b c)</pre>
+</div>
+<div class="entry" id="e7" data-name="vector-&gt;string">
+  <div class="entry-name">vector-&gt;string</div>
+  <pre class="entry-doc">Syntax: (vector-&gt;string vector)
+       (vector-&gt;string vector start)
+       (vector-&gt;string vector start end)
+Library: (scheme base)
+Description: Returns a newly allocated string of the objects contained in the
+  elements of vector between start and end. It is an error if any element is
+  not a character. start defaults to 0 and end defaults to the length of the
+  vector.
+Example:
+  (vector-&gt;string #(#\a #\b #\c))     =&gt; "abc"
+  (vector-&gt;string #(#\a #\b #\c) 1)   =&gt; "bc"
+  (vector-&gt;string #(#\a #\b #\c) 1 2) =&gt; "b"</pre>
+</div>
+<div class="entry" id="e8" data-name="vector-any">
+  <div class="entry-name">vector-any</div>
+  <pre class="entry-doc">Syntax: (vector-any pred vec1 vec2 ...)
+Library: (srfi 133)
+Description: Returns the first true value returned by pred applied to
+  corresponding elements, or #f if pred returns #f for all elements.
+Example:
+  (vector-any even? '#(1 2 3)) =&gt; #t
+  (vector-any even? '#(1 3 5)) =&gt; #f</pre>
+</div>
+<div class="entry" id="e9" data-name="vector-append">
+  <div class="entry-name">vector-append</div>
+  <pre class="entry-doc">Syntax: (vector-append vector ...)
+Library: (scheme base)
+Description: Returns a newly allocated vector whose elements are the
+  concatenation of the elements of the given vectors. With no arguments,
+  returns an empty vector.
+Example:
+  (vector-append '#(a b) '#(c d)) =&gt; #(a b c d)
+  (vector-append '#(a) '#() '#(b c)) =&gt; #(a b c)</pre>
+</div>
+<div class="entry" id="e10" data-name="vector-append-subvectors">
+  <div class="entry-name">vector-append-subvectors</div>
+  <pre class="entry-doc">Syntax: (vector-append-subvectors vec1 start1 end1 ...)
+Library: (srfi 133)
+Description: Returns a vector that contains every element of each vec from
+  start to end in order. The arguments alternate between vectors and
+  start/end index pairs.
+Example:
+  (vector-append-subvectors '#(a b c d e) 0 2 '#(f g h) 1 3)
+    =&gt; #(a b g h)</pre>
+</div>
+<div class="entry" id="e11" data-name="vector-binary-search">
+  <div class="entry-name">vector-binary-search</div>
+  <pre class="entry-doc">Syntax: (vector-binary-search vec value cmp)
+Library: (srfi 133)
+Description: Performs binary search on a sorted vector. cmp is a procedure
+  of two arguments that returns a negative integer if the first is less,
+  zero if equal, and positive if greater. Returns the index of the matching
+  element or #f.
+Example:
+  (vector-binary-search '#(1 3 5 7 9) 5
+    (lambda (a b) (- a b))) =&gt; 2</pre>
+</div>
+<div class="entry" id="e12" data-name="vector-concatenate">
+  <div class="entry-name">vector-concatenate</div>
+  <pre class="entry-doc">Syntax: (vector-concatenate list-of-vectors)
+Library: (srfi 133)
+Description: Appends each vector in list-of-vectors. Equivalent to
+  (apply vector-append list-of-vectors).
+Example:
+  (vector-concatenate '(#(a b) #(c d))) =&gt; #(a b c d)</pre>
+</div>
+<div class="entry" id="e13" data-name="vector-copy">
+  <div class="entry-name">vector-copy</div>
+  <pre class="entry-doc">Syntax: (vector-copy vec)
+       (vector-copy vec start)
+       (vector-copy vec start end)
+       (vector-copy vec start end fill)
+Library: (srfi 133)
+Description: Returns a newly allocated copy of the elements of vec between
+  start and end. If end is greater than the length of vec, the additional
+  elements are set to fill.
+Example:
+  (vector-copy '#(a b c d e) 1 3) =&gt; #(b c)
+  (vector-copy '#(a b c) 0 5 'x) =&gt; #(a b c x x)</pre>
+</div>
+<div class="entry" id="e14" data-name="vector-copy!">
+  <div class="entry-name">vector-copy!</div>
+  <pre class="entry-doc">Syntax: (vector-copy! to at from)
+       (vector-copy! to at from start)
+       (vector-copy! to at from start end)
+Library: (scheme base)
+Description: Copies the elements of vector from between start and end to
+  vector to, starting at at. The order in which elements are copied is
+  unspecified, except that if the source and destination overlap, copying
+  takes place as if the source is first copied into a temporary vector and
+  then into the destination. start defaults to 0 and end defaults to the
+  length of from.
+Example:
+  (let ((v (vector 1 2 3 4 5)))
+    (vector-copy! v 1 '#(10 11 12) 1 3)
+    v) =&gt; #(1 11 12 4 5)</pre>
+</div>
+<div class="entry" id="e15" data-name="vector-count">
+  <div class="entry-name">vector-count</div>
+  <pre class="entry-doc">Syntax: (vector-count pred vec1 vec2 ...)
+Library: (srfi 133)
+Description: Counts the number of indices i for which (pred vec1[i] vec2[i]
+  ...) returns true. The count is over the minimum length of the vectors.
+Example:
+  (vector-count even? '#(1 2 3 4 5)) =&gt; 2</pre>
+</div>
+<div class="entry" id="e16" data-name="vector-cumulate">
+  <div class="entry-name">vector-cumulate</div>
+  <pre class="entry-doc">Syntax: (vector-cumulate f knil vec)
+Library: (srfi 133)
+Description: Returns a newly allocated vector where element i is the result
+  of applying f to the cumulated value and element i, starting with knil.
+  Like a running fold stored in a vector.
+Example:
+  (vector-cumulate + 0 '#(1 2 3 4)) =&gt; #(1 3 6 10)</pre>
+</div>
+<div class="entry" id="e17" data-name="vector-empty?">
+  <div class="entry-name">vector-empty?</div>
+  <pre class="entry-doc">Syntax: (vector-empty? vec)
+Library: (srfi 133)
+Description: Returns #t if vec has length 0, #f otherwise.
+Example:
+  (vector-empty? '#()) =&gt; #t
+  (vector-empty? '#(1)) =&gt; #f</pre>
+</div>
+<div class="entry" id="e18" data-name="vector-every">
+  <div class="entry-name">vector-every</div>
+  <pre class="entry-doc">Syntax: (vector-every pred vec1 vec2 ...)
+Library: (srfi 133)
+Description: Returns the last true value returned by pred if pred returns
+  true for all corresponding elements, or #f as soon as pred returns #f.
+  Returns #t for empty vectors.
+Example:
+  (vector-every even? '#(2 4 6)) =&gt; #t
+  (vector-every even? '#(2 3 6)) =&gt; #f</pre>
+</div>
+<div class="entry" id="e19" data-name="vector-fill!">
+  <div class="entry-name">vector-fill!</div>
+  <pre class="entry-doc">Syntax: (vector-fill! vec fill)
+       (vector-fill! vec fill start)
+       (vector-fill! vec fill start end)
+Library: (srfi 133)
+Description: Stores fill in every element of vec between start (inclusive,
+  default 0) and end (exclusive, default length).
+Example:
+  (let ((v (vector 1 2 3 4 5)))
+    (vector-fill! v 0 1 4)
+    v) =&gt; #(1 0 0 0 5)</pre>
+</div>
+<div class="entry" id="e20" data-name="vector-fold">
+  <div class="entry-name">vector-fold</div>
+  <pre class="entry-doc">Syntax: (vector-fold kons knil vec1 vec2 ...)
+Library: (srfi 133)
+Description: Left fold over vectors. kons is called as (kons index state
+  val1 val2 ...) for each index from 0 to length-1, where length is the
+  minimum length of the given vectors.
+Example:
+  (vector-fold (lambda (i sum x) (+ sum x)) 0 '#(1 2 3)) =&gt; 6</pre>
+</div>
+<div class="entry" id="e21" data-name="vector-fold-right">
+  <div class="entry-name">vector-fold-right</div>
+  <pre class="entry-doc">Syntax: (vector-fold-right kons knil vec1 vec2 ...)
+Library: (srfi 133)
+Description: Right fold over vectors. kons is called as (kons index state
+  val1 val2 ...) for each index from length-1 down to 0.
+Example:
+  (vector-fold-right (lambda (i tail x) (cons x tail)) '() '#(a b c))
+    =&gt; (a b c)</pre>
+</div>
+<div class="entry" id="e22" data-name="vector-for-each">
+  <div class="entry-name">vector-for-each</div>
+  <pre class="entry-doc">Syntax: (vector-for-each proc vector1 vector2 ...)
+Library: (scheme base)
+Description: It is an error if proc does not accept as many arguments as
+  there are vectors. Applies proc element-wise to the elements of the vectors
+  for its side effects, in order from the first element to the last. The
+  return value is unspecified.
+Example:
+  (vector-for-each display '#(a b c)) ; displays abc</pre>
+</div>
+<div class="entry" id="e23" data-name="vector-index">
+  <div class="entry-name">vector-index</div>
+  <pre class="entry-doc">Syntax: (vector-index pred vec1 vec2 ...)
+Library: (srfi 133)
+Description: Returns the index of the first element for which (pred vec1[i]
+  vec2[i] ...) returns true, or #f if no such element exists.
+Example:
+  (vector-index even? '#(1 2 3 4)) =&gt; 1
+  (vector-index odd? '#(2 4 6)) =&gt; #f</pre>
+</div>
+<div class="entry" id="e24" data-name="vector-index-right">
+  <div class="entry-name">vector-index-right</div>
+  <pre class="entry-doc">Syntax: (vector-index-right pred vec1 vec2 ...)
+Library: (srfi 133)
+Description: Like vector-index, but searches from right to left, returning
+  the index of the last matching element.
+Example:
+  (vector-index-right even? '#(1 2 3 4)) =&gt; 3</pre>
+</div>
+<div class="entry" id="e25" data-name="vector-length">
+  <div class="entry-name">vector-length</div>
+  <pre class="entry-doc">Syntax: (vector-length v)
+Library: (scheme base)
+Description: Returns the number of elements in vector v.
+Example:
+  (vector-length #(1 2 3)) =&gt; 3
+  (vector-length (vector)) =&gt; 0</pre>
+</div>
+<div class="entry" id="e26" data-name="vector-map">
+  <div class="entry-name">vector-map</div>
+  <pre class="entry-doc">Syntax: (vector-map proc vector1 vector2 ...)
+Library: (scheme base)
+Description: It is an error if proc does not accept as many arguments as
+  there are vectors and return a single value. Applies proc element-wise to
+  the elements of the vectors and returns a vector of the results. The
+  dynamic order in which proc is applied to the elements is unspecified.
+Example:
+  (vector-map + '#(1 2 3) '#(4 5 6)) =&gt; #(5 7 9)
+  (vector-map cadr '#((a b) (d e) (g h))) =&gt; #(b e h)</pre>
+</div>
+<div class="entry" id="e27" data-name="vector-map!">
+  <div class="entry-name">vector-map!</div>
+  <pre class="entry-doc">Syntax: (vector-map! f vec1 vec2 ...)
+Library: (srfi 133)
+Description: Like vector-map, but stores the results in vec1, mutating it
+  in place. Returns unspecified.
+Example:
+  (let ((v (vector 1 2 3)))
+    (vector-map! (lambda (x) (* x x)) v)
+    v) =&gt; #(1 4 9)</pre>
+</div>
+<div class="entry" id="e28" data-name="vector-partition">
+  <div class="entry-name">vector-partition</div>
+  <pre class="entry-doc">Syntax: (vector-partition pred vec)
+Library: (srfi 133)
+Description: Returns two values: a vector of elements satisfying pred, and
+  a vector of elements not satisfying pred, both in their original order.
+Example:
+  (call-with-values (lambda () (vector-partition even? '#(1 2 3 4 5)))
+    list) =&gt; (#(2 4) #(1 3 5))</pre>
+</div>
+<div class="entry" id="e29" data-name="vector-ref">
+  <div class="entry-name">vector-ref</div>
+  <pre class="entry-doc">Syntax: (vector-ref v k)
+Library: (scheme base)
+Description: Returns the element at index k in vector v. If k is out of range and a default is provided, returns the default instead of signalling an error.
+Example:
+  (vector-ref #(a b c) 1) =&gt; b
+  (vector-ref #(a b c) 5 'none) =&gt; none</pre>
+</div>
+<div class="entry" id="e30" data-name="vector-reverse!">
+  <div class="entry-name">vector-reverse!</div>
+  <pre class="entry-doc">Syntax: (vector-reverse! vec)
+       (vector-reverse! vec start)
+       (vector-reverse! vec start end)
+Library: (srfi 133)
+Description: Reverses the elements of vec in place between start and end.
+Example:
+  (let ((v (vector 1 2 3 4 5)))
+    (vector-reverse! v 1 4)
+    v) =&gt; #(1 4 3 2 5)</pre>
+</div>
+<div class="entry" id="e31" data-name="vector-reverse-copy">
+  <div class="entry-name">vector-reverse-copy</div>
+  <pre class="entry-doc">Syntax: (vector-reverse-copy vec)
+       (vector-reverse-copy vec start)
+       (vector-reverse-copy vec start end)
+Library: (srfi 133)
+Description: Returns a newly allocated vector containing the elements of vec
+  between start and end in reverse order.
+Example:
+  (vector-reverse-copy '#(a b c d e) 1 4) =&gt; #(d c b)</pre>
+</div>
+<div class="entry" id="e32" data-name="vector-reverse-copy!">
+  <div class="entry-name">vector-reverse-copy!</div>
+  <pre class="entry-doc">Syntax: (vector-reverse-copy! to at from)
+       (vector-reverse-copy! to at from start)
+       (vector-reverse-copy! to at from start end)
+Library: (srfi 133)
+Description: Copies elements from the vector from between start and end in
+  reverse order into the vector to, starting at index at.
+Example:
+  (let ((v (vector 'x 'x 'x 'x 'x)))
+    (vector-reverse-copy! v 1 '#(a b c) 0 3)
+    v) =&gt; #(x c b a x)</pre>
+</div>
+<div class="entry" id="e33" data-name="vector-set!">
+  <div class="entry-name">vector-set!</div>
+  <pre class="entry-doc">Syntax: (vector-set! v k obj)
+Library: (scheme base)
+Description: Stores obj in element k of vector v. It is an error if k is not a valid index of v.
+Example:
+  (let ((v (vector 1 2 3))) (vector-set! v 1 99) v) =&gt; #(1 99 3)</pre>
+</div>
+<div class="entry" id="e34" data-name="vector-skip">
+  <div class="entry-name">vector-skip</div>
+  <pre class="entry-doc">Syntax: (vector-skip pred vec1 vec2 ...)
+Library: (srfi 133)
+Description: Returns the index of the first element for which pred returns
+  #f, or #f if pred is true for all elements.
+Example:
+  (vector-skip odd? '#(1 3 2 4)) =&gt; 2</pre>
+</div>
+<div class="entry" id="e35" data-name="vector-skip-right">
+  <div class="entry-name">vector-skip-right</div>
+  <pre class="entry-doc">Syntax: (vector-skip-right pred vec1 vec2 ...)
+Library: (srfi 133)
+Description: Like vector-skip, but searches from right to left.
+Example:
+  (vector-skip-right odd? '#(1 3 2 4)) =&gt; 3</pre>
+</div>
+<div class="entry" id="e36" data-name="vector-swap!">
+  <div class="entry-name">vector-swap!</div>
+  <pre class="entry-doc">Syntax: (vector-swap! vec i j)
+Library: (srfi 133)
+Description: Swaps the elements at indices i and j in vec.
+Example:
+  (let ((v (vector 'a 'b 'c)))
+    (vector-swap! v 0 2)
+    v) =&gt; #(c b a)</pre>
+</div>
+<div class="entry" id="e37" data-name="vector-unfold">
+  <div class="entry-name">vector-unfold</div>
+  <pre class="entry-doc">Syntax: (vector-unfold f length seed ...)
+Library: (srfi 133)
+Description: Creates a vector of the given length by applying f to each index
+  and the current seed values. f must return the element value followed by
+  new seed values via multiple return values.
+Example:
+  (vector-unfold (lambda (i) i) 5) =&gt; #(0 1 2 3 4)
+  (vector-unfold (lambda (i x) (values x (+ x 1))) 5 0) =&gt; #(0 1 2 3 4)</pre>
+</div>
+<div class="entry" id="e38" data-name="vector-unfold!">
+  <div class="entry-name">vector-unfold!</div>
+  <pre class="entry-doc">Syntax: (vector-unfold! f vec start end seed ...)
+Library: (srfi 133)
+Description: Like vector-unfold, but stores the elements into vec between
+  start (inclusive) and end (exclusive) rather than creating a new vector.
+Example:
+  (let ((v (make-vector 5 0)))
+    (vector-unfold! (lambda (i) (* i i)) v 1 4)
+    v) =&gt; #(0 1 4 9 0)</pre>
+</div>
+<div class="entry" id="e39" data-name="vector-unfold-right">
+  <div class="entry-name">vector-unfold-right</div>
+  <pre class="entry-doc">Syntax: (vector-unfold-right f length seed ...)
+Library: (srfi 133)
+Description: Like vector-unfold, but fills the vector from right to left,
+  starting at index length-1 down to 0.
+Example:
+  (vector-unfold-right (lambda (i x) (values x (+ x 1))) 5 0)
+    =&gt; #(4 3 2 1 0)</pre>
+</div>
+<div class="entry" id="e40" data-name="vector-unfold-right!">
+  <div class="entry-name">vector-unfold-right!</div>
+  <pre class="entry-doc">Syntax: (vector-unfold-right! f vec start end seed ...)
+Library: (srfi 133)
+Description: Like vector-unfold-right, but stores the elements into vec
+  between start and end rather than creating a new vector.
+Example:
+  (let ((v (make-vector 5 0)))
+    (vector-unfold-right! (lambda (i) (* i i)) v 1 4)
+    v) =&gt; #(0 1 4 9 0)</pre>
+</div>
+<div class="entry" id="e41" data-name="vector=">
+  <div class="entry-name">vector=</div>
+  <pre class="entry-doc">Syntax: (vector= elt= vec ...)
+Library: (srfi 133)
+Description: Compares vectors element-wise using elt= as the element
+  comparison procedure. Returns #t if all vectors have the same length and
+  corresponding elements are equal according to elt=.
+Example:
+  (vector= eq? '#(a b c) '#(a b c)) =&gt; #t
+  (vector= eq? '#(a b) '#(a b c)) =&gt; #f</pre>
+</div>
+<div class="entry" id="e42" data-name="vector?">
+  <div class="entry-name">vector?</div>
+  <pre class="entry-doc">Syntax: (vector? obj)
+Library: (scheme base)
+Description: Returns #t if obj is a vector, #f otherwise.
+Example:
+  (vector? #(1 2 3)) =&gt; #t
+  (vector? '(1 2 3)) =&gt; #f</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Scm Library Reference</a></h1>
+    <p>scm &mdash; libraries and their exports</p>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav>
+  <h2>R7RS Standard</h2>
+  <a href="scheme-base.html" class="r7rs">(scheme base)</a>
+  <a href="scheme-case-lambda.html" class="r7rs">(scheme case-lambda)</a>
+  <a href="scheme-char.html" class="r7rs">(scheme char)</a>
+  <a href="scheme-complex.html" class="r7rs">(scheme complex)</a>
+  <a href="scheme-cxr.html" class="r7rs">(scheme cxr)</a>
+  <a href="scheme-eval.html" class="r7rs">(scheme eval)</a>
+  <a href="scheme-file.html" class="r7rs">(scheme file)</a>
+  <a href="scheme-inexact.html" class="r7rs">(scheme inexact)</a>
+  <a href="scheme-lazy.html" class="r7rs">(scheme lazy)</a>
+  <a href="scheme-load.html" class="r7rs">(scheme load)</a>
+  <a href="scheme-process-context.html" class="r7rs">(scheme process-context)</a>
+  <a href="scheme-r5rs.html" class="r7rs">(scheme r5rs)</a>
+  <a href="scheme-read.html" class="r7rs">(scheme read)</a>
+  <a href="scheme-repl.html" class="r7rs">(scheme repl)</a>
+  <a href="scheme-time.html" class="r7rs">(scheme time)</a>
+  <a href="scheme-write.html" class="r7rs">(scheme write)</a>
+  <h2>SRFI Libraries</h2>
+  <a href="srfi-1.html" class="srfi">(srfi 1)</a>
+  <a href="srfi-2.html" class="srfi">(srfi 2)</a>
+  <a href="srfi-8.html" class="srfi">(srfi 8)</a>
+  <a href="srfi-9.html" class="srfi">(srfi 9)</a>
+  <a href="srfi-13.html" class="srfi">(srfi 13)</a>
+  <a href="srfi-14.html" class="srfi">(srfi 14)</a>
+  <a href="srfi-18.html" class="srfi">(srfi 18)</a>
+  <a href="srfi-19.html" class="srfi">(srfi 19)</a>
+  <a href="srfi-26.html" class="srfi">(srfi 26)</a>
+  <a href="srfi-28.html" class="srfi">(srfi 28)</a>
+  <a href="srfi-39.html" class="srfi">(srfi 39)</a>
+  <a href="srfi-48.html" class="srfi">(srfi 48)</a>
+  <a href="srfi-64.html" class="srfi">(srfi 64)</a>
+  <a href="srfi-69.html" class="srfi">(srfi 69)</a>
+  <a href="srfi-95.html" class="srfi">(srfi 95)</a>
+  <a href="srfi-98.html" class="srfi">(srfi 98)</a>
+  <a href="srfi-111.html" class="srfi">(srfi 111)</a>
+  <a href="srfi-125.html" class="srfi">(srfi 125)</a>
+  <a href="srfi-128.html" class="srfi">(srfi 128)</a>
+  <a href="srfi-132.html" class="srfi">(srfi 132)</a>
+  <a href="srfi-133.html" class="srfi">(srfi 133)</a>
+  <a href="srfi-151.html" class="srfi">(srfi 151)</a>
+  <a href="srfi-158.html" class="srfi">(srfi 158)</a>
+  <h2>Scm Extensions</h2>
+  <a href="scm-archive.html" class="scm">(scm archive)</a>
+  <a href="scm-args.html" class="scm">(scm args)</a>
+  <a href="scm-compile.html" class="scm">(scm compile)</a>
+  <a href="scm-compression.html" class="scm">(scm compression)</a>
+  <a href="scm-crypto.html" class="scm">(scm crypto)</a>
+  <a href="scm-csv.html" class="scm">(scm csv)</a>
+  <a href="scm-database-migrations.html" class="scm">(scm database migrations)</a>
+  <a href="scm-database-postgres.html" class="scm">(scm database postgres)</a>
+  <a href="scm-database-sqlserver.html" class="scm">(scm database sqlserver)</a>
+  <a href="scm-datetime.html" class="scm">(scm datetime)</a>
+  <a href="scm-dict.html" class="scm">(scm dict)</a>
+  <a href="scm-doc.html" class="scm">(scm doc)</a>
+  <a href="scm-duration.html" class="scm">(scm duration)</a>
+  <a href="scm-feed.html" class="scm">(scm feed)</a>
+  <a href="scm-fs-find.html" class="scm">(scm fs-find)</a>
+  <a href="scm-fs.html" class="scm">(scm fs)</a>
+  <a href="scm-glob.html" class="scm">(scm glob)</a>
+  <a href="scm-html-builder.html" class="scm">(scm html builder)</a>
+  <a href="scm-html.html" class="scm">(scm html)</a>
+  <a href="scm-io.html" class="scm">(scm io)</a>
+  <a href="scm-json-simple.html" class="scm">(scm json simple)</a>
+  <a href="scm-json.html" class="scm">(scm json)</a>
+  <a href="scm-list.html" class="scm">(scm list)</a>
+  <a href="scm-log.html" class="scm">(scm log)</a>
+  <a href="scm-macro.html" class="scm">(scm macro)</a>
+  <a href="scm-markdown.html" class="scm">(scm markdown)</a>
+  <a href="scm-match.html" class="scm">(scm match)</a>
+  <a href="scm-math.html" class="scm">(scm math)</a>
+  <a href="scm-module.html" class="scm">(scm module)</a>
+  <a href="scm-net-http-client.html" class="scm">(scm net http client)</a>
+  <a href="scm-net-http-cookies.html" class="scm">(scm net http cookies)</a>
+  <a href="scm-net-http-forms.html" class="scm">(scm net http forms)</a>
+  <a href="scm-net-http-multipart.html" class="scm">(scm net http multipart)</a>
+  <a href="scm-net-http-request.html" class="scm">(scm net http request)</a>
+  <a href="scm-net-http-response.html" class="scm">(scm net http response)</a>
+  <a href="scm-net-http-route.html" class="scm">(scm net http route)</a>
+  <a href="scm-net-http-server.html" class="scm">(scm net http server)</a>
+  <a href="scm-net-remote.html" class="scm">(scm net-remote)</a>
+  <a href="scm-net-sockets.html" class="scm">(scm net sockets)</a>
+  <a href="scm-net-websocket.html" class="scm">(scm net websocket)</a>
+  <a href="scm-odf-spreadsheet.html" class="scm">(scm odf spreadsheet)</a>
+  <a href="scm-odf-writer.html" class="scm">(scm odf writer)</a>
+  <a href="scm-ooxml-excel-reader.html" class="scm">(scm ooxml excel-reader)</a>
+  <a href="scm-ooxml-excel.html" class="scm">(scm ooxml excel)</a>
+  <a href="scm-ooxml-word-reader.html" class="scm">(scm ooxml word-reader)</a>
+  <a href="scm-ooxml-word.html" class="scm">(scm ooxml word)</a>
+  <a href="scm-pdf.html" class="scm">(scm pdf)</a>
+  <a href="scm-png.html" class="scm">(scm png)</a>
+  <a href="scm-profiling.html" class="scm">(scm profiling)</a>
+  <a href="scm-qr.html" class="scm">(scm qr)</a>
+  <a href="scm-random-access.html" class="scm">(scm random access)</a>
+  <a href="scm-repl.html" class="scm">(scm repl)</a>
+  <a href="scm-store.html" class="scm">(scm store)</a>
+  <a href="scm-string.html" class="scm">(scm string)</a>
+  <a href="scm-sysadmin.html" class="scm">(scm sysadmin)</a>
+  <a href="scm-system.html" class="scm">(scm system)</a>
+  <a href="scm-templating.html" class="scm">(scm templating)</a>
+  <a href="scm-terminal.html" class="scm">(scm terminal)</a>
+  <a href="scm-test.html" class="scm">(scm test)</a>
+  <a href="scm-text.html" class="scm">(scm text)</a>
+  <a href="scm-toml.html" class="scm">(scm toml)</a>
+  <a href="scm-uri.html" class="scm">(scm uri)</a>
+  <a href="scm-xml.html" class="scm">(scm xml)</a>
+  <a href="scm-zip.html" class="scm">(scm zip)</a>
+</nav>
+
+<main>
+
+<p class="intro">A browsable reference for the scm interpreter's libraries — 16 R7RS, 23 SRFI, and 64 extension libraries. Pick a library below, or use the search box to jump straight to any binding.</p>
+
+<div class="section-heading">
+  <h2>R7RS Standard Libraries</h2>
+  <hr>
+  <span class="badge badge-r7rs">R7RS</span>
+</div>
+
+<div class="lib-grid">
+  <a class="lib-card r7rs" href="scheme-base.html">
+    <span class="name">(scheme base)</span>
+    <span class="desc">R7RS base library — core forms and procedures</span>
+  </a>
+  <a class="lib-card r7rs" href="scheme-case-lambda.html">
+    <span class="name">(scheme case-lambda)</span>
+    <span class="desc">Case-lambda for multi-arity procedures</span>
+  </a>
+  <a class="lib-card r7rs" href="scheme-char.html">
+    <span class="name">(scheme char)</span>
+    <span class="desc">Character classification and case operations</span>
+  </a>
+  <a class="lib-card r7rs" href="scheme-complex.html">
+    <span class="name">(scheme complex)</span>
+    <span class="desc">Complex number arithmetic</span>
+  </a>
+  <a class="lib-card r7rs" href="scheme-cxr.html">
+    <span class="name">(scheme cxr)</span>
+    <span class="desc">Compositions of car and cdr up to 4 levels deep</span>
+  </a>
+  <a class="lib-card r7rs" href="scheme-eval.html">
+    <span class="name">(scheme eval)</span>
+    <span class="desc">Evaluation of Scheme expressions</span>
+  </a>
+  <a class="lib-card r7rs" href="scheme-file.html">
+    <span class="name">(scheme file)</span>
+    <span class="desc">File-based port operations</span>
+  </a>
+  <a class="lib-card r7rs" href="scheme-inexact.html">
+    <span class="name">(scheme inexact)</span>
+    <span class="desc">Inexact number operations and trigonometry</span>
+  </a>
+  <a class="lib-card r7rs" href="scheme-lazy.html">
+    <span class="name">(scheme lazy)</span>
+    <span class="desc">Lazy evaluation and promises</span>
+  </a>
+  <a class="lib-card r7rs" href="scheme-load.html">
+    <span class="name">(scheme load)</span>
+    <span class="desc">Loading Scheme source files</span>
+  </a>
+  <a class="lib-card r7rs" href="scheme-process-context.html">
+    <span class="name">(scheme process-context)</span>
+    <span class="desc">Process exit and context</span>
+  </a>
+  <a class="lib-card r7rs" href="scheme-r5rs.html">
+    <span class="name">(scheme r5rs)</span>
+    <span class="desc">Full R5RS compatibility library</span>
+  </a>
+  <a class="lib-card r7rs" href="scheme-read.html">
+    <span class="name">(scheme read)</span>
+    <span class="desc">Reading Scheme data from ports</span>
+  </a>
+  <a class="lib-card r7rs" href="scheme-repl.html">
+    <span class="name">(scheme repl)</span>
+    <span class="desc">REPL environment access</span>
+  </a>
+  <a class="lib-card r7rs" href="scheme-time.html">
+    <span class="name">(scheme time)</span>
+    <span class="desc">Timestamps and time formatting</span>
+  </a>
+  <a class="lib-card r7rs" href="scheme-write.html">
+    <span class="name">(scheme write)</span>
+    <span class="desc">Writing and displaying values to ports</span>
+  </a>
+</div>
+
+<div class="section-heading">
+  <h2>SRFI Libraries</h2>
+  <hr>
+  <span class="badge badge-srfi">SRFI</span>
+</div>
+
+<div class="lib-grid">
+  <a class="lib-card srfi" href="srfi-1.html">
+    <span class="name">(srfi 1)</span>
+    <span class="desc">SRFI-1 — List library: fold, any, every, take, drop, iota, lset ops</span>
+  </a>
+  <a class="lib-card srfi" href="srfi-2.html">
+    <span class="name">(srfi 2)</span>
+    <span class="desc">SRFI-2 — and-let*: short-circuiting let</span>
+  </a>
+  <a class="lib-card srfi" href="srfi-8.html">
+    <span class="name">(srfi 8)</span>
+    <span class="desc">SRFI-8 — receive: binding multiple values</span>
+  </a>
+  <a class="lib-card srfi" href="srfi-9.html">
+    <span class="name">(srfi 9)</span>
+    <span class="desc">SRFI-9 — Record types (re-export from scheme base)</span>
+  </a>
+  <a class="lib-card srfi" href="srfi-13.html">
+    <span class="name">(srfi 13)</span>
+    <span class="desc">SRFI-13 — String library: predicate-based string operations</span>
+  </a>
+  <a class="lib-card srfi" href="srfi-14.html">
+    <span class="name">(srfi 14)</span>
+    <span class="desc">SRFI-14 — Character sets: predicate-wrapped char-set type</span>
+  </a>
+  <a class="lib-card srfi" href="srfi-18.html">
+    <span class="name">(srfi 18)</span>
+    <span class="desc">SRFI-18 — Multithreading: threads, mutexes, condition variables</span>
+  </a>
+  <a class="lib-card srfi" href="srfi-19.html">
+    <span class="name">(srfi 19)</span>
+    <span class="desc">SRFI-19 — Time data types and procedures: time, date, Julian Day, formatting</span>
+  </a>
+  <a class="lib-card srfi" href="srfi-26.html">
+    <span class="name">(srfi 26)</span>
+    <span class="desc">SRFI-26 — cut/cute: partial application via slot notation</span>
+  </a>
+  <a class="lib-card srfi" href="srfi-28.html">
+    <span class="name">(srfi 28)</span>
+    <span class="desc">SRFI-28 — Basic format strings</span>
+  </a>
+  <a class="lib-card srfi" href="srfi-39.html">
+    <span class="name">(srfi 39)</span>
+    <span class="desc">SRFI-39 — Parameter objects (re-export from scheme base)</span>
+  </a>
+  <a class="lib-card srfi" href="srfi-48.html">
+    <span class="name">(srfi 48)</span>
+    <span class="desc">SRFI-48 — Intermediate format strings: display, write, numeric bases, pretty-print</span>
+  </a>
+  <a class="lib-card srfi" href="srfi-64.html">
+    <span class="name">(srfi 64)</span>
+    <span class="desc">SRFI-64 — A Scheme API for test suites</span>
+  </a>
+  <a class="lib-card srfi" href="srfi-69.html">
+    <span class="name">(srfi 69)</span>
+    <span class="desc">SRFI-69 — Basic hash tables with eq?/eqv?/equal? support</span>
+  </a>
+  <a class="lib-card srfi" href="srfi-95.html">
+    <span class="name">(srfi 95)</span>
+    <span class="desc">SRFI-95 — Sorting and merging: polymorphic sort, merge with optional key</span>
+  </a>
+  <a class="lib-card srfi" href="srfi-98.html">
+    <span class="name">(srfi 98)</span>
+    <span class="desc">SRFI-98 — Environment variables</span>
+  </a>
+  <a class="lib-card srfi" href="srfi-111.html">
+    <span class="name">(srfi 111)</span>
+    <span class="desc">SRFI-111 — Boxes: mutable single-value containers</span>
+  </a>
+  <a class="lib-card srfi" href="srfi-125.html">
+    <span class="name">(srfi 125)</span>
+    <span class="desc">SRFI-125 — Intermediate hash tables: comparator-based hash tables with mapping, folding, and set operations</span>
+  </a>
+  <a class="lib-card srfi" href="srfi-128.html">
+    <span class="name">(srfi 128)</span>
+    <span class="desc">SRFI-128 — Comparators: bundled type-test, equality, ordering, and hash procedures</span>
+  </a>
+  <a class="lib-card srfi" href="srfi-132.html">
+    <span class="name">(srfi 132)</span>
+    <span class="desc">SRFI-132 — Sort libraries: list/vector sort, merge, select, median</span>
+  </a>
+  <a class="lib-card srfi" href="srfi-133.html">
+    <span class="name">(srfi 133)</span>
+    <span class="desc">SRFI-133 — Vector libraries</span>
+  </a>
+  <a class="lib-card srfi" href="srfi-151.html">
+    <span class="name">(srfi 151)</span>
+    <span class="desc">SRFI-151 — Bitwise operations: logic, shifts, fields, and folds on exact integers</span>
+  </a>
+  <a class="lib-card srfi" href="srfi-158.html">
+    <span class="name">(srfi 158)</span>
+    <span class="desc">SRFI-158 — Generators and accumulators: lazy sequences, composable pipelines, and value collectors</span>
+  </a>
+</div>
+
+<div class="section-heading">
+  <h2>Scm Extension Libraries</h2>
+  <hr>
+  <span class="badge badge-scm">scm</span>
+</div>
+
+<div class="lib-grid">
+  <a class="lib-card scm" href="scm-archive.html">
+    <span class="name">(scm archive)</span>
+    <span class="desc">Archive and compression — tar, gzip, bzip2, xz, and zip operations</span>
+  </a>
+  <a class="lib-card scm" href="scm-args.html">
+    <span class="name">(scm args)</span>
+    <span class="desc">Declarative command-line argument parsing — options, flags, positionals, typed values</span>
+  </a>
+  <a class="lib-card scm" href="scm-compile.html">
+    <span class="name">(scm compile)</span>
+    <span class="desc">Compiler introspection, bytecode access, and type predicates</span>
+  </a>
+  <a class="lib-card scm" href="scm-compression.html">
+    <span class="name">(scm compression)</span>
+    <span class="desc">Data compression and decompression</span>
+  </a>
+  <a class="lib-card scm" href="scm-crypto.html">
+    <span class="name">(scm crypto)</span>
+    <span class="desc">Cryptographic hashing and encoding utilities</span>
+  </a>
+  <a class="lib-card scm" href="scm-csv.html">
+    <span class="name">(scm csv)</span>
+    <span class="desc">CSV parsing</span>
+  </a>
+  <a class="lib-card scm" href="scm-database-migrations.html">
+    <span class="name">(scm database migrations)</span>
+    <span class="desc">Forward-only SQL migration runner</span>
+  </a>
+  <a class="lib-card scm" href="scm-database-postgres.html">
+    <span class="name">(scm database postgres)</span>
+    <span class="desc">PostgreSQL database connectivity</span>
+  </a>
+  <a class="lib-card scm" href="scm-database-sqlserver.html">
+    <span class="name">(scm database sqlserver)</span>
+    <span class="desc">SQL Server database connectivity</span>
+  </a>
+  <a class="lib-card scm" href="scm-datetime.html">
+    <span class="name">(scm datetime)</span>
+    <span class="desc">Date and time operations</span>
+  </a>
+  <a class="lib-card scm" href="scm-dict.html">
+    <span class="name">(scm dict)</span>
+    <span class="desc">Dictionary / associative map operations</span>
+  </a>
+  <a class="lib-card scm" href="scm-doc.html">
+    <span class="name">(scm doc)</span>
+    <span class="desc">Documentation access</span>
+  </a>
+  <a class="lib-card scm" href="scm-duration.html">
+    <span class="name">(scm duration)</span>
+    <span class="desc">Duration string parsing and formatting (seconds, minutes, hours, days)</span>
+  </a>
+  <a class="lib-card scm" href="scm-feed.html">
+    <span class="name">(scm feed)</span>
+    <span class="desc">Atom and RSS 2.0 feed parsing</span>
+  </a>
+  <a class="lib-card scm" href="scm-fs-find.html">
+    <span class="name">(scm fs-find)</span>
+    <span class="desc">Filesystem traversal and reporting — find-file, tree, du, df, xargs</span>
+  </a>
+  <a class="lib-card scm" href="scm-fs.html">
+    <span class="name">(scm fs)</span>
+    <span class="desc">Filesystem operations — paths, directories, files</span>
+  </a>
+  <a class="lib-card scm" href="scm-glob.html">
+    <span class="name">(scm glob)</span>
+    <span class="desc">Filename globbing and pattern matching</span>
+  </a>
+  <a class="lib-card scm" href="scm-html-builder.html">
+    <span class="name">(scm html builder)</span>
+    <span class="desc">SXML-shaped HTML5 builder with automatic escaping</span>
+  </a>
+  <a class="lib-card scm" href="scm-html.html">
+    <span class="name">(scm html)</span>
+    <span class="desc">HTML escaping and tag stripping</span>
+  </a>
+  <a class="lib-card scm" href="scm-io.html">
+    <span class="name">(scm io)</span>
+    <span class="desc">Extended I/O — formatting, port utilities, property lists</span>
+  </a>
+  <a class="lib-card scm" href="scm-json-simple.html">
+    <span class="name">(scm json simple)</span>
+    <span class="desc">High-level JSON codec — parse and serialize JSON as Scheme data</span>
+  </a>
+  <a class="lib-card scm" href="scm-json.html">
+    <span class="name">(scm json)</span>
+    <span class="desc">JSON file reading</span>
+  </a>
+  <a class="lib-card scm" href="scm-list.html">
+    <span class="name">(scm list)</span>
+    <span class="desc">Extended list operations — higher-order, sorting, accessors</span>
+  </a>
+  <a class="lib-card scm" href="scm-log.html">
+    <span class="name">(scm log)</span>
+    <span class="desc">Structured single-line logging</span>
+  </a>
+  <a class="lib-card scm" href="scm-macro.html">
+    <span class="name">(scm macro)</span>
+    <span class="desc">Non-standard macros and meta-programming utilities</span>
+  </a>
+  <a class="lib-card scm" href="scm-markdown.html">
+    <span class="name">(scm markdown)</span>
+    <span class="desc">Markdown parser and HTML renderer (CommonMark subset)</span>
+  </a>
+  <a class="lib-card scm" href="scm-match.html">
+    <span class="name">(scm match)</span>
+    <span class="desc">Pattern matching</span>
+  </a>
+  <a class="lib-card scm" href="scm-math.html">
+    <span class="name">(scm math)</span>
+    <span class="desc">Math constants and non-standard numeric operations</span>
+  </a>
+  <a class="lib-card scm" href="scm-module.html">
+    <span class="name">(scm module)</span>
+    <span class="desc">Module system — import, export, search paths, introspection</span>
+  </a>
+  <a class="lib-card scm" href="scm-net-http-client.html">
+    <span class="name">(scm net http client)</span>
+    <span class="desc">HTTP client — GET, POST, and other request methods</span>
+  </a>
+  <a class="lib-card scm" href="scm-net-http-cookies.html">
+    <span class="name">(scm net http cookies)</span>
+    <span class="desc">HTTP cookie header parsing and Set-Cookie formatting</span>
+  </a>
+  <a class="lib-card scm" href="scm-net-http-forms.html">
+    <span class="name">(scm net http forms)</span>
+    <span class="desc">application/x-www-form-urlencoded form and query parsing</span>
+  </a>
+  <a class="lib-card scm" href="scm-net-http-multipart.html">
+    <span class="name">(scm net http multipart)</span>
+    <span class="desc">multipart/form-data parsing (RFC 7578)</span>
+  </a>
+  <a class="lib-card scm" href="scm-net-http-request.html">
+    <span class="name">(scm net http request)</span>
+    <span class="desc">HTTP request construction and accessors</span>
+  </a>
+  <a class="lib-card scm" href="scm-net-http-response.html">
+    <span class="name">(scm net http response)</span>
+    <span class="desc">HTTP response construction and accessors</span>
+  </a>
+  <a class="lib-card scm" href="scm-net-http-route.html">
+    <span class="name">(scm net http route)</span>
+    <span class="desc">HTTP request routing for servers</span>
+  </a>
+  <a class="lib-card scm" href="scm-net-http-server.html">
+    <span class="name">(scm net http server)</span>
+    <span class="desc">HTTP server — listen, accept, and serve requests</span>
+  </a>
+  <a class="lib-card scm" href="scm-net-remote.html">
+    <span class="name">(scm net-remote)</span>
+    <span class="desc">Remote operations — curl, wget, ssh, scp, rsync</span>
+  </a>
+  <a class="lib-card scm" href="scm-net-sockets.html">
+    <span class="name">(scm net sockets)</span>
+    <span class="desc">TCP socket operations — listen, accept, connect</span>
+  </a>
+  <a class="lib-card scm" href="scm-net-websocket.html">
+    <span class="name">(scm net websocket)</span>
+    <span class="desc">WebSocket client and server support</span>
+  </a>
+  <a class="lib-card scm" href="scm-odf-spreadsheet.html">
+    <span class="name">(scm odf spreadsheet)</span>
+    <span class="desc">ODF spreadsheet creation (ODS format)</span>
+  </a>
+  <a class="lib-card scm" href="scm-odf-writer.html">
+    <span class="name">(scm odf writer)</span>
+    <span class="desc">ODF text document creation (ODT format)</span>
+  </a>
+  <a class="lib-card scm" href="scm-ooxml-excel-reader.html">
+    <span class="name">(scm ooxml excel-reader)</span>
+    <span class="desc">Excel workbook reading (OOXML/XLSX format)</span>
+  </a>
+  <a class="lib-card scm" href="scm-ooxml-excel.html">
+    <span class="name">(scm ooxml excel)</span>
+    <span class="desc">Excel workbook and worksheet creation (OOXML/XLSX format)</span>
+  </a>
+  <a class="lib-card scm" href="scm-ooxml-word-reader.html">
+    <span class="name">(scm ooxml word-reader)</span>
+    <span class="desc">Word document text reading (OOXML/DOCX format)</span>
+  </a>
+  <a class="lib-card scm" href="scm-ooxml-word.html">
+    <span class="name">(scm ooxml word)</span>
+    <span class="desc">Word document creation (OOXML/DOCX format)</span>
+  </a>
+  <a class="lib-card scm" href="scm-pdf.html">
+    <span class="name">(scm pdf)</span>
+    <span class="desc">PDF document creation — pages, drawing, fonts, text flow, TTF embedding, images, links, outlines</span>
+  </a>
+  <a class="lib-card scm" href="scm-png.html">
+    <span class="name">(scm png)</span>
+    <span class="desc">PNG image writing — grayscale, RGB, and RGBA</span>
+  </a>
+  <a class="lib-card scm" href="scm-profiling.html">
+    <span class="name">(scm profiling)</span>
+    <span class="desc">Execution profiling and performance measurement</span>
+  </a>
+  <a class="lib-card scm" href="scm-qr.html">
+    <span class="name">(scm qr)</span>
+    <span class="desc">QR code encoding — PNG, SVG, and ASCII output</span>
+  </a>
+  <a class="lib-card scm" href="scm-random-access.html">
+    <span class="name">(scm random access)</span>
+    <span class="desc">Random-access file I/O — seek, read, write, truncate</span>
+  </a>
+  <a class="lib-card scm" href="scm-repl.html">
+    <span class="name">(scm repl)</span>
+    <span class="desc">REPL support — completions, syntax info, core form names</span>
+  </a>
+  <a class="lib-card scm" href="scm-store.html">
+    <span class="name">(scm store)</span>
+    <span class="desc">Immutable on-disk indexed record store</span>
+  </a>
+  <a class="lib-card scm" href="scm-string.html">
+    <span class="name">(scm string)</span>
+    <span class="desc">Extended string operations — search, split, trim, convert</span>
+  </a>
+  <a class="lib-card scm" href="scm-sysadmin.html">
+    <span class="name">(scm sysadmin)</span>
+    <span class="desc">System administration toolkit aggregating fs, archive, remote, logging, and more</span>
+  </a>
+  <a class="lib-card scm" href="scm-system.html">
+    <span class="name">(scm system)</span>
+    <span class="desc">System info, environment variables, process execution</span>
+  </a>
+  <a class="lib-card scm" href="scm-templating.html">
+    <span class="name">(scm templating)</span>
+    <span class="desc">Text templating with variable substitution</span>
+  </a>
+  <a class="lib-card scm" href="scm-terminal.html">
+    <span class="name">(scm terminal)</span>
+    <span class="desc">Terminal control — colors, cursor, raw mode</span>
+  </a>
+  <a class="lib-card scm" href="scm-test.html">
+    <span class="name">(scm test)</span>
+    <span class="desc">Test framework — SRFI-64 runner with summary reporting</span>
+  </a>
+  <a class="lib-card scm" href="scm-text.html">
+    <span class="name">(scm text)</span>
+    <span class="desc">Text processing utilities — awk, sed, grep, cut, sort, diff, and more</span>
+  </a>
+  <a class="lib-card scm" href="scm-toml.html">
+    <span class="name">(scm toml)</span>
+    <span class="desc">TOML reading and writing</span>
+  </a>
+  <a class="lib-card scm" href="scm-uri.html">
+    <span class="name">(scm uri)</span>
+    <span class="desc">URI percent-encoding and decoding</span>
+  </a>
+  <a class="lib-card scm" href="scm-xml.html">
+    <span class="name">(scm xml)</span>
+    <span class="desc">XML file reading and navigation</span>
+  </a>
+  <a class="lib-card scm" href="scm-zip.html">
+    <span class="name">(scm zip)</span>
+    <span class="desc">ZIP archive creation and entry writing</span>
+  </a>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

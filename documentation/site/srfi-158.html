@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(srfi 158) — Scm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Scm Library Reference</a></h1>
+    <p>scm &mdash; libraries and their exports</p>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav>
+  <h2>R7RS Standard</h2>
+  <a href="scheme-base.html" class="r7rs">(scheme base)</a>
+  <a href="scheme-case-lambda.html" class="r7rs">(scheme case-lambda)</a>
+  <a href="scheme-char.html" class="r7rs">(scheme char)</a>
+  <a href="scheme-complex.html" class="r7rs">(scheme complex)</a>
+  <a href="scheme-cxr.html" class="r7rs">(scheme cxr)</a>
+  <a href="scheme-eval.html" class="r7rs">(scheme eval)</a>
+  <a href="scheme-file.html" class="r7rs">(scheme file)</a>
+  <a href="scheme-inexact.html" class="r7rs">(scheme inexact)</a>
+  <a href="scheme-lazy.html" class="r7rs">(scheme lazy)</a>
+  <a href="scheme-load.html" class="r7rs">(scheme load)</a>
+  <a href="scheme-process-context.html" class="r7rs">(scheme process-context)</a>
+  <a href="scheme-r5rs.html" class="r7rs">(scheme r5rs)</a>
+  <a href="scheme-read.html" class="r7rs">(scheme read)</a>
+  <a href="scheme-repl.html" class="r7rs">(scheme repl)</a>
+  <a href="scheme-time.html" class="r7rs">(scheme time)</a>
+  <a href="scheme-write.html" class="r7rs">(scheme write)</a>
+  <h2>SRFI Libraries</h2>
+  <a href="srfi-1.html" class="srfi">(srfi 1)</a>
+  <a href="srfi-2.html" class="srfi">(srfi 2)</a>
+  <a href="srfi-8.html" class="srfi">(srfi 8)</a>
+  <a href="srfi-9.html" class="srfi">(srfi 9)</a>
+  <a href="srfi-13.html" class="srfi">(srfi 13)</a>
+  <a href="srfi-14.html" class="srfi">(srfi 14)</a>
+  <a href="srfi-18.html" class="srfi">(srfi 18)</a>
+  <a href="srfi-19.html" class="srfi">(srfi 19)</a>
+  <a href="srfi-26.html" class="srfi">(srfi 26)</a>
+  <a href="srfi-28.html" class="srfi">(srfi 28)</a>
+  <a href="srfi-39.html" class="srfi">(srfi 39)</a>
+  <a href="srfi-48.html" class="srfi">(srfi 48)</a>
+  <a href="srfi-64.html" class="srfi">(srfi 64)</a>
+  <a href="srfi-69.html" class="srfi">(srfi 69)</a>
+  <a href="srfi-95.html" class="srfi">(srfi 95)</a>
+  <a href="srfi-98.html" class="srfi">(srfi 98)</a>
+  <a href="srfi-111.html" class="srfi">(srfi 111)</a>
+  <a href="srfi-125.html" class="srfi">(srfi 125)</a>
+  <a href="srfi-128.html" class="srfi">(srfi 128)</a>
+  <a href="srfi-132.html" class="srfi">(srfi 132)</a>
+  <a href="srfi-133.html" class="srfi">(srfi 133)</a>
+  <a href="srfi-151.html" class="srfi">(srfi 151)</a>
+  <a href="srfi-158.html" class="srfi active">(srfi 158)</a>
+  <h2>Scm Extensions</h2>
+  <a href="scm-archive.html" class="scm">(scm archive)</a>
+  <a href="scm-args.html" class="scm">(scm args)</a>
+  <a href="scm-compile.html" class="scm">(scm compile)</a>
+  <a href="scm-compression.html" class="scm">(scm compression)</a>
+  <a href="scm-crypto.html" class="scm">(scm crypto)</a>
+  <a href="scm-csv.html" class="scm">(scm csv)</a>
+  <a href="scm-database-migrations.html" class="scm">(scm database migrations)</a>
+  <a href="scm-database-postgres.html" class="scm">(scm database postgres)</a>
+  <a href="scm-database-sqlserver.html" class="scm">(scm database sqlserver)</a>
+  <a href="scm-datetime.html" class="scm">(scm datetime)</a>
+  <a href="scm-dict.html" class="scm">(scm dict)</a>
+  <a href="scm-doc.html" class="scm">(scm doc)</a>
+  <a href="scm-duration.html" class="scm">(scm duration)</a>
+  <a href="scm-feed.html" class="scm">(scm feed)</a>
+  <a href="scm-fs-find.html" class="scm">(scm fs-find)</a>
+  <a href="scm-fs.html" class="scm">(scm fs)</a>
+  <a href="scm-glob.html" class="scm">(scm glob)</a>
+  <a href="scm-html-builder.html" class="scm">(scm html builder)</a>
+  <a href="scm-html.html" class="scm">(scm html)</a>
+  <a href="scm-io.html" class="scm">(scm io)</a>
+  <a href="scm-json-simple.html" class="scm">(scm json simple)</a>
+  <a href="scm-json.html" class="scm">(scm json)</a>
+  <a href="scm-list.html" class="scm">(scm list)</a>
+  <a href="scm-log.html" class="scm">(scm log)</a>
+  <a href="scm-macro.html" class="scm">(scm macro)</a>
+  <a href="scm-markdown.html" class="scm">(scm markdown)</a>
+  <a href="scm-match.html" class="scm">(scm match)</a>
+  <a href="scm-math.html" class="scm">(scm math)</a>
+  <a href="scm-module.html" class="scm">(scm module)</a>
+  <a href="scm-net-http-client.html" class="scm">(scm net http client)</a>
+  <a href="scm-net-http-cookies.html" class="scm">(scm net http cookies)</a>
+  <a href="scm-net-http-forms.html" class="scm">(scm net http forms)</a>
+  <a href="scm-net-http-multipart.html" class="scm">(scm net http multipart)</a>
+  <a href="scm-net-http-request.html" class="scm">(scm net http request)</a>
+  <a href="scm-net-http-response.html" class="scm">(scm net http response)</a>
+  <a href="scm-net-http-route.html" class="scm">(scm net http route)</a>
+  <a href="scm-net-http-server.html" class="scm">(scm net http server)</a>
+  <a href="scm-net-remote.html" class="scm">(scm net-remote)</a>
+  <a href="scm-net-sockets.html" class="scm">(scm net sockets)</a>
+  <a href="scm-net-websocket.html" class="scm">(scm net websocket)</a>
+  <a href="scm-odf-spreadsheet.html" class="scm">(scm odf spreadsheet)</a>
+  <a href="scm-odf-writer.html" class="scm">(scm odf writer)</a>
+  <a href="scm-ooxml-excel-reader.html" class="scm">(scm ooxml excel-reader)</a>
+  <a href="scm-ooxml-excel.html" class="scm">(scm ooxml excel)</a>
+  <a href="scm-ooxml-word-reader.html" class="scm">(scm ooxml word-reader)</a>
+  <a href="scm-ooxml-word.html" class="scm">(scm ooxml word)</a>
+  <a href="scm-pdf.html" class="scm">(scm pdf)</a>
+  <a href="scm-png.html" class="scm">(scm png)</a>
+  <a href="scm-profiling.html" class="scm">(scm profiling)</a>
+  <a href="scm-qr.html" class="scm">(scm qr)</a>
+  <a href="scm-random-access.html" class="scm">(scm random access)</a>
+  <a href="scm-repl.html" class="scm">(scm repl)</a>
+  <a href="scm-store.html" class="scm">(scm store)</a>
+  <a href="scm-string.html" class="scm">(scm string)</a>
+  <a href="scm-sysadmin.html" class="scm">(scm sysadmin)</a>
+  <a href="scm-system.html" class="scm">(scm system)</a>
+  <a href="scm-templating.html" class="scm">(scm templating)</a>
+  <a href="scm-terminal.html" class="scm">(scm terminal)</a>
+  <a href="scm-test.html" class="scm">(scm test)</a>
+  <a href="scm-text.html" class="scm">(scm text)</a>
+  <a href="scm-toml.html" class="scm">(scm toml)</a>
+  <a href="scm-uri.html" class="scm">(scm uri)</a>
+  <a href="scm-xml.html" class="scm">(scm xml)</a>
+  <a href="scm-zip.html" class="scm">(scm zip)</a>
+</nav>
+
+<main>
+
+<a class="backlink" href="index.html">&larr; All libraries</a>
+<div class="lib-title srfi">(srfi 158)</div>
+<p class="lib-sub">SRFI-158 — Generators and accumulators: lazy sequences, composable pipelines, and value collectors</p>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">55 bindings</p>
+
+<div class="entry" id="e0" data-name="bytevector-&gt;generator">
+  <div class="entry-name">bytevector-&gt;generator</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e1" data-name="bytevector-accumulator">
+  <div class="entry-name">bytevector-accumulator</div>
+  <pre class="entry-doc">Syntax: (bytevector-accumulator)
+Library: (srfi 158)
+Description: Returns an accumulator that collects bytes into a bytevector.
+  Returns the bytevector when called with end-of-file.
+Example:
+  (let ((a (bytevector-accumulator)))
+    (a 1) (a 2) (a 3) (a (eof-object))) =&gt; #u8(1 2 3)</pre>
+</div>
+<div class="entry" id="e2" data-name="bytevector-accumulator!">
+  <div class="entry-name">bytevector-accumulator!</div>
+  <pre class="entry-doc">Syntax: (bytevector-accumulator! bv at)
+Library: (srfi 158)
+Description: Returns an accumulator that stores bytes into bv starting
+  at index at. Returns bv when called with end-of-file.
+Example:
+  (let* ((bv (make-bytevector 5 0))
+         (a (bytevector-accumulator! bv 1)))
+    (a 10) (a 20) (a 30) (a (eof-object))) =&gt; #u8(0 10 20 30 0)</pre>
+</div>
+<div class="entry" id="e3" data-name="circular-generator">
+  <div class="entry-name">circular-generator</div>
+  <pre class="entry-doc">Syntax: (circular-generator arg1 arg2 ...)
+Library: (srfi 158)
+Description: Returns an infinite generator that cycles through the given
+  arguments repeatedly. At least one argument is required.
+Example:
+  (let ((g (circular-generator 1 2 3)))
+    (list (g) (g) (g) (g) (g))) =&gt; (1 2 3 1 2)</pre>
+</div>
+<div class="entry" id="e4" data-name="count-accumulator">
+  <div class="entry-name">count-accumulator</div>
+  <pre class="entry-doc">Syntax: (count-accumulator)
+Library: (srfi 158)
+Description: Returns an accumulator that counts the number of values
+  accumulated. Returns the count when called with end-of-file.
+Example:
+  (let ((a (count-accumulator)))
+    (a 'x) (a 'y) (a 'z) (a (eof-object))) =&gt; 3</pre>
+</div>
+<div class="entry" id="e5" data-name="gappend">
+  <div class="entry-name">gappend</div>
+  <pre class="entry-doc">Syntax: (gappend gen ...)
+Library: (srfi 158)
+Description: Returns a generator that yields all values from the first
+  generator, then all from the second, and so on.
+Example:
+  (generator-&gt;list (gappend (generator 1 2) (generator 3 4)))
+    =&gt; (1 2 3 4)</pre>
+</div>
+<div class="entry" id="e6" data-name="gcombine">
+  <div class="entry-name">gcombine</div>
+  <pre class="entry-doc">Syntax: (gcombine proc seed gen gen2 ...)
+Library: (srfi 158)
+Description: Returns a generator. Each time it is called, it applies proc
+  to the next values from the generators and the current seed. proc must
+  return two values: the yielded value and the new seed.
+Example:
+  (generator-&gt;list (gcombine (lambda (x s) (values (* x x) (+ s x)))
+                             0 (generator 1 2 3 4 5)))
+    =&gt; (1 4 9 16 25)</pre>
+</div>
+<div class="entry" id="e7" data-name="gcons*">
+  <div class="entry-name">gcons*</div>
+  <pre class="entry-doc">Syntax: (gcons* item ... gen)
+Library: (srfi 158)
+Description: Returns a generator that yields each item, then yields the
+  values from gen. The last argument must be a generator.
+Example:
+  (generator-&gt;list (gcons* 'a 'b (generator 1 2 3)))
+    =&gt; (a b 1 2 3)</pre>
+</div>
+<div class="entry" id="e8" data-name="gdelete">
+  <div class="entry-name">gdelete</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e9" data-name="gdelete-neighbor-dups">
+  <div class="entry-name">gdelete-neighbor-dups</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e10" data-name="gdrop">
+  <div class="entry-name">gdrop</div>
+  <pre class="entry-doc">Syntax: (gdrop gen k)
+Library: (srfi 158)
+Description: Returns a generator that skips the first k values from gen,
+  then yields the remaining values.
+Example:
+  (generator-&gt;list (gdrop (generator 1 2 3 4 5) 3)) =&gt; (4 5)</pre>
+</div>
+<div class="entry" id="e11" data-name="gdrop-while">
+  <div class="entry-name">gdrop-while</div>
+  <pre class="entry-doc">Syntax: (gdrop-while pred gen)
+Library: (srfi 158)
+Description: Returns a generator that skips values from gen while pred
+  returns true, then yields all remaining values.
+Example:
+  (generator-&gt;list (gdrop-while (lambda (x) (&lt; x 3))
+    (generator 1 2 3 4 5))) =&gt; (3 4 5)</pre>
+</div>
+<div class="entry" id="e12" data-name="generator">
+  <div class="entry-name">generator</div>
+  <pre class="entry-doc">Syntax: (generator arg ...)
+Library: (srfi 158)
+Description: Returns a generator that yields each arg in order, then returns
+  end-of-file on all subsequent calls.
+Example:
+  (let ((g (generator 1 2 3)))
+    (list (g) (g) (g) (g))) =&gt; (1 2 3 #&lt;eof&gt;)</pre>
+</div>
+<div class="entry" id="e13" data-name="generator-&gt;list">
+  <div class="entry-name">generator-&gt;list</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e14" data-name="generator-&gt;reverse-list">
+  <div class="entry-name">generator-&gt;reverse-list</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e15" data-name="generator-&gt;string">
+  <div class="entry-name">generator-&gt;string</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e16" data-name="generator-&gt;vector">
+  <div class="entry-name">generator-&gt;vector</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e17" data-name="generator-&gt;vector!">
+  <div class="entry-name">generator-&gt;vector!</div>
+  <pre class="entry-doc">Syntax: (generator-&gt;vector! vec at gen)
+Library: (srfi 158)
+Description: Fills vec starting at index at with values from gen. Returns
+  the number of elements written.
+Example:
+  (let ((v (make-vector 5 0)))
+    (generator-&gt;vector! v 1 (generator 'a 'b 'c))
+    v) =&gt; #(0 a b c 0)</pre>
+</div>
+<div class="entry" id="e18" data-name="generator-any">
+  <div class="entry-name">generator-any</div>
+  <pre class="entry-doc">Syntax: (generator-any pred gen)
+Library: (srfi 158)
+Description: Returns the first true value of (pred val) for values from gen,
+  or #f if pred returns false for all values. Consumes gen up to the first
+  true result.
+Example:
+  (generator-any odd? (generator 2 4 6 7 8)) =&gt; #t</pre>
+</div>
+<div class="entry" id="e19" data-name="generator-count">
+  <div class="entry-name">generator-count</div>
+  <pre class="entry-doc">Syntax: (generator-count pred gen)
+Library: (srfi 158)
+Description: Returns the number of values from gen for which pred returns
+  true. Consumes the entire generator.
+Example:
+  (generator-count even? (generator 1 2 3 4 5)) =&gt; 2</pre>
+</div>
+<div class="entry" id="e20" data-name="generator-every">
+  <div class="entry-name">generator-every</div>
+  <pre class="entry-doc">Syntax: (generator-every pred gen)
+Library: (srfi 158)
+Description: Returns the last true value of (pred val) for values from gen,
+  or #t if the generator is empty. Returns #f as soon as pred returns false.
+Example:
+  (generator-every odd? (generator 1 3 5 7)) =&gt; #t
+  (generator-every odd? (generator 1 3 4 5)) =&gt; #f</pre>
+</div>
+<div class="entry" id="e21" data-name="generator-find">
+  <div class="entry-name">generator-find</div>
+  <pre class="entry-doc">Syntax: (generator-find pred gen)
+Library: (srfi 158)
+Description: Returns the first value from gen for which pred returns true,
+  or #f if no such value exists. Note: consumes values from gen up to and
+  including the found value.
+Example:
+  (generator-find even? (generator 1 3 5 6 7)) =&gt; 6</pre>
+</div>
+<div class="entry" id="e22" data-name="generator-fold">
+  <div class="entry-name">generator-fold</div>
+  <pre class="entry-doc">Syntax: (generator-fold proc seed gen gen2 ...)
+Library: (srfi 158)
+Description: Folds over generator values. proc is called with each generated
+  value (or set of values from multiple generators) and the current
+  accumulator, returning the new accumulator. Returns the final accumulator
+  when any generator is exhausted.
+Example:
+  (generator-fold + 0 (generator 1 2 3 4 5)) =&gt; 15
+  (generator-fold cons '() (generator 1 2 3)) =&gt; (3 2 1)</pre>
+</div>
+<div class="entry" id="e23" data-name="generator-for-each">
+  <div class="entry-name">generator-for-each</div>
+  <pre class="entry-doc">Syntax: (generator-for-each proc gen gen2 ...)
+Library: (srfi 158)
+Description: Applies proc to each value from gen (or sets of values from
+  multiple generators) for side effects. Stops when any generator is
+  exhausted.
+Example:
+  (let ((sum 0))
+    (generator-for-each (lambda (x) (set! sum (+ sum x)))
+      (generator 1 2 3 4 5))
+    sum) =&gt; 15</pre>
+</div>
+<div class="entry" id="e24" data-name="generator-map-&gt;list">
+  <div class="entry-name">generator-map-&gt;list</div>
+  <pre class="entry-doc">Syntax: (generator-map-&gt;list proc gen gen2 ...)
+Library: (srfi 158)
+Description: Applies proc to each value from the generators and collects
+  the results into a list. Stops when any generator is exhausted.
+Example:
+  (generator-map-&gt;list square (generator 1 2 3 4 5))
+    =&gt; (1 4 9 16 25)</pre>
+</div>
+<div class="entry" id="e25" data-name="generator-unfold">
+  <div class="entry-name">generator-unfold</div>
+  <pre class="entry-doc">Syntax: (generator-unfold gen unfold arg ...)
+Library: (srfi 158)
+Description: Uses the unfold procedure to convert generator values into a
+  data structure. Equivalent to (unfold eof-object? (lambda (x) x) (lambda
+  (x) (gen)) (gen) args ...). The unfold argument must be compatible with
+  SRFI 1 unfold.
+Example:
+  (generator-unfold (generator 1 2 3) unfold) ; requires (srfi 1)</pre>
+</div>
+<div class="entry" id="e26" data-name="gfilter">
+  <div class="entry-name">gfilter</div>
+  <pre class="entry-doc">Syntax: (gfilter pred gen)
+Library: (srfi 158)
+Description: Returns a generator that yields only values from gen for which
+  pred returns true.
+Example:
+  (generator-&gt;list (gfilter odd? (generator 1 2 3 4 5))) =&gt; (1 3 5)</pre>
+</div>
+<div class="entry" id="e27" data-name="gflatten">
+  <div class="entry-name">gflatten</div>
+  <pre class="entry-doc">Syntax: (gflatten gen)
+Library: (srfi 158)
+Description: Returns a generator that yields elements from lists produced
+  by gen. Each value from gen must be a list; their elements are yielded
+  in order.
+Example:
+  (generator-&gt;list (gflatten (generator '(1 2) '() '(3 4 5))))
+    =&gt; (1 2 3 4 5)</pre>
+</div>
+<div class="entry" id="e28" data-name="ggroup">
+  <div class="entry-name">ggroup</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e29" data-name="gindex">
+  <div class="entry-name">gindex</div>
+  <pre class="entry-doc">Syntax: (gindex value-gen index-gen)
+Library: (srfi 158)
+Description: Returns a generator that yields elements from value-gen at
+  positions specified by index-gen. index-gen must yield monotonically
+  increasing non-negative integers.
+Example:
+  (generator-&gt;list (gindex (generator 'a 'b 'c 'd 'e)
+                           (generator 0 2 4))) =&gt; (a c e)</pre>
+</div>
+<div class="entry" id="e30" data-name="gmap">
+  <div class="entry-name">gmap</div>
+  <pre class="entry-doc">Syntax: (gmap proc gen gen2 ...)
+Library: (srfi 158)
+Description: Returns a generator that applies proc to the values yielded
+  by the given generators. With multiple generators, stops when any
+  generator is exhausted.
+Example:
+  (generator-&gt;list (gmap + (generator 1 2 3) (generator 10 20 30)))
+    =&gt; (11 22 33)</pre>
+</div>
+<div class="entry" id="e31" data-name="gmerge">
+  <div class="entry-name">gmerge</div>
+  <pre class="entry-doc">Syntax: (gmerge less-than gen1 gen2 ...)
+Library: (srfi 158)
+Description: Returns a generator that merges values from multiple sorted
+  generators into a single sorted sequence using the less-than predicate.
+Example:
+  (generator-&gt;list (gmerge &lt; (generator 1 3 5) (generator 2 4 6)))
+    =&gt; (1 2 3 4 5 6)</pre>
+</div>
+<div class="entry" id="e32" data-name="gremove">
+  <div class="entry-name">gremove</div>
+  <pre class="entry-doc">Syntax: (gremove pred gen)
+Library: (srfi 158)
+Description: Returns a generator that yields only values from gen for which
+  pred returns false. Equivalent to (gfilter (lambda (x) (not (pred x))) gen).
+Example:
+  (generator-&gt;list (gremove odd? (generator 1 2 3 4 5))) =&gt; (2 4)</pre>
+</div>
+<div class="entry" id="e33" data-name="gselect">
+  <div class="entry-name">gselect</div>
+  <pre class="entry-doc">Syntax: (gselect value-gen truth-gen)
+Library: (srfi 158)
+Description: Returns a generator that yields values from value-gen where
+  truth-gen yields a true value. Both generators are advanced in lockstep.
+Example:
+  (generator-&gt;list (gselect (generator 'a 'b 'c 'd 'e)
+                            (generator #t #f #t #f #t))) =&gt; (a c e)</pre>
+</div>
+<div class="entry" id="e34" data-name="gstate-filter">
+  <div class="entry-name">gstate-filter</div>
+  <pre class="entry-doc">Syntax: (gstate-filter proc seed gen)
+Library: (srfi 158)
+Description: Returns a generator that filters values from gen using stateful
+  predicate proc. proc takes the current seed and a value, and returns two
+  values: the new seed and a boolean. If the boolean is true, the value is
+  yielded; otherwise it is skipped.
+Example:
+  (generator-&gt;list (gstate-filter
+    (lambda (s v) (values (+ s 1) (even? s)))
+    0 (generator 'a 'b 'c 'd 'e))) =&gt; (a c e)</pre>
+</div>
+<div class="entry" id="e35" data-name="gtake">
+  <div class="entry-name">gtake</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e36" data-name="gtake-while">
+  <div class="entry-name">gtake-while</div>
+  <pre class="entry-doc">Syntax: (gtake-while pred gen)
+Library: (srfi 158)
+Description: Returns a generator that yields values from gen as long as pred
+  returns true. Stops as soon as pred returns false.
+Example:
+  (generator-&gt;list (gtake-while (lambda (x) (&lt; x 4))
+    (generator 1 2 3 4 5))) =&gt; (1 2 3)</pre>
+</div>
+<div class="entry" id="e37" data-name="list-&gt;generator">
+  <div class="entry-name">list-&gt;generator</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e38" data-name="list-accumulator">
+  <div class="entry-name">list-accumulator</div>
+  <pre class="entry-doc">Syntax: (list-accumulator)
+Library: (srfi 158)
+Description: Returns an accumulator that collects values into a list in
+  order. Returns the list when called with end-of-file.
+Example:
+  (let ((a (list-accumulator)))
+    (a 1) (a 2) (a 3) (a (eof-object))) =&gt; (1 2 3)</pre>
+</div>
+<div class="entry" id="e39" data-name="make-accumulator">
+  <div class="entry-name">make-accumulator</div>
+  <pre class="entry-doc">Syntax: (make-accumulator kons knil finalizer)
+Library: (srfi 158)
+Description: Creates an accumulator. When called with a value, applies kons
+  to the value and current state (initialized to knil). When called with
+  end-of-file, applies finalizer to the state and returns the result.
+Example:
+  (let ((a (make-accumulator cons '() reverse)))
+    (a 1) (a 2) (a 3) (a (eof-object))) =&gt; (1 2 3)</pre>
+</div>
+<div class="entry" id="e40" data-name="make-coroutine-generator">
+  <div class="entry-name">make-coroutine-generator</div>
+  <pre class="entry-doc">Syntax: (make-coroutine-generator proc)
+Library: (srfi 158)
+Description: Creates a generator from a coroutine. proc is a procedure that
+  takes a yield argument. When yield is called with a value, the generator
+  returns that value and suspends. When called again, the coroutine resumes
+  after the yield. When proc returns, the generator yields end-of-file.
+Example:
+  (generator-&gt;list (make-coroutine-generator
+    (lambda (yield)
+      (yield 1) (yield 2) (yield 3)))) =&gt; (1 2 3)</pre>
+</div>
+<div class="entry" id="e41" data-name="make-for-each-generator">
+  <div class="entry-name">make-for-each-generator</div>
+  <pre class="entry-doc">Syntax: (make-for-each-generator for-each obj)
+Library: (srfi 158)
+Description: Creates a generator from any collection by using a for-each
+  procedure. for-each must accept a procedure and obj as arguments and
+  apply the procedure to each element of obj.
+Example:
+  (generator-&gt;list (make-for-each-generator for-each '(a b c))) =&gt; (a b c)
+  (generator-&gt;list (make-for-each-generator string-for-each "abc"))
+    =&gt; (#\a #\b #\c)</pre>
+</div>
+<div class="entry" id="e42" data-name="make-iota-generator">
+  <div class="entry-name">make-iota-generator</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e43" data-name="make-range-generator">
+  <div class="entry-name">make-range-generator</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e44" data-name="make-unfold-generator">
+  <div class="entry-name">make-unfold-generator</div>
+  <pre class="entry-doc">Syntax: (make-unfold-generator stop? mapper successor seed)
+Library: (srfi 158)
+Description: Creates a generator that unfolds a sequence. Starting from seed,
+  if stop? returns true, the generator is done. Otherwise it yields
+  (mapper seed), then updates seed to (successor seed) and repeats.
+Example:
+  (generator-&gt;list (make-unfold-generator
+    (lambda (s) (&gt; s 5))
+    (lambda (s) (* s s))
+    (lambda (s) (+ s 1))
+    1)) =&gt; (1 4 9 16 25)</pre>
+</div>
+<div class="entry" id="e45" data-name="product-accumulator">
+  <div class="entry-name">product-accumulator</div>
+  <pre class="entry-doc">Syntax: (product-accumulator)
+Library: (srfi 158)
+Description: Returns an accumulator that computes the product of accumulated
+  values. Returns the product when called with end-of-file.
+Example:
+  (let ((a (product-accumulator)))
+    (a 1) (a 2) (a 3) (a 4) (a (eof-object))) =&gt; 24</pre>
+</div>
+<div class="entry" id="e46" data-name="reverse-list-accumulator">
+  <div class="entry-name">reverse-list-accumulator</div>
+  <pre class="entry-doc">Syntax: (reverse-list-accumulator)
+Library: (srfi 158)
+Description: Returns an accumulator that collects values into a list in
+  reverse order. Returns the reversed list when called with end-of-file.
+Example:
+  (let ((a (reverse-list-accumulator)))
+    (a 1) (a 2) (a 3) (a (eof-object))) =&gt; (3 2 1)</pre>
+</div>
+<div class="entry" id="e47" data-name="reverse-vector-&gt;generator">
+  <div class="entry-name">reverse-vector-&gt;generator</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e48" data-name="reverse-vector-accumulator">
+  <div class="entry-name">reverse-vector-accumulator</div>
+  <pre class="entry-doc">Syntax: (reverse-vector-accumulator)
+Library: (srfi 158)
+Description: Returns an accumulator that collects values into a vector in
+  reverse order. Returns the vector when called with end-of-file.
+Example:
+  (let ((a (reverse-vector-accumulator)))
+    (a 1) (a 2) (a 3) (a (eof-object))) =&gt; #(3 2 1)</pre>
+</div>
+<div class="entry" id="e49" data-name="string-&gt;generator">
+  <div class="entry-name">string-&gt;generator</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e50" data-name="string-accumulator">
+  <div class="entry-name">string-accumulator</div>
+  <pre class="entry-doc">Syntax: (string-accumulator)
+Library: (srfi 158)
+Description: Returns an accumulator that collects characters into a string.
+  Returns the string when called with end-of-file.
+Example:
+  (let ((a (string-accumulator)))
+    (a #\a) (a #\b) (a #\c) (a (eof-object))) =&gt; "abc"</pre>
+</div>
+<div class="entry" id="e51" data-name="sum-accumulator">
+  <div class="entry-name">sum-accumulator</div>
+  <pre class="entry-doc">Syntax: (sum-accumulator)
+Library: (srfi 158)
+Description: Returns an accumulator that computes the sum of accumulated
+  values. Returns the sum when called with end-of-file.
+Example:
+  (let ((a (sum-accumulator)))
+    (a 1) (a 2) (a 3) (a (eof-object))) =&gt; 6</pre>
+</div>
+<div class="entry" id="e52" data-name="vector-&gt;generator">
+  <div class="entry-name">vector-&gt;generator</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e53" data-name="vector-accumulator">
+  <div class="entry-name">vector-accumulator</div>
+  <pre class="entry-doc">Syntax: (vector-accumulator)
+Library: (srfi 158)
+Description: Returns an accumulator that collects values into a vector in
+  order. Returns the vector when called with end-of-file.
+Example:
+  (let ((a (vector-accumulator)))
+    (a 1) (a 2) (a 3) (a (eof-object))) =&gt; #(1 2 3)</pre>
+</div>
+<div class="entry" id="e54" data-name="vector-accumulator!">
+  <div class="entry-name">vector-accumulator!</div>
+  <pre class="entry-doc">Syntax: (vector-accumulator! vec at)
+Library: (srfi 158)
+Description: Returns an accumulator that stores values into vec starting
+  at index at. Returns vec when called with end-of-file.
+Example:
+  (let* ((v (make-vector 5 0))
+         (a (vector-accumulator! v 1)))
+    (a 'a) (a 'b) (a 'c) (a (eof-object))) =&gt; #(0 a b c 0)</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

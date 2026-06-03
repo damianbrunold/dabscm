@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm args) — Scm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Scm Library Reference</a></h1>
+    <p>scm &mdash; libraries and their exports</p>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav>
+  <h2>R7RS Standard</h2>
+  <a href="scheme-base.html" class="r7rs">(scheme base)</a>
+  <a href="scheme-case-lambda.html" class="r7rs">(scheme case-lambda)</a>
+  <a href="scheme-char.html" class="r7rs">(scheme char)</a>
+  <a href="scheme-complex.html" class="r7rs">(scheme complex)</a>
+  <a href="scheme-cxr.html" class="r7rs">(scheme cxr)</a>
+  <a href="scheme-eval.html" class="r7rs">(scheme eval)</a>
+  <a href="scheme-file.html" class="r7rs">(scheme file)</a>
+  <a href="scheme-inexact.html" class="r7rs">(scheme inexact)</a>
+  <a href="scheme-lazy.html" class="r7rs">(scheme lazy)</a>
+  <a href="scheme-load.html" class="r7rs">(scheme load)</a>
+  <a href="scheme-process-context.html" class="r7rs">(scheme process-context)</a>
+  <a href="scheme-r5rs.html" class="r7rs">(scheme r5rs)</a>
+  <a href="scheme-read.html" class="r7rs">(scheme read)</a>
+  <a href="scheme-repl.html" class="r7rs">(scheme repl)</a>
+  <a href="scheme-time.html" class="r7rs">(scheme time)</a>
+  <a href="scheme-write.html" class="r7rs">(scheme write)</a>
+  <h2>SRFI Libraries</h2>
+  <a href="srfi-1.html" class="srfi">(srfi 1)</a>
+  <a href="srfi-2.html" class="srfi">(srfi 2)</a>
+  <a href="srfi-8.html" class="srfi">(srfi 8)</a>
+  <a href="srfi-9.html" class="srfi">(srfi 9)</a>
+  <a href="srfi-13.html" class="srfi">(srfi 13)</a>
+  <a href="srfi-14.html" class="srfi">(srfi 14)</a>
+  <a href="srfi-18.html" class="srfi">(srfi 18)</a>
+  <a href="srfi-19.html" class="srfi">(srfi 19)</a>
+  <a href="srfi-26.html" class="srfi">(srfi 26)</a>
+  <a href="srfi-28.html" class="srfi">(srfi 28)</a>
+  <a href="srfi-39.html" class="srfi">(srfi 39)</a>
+  <a href="srfi-48.html" class="srfi">(srfi 48)</a>
+  <a href="srfi-64.html" class="srfi">(srfi 64)</a>
+  <a href="srfi-69.html" class="srfi">(srfi 69)</a>
+  <a href="srfi-95.html" class="srfi">(srfi 95)</a>
+  <a href="srfi-98.html" class="srfi">(srfi 98)</a>
+  <a href="srfi-111.html" class="srfi">(srfi 111)</a>
+  <a href="srfi-125.html" class="srfi">(srfi 125)</a>
+  <a href="srfi-128.html" class="srfi">(srfi 128)</a>
+  <a href="srfi-132.html" class="srfi">(srfi 132)</a>
+  <a href="srfi-133.html" class="srfi">(srfi 133)</a>
+  <a href="srfi-151.html" class="srfi">(srfi 151)</a>
+  <a href="srfi-158.html" class="srfi">(srfi 158)</a>
+  <h2>Scm Extensions</h2>
+  <a href="scm-archive.html" class="scm">(scm archive)</a>
+  <a href="scm-args.html" class="scm active">(scm args)</a>
+  <a href="scm-compile.html" class="scm">(scm compile)</a>
+  <a href="scm-compression.html" class="scm">(scm compression)</a>
+  <a href="scm-crypto.html" class="scm">(scm crypto)</a>
+  <a href="scm-csv.html" class="scm">(scm csv)</a>
+  <a href="scm-database-migrations.html" class="scm">(scm database migrations)</a>
+  <a href="scm-database-postgres.html" class="scm">(scm database postgres)</a>
+  <a href="scm-database-sqlserver.html" class="scm">(scm database sqlserver)</a>
+  <a href="scm-datetime.html" class="scm">(scm datetime)</a>
+  <a href="scm-dict.html" class="scm">(scm dict)</a>
+  <a href="scm-doc.html" class="scm">(scm doc)</a>
+  <a href="scm-duration.html" class="scm">(scm duration)</a>
+  <a href="scm-feed.html" class="scm">(scm feed)</a>
+  <a href="scm-fs-find.html" class="scm">(scm fs-find)</a>
+  <a href="scm-fs.html" class="scm">(scm fs)</a>
+  <a href="scm-glob.html" class="scm">(scm glob)</a>
+  <a href="scm-html-builder.html" class="scm">(scm html builder)</a>
+  <a href="scm-html.html" class="scm">(scm html)</a>
+  <a href="scm-io.html" class="scm">(scm io)</a>
+  <a href="scm-json-simple.html" class="scm">(scm json simple)</a>
+  <a href="scm-json.html" class="scm">(scm json)</a>
+  <a href="scm-list.html" class="scm">(scm list)</a>
+  <a href="scm-log.html" class="scm">(scm log)</a>
+  <a href="scm-macro.html" class="scm">(scm macro)</a>
+  <a href="scm-markdown.html" class="scm">(scm markdown)</a>
+  <a href="scm-match.html" class="scm">(scm match)</a>
+  <a href="scm-math.html" class="scm">(scm math)</a>
+  <a href="scm-module.html" class="scm">(scm module)</a>
+  <a href="scm-net-http-client.html" class="scm">(scm net http client)</a>
+  <a href="scm-net-http-cookies.html" class="scm">(scm net http cookies)</a>
+  <a href="scm-net-http-forms.html" class="scm">(scm net http forms)</a>
+  <a href="scm-net-http-multipart.html" class="scm">(scm net http multipart)</a>
+  <a href="scm-net-http-request.html" class="scm">(scm net http request)</a>
+  <a href="scm-net-http-response.html" class="scm">(scm net http response)</a>
+  <a href="scm-net-http-route.html" class="scm">(scm net http route)</a>
+  <a href="scm-net-http-server.html" class="scm">(scm net http server)</a>
+  <a href="scm-net-remote.html" class="scm">(scm net-remote)</a>
+  <a href="scm-net-sockets.html" class="scm">(scm net sockets)</a>
+  <a href="scm-net-websocket.html" class="scm">(scm net websocket)</a>
+  <a href="scm-odf-spreadsheet.html" class="scm">(scm odf spreadsheet)</a>
+  <a href="scm-odf-writer.html" class="scm">(scm odf writer)</a>
+  <a href="scm-ooxml-excel-reader.html" class="scm">(scm ooxml excel-reader)</a>
+  <a href="scm-ooxml-excel.html" class="scm">(scm ooxml excel)</a>
+  <a href="scm-ooxml-word-reader.html" class="scm">(scm ooxml word-reader)</a>
+  <a href="scm-ooxml-word.html" class="scm">(scm ooxml word)</a>
+  <a href="scm-pdf.html" class="scm">(scm pdf)</a>
+  <a href="scm-png.html" class="scm">(scm png)</a>
+  <a href="scm-profiling.html" class="scm">(scm profiling)</a>
+  <a href="scm-qr.html" class="scm">(scm qr)</a>
+  <a href="scm-random-access.html" class="scm">(scm random access)</a>
+  <a href="scm-repl.html" class="scm">(scm repl)</a>
+  <a href="scm-store.html" class="scm">(scm store)</a>
+  <a href="scm-string.html" class="scm">(scm string)</a>
+  <a href="scm-sysadmin.html" class="scm">(scm sysadmin)</a>
+  <a href="scm-system.html" class="scm">(scm system)</a>
+  <a href="scm-templating.html" class="scm">(scm templating)</a>
+  <a href="scm-terminal.html" class="scm">(scm terminal)</a>
+  <a href="scm-test.html" class="scm">(scm test)</a>
+  <a href="scm-text.html" class="scm">(scm text)</a>
+  <a href="scm-toml.html" class="scm">(scm toml)</a>
+  <a href="scm-uri.html" class="scm">(scm uri)</a>
+  <a href="scm-xml.html" class="scm">(scm xml)</a>
+  <a href="scm-zip.html" class="scm">(scm zip)</a>
+</nav>
+
+<main>
+
+<a class="backlink" href="index.html">&larr; All libraries</a>
+<div class="lib-title scm">(scm args)</div>
+<p class="lib-sub">Declarative command-line argument parsing — options, flags, positionals, typed values</p>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">23 bindings</p>
+
+<div class="entry" id="e0" data-name="arg-parser?">
+  <div class="entry-name">arg-parser?</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e1" data-name="arg-result?">
+  <div class="entry-name">arg-result?</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e2" data-name="arg-spec?">
+  <div class="entry-name">arg-spec?</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e3" data-name="arg-type?">
+  <div class="entry-name">arg-type?</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e4" data-name="arg:boolean">
+  <div class="entry-name">arg:boolean</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e5" data-name="arg:integer">
+  <div class="entry-name">arg:integer</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e6" data-name="arg:list">
+  <div class="entry-name">arg:list</div>
+  <pre class="entry-doc">Syntax: (arg:list elem-type [separator])
+Library: (scm args)
+Description: A type that splits the argument on separator (a char, default
+  #\,) and converts each piece with elem-type, returning a list. elem-type
+  may be any type or bare converter procedure. Empty pieces are kept.
+Example:
+  (option nums (long "nums") (type (arg:list arg:integer)))
+  ;; --nums 1,2,3  =&gt;  (1 2 3)</pre>
+</div>
+<div class="entry" id="e7" data-name="arg:number">
+  <div class="entry-name">arg:number</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e8" data-name="arg:one-of">
+  <div class="entry-name">arg:one-of</div>
+  <pre class="entry-doc">Syntax: (arg:one-of sym ...)
+Library: (scm args)
+Description: A type accepting only one of the given symbols (an enumeration).
+  The argument string is read as a symbol and must be a member of syms;
+  otherwise a usage error listing the choices is reported. In --help the
+  placeholder renders as {sym|sym|...}. Note the symbols are evaluated, so
+  quote them: (arg:one-of 'fast 'slow).
+Example:
+  (option mode (long "mode") (type (arg:one-of 'fast 'slow)) (default 'fast))</pre>
+</div>
+<div class="entry" id="e9" data-name="arg:string">
+  <div class="entry-name">arg:string</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e10" data-name="arg:symbol">
+  <div class="entry-name">arg:symbol</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e11" data-name="args-&gt;alist">
+  <div class="entry-name">args-&gt;alist</div>
+  <pre class="entry-doc">Syntax: (args-&gt;alist result)
+Library: (scm args)
+Description: Returns the full association list of (name . value) pairs from a
+  parse-args result. Handy for debugging or bulk processing.
+Example:
+  (args-&gt;alist r) =&gt; ((verbose . #t) (count . 3) (input . "in.txt"))</pre>
+</div>
+<div class="entry" id="e12" data-name="args-ref">
+  <div class="entry-name">args-ref</div>
+  <pre class="entry-doc">Syntax: (args-ref result name [fallback])
+Library: (scm args)
+Description: Returns the value parsed for name (a symbol) from a parse-args
+  result. If name was not supplied and has no default, returns fallback (or
+  #f when no fallback is given). Flags return #t/#f; repeatable options
+  return a list.
+Example:
+  (args-ref r 'count) =&gt; 3
+  (args-ref r 'output "-") =&gt; "-"   ; not supplied, fallback used</pre>
+</div>
+<div class="entry" id="e13" data-name="args-rest">
+  <div class="entry-name">args-rest</div>
+  <pre class="entry-doc">Syntax: (args-rest result)
+Library: (scm args)
+Description: Returns the list of leftover positional tokens. When the parser
+  declares no positional specs, every positional argument lands here; when
+  it does declare positionals, this is the empty list (use a repeat
+  positional to capture a variable tail by name instead).
+Example:
+  (args-rest r) =&gt; ("a.txt" "b.txt")</pre>
+</div>
+<div class="entry" id="e14" data-name="coerce-type">
+  <div class="entry-name">coerce-type</div>
+  <pre class="entry-doc">Syntax: (coerce-type t)
+Library: (scm args)
+Description: Normalizes a type designator to an arg-type: an arg-type is
+  returned unchanged; a bare procedure is wrapped as a string-&gt;value
+  converter with the placeholder "VALUE". Used internally and when writing
+  custom type combinators.
+Example:
+  (coerce-type string-&gt;number) =&gt; #&lt;arg-type VALUE&gt;</pre>
+</div>
+<div class="entry" id="e15" data-name="define-cli">
+  <div class="entry-name">define-cli</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e16" data-name="flag">
+  <div class="entry-name">flag</div>
+  <pre class="entry-doc">Syntax: (flag name key value ...)
+Library: (scm args)
+Description: Builds a boolean flag spec (data form). Presence sets it to #t;
+  --no-&lt;long&gt; sets it to #f. Keys: short, long, default, help. Use inside
+  make-arg-parser's 'options list.
+Example:
+  (flag 'verbose 'short #\v 'long "verbose" 'help "Verbose output")</pre>
+</div>
+<div class="entry" id="e17" data-name="format-help">
+  <div class="entry-name">format-help</div>
+  <pre class="entry-doc">Syntax: (format-help parser)
+Library: (scm args)
+Description: Renders the --help text for parser as a string: a usage line,
+  the description, an Arguments section for positionals, and an Options
+  section (including the auto-generated --help and --version entries).
+  parse-args prints this and exits 0 on --help/-h.
+Example:
+  (display (format-help cli))</pre>
+</div>
+<div class="entry" id="e18" data-name="make-arg-parser">
+  <div class="entry-name">make-arg-parser</div>
+  <pre class="entry-doc">Syntax: (make-arg-parser key value ...)
+Library: (scm args)
+Description: Builds an argument parser (data form). Keys: program (string),
+  description, version, epilog, options (list of opt/flag specs),
+  positionals (list of pos specs). The declarative define-cli macro is a
+  more readable front end producing the same object.
+Example:
+  (make-arg-parser 'program "tool"
+    'options (list (flag 'verbose 'short #\v))
+    'positionals (list (pos 'file 'required #t)))</pre>
+</div>
+<div class="entry" id="e19" data-name="make-arg-type">
+  <div class="entry-name">make-arg-type</div>
+  <pre class="entry-doc">Syntax: (make-arg-type name convert)
+Library: (scm args)
+Description: Builds a custom argument type. name is a short string shown in
+  --help as the value placeholder (e.g. "PORT"); convert is a procedure
+  taking the raw argument string and returning the converted value, raising
+  via error on invalid input (the message is surfaced to the user). Any
+  bare string-&gt;value procedure also works as a type — parse-args coerces it
+  with the placeholder "VALUE".
+Example:
+  (define arg:port
+    (make-arg-type "PORT"
+      (lambda (s)
+        (let ((n (string-&gt;number s)))
+          (if (and n (integer? n) (&lt;= 1 n 65535)) n
+              (error (string-append "bad port: " s)))))))</pre>
+</div>
+<div class="entry" id="e20" data-name="opt">
+  <div class="entry-name">opt</div>
+  <pre class="entry-doc">Syntax: (opt name key value ...)
+Library: (scm args)
+Description: Builds a key-value option spec (data form). Keys: short (a
+  char), long (a string), type (an arg-type, default arg:string), default,
+  required (boolean), repeat (boolean — collect repeats into a list), help,
+  metavar. Use inside make-arg-parser's 'options list.
+Example:
+  (opt 'count 'short #\n 'long "count" 'type arg:integer 'default 1)</pre>
+</div>
+<div class="entry" id="e21" data-name="parse-args">
+  <div class="entry-name">parse-args</div>
+  <pre class="entry-doc">Syntax: (parse-args parser [args] ['on-error mode])
+Library: (scm args)
+Description: Parses argument list args (default: (cdr (command-line)), i.e.
+  the script's arguments with the program path removed) against parser,
+  returning a result usable with args-ref / args-&gt;alist / args-rest. Values
+  are converted to their declared types. mode is 'exit (default) — on a
+  usage error print a diagnostic to (current-error-port) and exit 2 — or
+  'raise to signal a catchable error instead. --help and --version always
+  print to stdout and exit 0.
+Example:
+  (define r (parse-args cli '("-v" "--count" "3" "in.txt")))
+  (args-ref r 'count) =&gt; 3</pre>
+</div>
+<div class="entry" id="e22" data-name="pos">
+  <div class="entry-name">pos</div>
+  <pre class="entry-doc">Syntax: (pos name key value ...)
+Library: (scm args)
+Description: Builds a positional argument spec (data form). Keys: type,
+  required, default, repeat (variadic — collects all remaining positionals
+  into a list; must be the last positional), help. Use inside
+  make-arg-parser's 'positionals list.
+Example:
+  (pos 'input 'type arg:string 'required #t 'help "Input file")</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

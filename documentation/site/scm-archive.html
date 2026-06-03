@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm archive) — Scm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Scm Library Reference</a></h1>
+    <p>scm &mdash; libraries and their exports</p>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav>
+  <h2>R7RS Standard</h2>
+  <a href="scheme-base.html" class="r7rs">(scheme base)</a>
+  <a href="scheme-case-lambda.html" class="r7rs">(scheme case-lambda)</a>
+  <a href="scheme-char.html" class="r7rs">(scheme char)</a>
+  <a href="scheme-complex.html" class="r7rs">(scheme complex)</a>
+  <a href="scheme-cxr.html" class="r7rs">(scheme cxr)</a>
+  <a href="scheme-eval.html" class="r7rs">(scheme eval)</a>
+  <a href="scheme-file.html" class="r7rs">(scheme file)</a>
+  <a href="scheme-inexact.html" class="r7rs">(scheme inexact)</a>
+  <a href="scheme-lazy.html" class="r7rs">(scheme lazy)</a>
+  <a href="scheme-load.html" class="r7rs">(scheme load)</a>
+  <a href="scheme-process-context.html" class="r7rs">(scheme process-context)</a>
+  <a href="scheme-r5rs.html" class="r7rs">(scheme r5rs)</a>
+  <a href="scheme-read.html" class="r7rs">(scheme read)</a>
+  <a href="scheme-repl.html" class="r7rs">(scheme repl)</a>
+  <a href="scheme-time.html" class="r7rs">(scheme time)</a>
+  <a href="scheme-write.html" class="r7rs">(scheme write)</a>
+  <h2>SRFI Libraries</h2>
+  <a href="srfi-1.html" class="srfi">(srfi 1)</a>
+  <a href="srfi-2.html" class="srfi">(srfi 2)</a>
+  <a href="srfi-8.html" class="srfi">(srfi 8)</a>
+  <a href="srfi-9.html" class="srfi">(srfi 9)</a>
+  <a href="srfi-13.html" class="srfi">(srfi 13)</a>
+  <a href="srfi-14.html" class="srfi">(srfi 14)</a>
+  <a href="srfi-18.html" class="srfi">(srfi 18)</a>
+  <a href="srfi-19.html" class="srfi">(srfi 19)</a>
+  <a href="srfi-26.html" class="srfi">(srfi 26)</a>
+  <a href="srfi-28.html" class="srfi">(srfi 28)</a>
+  <a href="srfi-39.html" class="srfi">(srfi 39)</a>
+  <a href="srfi-48.html" class="srfi">(srfi 48)</a>
+  <a href="srfi-64.html" class="srfi">(srfi 64)</a>
+  <a href="srfi-69.html" class="srfi">(srfi 69)</a>
+  <a href="srfi-95.html" class="srfi">(srfi 95)</a>
+  <a href="srfi-98.html" class="srfi">(srfi 98)</a>
+  <a href="srfi-111.html" class="srfi">(srfi 111)</a>
+  <a href="srfi-125.html" class="srfi">(srfi 125)</a>
+  <a href="srfi-128.html" class="srfi">(srfi 128)</a>
+  <a href="srfi-132.html" class="srfi">(srfi 132)</a>
+  <a href="srfi-133.html" class="srfi">(srfi 133)</a>
+  <a href="srfi-151.html" class="srfi">(srfi 151)</a>
+  <a href="srfi-158.html" class="srfi">(srfi 158)</a>
+  <h2>Scm Extensions</h2>
+  <a href="scm-archive.html" class="scm active">(scm archive)</a>
+  <a href="scm-args.html" class="scm">(scm args)</a>
+  <a href="scm-compile.html" class="scm">(scm compile)</a>
+  <a href="scm-compression.html" class="scm">(scm compression)</a>
+  <a href="scm-crypto.html" class="scm">(scm crypto)</a>
+  <a href="scm-csv.html" class="scm">(scm csv)</a>
+  <a href="scm-database-migrations.html" class="scm">(scm database migrations)</a>
+  <a href="scm-database-postgres.html" class="scm">(scm database postgres)</a>
+  <a href="scm-database-sqlserver.html" class="scm">(scm database sqlserver)</a>
+  <a href="scm-datetime.html" class="scm">(scm datetime)</a>
+  <a href="scm-dict.html" class="scm">(scm dict)</a>
+  <a href="scm-doc.html" class="scm">(scm doc)</a>
+  <a href="scm-duration.html" class="scm">(scm duration)</a>
+  <a href="scm-feed.html" class="scm">(scm feed)</a>
+  <a href="scm-fs-find.html" class="scm">(scm fs-find)</a>
+  <a href="scm-fs.html" class="scm">(scm fs)</a>
+  <a href="scm-glob.html" class="scm">(scm glob)</a>
+  <a href="scm-html-builder.html" class="scm">(scm html builder)</a>
+  <a href="scm-html.html" class="scm">(scm html)</a>
+  <a href="scm-io.html" class="scm">(scm io)</a>
+  <a href="scm-json-simple.html" class="scm">(scm json simple)</a>
+  <a href="scm-json.html" class="scm">(scm json)</a>
+  <a href="scm-list.html" class="scm">(scm list)</a>
+  <a href="scm-log.html" class="scm">(scm log)</a>
+  <a href="scm-macro.html" class="scm">(scm macro)</a>
+  <a href="scm-markdown.html" class="scm">(scm markdown)</a>
+  <a href="scm-match.html" class="scm">(scm match)</a>
+  <a href="scm-math.html" class="scm">(scm math)</a>
+  <a href="scm-module.html" class="scm">(scm module)</a>
+  <a href="scm-net-http-client.html" class="scm">(scm net http client)</a>
+  <a href="scm-net-http-cookies.html" class="scm">(scm net http cookies)</a>
+  <a href="scm-net-http-forms.html" class="scm">(scm net http forms)</a>
+  <a href="scm-net-http-multipart.html" class="scm">(scm net http multipart)</a>
+  <a href="scm-net-http-request.html" class="scm">(scm net http request)</a>
+  <a href="scm-net-http-response.html" class="scm">(scm net http response)</a>
+  <a href="scm-net-http-route.html" class="scm">(scm net http route)</a>
+  <a href="scm-net-http-server.html" class="scm">(scm net http server)</a>
+  <a href="scm-net-remote.html" class="scm">(scm net-remote)</a>
+  <a href="scm-net-sockets.html" class="scm">(scm net sockets)</a>
+  <a href="scm-net-websocket.html" class="scm">(scm net websocket)</a>
+  <a href="scm-odf-spreadsheet.html" class="scm">(scm odf spreadsheet)</a>
+  <a href="scm-odf-writer.html" class="scm">(scm odf writer)</a>
+  <a href="scm-ooxml-excel-reader.html" class="scm">(scm ooxml excel-reader)</a>
+  <a href="scm-ooxml-excel.html" class="scm">(scm ooxml excel)</a>
+  <a href="scm-ooxml-word-reader.html" class="scm">(scm ooxml word-reader)</a>
+  <a href="scm-ooxml-word.html" class="scm">(scm ooxml word)</a>
+  <a href="scm-pdf.html" class="scm">(scm pdf)</a>
+  <a href="scm-png.html" class="scm">(scm png)</a>
+  <a href="scm-profiling.html" class="scm">(scm profiling)</a>
+  <a href="scm-qr.html" class="scm">(scm qr)</a>
+  <a href="scm-random-access.html" class="scm">(scm random access)</a>
+  <a href="scm-repl.html" class="scm">(scm repl)</a>
+  <a href="scm-store.html" class="scm">(scm store)</a>
+  <a href="scm-string.html" class="scm">(scm string)</a>
+  <a href="scm-sysadmin.html" class="scm">(scm sysadmin)</a>
+  <a href="scm-system.html" class="scm">(scm system)</a>
+  <a href="scm-templating.html" class="scm">(scm templating)</a>
+  <a href="scm-terminal.html" class="scm">(scm terminal)</a>
+  <a href="scm-test.html" class="scm">(scm test)</a>
+  <a href="scm-text.html" class="scm">(scm text)</a>
+  <a href="scm-toml.html" class="scm">(scm toml)</a>
+  <a href="scm-uri.html" class="scm">(scm uri)</a>
+  <a href="scm-xml.html" class="scm">(scm xml)</a>
+  <a href="scm-zip.html" class="scm">(scm zip)</a>
+</nav>
+
+<main>
+
+<a class="backlink" href="index.html">&larr; All libraries</a>
+<div class="lib-title scm">(scm archive)</div>
+<p class="lib-sub">Archive and compression — tar, gzip, bzip2, xz, and zip operations</p>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">25 bindings</p>
+
+<div class="entry" id="e0" data-name="bunzip2">
+  <div class="entry-name">bunzip2</div>
+  <pre class="entry-doc">Syntax: (bunzip2 path [option ...])
+Library: (scm archive)
+Description: Decompresses path (which should end in .bz2) in place via
+  the native bunzip2 command. Option 'keep retains the .bz2 original.
+Example:
+  (bunzip2 "big.log.bz2")</pre>
+</div>
+<div class="entry" id="e1" data-name="bzip2">
+  <div class="entry-name">bzip2</div>
+  <pre class="entry-doc">Syntax: (bzip2 path [option ...])
+Library: (scm archive)
+Description: Compresses path into path.bz2 using the native bzip2 command.
+  Option 'keep retains the original file (-k).
+Example:
+  (bzip2 "big.log")</pre>
+</div>
+<div class="entry" id="e2" data-name="close-input-zip">
+  <div class="entry-name">close-input-zip</div>
+  <pre class="entry-doc">Syntax: (close-input-zip zip)
+Library: (scm zip)
+Description: Closes the given ZIP input archive, releasing all underlying resources.
+Example:
+  (let ((z (open-input-zip-file "archive.zip")))
+    (close-input-zip z))</pre>
+</div>
+<div class="entry" id="e3" data-name="close-output-zip">
+  <div class="entry-name">close-output-zip</div>
+  <pre class="entry-doc">Syntax: (close-output-zip zip)
+Library: (scm core)
+Description: Closes the given zip output archive, flushing and releasing all underlying resources.
+Example:
+  (let ((z (open-output-zip-file "archive.zip")))
+    (close-output-zip z))</pre>
+</div>
+<div class="entry" id="e4" data-name="deflate-compress">
+  <div class="entry-name">deflate-compress</div>
+  <pre class="entry-doc">Syntax: (deflate-compress bytevector [level])
+Library: (scm compression)
+Description: Compresses bytevector using raw DEFLATE (RFC 1951) and returns
+  a bytevector. The optional level is an integer 0-9: 0 = no compression,
+  1-3 = fastest, 4-6 = optimal (default), 7-9 = smallest size.
+Example:
+  (utf8-&gt;string (deflate-decompress (deflate-compress (string-&gt;utf8 "hello")))) =&gt; "hello"</pre>
+</div>
+<div class="entry" id="e5" data-name="deflate-decompress">
+  <div class="entry-name">deflate-decompress</div>
+  <pre class="entry-doc">Syntax: (deflate-decompress bytevector)
+Library: (scm compression)
+Description: Decompresses a raw DEFLATE-compressed (RFC 1951) bytevector
+  and returns the original bytevector.
+Example:
+  (utf8-&gt;string (deflate-decompress (deflate-compress (string-&gt;utf8 "hello")))) =&gt; "hello"</pre>
+</div>
+<div class="entry" id="e6" data-name="gunzip">
+  <div class="entry-name">gunzip</div>
+  <pre class="entry-doc">Syntax: (gunzip path [option ...])
+Library: (scm archive)
+Description: Decompresses path (which should end in .gz) in place.
+  Option 'keep retains the .gz original (-k).
+Example:
+  (gunzip "big.log.gz")</pre>
+</div>
+<div class="entry" id="e7" data-name="gzip">
+  <div class="entry-name">gzip</div>
+  <pre class="entry-doc">Syntax: (gzip path [option ...])
+Library: (scm archive)
+Description: Compresses path into path.gz using the native gzip command
+  when available; falls back to gzip-compress on the file bytes.
+  Option 'keep retains the original file (-k).
+Example:
+  (gzip "big.log")</pre>
+</div>
+<div class="entry" id="e8" data-name="gzip-compress">
+  <div class="entry-name">gzip-compress</div>
+  <pre class="entry-doc">Syntax: (gzip-compress bytevector [level])
+Library: (scm compression)
+Description: Compresses bytevector using GZip format (RFC 1952) and returns
+  a bytevector. The optional level is an integer 0-9: 0 = no compression,
+  1-3 = fastest, 4-6 = optimal (default), 7-9 = smallest size.
+Example:
+  (utf8-&gt;string (gzip-decompress (gzip-compress (string-&gt;utf8 "hello")))) =&gt; "hello"</pre>
+</div>
+<div class="entry" id="e9" data-name="gzip-decompress">
+  <div class="entry-name">gzip-decompress</div>
+  <pre class="entry-doc">Syntax: (gzip-decompress bytevector)
+Library: (scm compression)
+Description: Decompresses a GZip-compressed (RFC 1952) bytevector and returns
+  the original bytevector.
+Example:
+  (utf8-&gt;string (gzip-decompress (gzip-compress (string-&gt;utf8 "hello")))) =&gt; "hello"</pre>
+</div>
+<div class="entry" id="e10" data-name="open-input-zip-file">
+  <div class="entry-name">open-input-zip-file</div>
+  <pre class="entry-doc">Syntax: (open-input-zip-file filename)
+Library: (scm zip)
+Description: Opens an existing ZIP archive at filename for reading and returns a ZIP reader object.
+Example:
+  (define z (open-input-zip-file "archive.zip"))
+  (zip-entry-names z)
+  (close-input-zip z)</pre>
+</div>
+<div class="entry" id="e11" data-name="open-output-zip-file">
+  <div class="entry-name">open-output-zip-file</div>
+  <pre class="entry-doc">Syntax: (open-output-zip-file filename)
+Library: (scm core)
+Description: Creates a new ZIP archive at the given filename and returns a ZIP writer object. Entries can be added using zip-add-text-entry or zip-add-binary-entry.
+Example:
+  (define z (open-output-zip-file "archive.zip"))
+  (zip-add-text-entry z "hello.txt" "Hello, world!")
+  (close-output-zip z)</pre>
+</div>
+<div class="entry" id="e12" data-name="tar-create">
+  <div class="entry-name">tar-create</div>
+  <pre class="entry-doc">Syntax: (tar-create archive paths [option ...])
+Library: (scm archive)
+Description: Creates a tar archive at path archive containing the listed
+  paths. archive's extension determines compression: .tar.gz/.tgz uses
+  gzip; .tar.bz2/.tbz uses bzip2; otherwise plain tar.
+  Options: 'gzip (force -z), 'bzip2 (force -j), 'verbose (-v),
+  '(work-dir . dir) (run as if cwd = dir).
+  Shells out to the native tar command.
+Example:
+  (tar-create "backup.tar.gz" '("src" "docs"))</pre>
+</div>
+<div class="entry" id="e13" data-name="tar-extract">
+  <div class="entry-name">tar-extract</div>
+  <pre class="entry-doc">Syntax: (tar-extract archive [option ...])
+Library: (scm archive)
+Description: Extracts archive into the current directory (or 'work-dir).
+  Compression is auto-detected from extension or forced via 'gzip / 'bzip2.
+  Options: '(work-dir . dir), 'verbose.
+Example:
+  (tar-extract "backup.tar.gz" '(work-dir . "/tmp/restore"))</pre>
+</div>
+<div class="entry" id="e14" data-name="tar-list">
+  <div class="entry-name">tar-list</div>
+  <pre class="entry-doc">Syntax: (tar-list archive [option ...])
+Library: (scm archive)
+Description: Returns a list of entry names contained in archive.
+  Compression is auto-detected; force with 'gzip or 'bzip2.
+Example:
+  (tar-list "backup.tar.gz")</pre>
+</div>
+<div class="entry" id="e15" data-name="unxz">
+  <div class="entry-name">unxz</div>
+  <pre class="entry-doc">Syntax: (unxz path [option ...])
+Library: (scm archive)
+Description: Decompresses path (which should end in .xz) in place via
+  the native unxz command. Option 'keep retains the .xz original.
+Example:
+  (unxz "big.log.xz")</pre>
+</div>
+<div class="entry" id="e16" data-name="xz">
+  <div class="entry-name">xz</div>
+  <pre class="entry-doc">Syntax: (xz path [option ...])
+Library: (scm archive)
+Description: Compresses path into path.xz using the native xz command.
+  Option 'keep retains the original file (-k).
+Example:
+  (xz "big.log")</pre>
+</div>
+<div class="entry" id="e17" data-name="zip-add-binary-entry">
+  <div class="entry-name">zip-add-binary-entry</div>
+  <pre class="entry-doc">Syntax: (zip-add-binary-entry zip name [timestamp])
+Library: (scm zip)
+Description: Creates a new binary entry named name in the ZIP archive zip and
+  returns an output binary port for writing to it. The optional timestamp is a
+  Unix epoch in seconds.
+Example:
+  (let ((port (zip-add-binary-entry zip "data.bin"))) (write-bytevector bv port))</pre>
+</div>
+<div class="entry" id="e18" data-name="zip-add-stored-entry">
+  <div class="entry-name">zip-add-stored-entry</div>
+  <pre class="entry-doc">Syntax: (zip-add-stored-entry zip name bytevector [timestamp])
+Library: (scm zip)
+Description: Creates a new uncompressed (STORED) entry named name in the
+  ZIP archive zip and writes the entire bytevector as its content. Unlike
+  zip-add-binary-entry, the data is stored without compression and must be
+  provided in full. The optional timestamp is a Unix epoch in seconds.
+  Returns void.
+Example:
+  (zip-add-stored-entry zip "mimetype" (string-&gt;utf8 "application/xml") 0)</pre>
+</div>
+<div class="entry" id="e19" data-name="zip-add-text-entry">
+  <div class="entry-name">zip-add-text-entry</div>
+  <pre class="entry-doc">Syntax: (zip-add-text-entry zip name [timestamp])
+Library: (scm zip)
+Description: Creates a new text entry named name in the ZIP archive zip and
+  returns a UTF-8 textual output port for writing to it. The optional timestamp
+  is a Unix epoch in seconds.
+Example:
+  (let ((port (zip-add-text-entry zip "readme.txt"))) (display "Hello" port))</pre>
+</div>
+<div class="entry" id="e20" data-name="zip-entry-names">
+  <div class="entry-name">zip-entry-names</div>
+  <pre class="entry-doc">Syntax: (zip-entry-names zip)
+Library: (scm zip)
+Description: Returns a list of entry name strings in the ZIP archive zip.
+Example:
+  (zip-entry-names z) =&gt; ("file1.txt" "dir/file2.txt")</pre>
+</div>
+<div class="entry" id="e21" data-name="zip-files-equal?">
+  <div class="entry-name">zip-files-equal?</div>
+  <pre class="entry-doc">Syntax: (zip-files-equal? file1 file2)
+Library: (scm zip)
+Description: Returns #t if the two ZIP files have the same entry names and identical
+  entry contents (compared as bytevectors), #f otherwise. Metadata differences such
+  as version-made-by or external attributes are ignored.
+Example:
+  (zip-files-equal? "a.xlsx" "b.xlsx") =&gt; #t</pre>
+</div>
+<div class="entry" id="e22" data-name="zip-read-entry-bytevector">
+  <div class="entry-name">zip-read-entry-bytevector</div>
+  <pre class="entry-doc">Syntax: (zip-read-entry-bytevector zip name)
+Library: (scm zip)
+Description: Reads the contents of the entry named name from the ZIP archive zip and returns it as a bytevector.
+Example:
+  (zip-read-entry-bytevector z "hello.txt") =&gt; #u8(72 101 108 108 111)</pre>
+</div>
+<div class="entry" id="e23" data-name="zlib-compress">
+  <div class="entry-name">zlib-compress</div>
+  <pre class="entry-doc">Syntax: (zlib-compress bytevector [level])
+Library: (scm compression)
+Description: Compresses bytevector using ZLib framing (RFC 1950) and returns
+  a bytevector. The optional level is an integer 0-9: 0 = no compression,
+  1-3 = fastest, 4-6 = optimal (default), 7-9 = smallest size.
+Example:
+  (utf8-&gt;string (zlib-decompress (zlib-compress (string-&gt;utf8 "hello")))) =&gt; "hello"</pre>
+</div>
+<div class="entry" id="e24" data-name="zlib-decompress">
+  <div class="entry-name">zlib-decompress</div>
+  <pre class="entry-doc">Syntax: (zlib-decompress bytevector)
+Library: (scm compression)
+Description: Decompresses a ZLib-framed (RFC 1950) bytevector and returns
+  the original bytevector.
+Example:
+  (utf8-&gt;string (zlib-decompress (zlib-compress (string-&gt;utf8 "hello")))) =&gt; "hello"</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(srfi 13) — Scm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Scm Library Reference</a></h1>
+    <p>scm &mdash; libraries and their exports</p>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav>
+  <h2>R7RS Standard</h2>
+  <a href="scheme-base.html" class="r7rs">(scheme base)</a>
+  <a href="scheme-case-lambda.html" class="r7rs">(scheme case-lambda)</a>
+  <a href="scheme-char.html" class="r7rs">(scheme char)</a>
+  <a href="scheme-complex.html" class="r7rs">(scheme complex)</a>
+  <a href="scheme-cxr.html" class="r7rs">(scheme cxr)</a>
+  <a href="scheme-eval.html" class="r7rs">(scheme eval)</a>
+  <a href="scheme-file.html" class="r7rs">(scheme file)</a>
+  <a href="scheme-inexact.html" class="r7rs">(scheme inexact)</a>
+  <a href="scheme-lazy.html" class="r7rs">(scheme lazy)</a>
+  <a href="scheme-load.html" class="r7rs">(scheme load)</a>
+  <a href="scheme-process-context.html" class="r7rs">(scheme process-context)</a>
+  <a href="scheme-r5rs.html" class="r7rs">(scheme r5rs)</a>
+  <a href="scheme-read.html" class="r7rs">(scheme read)</a>
+  <a href="scheme-repl.html" class="r7rs">(scheme repl)</a>
+  <a href="scheme-time.html" class="r7rs">(scheme time)</a>
+  <a href="scheme-write.html" class="r7rs">(scheme write)</a>
+  <h2>SRFI Libraries</h2>
+  <a href="srfi-1.html" class="srfi">(srfi 1)</a>
+  <a href="srfi-2.html" class="srfi">(srfi 2)</a>
+  <a href="srfi-8.html" class="srfi">(srfi 8)</a>
+  <a href="srfi-9.html" class="srfi">(srfi 9)</a>
+  <a href="srfi-13.html" class="srfi active">(srfi 13)</a>
+  <a href="srfi-14.html" class="srfi">(srfi 14)</a>
+  <a href="srfi-18.html" class="srfi">(srfi 18)</a>
+  <a href="srfi-19.html" class="srfi">(srfi 19)</a>
+  <a href="srfi-26.html" class="srfi">(srfi 26)</a>
+  <a href="srfi-28.html" class="srfi">(srfi 28)</a>
+  <a href="srfi-39.html" class="srfi">(srfi 39)</a>
+  <a href="srfi-48.html" class="srfi">(srfi 48)</a>
+  <a href="srfi-64.html" class="srfi">(srfi 64)</a>
+  <a href="srfi-69.html" class="srfi">(srfi 69)</a>
+  <a href="srfi-95.html" class="srfi">(srfi 95)</a>
+  <a href="srfi-98.html" class="srfi">(srfi 98)</a>
+  <a href="srfi-111.html" class="srfi">(srfi 111)</a>
+  <a href="srfi-125.html" class="srfi">(srfi 125)</a>
+  <a href="srfi-128.html" class="srfi">(srfi 128)</a>
+  <a href="srfi-132.html" class="srfi">(srfi 132)</a>
+  <a href="srfi-133.html" class="srfi">(srfi 133)</a>
+  <a href="srfi-151.html" class="srfi">(srfi 151)</a>
+  <a href="srfi-158.html" class="srfi">(srfi 158)</a>
+  <h2>Scm Extensions</h2>
+  <a href="scm-archive.html" class="scm">(scm archive)</a>
+  <a href="scm-args.html" class="scm">(scm args)</a>
+  <a href="scm-compile.html" class="scm">(scm compile)</a>
+  <a href="scm-compression.html" class="scm">(scm compression)</a>
+  <a href="scm-crypto.html" class="scm">(scm crypto)</a>
+  <a href="scm-csv.html" class="scm">(scm csv)</a>
+  <a href="scm-database-migrations.html" class="scm">(scm database migrations)</a>
+  <a href="scm-database-postgres.html" class="scm">(scm database postgres)</a>
+  <a href="scm-database-sqlserver.html" class="scm">(scm database sqlserver)</a>
+  <a href="scm-datetime.html" class="scm">(scm datetime)</a>
+  <a href="scm-dict.html" class="scm">(scm dict)</a>
+  <a href="scm-doc.html" class="scm">(scm doc)</a>
+  <a href="scm-duration.html" class="scm">(scm duration)</a>
+  <a href="scm-feed.html" class="scm">(scm feed)</a>
+  <a href="scm-fs-find.html" class="scm">(scm fs-find)</a>
+  <a href="scm-fs.html" class="scm">(scm fs)</a>
+  <a href="scm-glob.html" class="scm">(scm glob)</a>
+  <a href="scm-html-builder.html" class="scm">(scm html builder)</a>
+  <a href="scm-html.html" class="scm">(scm html)</a>
+  <a href="scm-io.html" class="scm">(scm io)</a>
+  <a href="scm-json-simple.html" class="scm">(scm json simple)</a>
+  <a href="scm-json.html" class="scm">(scm json)</a>
+  <a href="scm-list.html" class="scm">(scm list)</a>
+  <a href="scm-log.html" class="scm">(scm log)</a>
+  <a href="scm-macro.html" class="scm">(scm macro)</a>
+  <a href="scm-markdown.html" class="scm">(scm markdown)</a>
+  <a href="scm-match.html" class="scm">(scm match)</a>
+  <a href="scm-math.html" class="scm">(scm math)</a>
+  <a href="scm-module.html" class="scm">(scm module)</a>
+  <a href="scm-net-http-client.html" class="scm">(scm net http client)</a>
+  <a href="scm-net-http-cookies.html" class="scm">(scm net http cookies)</a>
+  <a href="scm-net-http-forms.html" class="scm">(scm net http forms)</a>
+  <a href="scm-net-http-multipart.html" class="scm">(scm net http multipart)</a>
+  <a href="scm-net-http-request.html" class="scm">(scm net http request)</a>
+  <a href="scm-net-http-response.html" class="scm">(scm net http response)</a>
+  <a href="scm-net-http-route.html" class="scm">(scm net http route)</a>
+  <a href="scm-net-http-server.html" class="scm">(scm net http server)</a>
+  <a href="scm-net-remote.html" class="scm">(scm net-remote)</a>
+  <a href="scm-net-sockets.html" class="scm">(scm net sockets)</a>
+  <a href="scm-net-websocket.html" class="scm">(scm net websocket)</a>
+  <a href="scm-odf-spreadsheet.html" class="scm">(scm odf spreadsheet)</a>
+  <a href="scm-odf-writer.html" class="scm">(scm odf writer)</a>
+  <a href="scm-ooxml-excel-reader.html" class="scm">(scm ooxml excel-reader)</a>
+  <a href="scm-ooxml-excel.html" class="scm">(scm ooxml excel)</a>
+  <a href="scm-ooxml-word-reader.html" class="scm">(scm ooxml word-reader)</a>
+  <a href="scm-ooxml-word.html" class="scm">(scm ooxml word)</a>
+  <a href="scm-pdf.html" class="scm">(scm pdf)</a>
+  <a href="scm-png.html" class="scm">(scm png)</a>
+  <a href="scm-profiling.html" class="scm">(scm profiling)</a>
+  <a href="scm-qr.html" class="scm">(scm qr)</a>
+  <a href="scm-random-access.html" class="scm">(scm random access)</a>
+  <a href="scm-repl.html" class="scm">(scm repl)</a>
+  <a href="scm-store.html" class="scm">(scm store)</a>
+  <a href="scm-string.html" class="scm">(scm string)</a>
+  <a href="scm-sysadmin.html" class="scm">(scm sysadmin)</a>
+  <a href="scm-system.html" class="scm">(scm system)</a>
+  <a href="scm-templating.html" class="scm">(scm templating)</a>
+  <a href="scm-terminal.html" class="scm">(scm terminal)</a>
+  <a href="scm-test.html" class="scm">(scm test)</a>
+  <a href="scm-text.html" class="scm">(scm text)</a>
+  <a href="scm-toml.html" class="scm">(scm toml)</a>
+  <a href="scm-uri.html" class="scm">(scm uri)</a>
+  <a href="scm-xml.html" class="scm">(scm xml)</a>
+  <a href="scm-zip.html" class="scm">(scm zip)</a>
+</nav>
+
+<main>
+
+<a class="backlink" href="index.html">&larr; All libraries</a>
+<div class="lib-title srfi">(srfi 13)</div>
+<p class="lib-sub">SRFI-13 — String library: predicate-based string operations</p>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">94 bindings</p>
+
+<div class="entry" id="e0" data-name="check-substring-spec">
+  <div class="entry-name">check-substring-spec</div>
+  <pre class="entry-doc">Syntax: (check-substring-spec proc s start end)
+Library: (srfi 13)
+Description: Signals an error if start/end are not valid substring bounds for s.
+Example:
+  (check-substring-spec 'test "hello" 0 5) =&gt; unspecified (no error)</pre>
+</div>
+<div class="entry" id="e1" data-name="kmp-step">
+  <div class="entry-name">kmp-step</div>
+  <pre class="entry-doc">Syntax: (kmp-step pattern rv c i c= p-start)
+Library: (srfi 13)
+Description: Advances the KMP state machine by one character.
+Example:
+  (let ((rv (make-kmp-restart-vector "abc")))
+    (kmp-step "abc" rv #\a 0 char=? 0)) =&gt; 1</pre>
+</div>
+<div class="entry" id="e2" data-name="let-string-start+end">
+  <div class="entry-name">let-string-start+end</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e3" data-name="list-&gt;string">
+  <div class="entry-name">list-&gt;string</div>
+  <pre class="entry-doc">Syntax: (list-&gt;string list)
+Library: (scheme base) (srfi 13)
+Description: Returns a newly allocated string formed from the characters in
+  list. It is an error if any element of list is not a character.
+Example:
+  (list-&gt;string '(#\a #\b #\c)) =&gt; "abc"
+  (list-&gt;string '())              =&gt; ""</pre>
+</div>
+<div class="entry" id="e4" data-name="make-kmp-restart-vector">
+  <div class="entry-name">make-kmp-restart-vector</div>
+  <pre class="entry-doc">Syntax: (make-kmp-restart-vector pattern [c= [start [end]]])
+Library: (srfi 13)
+Description: Builds the KMP restart vector for pattern[start..end).
+Example:
+  (make-kmp-restart-vector "abcabc") =&gt; #(-1 0 0 -1 0 0)</pre>
+</div>
+<div class="entry" id="e5" data-name="make-string">
+  <div class="entry-name">make-string</div>
+  <pre class="entry-doc">Syntax: (make-string k) (make-string k char)
+Library: (scheme base) (srfi 13)
+Description: Returns a newly allocated mutable string of k characters. If char is given, all characters are initialized to char; otherwise they are spaces.
+Example:
+  (make-string 3 #\x) =&gt; "xxx"
+  (make-string 3) =&gt; "   "</pre>
+</div>
+<div class="entry" id="e6" data-name="reverse-list-&gt;string">
+  <div class="entry-name">reverse-list-&gt;string</div>
+  <pre class="entry-doc">Syntax: (reverse-list-&gt;string lst)
+Library: (srfi 13)
+Description: Converts a list of characters to a string after reversing it.
+Example:
+  (reverse-list-&gt;string '(#\o #\l #\l #\e #\h)) =&gt; "hello"</pre>
+</div>
+<div class="entry" id="e7" data-name="string">
+  <div class="entry-name">string</div>
+  <pre class="entry-doc">Syntax: (string char ...)
+Library: (scheme base) (srfi 13)
+Description: Returns a newly allocated string composed of the given characters.
+Example:
+  (string #\a #\b #\c) =&gt; "abc"
+  (string) =&gt; ""</pre>
+</div>
+<div class="entry" id="e8" data-name="string-&gt;list">
+  <div class="entry-name">string-&gt;list</div>
+  <pre class="entry-doc">Syntax: (string-&gt;list string)
+       (string-&gt;list string start)
+       (string-&gt;list string start end)
+Library: (scheme base) (srfi 13)
+Description: Returns a newly allocated list of the characters of string
+  between start and end. start defaults to 0 and end defaults to the length
+  of string.
+Example:
+  (string-&gt;list "abc")     =&gt; (#\a #\b #\c)
+  (string-&gt;list "abc" 1)   =&gt; (#\b #\c)
+  (string-&gt;list "abc" 1 2) =&gt; (#\b)</pre>
+</div>
+<div class="entry" id="e9" data-name="string-any">
+  <div class="entry-name">string-any</div>
+  <pre class="entry-doc">Syntax: (string-any criterion s [start [end]])
+Library: (srfi 13)
+Description: Returns the first truthy value returned by criterion applied to
+characters in s[start..end), or #f if it returns #f for all characters.
+Example:
+  (string-any char-upper-case? "hEllo") =&gt; #t
+  (string-any char-upper-case? "hello") =&gt; #f</pre>
+</div>
+<div class="entry" id="e10" data-name="string-append">
+  <div class="entry-name">string-append</div>
+  <pre class="entry-doc">Syntax: (string-append string ...)
+Library: (scheme base) (srfi 13)
+Description: Returns a newly allocated string whose characters are the concatenation of the characters in the given strings.
+Example:
+  (string-append "foo" "bar") =&gt; "foobar"
+  (string-append "a" "b" "c") =&gt; "abc"</pre>
+</div>
+<div class="entry" id="e11" data-name="string-append/shared">
+  <div class="entry-name">string-append/shared</div>
+  <pre class="entry-doc">Syntax: (string-append string ...)
+Library: (scheme base) (srfi 13)
+Description: Returns a newly allocated string whose characters are the concatenation of the characters in the given strings.
+Example:
+  (string-append "foo" "bar") =&gt; "foobar"
+  (string-append "a" "b" "c") =&gt; "abc"</pre>
+</div>
+<div class="entry" id="e12" data-name="string-ci&lt;">
+  <div class="entry-name">string-ci&lt;</div>
+  <pre class="entry-doc">Syntax: (string-ci&lt; s1 s2 [start1 [end1 [start2 [end2]]]])
+Library: (srfi 13)
+Description: Case-insensitive string&lt;.
+Example:
+  (string-ci&lt; "abc" "ABD") =&gt; 2</pre>
+</div>
+<div class="entry" id="e13" data-name="string-ci&lt;=">
+  <div class="entry-name">string-ci&lt;=</div>
+  <pre class="entry-doc">Syntax: (string-ci&lt;= s1 s2 [start1 [end1 [start2 [end2]]]])
+Library: (srfi 13)
+Description: Case-insensitive string&lt;=.
+Example:
+  (string-ci&lt;= "ABC" "abc") =&gt; 3</pre>
+</div>
+<div class="entry" id="e14" data-name="string-ci&lt;&gt;">
+  <div class="entry-name">string-ci&lt;&gt;</div>
+  <pre class="entry-doc">Syntax: (string-ci&lt;&gt; s1 s2 [start1 [end1 [start2 [end2]]]])
+Library: (srfi 13)
+Description: Case-insensitive string&lt;&gt;.
+Example:
+  (string-ci&lt;&gt; "abc" "ABC") =&gt; #f</pre>
+</div>
+<div class="entry" id="e15" data-name="string-ci=">
+  <div class="entry-name">string-ci=</div>
+  <pre class="entry-doc">Syntax: (string-ci= s1 s2 [start1 [end1 [start2 [end2]]]])
+Library: (srfi 13)
+Description: Case-insensitive string=.
+Example:
+  (string-ci= "ABC" "abc") =&gt; 3</pre>
+</div>
+<div class="entry" id="e16" data-name="string-ci&gt;">
+  <div class="entry-name">string-ci&gt;</div>
+  <pre class="entry-doc">Syntax: (string-ci&gt; s1 s2 [start1 [end1 [start2 [end2]]]])
+Library: (srfi 13)
+Description: Case-insensitive string&gt;.
+Example:
+  (string-ci&gt; "ABD" "abc") =&gt; 2</pre>
+</div>
+<div class="entry" id="e17" data-name="string-ci&gt;=">
+  <div class="entry-name">string-ci&gt;=</div>
+  <pre class="entry-doc">Syntax: (string-ci&gt;= s1 s2 [start1 [end1 [start2 [end2]]]])
+Library: (srfi 13)
+Description: Case-insensitive string&gt;=.
+Example:
+  (string-ci&gt;= "ABC" "abc") =&gt; 3</pre>
+</div>
+<div class="entry" id="e18" data-name="string-compare">
+  <div class="entry-name">string-compare</div>
+  <pre class="entry-doc">Syntax: (string-compare s1 s2 proc&lt; proc= proc&gt; [start1 [end1 [start2 [end2]]]])
+Library: (srfi 13)
+Description: Compares s1 and s2 lexicographically. Calls the appropriate proc with the mismatch index.
+Example:
+  (string-compare "abc" "abd" (lambda (i) 'less) (lambda (i) 'equal) (lambda (i) 'greater)) =&gt; less</pre>
+</div>
+<div class="entry" id="e19" data-name="string-compare-ci">
+  <div class="entry-name">string-compare-ci</div>
+  <pre class="entry-doc">Syntax: (string-compare-ci s1 s2 proc&lt; proc= proc&gt; [start1 [end1 [start2 [end2]]]])
+Library: (srfi 13)
+Description: Case-insensitive version of string-compare.
+Example:
+  (string-compare-ci "ABC" "abc" (lambda (i) 'less) (lambda (i) 'equal) (lambda (i) 'greater)) =&gt; equal</pre>
+</div>
+<div class="entry" id="e20" data-name="string-concatenate">
+  <div class="entry-name">string-concatenate</div>
+  <pre class="entry-doc">Syntax: (string-concatenate lst)
+Library: (srfi 13)
+Description: Concatenates a list of strings into a single string.
+Example:
+  (string-concatenate '("foo" "bar" "baz")) =&gt; "foobarbaz"</pre>
+</div>
+<div class="entry" id="e21" data-name="string-concatenate-reverse">
+  <div class="entry-name">string-concatenate-reverse</div>
+  <pre class="entry-doc">Syntax: (string-concatenate-reverse lst [final [end]])
+Library: (srfi 13)
+Description: Reverses lst then concatenates, optionally prepending (substring final 0 end).
+Example:
+  (string-concatenate-reverse '("baz" "bar" "foo")) =&gt; "foobarbaz"</pre>
+</div>
+<div class="entry" id="e22" data-name="string-concatenate-reverse/shared">
+  <div class="entry-name">string-concatenate-reverse/shared</div>
+  <pre class="entry-doc">Syntax: (string-concatenate-reverse lst [final [end]])
+Library: (srfi 13)
+Description: Reverses lst then concatenates, optionally prepending (substring final 0 end).
+Example:
+  (string-concatenate-reverse '("baz" "bar" "foo")) =&gt; "foobarbaz"</pre>
+</div>
+<div class="entry" id="e23" data-name="string-concatenate/shared">
+  <div class="entry-name">string-concatenate/shared</div>
+  <pre class="entry-doc">Syntax: (string-concatenate lst)
+Library: (srfi 13)
+Description: Concatenates a list of strings into a single string.
+Example:
+  (string-concatenate '("foo" "bar" "baz")) =&gt; "foobarbaz"</pre>
+</div>
+<div class="entry" id="e24" data-name="string-contains">
+  <div class="entry-name">string-contains</div>
+  <pre class="entry-doc">Syntax: (string-contains s1 s2 [start1 [end1 [start2 [end2]]]])
+Library: (srfi 13)
+Description: Returns the index of the first occurrence of s2[start2..end2) in s1[start1..end1), or #f if not found.
+Example:
+  (string-contains "hello world" "world") =&gt; 6
+  (string-contains "hello" "xyz") =&gt; #f
+  (string-contains "abcabc" "b" 2) =&gt; 4</pre>
+</div>
+<div class="entry" id="e25" data-name="string-contains-ci">
+  <div class="entry-name">string-contains-ci</div>
+  <pre class="entry-doc">Syntax: (string-contains-ci s1 s2 [start1 [end1 [start2 [end2]]]])
+Library: (srfi 13)
+Description: Case-insensitive string-contains. Uses KMP algorithm.
+Example:
+  (string-contains-ci "Hello World" "world") =&gt; 6</pre>
+</div>
+<div class="entry" id="e26" data-name="string-copy">
+  <div class="entry-name">string-copy</div>
+  <pre class="entry-doc">Syntax: (string-copy string)
+       (string-copy string start)
+       (string-copy string start end)
+Library: (scheme base) (srfi 13)
+Description: Returns a newly allocated copy of the part of the given string
+  between start and end. start defaults to 0 and end defaults to the length
+  of the string.
+Example:
+  (string-copy "abc")     =&gt; "abc"
+  (string-copy "abc" 1)   =&gt; "bc"
+  (string-copy "abc" 1 2) =&gt; "b"</pre>
+</div>
+<div class="entry" id="e27" data-name="string-copy!">
+  <div class="entry-name">string-copy!</div>
+  <pre class="entry-doc">Syntax: (string-copy! to at from)
+       (string-copy! to at from start)
+       (string-copy! to at from start end)
+Library: (scheme base) (srfi 13)
+Description: Copies the characters of string from between start and end to
+  string to, starting at at. The order in which characters are copied is
+  unspecified, except that if the source and destination overlap, copying
+  takes place as if the source is first copied into a temporary string and
+  then into the destination. start defaults to 0 and end defaults to the
+  length of from.
+Example:
+  (let ((s (string-copy "hello")))
+    (string-copy! s 1 "xyz" 0 2)
+    s) =&gt; "hxylo"</pre>
+</div>
+<div class="entry" id="e28" data-name="string-count">
+  <div class="entry-name">string-count</div>
+  <pre class="entry-doc">Syntax: (string-count s criterion [start [end]])
+Library: (srfi 13)
+Description: Counts the number of characters in s[start..end) matching criterion.
+Example:
+  (string-count "hello world" char-alphabetic?) =&gt; 10</pre>
+</div>
+<div class="entry" id="e29" data-name="string-delete">
+  <div class="entry-name">string-delete</div>
+  <pre class="entry-doc">Syntax: (string-delete criterion s [start [end]])
+Library: (srfi 13)
+Description: Returns s[start..end) with characters matching criterion removed.
+Example:
+  (string-delete char-whitespace? "hello world") =&gt; "helloworld"</pre>
+</div>
+<div class="entry" id="e30" data-name="string-downcase">
+  <div class="entry-name">string-downcase</div>
+  <pre class="entry-doc">Syntax: (string-downcase string [start [end]])
+Library: (scheme char) (srfi 13)
+Description: Returns a newly allocated string that is the lowercase equivalent of string (or substring
+  s[start..end)), using full Unicode case mapping.
+Example:
+  (string-downcase "Hello World") =&gt; "hello world"
+  (string-downcase "HELLO" 1 3)   =&gt; "el"</pre>
+</div>
+<div class="entry" id="e31" data-name="string-downcase!">
+  <div class="entry-name">string-downcase!</div>
+  <pre class="entry-doc">Syntax: (string-downcase string [start [end]])
+Library: (scheme char) (srfi 13)
+Description: Returns a newly allocated string that is the lowercase equivalent of string (or substring
+  s[start..end)), using full Unicode case mapping.
+Example:
+  (string-downcase "Hello World") =&gt; "hello world"
+  (string-downcase "HELLO" 1 3)   =&gt; "el"</pre>
+</div>
+<div class="entry" id="e32" data-name="string-drop">
+  <div class="entry-name">string-drop</div>
+  <pre class="entry-doc">Syntax: (string-drop s n)
+Library: (srfi 13)
+Description: Returns s with the first n characters removed.
+Example:
+  (string-drop "hello" 2) =&gt; "llo"</pre>
+</div>
+<div class="entry" id="e33" data-name="string-drop-right">
+  <div class="entry-name">string-drop-right</div>
+  <pre class="entry-doc">Syntax: (string-drop-right s n)
+Library: (srfi 13)
+Description: Returns s with the last n characters removed.
+Example:
+  (string-drop-right "hello" 2) =&gt; "hel"</pre>
+</div>
+<div class="entry" id="e34" data-name="string-every">
+  <div class="entry-name">string-every</div>
+  <pre class="entry-doc">Syntax: (string-every criterion s [start [end]])
+Library: (srfi 13)
+Description: Returns #t if criterion is satisfied by every character in
+s[start..end), or #f as soon as it fails.
+Example:
+  (string-every char-alphabetic? "hello") =&gt; #t
+  (string-every char-alphabetic? "hello1") =&gt; #f</pre>
+</div>
+<div class="entry" id="e35" data-name="string-fill!">
+  <div class="entry-name">string-fill!</div>
+  <pre class="entry-doc">Syntax: (string-fill! string char)
+       (string-fill! string char start)
+       (string-fill! string char start end)
+Library: (scheme base) (srfi 13)
+Description: Stores char in every element of the given string between start
+  and end. start defaults to 0 and end defaults to the length of the string.
+Example:
+  (let ((s (make-string 3 #\a)))
+    (string-fill! s #\x)
+    s) =&gt; "xxx"
+  (let ((s (string-copy "hello")))
+    (string-fill! s #\x 1 3)
+    s) =&gt; "hxxlo"</pre>
+</div>
+<div class="entry" id="e36" data-name="string-filter">
+  <div class="entry-name">string-filter</div>
+  <pre class="entry-doc">Syntax: (string-filter criterion s [start [end]])
+Library: (srfi 13)
+Description: Returns a string of characters from s[start..end) that match criterion.
+Example:
+  (string-filter char-alphabetic? "h3ll0 w0rld") =&gt; "hllwrld"</pre>
+</div>
+<div class="entry" id="e37" data-name="string-fold">
+  <div class="entry-name">string-fold</div>
+  <pre class="entry-doc">Syntax: (string-fold kons knil s [start [end]])
+Library: (srfi 13)
+Description: Left-to-right fold over the characters of s[start..end). kons receives (char acc).
+Example:
+  (string-fold cons '() "hello") =&gt; (#\o #\l #\l #\e #\h)</pre>
+</div>
+<div class="entry" id="e38" data-name="string-fold-right">
+  <div class="entry-name">string-fold-right</div>
+  <pre class="entry-doc">Syntax: (string-fold-right kons knil s [start [end]])
+Library: (srfi 13)
+Description: Right-to-left fold over the characters of s[start..end). kons receives (char acc).
+Example:
+  (string-fold-right cons '() "hello") =&gt; (#\h #\e #\l #\l #\o)</pre>
+</div>
+<div class="entry" id="e39" data-name="string-for-each">
+  <div class="entry-name">string-for-each</div>
+  <pre class="entry-doc">Syntax: (string-for-each proc string1 string2 ...)
+       (string-for-each proc string [start [end]])
+Library: (scheme base) (srfi 13)
+Description: When given multiple strings, applies proc element-wise to the
+  characters of the strings in order for side effects (R7RS).
+  When given optional integer start/end indices, applies proc to each
+  character of string[start..end) in order (SRFI-13).
+Example:
+  (string-for-each display "abc") ; displays abc</pre>
+</div>
+<div class="entry" id="e40" data-name="string-for-each-index">
+  <div class="entry-name">string-for-each-index</div>
+  <pre class="entry-doc">Syntax: (string-for-each-index proc s [start [end]])
+Library: (srfi 13)
+Description: Applies proc to each valid index of s[start..end) in order, for side effects.
+Example:
+  (string-for-each-index display "hello") ; displays 0 1 2 3 4</pre>
+</div>
+<div class="entry" id="e41" data-name="string-hash">
+  <div class="entry-name">string-hash</div>
+  <pre class="entry-doc">Syntax: (string-hash s [bound [start [end]]])
+Library: (srfi 13)
+Description: Returns a hash of s[start..end) as a non-negative integer less than bound.
+Example:
+  (string-hash "hello") =&gt; some integer
+  (string-hash "hello" 100) =&gt; some integer &lt; 100</pre>
+</div>
+<div class="entry" id="e42" data-name="string-hash-ci">
+  <div class="entry-name">string-hash-ci</div>
+  <pre class="entry-doc">Syntax: (string-hash-ci s [bound [start [end]]])
+Library: (srfi 13)
+Description: Case-insensitive string hash.
+Example:
+  (= (string-hash-ci "Hello") (string-hash-ci "hello")) =&gt; #t</pre>
+</div>
+<div class="entry" id="e43" data-name="string-index">
+  <div class="entry-name">string-index</div>
+  <pre class="entry-doc">Syntax: (string-index s criterion [start [end]])
+Library: (srfi 13)
+Description: Returns the index of the first character in s[start..end) matching criterion.
+Example:
+  (string-index "hello" #\l) =&gt; 2
+  (string-index "hello" char-upper-case?) =&gt; #f</pre>
+</div>
+<div class="entry" id="e44" data-name="string-index-right">
+  <div class="entry-name">string-index-right</div>
+  <pre class="entry-doc">Syntax: (string-index-right s criterion [start [end]])
+Library: (srfi 13)
+Description: Returns the index of the last character in s[start..end) matching criterion.
+Example:
+  (string-index-right "hello" #\l) =&gt; 3</pre>
+</div>
+<div class="entry" id="e45" data-name="string-join">
+  <div class="entry-name">string-join</div>
+  <pre class="entry-doc">Syntax: (string-join strs delim grammar?)
+Library: (srfi 13)
+Description: Concatenates a list of strings strs with delim as the separator. The optional grammar argument may be 'infix (default), 'prefix, or 'suffix.
+Example:
+  (string-join '("a" "b" "c") "-") =&gt; "a-b-c"
+  (string-join '("x" "y") "," 'suffix) =&gt; "x,y,"</pre>
+</div>
+<div class="entry" id="e46" data-name="string-kmp-partial-search">
+  <div class="entry-name">string-kmp-partial-search</div>
+  <pre class="entry-doc">Syntax: (string-kmp-partial-search pattern rv text i [c= [p-start [start [end]]]])
+Library: (srfi 13)
+Description: Searches text for pattern using KMP with partial match state.
+Example:
+  (let* ((pat "abc") (rv (make-kmp-restart-vector pat)))
+    (string-kmp-partial-search pat rv "xyzabc" 0)) =&gt; -6</pre>
+</div>
+<div class="entry" id="e47" data-name="string-length">
+  <div class="entry-name">string-length</div>
+  <pre class="entry-doc">Syntax: (string-length s)
+Library: (scheme base) (srfi 13)
+Description: Returns the number of characters in the string s.
+Example:
+  (string-length "hello") =&gt; 5
+  (string-length "") =&gt; 0</pre>
+</div>
+<div class="entry" id="e48" data-name="string-map">
+  <div class="entry-name">string-map</div>
+  <pre class="entry-doc">Syntax: (string-map proc string1 string2 ...)
+       (string-map proc string [start [end]])
+Library: (scheme base) (srfi 13)
+Description: When given multiple strings, applies proc element-wise to the
+  characters of the strings and returns a string of the results. If multiple
+  strings are given, they must all have the same length (R7RS).
+  When given optional integer start/end indices, maps proc over the characters
+  of string[start..end) and returns a new string (SRFI-13).
+Example:
+  (string-map char-upcase "hello")       =&gt; "HELLO"
+  (string-map char-upcase "hello" 1 3)   =&gt; "EL"
+  (string-map (lambda (c) c) "xyz")      =&gt; "xyz"</pre>
+</div>
+<div class="entry" id="e49" data-name="string-map!">
+  <div class="entry-name">string-map!</div>
+  <pre class="entry-doc">Syntax: (string-map! proc s [start [end]])
+Library: (srfi 13)
+Description: Applies proc to each character of s[start..end) and stores the result back.
+Example:
+  (let ((s (string-copy "hello"))) (string-map! char-upcase s) s) =&gt; "HELLO"</pre>
+</div>
+<div class="entry" id="e50" data-name="string-null?">
+  <div class="entry-name">string-null?</div>
+  <pre class="entry-doc">Syntax: (string-null? s)
+Library: (srfi 13)
+Description: Returns #t if s is the empty string (length 0), #f otherwise.
+Example:
+  (string-null? "") =&gt; #t
+  (string-null? "hi") =&gt; #f</pre>
+</div>
+<div class="entry" id="e51" data-name="string-pad">
+  <div class="entry-name">string-pad</div>
+  <pre class="entry-doc">Syntax: (string-pad s k [char [start [end]]])
+Library: (srfi 13)
+Description: Left-pads s[start..end) to width k using char (default: space).
+Example:
+  (string-pad "42" 5) =&gt; "   42"
+  (string-pad "hello" 3) =&gt; "llo"</pre>
+</div>
+<div class="entry" id="e52" data-name="string-pad-right">
+  <div class="entry-name">string-pad-right</div>
+  <pre class="entry-doc">Syntax: (string-pad-right s k [char [start [end]]])
+Library: (srfi 13)
+Description: Right-pads s[start..end) to width k using char (default: space).
+Example:
+  (string-pad-right "42" 5) =&gt; "42   "
+  (string-pad-right "hello" 3) =&gt; "hel"</pre>
+</div>
+<div class="entry" id="e53" data-name="string-parse-final-start+end">
+  <div class="entry-name">string-parse-final-start+end</div>
+  <pre class="entry-doc">Syntax: (string-parse-final-start+end proc s rest)
+Library: (srfi 13)
+Description: Like string-parse-start+end but signals an error if extra args remain.
+Example:
+  (string-parse-final-start+end 'my-proc "hello" '(1 4)) =&gt; 1 and 4</pre>
+</div>
+<div class="entry" id="e54" data-name="string-parse-start+end">
+  <div class="entry-name">string-parse-start+end</div>
+  <pre class="entry-doc">Syntax: (string-parse-start+end proc s rest)
+Library: (srfi 13)
+Description: Validates and extracts start and end indices from the rest argument list.
+Returns three values: the remaining args, start, and end.
+Example:
+  (string-parse-start+end 'my-proc "hello" '(1 4 extra)) =&gt; (extra) 1 4</pre>
+</div>
+<div class="entry" id="e55" data-name="string-prefix-ci?">
+  <div class="entry-name">string-prefix-ci?</div>
+  <pre class="entry-doc">Syntax: (string-prefix-ci? s1 s2 [s1-start [s1-end [s2-start [s2-end]]]])
+Library: (srfi 13)
+Description: Case-insensitive version of string-prefix?.
+Example:
+  (string-prefix-ci? "HEL" "hello") =&gt; #t</pre>
+</div>
+<div class="entry" id="e56" data-name="string-prefix-length">
+  <div class="entry-name">string-prefix-length</div>
+  <pre class="entry-doc">Syntax: (string-prefix-length s1 s2 [start1 [end1 [start2 [end2]]]])
+Library: (srfi 13)
+Description: Returns the length of the longest common prefix of s1 and s2.
+Example:
+  (string-prefix-length "abcdef" "abcxyz") =&gt; 3</pre>
+</div>
+<div class="entry" id="e57" data-name="string-prefix-length-ci">
+  <div class="entry-name">string-prefix-length-ci</div>
+  <pre class="entry-doc">Syntax: (string-prefix-length-ci s1 s2 [start1 [end1 [start2 [end2]]]])
+Library: (srfi 13)
+Description: Case-insensitive version of string-prefix-length.
+Example:
+  (string-prefix-length-ci "ABCdef" "abcxyz") =&gt; 3</pre>
+</div>
+<div class="entry" id="e58" data-name="string-prefix?">
+  <div class="entry-name">string-prefix?</div>
+  <pre class="entry-doc">Syntax: (string-prefix? s1 s2 [s1-start [s1-end [s2-start [s2-end]]]])
+Library: (srfi 13)
+Description: Returns #t if s1 is a prefix of s2.
+Example:
+  (string-prefix? "hel" "hello") =&gt; #t
+  (string-prefix? "world" "hello") =&gt; #f</pre>
+</div>
+<div class="entry" id="e59" data-name="string-ref">
+  <div class="entry-name">string-ref</div>
+  <pre class="entry-doc">Syntax: (string-ref s k)
+Library: (scheme base) (srfi 13)
+Description: Returns the character at index k in the string s. It is an error if k is out of range.
+Example:
+  (string-ref "hello" 0) =&gt; #\h
+  (string-ref "hello" 4) =&gt; #\o</pre>
+</div>
+<div class="entry" id="e60" data-name="string-replace">
+  <div class="entry-name">string-replace</div>
+  <pre class="entry-doc">Syntax: (string-replace s1 s2 start1 end1 [start2 [end2]])
+Library: (srfi 13)
+Description: Returns a string built from s1 with s1[start1,end1) replaced by s2[start2,end2).
+Example:
+  (string-replace "abcdef" "XY" 2 4) =&gt; "abXYef"</pre>
+</div>
+<div class="entry" id="e61" data-name="string-reverse">
+  <div class="entry-name">string-reverse</div>
+  <pre class="entry-doc">Syntax: (string-reverse s [start [end]])
+Library: (srfi 13)
+Description: Returns a new string that is the reverse of s[start..end).
+Example:
+  (string-reverse "hello") =&gt; "olleh"</pre>
+</div>
+<div class="entry" id="e62" data-name="string-reverse!">
+  <div class="entry-name">string-reverse!</div>
+  <pre class="entry-doc">Syntax: (string-reverse s [start [end]])
+Library: (srfi 13)
+Description: Returns a new string that is the reverse of s[start..end).
+Example:
+  (string-reverse "hello") =&gt; "olleh"</pre>
+</div>
+<div class="entry" id="e63" data-name="string-set!">
+  <div class="entry-name">string-set!</div>
+  <pre class="entry-doc">Syntax: (string-set! s k char)
+Library: (scheme base) (srfi 13)
+Description: Stores char in position k of the string s, mutating the string in place. It is an error if k is out of range.
+Example:
+  (let ((s (string-copy "hello")))
+    (string-set! s 0 #\H)
+    s) =&gt; "Hello"</pre>
+</div>
+<div class="entry" id="e64" data-name="string-skip">
+  <div class="entry-name">string-skip</div>
+  <pre class="entry-doc">Syntax: (string-skip s criterion [start [end]])
+Library: (srfi 13)
+Description: Returns the index of the first character in s[start..end) NOT matching criterion.
+Example:
+  (string-skip "  hello" char-whitespace?) =&gt; 2</pre>
+</div>
+<div class="entry" id="e65" data-name="string-skip-right">
+  <div class="entry-name">string-skip-right</div>
+  <pre class="entry-doc">Syntax: (string-skip-right s criterion [start [end]])
+Library: (srfi 13)
+Description: Returns the index of the last character in s[start..end) NOT matching criterion.
+Example:
+  (string-skip-right "hello  " char-whitespace?) =&gt; 4</pre>
+</div>
+<div class="entry" id="e66" data-name="string-suffix-ci?">
+  <div class="entry-name">string-suffix-ci?</div>
+  <pre class="entry-doc">Syntax: (string-suffix-ci? s1 s2 [s1-start [s1-end [s2-start [s2-end]]]])
+Library: (srfi 13)
+Description: Case-insensitive version of string-suffix?.
+Example:
+  (string-suffix-ci? "LLO" "hello") =&gt; #t</pre>
+</div>
+<div class="entry" id="e67" data-name="string-suffix-length">
+  <div class="entry-name">string-suffix-length</div>
+  <pre class="entry-doc">Syntax: (string-suffix-length s1 s2 [start1 [end1 [start2 [end2]]]])
+Library: (srfi 13)
+Description: Returns the length of the longest common suffix of s1 and s2.
+Example:
+  (string-suffix-length "xyzdef" "abcdef") =&gt; 3</pre>
+</div>
+<div class="entry" id="e68" data-name="string-suffix-length-ci">
+  <div class="entry-name">string-suffix-length-ci</div>
+  <pre class="entry-doc">Syntax: (string-suffix-length-ci s1 s2 [start1 [end1 [start2 [end2]]]])
+Library: (srfi 13)
+Description: Case-insensitive version of string-suffix-length.
+Example:
+  (string-suffix-length-ci "xyzDEF" "abcdef") =&gt; 3</pre>
+</div>
+<div class="entry" id="e69" data-name="string-suffix?">
+  <div class="entry-name">string-suffix?</div>
+  <pre class="entry-doc">Syntax: (string-suffix? s1 s2 [s1-start [s1-end [s2-start [s2-end]]]])
+Library: (srfi 13)
+Description: Returns #t if s1 is a suffix of s2.
+Example:
+  (string-suffix? "llo" "hello") =&gt; #t
+  (string-suffix? "hel" "hello") =&gt; #f</pre>
+</div>
+<div class="entry" id="e70" data-name="string-tabulate">
+  <div class="entry-name">string-tabulate</div>
+  <pre class="entry-doc">Syntax: (string-tabulate f n)
+Library: (srfi 13)
+Description: Builds a string of length n by applying f to each index 0, 1, ..., n-1 in order.
+Example:
+  (string-tabulate (lambda (i) (integer-&gt;char (+ i 65))) 5) =&gt; "ABCDE"</pre>
+</div>
+<div class="entry" id="e71" data-name="string-take">
+  <div class="entry-name">string-take</div>
+  <pre class="entry-doc">Syntax: (string-take s n)
+Library: (srfi 13)
+Description: Returns the first n characters of s.
+Example:
+  (string-take "hello" 3) =&gt; "hel"</pre>
+</div>
+<div class="entry" id="e72" data-name="string-take-right">
+  <div class="entry-name">string-take-right</div>
+  <pre class="entry-doc">Syntax: (string-take-right s n)
+Library: (srfi 13)
+Description: Returns the last n characters of s.
+Example:
+  (string-take-right "hello" 3) =&gt; "llo"</pre>
+</div>
+<div class="entry" id="e73" data-name="string-titlecase">
+  <div class="entry-name">string-titlecase</div>
+  <pre class="entry-doc">Syntax: (string-titlecase s [start [end]])
+Library: (srfi 13)
+Description: Returns a titlecased copy of s[start..end): the first alphabetic character of each
+word is uppercased and the rest are lowercased.
+Example:
+  (string-titlecase "hello world") =&gt; "Hello World"</pre>
+</div>
+<div class="entry" id="e74" data-name="string-titlecase!">
+  <div class="entry-name">string-titlecase!</div>
+  <pre class="entry-doc">Syntax: (string-titlecase s [start [end]])
+Library: (srfi 13)
+Description: Returns a titlecased copy of s[start..end): the first alphabetic character of each
+word is uppercased and the rest are lowercased.
+Example:
+  (string-titlecase "hello world") =&gt; "Hello World"</pre>
+</div>
+<div class="entry" id="e75" data-name="string-tokenize">
+  <div class="entry-name">string-tokenize</div>
+  <pre class="entry-doc">Syntax: (string-tokenize s [token-set [start [end]]])
+Library: (srfi 13)
+Description: Splits s into a list of token strings, where a token is a maximal
+non-empty contiguous sequence of chars in token-set (default: char-set:graphic).
+Example:
+  (string-tokenize "hello world") =&gt; ("hello" "world")</pre>
+</div>
+<div class="entry" id="e76" data-name="string-trim">
+  <div class="entry-name">string-trim</div>
+  <pre class="entry-doc">Syntax: (string-trim s [criterion [start [end]]])
+Library: (srfi 13)
+Description: Trims characters matching criterion from the left of s. Default: whitespace.
+Example:
+  (string-trim "  hello  ") =&gt; "hello  "</pre>
+</div>
+<div class="entry" id="e77" data-name="string-trim-both">
+  <div class="entry-name">string-trim-both</div>
+  <pre class="entry-doc">Syntax: (string-trim-both s [criterion [start [end]]])
+Library: (srfi 13)
+Description: Trims characters matching criterion from both sides of s. Default: whitespace.
+Example:
+  (string-trim-both "  hello  ") =&gt; "hello"</pre>
+</div>
+<div class="entry" id="e78" data-name="string-trim-right">
+  <div class="entry-name">string-trim-right</div>
+  <pre class="entry-doc">Syntax: (string-trim-right s [criterion [start [end]]])
+Library: (srfi 13)
+Description: Trims characters matching criterion from the right of s. Default: whitespace.
+Example:
+  (string-trim-right "  hello  ") =&gt; "  hello"</pre>
+</div>
+<div class="entry" id="e79" data-name="string-unfold">
+  <div class="entry-name">string-unfold</div>
+  <pre class="entry-doc">Syntax: (string-unfold p f g seed [base [make-final]])
+Library: (srfi 13)
+Description: Builds a string by unfolding seed left-to-right. p is the termination predicate;
+f maps seed to a character; g maps seed to the next seed. Optional base string is prepended;
+make-final is called on the final seed to produce a suffix string.
+Example:
+  (string-unfold null? car cdr '(#\h #\e #\l #\l #\o)) =&gt; "hello"</pre>
+</div>
+<div class="entry" id="e80" data-name="string-unfold-right">
+  <div class="entry-name">string-unfold-right</div>
+  <pre class="entry-doc">Syntax: (string-unfold-right p f g seed [base [make-final]])
+Library: (srfi 13)
+Description: Builds a string by unfolding seed right-to-left. p is the termination predicate;
+f maps seed to a character; g maps seed to the next seed. Optional base string is appended;
+make-final is called on the final seed to produce a prefix string.
+Example:
+  (string-unfold-right null? car cdr '(#\o #\l #\l #\e #\h)) =&gt; "hello"</pre>
+</div>
+<div class="entry" id="e81" data-name="string-upcase">
+  <div class="entry-name">string-upcase</div>
+  <pre class="entry-doc">Syntax: (string-upcase string [start [end]])
+Library: (scheme char) (srfi 13)
+Description: Returns a newly allocated string that is the uppercase equivalent of string (or substring
+  s[start..end)), using full Unicode case mapping (e.g. ß → SS).
+Example:
+  (string-upcase "hello world") =&gt; "HELLO WORLD"
+  (string-upcase "ßa") =&gt; "SSA"</pre>
+</div>
+<div class="entry" id="e82" data-name="string-upcase!">
+  <div class="entry-name">string-upcase!</div>
+  <pre class="entry-doc">Syntax: (string-upcase string [start [end]])
+Library: (scheme char) (srfi 13)
+Description: Returns a newly allocated string that is the uppercase equivalent of string (or substring
+  s[start..end)), using full Unicode case mapping (e.g. ß → SS).
+Example:
+  (string-upcase "hello world") =&gt; "HELLO WORLD"
+  (string-upcase "ßa") =&gt; "SSA"</pre>
+</div>
+<div class="entry" id="e83" data-name="string-xcopy!">
+  <div class="entry-name">string-xcopy!</div>
+  <pre class="entry-doc">Syntax: (string-xcopy! target tstart s sfrom [sto [start [end]]])
+Library: (srfi 13)
+Description: Copies a cyclically repeated substring of s into target starting at tstart.
+Example:
+  (let ((t (string-copy "......"))) (string-xcopy! t 0 "abc" 0 6) t) =&gt; "abcabc"</pre>
+</div>
+<div class="entry" id="e84" data-name="string&lt;">
+  <div class="entry-name">string&lt;</div>
+  <pre class="entry-doc">Syntax: (string&lt; s1 s2 [start1 [end1 [start2 [end2]]]])
+Library: (srfi 13)
+Description: Returns the mismatch index if s1 &lt; s2, #f otherwise.
+Example:
+  (string&lt; "abc" "abd") =&gt; 2
+  (string&lt; "abd" "abc") =&gt; #f</pre>
+</div>
+<div class="entry" id="e85" data-name="string&lt;=">
+  <div class="entry-name">string&lt;=</div>
+  <pre class="entry-doc">Syntax: (string&lt;= s1 s2 [start1 [end1 [start2 [end2]]]])
+Library: (srfi 13)
+Description: Returns the mismatch index if s1 &lt;= s2, #f otherwise.
+Example:
+  (string&lt;= "abc" "abc") =&gt; 3
+  (string&lt;= "abc" "abd") =&gt; 2</pre>
+</div>
+<div class="entry" id="e86" data-name="string&lt;&gt;">
+  <div class="entry-name">string&lt;&gt;</div>
+  <pre class="entry-doc">Syntax: (string&lt;&gt; s1 s2 [start1 [end1 [start2 [end2]]]])
+Library: (srfi 13)
+Description: Returns the mismatch index if s1 and s2 are not equal, #f otherwise.
+Example:
+  (string&lt;&gt; "abc" "def") =&gt; 0
+  (string&lt;&gt; "abc" "abc") =&gt; #f</pre>
+</div>
+<div class="entry" id="e87" data-name="string=">
+  <div class="entry-name">string=</div>
+  <pre class="entry-doc">Syntax: (string= s1 s2 [start1 [end1 [start2 [end2]]]])
+Library: (srfi 13)
+Description: Returns the mismatch index if s1 and s2 are equal, #f otherwise.
+Example:
+  (string= "abc" "abc") =&gt; 3
+  (string= "abc" "abd") =&gt; #f</pre>
+</div>
+<div class="entry" id="e88" data-name="string&gt;">
+  <div class="entry-name">string&gt;</div>
+  <pre class="entry-doc">Syntax: (string&gt; s1 s2 [start1 [end1 [start2 [end2]]]])
+Library: (srfi 13)
+Description: Returns the mismatch index if s1 &gt; s2, #f otherwise.
+Example:
+  (string&gt; "abd" "abc") =&gt; 2
+  (string&gt; "abc" "abd") =&gt; #f</pre>
+</div>
+<div class="entry" id="e89" data-name="string&gt;=">
+  <div class="entry-name">string&gt;=</div>
+  <pre class="entry-doc">Syntax: (string&gt;= s1 s2 [start1 [end1 [start2 [end2]]]])
+Library: (srfi 13)
+Description: Returns the mismatch index if s1 &gt;= s2, #f otherwise.
+Example:
+  (string&gt;= "abc" "abc") =&gt; 3
+  (string&gt;= "abd" "abc") =&gt; 2</pre>
+</div>
+<div class="entry" id="e90" data-name="string?">
+  <div class="entry-name">string?</div>
+  <pre class="entry-doc">Syntax: (string? obj)
+Library: (scheme base) (srfi 13)
+Description: Returns #t if obj is a string, otherwise returns #f.
+Example:
+  (string? "hello") =&gt; #t
+  (string? 42) =&gt; #f</pre>
+</div>
+<div class="entry" id="e91" data-name="substring-spec-ok?">
+  <div class="entry-name">substring-spec-ok?</div>
+  <pre class="entry-doc">Syntax: (substring-spec-ok? s start end)
+Library: (srfi 13)
+Description: Returns #t if start and end are valid substring indices for s.
+Example:
+  (substring-spec-ok? "hello" 0 5) =&gt; #t
+  (substring-spec-ok? "hello" 3 2) =&gt; #f</pre>
+</div>
+<div class="entry" id="e92" data-name="substring/shared">
+  <div class="entry-name">substring/shared</div>
+  <pre class="entry-doc">Syntax: (substring/shared s start [end])
+Library: (srfi 13)
+Description: Returns a substring of s from start to end.
+Example:
+  (substring/shared "hello" 1 4) =&gt; "ell"
+  (substring/shared "hello" 2) =&gt; "llo"</pre>
+</div>
+<div class="entry" id="e93" data-name="xsubstring">
+  <div class="entry-name">xsubstring</div>
+  <pre class="entry-doc">Syntax: (xsubstring s from [to [start [end]]])
+Library: (srfi 13)
+Description: Returns a substring of the virtual infinite string formed by repeating s cyclically.
+Example:
+  (xsubstring "hello" 2 7) =&gt; "llohe"
+  (xsubstring "abc" 0 9) =&gt; "abcabcabc"</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

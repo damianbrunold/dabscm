@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(srfi 14) — Scm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Scm Library Reference</a></h1>
+    <p>scm &mdash; libraries and their exports</p>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav>
+  <h2>R7RS Standard</h2>
+  <a href="scheme-base.html" class="r7rs">(scheme base)</a>
+  <a href="scheme-case-lambda.html" class="r7rs">(scheme case-lambda)</a>
+  <a href="scheme-char.html" class="r7rs">(scheme char)</a>
+  <a href="scheme-complex.html" class="r7rs">(scheme complex)</a>
+  <a href="scheme-cxr.html" class="r7rs">(scheme cxr)</a>
+  <a href="scheme-eval.html" class="r7rs">(scheme eval)</a>
+  <a href="scheme-file.html" class="r7rs">(scheme file)</a>
+  <a href="scheme-inexact.html" class="r7rs">(scheme inexact)</a>
+  <a href="scheme-lazy.html" class="r7rs">(scheme lazy)</a>
+  <a href="scheme-load.html" class="r7rs">(scheme load)</a>
+  <a href="scheme-process-context.html" class="r7rs">(scheme process-context)</a>
+  <a href="scheme-r5rs.html" class="r7rs">(scheme r5rs)</a>
+  <a href="scheme-read.html" class="r7rs">(scheme read)</a>
+  <a href="scheme-repl.html" class="r7rs">(scheme repl)</a>
+  <a href="scheme-time.html" class="r7rs">(scheme time)</a>
+  <a href="scheme-write.html" class="r7rs">(scheme write)</a>
+  <h2>SRFI Libraries</h2>
+  <a href="srfi-1.html" class="srfi">(srfi 1)</a>
+  <a href="srfi-2.html" class="srfi">(srfi 2)</a>
+  <a href="srfi-8.html" class="srfi">(srfi 8)</a>
+  <a href="srfi-9.html" class="srfi">(srfi 9)</a>
+  <a href="srfi-13.html" class="srfi">(srfi 13)</a>
+  <a href="srfi-14.html" class="srfi active">(srfi 14)</a>
+  <a href="srfi-18.html" class="srfi">(srfi 18)</a>
+  <a href="srfi-19.html" class="srfi">(srfi 19)</a>
+  <a href="srfi-26.html" class="srfi">(srfi 26)</a>
+  <a href="srfi-28.html" class="srfi">(srfi 28)</a>
+  <a href="srfi-39.html" class="srfi">(srfi 39)</a>
+  <a href="srfi-48.html" class="srfi">(srfi 48)</a>
+  <a href="srfi-64.html" class="srfi">(srfi 64)</a>
+  <a href="srfi-69.html" class="srfi">(srfi 69)</a>
+  <a href="srfi-95.html" class="srfi">(srfi 95)</a>
+  <a href="srfi-98.html" class="srfi">(srfi 98)</a>
+  <a href="srfi-111.html" class="srfi">(srfi 111)</a>
+  <a href="srfi-125.html" class="srfi">(srfi 125)</a>
+  <a href="srfi-128.html" class="srfi">(srfi 128)</a>
+  <a href="srfi-132.html" class="srfi">(srfi 132)</a>
+  <a href="srfi-133.html" class="srfi">(srfi 133)</a>
+  <a href="srfi-151.html" class="srfi">(srfi 151)</a>
+  <a href="srfi-158.html" class="srfi">(srfi 158)</a>
+  <h2>Scm Extensions</h2>
+  <a href="scm-archive.html" class="scm">(scm archive)</a>
+  <a href="scm-args.html" class="scm">(scm args)</a>
+  <a href="scm-compile.html" class="scm">(scm compile)</a>
+  <a href="scm-compression.html" class="scm">(scm compression)</a>
+  <a href="scm-crypto.html" class="scm">(scm crypto)</a>
+  <a href="scm-csv.html" class="scm">(scm csv)</a>
+  <a href="scm-database-migrations.html" class="scm">(scm database migrations)</a>
+  <a href="scm-database-postgres.html" class="scm">(scm database postgres)</a>
+  <a href="scm-database-sqlserver.html" class="scm">(scm database sqlserver)</a>
+  <a href="scm-datetime.html" class="scm">(scm datetime)</a>
+  <a href="scm-dict.html" class="scm">(scm dict)</a>
+  <a href="scm-doc.html" class="scm">(scm doc)</a>
+  <a href="scm-duration.html" class="scm">(scm duration)</a>
+  <a href="scm-feed.html" class="scm">(scm feed)</a>
+  <a href="scm-fs-find.html" class="scm">(scm fs-find)</a>
+  <a href="scm-fs.html" class="scm">(scm fs)</a>
+  <a href="scm-glob.html" class="scm">(scm glob)</a>
+  <a href="scm-html-builder.html" class="scm">(scm html builder)</a>
+  <a href="scm-html.html" class="scm">(scm html)</a>
+  <a href="scm-io.html" class="scm">(scm io)</a>
+  <a href="scm-json-simple.html" class="scm">(scm json simple)</a>
+  <a href="scm-json.html" class="scm">(scm json)</a>
+  <a href="scm-list.html" class="scm">(scm list)</a>
+  <a href="scm-log.html" class="scm">(scm log)</a>
+  <a href="scm-macro.html" class="scm">(scm macro)</a>
+  <a href="scm-markdown.html" class="scm">(scm markdown)</a>
+  <a href="scm-match.html" class="scm">(scm match)</a>
+  <a href="scm-math.html" class="scm">(scm math)</a>
+  <a href="scm-module.html" class="scm">(scm module)</a>
+  <a href="scm-net-http-client.html" class="scm">(scm net http client)</a>
+  <a href="scm-net-http-cookies.html" class="scm">(scm net http cookies)</a>
+  <a href="scm-net-http-forms.html" class="scm">(scm net http forms)</a>
+  <a href="scm-net-http-multipart.html" class="scm">(scm net http multipart)</a>
+  <a href="scm-net-http-request.html" class="scm">(scm net http request)</a>
+  <a href="scm-net-http-response.html" class="scm">(scm net http response)</a>
+  <a href="scm-net-http-route.html" class="scm">(scm net http route)</a>
+  <a href="scm-net-http-server.html" class="scm">(scm net http server)</a>
+  <a href="scm-net-remote.html" class="scm">(scm net-remote)</a>
+  <a href="scm-net-sockets.html" class="scm">(scm net sockets)</a>
+  <a href="scm-net-websocket.html" class="scm">(scm net websocket)</a>
+  <a href="scm-odf-spreadsheet.html" class="scm">(scm odf spreadsheet)</a>
+  <a href="scm-odf-writer.html" class="scm">(scm odf writer)</a>
+  <a href="scm-ooxml-excel-reader.html" class="scm">(scm ooxml excel-reader)</a>
+  <a href="scm-ooxml-excel.html" class="scm">(scm ooxml excel)</a>
+  <a href="scm-ooxml-word-reader.html" class="scm">(scm ooxml word-reader)</a>
+  <a href="scm-ooxml-word.html" class="scm">(scm ooxml word)</a>
+  <a href="scm-pdf.html" class="scm">(scm pdf)</a>
+  <a href="scm-png.html" class="scm">(scm png)</a>
+  <a href="scm-profiling.html" class="scm">(scm profiling)</a>
+  <a href="scm-qr.html" class="scm">(scm qr)</a>
+  <a href="scm-random-access.html" class="scm">(scm random access)</a>
+  <a href="scm-repl.html" class="scm">(scm repl)</a>
+  <a href="scm-store.html" class="scm">(scm store)</a>
+  <a href="scm-string.html" class="scm">(scm string)</a>
+  <a href="scm-sysadmin.html" class="scm">(scm sysadmin)</a>
+  <a href="scm-system.html" class="scm">(scm system)</a>
+  <a href="scm-templating.html" class="scm">(scm templating)</a>
+  <a href="scm-terminal.html" class="scm">(scm terminal)</a>
+  <a href="scm-test.html" class="scm">(scm test)</a>
+  <a href="scm-text.html" class="scm">(scm text)</a>
+  <a href="scm-toml.html" class="scm">(scm toml)</a>
+  <a href="scm-uri.html" class="scm">(scm uri)</a>
+  <a href="scm-xml.html" class="scm">(scm xml)</a>
+  <a href="scm-zip.html" class="scm">(scm zip)</a>
+</nav>
+
+<main>
+
+<a class="backlink" href="index.html">&larr; All libraries</a>
+<div class="lib-title srfi">(srfi 14)</div>
+<p class="lib-sub">SRFI-14 — Character sets: predicate-wrapped char-set type</p>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">67 bindings</p>
+
+<div class="entry" id="e0" data-name="-&gt;char-set">
+  <div class="entry-name">-&gt;char-set</div>
+  <pre class="entry-doc">Syntax: (-&gt;char-set x)
+Library: (srfi 14)
+Description: Coerces x to a char-set. If x is already a char-set, returns it. If x is a
+string, returns a char-set of its characters. If x is a char, returns a char-set containing
+just that character.
+Example:
+  (char-set-contains? (-&gt;char-set "abc") #\b) =&gt; #t
+  (char-set-contains? (-&gt;char-set #\a) #\a) =&gt; #t
+  (char-set? (-&gt;char-set char-set:digit)) =&gt; #t
+</pre>
+</div>
+<div class="entry" id="e1" data-name="char-set">
+  <div class="entry-name">char-set</div>
+  <pre class="entry-doc">Syntax: (char-set char ...)
+Library: (srfi 14)
+Description: Constructs a char-set containing exactly the given chars.
+Example:
+  (char-set-contains? (char-set #\a #\b) #\a) =&gt; #t
+  (char-set-contains? (char-set #\a #\b) #\c) =&gt; #f
+</pre>
+</div>
+<div class="entry" id="e2" data-name="char-set-&gt;list">
+  <div class="entry-name">char-set-&gt;list</div>
+  <pre class="entry-doc">Syntax: (char-set-&gt;list cs)
+Library: (srfi 14)
+Description: Returns a list of all characters in cs in ascending code-point order.
+Example:
+  (char-set-&gt;list (char-set #\a #\b #\c)) =&gt; (#\a #\b #\c)
+  (char-set-&gt;list char-set:empty) =&gt; ()
+</pre>
+</div>
+<div class="entry" id="e3" data-name="char-set-&gt;string">
+  <div class="entry-name">char-set-&gt;string</div>
+  <pre class="entry-doc">Syntax: (char-set-&gt;string cs)
+Library: (srfi 14)
+Description: Returns a string containing all characters in cs in ascending code-point order.
+Example:
+  (char-set-&gt;string (char-set #\a #\b #\c)) =&gt; "abc"
+  (string-length (char-set-&gt;string char-set:digit)) =&gt; 10
+</pre>
+</div>
+<div class="entry" id="e4" data-name="char-set-adjoin">
+  <div class="entry-name">char-set-adjoin</div>
+  <pre class="entry-doc">Syntax: (char-set-adjoin cs char ...)
+Library: (srfi 14)
+Description: Returns a new char-set that contains all characters in cs plus the given chars.
+Example:
+  (char-set-contains? (char-set-adjoin char-set:digit #\a) #\a) =&gt; #t
+  (char-set-contains? (char-set-adjoin char-set:digit #\a) #\5) =&gt; #t
+</pre>
+</div>
+<div class="entry" id="e5" data-name="char-set-adjoin!">
+  <div class="entry-name">char-set-adjoin!</div>
+  <pre class="entry-doc">Syntax: (char-set-adjoin cs char ...)
+Library: (srfi 14)
+Description: Returns a new char-set that contains all characters in cs plus the given chars.
+Example:
+  (char-set-contains? (char-set-adjoin char-set:digit #\a) #\a) =&gt; #t
+  (char-set-contains? (char-set-adjoin char-set:digit #\a) #\5) =&gt; #t
+</pre>
+</div>
+<div class="entry" id="e6" data-name="char-set-any">
+  <div class="entry-name">char-set-any</div>
+  <pre class="entry-doc">Syntax: (char-set-any pred cs)
+Library: (srfi 14)
+Description: Applies pred to each character in cs. Returns the first true value pred returns,
+or #f if pred returns #f for every character.
+Example:
+  (char-set-any char-upper-case? char-set:letter) =&gt; #t
+  (char-set-any char-upper-case? char-set:digit) =&gt; #f
+</pre>
+</div>
+<div class="entry" id="e7" data-name="char-set-complement">
+  <div class="entry-name">char-set-complement</div>
+  <pre class="entry-doc">Syntax: (char-set-complement cs)
+Library: (srfi 14)
+Description: Returns a char-set containing all characters NOT in cs.
+Example:
+  (char-set-contains? (char-set-complement char-set:digit) #\a) =&gt; #t
+  (char-set-contains? (char-set-complement char-set:digit) #\5) =&gt; #f
+</pre>
+</div>
+<div class="entry" id="e8" data-name="char-set-complement!">
+  <div class="entry-name">char-set-complement!</div>
+  <pre class="entry-doc">Syntax: (char-set-complement cs)
+Library: (srfi 14)
+Description: Returns a char-set containing all characters NOT in cs.
+Example:
+  (char-set-contains? (char-set-complement char-set:digit) #\a) =&gt; #t
+  (char-set-contains? (char-set-complement char-set:digit) #\5) =&gt; #f
+</pre>
+</div>
+<div class="entry" id="e9" data-name="char-set-contains?">
+  <div class="entry-name">char-set-contains?</div>
+  <pre class="entry-doc">Syntax: (char-set-contains? cs ch)
+Library: (srfi 14)
+Description: Returns #t if the character ch is a member of char-set cs, #f otherwise.
+Example:
+  (char-set-contains? char-set:digit #\5) =&gt; #t
+  (char-set-contains? char-set:digit #\a) =&gt; #f
+</pre>
+</div>
+<div class="entry" id="e10" data-name="char-set-copy">
+  <div class="entry-name">char-set-copy</div>
+  <pre class="entry-doc">Syntax: (char-set-copy cs)
+Library: (srfi 14)
+Description: Returns a copy of the char-set cs. In this implementation char-sets are
+immutable, so this returns a new char-set with the same membership predicate.
+Example:
+  (char-set= (char-set-copy (char-set #\a #\b)) (char-set #\a #\b)) =&gt; #t
+</pre>
+</div>
+<div class="entry" id="e11" data-name="char-set-count">
+  <div class="entry-name">char-set-count</div>
+  <pre class="entry-doc">Syntax: (char-set-count pred cs)
+Library: (srfi 14)
+Description: Returns the number of characters in cs that satisfy pred.
+Example:
+  (char-set-count char-upper-case? char-set:letter) =&gt; 26
+  (char-set-count char-numeric? (char-set #\1 #\a #\2)) =&gt; 2
+</pre>
+</div>
+<div class="entry" id="e12" data-name="char-set-cursor">
+  <div class="entry-name">char-set-cursor</div>
+  <pre class="entry-doc">Syntax: (char-set-cursor cs)
+Library: (srfi 14)
+Description: Returns a cursor for iterating over the characters of cs. In this implementation
+a cursor is the list of characters in cs.
+Example:
+  (let ((cur (char-set-cursor (char-set #\a #\b))))
+    (char-set-ref (char-set #\a #\b) cur)) =&gt; #\a
+</pre>
+</div>
+<div class="entry" id="e13" data-name="char-set-cursor-next">
+  <div class="entry-name">char-set-cursor-next</div>
+  <pre class="entry-doc">Syntax: (char-set-cursor-next cs cursor)
+Library: (srfi 14)
+Description: Advances the cursor to the next character position in cs. Returns the updated
+cursor, or an exhausted cursor if there are no more characters.
+Example:
+  (let* ((cs (char-set #\a #\b))
+         (cur (char-set-cursor cs))
+         (cur2 (char-set-cursor-next cs cur)))
+    (end-of-char-set? cur2)) =&gt; #f
+</pre>
+</div>
+<div class="entry" id="e14" data-name="char-set-delete">
+  <div class="entry-name">char-set-delete</div>
+  <pre class="entry-doc">Syntax: (char-set-delete cs char ...)
+Library: (srfi 14)
+Description: Returns a new char-set containing all characters in cs except for the given chars.
+Example:
+  (char-set-contains? (char-set-delete (char-set #\a #\b #\c) #\b) #\a) =&gt; #t
+  (char-set-contains? (char-set-delete (char-set #\a #\b #\c) #\b) #\b) =&gt; #f
+</pre>
+</div>
+<div class="entry" id="e15" data-name="char-set-delete!">
+  <div class="entry-name">char-set-delete!</div>
+  <pre class="entry-doc">Syntax: (char-set-delete cs char ...)
+Library: (srfi 14)
+Description: Returns a new char-set containing all characters in cs except for the given chars.
+Example:
+  (char-set-contains? (char-set-delete (char-set #\a #\b #\c) #\b) #\a) =&gt; #t
+  (char-set-contains? (char-set-delete (char-set #\a #\b #\c) #\b) #\b) =&gt; #f
+</pre>
+</div>
+<div class="entry" id="e16" data-name="char-set-diff+intersection">
+  <div class="entry-name">char-set-diff+intersection</div>
+  <pre class="entry-doc">Syntax: (char-set-diff+intersection cs1 cs2 ...)
+Library: (srfi 14)
+Description: Returns two values: the difference of cs1 and the remaining sets, and the
+intersection of cs1 and the remaining sets. Equivalent to calling char-set-difference and
+char-set-intersection separately but potentially more efficient.
+Example:
+  (define-values (d i) (char-set-diff+intersection (char-set #\a #\b #\c) (char-set #\b #\c #\d)))
+  (char-set-&gt;list d) =&gt; (#\a)
+  (char-set-&gt;list i) =&gt; (#\b #\c)
+</pre>
+</div>
+<div class="entry" id="e17" data-name="char-set-diff+intersection!">
+  <div class="entry-name">char-set-diff+intersection!</div>
+  <pre class="entry-doc">Syntax: (char-set-diff+intersection cs1 cs2 ...)
+Library: (srfi 14)
+Description: Returns two values: the difference of cs1 and the remaining sets, and the
+intersection of cs1 and the remaining sets. Equivalent to calling char-set-difference and
+char-set-intersection separately but potentially more efficient.
+Example:
+  (define-values (d i) (char-set-diff+intersection (char-set #\a #\b #\c) (char-set #\b #\c #\d)))
+  (char-set-&gt;list d) =&gt; (#\a)
+  (char-set-&gt;list i) =&gt; (#\b #\c)
+</pre>
+</div>
+<div class="entry" id="e18" data-name="char-set-difference">
+  <div class="entry-name">char-set-difference</div>
+  <pre class="entry-doc">Syntax: (char-set-difference cs cs1 ...)
+Library: (srfi 14)
+Description: Returns a char-set containing the characters in cs that are not in any of the
+remaining sets.
+Example:
+  (char-set-contains? (char-set-difference (char-set #\a #\b #\c) (char-set #\b)) #\a) =&gt; #t
+  (char-set-contains? (char-set-difference (char-set #\a #\b #\c) (char-set #\b)) #\b) =&gt; #f
+</pre>
+</div>
+<div class="entry" id="e19" data-name="char-set-difference!">
+  <div class="entry-name">char-set-difference!</div>
+  <pre class="entry-doc">Syntax: (char-set-difference cs cs1 ...)
+Library: (srfi 14)
+Description: Returns a char-set containing the characters in cs that are not in any of the
+remaining sets.
+Example:
+  (char-set-contains? (char-set-difference (char-set #\a #\b #\c) (char-set #\b)) #\a) =&gt; #t
+  (char-set-contains? (char-set-difference (char-set #\a #\b #\c) (char-set #\b)) #\b) =&gt; #f
+</pre>
+</div>
+<div class="entry" id="e20" data-name="char-set-every">
+  <div class="entry-name">char-set-every</div>
+  <pre class="entry-doc">Syntax: (char-set-every pred cs)
+Library: (srfi 14)
+Description: Returns #t if pred returns a true value for every character in cs. Returns #f
+as soon as pred returns #f for any character.
+Example:
+  (char-set-every char-alphabetic? char-set:letter) =&gt; #t
+  (char-set-every char-upper-case? char-set:letter) =&gt; #f
+</pre>
+</div>
+<div class="entry" id="e21" data-name="char-set-filter">
+  <div class="entry-name">char-set-filter</div>
+  <pre class="entry-doc">Syntax: (char-set-filter pred cs [base-cs])
+Library: (srfi 14)
+Description: Returns a char-set containing those characters in cs that satisfy pred. If
+base-cs is provided, its characters are included unconditionally in the result.
+Example:
+  (char-set-&gt;list (char-set-filter char-upper-case? char-set:letter)) =&gt; (#\A ... #\Z)
+  (char-set-contains? (char-set-filter odd? (char-set #\a #\b)) #\a) =&gt; depends on char code
+</pre>
+</div>
+<div class="entry" id="e22" data-name="char-set-filter!">
+  <div class="entry-name">char-set-filter!</div>
+  <pre class="entry-doc">Syntax: (char-set-filter pred cs [base-cs])
+Library: (srfi 14)
+Description: Returns a char-set containing those characters in cs that satisfy pred. If
+base-cs is provided, its characters are included unconditionally in the result.
+Example:
+  (char-set-&gt;list (char-set-filter char-upper-case? char-set:letter)) =&gt; (#\A ... #\Z)
+  (char-set-contains? (char-set-filter odd? (char-set #\a #\b)) #\a) =&gt; depends on char code
+</pre>
+</div>
+<div class="entry" id="e23" data-name="char-set-fold">
+  <div class="entry-name">char-set-fold</div>
+  <pre class="entry-doc">Syntax: (char-set-fold kons knil cs)
+Library: (srfi 14)
+Description: Folds kons over each character in cs, starting with knil. kons is called as
+(kons char accumulator) for each character, returning the new accumulator.
+Example:
+  (char-set-fold (lambda (c acc) (cons c acc)) '() (char-set #\a #\b)) =&gt; (#\a #\b) or (#\b #\a)
+  (char-set-fold (lambda (c acc) (+ acc 1)) 0 (char-set #\a #\b)) =&gt; 2
+</pre>
+</div>
+<div class="entry" id="e24" data-name="char-set-for-each">
+  <div class="entry-name">char-set-for-each</div>
+  <pre class="entry-doc">Syntax: (char-set-for-each proc cs)
+Library: (srfi 14)
+Description: Applies proc to each character in cs for side effects. The order of iteration
+is not specified. Returns an unspecified value.
+Example:
+  (char-set-for-each display (char-set #\a #\b #\c))
+</pre>
+</div>
+<div class="entry" id="e25" data-name="char-set-hash">
+  <div class="entry-name">char-set-hash</div>
+  <pre class="entry-doc">Syntax: (char-set-hash cs [bound])
+Library: (srfi 14)
+Description: Returns a non-negative integer hash of the char-set cs. If bound is given,
+the result is in the range [0, bound); otherwise it is in [0, 2^32).
+Example:
+  (integer? (char-set-hash char-set:digit)) =&gt; #t
+  (&lt; (char-set-hash char-set:letter 100) 100) =&gt; #t
+</pre>
+</div>
+<div class="entry" id="e26" data-name="char-set-intersection">
+  <div class="entry-name">char-set-intersection</div>
+  <pre class="entry-doc">Syntax: (char-set-intersection cs ...)
+Library: (srfi 14)
+Description: Returns a char-set containing only characters that appear in all of the given sets.
+Example:
+  (char-set-contains? (char-set-intersection (char-set #\a #\b) (char-set #\b #\c)) #\b) =&gt; #t
+  (char-set-contains? (char-set-intersection (char-set #\a #\b) (char-set #\b #\c)) #\a) =&gt; #f
+</pre>
+</div>
+<div class="entry" id="e27" data-name="char-set-intersection!">
+  <div class="entry-name">char-set-intersection!</div>
+  <pre class="entry-doc">Syntax: (char-set-intersection cs ...)
+Library: (srfi 14)
+Description: Returns a char-set containing only characters that appear in all of the given sets.
+Example:
+  (char-set-contains? (char-set-intersection (char-set #\a #\b) (char-set #\b #\c)) #\b) =&gt; #t
+  (char-set-contains? (char-set-intersection (char-set #\a #\b) (char-set #\b #\c)) #\a) =&gt; #f
+</pre>
+</div>
+<div class="entry" id="e28" data-name="char-set-map">
+  <div class="entry-name">char-set-map</div>
+  <pre class="entry-doc">Syntax: (char-set-map proc cs)
+Library: (srfi 14)
+Description: Applies proc to each character in cs and returns a new char-set containing the
+resulting characters.
+Example:
+  (char-set-contains? (char-set-map char-upcase char-set:lower-case) #\A) =&gt; #t
+  (char-set-contains? (char-set-map char-upcase char-set:lower-case) #\a) =&gt; #f
+</pre>
+</div>
+<div class="entry" id="e29" data-name="char-set-member?">
+  <div class="entry-name">char-set-member?</div>
+  <pre class="entry-doc">Syntax: (char-set-contains? cs ch)
+Library: (srfi 14)
+Description: Returns #t if the character ch is a member of char-set cs, #f otherwise.
+Example:
+  (char-set-contains? char-set:digit #\5) =&gt; #t
+  (char-set-contains? char-set:digit #\a) =&gt; #f
+</pre>
+</div>
+<div class="entry" id="e30" data-name="char-set-ref">
+  <div class="entry-name">char-set-ref</div>
+  <pre class="entry-doc">Syntax: (char-set-ref cs cursor)
+Library: (srfi 14)
+Description: Returns the character at the current position of cursor within cs.
+Example:
+  (char-set-ref (char-set #\a) (char-set-cursor (char-set #\a))) =&gt; #\a
+</pre>
+</div>
+<div class="entry" id="e31" data-name="char-set-size">
+  <div class="entry-name">char-set-size</div>
+  <pre class="entry-doc">Syntax: (char-set-size cs)
+Library: (srfi 14)
+Description: Returns the total number of characters in cs.
+Example:
+  (char-set-size (char-set #\a #\b #\c)) =&gt; 3
+  (char-set-size char-set:empty) =&gt; 0
+</pre>
+</div>
+<div class="entry" id="e32" data-name="char-set-unfold">
+  <div class="entry-name">char-set-unfold</div>
+  <pre class="entry-doc">Syntax: (char-set-unfold p f g seed [base-cs])
+Library: (srfi 14)
+Description: Builds a char-set by unfolding from seed. p is the termination predicate
+applied to the seed; if true, the result is returned. f maps the seed to a character to
+add. g maps the seed to the next seed. If base-cs is provided, its characters are included.
+Example:
+  (char-set-&gt;list (char-set-unfold (lambda (i) (= i 3)) integer-&gt;char (lambda (i) (+ i 1)) 0))
+    =&gt; (#\nul #\x1 #\x2)
+</pre>
+</div>
+<div class="entry" id="e33" data-name="char-set-unfold!">
+  <div class="entry-name">char-set-unfold!</div>
+  <pre class="entry-doc">Syntax: (char-set-unfold p f g seed [base-cs])
+Library: (srfi 14)
+Description: Builds a char-set by unfolding from seed. p is the termination predicate
+applied to the seed; if true, the result is returned. f maps the seed to a character to
+add. g maps the seed to the next seed. If base-cs is provided, its characters are included.
+Example:
+  (char-set-&gt;list (char-set-unfold (lambda (i) (= i 3)) integer-&gt;char (lambda (i) (+ i 1)) 0))
+    =&gt; (#\nul #\x1 #\x2)
+</pre>
+</div>
+<div class="entry" id="e34" data-name="char-set-union">
+  <div class="entry-name">char-set-union</div>
+  <pre class="entry-doc">Syntax: (char-set-union cs ...)
+Library: (srfi 14)
+Description: Returns a char-set containing all characters that appear in any of the given sets.
+Example:
+  (char-set-contains? (char-set-union (char-set #\a) (char-set #\b)) #\a) =&gt; #t
+  (char-set-contains? (char-set-union (char-set #\a) (char-set #\b)) #\b) =&gt; #t
+  (char-set-contains? (char-set-union (char-set #\a) (char-set #\b)) #\c) =&gt; #f
+</pre>
+</div>
+<div class="entry" id="e35" data-name="char-set-union!">
+  <div class="entry-name">char-set-union!</div>
+  <pre class="entry-doc">Syntax: (char-set-union cs ...)
+Library: (srfi 14)
+Description: Returns a char-set containing all characters that appear in any of the given sets.
+Example:
+  (char-set-contains? (char-set-union (char-set #\a) (char-set #\b)) #\a) =&gt; #t
+  (char-set-contains? (char-set-union (char-set #\a) (char-set #\b)) #\b) =&gt; #t
+  (char-set-contains? (char-set-union (char-set #\a) (char-set #\b)) #\c) =&gt; #f
+</pre>
+</div>
+<div class="entry" id="e36" data-name="char-set-xor">
+  <div class="entry-name">char-set-xor</div>
+  <pre class="entry-doc">Syntax: (char-set-xor cs ...)
+Library: (srfi 14)
+Description: Returns the symmetric difference of the given char-sets: characters that appear
+in an odd number of the sets (i.e., in one but not both, pairwise applied left to right).
+Example:
+  (char-set-contains? (char-set-xor (char-set #\a #\b) (char-set #\b #\c)) #\a) =&gt; #t
+  (char-set-contains? (char-set-xor (char-set #\a #\b) (char-set #\b #\c)) #\b) =&gt; #f
+  (char-set-contains? (char-set-xor (char-set #\a #\b) (char-set #\b #\c)) #\c) =&gt; #t
+</pre>
+</div>
+<div class="entry" id="e37" data-name="char-set-xor!">
+  <div class="entry-name">char-set-xor!</div>
+  <pre class="entry-doc">Syntax: (char-set-xor cs ...)
+Library: (srfi 14)
+Description: Returns the symmetric difference of the given char-sets: characters that appear
+in an odd number of the sets (i.e., in one but not both, pairwise applied left to right).
+Example:
+  (char-set-contains? (char-set-xor (char-set #\a #\b) (char-set #\b #\c)) #\a) =&gt; #t
+  (char-set-contains? (char-set-xor (char-set #\a #\b) (char-set #\b #\c)) #\b) =&gt; #f
+  (char-set-contains? (char-set-xor (char-set #\a #\b) (char-set #\b #\c)) #\c) =&gt; #t
+</pre>
+</div>
+<div class="entry" id="e38" data-name="char-set:ascii">
+  <div class="entry-name">char-set:ascii</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e39" data-name="char-set:blank">
+  <div class="entry-name">char-set:blank</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e40" data-name="char-set:digit">
+  <div class="entry-name">char-set:digit</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e41" data-name="char-set:empty">
+  <div class="entry-name">char-set:empty</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e42" data-name="char-set:full">
+  <div class="entry-name">char-set:full</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e43" data-name="char-set:graphic">
+  <div class="entry-name">char-set:graphic</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e44" data-name="char-set:hex-digit">
+  <div class="entry-name">char-set:hex-digit</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e45" data-name="char-set:iso-control">
+  <div class="entry-name">char-set:iso-control</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e46" data-name="char-set:letter">
+  <div class="entry-name">char-set:letter</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e47" data-name="char-set:letter+digit">
+  <div class="entry-name">char-set:letter+digit</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e48" data-name="char-set:lower-case">
+  <div class="entry-name">char-set:lower-case</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e49" data-name="char-set:printing">
+  <div class="entry-name">char-set:printing</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e50" data-name="char-set:punctuation">
+  <div class="entry-name">char-set:punctuation</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e51" data-name="char-set:symbol">
+  <div class="entry-name">char-set:symbol</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e52" data-name="char-set:title-case">
+  <div class="entry-name">char-set:title-case</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e53" data-name="char-set:upper-case">
+  <div class="entry-name">char-set:upper-case</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e54" data-name="char-set:whitespace">
+  <div class="entry-name">char-set:whitespace</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e55" data-name="char-set&lt;=">
+  <div class="entry-name">char-set&lt;=</div>
+  <pre class="entry-doc">Syntax: (char-set&lt;= cs ...)
+Library: (srfi 14)
+Description: Returns #t if every char-set is a subset of the next; i.e., every character
+in cs1 is also in cs2, every character in cs2 is also in cs3, and so on.
+Example:
+  (char-set&lt;= (char-set #\a) (char-set #\a #\b)) =&gt; #t
+  (char-set&lt;= (char-set #\a #\b) (char-set #\a)) =&gt; #f
+</pre>
+</div>
+<div class="entry" id="e56" data-name="char-set&lt;=?">
+  <div class="entry-name">char-set&lt;=?</div>
+  <pre class="entry-doc">Syntax: (char-set&lt;= cs ...)
+Library: (srfi 14)
+Description: Returns #t if every char-set is a subset of the next; i.e., every character
+in cs1 is also in cs2, every character in cs2 is also in cs3, and so on.
+Example:
+  (char-set&lt;= (char-set #\a) (char-set #\a #\b)) =&gt; #t
+  (char-set&lt;= (char-set #\a #\b) (char-set #\a)) =&gt; #f
+</pre>
+</div>
+<div class="entry" id="e57" data-name="char-set=">
+  <div class="entry-name">char-set=</div>
+  <pre class="entry-doc">Syntax: (char-set= cs ...)
+Library: (srfi 14)
+Description: Returns #t if all of the given char-sets contain exactly the same characters.
+Example:
+  (char-set= (char-set #\a #\b) (char-set #\b #\a)) =&gt; #t
+  (char-set= (char-set #\a) (char-set #\b)) =&gt; #f
+</pre>
+</div>
+<div class="entry" id="e58" data-name="char-set=?">
+  <div class="entry-name">char-set=?</div>
+  <pre class="entry-doc">Syntax: (char-set= cs ...)
+Library: (srfi 14)
+Description: Returns #t if all of the given char-sets contain exactly the same characters.
+Example:
+  (char-set= (char-set #\a #\b) (char-set #\b #\a)) =&gt; #t
+  (char-set= (char-set #\a) (char-set #\b)) =&gt; #f
+</pre>
+</div>
+<div class="entry" id="e59" data-name="char-set?">
+  <div class="entry-name">char-set?</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e60" data-name="end-of-char-set?">
+  <div class="entry-name">end-of-char-set?</div>
+  <pre class="entry-doc">Syntax: (end-of-char-set? cursor)
+Library: (srfi 14)
+Description: Returns #t if the cursor is exhausted (there are no more characters to iterate
+over), #f otherwise.
+Example:
+  (end-of-char-set? (char-set-cursor char-set:empty)) =&gt; #t
+  (end-of-char-set? (char-set-cursor (char-set #\a))) =&gt; #f
+</pre>
+</div>
+<div class="entry" id="e61" data-name="list-&gt;char-set">
+  <div class="entry-name">list-&gt;char-set</div>
+  <pre class="entry-doc">Syntax: (list-&gt;char-set char-list [base-cs])
+Library: (srfi 14)
+Description: Creates a char-set from a list of characters. If base-cs is provided, the
+characters of base-cs are included in the result as well.
+Example:
+  (char-set-contains? (list-&gt;char-set '(#\a #\b #\c)) #\b) =&gt; #t
+  (char-set-contains? (list-&gt;char-set '(#\a) (char-set #\b)) #\b) =&gt; #t
+</pre>
+</div>
+<div class="entry" id="e62" data-name="list-&gt;char-set!">
+  <div class="entry-name">list-&gt;char-set!</div>
+  <pre class="entry-doc">Syntax: (list-&gt;char-set char-list [base-cs])
+Library: (srfi 14)
+Description: Creates a char-set from a list of characters. If base-cs is provided, the
+characters of base-cs are included in the result as well.
+Example:
+  (char-set-contains? (list-&gt;char-set '(#\a #\b #\c)) #\b) =&gt; #t
+  (char-set-contains? (list-&gt;char-set '(#\a) (char-set #\b)) #\b) =&gt; #t
+</pre>
+</div>
+<div class="entry" id="e63" data-name="string-&gt;char-set">
+  <div class="entry-name">string-&gt;char-set</div>
+  <pre class="entry-doc">Syntax: (string-&gt;char-set s [base-cs])
+Library: (srfi 14)
+Description: Creates a char-set containing all characters in string s. If base-cs is
+provided, its characters are included in the result as well.
+Example:
+  (char-set-contains? (string-&gt;char-set "hello") #\e) =&gt; #t
+  (char-set-contains? (string-&gt;char-set "abc" (char-set #\d)) #\d) =&gt; #t
+</pre>
+</div>
+<div class="entry" id="e64" data-name="string-&gt;char-set!">
+  <div class="entry-name">string-&gt;char-set!</div>
+  <pre class="entry-doc">Syntax: (string-&gt;char-set s [base-cs])
+Library: (srfi 14)
+Description: Creates a char-set containing all characters in string s. If base-cs is
+provided, its characters are included in the result as well.
+Example:
+  (char-set-contains? (string-&gt;char-set "hello") #\e) =&gt; #t
+  (char-set-contains? (string-&gt;char-set "abc" (char-set #\d)) #\d) =&gt; #t
+</pre>
+</div>
+<div class="entry" id="e65" data-name="ucs-range-&gt;char-set">
+  <div class="entry-name">ucs-range-&gt;char-set</div>
+  <pre class="entry-doc">Syntax: (ucs-range-&gt;char-set lower upper [error? base-cs])
+Library: (srfi 14)
+Description: Creates a char-set containing characters with Unicode code points in the range
+[lower, upper). Code points outside the ASCII range 0-127 are silently clamped. The optional
+error? argument is accepted for compatibility but ignored. If base-cs is provided, its
+characters are included in the result.
+Example:
+  (char-set-contains? (ucs-range-&gt;char-set 65 91) #\A) =&gt; #t
+  (char-set-contains? (ucs-range-&gt;char-set 65 91) #\a) =&gt; #f
+  (char-set-size (ucs-range-&gt;char-set 48 58)) =&gt; 10
+</pre>
+</div>
+<div class="entry" id="e66" data-name="ucs-range-&gt;char-set!">
+  <div class="entry-name">ucs-range-&gt;char-set!</div>
+  <pre class="entry-doc">Syntax: (ucs-range-&gt;char-set lower upper [error? base-cs])
+Library: (srfi 14)
+Description: Creates a char-set containing characters with Unicode code points in the range
+[lower, upper). Code points outside the ASCII range 0-127 are silently clamped. The optional
+error? argument is accepted for compatibility but ignored. If base-cs is provided, its
+characters are included in the result.
+Example:
+  (char-set-contains? (ucs-range-&gt;char-set 65 91) #\A) =&gt; #t
+  (char-set-contains? (ucs-range-&gt;char-set 65 91) #\a) =&gt; #f
+  (char-set-size (ucs-range-&gt;char-set 48 58)) =&gt; 10
+</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

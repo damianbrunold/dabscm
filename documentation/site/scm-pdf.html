@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm pdf) — Scm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Scm Library Reference</a></h1>
+    <p>scm &mdash; libraries and their exports</p>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav>
+  <h2>R7RS Standard</h2>
+  <a href="scheme-base.html" class="r7rs">(scheme base)</a>
+  <a href="scheme-case-lambda.html" class="r7rs">(scheme case-lambda)</a>
+  <a href="scheme-char.html" class="r7rs">(scheme char)</a>
+  <a href="scheme-complex.html" class="r7rs">(scheme complex)</a>
+  <a href="scheme-cxr.html" class="r7rs">(scheme cxr)</a>
+  <a href="scheme-eval.html" class="r7rs">(scheme eval)</a>
+  <a href="scheme-file.html" class="r7rs">(scheme file)</a>
+  <a href="scheme-inexact.html" class="r7rs">(scheme inexact)</a>
+  <a href="scheme-lazy.html" class="r7rs">(scheme lazy)</a>
+  <a href="scheme-load.html" class="r7rs">(scheme load)</a>
+  <a href="scheme-process-context.html" class="r7rs">(scheme process-context)</a>
+  <a href="scheme-r5rs.html" class="r7rs">(scheme r5rs)</a>
+  <a href="scheme-read.html" class="r7rs">(scheme read)</a>
+  <a href="scheme-repl.html" class="r7rs">(scheme repl)</a>
+  <a href="scheme-time.html" class="r7rs">(scheme time)</a>
+  <a href="scheme-write.html" class="r7rs">(scheme write)</a>
+  <h2>SRFI Libraries</h2>
+  <a href="srfi-1.html" class="srfi">(srfi 1)</a>
+  <a href="srfi-2.html" class="srfi">(srfi 2)</a>
+  <a href="srfi-8.html" class="srfi">(srfi 8)</a>
+  <a href="srfi-9.html" class="srfi">(srfi 9)</a>
+  <a href="srfi-13.html" class="srfi">(srfi 13)</a>
+  <a href="srfi-14.html" class="srfi">(srfi 14)</a>
+  <a href="srfi-18.html" class="srfi">(srfi 18)</a>
+  <a href="srfi-19.html" class="srfi">(srfi 19)</a>
+  <a href="srfi-26.html" class="srfi">(srfi 26)</a>
+  <a href="srfi-28.html" class="srfi">(srfi 28)</a>
+  <a href="srfi-39.html" class="srfi">(srfi 39)</a>
+  <a href="srfi-48.html" class="srfi">(srfi 48)</a>
+  <a href="srfi-64.html" class="srfi">(srfi 64)</a>
+  <a href="srfi-69.html" class="srfi">(srfi 69)</a>
+  <a href="srfi-95.html" class="srfi">(srfi 95)</a>
+  <a href="srfi-98.html" class="srfi">(srfi 98)</a>
+  <a href="srfi-111.html" class="srfi">(srfi 111)</a>
+  <a href="srfi-125.html" class="srfi">(srfi 125)</a>
+  <a href="srfi-128.html" class="srfi">(srfi 128)</a>
+  <a href="srfi-132.html" class="srfi">(srfi 132)</a>
+  <a href="srfi-133.html" class="srfi">(srfi 133)</a>
+  <a href="srfi-151.html" class="srfi">(srfi 151)</a>
+  <a href="srfi-158.html" class="srfi">(srfi 158)</a>
+  <h2>Scm Extensions</h2>
+  <a href="scm-archive.html" class="scm">(scm archive)</a>
+  <a href="scm-args.html" class="scm">(scm args)</a>
+  <a href="scm-compile.html" class="scm">(scm compile)</a>
+  <a href="scm-compression.html" class="scm">(scm compression)</a>
+  <a href="scm-crypto.html" class="scm">(scm crypto)</a>
+  <a href="scm-csv.html" class="scm">(scm csv)</a>
+  <a href="scm-database-migrations.html" class="scm">(scm database migrations)</a>
+  <a href="scm-database-postgres.html" class="scm">(scm database postgres)</a>
+  <a href="scm-database-sqlserver.html" class="scm">(scm database sqlserver)</a>
+  <a href="scm-datetime.html" class="scm">(scm datetime)</a>
+  <a href="scm-dict.html" class="scm">(scm dict)</a>
+  <a href="scm-doc.html" class="scm">(scm doc)</a>
+  <a href="scm-duration.html" class="scm">(scm duration)</a>
+  <a href="scm-feed.html" class="scm">(scm feed)</a>
+  <a href="scm-fs-find.html" class="scm">(scm fs-find)</a>
+  <a href="scm-fs.html" class="scm">(scm fs)</a>
+  <a href="scm-glob.html" class="scm">(scm glob)</a>
+  <a href="scm-html-builder.html" class="scm">(scm html builder)</a>
+  <a href="scm-html.html" class="scm">(scm html)</a>
+  <a href="scm-io.html" class="scm">(scm io)</a>
+  <a href="scm-json-simple.html" class="scm">(scm json simple)</a>
+  <a href="scm-json.html" class="scm">(scm json)</a>
+  <a href="scm-list.html" class="scm">(scm list)</a>
+  <a href="scm-log.html" class="scm">(scm log)</a>
+  <a href="scm-macro.html" class="scm">(scm macro)</a>
+  <a href="scm-markdown.html" class="scm">(scm markdown)</a>
+  <a href="scm-match.html" class="scm">(scm match)</a>
+  <a href="scm-math.html" class="scm">(scm math)</a>
+  <a href="scm-module.html" class="scm">(scm module)</a>
+  <a href="scm-net-http-client.html" class="scm">(scm net http client)</a>
+  <a href="scm-net-http-cookies.html" class="scm">(scm net http cookies)</a>
+  <a href="scm-net-http-forms.html" class="scm">(scm net http forms)</a>
+  <a href="scm-net-http-multipart.html" class="scm">(scm net http multipart)</a>
+  <a href="scm-net-http-request.html" class="scm">(scm net http request)</a>
+  <a href="scm-net-http-response.html" class="scm">(scm net http response)</a>
+  <a href="scm-net-http-route.html" class="scm">(scm net http route)</a>
+  <a href="scm-net-http-server.html" class="scm">(scm net http server)</a>
+  <a href="scm-net-remote.html" class="scm">(scm net-remote)</a>
+  <a href="scm-net-sockets.html" class="scm">(scm net sockets)</a>
+  <a href="scm-net-websocket.html" class="scm">(scm net websocket)</a>
+  <a href="scm-odf-spreadsheet.html" class="scm">(scm odf spreadsheet)</a>
+  <a href="scm-odf-writer.html" class="scm">(scm odf writer)</a>
+  <a href="scm-ooxml-excel-reader.html" class="scm">(scm ooxml excel-reader)</a>
+  <a href="scm-ooxml-excel.html" class="scm">(scm ooxml excel)</a>
+  <a href="scm-ooxml-word-reader.html" class="scm">(scm ooxml word-reader)</a>
+  <a href="scm-ooxml-word.html" class="scm">(scm ooxml word)</a>
+  <a href="scm-pdf.html" class="scm active">(scm pdf)</a>
+  <a href="scm-png.html" class="scm">(scm png)</a>
+  <a href="scm-profiling.html" class="scm">(scm profiling)</a>
+  <a href="scm-qr.html" class="scm">(scm qr)</a>
+  <a href="scm-random-access.html" class="scm">(scm random access)</a>
+  <a href="scm-repl.html" class="scm">(scm repl)</a>
+  <a href="scm-store.html" class="scm">(scm store)</a>
+  <a href="scm-string.html" class="scm">(scm string)</a>
+  <a href="scm-sysadmin.html" class="scm">(scm sysadmin)</a>
+  <a href="scm-system.html" class="scm">(scm system)</a>
+  <a href="scm-templating.html" class="scm">(scm templating)</a>
+  <a href="scm-terminal.html" class="scm">(scm terminal)</a>
+  <a href="scm-test.html" class="scm">(scm test)</a>
+  <a href="scm-text.html" class="scm">(scm text)</a>
+  <a href="scm-toml.html" class="scm">(scm toml)</a>
+  <a href="scm-uri.html" class="scm">(scm uri)</a>
+  <a href="scm-xml.html" class="scm">(scm xml)</a>
+  <a href="scm-zip.html" class="scm">(scm zip)</a>
+</nav>
+
+<main>
+
+<a class="backlink" href="index.html">&larr; All libraries</a>
+<div class="lib-title scm">(scm pdf)</div>
+<p class="lib-sub">PDF document creation — pages, drawing, fonts, text flow, TTF embedding, images, links, outlines</p>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">89 bindings</p>
+
+<div class="entry" id="e0" data-name="make-pdf">
+  <div class="entry-name">make-pdf</div>
+  <pre class="entry-doc">Syntax: (make-pdf)
+Library: (scm pdf)
+Description: Creates a new empty PDF document. Pages are appended with
+  pdf-add-page! and the finished document is serialized with pdf-save
+  or pdf-&gt;bytevector.
+Example:
+  (define doc (make-pdf))
+  (pdf-add-page! doc)
+  (pdf-save doc "blank.pdf")</pre>
+</div>
+<div class="entry" id="e1" data-name="pdf-&gt;bytevector">
+  <div class="entry-name">pdf-&gt;bytevector</div>
+  <pre class="entry-doc">Syntax: (pdf-&gt;bytevector doc)
+Library: (scm pdf)
+Description: Serializes doc to a bytevector containing a complete PDF
+  file (header, all objects, xref table, trailer, %%EOF). Pages with
+  no content render as blank pages of the requested size.
+Example:
+  (define doc (make-pdf))
+  (pdf-add-page! doc)
+  (pdf-&gt;bytevector doc)</pre>
+</div>
+<div class="entry" id="e2" data-name="pdf-add-link">
+  <div class="entry-name">pdf-add-link</div>
+  <pre class="entry-doc">Syntax: (pdf-add-link page rect uri-string)
+Library: (scm pdf)
+Description: Attaches a clickable URI link annotation to page. rect is
+  a 4-element list (llx lly urx ury) of user-space coordinates marking
+  the hot area; uri-string is the absolute URL to open. The annotation
+  has no visible border.
+Example:
+  (pdf-draw-text page helv 12 100 700 "Click here")
+  (pdf-add-link page '(100 695 200 712) "https://example.com")</pre>
+</div>
+<div class="entry" id="e3" data-name="pdf-add-outline!">
+  <div class="entry-name">pdf-add-outline!</div>
+  <pre class="entry-doc">Syntax: (pdf-add-outline! doc page title [option value]...)
+Library: (scm pdf)
+Description: Appends an outline (bookmark) entry that jumps to page.
+  Options (plist):
+    parent  another outline returned by pdf-add-outline! — creates a
+            nested child under that outline (default: top-level item)
+    y       baseline y-coord to scroll the page to (default: page top)
+  Returns the outline handle so it can be used as a parent in later
+  calls.
+Example:
+  (define ch1 (pdf-add-outline! doc page1 "Chapter 1"))
+  (pdf-add-outline! doc page1 "Section 1.1" 'parent ch1)</pre>
+</div>
+<div class="entry" id="e4" data-name="pdf-add-page!">
+  <div class="entry-name">pdf-add-page!</div>
+  <pre class="entry-doc">Syntax: (pdf-add-page! doc)
+       (pdf-add-page! doc size-pair)
+       (pdf-add-page! doc width-pt height-pt)
+Library: (scm pdf)
+Description: Appends a new page to doc and returns the page record.
+  With no extra arguments the page is A4 (595x842 points). A size pair
+  is a (cons width height); the page-size presets (pdf-page-size-a4
+  etc.) are such pairs. Or pass explicit width and height in points.
+Example:
+  (pdf-add-page! doc)                       ; A4
+  (pdf-add-page! doc pdf-page-size-letter)  ; US Letter
+  (pdf-add-page! doc 200 100)               ; custom size</pre>
+</div>
+<div class="entry" id="e5" data-name="pdf-array?">
+  <div class="entry-name">pdf-array?</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e6" data-name="pdf-clip">
+  <div class="entry-name">pdf-clip</div>
+  <pre class="entry-doc">Syntax: (pdf-clip page)
+Library: (scm pdf)
+Description: Modifies the current clipping path by intersecting it with
+  the current path (non-zero rule). Per the PDF spec this must be
+  followed by a painting or pdf-end-path operator. Emits 'W'.
+Example: (pdf-rect page 0 0 100 100) (pdf-clip page) (pdf-end-path page)</pre>
+</div>
+<div class="entry" id="e7" data-name="pdf-clip-even-odd">
+  <div class="entry-name">pdf-clip-even-odd</div>
+  <pre class="entry-doc">Syntax: (pdf-clip-even-odd page)
+Library: (scm pdf)
+Description: Like pdf-clip but uses the even-odd rule. Emits 'W*'.
+Example: (pdf-clip-even-odd page)</pre>
+</div>
+<div class="entry" id="e8" data-name="pdf-close-path">
+  <div class="entry-name">pdf-close-path</div>
+  <pre class="entry-doc">Syntax: (pdf-close-path page)
+Library: (scm pdf)
+Description: Closes the current subpath with a straight line back to its
+  start. Emits the PDF 'h' operator.
+Example: (pdf-close-path page)</pre>
+</div>
+<div class="entry" id="e9" data-name="pdf-close-stroke">
+  <div class="entry-name">pdf-close-stroke</div>
+  <pre class="entry-doc">Syntax: (pdf-close-stroke page)
+Library: (scm pdf)
+Description: Closes and strokes the current path. Emits 's'.
+Example: (pdf-close-stroke page)</pre>
+</div>
+<div class="entry" id="e10" data-name="pdf-curve-to">
+  <div class="entry-name">pdf-curve-to</div>
+  <pre class="entry-doc">Syntax: (pdf-curve-to page cx1 cy1 cx2 cy2 x y)
+Library: (scm pdf)
+Description: Appends a cubic Bezier curve from the current point to
+  (x, y) using control points (cx1, cy1) and (cx2, cy2). Emits 'c'.
+Example: (pdf-curve-to page 100 100 200 200 300 100)</pre>
+</div>
+<div class="entry" id="e11" data-name="pdf-dict?">
+  <div class="entry-name">pdf-dict?</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e12" data-name="pdf-draw-image">
+  <div class="entry-name">pdf-draw-image</div>
+  <pre class="entry-doc">Syntax: (pdf-draw-image page image x y width height)
+Library: (scm pdf)
+Description: Places image on page at user-space coordinates (x, y) —
+  the lower-left corner — scaled to width × height points. Image
+  XObjects are defined in a 1×1 unit square, so this concatenates a
+  scale+translate matrix and emits the Do operator. Wrapped in a
+  q ... Q pair to localize state changes.
+Example:
+  (pdf-draw-image page logo 50 600 100 100)</pre>
+</div>
+<div class="entry" id="e13" data-name="pdf-draw-text">
+  <div class="entry-name">pdf-draw-text</div>
+  <pre class="entry-doc">Syntax: (pdf-draw-text page font size x y string)
+Library: (scm pdf)
+Description: Draws string on page at user-space coordinates (x, y) — the
+  baseline origin — in font at size points. Emits a self-contained
+  q ... BT ... ET ... Q block so any current graphics state is
+  preserved. To rotate or scale text, wrap the call in pdf-with-state
+  and concat your own CTM.
+Example:
+  (define helv (pdf-use-font doc 'helvetica))
+  (pdf-draw-text page helv 12 100 700 "Hello, world!")</pre>
+</div>
+<div class="entry" id="e14" data-name="pdf-embed-jpeg">
+  <div class="entry-name">pdf-embed-jpeg</div>
+  <pre class="entry-doc">Syntax: (pdf-embed-jpeg doc jpeg-bytevector)
+Library: (scm pdf)
+Description: Embeds a JPEG image in doc as an Image XObject using
+  /Filter /DCTDecode (pass-through — no re-encoding). Auto-detects
+  width, height and color space (gray / RGB / CMYK) from the JPEG's
+  Start-Of-Frame marker. Returns a pdf-image handle for use with
+  pdf-draw-image.
+Example:
+  (define j (pdf-embed-jpeg doc (pdf-read-binary-file "photo.jpg")))
+  (pdf-draw-image page j 50 600 200 150)</pre>
+</div>
+<div class="entry" id="e15" data-name="pdf-embed-png">
+  <div class="entry-name">pdf-embed-png</div>
+  <pre class="entry-doc">Syntax: (pdf-embed-png doc png-bytevector)
+Library: (scm pdf)
+Description: Embeds a PNG image in doc as an Image XObject. The PNG's
+  concatenated IDAT chunks are emitted verbatim as a /FlateDecode
+  stream with /DecodeParms /Predictor 15 so the reader applies the
+  PNG filter rules. Color types 0 (grayscale) and 2 (RGB) pass through
+  the IDAT verbatim. Color types 4 (gray + alpha) and 6 (RGB + alpha)
+  are fully decoded, then the color and alpha channels are emitted as
+  two separate flate-compressed Image XObjects with the alpha as an
+  /SMask. 8-bit depth only. Returns a pdf-image handle for use with
+  pdf-draw-image.
+Example:
+  (define p (pdf-embed-png doc (pdf-read-binary-file "logo.png")))
+  (pdf-draw-image page p 50 600 100 100)</pre>
+</div>
+<div class="entry" id="e16" data-name="pdf-embed-truetype-font">
+  <div class="entry-name">pdf-embed-truetype-font</div>
+  <pre class="entry-doc">Syntax: (pdf-embed-truetype-font doc ttf-bytes [base-name])
+Library: (scm pdf)
+Description: Parses the TrueType font in ttf-bytes (a bytevector, e.g.
+  from pdf-read-binary-file), registers it on doc as an embedded Type0
+  composite font with /Encoding /Identity-H, and returns a font handle
+  usable with pdf-draw-text, pdf-text-width and pdf-flow-text. Supports
+  the full Unicode BMP (cmap format 4) or beyond (format 12). The whole
+  TTF is embedded — no subsetting; expect a few hundred KB per font.
+  An optional base-name overrides the PostScript name used for the
+  PDF /BaseFont entry (defaults to "EmbeddedTTF&lt;n&gt;").
+Example:
+  (define bv (pdf-read-binary-file "/path/to/DejaVuSans.ttf"))
+  (define dj (pdf-embed-truetype-font doc bv "DejaVuSans"))
+  (pdf-draw-text page dj 14 50 700 "Hello, мир, 日本語, ✓")</pre>
+</div>
+<div class="entry" id="e17" data-name="pdf-end-path">
+  <div class="entry-name">pdf-end-path</div>
+  <pre class="entry-doc">Syntax: (pdf-end-path page)
+Library: (scm pdf)
+Description: Ends the current path without filling or stroking. Used
+  after pdf-clip / pdf-clip-even-odd. Emits 'n'.
+Example: (pdf-end-path page)</pre>
+</div>
+<div class="entry" id="e18" data-name="pdf-fill">
+  <div class="entry-name">pdf-fill</div>
+  <pre class="entry-doc">Syntax: (pdf-fill page)
+Library: (scm pdf)
+Description: Fills the current path using the non-zero winding rule.
+  Emits the PDF 'f' operator.
+Example: (pdf-fill page)</pre>
+</div>
+<div class="entry" id="e19" data-name="pdf-fill-and-stroke">
+  <div class="entry-name">pdf-fill-and-stroke</div>
+  <pre class="entry-doc">Syntax: (pdf-fill-and-stroke page)
+Library: (scm pdf)
+Description: Fills (non-zero) and strokes the current path. Emits 'B'.
+Example: (pdf-fill-and-stroke page)</pre>
+</div>
+<div class="entry" id="e20" data-name="pdf-fill-and-stroke-even-odd">
+  <div class="entry-name">pdf-fill-and-stroke-even-odd</div>
+  <pre class="entry-doc">Syntax: (pdf-fill-and-stroke-even-odd page)
+Library: (scm pdf)
+Description: Fills (even-odd) and strokes the current path. Emits 'B*'.
+Example: (pdf-fill-and-stroke-even-odd page)</pre>
+</div>
+<div class="entry" id="e21" data-name="pdf-fill-even-odd">
+  <div class="entry-name">pdf-fill-even-odd</div>
+  <pre class="entry-doc">Syntax: (pdf-fill-even-odd page)
+Library: (scm pdf)
+Description: Fills the current path using the even-odd rule. Emits 'f*'.
+Example: (pdf-fill-even-odd page)</pre>
+</div>
+<div class="entry" id="e22" data-name="pdf-flow-text">
+  <div class="entry-name">pdf-flow-text</div>
+  <pre class="entry-doc">Syntax: (pdf-flow-text page font size rect text [option value]...)
+Library: (scm pdf)
+Description: Lays out text into a rectangular region using greedy word
+  wrapping and the font's AFM widths. Returns two values via `values`:
+  the leftover text (or "" if everything fit) and the y-coordinate
+  where the next line would have been placed (useful for continuing
+  below the block).
+  rect is a 4-element list: (x y width height), where (x, y) is the
+  rectangle's lower-left corner in user-space (PDF) points.
+  Options (plist style):
+    align    one of 'left (default), 'right, 'center, 'justify
+    leading  line spacing in points (default: size * 1.2)
+  Newline characters in text force hard line breaks; the line that ends
+  at a hard break is never justified. Words wider than rect width are
+  placed on a line by themselves (and will overflow horizontally).
+Example:
+  (define helv (pdf-use-font doc 'helvetica))
+  (call-with-values
+    (lambda () (pdf-flow-text page helv 11 '(72 72 200 400)
+                              "Lorem ipsum dolor sit amet ..."
+                              'align 'justify))
+    (lambda (rest final-y)
+      (when (not (string=? rest ""))
+        ...flow rest into a second column...)))</pre>
+</div>
+<div class="entry" id="e23" data-name="pdf-font-ascender">
+  <div class="entry-name">pdf-font-ascender</div>
+  <pre class="entry-doc">Syntax: (pdf-font-ascender font)
+Library: (scm pdf)
+Description: Returns the font's ascender height in 1/1000 em units
+  (multiply by font size and divide by 1000 to get a user-space value).
+Example: (pdf-font-ascender (pdf-use-font doc 'helvetica))</pre>
+</div>
+<div class="entry" id="e24" data-name="pdf-font-base-name">
+  <div class="entry-name">pdf-font-base-name</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e25" data-name="pdf-font-cap-height">
+  <div class="entry-name">pdf-font-cap-height</div>
+  <pre class="entry-doc">Syntax: (pdf-font-cap-height font)
+Library: (scm pdf)
+Description: Returns the font's capital-letter height in 1/1000 em
+  units.</pre>
+</div>
+<div class="entry" id="e26" data-name="pdf-font-cmap-lookup">
+  <div class="entry-name">pdf-font-cmap-lookup</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e27" data-name="pdf-font-descender">
+  <div class="entry-name">pdf-font-descender</div>
+  <pre class="entry-doc">Syntax: (pdf-font-descender font)
+Library: (scm pdf)
+Description: Returns the font's descender depth in 1/1000 em units
+  (a negative number for most fonts).</pre>
+</div>
+<div class="entry" id="e28" data-name="pdf-font-encoding">
+  <div class="entry-name">pdf-font-encoding</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e29" data-name="pdf-font-kind">
+  <div class="entry-name">pdf-font-kind</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e30" data-name="pdf-font-num-glyphs">
+  <div class="entry-name">pdf-font-num-glyphs</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e31" data-name="pdf-font-ttf-bytes">
+  <div class="entry-name">pdf-font-ttf-bytes</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e32" data-name="pdf-font-units-per-em">
+  <div class="entry-name">pdf-font-units-per-em</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e33" data-name="pdf-font-x-height">
+  <div class="entry-name">pdf-font-x-height</div>
+  <pre class="entry-doc">Syntax: (pdf-font-x-height font)
+Library: (scm pdf)
+Description: Returns the font's x-height in 1/1000 em units.</pre>
+</div>
+<div class="entry" id="e34" data-name="pdf-font?">
+  <div class="entry-name">pdf-font?</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e35" data-name="pdf-image-height">
+  <div class="entry-name">pdf-image-height</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e36" data-name="pdf-image-width">
+  <div class="entry-name">pdf-image-width</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e37" data-name="pdf-image?">
+  <div class="entry-name">pdf-image?</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e38" data-name="pdf-line-cap-butt">
+  <div class="entry-name">pdf-line-cap-butt</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e39" data-name="pdf-line-cap-round">
+  <div class="entry-name">pdf-line-cap-round</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e40" data-name="pdf-line-cap-square">
+  <div class="entry-name">pdf-line-cap-square</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e41" data-name="pdf-line-join-bevel">
+  <div class="entry-name">pdf-line-join-bevel</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e42" data-name="pdf-line-join-miter">
+  <div class="entry-name">pdf-line-join-miter</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e43" data-name="pdf-line-join-round">
+  <div class="entry-name">pdf-line-join-round</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e44" data-name="pdf-line-to">
+  <div class="entry-name">pdf-line-to</div>
+  <pre class="entry-doc">Syntax: (pdf-line-to page x y)
+Library: (scm pdf)
+Description: Appends a straight line segment from the current point to
+  (x, y). Emits the PDF 'l' operator.
+Example: (pdf-line-to page 300 400)</pre>
+</div>
+<div class="entry" id="e45" data-name="pdf-move-to">
+  <div class="entry-name">pdf-move-to</div>
+  <pre class="entry-doc">Syntax: (pdf-move-to page x y)
+Library: (scm pdf)
+Description: Begins a new subpath at (x, y). Emits the PDF 'm' operator.
+Example: (pdf-move-to page 100 200)</pre>
+</div>
+<div class="entry" id="e46" data-name="pdf-name?">
+  <div class="entry-name">pdf-name?</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e47" data-name="pdf-page-count">
+  <div class="entry-name">pdf-page-count</div>
+  <pre class="entry-doc">Syntax: (pdf-page-count doc)
+Library: (scm pdf)
+Description: Returns the number of pages currently in doc.
+Example: (pdf-page-count (make-pdf))  ; =&gt; 0</pre>
+</div>
+<div class="entry" id="e48" data-name="pdf-page-has-content?">
+  <div class="entry-name">pdf-page-has-content?</div>
+  <pre class="entry-doc">Syntax: (pdf-page-has-content? page)
+Library: (scm pdf)
+Description: True if any drawing operators have been emitted to page.
+  Pages without content are written without a /Contents entry.</pre>
+</div>
+<div class="entry" id="e49" data-name="pdf-page-height">
+  <div class="entry-name">pdf-page-height</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e50" data-name="pdf-page-size-a4">
+  <div class="entry-name">pdf-page-size-a4</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e51" data-name="pdf-page-size-a5">
+  <div class="entry-name">pdf-page-size-a5</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e52" data-name="pdf-page-size-legal">
+  <div class="entry-name">pdf-page-size-legal</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e53" data-name="pdf-page-size-letter">
+  <div class="entry-name">pdf-page-size-letter</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e54" data-name="pdf-page-width">
+  <div class="entry-name">pdf-page-width</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e55" data-name="pdf-page?">
+  <div class="entry-name">pdf-page?</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e56" data-name="pdf-read-binary-file">
+  <div class="entry-name">pdf-read-binary-file</div>
+  <pre class="entry-doc">Syntax: (pdf-read-binary-file path)
+Library: (scm pdf)
+Description: Convenience wrapper that opens path as a binary file,
+  reads its full contents into a bytevector, and returns the bytevector.
+  Intended for loading TTF files before calling pdf-embed-truetype-font.
+Example:
+  (pdf-read-binary-file "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf")</pre>
+</div>
+<div class="entry" id="e57" data-name="pdf-rect">
+  <div class="entry-name">pdf-rect</div>
+  <pre class="entry-doc">Syntax: (pdf-rect page x y width height)
+Library: (scm pdf)
+Description: Appends a complete rectangular subpath with its lower-left
+  corner at (x, y). Emits the PDF 're' operator. No painting is done.
+Example: (pdf-rect page 50 50 100 200)</pre>
+</div>
+<div class="entry" id="e58" data-name="pdf-ref?">
+  <div class="entry-name">pdf-ref?</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e59" data-name="pdf-restore-state">
+  <div class="entry-name">pdf-restore-state</div>
+  <pre class="entry-doc">Syntax: (pdf-restore-state page)
+Library: (scm pdf)
+Description: Pops the most recently saved graphics state. Emits 'Q'.
+Example: (pdf-restore-state page)</pre>
+</div>
+<div class="entry" id="e60" data-name="pdf-rotate">
+  <div class="entry-name">pdf-rotate</div>
+  <pre class="entry-doc">Syntax: (pdf-rotate page degrees)
+Library: (scm pdf)
+Description: Concatenates a rotation about the origin (in degrees,
+  counter-clockwise) onto the CTM. Translate first to rotate about a
+  different point.
+Example:
+  (pdf-with-state page
+    (lambda ()
+      (pdf-translate page 100 100)
+      (pdf-rotate page 45)
+      (pdf-rect page -25 -25 50 50)
+      (pdf-stroke page)))</pre>
+</div>
+<div class="entry" id="e61" data-name="pdf-save">
+  <div class="entry-name">pdf-save</div>
+  <pre class="entry-doc">Syntax: (pdf-save doc path)
+Library: (scm pdf)
+Description: Serializes doc with pdf-&gt;bytevector and writes the result
+  to the file at path. Overwrites an existing file.
+Example:
+  (define doc (make-pdf))
+  (pdf-add-page! doc)
+  (pdf-save doc "blank.pdf")</pre>
+</div>
+<div class="entry" id="e62" data-name="pdf-save-state">
+  <div class="entry-name">pdf-save-state</div>
+  <pre class="entry-doc">Syntax: (pdf-save-state page)
+Library: (scm pdf)
+Description: Pushes the current graphics state onto the stack (CTM,
+  colors, line attributes, clip path). Emits the PDF 'q' operator. Must
+  be paired with pdf-restore-state. Prefer pdf-with-state to keep them
+  balanced.
+Example: (pdf-save-state page)</pre>
+</div>
+<div class="entry" id="e63" data-name="pdf-scale">
+  <div class="entry-name">pdf-scale</div>
+  <pre class="entry-doc">Syntax: (pdf-scale page sx sy)
+Library: (scm pdf)
+Description: Concatenates an axis-aligned scale by (sx, sy) onto the CTM.
+Example: (pdf-scale page 2 2)</pre>
+</div>
+<div class="entry" id="e64" data-name="pdf-set-dash">
+  <div class="entry-name">pdf-set-dash</div>
+  <pre class="entry-doc">Syntax: (pdf-set-dash page pattern-list phase)
+Library: (scm pdf)
+Description: Sets the dash pattern. pattern-list is a list of numbers
+  alternating dash/gap lengths; an empty list resets to a solid line.
+  phase is the offset into the pattern at which to start. Emits 'd'.
+Example:
+  (pdf-set-dash page '(5 3) 0)   ; 5-on 3-off
+  (pdf-set-dash page '() 0)      ; solid</pre>
+</div>
+<div class="entry" id="e65" data-name="pdf-set-fill-cmyk">
+  <div class="entry-name">pdf-set-fill-cmyk</div>
+  <pre class="entry-doc">Syntax: (pdf-set-fill-cmyk page c m y k)
+Library: (scm pdf)
+Description: Sets the non-stroking color to CMYK (each in [0, 1]).
+  Emits 'k'.
+Example: (pdf-set-fill-cmyk page 1 0 0 0)   ; cyan</pre>
+</div>
+<div class="entry" id="e66" data-name="pdf-set-fill-gray">
+  <div class="entry-name">pdf-set-fill-gray</div>
+  <pre class="entry-doc">Syntax: (pdf-set-fill-gray page g)
+Library: (scm pdf)
+Description: Sets the non-stroking color to gray (g in [0, 1]).
+  Emits 'g'.
+Example: (pdf-set-fill-gray page 0.9)</pre>
+</div>
+<div class="entry" id="e67" data-name="pdf-set-fill-rgb">
+  <div class="entry-name">pdf-set-fill-rgb</div>
+  <pre class="entry-doc">Syntax: (pdf-set-fill-rgb page r g b)
+Library: (scm pdf)
+Description: Sets the non-stroking color to RGB (each in [0, 1]).
+  Emits 'rg'.
+Example: (pdf-set-fill-rgb page 0 0 1)   ; blue</pre>
+</div>
+<div class="entry" id="e68" data-name="pdf-set-line-cap">
+  <div class="entry-name">pdf-set-line-cap</div>
+  <pre class="entry-doc">Syntax: (pdf-set-line-cap page cap)
+Library: (scm pdf)
+Description: Sets the line cap style. cap is 0 (butt), 1 (round) or
+  2 (projecting square) — see pdf-line-cap-butt etc. Emits 'J'.
+Example: (pdf-set-line-cap page pdf-line-cap-round)</pre>
+</div>
+<div class="entry" id="e69" data-name="pdf-set-line-join">
+  <div class="entry-name">pdf-set-line-join</div>
+  <pre class="entry-doc">Syntax: (pdf-set-line-join page join)
+Library: (scm pdf)
+Description: Sets the line join style. join is 0 (miter), 1 (round) or
+  2 (bevel) — see pdf-line-join-miter etc. Emits 'j'.
+Example: (pdf-set-line-join page pdf-line-join-round)</pre>
+</div>
+<div class="entry" id="e70" data-name="pdf-set-line-width">
+  <div class="entry-name">pdf-set-line-width</div>
+  <pre class="entry-doc">Syntax: (pdf-set-line-width page width)
+Library: (scm pdf)
+Description: Sets the line width in user units. Emits 'w'.
+Example: (pdf-set-line-width page 1.5)</pre>
+</div>
+<div class="entry" id="e71" data-name="pdf-set-metadata!">
+  <div class="entry-name">pdf-set-metadata!</div>
+  <pre class="entry-doc">Syntax: (pdf-set-metadata! doc key1 value1 key2 value2 ...)
+Library: (scm pdf)
+Description: Sets document metadata fields on the /Info dictionary.
+  Repeated keys overwrite earlier values. Recognised keys (symbols):
+    title author subject keywords creator producer
+    creation-date mod-date
+  Values are strings. Date strings should follow PDF format,
+  e.g. "D:20260527120000+02'00".
+Example:
+  (pdf-set-metadata! doc 'title "My Report"
+                         'author "Damian"
+                         'creator "(scm pdf)")</pre>
+</div>
+<div class="entry" id="e72" data-name="pdf-set-miter-limit">
+  <div class="entry-name">pdf-set-miter-limit</div>
+  <pre class="entry-doc">Syntax: (pdf-set-miter-limit page miter-limit)
+Library: (scm pdf)
+Description: Sets the miter limit. Emits 'M'.
+Example: (pdf-set-miter-limit page 10)</pre>
+</div>
+<div class="entry" id="e73" data-name="pdf-set-stroke-cmyk">
+  <div class="entry-name">pdf-set-stroke-cmyk</div>
+  <pre class="entry-doc">Syntax: (pdf-set-stroke-cmyk page c m y k)
+Library: (scm pdf)
+Description: Sets the stroking color to CMYK (each in [0, 1]).
+  Emits 'K'.
+Example: (pdf-set-stroke-cmyk page 0 1 1 0)   ; pure red</pre>
+</div>
+<div class="entry" id="e74" data-name="pdf-set-stroke-gray">
+  <div class="entry-name">pdf-set-stroke-gray</div>
+  <pre class="entry-doc">Syntax: (pdf-set-stroke-gray page g)
+Library: (scm pdf)
+Description: Sets the stroking color to gray (g in [0, 1]). Emits 'G'.
+Example: (pdf-set-stroke-gray page 0.5)</pre>
+</div>
+<div class="entry" id="e75" data-name="pdf-set-stroke-rgb">
+  <div class="entry-name">pdf-set-stroke-rgb</div>
+  <pre class="entry-doc">Syntax: (pdf-set-stroke-rgb page r g b)
+Library: (scm pdf)
+Description: Sets the stroking color to RGB (each in [0, 1]).
+  Emits 'RG'.
+Example: (pdf-set-stroke-rgb page 1 0 0)   ; red</pre>
+</div>
+<div class="entry" id="e76" data-name="pdf-stream?">
+  <div class="entry-name">pdf-stream?</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e77" data-name="pdf-stroke">
+  <div class="entry-name">pdf-stroke</div>
+  <pre class="entry-doc">Syntax: (pdf-stroke page)
+Library: (scm pdf)
+Description: Strokes the current path. Emits the PDF 'S' operator.
+Example: (pdf-stroke page)</pre>
+</div>
+<div class="entry" id="e78" data-name="pdf-text-width">
+  <div class="entry-name">pdf-text-width</div>
+  <pre class="entry-doc">Syntax: (pdf-text-width font size string)
+Library: (scm pdf)
+Description: Returns the rendered width of string in user-space units
+  (points) when set in font at size, using the AFM/TTF glyph widths.
+  For core14 fonts, unmappable codepoints are treated as the '?' glyph;
+  for embedded TrueType fonts, codepoints without a glyph use GID 0
+  (which is .notdef, typically zero width or a blank box).
+Example:
+  (define helv (pdf-use-font doc 'helvetica))
+  (pdf-text-width helv 12 "Hello")</pre>
+</div>
+<div class="entry" id="e79" data-name="pdf-transform">
+  <div class="entry-name">pdf-transform</div>
+  <pre class="entry-doc">Syntax: (pdf-transform page a b c d e f)
+Library: (scm pdf)
+Description: Concatenates the matrix [a b c d e f] onto the current
+  transformation matrix. The PDF CTM is a 3x3 affine matrix whose six
+  free entries are passed in column-major order. Emits 'cm'.
+Example: (pdf-transform page 1 0 0 1 100 200)   ; translate (100,200)</pre>
+</div>
+<div class="entry" id="e80" data-name="pdf-translate">
+  <div class="entry-name">pdf-translate</div>
+  <pre class="entry-doc">Syntax: (pdf-translate page tx ty)
+Library: (scm pdf)
+Description: Concatenates a translation by (tx, ty) onto the CTM.
+Example: (pdf-translate page 100 200)</pre>
+</div>
+<div class="entry" id="e81" data-name="pdf-use-font">
+  <div class="entry-name">pdf-use-font</div>
+  <pre class="entry-doc">Syntax: (pdf-use-font doc font-symbol)
+Library: (scm pdf)
+Description: Registers one of the 14 standard PDF base fonts on doc
+  and returns a font handle suitable for pdf-text-width and
+  pdf-draw-text. Repeated calls with the same symbol return the same
+  handle.
+  font-symbol is one of:
+    helvetica  helvetica-bold  helvetica-oblique  helvetica-bold-oblique
+    times-roman  times-bold  times-italic  times-bold-italic
+    courier  courier-bold  courier-oblique  courier-bold-oblique
+    symbol  zapf-dingbats
+Example:
+  (define helv (pdf-use-font doc 'helvetica))</pre>
+</div>
+<div class="entry" id="e82" data-name="pdf-with-state">
+  <div class="entry-name">pdf-with-state</div>
+  <pre class="entry-doc">Syntax: (pdf-with-state page thunk)
+Library: (scm pdf)
+Description: Calls thunk between a save-state / restore-state pair so
+  any transforms, colors, or clip changes made inside do not leak out.
+Example:
+  (pdf-with-state page
+    (lambda ()
+      (pdf-translate page 100 100)
+      (pdf-set-fill-rgb page 1 0 0)
+      (pdf-rect page 0 0 50 50)
+      (pdf-fill page)))</pre>
+</div>
+<div class="entry" id="e83" data-name="pdf/array">
+  <div class="entry-name">pdf/array</div>
+  <pre class="entry-doc">Syntax: (pdf/array list-of-values)
+Library: (scm pdf)
+Description: Constructs a PDF array from a Scheme list of PDF values.
+Example: (pdf/array (list 0 0 595 842))</pre>
+</div>
+<div class="entry" id="e84" data-name="pdf/dict">
+  <div class="entry-name">pdf/dict</div>
+  <pre class="entry-doc">Syntax: (pdf/dict key1 value1 key2 value2 ...)
+Library: (scm pdf)
+Description: Constructs a PDF dictionary from alternating string keys
+  and PDF values. Keys are bare strings (the leading / is added by the
+  serializer). Values may be other PDF values, numbers, booleans, the
+  symbol 'null, or plain strings (emitted as literal strings).
+Example:
+  (pdf/dict "Type" (pdf/name "Catalog")
+            "Pages" (pdf/ref 2))</pre>
+</div>
+<div class="entry" id="e85" data-name="pdf/literal">
+  <div class="entry-name">pdf/literal</div>
+  <pre class="entry-doc">Syntax: (pdf/literal bytevector)
+Library: (scm pdf)
+Description: Wraps a bytevector so the PDF serializer splices it
+  verbatim into the output stream. Intended for already-formed PDF
+  fragments — most users should not need this.
+Example: (pdf/literal (string-&gt;utf8 "&lt;&lt; /Foo /Bar &gt;&gt;"))</pre>
+</div>
+<div class="entry" id="e86" data-name="pdf/name">
+  <div class="entry-name">pdf/name</div>
+  <pre class="entry-doc">Syntax: (pdf/name string)
+Library: (scm pdf)
+Description: Constructs a PDF name object (serialized as /string). Used
+  for dictionary keys' values, font names, type tags, etc.
+Example: (pdf/name "Catalog")</pre>
+</div>
+<div class="entry" id="e87" data-name="pdf/ref">
+  <div class="entry-name">pdf/ref</div>
+  <pre class="entry-doc">Syntax: (pdf/ref object-id)
+Library: (scm pdf)
+Description: Constructs an indirect-object reference (serialized as
+  "N 0 R"). object-id is the integer id assigned by the writer.
+Example: (pdf/ref 3)</pre>
+</div>
+<div class="entry" id="e88" data-name="pdf/stream">
+  <div class="entry-name">pdf/stream</div>
+  <pre class="entry-doc">Syntax: (pdf/stream dict bytevector)
+Library: (scm pdf)
+Description: Constructs a PDF stream object. dict is a pdf-dict (its
+  /Length entry is added automatically if missing). data is the raw
+  stream payload as a bytevector — callers are responsible for any
+  compression and for setting /Filter accordingly.
+Example:
+  (pdf/stream (pdf/dict) (string-&gt;utf8 "q Q"))</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

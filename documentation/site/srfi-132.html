@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(srfi 132) — Scm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Scm Library Reference</a></h1>
+    <p>scm &mdash; libraries and their exports</p>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav>
+  <h2>R7RS Standard</h2>
+  <a href="scheme-base.html" class="r7rs">(scheme base)</a>
+  <a href="scheme-case-lambda.html" class="r7rs">(scheme case-lambda)</a>
+  <a href="scheme-char.html" class="r7rs">(scheme char)</a>
+  <a href="scheme-complex.html" class="r7rs">(scheme complex)</a>
+  <a href="scheme-cxr.html" class="r7rs">(scheme cxr)</a>
+  <a href="scheme-eval.html" class="r7rs">(scheme eval)</a>
+  <a href="scheme-file.html" class="r7rs">(scheme file)</a>
+  <a href="scheme-inexact.html" class="r7rs">(scheme inexact)</a>
+  <a href="scheme-lazy.html" class="r7rs">(scheme lazy)</a>
+  <a href="scheme-load.html" class="r7rs">(scheme load)</a>
+  <a href="scheme-process-context.html" class="r7rs">(scheme process-context)</a>
+  <a href="scheme-r5rs.html" class="r7rs">(scheme r5rs)</a>
+  <a href="scheme-read.html" class="r7rs">(scheme read)</a>
+  <a href="scheme-repl.html" class="r7rs">(scheme repl)</a>
+  <a href="scheme-time.html" class="r7rs">(scheme time)</a>
+  <a href="scheme-write.html" class="r7rs">(scheme write)</a>
+  <h2>SRFI Libraries</h2>
+  <a href="srfi-1.html" class="srfi">(srfi 1)</a>
+  <a href="srfi-2.html" class="srfi">(srfi 2)</a>
+  <a href="srfi-8.html" class="srfi">(srfi 8)</a>
+  <a href="srfi-9.html" class="srfi">(srfi 9)</a>
+  <a href="srfi-13.html" class="srfi">(srfi 13)</a>
+  <a href="srfi-14.html" class="srfi">(srfi 14)</a>
+  <a href="srfi-18.html" class="srfi">(srfi 18)</a>
+  <a href="srfi-19.html" class="srfi">(srfi 19)</a>
+  <a href="srfi-26.html" class="srfi">(srfi 26)</a>
+  <a href="srfi-28.html" class="srfi">(srfi 28)</a>
+  <a href="srfi-39.html" class="srfi">(srfi 39)</a>
+  <a href="srfi-48.html" class="srfi">(srfi 48)</a>
+  <a href="srfi-64.html" class="srfi">(srfi 64)</a>
+  <a href="srfi-69.html" class="srfi">(srfi 69)</a>
+  <a href="srfi-95.html" class="srfi">(srfi 95)</a>
+  <a href="srfi-98.html" class="srfi">(srfi 98)</a>
+  <a href="srfi-111.html" class="srfi">(srfi 111)</a>
+  <a href="srfi-125.html" class="srfi">(srfi 125)</a>
+  <a href="srfi-128.html" class="srfi">(srfi 128)</a>
+  <a href="srfi-132.html" class="srfi active">(srfi 132)</a>
+  <a href="srfi-133.html" class="srfi">(srfi 133)</a>
+  <a href="srfi-151.html" class="srfi">(srfi 151)</a>
+  <a href="srfi-158.html" class="srfi">(srfi 158)</a>
+  <h2>Scm Extensions</h2>
+  <a href="scm-archive.html" class="scm">(scm archive)</a>
+  <a href="scm-args.html" class="scm">(scm args)</a>
+  <a href="scm-compile.html" class="scm">(scm compile)</a>
+  <a href="scm-compression.html" class="scm">(scm compression)</a>
+  <a href="scm-crypto.html" class="scm">(scm crypto)</a>
+  <a href="scm-csv.html" class="scm">(scm csv)</a>
+  <a href="scm-database-migrations.html" class="scm">(scm database migrations)</a>
+  <a href="scm-database-postgres.html" class="scm">(scm database postgres)</a>
+  <a href="scm-database-sqlserver.html" class="scm">(scm database sqlserver)</a>
+  <a href="scm-datetime.html" class="scm">(scm datetime)</a>
+  <a href="scm-dict.html" class="scm">(scm dict)</a>
+  <a href="scm-doc.html" class="scm">(scm doc)</a>
+  <a href="scm-duration.html" class="scm">(scm duration)</a>
+  <a href="scm-feed.html" class="scm">(scm feed)</a>
+  <a href="scm-fs-find.html" class="scm">(scm fs-find)</a>
+  <a href="scm-fs.html" class="scm">(scm fs)</a>
+  <a href="scm-glob.html" class="scm">(scm glob)</a>
+  <a href="scm-html-builder.html" class="scm">(scm html builder)</a>
+  <a href="scm-html.html" class="scm">(scm html)</a>
+  <a href="scm-io.html" class="scm">(scm io)</a>
+  <a href="scm-json-simple.html" class="scm">(scm json simple)</a>
+  <a href="scm-json.html" class="scm">(scm json)</a>
+  <a href="scm-list.html" class="scm">(scm list)</a>
+  <a href="scm-log.html" class="scm">(scm log)</a>
+  <a href="scm-macro.html" class="scm">(scm macro)</a>
+  <a href="scm-markdown.html" class="scm">(scm markdown)</a>
+  <a href="scm-match.html" class="scm">(scm match)</a>
+  <a href="scm-math.html" class="scm">(scm math)</a>
+  <a href="scm-module.html" class="scm">(scm module)</a>
+  <a href="scm-net-http-client.html" class="scm">(scm net http client)</a>
+  <a href="scm-net-http-cookies.html" class="scm">(scm net http cookies)</a>
+  <a href="scm-net-http-forms.html" class="scm">(scm net http forms)</a>
+  <a href="scm-net-http-multipart.html" class="scm">(scm net http multipart)</a>
+  <a href="scm-net-http-request.html" class="scm">(scm net http request)</a>
+  <a href="scm-net-http-response.html" class="scm">(scm net http response)</a>
+  <a href="scm-net-http-route.html" class="scm">(scm net http route)</a>
+  <a href="scm-net-http-server.html" class="scm">(scm net http server)</a>
+  <a href="scm-net-remote.html" class="scm">(scm net-remote)</a>
+  <a href="scm-net-sockets.html" class="scm">(scm net sockets)</a>
+  <a href="scm-net-websocket.html" class="scm">(scm net websocket)</a>
+  <a href="scm-odf-spreadsheet.html" class="scm">(scm odf spreadsheet)</a>
+  <a href="scm-odf-writer.html" class="scm">(scm odf writer)</a>
+  <a href="scm-ooxml-excel-reader.html" class="scm">(scm ooxml excel-reader)</a>
+  <a href="scm-ooxml-excel.html" class="scm">(scm ooxml excel)</a>
+  <a href="scm-ooxml-word-reader.html" class="scm">(scm ooxml word-reader)</a>
+  <a href="scm-ooxml-word.html" class="scm">(scm ooxml word)</a>
+  <a href="scm-pdf.html" class="scm">(scm pdf)</a>
+  <a href="scm-png.html" class="scm">(scm png)</a>
+  <a href="scm-profiling.html" class="scm">(scm profiling)</a>
+  <a href="scm-qr.html" class="scm">(scm qr)</a>
+  <a href="scm-random-access.html" class="scm">(scm random access)</a>
+  <a href="scm-repl.html" class="scm">(scm repl)</a>
+  <a href="scm-store.html" class="scm">(scm store)</a>
+  <a href="scm-string.html" class="scm">(scm string)</a>
+  <a href="scm-sysadmin.html" class="scm">(scm sysadmin)</a>
+  <a href="scm-system.html" class="scm">(scm system)</a>
+  <a href="scm-templating.html" class="scm">(scm templating)</a>
+  <a href="scm-terminal.html" class="scm">(scm terminal)</a>
+  <a href="scm-test.html" class="scm">(scm test)</a>
+  <a href="scm-text.html" class="scm">(scm text)</a>
+  <a href="scm-toml.html" class="scm">(scm toml)</a>
+  <a href="scm-uri.html" class="scm">(scm uri)</a>
+  <a href="scm-xml.html" class="scm">(scm xml)</a>
+  <a href="scm-zip.html" class="scm">(scm zip)</a>
+</nav>
+
+<main>
+
+<a class="backlink" href="index.html">&larr; All libraries</a>
+<div class="lib-title srfi">(srfi 132)</div>
+<p class="lib-sub">SRFI-132 — Sort libraries: list/vector sort, merge, select, median</p>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">22 bindings</p>
+
+<div class="entry" id="e0" data-name="list-delete-neighbor-dups">
+  <div class="entry-name">list-delete-neighbor-dups</div>
+  <pre class="entry-doc">Syntax: (list-delete-neighbor-dups = lis)
+Library: (srfi 132)
+Description: Returns a list with adjacent duplicate elements removed. Elements
+are compared using the equality predicate =. The first element of each run of
+equal elements is retained. The input list is not modified. Shares common tail
+structure with the input when possible.
+Example:
+  (list-delete-neighbor-dups = '(1 1 2 3 3 3 4)) =&gt; (1 2 3 4)
+  (list-delete-neighbor-dups = '()) =&gt; ()</pre>
+</div>
+<div class="entry" id="e1" data-name="list-delete-neighbor-dups!">
+  <div class="entry-name">list-delete-neighbor-dups!</div>
+  <pre class="entry-doc">Syntax: (list-delete-neighbor-dups! = lis)
+Library: (srfi 132)
+Description: Destructively removes adjacent duplicate elements from lis by
+relinking cons cells with set-cdr!. Elements are compared using =. The first
+element of each run of equal elements is retained. Returns the modified list.
+Example:
+  (list-delete-neighbor-dups! = (list 1 1 2 3 3 3 4)) =&gt; (1 2 3 4)</pre>
+</div>
+<div class="entry" id="e2" data-name="list-merge">
+  <div class="entry-name">list-merge</div>
+  <pre class="entry-doc">Syntax: (list-merge &lt; lis1 lis2)
+Library: (srfi 132)
+Description: Merges two sorted lists into a single sorted list. Both input
+lists must already be sorted according to &lt;. The merge is stable: elements
+from lis1 are preferred over equal elements from lis2. The input lists are
+not modified.
+Example:
+  (list-merge &lt; '(1 3 5) '(2 4 6)) =&gt; (1 2 3 4 5 6)
+  (list-merge &lt; '(1 2) '(2 3)) =&gt; (1 2 2 3)</pre>
+</div>
+<div class="entry" id="e3" data-name="list-merge!">
+  <div class="entry-name">list-merge!</div>
+  <pre class="entry-doc">Syntax: (list-merge! &lt; lis1 lis2)
+Library: (srfi 132)
+Description: Merges two sorted lists into a single sorted list. Both input
+lists must already be sorted according to &lt;. This is a destructive variant
+that may modify the cons cells of the input lists via set-cdr!.
+Example:
+  (list-merge! &lt; (list 1 3 5) (list 2 4 6)) =&gt; (1 2 3 4 5 6)</pre>
+</div>
+<div class="entry" id="e4" data-name="list-sort">
+  <div class="entry-name">list-sort</div>
+  <pre class="entry-doc">Syntax: (list-sort &lt; lis)
+Library: (srfi 132)
+Description: Returns a list containing the elements of lis in non-decreasing
+order according to the comparison procedure &lt;. The original list is not
+modified. The sort is stable: equal elements maintain their relative order.
+Example:
+  (list-sort &lt; '(3 1 4 1 5 9)) =&gt; (1 1 3 4 5 9)
+  (list-sort string&lt;? '("banana" "apple" "cherry")) =&gt; ("apple" "banana" "cherry")</pre>
+</div>
+<div class="entry" id="e5" data-name="list-sort!">
+  <div class="entry-name">list-sort!</div>
+  <pre class="entry-doc">Syntax: (list-sort! &lt; lis)
+Library: (srfi 132)
+Description: Returns a list containing the elements of lis in non-decreasing
+order according to &lt;. This is a linear-update variant that modifies the input
+list's cons cells to avoid allocation.
+Example:
+  (list-sort! &lt; '(3 1 4 1 5)) =&gt; (1 1 3 4 5)</pre>
+</div>
+<div class="entry" id="e6" data-name="list-sorted?">
+  <div class="entry-name">list-sorted?</div>
+  <pre class="entry-doc">Syntax: (list-sorted? &lt; lis)
+Library: (srfi 132)
+Description: Returns #t if the elements of lis are in non-decreasing order
+according to the comparison procedure &lt;, #f otherwise. Returns #t for empty
+and single-element lists.
+Example:
+  (list-sorted? &lt; '(1 2 3)) =&gt; #t
+  (list-sorted? &lt; '(3 1 2)) =&gt; #f
+  (list-sorted? &lt; '()) =&gt; #t</pre>
+</div>
+<div class="entry" id="e7" data-name="list-stable-sort">
+  <div class="entry-name">list-stable-sort</div>
+  <pre class="entry-doc">Syntax: (list-stable-sort &lt; lis)
+Library: (srfi 132)
+Description: Returns a list containing the elements of lis in non-decreasing
+order according to &lt;. The sort is stable: equal elements maintain their
+relative order. Equivalent to list-sort since the underlying merge sort
+algorithm is stable.
+Example:
+  (list-stable-sort &lt; '(3 1 4 1 5)) =&gt; (1 1 3 4 5)</pre>
+</div>
+<div class="entry" id="e8" data-name="list-stable-sort!">
+  <div class="entry-name">list-stable-sort!</div>
+  <pre class="entry-doc">Syntax: (list-stable-sort! &lt; lis)
+Library: (srfi 132)
+Description: Returns a list containing the elements of lis in non-decreasing
+order according to &lt;. This is a stable, linear-update variant that modifies
+the input list's cons cells to avoid allocation.
+Example:
+  (list-stable-sort! &lt; '(3 1 4 1 5)) =&gt; (1 1 3 4 5)</pre>
+</div>
+<div class="entry" id="e9" data-name="vector-delete-neighbor-dups">
+  <div class="entry-name">vector-delete-neighbor-dups</div>
+  <pre class="entry-doc">Syntax: (vector-delete-neighbor-dups = v)
+       (vector-delete-neighbor-dups = v start)
+       (vector-delete-neighbor-dups = v start end)
+Library: (srfi 132)
+Description: Returns a newly allocated vector with adjacent duplicate elements
+removed from the range [start, end) of v. Elements are compared using =. The
+first element of each run of equal elements is retained.
+Example:
+  (vector-delete-neighbor-dups = #(1 1 2 3 3 4)) =&gt; #(1 2 3 4)
+  (vector-delete-neighbor-dups = #(1 2 3)) =&gt; #(1 2 3)</pre>
+</div>
+<div class="entry" id="e10" data-name="vector-delete-neighbor-dups!">
+  <div class="entry-name">vector-delete-neighbor-dups!</div>
+  <pre class="entry-doc">Syntax: (vector-delete-neighbor-dups! = v)
+       (vector-delete-neighbor-dups! = v start)
+       (vector-delete-neighbor-dups! = v start end)
+Library: (srfi 132)
+Description: Destructively compacts the range [start, end) of v by removing
+adjacent duplicate elements. Elements are compared using =. The first element
+of each run of equal elements is retained. Returns the new end index (an exact
+integer), not a vector. Elements beyond the new end are unchanged.
+Example:
+  (let ((v (vector 1 1 2 3 3 4)))
+    (vector-delete-neighbor-dups! = v)) =&gt; 4</pre>
+</div>
+<div class="entry" id="e11" data-name="vector-find-median">
+  <div class="entry-name">vector-find-median</div>
+  <pre class="entry-doc">Syntax: (vector-find-median &lt; v knil)
+       (vector-find-median &lt; v knil mean)
+Library: (srfi 132)
+Description: Finds the median of the elements in vector v according to &lt;.
+If v is empty, returns knil. If v has an odd number of elements, returns the
+middle element. If v has an even number of elements and mean is provided,
+returns (mean a b) where a and b are the two middle elements; otherwise
+returns the lower of the two. The original vector is not modified.
+Example:
+  (vector-find-median &lt; #(3 1 4 1 5) 0) =&gt; 3
+  (vector-find-median &lt; #(3 1 4 5) 0 (lambda (a b) (/ (+ a b) 2))) =&gt; 7/2</pre>
+</div>
+<div class="entry" id="e12" data-name="vector-find-median!">
+  <div class="entry-name">vector-find-median!</div>
+  <pre class="entry-doc">Syntax: (vector-find-median! &lt; v knil)
+       (vector-find-median! &lt; v knil mean)
+Library: (srfi 132)
+Description: Finds the median of the elements in vector v according to &lt;.
+If v is empty, returns knil. If v has an odd number of elements, returns the
+middle element. If v has an even number of elements and mean is provided,
+returns (mean a b) where a and b are the two middle elements; otherwise
+returns the lower of the two. This variant sorts v in place.
+Example:
+  (vector-find-median! &lt; (vector 3 1 4 1 5) 0) =&gt; 3
+  (vector-find-median! &lt; (vector 3 1 4 5) 0 (lambda (a b) (/ (+ a b) 2))) =&gt; 7/2</pre>
+</div>
+<div class="entry" id="e13" data-name="vector-merge">
+  <div class="entry-name">vector-merge</div>
+  <pre class="entry-doc">Syntax: (vector-merge &lt; v1 v2)
+       (vector-merge &lt; v1 v2 start1)
+       (vector-merge &lt; v1 v2 start1 end1)
+       (vector-merge &lt; v1 v2 start1 end1 start2)
+       (vector-merge &lt; v1 v2 start1 end1 start2 end2)
+Library: (srfi 132)
+Description: Merges the elements of sorted vectors v1 (range [start1, end1))
+and v2 (range [start2, end2)) into a newly allocated vector in non-decreasing
+order according to &lt;. Both input ranges must already be sorted. Elements from
+v1 are preferred over equal elements from v2 (stable).
+Example:
+  (vector-merge &lt; #(1 3 5) #(2 4 6)) =&gt; #(1 2 3 4 5 6)</pre>
+</div>
+<div class="entry" id="e14" data-name="vector-merge!">
+  <div class="entry-name">vector-merge!</div>
+  <pre class="entry-doc">Syntax: (vector-merge! &lt; to from1 from2)
+       (vector-merge! &lt; to from1 from2 start)
+       (vector-merge! &lt; to from1 from2 start start1)
+       (vector-merge! &lt; to from1 from2 start start1 end1)
+       (vector-merge! &lt; to from1 from2 start start1 end1 start2)
+       (vector-merge! &lt; to from1 from2 start start1 end1 start2 end2)
+Library: (srfi 132)
+Description: Merges the sorted elements of from1 (range [start1, end1)) and
+from2 (range [start2, end2)) into the vector to, starting at index start.
+Both source ranges must be sorted according to &lt;. The target range must not
+overlap the source ranges. Returns an unspecified value.
+Example:
+  (let ((v (make-vector 6)))
+    (vector-merge! &lt; v #(1 3 5) #(2 4 6))
+    v) =&gt; #(1 2 3 4 5 6)</pre>
+</div>
+<div class="entry" id="e15" data-name="vector-select!">
+  <div class="entry-name">vector-select!</div>
+  <pre class="entry-doc">Syntax: (vector-select! &lt; v k)
+       (vector-select! &lt; v k start)
+       (vector-select! &lt; v k start end)
+Library: (srfi 132)
+Description: Returns the k-th smallest element (zero-indexed) in the range
+[start, end) of vector v, according to the comparison procedure &lt;. May
+rearrange elements within the range. Runs in O(n) average time.
+Example:
+  (vector-select! &lt; (vector 3 1 4 1 5) 0) =&gt; 1
+  (vector-select! &lt; (vector 3 1 4 1 5) 2) =&gt; 3
+  (vector-select! &lt; (vector 3 1 4 1 5) 4) =&gt; 5</pre>
+</div>
+<div class="entry" id="e16" data-name="vector-separate!">
+  <div class="entry-name">vector-separate!</div>
+  <pre class="entry-doc">Syntax: (vector-separate! &lt; v k)
+       (vector-separate! &lt; v k start)
+       (vector-separate! &lt; v k start end)
+Library: (srfi 132)
+Description: Rearranges the elements of v in the range [start, end) so that
+the k smallest elements (according to &lt;) are in positions [start, start+k).
+The remaining elements are in positions [start+k, end) in unspecified order.
+Returns an unspecified value.
+Example:
+  (let ((v (vector 5 3 1 4 2)))
+    (vector-separate! &lt; v 2)
+    (let ((first-two (list (vector-ref v 0) (vector-ref v 1))))
+      (list-sort &lt; first-two))) =&gt; (1 2)</pre>
+</div>
+<div class="entry" id="e17" data-name="vector-sort">
+  <div class="entry-name">vector-sort</div>
+  <pre class="entry-doc">Syntax: (vector-sort &lt; v)
+       (vector-sort &lt; v start)
+       (vector-sort &lt; v start end)
+Library: (srfi 132)
+Description: Returns a newly allocated vector containing the elements of v in
+the range [start, end) sorted in non-decreasing order according to &lt;. The
+original vector is not modified. The sort is stable.
+Example:
+  (vector-sort &lt; #(3 1 4 1 5)) =&gt; #(1 1 3 4 5)
+  (vector-sort &lt; #(5 3 1 4 2) 1 4) =&gt; #(1 3 4)</pre>
+</div>
+<div class="entry" id="e18" data-name="vector-sort!">
+  <div class="entry-name">vector-sort!</div>
+  <pre class="entry-doc">Syntax: (vector-sort! &lt; v)
+       (vector-sort! &lt; v start)
+       (vector-sort! &lt; v start end)
+Library: (srfi 132)
+Description: Sorts the elements of vector v in the range [start, end) in
+non-decreasing order according to &lt;. The sort is performed in place. The sort
+is stable. Returns an unspecified value. start defaults to 0 and end defaults
+to the length of v.
+Example:
+  (let ((v (vector 3 1 4 1 5))) (vector-sort! &lt; v) v) =&gt; #(1 1 3 4 5)</pre>
+</div>
+<div class="entry" id="e19" data-name="vector-sorted?">
+  <div class="entry-name">vector-sorted?</div>
+  <pre class="entry-doc">Syntax: (vector-sorted? &lt; v)
+       (vector-sorted? &lt; v start)
+       (vector-sorted? &lt; v start end)
+Library: (srfi 132)
+Description: Returns #t if the elements of v in the range [start, end) are in
+non-decreasing order according to &lt;, #f otherwise. start defaults to 0 and
+end defaults to the length of v.
+Example:
+  (vector-sorted? &lt; #(1 2 3)) =&gt; #t
+  (vector-sorted? &lt; #(3 1 2)) =&gt; #f
+  (vector-sorted? &lt; #(1 3 2 4) 2 4) =&gt; #t</pre>
+</div>
+<div class="entry" id="e20" data-name="vector-stable-sort">
+  <div class="entry-name">vector-stable-sort</div>
+  <pre class="entry-doc">Syntax: (vector-stable-sort &lt; v)
+       (vector-stable-sort &lt; v start)
+       (vector-stable-sort &lt; v start end)
+Library: (srfi 132)
+Description: Returns a newly allocated vector containing the elements of v in
+the range [start, end) sorted in non-decreasing order according to &lt;. The
+original vector is not modified. The sort is stable. Equivalent to vector-sort.
+Example:
+  (vector-stable-sort &lt; #(3 1 4 1 5)) =&gt; #(1 1 3 4 5)</pre>
+</div>
+<div class="entry" id="e21" data-name="vector-stable-sort!">
+  <div class="entry-name">vector-stable-sort!</div>
+  <pre class="entry-doc">Syntax: (vector-stable-sort! &lt; v)
+       (vector-stable-sort! &lt; v start)
+       (vector-stable-sort! &lt; v start end)
+Library: (srfi 132)
+Description: Sorts the elements of vector v in the range [start, end) in
+non-decreasing order according to &lt;. The sort is performed in place and is
+stable: equal elements maintain their relative order. Returns an unspecified
+value. Equivalent to vector-sort!.
+Example:
+  (let ((v (vector 3 1 4 1 5))) (vector-stable-sort! &lt; v) v) =&gt; #(1 1 3 4 5)</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

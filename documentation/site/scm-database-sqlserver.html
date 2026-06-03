@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm database sqlserver) — Scm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Scm Library Reference</a></h1>
+    <p>scm &mdash; libraries and their exports</p>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav>
+  <h2>R7RS Standard</h2>
+  <a href="scheme-base.html" class="r7rs">(scheme base)</a>
+  <a href="scheme-case-lambda.html" class="r7rs">(scheme case-lambda)</a>
+  <a href="scheme-char.html" class="r7rs">(scheme char)</a>
+  <a href="scheme-complex.html" class="r7rs">(scheme complex)</a>
+  <a href="scheme-cxr.html" class="r7rs">(scheme cxr)</a>
+  <a href="scheme-eval.html" class="r7rs">(scheme eval)</a>
+  <a href="scheme-file.html" class="r7rs">(scheme file)</a>
+  <a href="scheme-inexact.html" class="r7rs">(scheme inexact)</a>
+  <a href="scheme-lazy.html" class="r7rs">(scheme lazy)</a>
+  <a href="scheme-load.html" class="r7rs">(scheme load)</a>
+  <a href="scheme-process-context.html" class="r7rs">(scheme process-context)</a>
+  <a href="scheme-r5rs.html" class="r7rs">(scheme r5rs)</a>
+  <a href="scheme-read.html" class="r7rs">(scheme read)</a>
+  <a href="scheme-repl.html" class="r7rs">(scheme repl)</a>
+  <a href="scheme-time.html" class="r7rs">(scheme time)</a>
+  <a href="scheme-write.html" class="r7rs">(scheme write)</a>
+  <h2>SRFI Libraries</h2>
+  <a href="srfi-1.html" class="srfi">(srfi 1)</a>
+  <a href="srfi-2.html" class="srfi">(srfi 2)</a>
+  <a href="srfi-8.html" class="srfi">(srfi 8)</a>
+  <a href="srfi-9.html" class="srfi">(srfi 9)</a>
+  <a href="srfi-13.html" class="srfi">(srfi 13)</a>
+  <a href="srfi-14.html" class="srfi">(srfi 14)</a>
+  <a href="srfi-18.html" class="srfi">(srfi 18)</a>
+  <a href="srfi-19.html" class="srfi">(srfi 19)</a>
+  <a href="srfi-26.html" class="srfi">(srfi 26)</a>
+  <a href="srfi-28.html" class="srfi">(srfi 28)</a>
+  <a href="srfi-39.html" class="srfi">(srfi 39)</a>
+  <a href="srfi-48.html" class="srfi">(srfi 48)</a>
+  <a href="srfi-64.html" class="srfi">(srfi 64)</a>
+  <a href="srfi-69.html" class="srfi">(srfi 69)</a>
+  <a href="srfi-95.html" class="srfi">(srfi 95)</a>
+  <a href="srfi-98.html" class="srfi">(srfi 98)</a>
+  <a href="srfi-111.html" class="srfi">(srfi 111)</a>
+  <a href="srfi-125.html" class="srfi">(srfi 125)</a>
+  <a href="srfi-128.html" class="srfi">(srfi 128)</a>
+  <a href="srfi-132.html" class="srfi">(srfi 132)</a>
+  <a href="srfi-133.html" class="srfi">(srfi 133)</a>
+  <a href="srfi-151.html" class="srfi">(srfi 151)</a>
+  <a href="srfi-158.html" class="srfi">(srfi 158)</a>
+  <h2>Scm Extensions</h2>
+  <a href="scm-archive.html" class="scm">(scm archive)</a>
+  <a href="scm-args.html" class="scm">(scm args)</a>
+  <a href="scm-compile.html" class="scm">(scm compile)</a>
+  <a href="scm-compression.html" class="scm">(scm compression)</a>
+  <a href="scm-crypto.html" class="scm">(scm crypto)</a>
+  <a href="scm-csv.html" class="scm">(scm csv)</a>
+  <a href="scm-database-migrations.html" class="scm">(scm database migrations)</a>
+  <a href="scm-database-postgres.html" class="scm">(scm database postgres)</a>
+  <a href="scm-database-sqlserver.html" class="scm active">(scm database sqlserver)</a>
+  <a href="scm-datetime.html" class="scm">(scm datetime)</a>
+  <a href="scm-dict.html" class="scm">(scm dict)</a>
+  <a href="scm-doc.html" class="scm">(scm doc)</a>
+  <a href="scm-duration.html" class="scm">(scm duration)</a>
+  <a href="scm-feed.html" class="scm">(scm feed)</a>
+  <a href="scm-fs-find.html" class="scm">(scm fs-find)</a>
+  <a href="scm-fs.html" class="scm">(scm fs)</a>
+  <a href="scm-glob.html" class="scm">(scm glob)</a>
+  <a href="scm-html-builder.html" class="scm">(scm html builder)</a>
+  <a href="scm-html.html" class="scm">(scm html)</a>
+  <a href="scm-io.html" class="scm">(scm io)</a>
+  <a href="scm-json-simple.html" class="scm">(scm json simple)</a>
+  <a href="scm-json.html" class="scm">(scm json)</a>
+  <a href="scm-list.html" class="scm">(scm list)</a>
+  <a href="scm-log.html" class="scm">(scm log)</a>
+  <a href="scm-macro.html" class="scm">(scm macro)</a>
+  <a href="scm-markdown.html" class="scm">(scm markdown)</a>
+  <a href="scm-match.html" class="scm">(scm match)</a>
+  <a href="scm-math.html" class="scm">(scm math)</a>
+  <a href="scm-module.html" class="scm">(scm module)</a>
+  <a href="scm-net-http-client.html" class="scm">(scm net http client)</a>
+  <a href="scm-net-http-cookies.html" class="scm">(scm net http cookies)</a>
+  <a href="scm-net-http-forms.html" class="scm">(scm net http forms)</a>
+  <a href="scm-net-http-multipart.html" class="scm">(scm net http multipart)</a>
+  <a href="scm-net-http-request.html" class="scm">(scm net http request)</a>
+  <a href="scm-net-http-response.html" class="scm">(scm net http response)</a>
+  <a href="scm-net-http-route.html" class="scm">(scm net http route)</a>
+  <a href="scm-net-http-server.html" class="scm">(scm net http server)</a>
+  <a href="scm-net-remote.html" class="scm">(scm net-remote)</a>
+  <a href="scm-net-sockets.html" class="scm">(scm net sockets)</a>
+  <a href="scm-net-websocket.html" class="scm">(scm net websocket)</a>
+  <a href="scm-odf-spreadsheet.html" class="scm">(scm odf spreadsheet)</a>
+  <a href="scm-odf-writer.html" class="scm">(scm odf writer)</a>
+  <a href="scm-ooxml-excel-reader.html" class="scm">(scm ooxml excel-reader)</a>
+  <a href="scm-ooxml-excel.html" class="scm">(scm ooxml excel)</a>
+  <a href="scm-ooxml-word-reader.html" class="scm">(scm ooxml word-reader)</a>
+  <a href="scm-ooxml-word.html" class="scm">(scm ooxml word)</a>
+  <a href="scm-pdf.html" class="scm">(scm pdf)</a>
+  <a href="scm-png.html" class="scm">(scm png)</a>
+  <a href="scm-profiling.html" class="scm">(scm profiling)</a>
+  <a href="scm-qr.html" class="scm">(scm qr)</a>
+  <a href="scm-random-access.html" class="scm">(scm random access)</a>
+  <a href="scm-repl.html" class="scm">(scm repl)</a>
+  <a href="scm-store.html" class="scm">(scm store)</a>
+  <a href="scm-string.html" class="scm">(scm string)</a>
+  <a href="scm-sysadmin.html" class="scm">(scm sysadmin)</a>
+  <a href="scm-system.html" class="scm">(scm system)</a>
+  <a href="scm-templating.html" class="scm">(scm templating)</a>
+  <a href="scm-terminal.html" class="scm">(scm terminal)</a>
+  <a href="scm-test.html" class="scm">(scm test)</a>
+  <a href="scm-text.html" class="scm">(scm text)</a>
+  <a href="scm-toml.html" class="scm">(scm toml)</a>
+  <a href="scm-uri.html" class="scm">(scm uri)</a>
+  <a href="scm-xml.html" class="scm">(scm xml)</a>
+  <a href="scm-zip.html" class="scm">(scm zip)</a>
+</nav>
+
+<main>
+
+<a class="backlink" href="index.html">&larr; All libraries</a>
+<div class="lib-title scm">(scm database sqlserver)</div>
+<p class="lib-sub">SQL Server database connectivity</p>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">14 bindings</p>
+
+<div class="entry" id="e0" data-name="ss-close">
+  <div class="entry-name">ss-close</div>
+  <pre class="entry-doc">Syntax: (ss-close conn)
+Library: (scm database sqlserver)
+Description: Closes the TCP connection to the SQL Server.
+Example:
+  (ss-close conn)</pre>
+</div>
+<div class="entry" id="e1" data-name="ss-connect">
+  <div class="entry-name">ss-connect</div>
+  <pre class="entry-doc">Syntax: (ss-connect host port user password database)
+Library: (scm database sqlserver)
+Description: Opens a TDS connection to SQL Server, performs TLS negotiation (via tds-connect),
+  and completes Login7 SQL Server authentication. Returns a connection vector #(in out sock).
+Example:
+  (define conn (ss-connect "localhost" 1433 "sa" "Password123!" "master"))</pre>
+</div>
+<div class="entry" id="e2" data-name="ss-cursor-close">
+  <div class="entry-name">ss-cursor-close</div>
+  <pre class="entry-doc">Syntax: (ss-cursor-close cursor)
+Library: (scm database sqlserver)
+Description: Closes the cursor, deallocates it, and commits the transaction. Returns #t.
+  Safe to call multiple times; subsequent calls are no-ops.
+Example:
+  (ss-cursor-close cur)</pre>
+</div>
+<div class="entry" id="e3" data-name="ss-cursor-columns">
+  <div class="entry-name">ss-cursor-columns</div>
+  <pre class="entry-doc">Syntax: (ss-cursor-columns cursor)
+Library: (scm database sqlserver)
+Description: Returns the column name vector for the cursor, or #f before the first fetch.
+Example:
+  (ss-cursor-columns cur) =&gt; #("id" "name")</pre>
+</div>
+<div class="entry" id="e4" data-name="ss-cursor-fetch">
+  <div class="entry-name">ss-cursor-fetch</div>
+  <pre class="entry-doc">Syntax: (ss-cursor-fetch cursor [n])
+Library: (scm database sqlserver)
+Description: Fetches up to n rows from the cursor (default 1). Returns a list of row vectors.
+  Returns an empty list when the cursor is exhausted.
+Example:
+  (ss-cursor-fetch cur 100)</pre>
+</div>
+<div class="entry" id="e5" data-name="ss-cursor-for-each">
+  <div class="entry-name">ss-cursor-for-each</div>
+  <pre class="entry-doc">Syntax: (ss-cursor-for-each cursor proc [batch-size])
+Library: (scm database sqlserver)
+Description: Calls proc on each row vector from the cursor in batches (default 100).
+  Automatically closes the cursor when all rows are consumed.
+Example:
+  (ss-cursor-for-each cur (lambda (row) (display (vector-ref row 0))) 50)</pre>
+</div>
+<div class="entry" id="e6" data-name="ss-cursor-open">
+  <div class="entry-name">ss-cursor-open</div>
+  <pre class="entry-doc">Syntax: (ss-cursor-open conn sql)
+Library: (scm database sqlserver)
+Description: Opens a server-side cursor for the given SQL query using DECLARE CURSOR
+  inside a transaction. Returns a cursor object. Call ss-cursor-close when done.
+Example:
+  (define cur (ss-cursor-open conn "SELECT id, name FROM users ORDER BY id"))</pre>
+</div>
+<div class="entry" id="e7" data-name="ss-exec">
+  <div class="entry-name">ss-exec</div>
+  <pre class="entry-doc">Syntax: (ss-exec conn sql)
+Library: (scm database sqlserver)
+Description: Executes a SQL statement and discards the result. Suitable for DDL and DML.
+Example:
+  (ss-exec conn "CREATE TABLE #t (id INT, name NVARCHAR(50))")</pre>
+</div>
+<div class="entry" id="e8" data-name="ss-query">
+  <div class="entry-name">ss-query</div>
+  <pre class="entry-doc">Syntax: (ss-query conn sql)
+Library: (scm database sqlserver)
+Description: Executes a SQL query and returns a result object #(cols rows). Use
+  ss-result-columns and ss-result-rows to access the result.
+Example:
+  (define result (ss-query conn "SELECT id, name FROM users"))</pre>
+</div>
+<div class="entry" id="e9" data-name="ss-result-&gt;alist-list">
+  <div class="entry-name">ss-result-&gt;alist-list</div>
+  <pre class="entry-doc">Syntax: (ss-result-&gt;alist-list result)
+Library: (scm database sqlserver)
+Description: Converts a query result to a list of association lists, one per row.
+  Each alist maps column name strings to value strings (or #f for NULL).
+Example:
+  (ss-result-&gt;alist-list result) =&gt; (("id" . "1") ("name" . "alice")) ...)</pre>
+</div>
+<div class="entry" id="e10" data-name="ss-result-columns">
+  <div class="entry-name">ss-result-columns</div>
+  <pre class="entry-doc">Syntax: (ss-result-columns result)
+Library: (scm database sqlserver)
+Description: Returns the column name vector from a query result.
+Example:
+  (ss-result-columns result) =&gt; #("id" "name")</pre>
+</div>
+<div class="entry" id="e11" data-name="ss-result-rows">
+  <div class="entry-name">ss-result-rows</div>
+  <pre class="entry-doc">Syntax: (ss-result-rows result)
+Library: (scm database sqlserver)
+Description: Returns the list of row vectors from a query result. Each row is a vector of
+  string values, or #f for NULL values.
+Example:
+  (ss-result-rows result) =&gt; (#("1" "alice") #("2" "bob"))</pre>
+</div>
+<div class="entry" id="e12" data-name="with-ss-connection">
+  <div class="entry-name">with-ss-connection</div>
+  <pre class="entry-doc">Syntax: (with-ss-connection host port user password database proc)
+Library: (scm database sqlserver)
+Description: Opens a SQL Server connection, calls (proc conn), and closes the connection
+  on exit even if an exception is raised.
+Example:
+  (with-ss-connection "localhost" 1433 "sa" "pass" "master"
+    (lambda (conn) (ss-result-&gt;alist-list (ss-query conn "SELECT 1 AS n"))))</pre>
+</div>
+<div class="entry" id="e13" data-name="with-ss-query">
+  <div class="entry-name">with-ss-query</div>
+  <pre class="entry-doc">Syntax: (with-ss-query host port user password database sql proc)
+Library: (scm database sqlserver)
+Description: Opens a connection and cursor, calls (proc conn cursor), and closes both
+  on exit even if an exception is raised.
+Example:
+  (with-ss-query "localhost" 1433 "sa" "pass" "master" "SELECT * FROM t"
+    (lambda (conn cursor) (ss-cursor-for-each cursor display)))</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

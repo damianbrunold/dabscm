@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm database postgres) — Scm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Scm Library Reference</a></h1>
+    <p>scm &mdash; libraries and their exports</p>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav>
+  <h2>R7RS Standard</h2>
+  <a href="scheme-base.html" class="r7rs">(scheme base)</a>
+  <a href="scheme-case-lambda.html" class="r7rs">(scheme case-lambda)</a>
+  <a href="scheme-char.html" class="r7rs">(scheme char)</a>
+  <a href="scheme-complex.html" class="r7rs">(scheme complex)</a>
+  <a href="scheme-cxr.html" class="r7rs">(scheme cxr)</a>
+  <a href="scheme-eval.html" class="r7rs">(scheme eval)</a>
+  <a href="scheme-file.html" class="r7rs">(scheme file)</a>
+  <a href="scheme-inexact.html" class="r7rs">(scheme inexact)</a>
+  <a href="scheme-lazy.html" class="r7rs">(scheme lazy)</a>
+  <a href="scheme-load.html" class="r7rs">(scheme load)</a>
+  <a href="scheme-process-context.html" class="r7rs">(scheme process-context)</a>
+  <a href="scheme-r5rs.html" class="r7rs">(scheme r5rs)</a>
+  <a href="scheme-read.html" class="r7rs">(scheme read)</a>
+  <a href="scheme-repl.html" class="r7rs">(scheme repl)</a>
+  <a href="scheme-time.html" class="r7rs">(scheme time)</a>
+  <a href="scheme-write.html" class="r7rs">(scheme write)</a>
+  <h2>SRFI Libraries</h2>
+  <a href="srfi-1.html" class="srfi">(srfi 1)</a>
+  <a href="srfi-2.html" class="srfi">(srfi 2)</a>
+  <a href="srfi-8.html" class="srfi">(srfi 8)</a>
+  <a href="srfi-9.html" class="srfi">(srfi 9)</a>
+  <a href="srfi-13.html" class="srfi">(srfi 13)</a>
+  <a href="srfi-14.html" class="srfi">(srfi 14)</a>
+  <a href="srfi-18.html" class="srfi">(srfi 18)</a>
+  <a href="srfi-19.html" class="srfi">(srfi 19)</a>
+  <a href="srfi-26.html" class="srfi">(srfi 26)</a>
+  <a href="srfi-28.html" class="srfi">(srfi 28)</a>
+  <a href="srfi-39.html" class="srfi">(srfi 39)</a>
+  <a href="srfi-48.html" class="srfi">(srfi 48)</a>
+  <a href="srfi-64.html" class="srfi">(srfi 64)</a>
+  <a href="srfi-69.html" class="srfi">(srfi 69)</a>
+  <a href="srfi-95.html" class="srfi">(srfi 95)</a>
+  <a href="srfi-98.html" class="srfi">(srfi 98)</a>
+  <a href="srfi-111.html" class="srfi">(srfi 111)</a>
+  <a href="srfi-125.html" class="srfi">(srfi 125)</a>
+  <a href="srfi-128.html" class="srfi">(srfi 128)</a>
+  <a href="srfi-132.html" class="srfi">(srfi 132)</a>
+  <a href="srfi-133.html" class="srfi">(srfi 133)</a>
+  <a href="srfi-151.html" class="srfi">(srfi 151)</a>
+  <a href="srfi-158.html" class="srfi">(srfi 158)</a>
+  <h2>Scm Extensions</h2>
+  <a href="scm-archive.html" class="scm">(scm archive)</a>
+  <a href="scm-args.html" class="scm">(scm args)</a>
+  <a href="scm-compile.html" class="scm">(scm compile)</a>
+  <a href="scm-compression.html" class="scm">(scm compression)</a>
+  <a href="scm-crypto.html" class="scm">(scm crypto)</a>
+  <a href="scm-csv.html" class="scm">(scm csv)</a>
+  <a href="scm-database-migrations.html" class="scm">(scm database migrations)</a>
+  <a href="scm-database-postgres.html" class="scm active">(scm database postgres)</a>
+  <a href="scm-database-sqlserver.html" class="scm">(scm database sqlserver)</a>
+  <a href="scm-datetime.html" class="scm">(scm datetime)</a>
+  <a href="scm-dict.html" class="scm">(scm dict)</a>
+  <a href="scm-doc.html" class="scm">(scm doc)</a>
+  <a href="scm-duration.html" class="scm">(scm duration)</a>
+  <a href="scm-feed.html" class="scm">(scm feed)</a>
+  <a href="scm-fs-find.html" class="scm">(scm fs-find)</a>
+  <a href="scm-fs.html" class="scm">(scm fs)</a>
+  <a href="scm-glob.html" class="scm">(scm glob)</a>
+  <a href="scm-html-builder.html" class="scm">(scm html builder)</a>
+  <a href="scm-html.html" class="scm">(scm html)</a>
+  <a href="scm-io.html" class="scm">(scm io)</a>
+  <a href="scm-json-simple.html" class="scm">(scm json simple)</a>
+  <a href="scm-json.html" class="scm">(scm json)</a>
+  <a href="scm-list.html" class="scm">(scm list)</a>
+  <a href="scm-log.html" class="scm">(scm log)</a>
+  <a href="scm-macro.html" class="scm">(scm macro)</a>
+  <a href="scm-markdown.html" class="scm">(scm markdown)</a>
+  <a href="scm-match.html" class="scm">(scm match)</a>
+  <a href="scm-math.html" class="scm">(scm math)</a>
+  <a href="scm-module.html" class="scm">(scm module)</a>
+  <a href="scm-net-http-client.html" class="scm">(scm net http client)</a>
+  <a href="scm-net-http-cookies.html" class="scm">(scm net http cookies)</a>
+  <a href="scm-net-http-forms.html" class="scm">(scm net http forms)</a>
+  <a href="scm-net-http-multipart.html" class="scm">(scm net http multipart)</a>
+  <a href="scm-net-http-request.html" class="scm">(scm net http request)</a>
+  <a href="scm-net-http-response.html" class="scm">(scm net http response)</a>
+  <a href="scm-net-http-route.html" class="scm">(scm net http route)</a>
+  <a href="scm-net-http-server.html" class="scm">(scm net http server)</a>
+  <a href="scm-net-remote.html" class="scm">(scm net-remote)</a>
+  <a href="scm-net-sockets.html" class="scm">(scm net sockets)</a>
+  <a href="scm-net-websocket.html" class="scm">(scm net websocket)</a>
+  <a href="scm-odf-spreadsheet.html" class="scm">(scm odf spreadsheet)</a>
+  <a href="scm-odf-writer.html" class="scm">(scm odf writer)</a>
+  <a href="scm-ooxml-excel-reader.html" class="scm">(scm ooxml excel-reader)</a>
+  <a href="scm-ooxml-excel.html" class="scm">(scm ooxml excel)</a>
+  <a href="scm-ooxml-word-reader.html" class="scm">(scm ooxml word-reader)</a>
+  <a href="scm-ooxml-word.html" class="scm">(scm ooxml word)</a>
+  <a href="scm-pdf.html" class="scm">(scm pdf)</a>
+  <a href="scm-png.html" class="scm">(scm png)</a>
+  <a href="scm-profiling.html" class="scm">(scm profiling)</a>
+  <a href="scm-qr.html" class="scm">(scm qr)</a>
+  <a href="scm-random-access.html" class="scm">(scm random access)</a>
+  <a href="scm-repl.html" class="scm">(scm repl)</a>
+  <a href="scm-store.html" class="scm">(scm store)</a>
+  <a href="scm-string.html" class="scm">(scm string)</a>
+  <a href="scm-sysadmin.html" class="scm">(scm sysadmin)</a>
+  <a href="scm-system.html" class="scm">(scm system)</a>
+  <a href="scm-templating.html" class="scm">(scm templating)</a>
+  <a href="scm-terminal.html" class="scm">(scm terminal)</a>
+  <a href="scm-test.html" class="scm">(scm test)</a>
+  <a href="scm-text.html" class="scm">(scm text)</a>
+  <a href="scm-toml.html" class="scm">(scm toml)</a>
+  <a href="scm-uri.html" class="scm">(scm uri)</a>
+  <a href="scm-xml.html" class="scm">(scm xml)</a>
+  <a href="scm-zip.html" class="scm">(scm zip)</a>
+</nav>
+
+<main>
+
+<a class="backlink" href="index.html">&larr; All libraries</a>
+<div class="lib-title scm">(scm database postgres)</div>
+<p class="lib-sub">PostgreSQL database connectivity</p>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">23 bindings</p>
+
+<div class="entry" id="e0" data-name="make-pg-pool">
+  <div class="entry-name">make-pg-pool</div>
+  <pre class="entry-doc">Syntax: (make-pg-pool host port user password database capacity)
+Library: (scm database postgres)
+Description: Creates an empty pg connection pool. Connections are created
+  lazily on first checkout, up to capacity. Use with-pg-pool-connection
+  to borrow a connection, and pg-pool-close-all! to tear it down.
+Example:
+  (define pool (make-pg-pool "localhost" 5432 "u" "p" "db" 8))</pre>
+</div>
+<div class="entry" id="e1" data-name="pg-close">
+  <div class="entry-name">pg-close</div>
+  <pre class="entry-doc">Syntax: (pg-close conn)
+Library: (scm database postgres)
+Description: Closes the TCP connection to the PostgreSQL server.
+Example:
+  (pg-close conn)</pre>
+</div>
+<div class="entry" id="e2" data-name="pg-connect">
+  <div class="entry-name">pg-connect</div>
+  <pre class="entry-doc">Syntax: (pg-connect host port user password database)
+Library: (scm database postgres)
+Description: Opens a TCP connection to a PostgreSQL server and performs authentication.
+  Supports trust, MD5, and SCRAM-SHA-256 authentication. Returns a connection object.
+Example:
+  (define conn (pg-connect "localhost" 5432 "alice" "secret" "mydb"))</pre>
+</div>
+<div class="entry" id="e3" data-name="pg-cursor-close">
+  <div class="entry-name">pg-cursor-close</div>
+  <pre class="entry-doc">Syntax: (pg-cursor-close cursor)
+Library: (scm database postgres)
+Description: Closes the cursor and commits the transaction. Returns #t. Safe to call
+  multiple times; subsequent calls are no-ops.
+Example:
+  (pg-cursor-close cur)</pre>
+</div>
+<div class="entry" id="e4" data-name="pg-cursor-columns">
+  <div class="entry-name">pg-cursor-columns</div>
+  <pre class="entry-doc">Syntax: (pg-cursor-columns cursor)
+Library: (scm database postgres)
+Description: Returns the column name vector for the cursor, or #f before the first fetch.
+Example:
+  (pg-cursor-columns cur) =&gt; #("id" "name")</pre>
+</div>
+<div class="entry" id="e5" data-name="pg-cursor-fetch">
+  <div class="entry-name">pg-cursor-fetch</div>
+  <pre class="entry-doc">Syntax: (pg-cursor-fetch cursor [n])
+Library: (scm database postgres)
+Description: Fetches up to n rows from cursor (default 1). Returns a list of row vectors.
+  Returns an empty list when the cursor is exhausted.
+Example:
+  (pg-cursor-fetch cur 100)</pre>
+</div>
+<div class="entry" id="e6" data-name="pg-cursor-for-each">
+  <div class="entry-name">pg-cursor-for-each</div>
+  <pre class="entry-doc">Syntax: (pg-cursor-for-each cursor proc [batch-size])
+Library: (scm database postgres)
+Description: Calls proc on each row vector from cursor in batches (default 100).
+  Automatically closes the cursor when all rows are consumed.
+Example:
+  (pg-cursor-for-each cur (lambda (row) (display (vector-ref row 0))) 50)</pre>
+</div>
+<div class="entry" id="e7" data-name="pg-cursor-open">
+  <div class="entry-name">pg-cursor-open</div>
+  <pre class="entry-doc">Syntax: (pg-cursor-open conn sql)
+Library: (scm database postgres)
+Description: Opens a server-side cursor for the given SQL query. Returns a cursor object.
+  The query runs inside a transaction; call pg-cursor-close when done.
+Example:
+  (define cur (pg-cursor-open conn "SELECT id, name FROM users ORDER BY id"))</pre>
+</div>
+<div class="entry" id="e8" data-name="pg-exec">
+  <div class="entry-name">pg-exec</div>
+  <pre class="entry-doc">Syntax: (pg-exec conn sql [param ...])
+Library: (scm database postgres)
+Description: Executes a SQL statement and discards the result. Suitable
+  for DDL and DML statements such as CREATE TABLE, INSERT, UPDATE, and
+  DELETE.
+
+  If params are supplied, the sql string is a template with $1, $2, ...
+  placeholders substituted via pg-format-sql.
+Example:
+  (pg-exec conn "INSERT INTO users (name) VALUES ('alice')")
+  (pg-exec conn "INSERT INTO users (name, age) VALUES ($1, $2)"
+           "Ada" 36)</pre>
+</div>
+<div class="entry" id="e9" data-name="pg-format-sql">
+  <div class="entry-name">pg-format-sql</div>
+  <pre class="entry-doc">Syntax: (pg-format-sql sql params)
+Library: (scm database postgres)
+Description: Returns sql with $1, $2, ... placeholders substituted by
+  the corresponding (1-indexed) values from the params list, each
+  converted to a properly-escaped SQL literal. Substitution is skipped
+  inside string literals, quoted identifiers, comments, and dollar-
+  quoted strings. Raises on $0, $N out of range, or a param of an
+  unsupported type.
+Example:
+  (pg-format-sql "WHERE slug = $1 AND age &gt; $2" '("a'b" 18))
+  =&gt; "WHERE slug = 'a''b' AND age &gt; 18"</pre>
+</div>
+<div class="entry" id="e10" data-name="pg-pool-checkin">
+  <div class="entry-name">pg-pool-checkin</div>
+  <pre class="entry-doc">Syntax: (pg-pool-checkin pool conn ok?)
+Library: (scm database postgres)
+Description: Returns conn to the pool. If ok? is #t, the connection
+  goes back on the idle list. If #f, the connection is closed and
+  discarded — use this when an exception suggests the connection is
+  in an unknown state. Prefer with-pg-pool-connection.</pre>
+</div>
+<div class="entry" id="e11" data-name="pg-pool-checkout">
+  <div class="entry-name">pg-pool-checkout</div>
+  <pre class="entry-doc">Syntax: (pg-pool-checkout pool)
+Library: (scm database postgres)
+Description: Borrows a connection from the pool. If an idle connection
+  is available, returns it immediately. Otherwise, opens a new one (up
+  to capacity), or waits on the pool's condition variable until a
+  checkin frees one up. Prefer with-pg-pool-connection — it handles
+  the matching checkin under exceptions.</pre>
+</div>
+<div class="entry" id="e12" data-name="pg-pool-close-all!">
+  <div class="entry-name">pg-pool-close-all!</div>
+  <pre class="entry-doc">Syntax: (pg-pool-close-all! pool)
+Library: (scm database postgres)
+Description: Marks the pool as shut down and closes every idle
+  connection. Connections currently checked out will be closed when
+  they are checked back in. Subsequent checkouts raise.</pre>
+</div>
+<div class="entry" id="e13" data-name="pg-pool?">
+  <div class="entry-name">pg-pool?</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e14" data-name="pg-query">
+  <div class="entry-name">pg-query</div>
+  <pre class="entry-doc">Syntax: (pg-query conn sql [param ...])
+Library: (scm database postgres)
+Description: Executes a SQL query and returns a result object containing
+  column names and rows. Use pg-result-columns and pg-result-rows to
+  access the result.
+
+  If params are supplied, the sql string is treated as a template with
+  $1, $2, ... placeholders that are substituted with the corresponding
+  param values. See pg-format-sql for the conversion rules. With no
+  params, sql is sent verbatim.
+Example:
+  (pg-query conn "SELECT * FROM users")
+  (pg-query conn "SELECT * FROM users WHERE id = $1" 42)
+  (pg-query conn "SELECT * FROM users WHERE name = $1 AND age &gt; $2"
+            "Ada" 30)</pre>
+</div>
+<div class="entry" id="e15" data-name="pg-quote-int">
+  <div class="entry-name">pg-quote-int</div>
+  <pre class="entry-doc">Syntax: (pg-quote-int n)
+Library: (scm database postgres)
+Description: Returns the decimal representation of an integer n, validated as
+  integer. Accepts an integer or a numeric string. Raises an error for any
+  other input, preventing callers from accidentally splicing arbitrary text
+  through what was intended to be a numeric parameter.
+Example:
+  (pg-quote-int 42)   =&gt; "42"
+  (pg-quote-int "42") =&gt; "42"
+  (pg-quote-int "x") raises an error</pre>
+</div>
+<div class="entry" id="e16" data-name="pg-quote-literal">
+  <div class="entry-name">pg-quote-literal</div>
+  <pre class="entry-doc">Syntax: (pg-quote-literal s)
+Library: (scm database postgres)
+Description: Returns s wrapped in single quotes with internal single quotes doubled — the SQL standard string-literal escape, safe under PostgreSQL's default standard_conforming_strings=on (backslashes stay literal). Use for any user-controlled string interpolated into SQL.
+Example:
+  (pg-quote-literal "O'Brien") =&gt; "'O''Brien'"</pre>
+</div>
+<div class="entry" id="e17" data-name="pg-result-&gt;alist-list">
+  <div class="entry-name">pg-result-&gt;alist-list</div>
+  <pre class="entry-doc">Syntax: (pg-result-&gt;alist-list result)
+Library: (scm database postgres)
+Description: Converts a query result to a list of association lists, one per row.
+  Each alist maps column name strings to value strings (or #f for NULL).
+Example:
+  (pg-result-&gt;alist-list result) =&gt; (("id" . "1") ("name" . "alice")) ...)</pre>
+</div>
+<div class="entry" id="e18" data-name="pg-result-columns">
+  <div class="entry-name">pg-result-columns</div>
+  <pre class="entry-doc">Syntax: (pg-result-columns result)
+Library: (scm database postgres)
+Description: Returns the column name vector from a query result.
+Example:
+  (pg-result-columns result) =&gt; #("id" "name")</pre>
+</div>
+<div class="entry" id="e19" data-name="pg-result-rows">
+  <div class="entry-name">pg-result-rows</div>
+  <pre class="entry-doc">Syntax: (pg-result-rows result)
+Library: (scm database postgres)
+Description: Returns the list of row vectors from a query result. Each row is a vector of
+  string values, or #f for NULL values.
+Example:
+  (pg-result-rows result) =&gt; (#("1" "alice") #("2" "bob"))</pre>
+</div>
+<div class="entry" id="e20" data-name="with-pg-connection">
+  <div class="entry-name">with-pg-connection</div>
+  <pre class="entry-doc">Syntax: (with-pg-connection host port user password database proc)
+Library: (scm database postgres)
+Description: Opens a connection, calls (proc conn), and closes the connection on exit,
+  even if an exception is raised.
+Example:
+  (with-pg-connection "localhost" 5432 "user" "pass" "db"
+    (lambda (conn) (display (pg-result-&gt;alist-list (pg-query conn "SELECT 1")))))</pre>
+</div>
+<div class="entry" id="e21" data-name="with-pg-pool-connection">
+  <div class="entry-name">with-pg-pool-connection</div>
+  <pre class="entry-doc">Syntax: (with-pg-pool-connection pool proc)
+Library: (scm database postgres)
+Description: Checks out a connection, calls (proc conn), and checks
+  it back in. On normal return, the connection is returned to the
+  idle list. On exception, the connection is closed (not pooled) and
+  the exception is re-raised — assumes the connection's state is
+  suspect.
+Example:
+  (with-pg-pool-connection pool
+    (lambda (c) (pg-result-rows (pg-query c "SELECT 1"))))</pre>
+</div>
+<div class="entry" id="e22" data-name="with-pg-query">
+  <div class="entry-name">with-pg-query</div>
+  <pre class="entry-doc">Syntax: (with-pg-query host port user password database sql proc)
+Library: (scm database postgres)
+Description: Opens a connection and cursor, calls (proc conn cursor), and closes both
+  on exit, even if an exception is raised.
+Example:
+  (with-pg-query "localhost" 5432 "user" "pass" "db" "SELECT * FROM t"
+    (lambda (conn cursor) (pg-cursor-for-each cursor display)))</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

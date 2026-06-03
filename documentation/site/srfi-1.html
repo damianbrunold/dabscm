@@ -1,0 +1,1526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(srfi 1) — Scm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Scm Library Reference</a></h1>
+    <p>scm &mdash; libraries and their exports</p>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav>
+  <h2>R7RS Standard</h2>
+  <a href="scheme-base.html" class="r7rs">(scheme base)</a>
+  <a href="scheme-case-lambda.html" class="r7rs">(scheme case-lambda)</a>
+  <a href="scheme-char.html" class="r7rs">(scheme char)</a>
+  <a href="scheme-complex.html" class="r7rs">(scheme complex)</a>
+  <a href="scheme-cxr.html" class="r7rs">(scheme cxr)</a>
+  <a href="scheme-eval.html" class="r7rs">(scheme eval)</a>
+  <a href="scheme-file.html" class="r7rs">(scheme file)</a>
+  <a href="scheme-inexact.html" class="r7rs">(scheme inexact)</a>
+  <a href="scheme-lazy.html" class="r7rs">(scheme lazy)</a>
+  <a href="scheme-load.html" class="r7rs">(scheme load)</a>
+  <a href="scheme-process-context.html" class="r7rs">(scheme process-context)</a>
+  <a href="scheme-r5rs.html" class="r7rs">(scheme r5rs)</a>
+  <a href="scheme-read.html" class="r7rs">(scheme read)</a>
+  <a href="scheme-repl.html" class="r7rs">(scheme repl)</a>
+  <a href="scheme-time.html" class="r7rs">(scheme time)</a>
+  <a href="scheme-write.html" class="r7rs">(scheme write)</a>
+  <h2>SRFI Libraries</h2>
+  <a href="srfi-1.html" class="srfi active">(srfi 1)</a>
+  <a href="srfi-2.html" class="srfi">(srfi 2)</a>
+  <a href="srfi-8.html" class="srfi">(srfi 8)</a>
+  <a href="srfi-9.html" class="srfi">(srfi 9)</a>
+  <a href="srfi-13.html" class="srfi">(srfi 13)</a>
+  <a href="srfi-14.html" class="srfi">(srfi 14)</a>
+  <a href="srfi-18.html" class="srfi">(srfi 18)</a>
+  <a href="srfi-19.html" class="srfi">(srfi 19)</a>
+  <a href="srfi-26.html" class="srfi">(srfi 26)</a>
+  <a href="srfi-28.html" class="srfi">(srfi 28)</a>
+  <a href="srfi-39.html" class="srfi">(srfi 39)</a>
+  <a href="srfi-48.html" class="srfi">(srfi 48)</a>
+  <a href="srfi-64.html" class="srfi">(srfi 64)</a>
+  <a href="srfi-69.html" class="srfi">(srfi 69)</a>
+  <a href="srfi-95.html" class="srfi">(srfi 95)</a>
+  <a href="srfi-98.html" class="srfi">(srfi 98)</a>
+  <a href="srfi-111.html" class="srfi">(srfi 111)</a>
+  <a href="srfi-125.html" class="srfi">(srfi 125)</a>
+  <a href="srfi-128.html" class="srfi">(srfi 128)</a>
+  <a href="srfi-132.html" class="srfi">(srfi 132)</a>
+  <a href="srfi-133.html" class="srfi">(srfi 133)</a>
+  <a href="srfi-151.html" class="srfi">(srfi 151)</a>
+  <a href="srfi-158.html" class="srfi">(srfi 158)</a>
+  <h2>Scm Extensions</h2>
+  <a href="scm-archive.html" class="scm">(scm archive)</a>
+  <a href="scm-args.html" class="scm">(scm args)</a>
+  <a href="scm-compile.html" class="scm">(scm compile)</a>
+  <a href="scm-compression.html" class="scm">(scm compression)</a>
+  <a href="scm-crypto.html" class="scm">(scm crypto)</a>
+  <a href="scm-csv.html" class="scm">(scm csv)</a>
+  <a href="scm-database-migrations.html" class="scm">(scm database migrations)</a>
+  <a href="scm-database-postgres.html" class="scm">(scm database postgres)</a>
+  <a href="scm-database-sqlserver.html" class="scm">(scm database sqlserver)</a>
+  <a href="scm-datetime.html" class="scm">(scm datetime)</a>
+  <a href="scm-dict.html" class="scm">(scm dict)</a>
+  <a href="scm-doc.html" class="scm">(scm doc)</a>
+  <a href="scm-duration.html" class="scm">(scm duration)</a>
+  <a href="scm-feed.html" class="scm">(scm feed)</a>
+  <a href="scm-fs-find.html" class="scm">(scm fs-find)</a>
+  <a href="scm-fs.html" class="scm">(scm fs)</a>
+  <a href="scm-glob.html" class="scm">(scm glob)</a>
+  <a href="scm-html-builder.html" class="scm">(scm html builder)</a>
+  <a href="scm-html.html" class="scm">(scm html)</a>
+  <a href="scm-io.html" class="scm">(scm io)</a>
+  <a href="scm-json-simple.html" class="scm">(scm json simple)</a>
+  <a href="scm-json.html" class="scm">(scm json)</a>
+  <a href="scm-list.html" class="scm">(scm list)</a>
+  <a href="scm-log.html" class="scm">(scm log)</a>
+  <a href="scm-macro.html" class="scm">(scm macro)</a>
+  <a href="scm-markdown.html" class="scm">(scm markdown)</a>
+  <a href="scm-match.html" class="scm">(scm match)</a>
+  <a href="scm-math.html" class="scm">(scm math)</a>
+  <a href="scm-module.html" class="scm">(scm module)</a>
+  <a href="scm-net-http-client.html" class="scm">(scm net http client)</a>
+  <a href="scm-net-http-cookies.html" class="scm">(scm net http cookies)</a>
+  <a href="scm-net-http-forms.html" class="scm">(scm net http forms)</a>
+  <a href="scm-net-http-multipart.html" class="scm">(scm net http multipart)</a>
+  <a href="scm-net-http-request.html" class="scm">(scm net http request)</a>
+  <a href="scm-net-http-response.html" class="scm">(scm net http response)</a>
+  <a href="scm-net-http-route.html" class="scm">(scm net http route)</a>
+  <a href="scm-net-http-server.html" class="scm">(scm net http server)</a>
+  <a href="scm-net-remote.html" class="scm">(scm net-remote)</a>
+  <a href="scm-net-sockets.html" class="scm">(scm net sockets)</a>
+  <a href="scm-net-websocket.html" class="scm">(scm net websocket)</a>
+  <a href="scm-odf-spreadsheet.html" class="scm">(scm odf spreadsheet)</a>
+  <a href="scm-odf-writer.html" class="scm">(scm odf writer)</a>
+  <a href="scm-ooxml-excel-reader.html" class="scm">(scm ooxml excel-reader)</a>
+  <a href="scm-ooxml-excel.html" class="scm">(scm ooxml excel)</a>
+  <a href="scm-ooxml-word-reader.html" class="scm">(scm ooxml word-reader)</a>
+  <a href="scm-ooxml-word.html" class="scm">(scm ooxml word)</a>
+  <a href="scm-pdf.html" class="scm">(scm pdf)</a>
+  <a href="scm-png.html" class="scm">(scm png)</a>
+  <a href="scm-profiling.html" class="scm">(scm profiling)</a>
+  <a href="scm-qr.html" class="scm">(scm qr)</a>
+  <a href="scm-random-access.html" class="scm">(scm random access)</a>
+  <a href="scm-repl.html" class="scm">(scm repl)</a>
+  <a href="scm-store.html" class="scm">(scm store)</a>
+  <a href="scm-string.html" class="scm">(scm string)</a>
+  <a href="scm-sysadmin.html" class="scm">(scm sysadmin)</a>
+  <a href="scm-system.html" class="scm">(scm system)</a>
+  <a href="scm-templating.html" class="scm">(scm templating)</a>
+  <a href="scm-terminal.html" class="scm">(scm terminal)</a>
+  <a href="scm-test.html" class="scm">(scm test)</a>
+  <a href="scm-text.html" class="scm">(scm text)</a>
+  <a href="scm-toml.html" class="scm">(scm toml)</a>
+  <a href="scm-uri.html" class="scm">(scm uri)</a>
+  <a href="scm-xml.html" class="scm">(scm xml)</a>
+  <a href="scm-zip.html" class="scm">(scm zip)</a>
+</nav>
+
+<main>
+
+<a class="backlink" href="index.html">&larr; All libraries</a>
+<div class="lib-title srfi">(srfi 1)</div>
+<p class="lib-sub">SRFI-1 — List library: fold, any, every, take, drop, iota, lset ops</p>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">151 bindings</p>
+
+<div class="entry" id="e0" data-name="alist-cons">
+  <div class="entry-name">alist-cons</div>
+  <pre class="entry-doc">Syntax: (alist-cons key val alist)
+Library: (srfi 1)
+Description: Prepends a new (key . val) pair to alist and returns the extended association list.
+Example:
+  (alist-cons 'a 1 '((b . 2))) =&gt; ((a . 1) (b . 2))</pre>
+</div>
+<div class="entry" id="e1" data-name="alist-copy">
+  <div class="entry-name">alist-copy</div>
+  <pre class="entry-doc">Syntax: (alist-copy alist)
+Library: (srfi 1)
+Description: Returns a shallow copy of alist with each pair freshly allocated. The keys and values
+themselves are not copied.
+Example:
+  (alist-copy '((a . 1) (b . 2))) =&gt; ((a . 1) (b . 2))</pre>
+</div>
+<div class="entry" id="e2" data-name="alist-delete">
+  <div class="entry-name">alist-delete</div>
+  <pre class="entry-doc">Syntax: (alist-delete key alist [=])
+Library: (srfi 1)
+Description: Returns a copy of alist with all entries whose car equals key removed.
+Uses equal? by default; an optional = argument specifies the equality predicate.
+Example:
+  (alist-delete 'b '((a . 1) (b . 2) (b . 3))) =&gt; ((a . 1))</pre>
+</div>
+<div class="entry" id="e3" data-name="alist-delete!">
+  <div class="entry-name">alist-delete!</div>
+  <pre class="entry-doc">Syntax: (alist-delete! key alist [=])
+Library: (srfi 1)
+Description: Destructive version of alist-delete. May modify alist.
+Example:
+  (alist-delete! 'b (list (cons 'a 1) (cons 'b 2))) =&gt; ((a . 1))</pre>
+</div>
+<div class="entry" id="e4" data-name="any">
+  <div class="entry-name">any</div>
+  <pre class="entry-doc">Syntax: (any pred lst1 ...)
+Library: (srfi 1)
+Description: Applies pred to successive elements of the lists. Returns the first true value
+returned by pred, or #f if pred returns #f for all elements. Stops on the first true value.
+Example:
+  (any odd? '(2 4 5 6)) =&gt; #t
+  (any odd? '(2 4 6)) =&gt; #f
+  (any &lt; '(1 2 3) '(2 3 4)) =&gt; #t</pre>
+</div>
+<div class="entry" id="e5" data-name="append">
+  <div class="entry-name">append</div>
+  <pre class="entry-doc">Syntax: (append list1 ... obj)
+Library: (scheme base)
+Description: Returns a list consisting of the elements of the first list followed by the elements of the other lists. The last argument may be any object.
+Example:
+  (append '(x) '(y)) =&gt; (x y)
+  (append '(a) '(b c d)) =&gt; (a b c d)
+  (append '(a b) '() '(c)) =&gt; (a b c)</pre>
+</div>
+<div class="entry" id="e6" data-name="append!">
+  <div class="entry-name">append!</div>
+  <pre class="entry-doc">Syntax: (append! lst ...)
+Library: (srfi 1)
+Description: Destructively appends the given lists together by modifying the cdr of each list's last pair.
+Returns the concatenated list.
+Example:
+  (append! (list 1 2) (list 3 4)) =&gt; (1 2 3 4)</pre>
+</div>
+<div class="entry" id="e7" data-name="append-map">
+  <div class="entry-name">append-map</div>
+  <pre class="entry-doc">Syntax: (append-map f lst1 ...)
+Library: (srfi 1)
+Description: Maps f over lst(s) and appends all resulting lists. f must return a list for each element.
+Example:
+  (append-map (lambda (x) (list x (* x x))) '(1 2 3)) =&gt; (1 1 2 4 3 9)</pre>
+</div>
+<div class="entry" id="e8" data-name="append-map!">
+  <div class="entry-name">append-map!</div>
+  <pre class="entry-doc">Syntax: (append-map! f lst1 ...)
+Library: (srfi 1)
+Description: Destructive version of append-map.
+Example:
+  (append-map! (lambda (x) (list x (* x x))) '(1 2 3)) =&gt; (1 1 2 4 3 9)</pre>
+</div>
+<div class="entry" id="e9" data-name="append-reverse">
+  <div class="entry-name">append-reverse</div>
+  <pre class="entry-doc">Syntax: (append-reverse rev-head tail)
+Library: (srfi 1)
+Description: Appends (reverse rev-head) to tail. More efficient than (append (reverse rev-head) tail).
+Example:
+  (append-reverse '(3 2 1) '(4 5)) =&gt; (1 2 3 4 5)</pre>
+</div>
+<div class="entry" id="e10" data-name="append-reverse!">
+  <div class="entry-name">append-reverse!</div>
+  <pre class="entry-doc">Syntax: (append-reverse! rev-head tail)
+Library: (srfi 1)
+Description: Destructive version of append-reverse. May modify rev-head.
+Example:
+  (append-reverse! (list 3 2 1) '(4 5)) =&gt; (1 2 3 4 5)</pre>
+</div>
+<div class="entry" id="e11" data-name="assoc">
+  <div class="entry-name">assoc</div>
+  <pre class="entry-doc">Syntax: (assoc key alist)
+Library: (scheme base)
+Description: Searches association list alist for a pair whose car is equal? to key. Returns the first matching pair, or #f if none is found. An optional third argument may supply an alternative comparison procedure.
+Example:
+  (assoc "b" '(("a" 1) ("b" 2))) =&gt; (b 2)
+  (assoc 2.0 '((1 a) (2 b)) =) =&gt; (2 b)</pre>
+</div>
+<div class="entry" id="e12" data-name="assq">
+  <div class="entry-name">assq</div>
+  <pre class="entry-doc">Syntax: (assq key alist)
+Library: (scheme base)
+Description: Searches association list alist for a pair whose car is eq? to key. Returns the first matching pair, or #f if none is found.
+Example:
+  (assq 'b '((a 1) (b 2) (c 3))) =&gt; (b 2)
+  (assq 'd '((a 1) (b 2))) =&gt; #f</pre>
+</div>
+<div class="entry" id="e13" data-name="assv">
+  <div class="entry-name">assv</div>
+  <pre class="entry-doc">Syntax: (assv key alist)
+Library: (scheme base)
+Description: Searches association list alist for a pair whose car is eqv? to key. Returns the first matching pair, or #f if none is found. Similar to assq but uses eqv? for comparison.
+Example:
+  (assv 2 '((1 a) (2 b) (3 c))) =&gt; (2 b)
+  (assv 5 '((1 a) (2 b))) =&gt; #f</pre>
+</div>
+<div class="entry" id="e14" data-name="break">
+  <div class="entry-name">break</div>
+  <pre class="entry-doc">Syntax: (break pred lst)
+Library: (srfi 1)
+Description: Splits lst at the first element satisfying pred. Returns two values:
+the longest initial prefix of elements not satisfying pred, and the remainder.
+Example:
+  (break odd? '(2 4 5 6)) =&gt; (2 4) and (5 6)</pre>
+</div>
+<div class="entry" id="e15" data-name="break!">
+  <div class="entry-name">break!</div>
+  <pre class="entry-doc">Syntax: (break! pred lst)
+Library: (srfi 1)
+Description: Destructive version of break. May modify lst.
+Example:
+  (break! odd? (list 2 4 5 6)) =&gt; (2 4) and (5 6)</pre>
+</div>
+<div class="entry" id="e16" data-name="caaaar">
+  <div class="entry-name">caaaar</div>
+  <pre class="entry-doc">Syntax: (caaaar pair)
+Library: (scheme cxr)
+Description: Equivalent to (car (car (car (car pair)))). Accesses the car of
+four nested car operations on a pair structure.
+Example:
+  (caaaar '((((1 2) 3) 4) 5)) =&gt; 1</pre>
+</div>
+<div class="entry" id="e17" data-name="caaadr">
+  <div class="entry-name">caaadr</div>
+  <pre class="entry-doc">Syntax: (caaadr pair)
+Library: (scheme cxr)
+Description: Equivalent to (car (car (car (cdr pair)))). Accesses the car of
+the car of the car of the cdr of a nested pair structure.
+Example:
+  (caaadr '(1 ((2 3) 4) 5)) =&gt; 2</pre>
+</div>
+<div class="entry" id="e18" data-name="caaar">
+  <div class="entry-name">caaar</div>
+  <pre class="entry-doc">Syntax: (caaar pair)
+Library: (scheme cxr)
+Description: Equivalent to (car (car (car pair))). Accesses the car of the
+car of the car of a nested pair structure.
+Example:
+  (caaar '(((1 2) 3) 4)) =&gt; 1</pre>
+</div>
+<div class="entry" id="e19" data-name="caadar">
+  <div class="entry-name">caadar</div>
+  <pre class="entry-doc">Syntax: (caadar pair)
+Library: (scheme cxr)
+Description: Equivalent to (car (car (cdr (car pair)))). Accesses the car of
+the car of the cdr of the car of a nested pair structure.
+Example:
+  (caadar '((1 (2 3)) 4)) =&gt; 2</pre>
+</div>
+<div class="entry" id="e20" data-name="caaddr">
+  <div class="entry-name">caaddr</div>
+  <pre class="entry-doc">Syntax: (caaddr pair)
+Library: (scheme cxr)
+Description: Equivalent to (car (car (cdr (cdr pair)))). Accesses the car of
+the car of the third tail of a nested pair structure.
+Example:
+  (caaddr '(1 2 (3 4) 5)) =&gt; 3</pre>
+</div>
+<div class="entry" id="e21" data-name="caadr">
+  <div class="entry-name">caadr</div>
+  <pre class="entry-doc">Syntax: (caadr pair)
+Library: (scheme cxr)
+Description: Equivalent to (car (car (cdr pair))). Accesses the car of the
+car of the cdr of a nested pair structure.
+Example:
+  (caadr '(1 (2 3) 4)) =&gt; 2</pre>
+</div>
+<div class="entry" id="e22" data-name="caar">
+  <div class="entry-name">caar</div>
+  <pre class="entry-doc">Syntax: (caar pair)
+Library: (scheme base)
+Description: Returns the car of the car of pair. Equivalent to (car (car pair)).
+Example:
+  (caar '((a b) c)) =&gt; a</pre>
+</div>
+<div class="entry" id="e23" data-name="cadaar">
+  <div class="entry-name">cadaar</div>
+  <pre class="entry-doc">Syntax: (cadaar pair)
+Library: (scheme cxr)
+Description: Equivalent to (car (cdr (car (car pair)))). Accesses the car of
+the cdr of the car of the car of a nested pair structure.
+Example:
+  (cadaar '(((1 2) 3) 4)) =&gt; 2</pre>
+</div>
+<div class="entry" id="e24" data-name="cadadr">
+  <div class="entry-name">cadadr</div>
+  <pre class="entry-doc">Syntax: (cadadr pair)
+Library: (scheme cxr)
+Description: Equivalent to (car (cdr (car (cdr pair)))). Accesses the car of
+the cdr of the car of the cdr of a nested pair structure.
+Example:
+  (cadadr '(1 (2 3) 4)) =&gt; 3</pre>
+</div>
+<div class="entry" id="e25" data-name="cadar">
+  <div class="entry-name">cadar</div>
+  <pre class="entry-doc">Syntax: (cadar pair)
+Library: (scheme cxr)
+Description: Equivalent to (car (cdr (car pair))). Accesses the car of the
+cdr of the car of a nested pair structure.
+Example:
+  (cadar '((1 2) 3)) =&gt; 2</pre>
+</div>
+<div class="entry" id="e26" data-name="caddar">
+  <div class="entry-name">caddar</div>
+  <pre class="entry-doc">Syntax: (caddar pair)
+Library: (scheme cxr)
+Description: Equivalent to (car (cdr (cdr (car pair)))). Accesses the car of
+the cdr of the cdr of the car of a nested pair structure.
+Example:
+  (caddar '((1 2 3) 4)) =&gt; 3</pre>
+</div>
+<div class="entry" id="e27" data-name="cadddr">
+  <div class="entry-name">cadddr</div>
+  <pre class="entry-doc">Syntax: (cadddr pair)
+Library: (scheme cxr)
+Description: Equivalent to (car (cdr (cdr (cdr pair)))). Returns the fourth
+element of a list.
+Example:
+  (cadddr '(1 2 3 4 5)) =&gt; 4</pre>
+</div>
+<div class="entry" id="e28" data-name="caddr">
+  <div class="entry-name">caddr</div>
+  <pre class="entry-doc">Syntax: (caddr pair)
+Library: (scheme cxr)
+Description: Equivalent to (car (cdr (cdr pair))). Returns the third element
+of a list.
+Example:
+  (caddr '(1 2 3 4)) =&gt; 3</pre>
+</div>
+<div class="entry" id="e29" data-name="cadr">
+  <div class="entry-name">cadr</div>
+  <pre class="entry-doc">Syntax: (cadr pair)
+Library: (scheme base)
+Description: Returns the car of the cdr of pair. Equivalent to (car (cdr pair)).
+Example:
+  (cadr '(a b c)) =&gt; b</pre>
+</div>
+<div class="entry" id="e30" data-name="car">
+  <div class="entry-name">car</div>
+  <pre class="entry-doc">Syntax: (car pair)
+Library: (scheme base)
+Description: Returns the car of pair. It is an error if pair is not a pair.
+Example:
+  (car '(a b c)) =&gt; a
+  (car '((a) b)) =&gt; (a)</pre>
+</div>
+<div class="entry" id="e31" data-name="car+cdr">
+  <div class="entry-name">car+cdr</div>
+  <pre class="entry-doc">Syntax: (car+cdr p)
+Library: (srfi 1)
+Description: Returns two values: the car and cdr of pair p. Equivalent to (values (car p) (cdr p)).
+Example:
+  (car+cdr '(1 2 3)) =&gt; 1 and (2 3)</pre>
+</div>
+<div class="entry" id="e32" data-name="cdaaar">
+  <div class="entry-name">cdaaar</div>
+  <pre class="entry-doc">Syntax: (cdaaar pair)
+Library: (scheme cxr)
+Description: Equivalent to (cdr (car (car (car pair)))). Accesses the cdr of
+the car of the car of the car of a nested pair structure.
+Example:
+  (cdaaar '((((1 2) 3) 4) 5)) =&gt; (2)</pre>
+</div>
+<div class="entry" id="e33" data-name="cdaadr">
+  <div class="entry-name">cdaadr</div>
+  <pre class="entry-doc">Syntax: (cdaadr pair)
+Library: (scheme cxr)
+Description: Equivalent to (cdr (car (car (cdr pair)))). Accesses the cdr of
+the car of the car of the cdr of a nested pair structure.
+Example:
+  (cdaadr '(1 ((2 3) 4) 5)) =&gt; (3)</pre>
+</div>
+<div class="entry" id="e34" data-name="cdaar">
+  <div class="entry-name">cdaar</div>
+  <pre class="entry-doc">Syntax: (cdaar pair)
+Library: (scheme cxr)
+Description: Equivalent to (cdr (car (car pair))). Accesses the cdr of the
+car of the car of a nested pair structure.
+Example:
+  (cdaar '(((1 2) 3) 4)) =&gt; (2)</pre>
+</div>
+<div class="entry" id="e35" data-name="cdadar">
+  <div class="entry-name">cdadar</div>
+  <pre class="entry-doc">Syntax: (cdadar pair)
+Library: (scheme cxr)
+Description: Equivalent to (cdr (car (cdr (car pair)))). Accesses the cdr of
+the car of the cdr of the car of a nested pair structure.
+Example:
+  (cdadar '((1 (2 3)) 4)) =&gt; (3)</pre>
+</div>
+<div class="entry" id="e36" data-name="cdaddr">
+  <div class="entry-name">cdaddr</div>
+  <pre class="entry-doc">Syntax: (cdaddr pair)
+Library: (scheme cxr)
+Description: Equivalent to (cdr (car (cdr (cdr pair)))). Accesses the cdr of
+the car of the third tail of a nested pair structure.
+Example:
+  (cdaddr '(1 2 (3 4) 5)) =&gt; (4)</pre>
+</div>
+<div class="entry" id="e37" data-name="cdadr">
+  <div class="entry-name">cdadr</div>
+  <pre class="entry-doc">Syntax: (cdadr pair)
+Library: (scheme cxr)
+Description: Equivalent to (cdr (car (cdr pair))). Accesses the cdr of the
+car of the cdr of a nested pair structure.
+Example:
+  (cdadr '(1 (2 3) 4)) =&gt; (3)</pre>
+</div>
+<div class="entry" id="e38" data-name="cdar">
+  <div class="entry-name">cdar</div>
+  <pre class="entry-doc">Syntax: (cdar pair)
+Library: (scheme base)
+Description: Returns the cdr of the car of pair. Equivalent to (cdr (car pair)).
+Example:
+  (cdar '((1 2) 3)) =&gt; (2)</pre>
+</div>
+<div class="entry" id="e39" data-name="cddaar">
+  <div class="entry-name">cddaar</div>
+  <pre class="entry-doc">Syntax: (cddaar pair)
+Library: (scheme cxr)
+Description: Equivalent to (cdr (cdr (car (car pair)))). Accesses the cdr of
+the cdr of the car of the car of a nested pair structure.
+Example:
+  (cddaar '(((1 2 3) 4) 5)) =&gt; (3)</pre>
+</div>
+<div class="entry" id="e40" data-name="cddadr">
+  <div class="entry-name">cddadr</div>
+  <pre class="entry-doc">Syntax: (cddadr pair)
+Library: (scheme cxr)
+Description: Equivalent to (cdr (cdr (car (cdr pair)))). Accesses the cdr of
+the cdr of the car of the cdr of a nested pair structure.
+Example:
+  (cddadr '(1 (2 3 4) 5)) =&gt; (4)</pre>
+</div>
+<div class="entry" id="e41" data-name="cddar">
+  <div class="entry-name">cddar</div>
+  <pre class="entry-doc">Syntax: (cddar pair)
+Library: (scheme cxr)
+Description: Equivalent to (cdr (cdr (car pair))). Accesses the cdr of the
+cdr of the car of a nested pair structure.
+Example:
+  (cddar '((1 2 3) 4)) =&gt; (3)</pre>
+</div>
+<div class="entry" id="e42" data-name="cdddar">
+  <div class="entry-name">cdddar</div>
+  <pre class="entry-doc">Syntax: (cdddar pair)
+Library: (scheme cxr)
+Description: Equivalent to (cdr (cdr (cdr (car pair)))). Accesses the cdr of
+the cdr of the cdr of the car of a nested pair structure.
+Example:
+  (cdddar '((1 2 3 4) 5)) =&gt; (4)</pre>
+</div>
+<div class="entry" id="e43" data-name="cddddr">
+  <div class="entry-name">cddddr</div>
+  <pre class="entry-doc">Syntax: (cddddr pair)
+Library: (scheme cxr)
+Description: Equivalent to (cdr (cdr (cdr (cdr pair)))). Returns the tail of
+a list starting after the fourth element.
+Example:
+  (cddddr '(1 2 3 4 5 6)) =&gt; (5 6)</pre>
+</div>
+<div class="entry" id="e44" data-name="cdddr">
+  <div class="entry-name">cdddr</div>
+  <pre class="entry-doc">Syntax: (cdddr pair)
+Library: (scheme cxr)
+Description: Equivalent to (cdr (cdr (cdr pair))). Returns the tail of a
+list starting after the third element.
+Example:
+  (cdddr '(1 2 3 4 5)) =&gt; (4 5)</pre>
+</div>
+<div class="entry" id="e45" data-name="cddr">
+  <div class="entry-name">cddr</div>
+  <pre class="entry-doc">Syntax: (cddr pair)
+Library: (scheme base)
+Description: Returns the cdr of the cdr of pair. Equivalent to (cdr (cdr pair)).
+Example:
+  (cddr '(1 2 3)) =&gt; (3)</pre>
+</div>
+<div class="entry" id="e46" data-name="cdr">
+  <div class="entry-name">cdr</div>
+  <pre class="entry-doc">Syntax: (cdr pair)
+Library: (scheme base)
+Description: Returns the cdr of pair. It is an error if pair is not a pair.
+Example:
+  (cdr '((a) b c)) =&gt; (b c)
+  (cdr '(1 . 2)) =&gt; 2</pre>
+</div>
+<div class="entry" id="e47" data-name="circular-list">
+  <div class="entry-name">circular-list</div>
+  <pre class="entry-doc">Syntax: (circular-list elt1 ...)
+Library: (srfi 1)
+Description: Creates a circular list from the given arguments by setting the cdr of the last
+pair to point back to the beginning.
+Example:
+  (take (circular-list 1 2 3) 7) =&gt; (1 2 3 1 2 3 1)</pre>
+</div>
+<div class="entry" id="e48" data-name="circular-list?">
+  <div class="entry-name">circular-list?</div>
+  <pre class="entry-doc">Syntax: (circular-list? x)
+Library: (srfi 1)
+Description: Returns #t if x is a circular list (one that contains a cycle).
+Uses a fast/slow pointer technique to detect cycles.
+Example:
+  (circular-list? (circular-list 1 2 3)) =&gt; #t
+  (circular-list? '(1 2 3)) =&gt; #f</pre>
+</div>
+<div class="entry" id="e49" data-name="concatenate">
+  <div class="entry-name">concatenate</div>
+  <pre class="entry-doc">Syntax: (concatenate lsts)
+Library: (srfi 1)
+Description: Appends all lists in lsts together into a single list. Equivalent to (apply append lsts).
+Example:
+  (concatenate '((1 2) (3 4) (5))) =&gt; (1 2 3 4 5)
+  (concatenate '()) =&gt; ()</pre>
+</div>
+<div class="entry" id="e50" data-name="concatenate!">
+  <div class="entry-name">concatenate!</div>
+  <pre class="entry-doc">Syntax: (concatenate! lsts)
+Library: (srfi 1)
+Description: Destructive version of concatenate.
+Example:
+  (concatenate! (list (list 1 2) (list 3 4))) =&gt; (1 2 3 4)</pre>
+</div>
+<div class="entry" id="e51" data-name="cons">
+  <div class="entry-name">cons</div>
+  <pre class="entry-doc">Syntax: (cons obj1 obj2)
+Library: (scheme base)
+Description: Returns a newly allocated pair whose car is obj1 and whose cdr is obj2.
+Example:
+  (cons 'a '()) =&gt; (a)
+  (cons 'a '(b c)) =&gt; (a b c)
+  (cons 1 2) =&gt; (1 . 2)</pre>
+</div>
+<div class="entry" id="e52" data-name="cons*">
+  <div class="entry-name">cons*</div>
+  <pre class="entry-doc">Syntax: (cons* elt1 ... obj)
+Library: (srfi 1)
+Description: Like list* -- constructs a list from the given arguments, using the last argument as
+the tail. With one argument, returns that argument.
+Example:
+  (cons* 1 2 3 '(4 5)) =&gt; (1 2 3 4 5)
+  (cons* 1) =&gt; 1</pre>
+</div>
+<div class="entry" id="e53" data-name="count">
+  <div class="entry-name">count</div>
+  <pre class="entry-doc">Syntax: (count pred lst1 ...)
+Library: (srfi 1)
+Description: Counts the number of elements in lst1 (and parallel elements in other lists) for which
+pred returns true. With multiple lists, pred is applied to parallel elements.
+Example:
+  (count odd? '(1 2 3 4 5)) =&gt; 3
+  (count &lt; '(1 2 3) '(2 1 4)) =&gt; 2</pre>
+</div>
+<div class="entry" id="e54" data-name="delete">
+  <div class="entry-name">delete</div>
+  <pre class="entry-doc">Syntax: (delete x lst [=])
+Library: (srfi 1)
+Description: Returns lst with all elements equal to x removed. Uses equal? by default;
+an optional = argument specifies the equality predicate.
+Example:
+  (delete 3 '(1 2 3 4 3)) =&gt; (1 2 4)
+  (delete "b" '("a" "b" "c") string=?) =&gt; ("a" "c")</pre>
+</div>
+<div class="entry" id="e55" data-name="delete!">
+  <div class="entry-name">delete!</div>
+  <pre class="entry-doc">Syntax: (delete! x lst [=])
+Library: (srfi 1)
+Description: Destructive version of delete. May modify lst.
+Example:
+  (delete! 3 (list 1 2 3 4 3)) =&gt; (1 2 4)</pre>
+</div>
+<div class="entry" id="e56" data-name="delete-duplicates">
+  <div class="entry-name">delete-duplicates</div>
+  <pre class="entry-doc">Syntax: (delete-duplicates lst [=])
+Library: (srfi 1)
+Description: Returns lst with duplicate elements removed, preserving the first occurrence of each.
+Uses equal? by default; an optional = argument specifies the equality predicate.
+Example:
+  (delete-duplicates '(1 2 1 3 2 4)) =&gt; (1 2 3 4)</pre>
+</div>
+<div class="entry" id="e57" data-name="delete-duplicates!">
+  <div class="entry-name">delete-duplicates!</div>
+  <pre class="entry-doc">Syntax: (delete-duplicates! lst [=])
+Library: (srfi 1)
+Description: Destructive version of delete-duplicates. May modify lst.
+Example:
+  (delete-duplicates! (list 1 2 1 3 2 4)) =&gt; (1 2 3 4)</pre>
+</div>
+<div class="entry" id="e58" data-name="dotted-list?">
+  <div class="entry-name">dotted-list?</div>
+  <pre class="entry-doc">Syntax: (dotted-list? x)
+Library: (srfi 1)
+Description: Returns #t if x is a dotted list (a finite list ending with a non-null, non-pair value).
+A dotted list is one that is neither proper nor circular.
+Example:
+  (dotted-list? '(1 2 . 3)) =&gt; #t
+  (dotted-list? '(1 2 3)) =&gt; #f
+  (dotted-list? 5) =&gt; #t</pre>
+</div>
+<div class="entry" id="e59" data-name="drop">
+  <div class="entry-name">drop</div>
+  <pre class="entry-doc">Syntax: (drop lst n)
+Library: (srfi 1)
+Description: Returns all but the first n elements of lst.
+Example:
+  (drop '(1 2 3 4 5) 2) =&gt; (3 4 5)
+  (drop '(1 2 3) 3) =&gt; ()</pre>
+</div>
+<div class="entry" id="e60" data-name="drop-right">
+  <div class="entry-name">drop-right</div>
+  <pre class="entry-doc">Syntax: (drop-right lst n)
+Library: (srfi 1)
+Description: Returns all but the last n elements of lst.
+Example:
+  (drop-right '(1 2 3 4 5) 2) =&gt; (1 2 3)
+  (drop-right '(1 2 3) 3) =&gt; ()</pre>
+</div>
+<div class="entry" id="e61" data-name="drop-right!">
+  <div class="entry-name">drop-right!</div>
+  <pre class="entry-doc">Syntax: (drop-right! lst n)
+Library: (srfi 1)
+Description: Destructive version of drop-right. May modify lst to return all but the last n elements.
+Example:
+  (drop-right! (list 1 2 3 4 5) 2) =&gt; (1 2 3)</pre>
+</div>
+<div class="entry" id="e62" data-name="drop-while">
+  <div class="entry-name">drop-while</div>
+  <pre class="entry-doc">Syntax: (drop-while pred lst)
+Library: (srfi 1)
+Description: Drops leading elements of lst that satisfy pred, returning the remainder.
+Example:
+  (drop-while even? '(2 4 5 6)) =&gt; (5 6)
+  (drop-while even? '(2 4 6)) =&gt; ()</pre>
+</div>
+<div class="entry" id="e63" data-name="eighth">
+  <div class="entry-name">eighth</div>
+  <pre class="entry-doc">Syntax: (eighth lst)
+Library: (srfi 1)
+Description: Returns the eighth element of lst.
+Example:
+  (eighth '(a b c d e f g h)) =&gt; h</pre>
+</div>
+<div class="entry" id="e64" data-name="every">
+  <div class="entry-name">every</div>
+  <pre class="entry-doc">Syntax: (every pred lst1 ...)
+Library: (srfi 1)
+Description: Applies pred to successive elements of the lists. Returns #t (or the last pred result)
+if pred returns true for all elements, or #f as soon as pred returns #f.
+Example:
+  (every odd? '(1 3 5)) =&gt; #t
+  (every odd? '(1 2 5)) =&gt; #f
+  (every &lt; '(1 2 3) '(2 3 4)) =&gt; #t</pre>
+</div>
+<div class="entry" id="e65" data-name="fifth">
+  <div class="entry-name">fifth</div>
+  <pre class="entry-doc">Syntax: (fifth lst)
+Library: (srfi 1)
+Description: Returns the fifth element of lst.
+Example:
+  (fifth '(a b c d e)) =&gt; e</pre>
+</div>
+<div class="entry" id="e66" data-name="filter">
+  <div class="entry-name">filter</div>
+  <pre class="entry-doc">Syntax: (filter pred lst)
+Library: (srfi 1)
+Description: Returns a list of all elements in lst that satisfy pred, in order.
+Example:
+  (filter odd? '(1 2 3 4 5)) =&gt; (1 3 5)</pre>
+</div>
+<div class="entry" id="e67" data-name="filter!">
+  <div class="entry-name">filter!</div>
+  <pre class="entry-doc">Syntax: (filter! pred lst)
+Library: (srfi 1)
+Description: Destructive version of filter. Modifies lst in place to retain only elements satisfying pred.
+Example:
+  (filter! odd? (list 1 2 3 4 5)) =&gt; (1 3 5)</pre>
+</div>
+<div class="entry" id="e68" data-name="filter-map">
+  <div class="entry-name">filter-map</div>
+  <pre class="entry-doc">Syntax: (filter-map f lst1 ...)
+Library: (srfi 1)
+Description: Maps f over the list(s) and returns a list of all non-#f results.
+Example:
+  (filter-map (lambda (x) (and (odd? x) (* x x))) '(1 2 3 4 5)) =&gt; (1 9 25)</pre>
+</div>
+<div class="entry" id="e69" data-name="find">
+  <div class="entry-name">find</div>
+  <pre class="entry-doc">Syntax: (find pred lst)
+Library: (srfi 1)
+Description: Returns the first element of lst that satisfies pred, or #f if no such element exists.
+Example:
+  (find even? '(1 3 4 5)) =&gt; 4
+  (find even? '(1 3 5)) =&gt; #f</pre>
+</div>
+<div class="entry" id="e70" data-name="find-tail">
+  <div class="entry-name">find-tail</div>
+  <pre class="entry-doc">Syntax: (find-tail pred lst)
+Library: (srfi 1)
+Description: Returns the first pair in lst whose car satisfies pred, or #f if no such pair exists.
+Example:
+  (find-tail even? '(1 3 4 5)) =&gt; (4 5)
+  (find-tail even? '(1 3 5)) =&gt; #f</pre>
+</div>
+<div class="entry" id="e71" data-name="first">
+  <div class="entry-name">first</div>
+  <pre class="entry-doc">Syntax: (first lst)
+Library: (srfi 1)
+Description: Returns the first element of list lst. Equivalent to car.
+Example:
+  (first '(a b c)) =&gt; a</pre>
+</div>
+<div class="entry" id="e72" data-name="fold">
+  <div class="entry-name">fold</div>
+  <pre class="entry-doc">Syntax: (fold kons knil lst1 ...)
+Library: (srfi 1)
+Description: Left-associative fold. Applies kons to each element and the accumulated value,
+processing from left to right. kons receives (e1 ... acc) where acc starts as knil.
+Example:
+  (fold + 0 '(1 2 3)) =&gt; 6
+  (fold cons '() '(1 2 3)) =&gt; (3 2 1)</pre>
+</div>
+<div class="entry" id="e73" data-name="fold-right">
+  <div class="entry-name">fold-right</div>
+  <pre class="entry-doc">Syntax: (fold-right kons knil lst1 ...)
+Library: (srfi 1)
+Description: Right-associative fold. Applies kons to each element and the accumulated result,
+processing lists from right to left. kons receives (e1 ... acc).
+Example:
+  (fold-right cons '() '(1 2 3)) =&gt; (1 2 3)
+  (fold-right + 0 '(1 2 3)) =&gt; 6</pre>
+</div>
+<div class="entry" id="e74" data-name="for-each">
+  <div class="entry-name">for-each</div>
+  <pre class="entry-doc">Syntax: (for-each proc list1 list2 ...)
+Library: (scheme base)
+Description: The arguments to for-each are like the arguments to map, but
+  for-each calls proc for its side effects rather than for its values. Unlike
+  map, for-each is guaranteed to call proc on the elements of the lists in
+  order from the first element(s) to the last. The return values of for-each
+  are unspecified.
+Example:
+  (for-each display '(a b c))    ; displays abc
+  (for-each + '(1 2 3) '(4 5 6)) ; calls +, side effects only</pre>
+</div>
+<div class="entry" id="e75" data-name="fourth">
+  <div class="entry-name">fourth</div>
+  <pre class="entry-doc">Syntax: (fourth lst)
+Library: (srfi 1)
+Description: Returns the fourth element of lst.
+Example:
+  (fourth '(a b c d)) =&gt; d</pre>
+</div>
+<div class="entry" id="e76" data-name="iota">
+  <div class="entry-name">iota</div>
+  <pre class="entry-doc">Syntax: (iota count [start [step]])
+Library: (srfi 1)
+Description: Returns a list of count numbers starting at start (default 0) with increment step (default 1).
+Example:
+  (iota 5) =&gt; (0 1 2 3 4)
+  (iota 5 1) =&gt; (1 2 3 4 5)
+  (iota 5 0 2) =&gt; (0 2 4 6 8)</pre>
+</div>
+<div class="entry" id="e77" data-name="last">
+  <div class="entry-name">last</div>
+  <pre class="entry-doc">Syntax: (last lst)
+Library: (srfi 1)
+Description: Returns the last element of lst. lst must be a non-empty proper list.
+Example:
+  (last '(1 2 3)) =&gt; 3</pre>
+</div>
+<div class="entry" id="e78" data-name="last-pair">
+  <div class="entry-name">last-pair</div>
+  <pre class="entry-doc">Syntax: (last-pair lst)
+Library: (srfi 1)
+Description: Returns the last pair (the final cons cell) of lst. lst must be a non-empty list.
+Example:
+  (last-pair '(1 2 3)) =&gt; (3)
+  (last-pair '(1 2 . 3)) =&gt; (2 . 3)</pre>
+</div>
+<div class="entry" id="e79" data-name="length">
+  <div class="entry-name">length</div>
+  <pre class="entry-doc">Syntax: (length list)
+Library: (scheme base)
+Description: Returns the number of elements in the proper list. It is an error if the list is not a proper list.
+Example:
+  (length '(a b c)) =&gt; 3
+  (length '()) =&gt; 0</pre>
+</div>
+<div class="entry" id="e80" data-name="length+">
+  <div class="entry-name">length+</div>
+  <pre class="entry-doc">Syntax: (length+ lst)
+Library: (srfi 1)
+Description: Returns the length of lst if it is a proper or dotted list, or #f if lst is circular.
+Example:
+  (length+ '(1 2 3)) =&gt; 3
+  (length+ '(1 2 . 3)) =&gt; 2
+  (length+ (circular-list 1 2)) =&gt; #f</pre>
+</div>
+<div class="entry" id="e81" data-name="list">
+  <div class="entry-name">list</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e82" data-name="list-copy">
+  <div class="entry-name">list-copy</div>
+  <pre class="entry-doc">Syntax: (list-copy obj)
+Library: (scheme base)
+Description: Returns a newly allocated copy of the given list. Only the pairs
+  themselves are copied; the cars of the result are the same (in the sense of
+  eqv?) as the cars of list. If the last cdr of the list is not the empty
+  list, the result is an improper list with the same final cdr as the
+  argument.
+Example:
+  (list-copy '(a b c)) =&gt; (a b c)
+  (list-copy '())      =&gt; ()
+  (list-copy '(a b . c)) =&gt; (a b . c)</pre>
+</div>
+<div class="entry" id="e83" data-name="list-copy">
+  <div class="entry-name">list-copy</div>
+  <pre class="entry-doc">Syntax: (list-copy obj)
+Library: (scheme base)
+Description: Returns a newly allocated copy of the given list. Only the pairs
+  themselves are copied; the cars of the result are the same (in the sense of
+  eqv?) as the cars of list. If the last cdr of the list is not the empty
+  list, the result is an improper list with the same final cdr as the
+  argument.
+Example:
+  (list-copy '(a b c)) =&gt; (a b c)
+  (list-copy '())      =&gt; ()
+  (list-copy '(a b . c)) =&gt; (a b . c)</pre>
+</div>
+<div class="entry" id="e84" data-name="list-index">
+  <div class="entry-name">list-index</div>
+  <pre class="entry-doc">Syntax: (list-index pred lst1 ...)
+Library: (srfi 1)
+Description: Returns the 0-based index of the first element in lst1 (and parallel elements in other lists)
+for which pred returns true, or #f if no such element exists.
+Example:
+  (list-index even? '(1 3 4 5)) =&gt; 2
+  (list-index &lt; '(1 2 3) '(2 1 4)) =&gt; 0</pre>
+</div>
+<div class="entry" id="e85" data-name="list-ref">
+  <div class="entry-name">list-ref</div>
+  <pre class="entry-doc">Syntax: (list-ref list k)
+Library: (scheme base)
+Description: Returns the k-th element (zero-indexed) of list. It is an error if k is out of range.
+Example:
+  (list-ref '(a b c) 0) =&gt; a
+  (list-ref '(a b c) 2) =&gt; c</pre>
+</div>
+<div class="entry" id="e86" data-name="list-tabulate">
+  <div class="entry-name">list-tabulate</div>
+  <pre class="entry-doc">Syntax: (list-tabulate n f)
+Library: (srfi 1)
+Description: Creates a list of n elements by applying f to each index 0, 1, ..., n-1 in order.
+Example:
+  (list-tabulate 5 (lambda (i) i)) =&gt; (0 1 2 3 4)
+  (list-tabulate 4 (lambda (i) (* i i))) =&gt; (0 1 4 9)</pre>
+</div>
+<div class="entry" id="e87" data-name="list=">
+  <div class="entry-name">list=</div>
+  <pre class="entry-doc">Syntax: (list= = lst1 ...)
+Library: (srfi 1)
+Description: Returns #t if all lists are equal element-by-element using the = predicate.
+Lists must have the same length. Returns #t if zero or one list is given.
+Example:
+  (list= eq? '(a b c) '(a b c)) =&gt; #t
+  (list= = '(1 2 3) '(1 2 4)) =&gt; #f</pre>
+</div>
+<div class="entry" id="e88" data-name="lset-adjoin">
+  <div class="entry-name">lset-adjoin</div>
+  <pre class="entry-doc">Syntax: (lset-adjoin = lst elt ...)
+Library: (srfi 1)
+Description: Adds each elt to lst if it is not already present (tested with =).
+Returns the augmented list.
+Example:
+  (lset-adjoin eq? '(a b c) 'd 'a) =&gt; (d a b c)</pre>
+</div>
+<div class="entry" id="e89" data-name="lset-diff+intersection">
+  <div class="entry-name">lset-diff+intersection</div>
+  <pre class="entry-doc">Syntax: (lset-diff+intersection = lst1 lst2 ...)
+Library: (srfi 1)
+Description: Returns two values: the set difference of lst1 minus the other sets, and the
+intersection of lst1 with the union of the other sets (tested with =).
+Example:
+  (lset-diff+intersection eq? '(a b c d) '(b c)) =&gt; (a d) and (b c)</pre>
+</div>
+<div class="entry" id="e90" data-name="lset-diff+intersection!">
+  <div class="entry-name">lset-diff+intersection!</div>
+  <pre class="entry-doc">Syntax: (lset-diff+intersection! = lst1 lst2 ...)
+Library: (srfi 1)
+Description: Destructive version of lset-diff+intersection. May modify lis1.
+Example:
+  (lset-diff+intersection! eq? (list 'a 'b 'c 'd) '(b c)) =&gt; (a d) and (b c)</pre>
+</div>
+<div class="entry" id="e91" data-name="lset-difference">
+  <div class="entry-name">lset-difference</div>
+  <pre class="entry-doc">Syntax: (lset-difference = lst1 lst2 ...)
+Library: (srfi 1)
+Description: Returns the difference of the sets: elements of lst1 that do not appear in any
+of the other lists (tested with =).
+Example:
+  (lset-difference eq? '(a b c d) '(b c)) =&gt; (a d)</pre>
+</div>
+<div class="entry" id="e92" data-name="lset-difference!">
+  <div class="entry-name">lset-difference!</div>
+  <pre class="entry-doc">Syntax: (lset-difference! = lst1 lst2 ...)
+Library: (srfi 1)
+Description: Destructive version of lset-difference. May modify lis1.
+Example:
+  (lset-difference! eq? (list 'a 'b 'c 'd) '(b c)) =&gt; (a d)</pre>
+</div>
+<div class="entry" id="e93" data-name="lset-intersection">
+  <div class="entry-name">lset-intersection</div>
+  <pre class="entry-doc">Syntax: (lset-intersection = lst1 lst2 ...)
+Library: (srfi 1)
+Description: Returns the intersection of the given sets: elements of lst1 that appear in all
+other lists (tested with =).
+Example:
+  (lset-intersection eq? '(a b c d) '(b c d e) '(c d e f)) =&gt; (c d)</pre>
+</div>
+<div class="entry" id="e94" data-name="lset-intersection!">
+  <div class="entry-name">lset-intersection!</div>
+  <pre class="entry-doc">Syntax: (lset-intersection! = lst1 lst2 ...)
+Library: (srfi 1)
+Description: Destructive version of lset-intersection. May modify lis1.
+Example:
+  (lset-intersection! eq? (list 'a 'b 'c) '(b c d)) =&gt; (b c)</pre>
+</div>
+<div class="entry" id="e95" data-name="lset-union">
+  <div class="entry-name">lset-union</div>
+  <pre class="entry-doc">Syntax: (lset-union = lst ...)
+Library: (srfi 1)
+Description: Returns the union of the given sets (lists), using = to test element equality.
+The result contains all elements that appear in at least one of the lists, without duplicates.
+Example:
+  (lset-union eq? '(a b c) '(b c d)) =&gt; (d a b c)</pre>
+</div>
+<div class="entry" id="e96" data-name="lset-union!">
+  <div class="entry-name">lset-union!</div>
+  <pre class="entry-doc">Syntax: (lset-union! = lst ...)
+Library: (srfi 1)
+Description: Destructive version of lset-union. May modify the input lists.
+Example:
+  (lset-union! eq? (list 'a 'b) (list 'b 'c)) =&gt; (c a b)</pre>
+</div>
+<div class="entry" id="e97" data-name="lset-xor">
+  <div class="entry-name">lset-xor</div>
+  <pre class="entry-doc">Syntax: (lset-xor = lst ...)
+Library: (srfi 1)
+Description: Returns the symmetric difference of the given sets: elements that appear in an odd
+number of the lists (tested with =).
+Example:
+  (lset-xor eq? '(a b c d) '(b c d e)) =&gt; (e a)</pre>
+</div>
+<div class="entry" id="e98" data-name="lset-xor!">
+  <div class="entry-name">lset-xor!</div>
+  <pre class="entry-doc">Syntax: (lset-xor! = lst ...)
+Library: (srfi 1)
+Description: Destructive version of lset-xor. May modify the input lists.
+Example:
+  (lset-xor! eq? (list 'a 'b 'c) (list 'b 'c 'd)) =&gt; (d a)</pre>
+</div>
+<div class="entry" id="e99" data-name="lset&lt;=">
+  <div class="entry-name">lset&lt;=</div>
+  <pre class="entry-doc">Syntax: (lset&lt;= = lst ...)
+Library: (srfi 1)
+Description: Subset test. Returns #t if every element of each list is contained in the next list
+(tested with =). In other words, s1 is a subset of s2 is a subset of ...
+Example:
+  (lset&lt;= eq? '(a b) '(a b c)) =&gt; #t
+  (lset&lt;= eq? '(a b c) '(a b)) =&gt; #f</pre>
+</div>
+<div class="entry" id="e100" data-name="lset=">
+  <div class="entry-name">lset=</div>
+  <pre class="entry-doc">Syntax: (lset= = lst ...)
+Library: (srfi 1)
+Description: Returns #t if all given sets contain the same elements (tested with =).
+Each pair of adjacent sets must be mutual subsets.
+Example:
+  (lset= eq? '(a b c) '(c b a)) =&gt; #t
+  (lset= eq? '(a b c) '(a b)) =&gt; #f</pre>
+</div>
+<div class="entry" id="e101" data-name="make-list">
+  <div class="entry-name">make-list</div>
+  <pre class="entry-doc">Syntax: (make-list k)
+       (make-list k fill)
+Library: (scheme base)
+Description: Returns a newly allocated list of k elements. If a second
+  argument is given, then each element is initialized to fill. Otherwise
+  the initial contents of each element is unspecified (defaults to #f).
+Example:
+  (make-list 3)      =&gt; (#f #f #f)
+  (make-list 3 'x)   =&gt; (x x x)
+  (make-list 0)      =&gt; ()</pre>
+</div>
+<div class="entry" id="e102" data-name="make-list">
+  <div class="entry-name">make-list</div>
+  <pre class="entry-doc">Syntax: (make-list k)
+       (make-list k fill)
+Library: (scheme base)
+Description: Returns a newly allocated list of k elements. If a second
+  argument is given, then each element is initialized to fill. Otherwise
+  the initial contents of each element is unspecified (defaults to #f).
+Example:
+  (make-list 3)      =&gt; (#f #f #f)
+  (make-list 3 'x)   =&gt; (x x x)
+  (make-list 0)      =&gt; ()</pre>
+</div>
+<div class="entry" id="e103" data-name="map">
+  <div class="entry-name">map</div>
+  <pre class="entry-doc">Syntax: (map proc list1 list2 ...)
+Library: (scheme base)
+Description: The lists must be lists, and proc must be a procedure taking as
+  many arguments as there are lists and returning a single value. If more than
+  one list is given and not all lists have the same length, map terminates when
+  the shortest list runs out. Map applies proc element-wise to the elements of
+  the lists and returns a list of the results, in order.
+Example:
+  (map cadr '((a b) (d e) (g h))) =&gt; (b e h)
+  (map + '(1 2 3) '(4 5 6))      =&gt; (5 7 9)</pre>
+</div>
+<div class="entry" id="e104" data-name="map!">
+  <div class="entry-name">map!</div>
+  <pre class="entry-doc">Syntax: (map! f lst1 ...)
+Library: (srfi 1)
+Description: Destructive map. Applies f to each element of lst (and parallel elements of other lists)
+and stores the result back in lst's pairs in place.
+Example:
+  (let ((l (list 1 2 3))) (map! (lambda (x) (* x x)) l) l) =&gt; (1 4 9)</pre>
+</div>
+<div class="entry" id="e105" data-name="map-in-order">
+  <div class="entry-name">map-in-order</div>
+  <pre class="entry-doc">Syntax: (map-in-order f lst1 ...)
+Library: (srfi 1)
+Description: Like map, but guarantees left-to-right evaluation order.
+Example:
+  (map-in-order (lambda (x) (* x x)) '(1 2 3)) =&gt; (1 4 9)</pre>
+</div>
+<div class="entry" id="e106" data-name="member">
+  <div class="entry-name">member</div>
+  <pre class="entry-doc">Syntax: (member obj list)
+       (member obj list compare)
+Library: (scheme base)
+Description: Returns the first sublist of list whose car is obj, where the
+  sublists of list are the non-empty lists returned by (list-tail list k) for
+  k less than the length of list. If obj does not occur in list, #f is
+  returned. The optional compare argument specifies the equality predicate to
+  use; it defaults to equal?.
+Example:
+  (member 2 '(1 2 3))   =&gt; (2 3)
+  (member 'd '(a b c))  =&gt; #f
+  (member 2.0 '(1 2 3) =) =&gt; (2 3)</pre>
+</div>
+<div class="entry" id="e107" data-name="memq">
+  <div class="entry-name">memq</div>
+  <pre class="entry-doc">Syntax: (memq obj list)
+Library: (scheme base)
+Description: Returns the first sublist of list whose car is eq? to obj, or #f if no such sublist exists.
+Example:
+  (memq 'b '(a b c)) =&gt; (b c)
+  (memq 'z '(a b c)) =&gt; #f</pre>
+</div>
+<div class="entry" id="e108" data-name="memv">
+  <div class="entry-name">memv</div>
+  <pre class="entry-doc">Syntax: (memv obj list)
+Library: (scheme base)
+Description: Returns the first sublist of list whose car is eqv? to obj, or #f if no such sublist exists.
+Example:
+  (memv 2 '(1 2 3)) =&gt; (2 3)
+  (memv 5 '(1 2 3)) =&gt; #f</pre>
+</div>
+<div class="entry" id="e109" data-name="ninth">
+  <div class="entry-name">ninth</div>
+  <pre class="entry-doc">Syntax: (ninth lst)
+Library: (srfi 1)
+Description: Returns the ninth element of lst.
+Example:
+  (ninth '(a b c d e f g h i)) =&gt; i</pre>
+</div>
+<div class="entry" id="e110" data-name="not-pair?">
+  <div class="entry-name">not-pair?</div>
+  <pre class="entry-doc">Syntax: (not-pair? x)
+Library: (srfi 1)
+Description: Returns #t if x is not a pair, #f if it is. Complement of pair?.
+Example:
+  (not-pair? '()) =&gt; #t
+  (not-pair? '(1 2)) =&gt; #f
+  (not-pair? 5) =&gt; #t</pre>
+</div>
+<div class="entry" id="e111" data-name="null-list?">
+  <div class="entry-name">null-list?</div>
+  <pre class="entry-doc">Syntax: (null-list? lst)
+Library: (srfi 1)
+Description: Returns #t if lst is the empty list, #f if it is a pair.
+Signals an error if lst is neither null nor a pair.
+Example:
+  (null-list? '()) =&gt; #t
+  (null-list? '(1 2)) =&gt; #f</pre>
+</div>
+<div class="entry" id="e112" data-name="null?">
+  <div class="entry-name">null?</div>
+  <pre class="entry-doc">Syntax: (null? obj)
+Library: (scheme base)
+Description: Returns #t if obj is the empty list '(), otherwise returns #f.
+Example:
+  (null? '()) =&gt; #t
+  (null? '(1 2)) =&gt; #f</pre>
+</div>
+<div class="entry" id="e113" data-name="pair-fold">
+  <div class="entry-name">pair-fold</div>
+  <pre class="entry-doc">Syntax: (pair-fold f knil lst1 ...)
+Library: (srfi 1)
+Description: Folds f over the successive tails (pairs) of lst rather than its elements.
+f receives the current tail and the accumulator; processes left to right.
+Example:
+  (pair-fold (lambda (pair acc) (cons (car pair) acc)) '() '(1 2 3)) =&gt; (3 2 1)</pre>
+</div>
+<div class="entry" id="e114" data-name="pair-fold-right">
+  <div class="entry-name">pair-fold-right</div>
+  <pre class="entry-doc">Syntax: (pair-fold-right f knil lst1 ...)
+Library: (srfi 1)
+Description: Right-associative fold over successive tails (pairs) of lst.
+f receives the current tail and the accumulated result; processes right to left.
+Example:
+  (pair-fold-right cons '() '(1 2 3)) =&gt; ((1 2 3) (2 3) (3))</pre>
+</div>
+<div class="entry" id="e115" data-name="pair-for-each">
+  <div class="entry-name">pair-for-each</div>
+  <pre class="entry-doc">Syntax: (pair-for-each proc lst1 ...)
+Library: (srfi 1)
+Description: Like for-each, but proc is called on successive tails (pairs) of the list(s) rather
+than on individual elements.
+Example:
+  (pair-for-each (lambda (p) (display (car p))) '(1 2 3)) ; displays 1 2 3</pre>
+</div>
+<div class="entry" id="e116" data-name="pair?">
+  <div class="entry-name">pair?</div>
+  <pre class="entry-doc">Syntax: (pair? obj)
+Library: (scheme base)
+Description: Returns #t if obj is a pair, otherwise returns #f.
+Example:
+  (pair? '(a b c)) =&gt; #t
+  (pair? '()) =&gt; #f
+  (pair? '(a . b)) =&gt; #t
+  (pair? 7) =&gt; #f</pre>
+</div>
+<div class="entry" id="e117" data-name="partition">
+  <div class="entry-name">partition</div>
+  <pre class="entry-doc">Syntax: (partition pred lst)
+Library: (srfi 1)
+Description: Partitions lst into two lists: elements that satisfy pred and elements that do not.
+Returns two values: the list of matching elements and the list of non-matching elements, both in order.
+Example:
+  (partition odd? '(1 2 3 4 5)) =&gt; (1 3 5) and (2 4)</pre>
+</div>
+<div class="entry" id="e118" data-name="partition!">
+  <div class="entry-name">partition!</div>
+  <pre class="entry-doc">Syntax: (partition! pred lst)
+Library: (srfi 1)
+Description: Destructive version of partition. Splits lst in place into two lists: elements satisfying
+pred and elements not satisfying pred. Returns two values.
+Example:
+  (partition! odd? (list 1 2 3 4 5)) =&gt; (1 3 5) and (2 4)</pre>
+</div>
+<div class="entry" id="e119" data-name="proper-list?">
+  <div class="entry-name">proper-list?</div>
+  <pre class="entry-doc">Syntax: (proper-list? x)
+Library: (srfi 1)
+Description: Returns #t if x is a proper list (a finite list ending with the empty list).
+Uses a fast/slow pointer technique to detect cycles.
+Example:
+  (proper-list? '(1 2 3)) =&gt; #t
+  (proper-list? '(1 2 . 3)) =&gt; #f
+  (proper-list? '()) =&gt; #t</pre>
+</div>
+<div class="entry" id="e120" data-name="reduce">
+  <div class="entry-name">reduce</div>
+  <pre class="entry-doc">Syntax: (reduce f ridentity lst)
+Library: (srfi 1)
+Description: Like fold, but uses the first element of lst as the initial accumulator when lst is non-empty.
+If lst is empty, returns ridentity.
+Example:
+  (reduce + 0 '(1 2 3)) =&gt; 6
+  (reduce max 0 '(3 1 4 1 5)) =&gt; 5
+  (reduce + 0 '()) =&gt; 0</pre>
+</div>
+<div class="entry" id="e121" data-name="reduce-right">
+  <div class="entry-name">reduce-right</div>
+  <pre class="entry-doc">Syntax: (reduce-right f ridentity lst)
+Library: (srfi 1)
+Description: Like fold-right, but uses the last element of lst as the initial accumulator when lst is non-empty.
+If lst is empty, returns ridentity.
+Example:
+  (reduce-right + 0 '(1 2 3)) =&gt; 6
+  (reduce-right cons '() '(1 2 3)) =&gt; (1 2 3)
+  (reduce-right + 0 '()) =&gt; 0</pre>
+</div>
+<div class="entry" id="e122" data-name="remove">
+  <div class="entry-name">remove</div>
+  <pre class="entry-doc">Syntax: (remove pred lst)
+Library: (srfi 1)
+Description: Returns a list of all elements in lst that do not satisfy pred (complement of filter).
+Example:
+  (remove odd? '(1 2 3 4 5)) =&gt; (2 4)</pre>
+</div>
+<div class="entry" id="e123" data-name="remove!">
+  <div class="entry-name">remove!</div>
+  <pre class="entry-doc">Syntax: (remove! pred lst)
+Library: (srfi 1)
+Description: Destructive version of remove. Modifies lst in place to remove all elements satisfying pred.
+Example:
+  (remove! odd? (list 1 2 3 4 5)) =&gt; (2 4)</pre>
+</div>
+<div class="entry" id="e124" data-name="reverse">
+  <div class="entry-name">reverse</div>
+  <pre class="entry-doc">Syntax: (reverse list)
+Library: (scheme base)
+Description: Returns a newly allocated list containing the elements of list in reverse order.
+Example:
+  (reverse '(1 2 3)) =&gt; (3 2 1)
+  (reverse '()) =&gt; ()</pre>
+</div>
+<div class="entry" id="e125" data-name="reverse!">
+  <div class="entry-name">reverse!</div>
+  <pre class="entry-doc">Syntax: (reverse! lst)
+Library: (srfi 1)
+Description: Destructively reverses lst in place by modifying the cdr pointers. Returns the reversed list.
+Example:
+  (reverse! (list 1 2 3)) =&gt; (3 2 1)</pre>
+</div>
+<div class="entry" id="e126" data-name="second">
+  <div class="entry-name">second</div>
+  <pre class="entry-doc">Syntax: (second list)
+Library: (srfi 1)
+Description: Returns the second element of a list. Equivalent to (cadr list).
+Example:
+  (second '(a b c)) =&gt; b
+  (second '(1 2 3)) =&gt; 2</pre>
+</div>
+<div class="entry" id="e127" data-name="set-car!">
+  <div class="entry-name">set-car!</div>
+  <pre class="entry-doc">Syntax: (set-car! pair obj)
+Library: (scheme base)
+Description: Stores obj in the car field of pair. It is an error if pair is not a pair.
+Example:
+  (define p (list 1 2 3))
+  (set-car! p 'a)
+  p =&gt; (a 2 3)</pre>
+</div>
+<div class="entry" id="e128" data-name="set-cdr!">
+  <div class="entry-name">set-cdr!</div>
+  <pre class="entry-doc">Syntax: (set-cdr! pair obj)
+Library: (scheme base)
+Description: Stores obj in the cdr field of pair. It is an error if pair is not a pair.
+Example:
+  (define p (list 1 2 3))
+  (set-cdr! p '(b c))
+  p =&gt; (1 b c)</pre>
+</div>
+<div class="entry" id="e129" data-name="seventh">
+  <div class="entry-name">seventh</div>
+  <pre class="entry-doc">Syntax: (seventh lst)
+Library: (srfi 1)
+Description: Returns the seventh element of lst.
+Example:
+  (seventh '(a b c d e f g)) =&gt; g</pre>
+</div>
+<div class="entry" id="e130" data-name="sixth">
+  <div class="entry-name">sixth</div>
+  <pre class="entry-doc">Syntax: (sixth lst)
+Library: (srfi 1)
+Description: Returns the sixth element of lst.
+Example:
+  (sixth '(a b c d e f)) =&gt; f</pre>
+</div>
+<div class="entry" id="e131" data-name="span">
+  <div class="entry-name">span</div>
+  <pre class="entry-doc">Syntax: (span pred lst)
+Library: (srfi 1)
+Description: Splits lst at the first element not satisfying pred. Returns two values:
+the longest initial prefix of elements satisfying pred, and the remainder.
+Example:
+  (span even? '(2 4 5 6)) =&gt; (2 4) and (5 6)</pre>
+</div>
+<div class="entry" id="e132" data-name="span!">
+  <div class="entry-name">span!</div>
+  <pre class="entry-doc">Syntax: (span! pred lst)
+Library: (srfi 1)
+Description: Destructive version of span. May modify lst.
+Example:
+  (span! even? (list 2 4 5 6)) =&gt; (2 4) and (5 6)</pre>
+</div>
+<div class="entry" id="e133" data-name="split-at">
+  <div class="entry-name">split-at</div>
+  <pre class="entry-doc">Syntax: (split-at lst n)
+Library: (srfi 1)
+Description: Splits lst at index n. Returns two values: the first n elements and the remaining elements.
+Example:
+  (split-at '(1 2 3 4 5) 2) =&gt; (1 2) and (3 4 5)</pre>
+</div>
+<div class="entry" id="e134" data-name="split-at!">
+  <div class="entry-name">split-at!</div>
+  <pre class="entry-doc">Syntax: (split-at! lst n)
+Library: (srfi 1)
+Description: Destructive version of split-at. May modify lst.
+Example:
+  (split-at! (list 1 2 3 4 5) 2) =&gt; (1 2) and (3 4 5)</pre>
+</div>
+<div class="entry" id="e135" data-name="take">
+  <div class="entry-name">take</div>
+  <pre class="entry-doc">Syntax: (take lst n)
+Library: (srfi 1)
+Description: Returns a fresh list of the first n elements of lst.
+Example:
+  (take '(1 2 3 4 5) 3) =&gt; (1 2 3)
+  (take '(1 2 3) 0) =&gt; ()</pre>
+</div>
+<div class="entry" id="e136" data-name="take!">
+  <div class="entry-name">take!</div>
+  <pre class="entry-doc">Syntax: (take! lst n)
+Library: (srfi 1)
+Description: Destructive version of take. May modify lst to return the first n elements.
+Example:
+  (take! (list 1 2 3 4 5) 3) =&gt; (1 2 3)</pre>
+</div>
+<div class="entry" id="e137" data-name="take-right">
+  <div class="entry-name">take-right</div>
+  <pre class="entry-doc">Syntax: (take-right lst n)
+Library: (srfi 1)
+Description: Returns the last n elements of lst.
+Example:
+  (take-right '(1 2 3 4 5) 2) =&gt; (4 5)
+  (take-right '(1 2 3) 0) =&gt; ()</pre>
+</div>
+<div class="entry" id="e138" data-name="take-while">
+  <div class="entry-name">take-while</div>
+  <pre class="entry-doc">Syntax: (take-while pred lst)
+Library: (srfi 1)
+Description: Returns the longest initial prefix of lst whose elements all satisfy pred.
+Example:
+  (take-while even? '(2 4 5 6)) =&gt; (2 4)
+  (take-while even? '(1 2 3)) =&gt; ()</pre>
+</div>
+<div class="entry" id="e139" data-name="take-while!">
+  <div class="entry-name">take-while!</div>
+  <pre class="entry-doc">Syntax: (take-while! pred lst)
+Library: (srfi 1)
+Description: Destructive version of take-while. May modify lst.
+Example:
+  (take-while! even? (list 2 4 5 6)) =&gt; (2 4)</pre>
+</div>
+<div class="entry" id="e140" data-name="tenth">
+  <div class="entry-name">tenth</div>
+  <pre class="entry-doc">Syntax: (tenth lst)
+Library: (srfi 1)
+Description: Returns the tenth element of lst.
+Example:
+  (tenth '(a b c d e f g h i j)) =&gt; j</pre>
+</div>
+<div class="entry" id="e141" data-name="third">
+  <div class="entry-name">third</div>
+  <pre class="entry-doc">Syntax: (third lst)
+Library: (srfi 1)
+Description: Returns the third element of lst.
+Example:
+  (third '(a b c d)) =&gt; c</pre>
+</div>
+<div class="entry" id="e142" data-name="unfold">
+  <div class="entry-name">unfold</div>
+  <pre class="entry-doc">Syntax: (unfold p f g seed [tail-gen])
+Library: (srfi 1)
+Description: Constructs a list by unfolding seed. p is the termination predicate; when (p seed) is true,
+unfolding stops. f maps seed to the next list element, g maps seed to the next seed.
+Optional tail-gen is called on the final seed to produce the tail (defaults to empty list).
+Example:
+  (unfold (lambda (n) (&gt; n 5)) (lambda (n) n) (lambda (n) (+ n 1)) 1) =&gt; (1 2 3 4 5)</pre>
+</div>
+<div class="entry" id="e143" data-name="unfold-right">
+  <div class="entry-name">unfold-right</div>
+  <pre class="entry-doc">Syntax: (unfold-right p f g seed [tail])
+Library: (srfi 1)
+Description: Constructs a list right-to-left by unfolding seed. p is the termination predicate;
+f maps seed to an element, g maps seed to the next seed. Optional tail is the initial list
+that elements are prepended to (defaults to empty list).
+Example:
+  (unfold-right zero? (lambda (n) n) (lambda (n) (- n 1)) 5) =&gt; (1 2 3 4 5)</pre>
+</div>
+<div class="entry" id="e144" data-name="unzip1">
+  <div class="entry-name">unzip1</div>
+  <pre class="entry-doc">Syntax: (unzip1 lsts)
+Library: (srfi 1)
+Description: Takes a list of lists and returns a list of the first elements of each sublist.
+Example:
+  (unzip1 '((1 a) (2 b) (3 c))) =&gt; (1 2 3)</pre>
+</div>
+<div class="entry" id="e145" data-name="unzip2">
+  <div class="entry-name">unzip2</div>
+  <pre class="entry-doc">Syntax: (unzip2 lsts)
+Library: (srfi 1)
+Description: Takes a list of lists and returns two values: the list of first elements and the list
+of second elements from each sublist.
+Example:
+  (unzip2 '((1 a) (2 b) (3 c))) =&gt; (1 2 3) and (a b c)</pre>
+</div>
+<div class="entry" id="e146" data-name="unzip3">
+  <div class="entry-name">unzip3</div>
+  <pre class="entry-doc">Syntax: (unzip3 lsts)
+Library: (srfi 1)
+Description: Takes a list of lists and returns three values: the lists of first, second, and third
+elements from each sublist.
+Example:
+  (unzip3 '((1 a x) (2 b y))) =&gt; (1 2) and (a b) and (x y)</pre>
+</div>
+<div class="entry" id="e147" data-name="unzip4">
+  <div class="entry-name">unzip4</div>
+  <pre class="entry-doc">Syntax: (unzip4 lsts)
+Library: (srfi 1)
+Description: Takes a list of lists and returns four values: the lists of first through fourth
+elements from each sublist.
+Example:
+  (unzip4 '((1 a x p) (2 b y q))) =&gt; (1 2) and (a b) and (x y) and (p q)</pre>
+</div>
+<div class="entry" id="e148" data-name="unzip5">
+  <div class="entry-name">unzip5</div>
+  <pre class="entry-doc">Syntax: (unzip5 lsts)
+Library: (srfi 1)
+Description: Takes a list of lists and returns five values: the lists of first through fifth
+elements from each sublist.
+Example:
+  (unzip5 '((1 a x p i) (2 b y q j))) =&gt; (1 2) and (a b) and (x y) and (p q) and (i j)</pre>
+</div>
+<div class="entry" id="e149" data-name="xcons">
+  <div class="entry-name">xcons</div>
+  <pre class="entry-doc">Syntax: (xcons d a)
+Library: (srfi 1)
+Description: Constructs a pair with reversed argument order: (xcons d a) = (cons a d).
+Useful for fold-based list construction where the accumulator comes first.
+Example:
+  (xcons '(2 3) 1) =&gt; (1 2 3)
+  (fold xcons '() '(1 2 3)) =&gt; (3 2 1)</pre>
+</div>
+<div class="entry" id="e150" data-name="zip">
+  <div class="entry-name">zip</div>
+  <pre class="entry-doc">Syntax: (zip lst1 ...)
+Library: (srfi 1)
+Description: Interleaves multiple lists into a list of lists. Each element of the result is a list
+of the corresponding elements from each input list. Stops at the shortest list.
+Example:
+  (zip '(1 2 3) '(a b c)) =&gt; ((1 a) (2 b) (3 c))
+  (zip '(1 2) '(a b) '(x y)) =&gt; ((1 a x) (2 b y))</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

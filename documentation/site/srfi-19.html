@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(srfi 19) — Scm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Scm Library Reference</a></h1>
+    <p>scm &mdash; libraries and their exports</p>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav>
+  <h2>R7RS Standard</h2>
+  <a href="scheme-base.html" class="r7rs">(scheme base)</a>
+  <a href="scheme-case-lambda.html" class="r7rs">(scheme case-lambda)</a>
+  <a href="scheme-char.html" class="r7rs">(scheme char)</a>
+  <a href="scheme-complex.html" class="r7rs">(scheme complex)</a>
+  <a href="scheme-cxr.html" class="r7rs">(scheme cxr)</a>
+  <a href="scheme-eval.html" class="r7rs">(scheme eval)</a>
+  <a href="scheme-file.html" class="r7rs">(scheme file)</a>
+  <a href="scheme-inexact.html" class="r7rs">(scheme inexact)</a>
+  <a href="scheme-lazy.html" class="r7rs">(scheme lazy)</a>
+  <a href="scheme-load.html" class="r7rs">(scheme load)</a>
+  <a href="scheme-process-context.html" class="r7rs">(scheme process-context)</a>
+  <a href="scheme-r5rs.html" class="r7rs">(scheme r5rs)</a>
+  <a href="scheme-read.html" class="r7rs">(scheme read)</a>
+  <a href="scheme-repl.html" class="r7rs">(scheme repl)</a>
+  <a href="scheme-time.html" class="r7rs">(scheme time)</a>
+  <a href="scheme-write.html" class="r7rs">(scheme write)</a>
+  <h2>SRFI Libraries</h2>
+  <a href="srfi-1.html" class="srfi">(srfi 1)</a>
+  <a href="srfi-2.html" class="srfi">(srfi 2)</a>
+  <a href="srfi-8.html" class="srfi">(srfi 8)</a>
+  <a href="srfi-9.html" class="srfi">(srfi 9)</a>
+  <a href="srfi-13.html" class="srfi">(srfi 13)</a>
+  <a href="srfi-14.html" class="srfi">(srfi 14)</a>
+  <a href="srfi-18.html" class="srfi">(srfi 18)</a>
+  <a href="srfi-19.html" class="srfi active">(srfi 19)</a>
+  <a href="srfi-26.html" class="srfi">(srfi 26)</a>
+  <a href="srfi-28.html" class="srfi">(srfi 28)</a>
+  <a href="srfi-39.html" class="srfi">(srfi 39)</a>
+  <a href="srfi-48.html" class="srfi">(srfi 48)</a>
+  <a href="srfi-64.html" class="srfi">(srfi 64)</a>
+  <a href="srfi-69.html" class="srfi">(srfi 69)</a>
+  <a href="srfi-95.html" class="srfi">(srfi 95)</a>
+  <a href="srfi-98.html" class="srfi">(srfi 98)</a>
+  <a href="srfi-111.html" class="srfi">(srfi 111)</a>
+  <a href="srfi-125.html" class="srfi">(srfi 125)</a>
+  <a href="srfi-128.html" class="srfi">(srfi 128)</a>
+  <a href="srfi-132.html" class="srfi">(srfi 132)</a>
+  <a href="srfi-133.html" class="srfi">(srfi 133)</a>
+  <a href="srfi-151.html" class="srfi">(srfi 151)</a>
+  <a href="srfi-158.html" class="srfi">(srfi 158)</a>
+  <h2>Scm Extensions</h2>
+  <a href="scm-archive.html" class="scm">(scm archive)</a>
+  <a href="scm-args.html" class="scm">(scm args)</a>
+  <a href="scm-compile.html" class="scm">(scm compile)</a>
+  <a href="scm-compression.html" class="scm">(scm compression)</a>
+  <a href="scm-crypto.html" class="scm">(scm crypto)</a>
+  <a href="scm-csv.html" class="scm">(scm csv)</a>
+  <a href="scm-database-migrations.html" class="scm">(scm database migrations)</a>
+  <a href="scm-database-postgres.html" class="scm">(scm database postgres)</a>
+  <a href="scm-database-sqlserver.html" class="scm">(scm database sqlserver)</a>
+  <a href="scm-datetime.html" class="scm">(scm datetime)</a>
+  <a href="scm-dict.html" class="scm">(scm dict)</a>
+  <a href="scm-doc.html" class="scm">(scm doc)</a>
+  <a href="scm-duration.html" class="scm">(scm duration)</a>
+  <a href="scm-feed.html" class="scm">(scm feed)</a>
+  <a href="scm-fs-find.html" class="scm">(scm fs-find)</a>
+  <a href="scm-fs.html" class="scm">(scm fs)</a>
+  <a href="scm-glob.html" class="scm">(scm glob)</a>
+  <a href="scm-html-builder.html" class="scm">(scm html builder)</a>
+  <a href="scm-html.html" class="scm">(scm html)</a>
+  <a href="scm-io.html" class="scm">(scm io)</a>
+  <a href="scm-json-simple.html" class="scm">(scm json simple)</a>
+  <a href="scm-json.html" class="scm">(scm json)</a>
+  <a href="scm-list.html" class="scm">(scm list)</a>
+  <a href="scm-log.html" class="scm">(scm log)</a>
+  <a href="scm-macro.html" class="scm">(scm macro)</a>
+  <a href="scm-markdown.html" class="scm">(scm markdown)</a>
+  <a href="scm-match.html" class="scm">(scm match)</a>
+  <a href="scm-math.html" class="scm">(scm math)</a>
+  <a href="scm-module.html" class="scm">(scm module)</a>
+  <a href="scm-net-http-client.html" class="scm">(scm net http client)</a>
+  <a href="scm-net-http-cookies.html" class="scm">(scm net http cookies)</a>
+  <a href="scm-net-http-forms.html" class="scm">(scm net http forms)</a>
+  <a href="scm-net-http-multipart.html" class="scm">(scm net http multipart)</a>
+  <a href="scm-net-http-request.html" class="scm">(scm net http request)</a>
+  <a href="scm-net-http-response.html" class="scm">(scm net http response)</a>
+  <a href="scm-net-http-route.html" class="scm">(scm net http route)</a>
+  <a href="scm-net-http-server.html" class="scm">(scm net http server)</a>
+  <a href="scm-net-remote.html" class="scm">(scm net-remote)</a>
+  <a href="scm-net-sockets.html" class="scm">(scm net sockets)</a>
+  <a href="scm-net-websocket.html" class="scm">(scm net websocket)</a>
+  <a href="scm-odf-spreadsheet.html" class="scm">(scm odf spreadsheet)</a>
+  <a href="scm-odf-writer.html" class="scm">(scm odf writer)</a>
+  <a href="scm-ooxml-excel-reader.html" class="scm">(scm ooxml excel-reader)</a>
+  <a href="scm-ooxml-excel.html" class="scm">(scm ooxml excel)</a>
+  <a href="scm-ooxml-word-reader.html" class="scm">(scm ooxml word-reader)</a>
+  <a href="scm-ooxml-word.html" class="scm">(scm ooxml word)</a>
+  <a href="scm-pdf.html" class="scm">(scm pdf)</a>
+  <a href="scm-png.html" class="scm">(scm png)</a>
+  <a href="scm-profiling.html" class="scm">(scm profiling)</a>
+  <a href="scm-qr.html" class="scm">(scm qr)</a>
+  <a href="scm-random-access.html" class="scm">(scm random access)</a>
+  <a href="scm-repl.html" class="scm">(scm repl)</a>
+  <a href="scm-store.html" class="scm">(scm store)</a>
+  <a href="scm-string.html" class="scm">(scm string)</a>
+  <a href="scm-sysadmin.html" class="scm">(scm sysadmin)</a>
+  <a href="scm-system.html" class="scm">(scm system)</a>
+  <a href="scm-templating.html" class="scm">(scm templating)</a>
+  <a href="scm-terminal.html" class="scm">(scm terminal)</a>
+  <a href="scm-test.html" class="scm">(scm test)</a>
+  <a href="scm-text.html" class="scm">(scm text)</a>
+  <a href="scm-toml.html" class="scm">(scm toml)</a>
+  <a href="scm-uri.html" class="scm">(scm uri)</a>
+  <a href="scm-xml.html" class="scm">(scm xml)</a>
+  <a href="scm-zip.html" class="scm">(scm zip)</a>
+</nav>
+
+<main>
+
+<a class="backlink" href="index.html">&larr; All libraries</a>
+<div class="lib-title srfi">(srfi 19)</div>
+<p class="lib-sub">SRFI-19 — Time data types and procedures: time, date, Julian Day, formatting</p>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">80 bindings</p>
+
+<div class="entry" id="e0" data-name="add-duration">
+  <div class="entry-name">add-duration</div>
+  <pre class="entry-doc">Syntax: (add-duration time duration)
+Library: (srfi 19)
+Description: Returns a new time by adding a time-duration to time.
+Example:
+  (time-second (add-duration (make-time time-utc 0 100) (make-time time-duration 0 50))) =&gt; 150</pre>
+</div>
+<div class="entry" id="e1" data-name="add-duration!">
+  <div class="entry-name">add-duration!</div>
+  <pre class="entry-doc">Syntax: (add-duration! time duration)
+Library: (srfi 19)
+Description: Like add-duration, but may modify and return time.
+Example:
+  (time-second (add-duration! (make-time time-utc 0 100) (make-time time-duration 0 50))) =&gt; 150</pre>
+</div>
+<div class="entry" id="e2" data-name="copy-time">
+  <div class="entry-name">copy-time</div>
+  <pre class="entry-doc">Syntax: (copy-time time)
+Library: (srfi 19)
+Description: Returns a new time object with the same type, second, and nanosecond as time.
+Example:
+  (let ((t (make-time time-utc 0 100))) (time=? t (copy-time t))) =&gt; #t</pre>
+</div>
+<div class="entry" id="e3" data-name="current-date">
+  <div class="entry-name">current-date</div>
+  <pre class="entry-doc">Syntax: (current-date [tz-offset])
+Library: (srfi 19)
+Description: Returns the current date. If tz-offset is not given, the local timezone is used.
+Example:
+  (date? (current-date)) =&gt; #t</pre>
+</div>
+<div class="entry" id="e4" data-name="current-julian-day">
+  <div class="entry-name">current-julian-day</div>
+  <pre class="entry-doc">Syntax: (current-julian-day)
+Library: (srfi 19)
+Description: Returns the current Julian Day.</pre>
+</div>
+<div class="entry" id="e5" data-name="current-modified-julian-day">
+  <div class="entry-name">current-modified-julian-day</div>
+  <pre class="entry-doc">Syntax: (current-modified-julian-day)
+Library: (srfi 19)
+Description: Returns the current Modified Julian Day.</pre>
+</div>
+<div class="entry" id="e6" data-name="current-time">
+  <div class="entry-name">current-time</div>
+  <pre class="entry-doc">Syntax: (current-time [time-type])
+Library: (srfi 19)
+Description: Returns the current time as a time object. Default type is time-utc.
+Example:
+  (time? (current-time)) =&gt; #t
+  (time-type (current-time time-tai)) =&gt; time-tai</pre>
+</div>
+<div class="entry" id="e7" data-name="date-&gt;julian-day">
+  <div class="entry-name">date-&gt;julian-day</div>
+  <pre class="entry-doc">Syntax: (date-&gt;julian-day date)
+Library: (srfi 19)
+Description: Returns the Julian Day for the given date as a real number.
+Example:
+  (date-&gt;julian-day (make-date 0 0 0 12 1 1 2000 0)) =&gt; 2451545</pre>
+</div>
+<div class="entry" id="e8" data-name="date-&gt;modified-julian-day">
+  <div class="entry-name">date-&gt;modified-julian-day</div>
+  <pre class="entry-doc">Syntax: (date-&gt;modified-julian-day date)
+Library: (srfi 19)
+Description: Returns the Modified Julian Day for the given date.
+Example:
+  (date-&gt;modified-julian-day (make-date 0 0 0 12 1 1 2000 0)) =&gt; 51544.5</pre>
+</div>
+<div class="entry" id="e9" data-name="date-&gt;string">
+  <div class="entry-name">date-&gt;string</div>
+  <pre class="entry-doc">Syntax: (date-&gt;string date [format-string])
+Library: (srfi 19)
+Description: Formats a date as a string. Uses ~-prefixed directives:
+  ~Y year, ~m month, ~d day, ~H hour, ~M minute, ~S second, ~N nanosecond,
+  ~z timezone, ~a abbreviated weekday, ~A full weekday, ~b abbreviated month,
+  ~B full month, ~1 ISO date, ~2 ISO time+tz, ~3 ISO time, ~4 ISO date+time+tz,
+  ~5 ISO date+time, ~~ literal tilde.
+  Default format is "~c" (locale date and time).
+Example:
+  (date-&gt;string (make-date 0 30 15 14 28 3 2026 3600) "~Y-~m-~d") =&gt; "2026-03-28"</pre>
+</div>
+<div class="entry" id="e10" data-name="date-&gt;time-monotonic">
+  <div class="entry-name">date-&gt;time-monotonic</div>
+  <pre class="entry-doc">Syntax: (date-&gt;time-monotonic date)
+Library: (srfi 19)
+Description: Converts a date to a time-monotonic.
+Example:
+  (time-type (date-&gt;time-monotonic (current-date))) =&gt; time-monotonic</pre>
+</div>
+<div class="entry" id="e11" data-name="date-&gt;time-tai">
+  <div class="entry-name">date-&gt;time-tai</div>
+  <pre class="entry-doc">Syntax: (date-&gt;time-tai date)
+Library: (srfi 19)
+Description: Converts a date to a time-tai.
+Example:
+  (time-type (date-&gt;time-tai (current-date))) =&gt; time-tai</pre>
+</div>
+<div class="entry" id="e12" data-name="date-&gt;time-utc">
+  <div class="entry-name">date-&gt;time-utc</div>
+  <pre class="entry-doc">Syntax: (date-&gt;time-utc date)
+Library: (srfi 19)
+Description: Converts a date to a time-utc.
+Example:
+  (time-second (date-&gt;time-utc (make-date 0 0 0 0 1 1 1970 0))) =&gt; 0</pre>
+</div>
+<div class="entry" id="e13" data-name="date-day">
+  <div class="entry-name">date-day</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e14" data-name="date-hour">
+  <div class="entry-name">date-hour</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e15" data-name="date-minute">
+  <div class="entry-name">date-minute</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e16" data-name="date-month">
+  <div class="entry-name">date-month</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e17" data-name="date-nanosecond">
+  <div class="entry-name">date-nanosecond</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e18" data-name="date-second">
+  <div class="entry-name">date-second</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e19" data-name="date-week-day">
+  <div class="entry-name">date-week-day</div>
+  <pre class="entry-doc">Syntax: (date-week-day date)
+Library: (srfi 19)
+Description: Returns the day of the week (0=Sunday, 6=Saturday).
+Example:
+  (date-week-day (make-date 0 0 0 0 28 3 2026 0)) =&gt; 6</pre>
+</div>
+<div class="entry" id="e20" data-name="date-week-number">
+  <div class="entry-name">date-week-number</div>
+  <pre class="entry-doc">Syntax: (date-week-number date day-of-week-starting)
+Library: (srfi 19)
+Description: Returns the week number of the year. day-of-week-starting is 0 for Sunday, 1 for Monday.
+Example:
+  (date-week-number (make-date 0 0 0 0 1 1 2026 0) 0) =&gt; 0</pre>
+</div>
+<div class="entry" id="e21" data-name="date-year">
+  <div class="entry-name">date-year</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e22" data-name="date-year-day">
+  <div class="entry-name">date-year-day</div>
+  <pre class="entry-doc">Syntax: (date-year-day date)
+Library: (srfi 19)
+Description: Returns the day of the year (1-366).
+Example:
+  (date-year-day (make-date 0 0 0 0 1 3 2000 0)) =&gt; 61</pre>
+</div>
+<div class="entry" id="e23" data-name="date-zone-offset">
+  <div class="entry-name">date-zone-offset</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e24" data-name="date?">
+  <div class="entry-name">date?</div>
+  <pre class="entry-doc">Syntax: (date? obj)
+Library: (srfi 19)
+Description: Returns #t if obj is a date object, #f otherwise.
+Example:
+  (date? (current-date)) =&gt; #t</pre>
+</div>
+<div class="entry" id="e25" data-name="julian-day-&gt;date">
+  <div class="entry-name">julian-day-&gt;date</div>
+  <pre class="entry-doc">Syntax: (julian-day-&gt;date jd [tz-offset])
+Library: (srfi 19)
+Description: Converts a Julian Day to a date.
+Example:
+  (date-year (julian-day-&gt;date 2451545 0)) =&gt; 2000</pre>
+</div>
+<div class="entry" id="e26" data-name="julian-day-&gt;time-monotonic">
+  <div class="entry-name">julian-day-&gt;time-monotonic</div>
+  <pre class="entry-doc">Syntax: (julian-day-&gt;time-monotonic jd)
+Library: (srfi 19)
+Description: Converts a Julian Day to a time-monotonic.</pre>
+</div>
+<div class="entry" id="e27" data-name="julian-day-&gt;time-tai">
+  <div class="entry-name">julian-day-&gt;time-tai</div>
+  <pre class="entry-doc">Syntax: (julian-day-&gt;time-tai jd)
+Library: (srfi 19)
+Description: Converts a Julian Day to a time-tai.</pre>
+</div>
+<div class="entry" id="e28" data-name="julian-day-&gt;time-utc">
+  <div class="entry-name">julian-day-&gt;time-utc</div>
+  <pre class="entry-doc">Syntax: (julian-day-&gt;time-utc jd)
+Library: (srfi 19)
+Description: Converts a Julian Day to a time-utc.
+Example:
+  (time-second (julian-day-&gt;time-utc 2440587.5)) =&gt; 0</pre>
+</div>
+<div class="entry" id="e29" data-name="make-date">
+  <div class="entry-name">make-date</div>
+  <pre class="entry-doc">Syntax: (make-date nanosecond second minute hour day month year zone-offset)
+Library: (srfi 19)
+Description: Creates a date object. All fields are integers. zone-offset is seconds from UTC.
+Example:
+  (date-year (make-date 0 30 15 14 28 3 2026 3600)) =&gt; 2026</pre>
+</div>
+<div class="entry" id="e30" data-name="make-time">
+  <div class="entry-name">make-time</div>
+  <pre class="entry-doc">Syntax: (make-time type nanosecond second)
+Library: (srfi 19)
+Description: Creates a time object. type must be a time type constant (e.g. time-utc). second and nanosecond must be integers.
+Example:
+  (make-time time-utc 0 1000000000)</pre>
+</div>
+<div class="entry" id="e31" data-name="modified-julian-day-&gt;date">
+  <div class="entry-name">modified-julian-day-&gt;date</div>
+  <pre class="entry-doc">Syntax: (modified-julian-day-&gt;date mjd [tz-offset])
+Library: (srfi 19)
+Description: Converts a Modified Julian Day to a date.</pre>
+</div>
+<div class="entry" id="e32" data-name="modified-julian-day-&gt;time-monotonic">
+  <div class="entry-name">modified-julian-day-&gt;time-monotonic</div>
+  <pre class="entry-doc">Syntax: (modified-julian-day-&gt;time-monotonic mjd)
+Library: (srfi 19)
+Description: Converts a Modified Julian Day to a time-monotonic.</pre>
+</div>
+<div class="entry" id="e33" data-name="modified-julian-day-&gt;time-tai">
+  <div class="entry-name">modified-julian-day-&gt;time-tai</div>
+  <pre class="entry-doc">Syntax: (modified-julian-day-&gt;time-tai mjd)
+Library: (srfi 19)
+Description: Converts a Modified Julian Day to a time-tai.</pre>
+</div>
+<div class="entry" id="e34" data-name="modified-julian-day-&gt;time-utc">
+  <div class="entry-name">modified-julian-day-&gt;time-utc</div>
+  <pre class="entry-doc">Syntax: (modified-julian-day-&gt;time-utc mjd)
+Library: (srfi 19)
+Description: Converts a Modified Julian Day to a time-utc.</pre>
+</div>
+<div class="entry" id="e35" data-name="set-time-nanosecond!">
+  <div class="entry-name">set-time-nanosecond!</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e36" data-name="set-time-second!">
+  <div class="entry-name">set-time-second!</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e37" data-name="set-time-type!">
+  <div class="entry-name">set-time-type!</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e38" data-name="string-&gt;date">
+  <div class="entry-name">string-&gt;date</div>
+  <pre class="entry-doc">Syntax: (string-&gt;date input-string template-string)
+Library: (srfi 19)
+Description: Parses a date string according to the template. Supported directives for parsing:
+  ~Y year, ~m month, ~d day, ~H hour, ~M minute, ~S second, ~y 2-digit year,
+  ~b/~B/~h month name, ~a/~A weekday name (consumed but ignored),
+  ~e space-padded day, ~k space-padded hour, ~z timezone offset, ~~ literal tilde.
+Example:
+  (date-year (string-&gt;date "2026-03-28" "~Y-~m-~d")) =&gt; 2026</pre>
+</div>
+<div class="entry" id="e39" data-name="subtract-duration">
+  <div class="entry-name">subtract-duration</div>
+  <pre class="entry-doc">Syntax: (subtract-duration time duration)
+Library: (srfi 19)
+Description: Returns a new time by subtracting a time-duration from time.
+Example:
+  (time-second (subtract-duration (make-time time-utc 0 200) (make-time time-duration 0 50))) =&gt; 150</pre>
+</div>
+<div class="entry" id="e40" data-name="subtract-duration!">
+  <div class="entry-name">subtract-duration!</div>
+  <pre class="entry-doc">Syntax: (subtract-duration! time duration)
+Library: (srfi 19)
+Description: Like subtract-duration, but may modify and return time.
+Example:
+  (time-second (subtract-duration! (make-time time-utc 0 200) (make-time time-duration 0 50))) =&gt; 150</pre>
+</div>
+<div class="entry" id="e41" data-name="time-difference">
+  <div class="entry-name">time-difference</div>
+  <pre class="entry-doc">Syntax: (time-difference t1 t2)
+Library: (srfi 19)
+Description: Returns a time-duration representing t1 - t2. Both must have the same time type.
+Example:
+  (time-second (time-difference (make-time time-utc 0 200) (make-time time-utc 0 100))) =&gt; 100</pre>
+</div>
+<div class="entry" id="e42" data-name="time-difference!">
+  <div class="entry-name">time-difference!</div>
+  <pre class="entry-doc">Syntax: (time-difference! t1 t2)
+Library: (srfi 19)
+Description: Like time-difference, but may modify and return t1.
+Example:
+  (time-second (time-difference! (make-time time-utc 0 200) (make-time time-utc 0 100))) =&gt; 100</pre>
+</div>
+<div class="entry" id="e43" data-name="time-duration">
+  <div class="entry-name">time-duration</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e44" data-name="time-monotonic">
+  <div class="entry-name">time-monotonic</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e45" data-name="time-monotonic-&gt;date">
+  <div class="entry-name">time-monotonic-&gt;date</div>
+  <pre class="entry-doc">Syntax: (time-monotonic-&gt;date time [tz-offset])
+Library: (srfi 19)
+Description: Converts a time-monotonic to a date.
+Example:
+  (date? (time-monotonic-&gt;date (time-utc-&gt;time-monotonic (current-time)))) =&gt; #t</pre>
+</div>
+<div class="entry" id="e46" data-name="time-monotonic-&gt;julian-day">
+  <div class="entry-name">time-monotonic-&gt;julian-day</div>
+  <pre class="entry-doc">Syntax: (time-monotonic-&gt;julian-day time)
+Library: (srfi 19)
+Description: Converts a time-monotonic to a Julian Day.</pre>
+</div>
+<div class="entry" id="e47" data-name="time-monotonic-&gt;modified-julian-day">
+  <div class="entry-name">time-monotonic-&gt;modified-julian-day</div>
+  <pre class="entry-doc">Syntax: (time-monotonic-&gt;modified-julian-day time)
+Library: (srfi 19)
+Description: Converts a time-monotonic to a Modified Julian Day.</pre>
+</div>
+<div class="entry" id="e48" data-name="time-monotonic-&gt;time-tai">
+  <div class="entry-name">time-monotonic-&gt;time-tai</div>
+  <pre class="entry-doc">Syntax: (time-monotonic-&gt;time-tai time)
+Library: (srfi 19)
+Description: Converts a time-monotonic to time-tai (via UTC).
+Example:
+  (time-type (time-monotonic-&gt;time-tai (make-time time-monotonic 0 100))) =&gt; time-tai</pre>
+</div>
+<div class="entry" id="e49" data-name="time-monotonic-&gt;time-tai!">
+  <div class="entry-name">time-monotonic-&gt;time-tai!</div>
+  <pre class="entry-doc">Syntax: (time-monotonic-&gt;time-tai! time)
+Library: (srfi 19)
+Description: Like time-monotonic-&gt;time-tai, but may modify and return time.</pre>
+</div>
+<div class="entry" id="e50" data-name="time-monotonic-&gt;time-utc">
+  <div class="entry-name">time-monotonic-&gt;time-utc</div>
+  <pre class="entry-doc">Syntax: (time-monotonic-&gt;time-utc time)
+Library: (srfi 19)
+Description: Converts a time-monotonic to time-utc (same value, different type).
+Example:
+  (time-type (time-monotonic-&gt;time-utc (make-time time-monotonic 0 100))) =&gt; time-utc</pre>
+</div>
+<div class="entry" id="e51" data-name="time-monotonic-&gt;time-utc!">
+  <div class="entry-name">time-monotonic-&gt;time-utc!</div>
+  <pre class="entry-doc">Syntax: (time-monotonic-&gt;time-utc! time)
+Library: (srfi 19)
+Description: Like time-monotonic-&gt;time-utc, but may modify and return time.</pre>
+</div>
+<div class="entry" id="e52" data-name="time-nanosecond">
+  <div class="entry-name">time-nanosecond</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e53" data-name="time-process">
+  <div class="entry-name">time-process</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e54" data-name="time-resolution">
+  <div class="entry-name">time-resolution</div>
+  <pre class="entry-doc">Syntax: (time-resolution [time-type])
+Library: (srfi 19)
+Description: Returns the clock resolution in nanoseconds for the given time type.
+Example:
+  (time-resolution time-utc) =&gt; 100</pre>
+</div>
+<div class="entry" id="e55" data-name="time-second">
+  <div class="entry-name">time-second</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e56" data-name="time-tai">
+  <div class="entry-name">time-tai</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e57" data-name="time-tai-&gt;date">
+  <div class="entry-name">time-tai-&gt;date</div>
+  <pre class="entry-doc">Syntax: (time-tai-&gt;date time [tz-offset])
+Library: (srfi 19)
+Description: Converts a time-tai to a date. Correctly handles leap seconds
+  by producing date-second = 60 when the TAI time falls on a leap second.
+Example:
+  (date? (time-tai-&gt;date (time-utc-&gt;time-tai (current-time)))) =&gt; #t</pre>
+</div>
+<div class="entry" id="e58" data-name="time-tai-&gt;julian-day">
+  <div class="entry-name">time-tai-&gt;julian-day</div>
+  <pre class="entry-doc">Syntax: (time-tai-&gt;julian-day time)
+Library: (srfi 19)
+Description: Converts a time-tai to a Julian Day.</pre>
+</div>
+<div class="entry" id="e59" data-name="time-tai-&gt;modified-julian-day">
+  <div class="entry-name">time-tai-&gt;modified-julian-day</div>
+  <pre class="entry-doc">Syntax: (time-tai-&gt;modified-julian-day time)
+Library: (srfi 19)
+Description: Converts a time-tai to a Modified Julian Day.</pre>
+</div>
+<div class="entry" id="e60" data-name="time-tai-&gt;time-monotonic">
+  <div class="entry-name">time-tai-&gt;time-monotonic</div>
+  <pre class="entry-doc">Syntax: (time-tai-&gt;time-monotonic time)
+Library: (srfi 19)
+Description: Converts a time-tai to time-monotonic (via UTC).
+Example:
+  (time-type (time-tai-&gt;time-monotonic (make-time time-tai 0 100))) =&gt; time-monotonic</pre>
+</div>
+<div class="entry" id="e61" data-name="time-tai-&gt;time-monotonic!">
+  <div class="entry-name">time-tai-&gt;time-monotonic!</div>
+  <pre class="entry-doc">Syntax: (time-tai-&gt;time-monotonic! time)
+Library: (srfi 19)
+Description: Like time-tai-&gt;time-monotonic, but may modify and return time.</pre>
+</div>
+<div class="entry" id="e62" data-name="time-tai-&gt;time-utc">
+  <div class="entry-name">time-tai-&gt;time-utc</div>
+  <pre class="entry-doc">Syntax: (time-tai-&gt;time-utc time)
+Library: (srfi 19)
+Description: Converts a time-tai to time-utc.
+Example:
+  (time-type (time-tai-&gt;time-utc (make-time time-tai 0 1500000037))) =&gt; time-utc</pre>
+</div>
+<div class="entry" id="e63" data-name="time-tai-&gt;time-utc!">
+  <div class="entry-name">time-tai-&gt;time-utc!</div>
+  <pre class="entry-doc">Syntax: (time-tai-&gt;time-utc! time)
+Library: (srfi 19)
+Description: Like time-tai-&gt;time-utc, but may modify and return time.</pre>
+</div>
+<div class="entry" id="e64" data-name="time-thread">
+  <div class="entry-name">time-thread</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e65" data-name="time-type">
+  <div class="entry-name">time-type</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e66" data-name="time-utc">
+  <div class="entry-name">time-utc</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e67" data-name="time-utc-&gt;date">
+  <div class="entry-name">time-utc-&gt;date</div>
+  <pre class="entry-doc">Syntax: (time-utc-&gt;date time [tz-offset])
+Library: (srfi 19)
+Description: Converts a time-utc to a date. If tz-offset is not given, the local timezone is used.
+Example:
+  (date-year (time-utc-&gt;date (make-time time-utc 0 946684800) 0)) =&gt; 2000</pre>
+</div>
+<div class="entry" id="e68" data-name="time-utc-&gt;julian-day">
+  <div class="entry-name">time-utc-&gt;julian-day</div>
+  <pre class="entry-doc">Syntax: (time-utc-&gt;julian-day time)
+Library: (srfi 19)
+Description: Converts a time-utc to a Julian Day.</pre>
+</div>
+<div class="entry" id="e69" data-name="time-utc-&gt;modified-julian-day">
+  <div class="entry-name">time-utc-&gt;modified-julian-day</div>
+  <pre class="entry-doc">Syntax: (time-utc-&gt;modified-julian-day time)
+Library: (srfi 19)
+Description: Converts a time-utc to a Modified Julian Day.</pre>
+</div>
+<div class="entry" id="e70" data-name="time-utc-&gt;time-monotonic">
+  <div class="entry-name">time-utc-&gt;time-monotonic</div>
+  <pre class="entry-doc">Syntax: (time-utc-&gt;time-monotonic time)
+Library: (srfi 19)
+Description: Converts a time-utc to time-monotonic (same value, different type).
+Example:
+  (time-type (time-utc-&gt;time-monotonic (make-time time-utc 0 100))) =&gt; time-monotonic</pre>
+</div>
+<div class="entry" id="e71" data-name="time-utc-&gt;time-monotonic!">
+  <div class="entry-name">time-utc-&gt;time-monotonic!</div>
+  <pre class="entry-doc">Syntax: (time-utc-&gt;time-monotonic! time)
+Library: (srfi 19)
+Description: Like time-utc-&gt;time-monotonic, but may modify and return time.</pre>
+</div>
+<div class="entry" id="e72" data-name="time-utc-&gt;time-tai">
+  <div class="entry-name">time-utc-&gt;time-tai</div>
+  <pre class="entry-doc">Syntax: (time-utc-&gt;time-tai time)
+Library: (srfi 19)
+Description: Converts a time-utc to time-tai.
+Example:
+  (time-type (time-utc-&gt;time-tai (make-time time-utc 0 1500000000))) =&gt; time-tai</pre>
+</div>
+<div class="entry" id="e73" data-name="time-utc-&gt;time-tai!">
+  <div class="entry-name">time-utc-&gt;time-tai!</div>
+  <pre class="entry-doc">Syntax: (time-utc-&gt;time-tai! time)
+Library: (srfi 19)
+Description: Like time-utc-&gt;time-tai, but may modify and return time.</pre>
+</div>
+<div class="entry" id="e74" data-name="time&lt;=?">
+  <div class="entry-name">time&lt;=?</div>
+  <pre class="entry-doc">Syntax: (time&lt;=? t1 t2)
+Library: (srfi 19)
+Description: Returns #t if t1 is before or equal to t2. Both must have the same time type.
+Example:
+  (time&lt;=? (make-time time-utc 0 100) (make-time time-utc 0 100)) =&gt; #t</pre>
+</div>
+<div class="entry" id="e75" data-name="time&lt;?">
+  <div class="entry-name">time&lt;?</div>
+  <pre class="entry-doc">Syntax: (time&lt;? t1 t2)
+Library: (srfi 19)
+Description: Returns #t if t1 is before t2. Both must have the same time type.
+Example:
+  (time&lt;? (make-time time-utc 0 100) (make-time time-utc 0 200)) =&gt; #t</pre>
+</div>
+<div class="entry" id="e76" data-name="time=?">
+  <div class="entry-name">time=?</div>
+  <pre class="entry-doc">Syntax: (time=? t1 t2)
+Library: (srfi 19)
+Description: Returns #t if t1 and t2 represent the same time. Both must have the same time type.
+Example:
+  (time=? (make-time time-utc 0 100) (make-time time-utc 0 100)) =&gt; #t</pre>
+</div>
+<div class="entry" id="e77" data-name="time&gt;=?">
+  <div class="entry-name">time&gt;=?</div>
+  <pre class="entry-doc">Syntax: (time&gt;=? t1 t2)
+Library: (srfi 19)
+Description: Returns #t if t1 is after or equal to t2. Both must have the same time type.
+Example:
+  (time&gt;=? (make-time time-utc 0 100) (make-time time-utc 0 100)) =&gt; #t</pre>
+</div>
+<div class="entry" id="e78" data-name="time&gt;?">
+  <div class="entry-name">time&gt;?</div>
+  <pre class="entry-doc">Syntax: (time&gt;? t1 t2)
+Library: (srfi 19)
+Description: Returns #t if t1 is after t2. Both must have the same time type.
+Example:
+  (time&gt;? (make-time time-utc 0 200) (make-time time-utc 0 100)) =&gt; #t</pre>
+</div>
+<div class="entry" id="e79" data-name="time?">
+  <div class="entry-name">time?</div>
+  <pre class="entry-doc">Syntax: (time? obj)
+Library: (srfi 19)
+Description: Returns #t if obj is a SRFI-19 time object, #f otherwise.
+Example:
+  (time? (current-time)) =&gt; #t</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

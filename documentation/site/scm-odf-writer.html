@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm odf writer) — Scm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Scm Library Reference</a></h1>
+    <p>scm &mdash; libraries and their exports</p>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav>
+  <h2>R7RS Standard</h2>
+  <a href="scheme-base.html" class="r7rs">(scheme base)</a>
+  <a href="scheme-case-lambda.html" class="r7rs">(scheme case-lambda)</a>
+  <a href="scheme-char.html" class="r7rs">(scheme char)</a>
+  <a href="scheme-complex.html" class="r7rs">(scheme complex)</a>
+  <a href="scheme-cxr.html" class="r7rs">(scheme cxr)</a>
+  <a href="scheme-eval.html" class="r7rs">(scheme eval)</a>
+  <a href="scheme-file.html" class="r7rs">(scheme file)</a>
+  <a href="scheme-inexact.html" class="r7rs">(scheme inexact)</a>
+  <a href="scheme-lazy.html" class="r7rs">(scheme lazy)</a>
+  <a href="scheme-load.html" class="r7rs">(scheme load)</a>
+  <a href="scheme-process-context.html" class="r7rs">(scheme process-context)</a>
+  <a href="scheme-r5rs.html" class="r7rs">(scheme r5rs)</a>
+  <a href="scheme-read.html" class="r7rs">(scheme read)</a>
+  <a href="scheme-repl.html" class="r7rs">(scheme repl)</a>
+  <a href="scheme-time.html" class="r7rs">(scheme time)</a>
+  <a href="scheme-write.html" class="r7rs">(scheme write)</a>
+  <h2>SRFI Libraries</h2>
+  <a href="srfi-1.html" class="srfi">(srfi 1)</a>
+  <a href="srfi-2.html" class="srfi">(srfi 2)</a>
+  <a href="srfi-8.html" class="srfi">(srfi 8)</a>
+  <a href="srfi-9.html" class="srfi">(srfi 9)</a>
+  <a href="srfi-13.html" class="srfi">(srfi 13)</a>
+  <a href="srfi-14.html" class="srfi">(srfi 14)</a>
+  <a href="srfi-18.html" class="srfi">(srfi 18)</a>
+  <a href="srfi-19.html" class="srfi">(srfi 19)</a>
+  <a href="srfi-26.html" class="srfi">(srfi 26)</a>
+  <a href="srfi-28.html" class="srfi">(srfi 28)</a>
+  <a href="srfi-39.html" class="srfi">(srfi 39)</a>
+  <a href="srfi-48.html" class="srfi">(srfi 48)</a>
+  <a href="srfi-64.html" class="srfi">(srfi 64)</a>
+  <a href="srfi-69.html" class="srfi">(srfi 69)</a>
+  <a href="srfi-95.html" class="srfi">(srfi 95)</a>
+  <a href="srfi-98.html" class="srfi">(srfi 98)</a>
+  <a href="srfi-111.html" class="srfi">(srfi 111)</a>
+  <a href="srfi-125.html" class="srfi">(srfi 125)</a>
+  <a href="srfi-128.html" class="srfi">(srfi 128)</a>
+  <a href="srfi-132.html" class="srfi">(srfi 132)</a>
+  <a href="srfi-133.html" class="srfi">(srfi 133)</a>
+  <a href="srfi-151.html" class="srfi">(srfi 151)</a>
+  <a href="srfi-158.html" class="srfi">(srfi 158)</a>
+  <h2>Scm Extensions</h2>
+  <a href="scm-archive.html" class="scm">(scm archive)</a>
+  <a href="scm-args.html" class="scm">(scm args)</a>
+  <a href="scm-compile.html" class="scm">(scm compile)</a>
+  <a href="scm-compression.html" class="scm">(scm compression)</a>
+  <a href="scm-crypto.html" class="scm">(scm crypto)</a>
+  <a href="scm-csv.html" class="scm">(scm csv)</a>
+  <a href="scm-database-migrations.html" class="scm">(scm database migrations)</a>
+  <a href="scm-database-postgres.html" class="scm">(scm database postgres)</a>
+  <a href="scm-database-sqlserver.html" class="scm">(scm database sqlserver)</a>
+  <a href="scm-datetime.html" class="scm">(scm datetime)</a>
+  <a href="scm-dict.html" class="scm">(scm dict)</a>
+  <a href="scm-doc.html" class="scm">(scm doc)</a>
+  <a href="scm-duration.html" class="scm">(scm duration)</a>
+  <a href="scm-feed.html" class="scm">(scm feed)</a>
+  <a href="scm-fs-find.html" class="scm">(scm fs-find)</a>
+  <a href="scm-fs.html" class="scm">(scm fs)</a>
+  <a href="scm-glob.html" class="scm">(scm glob)</a>
+  <a href="scm-html-builder.html" class="scm">(scm html builder)</a>
+  <a href="scm-html.html" class="scm">(scm html)</a>
+  <a href="scm-io.html" class="scm">(scm io)</a>
+  <a href="scm-json-simple.html" class="scm">(scm json simple)</a>
+  <a href="scm-json.html" class="scm">(scm json)</a>
+  <a href="scm-list.html" class="scm">(scm list)</a>
+  <a href="scm-log.html" class="scm">(scm log)</a>
+  <a href="scm-macro.html" class="scm">(scm macro)</a>
+  <a href="scm-markdown.html" class="scm">(scm markdown)</a>
+  <a href="scm-match.html" class="scm">(scm match)</a>
+  <a href="scm-math.html" class="scm">(scm math)</a>
+  <a href="scm-module.html" class="scm">(scm module)</a>
+  <a href="scm-net-http-client.html" class="scm">(scm net http client)</a>
+  <a href="scm-net-http-cookies.html" class="scm">(scm net http cookies)</a>
+  <a href="scm-net-http-forms.html" class="scm">(scm net http forms)</a>
+  <a href="scm-net-http-multipart.html" class="scm">(scm net http multipart)</a>
+  <a href="scm-net-http-request.html" class="scm">(scm net http request)</a>
+  <a href="scm-net-http-response.html" class="scm">(scm net http response)</a>
+  <a href="scm-net-http-route.html" class="scm">(scm net http route)</a>
+  <a href="scm-net-http-server.html" class="scm">(scm net http server)</a>
+  <a href="scm-net-remote.html" class="scm">(scm net-remote)</a>
+  <a href="scm-net-sockets.html" class="scm">(scm net sockets)</a>
+  <a href="scm-net-websocket.html" class="scm">(scm net websocket)</a>
+  <a href="scm-odf-spreadsheet.html" class="scm">(scm odf spreadsheet)</a>
+  <a href="scm-odf-writer.html" class="scm active">(scm odf writer)</a>
+  <a href="scm-ooxml-excel-reader.html" class="scm">(scm ooxml excel-reader)</a>
+  <a href="scm-ooxml-excel.html" class="scm">(scm ooxml excel)</a>
+  <a href="scm-ooxml-word-reader.html" class="scm">(scm ooxml word-reader)</a>
+  <a href="scm-ooxml-word.html" class="scm">(scm ooxml word)</a>
+  <a href="scm-pdf.html" class="scm">(scm pdf)</a>
+  <a href="scm-png.html" class="scm">(scm png)</a>
+  <a href="scm-profiling.html" class="scm">(scm profiling)</a>
+  <a href="scm-qr.html" class="scm">(scm qr)</a>
+  <a href="scm-random-access.html" class="scm">(scm random access)</a>
+  <a href="scm-repl.html" class="scm">(scm repl)</a>
+  <a href="scm-store.html" class="scm">(scm store)</a>
+  <a href="scm-string.html" class="scm">(scm string)</a>
+  <a href="scm-sysadmin.html" class="scm">(scm sysadmin)</a>
+  <a href="scm-system.html" class="scm">(scm system)</a>
+  <a href="scm-templating.html" class="scm">(scm templating)</a>
+  <a href="scm-terminal.html" class="scm">(scm terminal)</a>
+  <a href="scm-test.html" class="scm">(scm test)</a>
+  <a href="scm-text.html" class="scm">(scm text)</a>
+  <a href="scm-toml.html" class="scm">(scm toml)</a>
+  <a href="scm-uri.html" class="scm">(scm uri)</a>
+  <a href="scm-xml.html" class="scm">(scm xml)</a>
+  <a href="scm-zip.html" class="scm">(scm zip)</a>
+</nav>
+
+<main>
+
+<a class="backlink" href="index.html">&larr; All libraries</a>
+<div class="lib-title scm">(scm odf writer)</div>
+<p class="lib-sub">ODF text document creation (ODT format)</p>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">30 bindings</p>
+
+<div class="entry" id="e0" data-name="call-with-document">
+  <div class="entry-name">call-with-document</div>
+  <pre class="entry-doc">Syntax: (call-with-document filename proc)
+Library: (scm odf writer)
+Description: Creates a new document, calls (proc doc), then saves to filename.
+  Returns 'ok.
+Example:
+  (call-with-document "/tmp/out.odt"
+    (lambda (doc)
+      (let ((p (document-add-paragraph! doc)))
+        (paragraph-add-run! p "Hello"))))</pre>
+</div>
+<div class="entry" id="e1" data-name="document-add-heading!">
+  <div class="entry-name">document-add-heading!</div>
+  <pre class="entry-doc">Syntax: (document-add-heading! doc level [text])
+Library: (scm odf writer)
+Description: Adds a heading paragraph at the given outline level (1-6). Returns
+  the new paragraph object. If text is provided, it is added as an unstyled run.
+Example:
+  (document-add-heading! doc 1 "Introduction")</pre>
+</div>
+<div class="entry" id="e2" data-name="document-add-index!">
+  <div class="entry-name">document-add-index!</div>
+  <pre class="entry-doc">Syntax: (document-add-index! doc [title])
+Library: (scm odf writer)
+Description: Adds an alphabetical index placeholder to the document. The index
+  is updated by LibreOffice on open. title defaults to "Index". Use
+  paragraph-add-index-entry! to mark terms for the index.
+Example:
+  (document-add-index! doc)
+  (document-add-index! doc "Alphabetical Index")</pre>
+</div>
+<div class="entry" id="e3" data-name="document-add-named-style!">
+  <div class="entry-name">document-add-named-style!</div>
+  <pre class="entry-doc">Syntax: (document-add-named-style! doc name based-on font-name font-size color bold italic underline alignment spacing-before spacing-after line-spacing)
+Library: (scm odf writer)
+Description: Low-level function to add a named paragraph style to doc. All
+  spacing values are in points (ODF uses pt natively). Use document-define-style!
+  for a more convenient keyword-based interface.
+Example:
+  (document-add-named-style! doc "Heading" #f "Arial" 16 #f #t #f #f 'center 24 12 #f)</pre>
+</div>
+<div class="entry" id="e4" data-name="document-add-page-break!">
+  <div class="entry-name">document-add-page-break!</div>
+  <pre class="entry-doc">Syntax: (document-add-page-break! doc)
+Library: (scm odf writer)
+Description: Adds a page break to doc by inserting an empty paragraph with the
+  page-break-before property set.
+Example:
+  (document-add-page-break! doc)</pre>
+</div>
+<div class="entry" id="e5" data-name="document-add-paragraph!">
+  <div class="entry-name">document-add-paragraph!</div>
+  <pre class="entry-doc">Syntax: (document-add-paragraph! doc [style-name])
+Library: (scm odf writer)
+Description: Adds a new paragraph to doc, optionally with a named style.
+  Returns the new paragraph object.
+Example:
+  (let* ((doc (make-document))
+         (p (document-add-paragraph! doc "Heading1")))
+    (paragraph-add-run! p "Title"))</pre>
+</div>
+<div class="entry" id="e6" data-name="document-add-table-of-contents!">
+  <div class="entry-name">document-add-table-of-contents!</div>
+  <pre class="entry-doc">Syntax: (document-add-table-of-contents! doc [title [max-level]])
+Library: (scm odf writer)
+Description: Adds a table of contents placeholder to the document. The TOC is
+  updated by LibreOffice on open. title defaults to "Table of Contents" and
+  max-level defaults to 3.
+Example:
+  (document-add-table-of-contents! doc)
+  (document-add-table-of-contents! doc "Contents" 2)</pre>
+</div>
+<div class="entry" id="e7" data-name="document-define-style!">
+  <div class="entry-name">document-define-style!</div>
+  <pre class="entry-doc">Syntax: (document-define-style! doc name [based-on: s] [font: n] [size: n] [color: c] [bold] [italic] [underline] [alignment: a] [spacing-before: n] [spacing-after: n] [line-spacing: n])
+Library: (scm odf writer)
+Description: Defines a named paragraph style in doc. Keyword arguments set font,
+  size, color, bold/italic/underline flags, alignment, and spacing (in points).
+  Unlike the Word library, spacing values are stored in points directly since
+  ODF uses pt natively.
+Example:
+  (document-define-style! doc "Heading" font: "Arial" size: 16 bold alignment: 'center)</pre>
+</div>
+<div class="entry" id="e8" data-name="document-save">
+  <div class="entry-name">document-save</div>
+  <pre class="entry-doc">Syntax: (document-save doc filename)
+Library: (scm odf writer)
+Description: Serializes doc to an ODF text document (.odt) file at filename.
+  Returns 'ok.
+Example:
+  (let* ((doc (make-document))
+         (p   (document-add-paragraph! doc)))
+    (paragraph-add-run! p "Hello, World!")
+    (document-save doc "/tmp/out.odt"))</pre>
+</div>
+<div class="entry" id="e9" data-name="document-save-to-bytevector">
+  <div class="entry-name">document-save-to-bytevector</div>
+  <pre class="entry-doc">Syntax: (document-save-to-bytevector doc)
+Library: (scm odf writer)
+Description: Serializes doc to an ODF text document in memory and returns the
+  bytes as a bytevector. Useful for generating documents for HTTP responses or
+  in-memory processing without writing to disk.
+Example:
+  (let* ((doc (make-document))
+         (p   (document-add-paragraph! doc)))
+    (paragraph-add-run! p "Hello, World!")
+    (document-save-to-bytevector doc))</pre>
+</div>
+<div class="entry" id="e10" data-name="document-set-footer!">
+  <div class="entry-name">document-set-footer!</div>
+  <pre class="entry-doc">Syntax: (document-set-footer! doc para ...)
+Library: (scm odf writer)
+Description: Sets the document footer to the given paragraph(s). The paragraphs
+  should be created with document-add-paragraph! and can contain runs, page
+  numbers, and other inline content.
+Example:
+  (let ((p (document-add-paragraph! doc)))
+    (paragraph-set-alignment! p 'center)
+    (paragraph-add-page-number! p)
+    (document-set-footer! doc p))</pre>
+</div>
+<div class="entry" id="e11" data-name="document-set-header!">
+  <div class="entry-name">document-set-header!</div>
+  <pre class="entry-doc">Syntax: (document-set-header! doc para ...)
+Library: (scm odf writer)
+Description: Sets the document header to the given paragraph(s). The paragraphs
+  should be created with document-add-paragraph! and can contain runs, page
+  numbers, and other inline content.
+Example:
+  (let ((p (document-add-paragraph! doc)))
+    (paragraph-set-alignment! p 'right)
+    (paragraph-add-run! p "My Document" italic size: 8)
+    (document-set-header! doc p))</pre>
+</div>
+<div class="entry" id="e12" data-name="document-set-page-size!">
+  <div class="entry-name">document-set-page-size!</div>
+  <pre class="entry-doc">Syntax: (document-set-page-size! doc size)
+Library: (scm odf writer)
+Description: Sets the page size for the document. size may be a symbol
+  (letter, a4, a5, legal) or a pair (width-cm-string . height-cm-string).
+Example:
+  (document-set-page-size! doc 'a5)
+  (document-set-page-size! doc '("14.80cm" . "21.00cm"))</pre>
+</div>
+<div class="entry" id="e13" data-name="make-document">
+  <div class="entry-name">make-document</div>
+  <pre class="entry-doc">Syntax: (make-document)
+Library: (scm odf writer)
+Description: Creates and returns a new empty ODF text document object.
+Example:
+  (let ((doc (make-document)))
+    (document-add-paragraph! doc)
+    (document-save doc "out.odt"))</pre>
+</div>
+<div class="entry" id="e14" data-name="make-run-style">
+  <div class="entry-name">make-run-style</div>
+  <pre class="entry-doc">Syntax: (make-run-style)
+Library: (scm odf writer)
+Description: Creates a mutable run style object (font-name, font-size, bold,
+  italic, underline, color). Use paragraph-add-styled-run! to apply it.
+Example:
+  (let ((rs (make-run-style)))
+    (rs 'set-bold #t)
+    (rs 'set-color (resolve-color 'red))
+    (paragraph-add-styled-run! para "text" rs))</pre>
+</div>
+<div class="entry" id="e15" data-name="paragraph-add-break!">
+  <div class="entry-name">paragraph-add-break!</div>
+  <pre class="entry-doc">Syntax: (paragraph-add-break! para)
+Library: (scm odf writer)
+Description: Adds a line break to para.
+Example:
+  (paragraph-add-break! para)</pre>
+</div>
+<div class="entry" id="e16" data-name="paragraph-add-image!">
+  <div class="entry-name">paragraph-add-image!</div>
+  <pre class="entry-doc">Syntax: (paragraph-add-image! para filename width-pt height-pt)
+Library: (scm odf writer)
+Description: Embeds an image from filename into para. width-pt and height-pt
+  are the display dimensions in points, which are converted to cm for ODF.
+Example:
+  (paragraph-add-image! para "logo.png" 100 50)</pre>
+</div>
+<div class="entry" id="e17" data-name="paragraph-add-index-entry!">
+  <div class="entry-name">paragraph-add-index-entry!</div>
+  <pre class="entry-doc">Syntax: (paragraph-add-index-entry! para term)
+Library: (scm odf writer)
+Description: Marks an inline index entry in para. term is the text that will
+  appear in the alphabetical index. The mark is invisible in the document body.
+Example:
+  (paragraph-add-run! para "Scheme is a programming language.")
+  (paragraph-add-index-entry! para "Scheme")</pre>
+</div>
+<div class="entry" id="e18" data-name="paragraph-add-page-number!">
+  <div class="entry-name">paragraph-add-page-number!</div>
+  <pre class="entry-doc">Syntax: (paragraph-add-page-number! para)
+Library: (scm odf writer)
+Description: Adds a page number field to the paragraph. The page number is
+  automatically updated when the document is rendered.
+Example:
+  (let ((p (document-add-paragraph! doc)))
+    (paragraph-add-run! p "Page ")
+    (paragraph-add-page-number! p))</pre>
+</div>
+<div class="entry" id="e19" data-name="paragraph-add-run!">
+  <div class="entry-name">paragraph-add-run!</div>
+  <pre class="entry-doc">Syntax: (paragraph-add-run! para text [font: n] [size: n] [color: c] [bold] [italic] [underline])
+Library: (scm odf writer)
+Description: Adds a text run to para with optional formatting. Keyword arguments
+  set font name, size (points), color (symbol or ARGB string), and style flags.
+Example:
+  (paragraph-add-run! para "hello")
+  (paragraph-add-run! para "bold red" bold color: 'red)</pre>
+</div>
+<div class="entry" id="e20" data-name="paragraph-add-styled-run!">
+  <div class="entry-name">paragraph-add-styled-run!</div>
+  <pre class="entry-doc">Syntax: (paragraph-add-styled-run! para text run-style-or-false)
+Library: (scm odf writer)
+Description: Adds a text run to para. run-style-or-false is a run style object
+  from make-run-style, or #f for unstyled text.
+Example:
+  (paragraph-add-styled-run! para "hello" #f)
+  (let ((rs (make-run-style))) (rs 'set-bold #t)
+    (paragraph-add-styled-run! para "bold" rs))</pre>
+</div>
+<div class="entry" id="e21" data-name="paragraph-add-tab!">
+  <div class="entry-name">paragraph-add-tab!</div>
+  <pre class="entry-doc">Syntax: (paragraph-add-tab! para)
+Library: (scm odf writer)
+Description: Adds a tab character to para.
+Example:
+  (paragraph-add-tab! para)</pre>
+</div>
+<div class="entry" id="e22" data-name="paragraph-set-alignment!">
+  <div class="entry-name">paragraph-set-alignment!</div>
+  <pre class="entry-doc">Syntax: (paragraph-set-alignment! para alignment)
+Library: (scm odf writer)
+Description: Sets the alignment of para. alignment is one of 'left 'center
+  'right 'justify.
+Example:
+  (paragraph-set-alignment! para 'center)</pre>
+</div>
+<div class="entry" id="e23" data-name="paragraph-set-indent!">
+  <div class="entry-name">paragraph-set-indent!</div>
+  <pre class="entry-doc">Syntax: (paragraph-set-indent! para left-pt [right-pt [first-pt]])
+Library: (scm odf writer)
+Description: Sets paragraph indentation in points. Values are stored directly
+  in points for ODF output.
+Example:
+  (paragraph-set-indent! para 36)
+  (paragraph-set-indent! para 18 0 -18)</pre>
+</div>
+<div class="entry" id="e24" data-name="paragraph-set-page-break-before!">
+  <div class="entry-name">paragraph-set-page-break-before!</div>
+  <pre class="entry-doc">Syntax: (paragraph-set-page-break-before! para)
+Library: (scm odf writer)
+Description: Sets the page-break-before property on para so that it starts on
+  a new page when rendered.
+Example:
+  (let ((p (document-add-paragraph! doc)))
+    (paragraph-set-page-break-before! p)
+    (paragraph-add-run! p "New page content"))</pre>
+</div>
+<div class="entry" id="e25" data-name="paragraph-set-spacing!">
+  <div class="entry-name">paragraph-set-spacing!</div>
+  <pre class="entry-doc">Syntax: (paragraph-set-spacing! para before-pt after-pt [line-pt])
+Library: (scm odf writer)
+Description: Sets paragraph spacing in points. ODF stores point values
+  directly (no conversion needed). line-pt is optional line height.
+Example:
+  (paragraph-set-spacing! para 12 6)
+  (paragraph-set-spacing! para 0 0 14)</pre>
+</div>
+<div class="entry" id="e26" data-name="paragraph-set-style!">
+  <div class="entry-name">paragraph-set-style!</div>
+  <pre class="entry-doc">Syntax: (paragraph-set-style! para style-name)
+Library: (scm odf writer)
+Description: Sets the named style of para. style-name is a string matching a
+  style defined with document-define-style!.
+Example:
+  (paragraph-set-style! para "Heading1")</pre>
+</div>
+<div class="entry" id="e27" data-name="paragraph-set-tab-stops!">
+  <div class="entry-name">paragraph-set-tab-stops!</div>
+  <pre class="entry-doc">Syntax: (paragraph-set-tab-stops! para stops)
+Library: (scm odf writer)
+Description: Sets tab stops for para. stops is a list of (pos-pt alignment)
+  where pos-pt is in points and alignment is a symbol ('left 'center 'right
+  'decimal). Points are converted to cm for ODF output.
+Example:
+  (paragraph-set-tab-stops! para '((72 left) (144 center)))</pre>
+</div>
+<div class="entry" id="e28" data-name="register-color!">
+  <div class="entry-name">register-color!</div>
+  <pre class="entry-doc">Syntax: (register-color! name hex-string)
+Library: (scm odf writer)
+Description: Registers a new named color. name is a symbol; hex-string is an
+  8-character ARGB hex string (e.g. "FFFF0000").
+Example:
+  (register-color! 'salmon "FFFA8072")</pre>
+</div>
+<div class="entry" id="e29" data-name="resolve-color">
+  <div class="entry-name">resolve-color</div>
+  <pre class="entry-doc">Syntax: (resolve-color color)
+Library: (scm odf writer)
+Description: Resolves a color to an 8-character ARGB hex string. color may be
+  a string (returned as-is) or a named symbol (black, white, red, etc.).
+Example:
+  (resolve-color 'red)       =&gt; "FFFF0000"
+  (resolve-color "FFAABBCC") =&gt; "FFAABBCC"</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

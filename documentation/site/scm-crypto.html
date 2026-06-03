@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm crypto) — Scm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Scm Library Reference</a></h1>
+    <p>scm &mdash; libraries and their exports</p>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav>
+  <h2>R7RS Standard</h2>
+  <a href="scheme-base.html" class="r7rs">(scheme base)</a>
+  <a href="scheme-case-lambda.html" class="r7rs">(scheme case-lambda)</a>
+  <a href="scheme-char.html" class="r7rs">(scheme char)</a>
+  <a href="scheme-complex.html" class="r7rs">(scheme complex)</a>
+  <a href="scheme-cxr.html" class="r7rs">(scheme cxr)</a>
+  <a href="scheme-eval.html" class="r7rs">(scheme eval)</a>
+  <a href="scheme-file.html" class="r7rs">(scheme file)</a>
+  <a href="scheme-inexact.html" class="r7rs">(scheme inexact)</a>
+  <a href="scheme-lazy.html" class="r7rs">(scheme lazy)</a>
+  <a href="scheme-load.html" class="r7rs">(scheme load)</a>
+  <a href="scheme-process-context.html" class="r7rs">(scheme process-context)</a>
+  <a href="scheme-r5rs.html" class="r7rs">(scheme r5rs)</a>
+  <a href="scheme-read.html" class="r7rs">(scheme read)</a>
+  <a href="scheme-repl.html" class="r7rs">(scheme repl)</a>
+  <a href="scheme-time.html" class="r7rs">(scheme time)</a>
+  <a href="scheme-write.html" class="r7rs">(scheme write)</a>
+  <h2>SRFI Libraries</h2>
+  <a href="srfi-1.html" class="srfi">(srfi 1)</a>
+  <a href="srfi-2.html" class="srfi">(srfi 2)</a>
+  <a href="srfi-8.html" class="srfi">(srfi 8)</a>
+  <a href="srfi-9.html" class="srfi">(srfi 9)</a>
+  <a href="srfi-13.html" class="srfi">(srfi 13)</a>
+  <a href="srfi-14.html" class="srfi">(srfi 14)</a>
+  <a href="srfi-18.html" class="srfi">(srfi 18)</a>
+  <a href="srfi-19.html" class="srfi">(srfi 19)</a>
+  <a href="srfi-26.html" class="srfi">(srfi 26)</a>
+  <a href="srfi-28.html" class="srfi">(srfi 28)</a>
+  <a href="srfi-39.html" class="srfi">(srfi 39)</a>
+  <a href="srfi-48.html" class="srfi">(srfi 48)</a>
+  <a href="srfi-64.html" class="srfi">(srfi 64)</a>
+  <a href="srfi-69.html" class="srfi">(srfi 69)</a>
+  <a href="srfi-95.html" class="srfi">(srfi 95)</a>
+  <a href="srfi-98.html" class="srfi">(srfi 98)</a>
+  <a href="srfi-111.html" class="srfi">(srfi 111)</a>
+  <a href="srfi-125.html" class="srfi">(srfi 125)</a>
+  <a href="srfi-128.html" class="srfi">(srfi 128)</a>
+  <a href="srfi-132.html" class="srfi">(srfi 132)</a>
+  <a href="srfi-133.html" class="srfi">(srfi 133)</a>
+  <a href="srfi-151.html" class="srfi">(srfi 151)</a>
+  <a href="srfi-158.html" class="srfi">(srfi 158)</a>
+  <h2>Scm Extensions</h2>
+  <a href="scm-archive.html" class="scm">(scm archive)</a>
+  <a href="scm-args.html" class="scm">(scm args)</a>
+  <a href="scm-compile.html" class="scm">(scm compile)</a>
+  <a href="scm-compression.html" class="scm">(scm compression)</a>
+  <a href="scm-crypto.html" class="scm active">(scm crypto)</a>
+  <a href="scm-csv.html" class="scm">(scm csv)</a>
+  <a href="scm-database-migrations.html" class="scm">(scm database migrations)</a>
+  <a href="scm-database-postgres.html" class="scm">(scm database postgres)</a>
+  <a href="scm-database-sqlserver.html" class="scm">(scm database sqlserver)</a>
+  <a href="scm-datetime.html" class="scm">(scm datetime)</a>
+  <a href="scm-dict.html" class="scm">(scm dict)</a>
+  <a href="scm-doc.html" class="scm">(scm doc)</a>
+  <a href="scm-duration.html" class="scm">(scm duration)</a>
+  <a href="scm-feed.html" class="scm">(scm feed)</a>
+  <a href="scm-fs-find.html" class="scm">(scm fs-find)</a>
+  <a href="scm-fs.html" class="scm">(scm fs)</a>
+  <a href="scm-glob.html" class="scm">(scm glob)</a>
+  <a href="scm-html-builder.html" class="scm">(scm html builder)</a>
+  <a href="scm-html.html" class="scm">(scm html)</a>
+  <a href="scm-io.html" class="scm">(scm io)</a>
+  <a href="scm-json-simple.html" class="scm">(scm json simple)</a>
+  <a href="scm-json.html" class="scm">(scm json)</a>
+  <a href="scm-list.html" class="scm">(scm list)</a>
+  <a href="scm-log.html" class="scm">(scm log)</a>
+  <a href="scm-macro.html" class="scm">(scm macro)</a>
+  <a href="scm-markdown.html" class="scm">(scm markdown)</a>
+  <a href="scm-match.html" class="scm">(scm match)</a>
+  <a href="scm-math.html" class="scm">(scm math)</a>
+  <a href="scm-module.html" class="scm">(scm module)</a>
+  <a href="scm-net-http-client.html" class="scm">(scm net http client)</a>
+  <a href="scm-net-http-cookies.html" class="scm">(scm net http cookies)</a>
+  <a href="scm-net-http-forms.html" class="scm">(scm net http forms)</a>
+  <a href="scm-net-http-multipart.html" class="scm">(scm net http multipart)</a>
+  <a href="scm-net-http-request.html" class="scm">(scm net http request)</a>
+  <a href="scm-net-http-response.html" class="scm">(scm net http response)</a>
+  <a href="scm-net-http-route.html" class="scm">(scm net http route)</a>
+  <a href="scm-net-http-server.html" class="scm">(scm net http server)</a>
+  <a href="scm-net-remote.html" class="scm">(scm net-remote)</a>
+  <a href="scm-net-sockets.html" class="scm">(scm net sockets)</a>
+  <a href="scm-net-websocket.html" class="scm">(scm net websocket)</a>
+  <a href="scm-odf-spreadsheet.html" class="scm">(scm odf spreadsheet)</a>
+  <a href="scm-odf-writer.html" class="scm">(scm odf writer)</a>
+  <a href="scm-ooxml-excel-reader.html" class="scm">(scm ooxml excel-reader)</a>
+  <a href="scm-ooxml-excel.html" class="scm">(scm ooxml excel)</a>
+  <a href="scm-ooxml-word-reader.html" class="scm">(scm ooxml word-reader)</a>
+  <a href="scm-ooxml-word.html" class="scm">(scm ooxml word)</a>
+  <a href="scm-pdf.html" class="scm">(scm pdf)</a>
+  <a href="scm-png.html" class="scm">(scm png)</a>
+  <a href="scm-profiling.html" class="scm">(scm profiling)</a>
+  <a href="scm-qr.html" class="scm">(scm qr)</a>
+  <a href="scm-random-access.html" class="scm">(scm random access)</a>
+  <a href="scm-repl.html" class="scm">(scm repl)</a>
+  <a href="scm-store.html" class="scm">(scm store)</a>
+  <a href="scm-string.html" class="scm">(scm string)</a>
+  <a href="scm-sysadmin.html" class="scm">(scm sysadmin)</a>
+  <a href="scm-system.html" class="scm">(scm system)</a>
+  <a href="scm-templating.html" class="scm">(scm templating)</a>
+  <a href="scm-terminal.html" class="scm">(scm terminal)</a>
+  <a href="scm-test.html" class="scm">(scm test)</a>
+  <a href="scm-text.html" class="scm">(scm text)</a>
+  <a href="scm-toml.html" class="scm">(scm toml)</a>
+  <a href="scm-uri.html" class="scm">(scm uri)</a>
+  <a href="scm-xml.html" class="scm">(scm xml)</a>
+  <a href="scm-zip.html" class="scm">(scm zip)</a>
+</nav>
+
+<main>
+
+<a class="backlink" href="index.html">&larr; All libraries</a>
+<div class="lib-title scm">(scm crypto)</div>
+<p class="lib-sub">Cryptographic hashing and encoding utilities</p>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">24 bindings</p>
+
+<div class="entry" id="e0" data-name="aes-cbc-decrypt">
+  <div class="entry-name">aes-cbc-decrypt</div>
+  <pre class="entry-doc">Syntax: (aes-cbc-decrypt key iv ciphertext)
+Library: (scm crypto)
+Description: Decrypts ciphertext using AES-CBC with PKCS7 padding. key must be 16, 24, or 32 bytes; iv must be 16 bytes. Returns a bytevector.
+Example:
+  (aes-cbc-decrypt key iv ciphertext) =&gt; #u8(...)</pre>
+</div>
+<div class="entry" id="e1" data-name="aes-cbc-encrypt">
+  <div class="entry-name">aes-cbc-encrypt</div>
+  <pre class="entry-doc">Syntax: (aes-cbc-encrypt key iv plaintext)
+Library: (scm crypto)
+Description: Encrypts plaintext using AES-CBC with PKCS7 padding. key must be 16, 24, or 32 bytes; iv must be 16 bytes. Returns a bytevector.
+Example:
+  (aes-cbc-encrypt key iv plaintext) =&gt; #u8(...)</pre>
+</div>
+<div class="entry" id="e2" data-name="aes-ecb-decrypt">
+  <div class="entry-name">aes-ecb-decrypt</div>
+  <pre class="entry-doc">Syntax: (aes-ecb-decrypt key ciphertext)
+Library: (scm crypto)
+Description: Decrypts ciphertext using AES-ECB with PKCS7 padding. key must be 16, 24, or 32 bytes. Returns a bytevector.
+Example:
+  (aes-ecb-decrypt key ciphertext) =&gt; #u8(...)</pre>
+</div>
+<div class="entry" id="e3" data-name="aes-ecb-encrypt">
+  <div class="entry-name">aes-ecb-encrypt</div>
+  <pre class="entry-doc">Syntax: (aes-ecb-encrypt key plaintext)
+Library: (scm crypto)
+Description: Encrypts plaintext using AES-ECB with PKCS7 padding. key must be 16, 24, or 32 bytes. Note: ECB mode is not semantically secure; prefer AES-CBC or AES-GCM. Returns a bytevector.
+Example:
+  (aes-ecb-encrypt key plaintext) =&gt; #u8(...)</pre>
+</div>
+<div class="entry" id="e4" data-name="aes-gcm-decrypt">
+  <div class="entry-name">aes-gcm-decrypt</div>
+  <pre class="entry-doc">Syntax: (aes-gcm-decrypt key nonce ciphertext [aad])
+Library: (scm crypto)
+Description: Decrypts ciphertext using AES-GCM. key must be 16, 24, or 32 bytes; nonce must be 12 bytes. The ciphertext argument must include the 16-byte authentication tag appended at the end. Raises an error if authentication fails.
+Example:
+  (aes-gcm-decrypt key nonce ciphertext-with-tag) =&gt; #u8(...)</pre>
+</div>
+<div class="entry" id="e5" data-name="aes-gcm-encrypt">
+  <div class="entry-name">aes-gcm-encrypt</div>
+  <pre class="entry-doc">Syntax: (aes-gcm-encrypt key nonce plaintext [aad])
+Library: (scm crypto)
+Description: Encrypts plaintext using AES-GCM. key must be 16, 24, or 32 bytes; nonce must be 12 bytes. Optional aad is additional authenticated data. Returns ciphertext concatenated with 16-byte authentication tag.
+Example:
+  (aes-gcm-encrypt key nonce plaintext) =&gt; #u8(...)</pre>
+</div>
+<div class="entry" id="e6" data-name="base64-decode">
+  <div class="entry-name">base64-decode</div>
+  <pre class="entry-doc">Syntax: (base64-decode string)
+Library: (scm crypto)
+Description: Decodes a base64-encoded string and returns a bytevector.
+Example:
+  (base64-decode "SGVsbG8=") =&gt; #u8(72 101 108 108 111)</pre>
+</div>
+<div class="entry" id="e7" data-name="base64-encode">
+  <div class="entry-name">base64-encode</div>
+  <pre class="entry-doc">Syntax: (base64-encode bytevector)
+Library: (scm crypto)
+Description: Returns the base64-encoded string of a bytevector.
+Example:
+  (base64-encode #u8(72 101 108 108 111)) =&gt; "SGVsbG8="</pre>
+</div>
+<div class="entry" id="e8" data-name="bytevector-&gt;hex">
+  <div class="entry-name">bytevector-&gt;hex</div>
+  <pre class="entry-doc">Syntax: (bytevector-&gt;hex bv)
+Library: (scm crypto)
+Description: Returns the lowercase hexadecimal string representation of the
+  bytevector bv (two hex digits per byte, no separators).
+Example:
+  (bytevector-&gt;hex #u8(0 15 255)) =&gt; "000fff"</pre>
+</div>
+<div class="entry" id="e9" data-name="chacha20poly1305-decrypt">
+  <div class="entry-name">chacha20poly1305-decrypt</div>
+  <pre class="entry-doc">Syntax: (chacha20poly1305-decrypt key nonce ciphertext [aad])
+Library: (scm crypto)
+Description: Decrypts ciphertext using ChaCha20-Poly1305. key must be 32 bytes; nonce must be 12 bytes. The ciphertext argument must include the 16-byte authentication tag appended at the end. Raises an error if authentication fails.
+Example:
+  (chacha20poly1305-decrypt key nonce ciphertext-with-tag) =&gt; #u8(...)</pre>
+</div>
+<div class="entry" id="e10" data-name="chacha20poly1305-encrypt">
+  <div class="entry-name">chacha20poly1305-encrypt</div>
+  <pre class="entry-doc">Syntax: (chacha20poly1305-encrypt key nonce plaintext [aad])
+Library: (scm crypto)
+Description: Encrypts plaintext using ChaCha20-Poly1305. key must be 32 bytes; nonce must be 12 bytes. Optional aad is additional authenticated data. Returns ciphertext concatenated with 16-byte authentication tag.
+Example:
+  (chacha20poly1305-encrypt key nonce plaintext) =&gt; #u8(...)</pre>
+</div>
+<div class="entry" id="e11" data-name="constant-time-bytevector=?">
+  <div class="entry-name">constant-time-bytevector=?</div>
+  <pre class="entry-doc">Syntax: (constant-time-bytevector=? a b)
+Library: (scm crypto)
+Description: Compares two bytevectors in constant time relative to their
+  length when equal-length. Returns #f for different lengths (this does
+  leak length, just not content). Use for comparing MACs, password hashes,
+  or any secret-derived bytes.
+Example:
+  (constant-time-bytevector=? #u8(1 2 3) #u8(1 2 3)) =&gt; #t
+  (constant-time-bytevector=? #u8(1 2 3) #u8(1 2 4)) =&gt; #f</pre>
+</div>
+<div class="entry" id="e12" data-name="hex-&gt;bytevector">
+  <div class="entry-name">hex-&gt;bytevector</div>
+  <pre class="entry-doc">Syntax: (hex-&gt;bytevector s)
+Library: (scm crypto)
+Description: Parses a hexadecimal string (case-insensitive, no separators)
+  into a bytevector. Raises an error on odd length or non-hex characters.
+Example:
+  (hex-&gt;bytevector "000fff") =&gt; #u8(0 15 255)
+  (hex-&gt;bytevector "DEADBEEF") =&gt; #u8(222 173 190 239)</pre>
+</div>
+<div class="entry" id="e13" data-name="hmac-sha256">
+  <div class="entry-name">hmac-sha256</div>
+  <pre class="entry-doc">Syntax: (hmac-sha256 key data)
+Library: (scm crypto)
+Description: Computes HMAC-SHA256 of data using key. Both key and data must be bytevectors. Returns a bytevector.
+Example:
+  (hmac-sha256 key-bv data-bv) =&gt; #u8(...)</pre>
+</div>
+<div class="entry" id="e14" data-name="md5-hash">
+  <div class="entry-name">md5-hash</div>
+  <pre class="entry-doc">Syntax: (md5-hash obj)
+Library: (scm crypto)
+Description: Returns the MD5 hash of obj as a lowercase hex string. Accepts strings, symbols, or bytevectors.
+Example:
+  (md5-hash "hello") =&gt; "5d41402abc4b2a76b9719d911017c592"</pre>
+</div>
+<div class="entry" id="e15" data-name="pbkdf2-sha256">
+  <div class="entry-name">pbkdf2-sha256</div>
+  <pre class="entry-doc">Syntax: (pbkdf2-sha256 password salt iterations length)
+Library: (scm crypto)
+Description: Derives a key using PBKDF2-HMAC-SHA256. Password is a string or bytevector, salt is a bytevector. Returns a bytevector of given length.
+Example:
+  (pbkdf2-sha256 "password" salt-bv 4096 32) =&gt; #u8(...)</pre>
+</div>
+<div class="entry" id="e16" data-name="random-bytes">
+  <div class="entry-name">random-bytes</div>
+  <pre class="entry-doc">Syntax: (random-bytes n)
+Library: (scm crypto)
+Description: Returns a fresh bytevector of n cryptographically random bytes.
+Example:
+  (random-bytes 16) =&gt; #u8(...)</pre>
+</div>
+<div class="entry" id="e17" data-name="random-string">
+  <div class="entry-name">random-string</div>
+  <pre class="entry-doc">Syntax: (random-string charset length)
+Library: (scm crypto)
+Description: Returns a random string of the given length drawn from charset,
+  using random-bytes as the entropy source. Each output character is the
+  byte taken modulo (string-length charset); for cryptographic uses prefer
+  a charset length that is a power of two to avoid modulo bias, or a
+  charset of length ≤ 64 (the bias is then ≲ 1 in 4 billion per char).
+Example:
+  (random-string "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" 6) ; e.g. "K3Z9PA"
+  (random-string "0123456789abcdef" 32) ; 128 random bits as hex</pre>
+</div>
+<div class="entry" id="e18" data-name="rsa-decrypt">
+  <div class="entry-name">rsa-decrypt</div>
+  <pre class="entry-doc">Syntax: (rsa-decrypt private-key ciphertext)
+Library: (scm crypto)
+Description: Decrypts ciphertext using RSA with OAEP-SHA256 padding. private-key must be a bytevector in PKCS#8 DER format (as returned by rsa-generate-keypair). Returns a bytevector.
+Example:
+  (rsa-decrypt priv ciphertext) =&gt; #u8(...)</pre>
+</div>
+<div class="entry" id="e19" data-name="rsa-encrypt">
+  <div class="entry-name">rsa-encrypt</div>
+  <pre class="entry-doc">Syntax: (rsa-encrypt public-key plaintext)
+Library: (scm crypto)
+Description: Encrypts plaintext using RSA with OAEP-SHA256 padding. public-key must be a bytevector in SubjectPublicKeyInfo DER format (as returned by rsa-generate-keypair). Returns a bytevector.
+Example:
+  (rsa-encrypt pub plaintext) =&gt; #u8(...)</pre>
+</div>
+<div class="entry" id="e20" data-name="rsa-generate-keypair">
+  <div class="entry-name">rsa-generate-keypair</div>
+  <pre class="entry-doc">Syntax: (rsa-generate-keypair bits)
+Library: (scm crypto)
+Description: Generates an RSA key pair of the given bit size (e.g. 2048, 4096). Returns a list of two bytevectors: (list public-key private-key). The public key is in SubjectPublicKeyInfo DER format; the private key is in PKCS#8 DER format.
+Example:
+  (define kp (rsa-generate-keypair 2048))
+  (define pub (car kp))
+  (define priv (cadr kp))</pre>
+</div>
+<div class="entry" id="e21" data-name="sha1-hash">
+  <div class="entry-name">sha1-hash</div>
+  <pre class="entry-doc">Syntax: (sha1-hash obj)
+Library: (scm crypto)
+Description: Returns the SHA-1 hash of obj as a lowercase hex string. Accepts strings, symbols, or bytevectors.
+Example:
+  (sha1-hash "hello") =&gt; "aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d"</pre>
+</div>
+<div class="entry" id="e22" data-name="sha256-hash">
+  <div class="entry-name">sha256-hash</div>
+  <pre class="entry-doc">Syntax: (sha256-hash obj)
+Library: (scm crypto)
+Description: Returns the SHA-256 hash of obj as a bytevector. Accepts strings, symbols, or bytevectors.
+Example:
+  (sha256-hash "hello") =&gt; #u8(...)</pre>
+</div>
+<div class="entry" id="e23" data-name="xor-key">
+  <div class="entry-name">xor-key</div>
+  <pre class="entry-doc">Syntax: (xor-key bv key)
+Library: (scm crypto)
+Description: Returns a new bytevector produced by XORing each byte of bv with the corresponding byte of key, cycling through key as needed.
+Example:
+  (xor-key data-bv key-bv) =&gt; #u8(...)</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

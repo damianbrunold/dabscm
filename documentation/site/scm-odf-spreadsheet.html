@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm odf spreadsheet) — Scm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Scm Library Reference</a></h1>
+    <p>scm &mdash; libraries and their exports</p>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav>
+  <h2>R7RS Standard</h2>
+  <a href="scheme-base.html" class="r7rs">(scheme base)</a>
+  <a href="scheme-case-lambda.html" class="r7rs">(scheme case-lambda)</a>
+  <a href="scheme-char.html" class="r7rs">(scheme char)</a>
+  <a href="scheme-complex.html" class="r7rs">(scheme complex)</a>
+  <a href="scheme-cxr.html" class="r7rs">(scheme cxr)</a>
+  <a href="scheme-eval.html" class="r7rs">(scheme eval)</a>
+  <a href="scheme-file.html" class="r7rs">(scheme file)</a>
+  <a href="scheme-inexact.html" class="r7rs">(scheme inexact)</a>
+  <a href="scheme-lazy.html" class="r7rs">(scheme lazy)</a>
+  <a href="scheme-load.html" class="r7rs">(scheme load)</a>
+  <a href="scheme-process-context.html" class="r7rs">(scheme process-context)</a>
+  <a href="scheme-r5rs.html" class="r7rs">(scheme r5rs)</a>
+  <a href="scheme-read.html" class="r7rs">(scheme read)</a>
+  <a href="scheme-repl.html" class="r7rs">(scheme repl)</a>
+  <a href="scheme-time.html" class="r7rs">(scheme time)</a>
+  <a href="scheme-write.html" class="r7rs">(scheme write)</a>
+  <h2>SRFI Libraries</h2>
+  <a href="srfi-1.html" class="srfi">(srfi 1)</a>
+  <a href="srfi-2.html" class="srfi">(srfi 2)</a>
+  <a href="srfi-8.html" class="srfi">(srfi 8)</a>
+  <a href="srfi-9.html" class="srfi">(srfi 9)</a>
+  <a href="srfi-13.html" class="srfi">(srfi 13)</a>
+  <a href="srfi-14.html" class="srfi">(srfi 14)</a>
+  <a href="srfi-18.html" class="srfi">(srfi 18)</a>
+  <a href="srfi-19.html" class="srfi">(srfi 19)</a>
+  <a href="srfi-26.html" class="srfi">(srfi 26)</a>
+  <a href="srfi-28.html" class="srfi">(srfi 28)</a>
+  <a href="srfi-39.html" class="srfi">(srfi 39)</a>
+  <a href="srfi-48.html" class="srfi">(srfi 48)</a>
+  <a href="srfi-64.html" class="srfi">(srfi 64)</a>
+  <a href="srfi-69.html" class="srfi">(srfi 69)</a>
+  <a href="srfi-95.html" class="srfi">(srfi 95)</a>
+  <a href="srfi-98.html" class="srfi">(srfi 98)</a>
+  <a href="srfi-111.html" class="srfi">(srfi 111)</a>
+  <a href="srfi-125.html" class="srfi">(srfi 125)</a>
+  <a href="srfi-128.html" class="srfi">(srfi 128)</a>
+  <a href="srfi-132.html" class="srfi">(srfi 132)</a>
+  <a href="srfi-133.html" class="srfi">(srfi 133)</a>
+  <a href="srfi-151.html" class="srfi">(srfi 151)</a>
+  <a href="srfi-158.html" class="srfi">(srfi 158)</a>
+  <h2>Scm Extensions</h2>
+  <a href="scm-archive.html" class="scm">(scm archive)</a>
+  <a href="scm-args.html" class="scm">(scm args)</a>
+  <a href="scm-compile.html" class="scm">(scm compile)</a>
+  <a href="scm-compression.html" class="scm">(scm compression)</a>
+  <a href="scm-crypto.html" class="scm">(scm crypto)</a>
+  <a href="scm-csv.html" class="scm">(scm csv)</a>
+  <a href="scm-database-migrations.html" class="scm">(scm database migrations)</a>
+  <a href="scm-database-postgres.html" class="scm">(scm database postgres)</a>
+  <a href="scm-database-sqlserver.html" class="scm">(scm database sqlserver)</a>
+  <a href="scm-datetime.html" class="scm">(scm datetime)</a>
+  <a href="scm-dict.html" class="scm">(scm dict)</a>
+  <a href="scm-doc.html" class="scm">(scm doc)</a>
+  <a href="scm-duration.html" class="scm">(scm duration)</a>
+  <a href="scm-feed.html" class="scm">(scm feed)</a>
+  <a href="scm-fs-find.html" class="scm">(scm fs-find)</a>
+  <a href="scm-fs.html" class="scm">(scm fs)</a>
+  <a href="scm-glob.html" class="scm">(scm glob)</a>
+  <a href="scm-html-builder.html" class="scm">(scm html builder)</a>
+  <a href="scm-html.html" class="scm">(scm html)</a>
+  <a href="scm-io.html" class="scm">(scm io)</a>
+  <a href="scm-json-simple.html" class="scm">(scm json simple)</a>
+  <a href="scm-json.html" class="scm">(scm json)</a>
+  <a href="scm-list.html" class="scm">(scm list)</a>
+  <a href="scm-log.html" class="scm">(scm log)</a>
+  <a href="scm-macro.html" class="scm">(scm macro)</a>
+  <a href="scm-markdown.html" class="scm">(scm markdown)</a>
+  <a href="scm-match.html" class="scm">(scm match)</a>
+  <a href="scm-math.html" class="scm">(scm math)</a>
+  <a href="scm-module.html" class="scm">(scm module)</a>
+  <a href="scm-net-http-client.html" class="scm">(scm net http client)</a>
+  <a href="scm-net-http-cookies.html" class="scm">(scm net http cookies)</a>
+  <a href="scm-net-http-forms.html" class="scm">(scm net http forms)</a>
+  <a href="scm-net-http-multipart.html" class="scm">(scm net http multipart)</a>
+  <a href="scm-net-http-request.html" class="scm">(scm net http request)</a>
+  <a href="scm-net-http-response.html" class="scm">(scm net http response)</a>
+  <a href="scm-net-http-route.html" class="scm">(scm net http route)</a>
+  <a href="scm-net-http-server.html" class="scm">(scm net http server)</a>
+  <a href="scm-net-remote.html" class="scm">(scm net-remote)</a>
+  <a href="scm-net-sockets.html" class="scm">(scm net sockets)</a>
+  <a href="scm-net-websocket.html" class="scm">(scm net websocket)</a>
+  <a href="scm-odf-spreadsheet.html" class="scm active">(scm odf spreadsheet)</a>
+  <a href="scm-odf-writer.html" class="scm">(scm odf writer)</a>
+  <a href="scm-ooxml-excel-reader.html" class="scm">(scm ooxml excel-reader)</a>
+  <a href="scm-ooxml-excel.html" class="scm">(scm ooxml excel)</a>
+  <a href="scm-ooxml-word-reader.html" class="scm">(scm ooxml word-reader)</a>
+  <a href="scm-ooxml-word.html" class="scm">(scm ooxml word)</a>
+  <a href="scm-pdf.html" class="scm">(scm pdf)</a>
+  <a href="scm-png.html" class="scm">(scm png)</a>
+  <a href="scm-profiling.html" class="scm">(scm profiling)</a>
+  <a href="scm-qr.html" class="scm">(scm qr)</a>
+  <a href="scm-random-access.html" class="scm">(scm random access)</a>
+  <a href="scm-repl.html" class="scm">(scm repl)</a>
+  <a href="scm-store.html" class="scm">(scm store)</a>
+  <a href="scm-string.html" class="scm">(scm string)</a>
+  <a href="scm-sysadmin.html" class="scm">(scm sysadmin)</a>
+  <a href="scm-system.html" class="scm">(scm system)</a>
+  <a href="scm-templating.html" class="scm">(scm templating)</a>
+  <a href="scm-terminal.html" class="scm">(scm terminal)</a>
+  <a href="scm-test.html" class="scm">(scm test)</a>
+  <a href="scm-text.html" class="scm">(scm text)</a>
+  <a href="scm-toml.html" class="scm">(scm toml)</a>
+  <a href="scm-uri.html" class="scm">(scm uri)</a>
+  <a href="scm-xml.html" class="scm">(scm xml)</a>
+  <a href="scm-zip.html" class="scm">(scm zip)</a>
+</nav>
+
+<main>
+
+<a class="backlink" href="index.html">&larr; All libraries</a>
+<div class="lib-title scm">(scm odf spreadsheet)</div>
+<p class="lib-sub">ODF spreadsheet creation (ODS format)</p>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">27 bindings</p>
+
+<div class="entry" id="e0" data-name="call-with-streaming-table">
+  <div class="entry-name">call-with-streaming-table</div>
+  <pre class="entry-doc">Syntax: (call-with-streaming-table filename name num-cols proc)
+Library: (scm odf spreadsheet)
+Description: Creates a single-sheet streaming table workbook, calls
+(proc wb-proxy st) where wb-proxy supports workbook-add-style and st is a
+streaming table, then finalizes and saves the ODS file. Returns 'ok.
+Example:
+  (call-with-streaming-table "/tmp/big.ods" "Data" 3
+    (lambda (wb st)
+      (streaming-table-write-row! st '("Name" "Age" "City"))
+      (streaming-table-write-row! st '("Alice" 30 "Bern"))))</pre>
+</div>
+<div class="entry" id="e1" data-name="call-with-streaming-workbook">
+  <div class="entry-name">call-with-streaming-workbook</div>
+  <pre class="entry-doc">Syntax: (call-with-streaming-workbook filename name proc)
+Library: (scm odf spreadsheet)
+Description: Creates a single-sheet streaming workbook, calls (proc wb-proxy sws)
+where wb-proxy supports workbook-add-style and sws is a streaming worksheet,
+then finalizes and saves the ODS file to filename. Cells must be written in
+row-ascending order. Styles and column/row dimensions should be set before
+writing any cells. Returns 'ok.
+Example:
+  (call-with-streaming-workbook "/tmp/big.ods" "Data"
+    (lambda (wb sws)
+      (let ((hdr (workbook-add-style wb fill: fgcolor: 'lightblue)))
+        (worksheet-set-cell! sws "A1" "Name" 'string hdr)
+        (worksheet-set-cell! sws "A2" "Alice" 'string #f))))</pre>
+</div>
+<div class="entry" id="e2" data-name="call-with-worksheet">
+  <div class="entry-name">call-with-worksheet</div>
+  <pre class="entry-doc">Syntax: (call-with-worksheet filename name proc)
+Library: (scm odf spreadsheet)
+Description: Creates a workbook with a single worksheet named name, calls
+(proc wb ws) where wb is the workbook and ws is the worksheet, then saves
+the workbook to filename.
+Example:
+  (call-with-worksheet "/tmp/out.ods" "Data"
+    (lambda (wb ws)
+      (worksheet-set-cell! ws "A1" "hello" 'string #f)))</pre>
+</div>
+<div class="entry" id="e3" data-name="col-index-&gt;string">
+  <div class="entry-name">col-index-&gt;string</div>
+  <pre class="entry-doc">Syntax: (col-index-&gt;string col)
+Library: (scm odf spreadsheet)
+Description: Converts a 1-based column index to its column letter string.
+Example:
+  (col-index-&gt;string 1)  =&gt; "A"
+  (col-index-&gt;string 26) =&gt; "Z"
+  (col-index-&gt;string 27) =&gt; "AA"</pre>
+</div>
+<div class="entry" id="e4" data-name="make-style">
+  <div class="entry-name">make-style</div>
+  <pre class="entry-doc">Syntax: (make-style)
+Library: (scm odf spreadsheet)
+Description: Creates and returns a new mutable style object with default font
+(Arial 10pt black), no fill, no border, and no alignment. The style object
+is a message-passing procedure accepting set-font, set-fill, set-border, and
+set-alignment actions. Use workbook-add-style instead of this function directly.
+Example:
+  (let ((s (make-style)))
+    (s 'set-font 'color 'red 'bold #t)
+    (s 'set-fill 'fgcolor 'lightblue))</pre>
+</div>
+<div class="entry" id="e5" data-name="make-workbook">
+  <div class="entry-name">make-workbook</div>
+  <pre class="entry-doc">Syntax: (make-workbook)
+Library: (scm odf spreadsheet)
+Description: Creates and returns a new empty workbook object.
+Example:
+  (let ((wb (make-workbook)))
+    (workbook-add-worksheet! wb "Sheet1")
+    (workbook-save wb "out.ods"))</pre>
+</div>
+<div class="entry" id="e6" data-name="open-streaming-table">
+  <div class="entry-name">open-streaming-table</div>
+  <pre class="entry-doc">Syntax: (open-streaming-table filename sheet-name num-cols)
+Library: (scm odf spreadsheet)
+Description: Opens a new single-sheet streaming table workbook. num-cols is
+the number of columns per row. Returns a pair (st . close-proc) where st is
+a streaming table and close-proc must be called exactly once to finalize.
+Example:
+  (let* ((handle (open-streaming-table "/tmp/out.ods" "Sheet1" 3))
+         (st     (car handle))
+         (done!  (cdr handle)))
+    (streaming-table-write-row! st '("hello" "world" 42))
+    (done!))</pre>
+</div>
+<div class="entry" id="e7" data-name="register-color!">
+  <div class="entry-name">register-color!</div>
+  <pre class="entry-doc">Syntax: (register-color! name hex-string)
+Library: (scm odf spreadsheet)
+Description: Registers a new named color in the color table used by resolve-color.
+name is a symbol; hex-string is an 8-character ARGB hex string (e.g. "FFFF0000").
+Example:
+  (register-color! 'salmon "FFFA8072")</pre>
+</div>
+<div class="entry" id="e8" data-name="resolve-color">
+  <div class="entry-name">resolve-color</div>
+  <pre class="entry-doc">Syntax: (resolve-color color)
+Library: (scm odf spreadsheet)
+Description: Resolves a color value to an 8-character ARGB hex string. color may
+be a string (returned as-is) or a symbol naming a known color (black, white, red,
+darkred, lightred, green, darkgreen, lightgreen, blue, darkblue, lightblue,
+yellow, orange, purple, gray, darkgray, lightgray). Signals an error for unknown
+color symbols.
+Example:
+  (resolve-color 'red)       =&gt; "FFFF0000"
+  (resolve-color "FF0000FF") =&gt; "FF0000FF"</pre>
+</div>
+<div class="entry" id="e9" data-name="row-col-&gt;cell-id">
+  <div class="entry-name">row-col-&gt;cell-id</div>
+  <pre class="entry-doc">Syntax: (row-col-&gt;cell-id row col)
+Library: (scm odf spreadsheet)
+Description: Returns the cell ID string for the given 1-based row and column
+indices.
+Example:
+  (row-col-&gt;cell-id 1 1)  =&gt; "A1"
+  (row-col-&gt;cell-id 3 28) =&gt; "AB3"</pre>
+</div>
+<div class="entry" id="e10" data-name="streaming-table-finish!">
+  <div class="entry-name">streaming-table-finish!</div>
+  <pre class="entry-doc">Syntax: (streaming-table-finish! st)
+Library: (scm odf spreadsheet)
+Description: Finalizes a streaming table worksheet.</pre>
+</div>
+<div class="entry" id="e11" data-name="streaming-table-get-col-styles">
+  <div class="entry-name">streaming-table-get-col-styles</div>
+  <pre class="entry-doc">Syntax: (streaming-table-get-col-styles st)
+Library: (scm odf spreadsheet)
+Description: Returns column styles for automatic-styles.</pre>
+</div>
+<div class="entry" id="e12" data-name="streaming-table-get-row-styles">
+  <div class="entry-name">streaming-table-get-row-styles</div>
+  <pre class="entry-doc">Syntax: (streaming-table-get-row-styles st)
+Library: (scm odf spreadsheet)
+Description: Returns row styles for automatic-styles.</pre>
+</div>
+<div class="entry" id="e13" data-name="streaming-table-row-num">
+  <div class="entry-name">streaming-table-row-num</div>
+  <pre class="entry-doc">Syntax: (streaming-table-row-num st)
+Library: (scm odf spreadsheet)
+Description: Returns the number of rows written so far to a streaming table.</pre>
+</div>
+<div class="entry" id="e14" data-name="streaming-table-set-col-width!">
+  <div class="entry-name">streaming-table-set-col-width!</div>
+  <pre class="entry-doc">Syntax: (streaming-table-set-col-width! st col width)
+Library: (scm odf spreadsheet)
+Description: Sets the width of a column in a streaming table (in points).</pre>
+</div>
+<div class="entry" id="e15" data-name="streaming-table-set-pre-write-thunk!">
+  <div class="entry-name">streaming-table-set-pre-write-thunk!</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e16" data-name="streaming-table-set-row-height!">
+  <div class="entry-name">streaming-table-set-row-height!</div>
+  <pre class="entry-doc">Syntax: (streaming-table-set-row-height! st row height)
+Library: (scm odf spreadsheet)
+Description: Sets the height of a row in a streaming table (in points).</pre>
+</div>
+<div class="entry" id="e17" data-name="streaming-table-write-row!">
+  <div class="entry-name">streaming-table-write-row!</div>
+  <pre class="entry-doc">Syntax: (streaming-table-write-row! st values)
+Library: (scm odf spreadsheet)
+Description: Writes a row to a streaming table. values is a list of cell
+values.</pre>
+</div>
+<div class="entry" id="e18" data-name="streaming-table-write-styled-row!">
+  <div class="entry-name">streaming-table-write-styled-row!</div>
+  <pre class="entry-doc">Syntax: (streaming-table-write-styled-row! st values styles)
+Library: (scm odf spreadsheet)
+Description: Writes a row with per-cell styles. values and styles are
+parallel lists; each style element is #f or a style name string.</pre>
+</div>
+<div class="entry" id="e19" data-name="workbook-add-style">
+  <div class="entry-name">workbook-add-style</div>
+  <pre class="entry-doc">Syntax: (workbook-add-style wb [(font opts...)] [(fill opts...)] [(border opts...)] [(alignment opts...)])
+Library: (scm odf spreadsheet)
+Description: Creates a style, registers it with wb, and returns its style name
+(a string like "ce1") for use as the style argument to worksheet-set-cell!.
+Accepts keyword sections font, fill, border, and alignment followed by
+property keyword/value pairs.
+Font properties: name: family: size: color: bold italic
+Fill properties: type: fgcolor: bgcolor:
+Border properties: left: right: top: bottom: diagonal:
+Alignment properties: rotation:
+Color values may be symbols (e.g. 'red) or 8-char ARGB hex strings.
+Example:
+(workbook-add-style wb (fill type: solid fgcolor: lightblue))
+(workbook-add-style wb (fill type: solid fgcolor: lightblue) (font color: red bold))</pre>
+</div>
+<div class="entry" id="e20" data-name="workbook-add-worksheet!">
+  <div class="entry-name">workbook-add-worksheet!</div>
+  <pre class="entry-doc">Syntax: (workbook-add-worksheet! wb name)
+Library: (scm odf spreadsheet)
+Description: Adds a new worksheet named name to wb and returns the new worksheet
+object. Worksheets are saved in the order they are added.
+Example:
+  (let* ((wb (make-workbook))
+         (ws (workbook-add-worksheet! wb "Sheet1")))
+    (worksheet-set-cell! ws "A1" 42 'num #f))</pre>
+</div>
+<div class="entry" id="e21" data-name="workbook-save">
+  <div class="entry-name">workbook-save</div>
+  <pre class="entry-doc">Syntax: (workbook-save wb filename)
+Library: (scm odf spreadsheet)
+Description: Serializes wb to an ODS file at the given filename path. All
+worksheets added via workbook-add-worksheet! are included. Returns 'ok.
+Example:
+  (let* ((wb (make-workbook))
+         (ws (workbook-add-worksheet! wb "Data")))
+    (worksheet-set-cell! ws "A1" "hello" 'string #f)
+    (workbook-save wb "/tmp/out.ods"))</pre>
+</div>
+<div class="entry" id="e22" data-name="workbook-save-to-bytevector">
+  <div class="entry-name">workbook-save-to-bytevector</div>
+  <pre class="entry-doc">Syntax: (workbook-save-to-bytevector wb)
+Library: (scm odf spreadsheet)
+Description: Serializes wb to an ODS file in memory and returns the bytes as
+a bytevector. Useful for generating documents for HTTP responses or in-memory
+processing without writing to disk.
+Example:
+  (let* ((wb (make-workbook))
+         (ws (workbook-add-worksheet! wb "Data")))
+    (worksheet-set-cell! ws "A1" "hello" 'string #f)
+    (workbook-save-to-bytevector wb))</pre>
+</div>
+<div class="entry" id="e23" data-name="workbook-styles">
+  <div class="entry-name">workbook-styles</div>
+  <pre class="entry-doc">Syntax: (workbook-styles wb)
+Library: (scm odf spreadsheet)
+Description: Returns the styles object for wb. Works for both regular workbooks
+and streaming workbook proxies. The styles object is used internally by
+workbook-add-style.
+Example:
+  ((workbook-styles wb) 'styles-count) =&gt; 0</pre>
+</div>
+<div class="entry" id="e24" data-name="worksheet-set-cell!">
+  <div class="entry-name">worksheet-set-cell!</div>
+  <pre class="entry-doc">Syntax: (worksheet-set-cell! ws id value type style)
+Library: (scm odf spreadsheet)
+Description: Sets the cell at id (an A1-notation string such as "B3") in
+worksheet ws. type is 'string, 'num, or 'boolean. style is either #f for no
+style or a style name string returned by workbook-add-style. Works for both
+regular and streaming worksheets. For streaming worksheets, cells must be
+written in row-ascending order.
+Example:
+  (worksheet-set-cell! ws "A1" "hello" 'string #f)
+  (worksheet-set-cell! ws "B2" 42 'num #f)
+  (worksheet-set-cell! ws "C3" #t 'boolean #f)
+  (worksheet-set-cell! ws "D4" "hi" 'string my-style)</pre>
+</div>
+<div class="entry" id="e25" data-name="worksheet-set-col-width!">
+  <div class="entry-name">worksheet-set-col-width!</div>
+  <pre class="entry-doc">Syntax: (worksheet-set-col-width! ws col width)
+Library: (scm odf spreadsheet)
+Description: Sets the width of the column identified by the letter string col
+in worksheet ws. width is specified in points. Works for both regular and
+streaming worksheets.
+Example:
+  (worksheet-set-col-width! ws "A" 20)
+  (worksheet-set-col-width! ws "B" 12.5)</pre>
+</div>
+<div class="entry" id="e26" data-name="worksheet-set-row-height!">
+  <div class="entry-name">worksheet-set-row-height!</div>
+  <pre class="entry-doc">Syntax: (worksheet-set-row-height! ws row height)
+Library: (scm odf spreadsheet)
+Description: Sets the height (in points) of the 1-based row index in worksheet
+ws. Works for both regular and streaming worksheets.
+Example:
+  (worksheet-set-row-height! ws 1 30)</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>
