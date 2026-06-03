@@ -135,6 +135,17 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title srfi">(srfi 18)</div>
 <p class="lib-sub">SRFI-18 — Multithreading: threads, mutexes, condition variables</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p>SRFI-18 is the multithreading library: create and start threads, wait for results, and coordinate with mutexes and condition variables.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (srfi 18))
+
+(define t (make-thread (lambda () (* 6 7))))
+(thread-start! t)
+(thread-join! t)        ;; =&gt; 42   (the thread's result)</code></pre>
+<p>Mutexes (<code>make-mutex</code>, <code>mutex-lock!</code>, <code>mutex-unlock!</code>) and condition variables (<code>make-condition-variable</code>, <code>condition-variable-wait!</code>, …) provide synchronization; <code>thread-sleep!</code> pauses the current thread.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">38 bindings</p>
 

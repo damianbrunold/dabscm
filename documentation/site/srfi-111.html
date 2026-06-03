@@ -135,6 +135,18 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title srfi">(srfi 111)</div>
 <p class="lib-sub">SRFI-111 — Boxes: mutable single-value containers</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p>SRFI-111 provides boxes: simple mutable single-value containers. A box holds one value you can read with <code>unbox</code> and replace with <code>set-box!</code> — handy for shared mutable state without defining a record.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (srfi 111))
+
+(define b (box 10))
+(unbox b)         ;; =&gt; 10
+(set-box! b 20)
+(unbox b)         ;; =&gt; 20
+(box? b)          ;; =&gt; #t</code></pre>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">4 bindings</p>
 

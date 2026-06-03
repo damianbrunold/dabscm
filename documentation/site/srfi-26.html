@@ -135,6 +135,18 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title srfi">(srfi 26)</div>
 <p class="lib-sub">SRFI-26 — cut/cute: partial application via slot notation</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p>SRFI-26 provides <code>cut</code> and <code>cute</code>, compact syntax for partial application: write a specialized procedure by marking the "holes" with <code>&lt;&gt;</code> instead of writing a full lambda.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (srfi 26))
+
+(map (cut * 2 &lt;&gt;) '(1 2 3))        ;; =&gt; (2 4 6)
+(map (cut cons &lt;&gt; '()) '(a b c))   ;; =&gt; ((a) (b) (c))
+
+((cut + 1 &lt;&gt;) 10)                  ;; =&gt; 11</code></pre>
+<p><code>&lt;...&gt;</code> collects the rest of the arguments. <code>cute</code> is like <code>cut</code> but evaluates the non-hole subexpressions once, up front (useful when they're expensive or effectful).</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">2 bindings</p>
 

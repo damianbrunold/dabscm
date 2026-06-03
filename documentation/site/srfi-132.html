@@ -135,6 +135,16 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title srfi">(srfi 132)</div>
 <p class="lib-sub">SRFI-132 — Sort libraries: list/vector sort, merge, select, median</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p>SRFI-132 is the sort library for lists and vectors: stable sorting, merging, in-place variants, plus selection utilities (find the nth element, the median, or take the smallest k) without fully sorting.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (srfi 132))
+
+(list-sort &lt; '(3 1 2))            ;; =&gt; (1 2 3)
+(vector-sort &lt; (vector 3 1 2))    ;; =&gt; #(1 2 3)</code></pre>
+<p><code>list-sort!</code> / <code>vector-sort!</code> sort in place, <code>list-merge</code> / <code>vector-merge</code> merge sorted sequences, and <code>vector-select!</code> / <code>vector-find-median</code> provide order statistics.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">22 bindings</p>
 

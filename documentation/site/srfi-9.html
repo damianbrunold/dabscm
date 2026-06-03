@@ -135,6 +135,23 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title srfi">(srfi 9)</div>
 <p class="lib-sub">SRFI-9 — Record types (re-export from scheme base)</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p>SRFI-9 provides <code>define-record-type</code> for defining new record types with a constructor, a type predicate, and field accessors (and optional mutators). In R7RS this is part of <code>(scheme base)</code>; this library re-exports it for SRFI-9 compatibility.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (srfi 9))
+
+(define-record-type point
+  (make-point x y)     ;; constructor
+  point?               ;; predicate
+  (x point-x)          ;; field + accessor
+  (y point-y))
+
+(define p (make-point 3 4))
+(point? p)      ;; =&gt; #t
+(point-x p)     ;; =&gt; 3</code></pre>
+<p>Add a setter by writing <code>(x point-x set-point-x!)</code> for a mutable field.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">1 bindings</p>
 

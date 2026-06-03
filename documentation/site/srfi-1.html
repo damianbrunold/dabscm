@@ -135,6 +135,20 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title srfi">(srfi 1)</div>
 <p class="lib-sub">SRFI-1 — List library: fold, any, every, take, drop, iota, lset ops</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p>SRFI-1 is the comprehensive list library: constructors, folds and reductions, searching and filtering, take/drop, association-list and set operations, and much more. It is the go-to library for list processing (preferred over <code>(scm list)</code>).</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (srfi 1))
+
+(iota 3)                       ;; =&gt; (0 1 2)
+(fold + 0 '(1 2 3))            ;; =&gt; 6
+(take '(1 2 3 4) 2)           ;; =&gt; (1 2)
+(filter even? '(1 2 3 4))     ;; =&gt; (2 4)
+(any odd? '(2 4 5))           ;; =&gt; #t
+(delete-duplicates '(1 1 2 3 3))   ;; =&gt; (1 2 3)</code></pre>
+<p>It also provides <code>map</code>/<code>for-each</code> variants, <code>append-map</code>, <code>partition</code>, <code>find</code>, <code>count</code>, <code>last</code>, <code>zip</code>/<code>unzip</code>, and the <code>lset-*</code> set operations.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">151 bindings</p>
 

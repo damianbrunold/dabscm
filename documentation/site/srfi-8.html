@@ -135,6 +135,16 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title srfi">(srfi 8)</div>
 <p class="lib-sub">SRFI-8 — receive: binding multiple values</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p>SRFI-8 provides <code>receive</code>, concise syntax for binding the multiple values returned by an expression — much tidier than <code>call-with-values</code> with an explicit lambda.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (srfi 8))
+
+(receive (q r) (floor/ 17 5)
+  (list q r))                    ;; =&gt; (3 2)</code></pre>
+<p>The formals work like a lambda's, so you can capture a fixed number of values or gather the rest with a dotted/rest parameter.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">1 bindings</p>
 

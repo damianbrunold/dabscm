@@ -135,6 +135,17 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title srfi">(srfi 28)</div>
 <p class="lib-sub">SRFI-28 — Basic format strings</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p>SRFI-28 provides basic format strings: <code>format</code> builds a string by substituting values into a template with simple directives — <code>~a</code> (display), <code>~s</code> (write), <code>~%</code> (newline), and <code>~~</code> (a literal tilde).</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (srfi 28))
+
+(format "~a-~a" 1 2)              ;; =&gt; "1-2"
+(format "Hello, ~a!~%" "world")  ;; =&gt; "Hello, world!\n"
+(format "~s" "quoted")           ;; =&gt; "\"quoted\""</code></pre>
+<p>For more directives (numeric bases, padding, pretty-printing) see SRFI-48, whose <code>format</code> is compatible and adds a destination argument.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">1 bindings</p>
 

@@ -135,6 +135,18 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title srfi">(srfi 133)</div>
 <p class="lib-sub">SRFI-133 — Vector libraries</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p>SRFI-133 is a comprehensive vector library: the higher-order operations, searching, folding, and copying you expect for lists, but for vectors.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (srfi 133))
+
+(vector-map + (vector 1 2 3) (vector 10 20 30))   ;; =&gt; #(11 22 33)
+(vector-fold + 0 (vector 1 2 3 4))                ;; =&gt; 10
+(vector-for-each display (vector 1 2 3))          ;; prints 123
+(vector-count even? (vector 1 2 3 4))             ;; =&gt; 2</code></pre>
+<p>It also provides <code>vector-append</code>, <code>vector-copy</code>/<code>vector-copy!</code>, <code>vector-reverse</code>, <code>vector-index</code>, and many more vector operations.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">43 bindings</p>
 

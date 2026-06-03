@@ -135,6 +135,18 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title srfi">(srfi 128)</div>
 <p class="lib-sub">SRFI-128 — Comparators: bundled type-test, equality, ordering, and hash procedures</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p>SRFI-128 provides comparators: bundles of a type test, an equality predicate, an ordering predicate, and a hash function. They give a single value that fully describes how to compare and hash a kind of data — used by hash tables (SRFI-125) and ordered collections.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (srfi 128))
+
+(define c (make-comparator number? = &lt; #f))   ;; type=, equal=, order=, hash=
+(comparator? c)                                ;; =&gt; #t
+(=? c 3 3)                                      ;; =&gt; #t
+(&lt;? c 1 2)                                      ;; =&gt; #t</code></pre>
+<p><code>make-default-comparator</code> returns a general-purpose comparator, and there are predefined comparators and combinators for building comparators over compound data.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">35 bindings</p>
 

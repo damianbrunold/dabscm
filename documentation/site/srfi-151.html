@@ -135,6 +135,20 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title srfi">(srfi 151)</div>
 <p class="lib-sub">SRFI-151 — Bitwise operations: logic, shifts, fields, and folds on exact integers</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p>SRFI-151 provides bitwise operations on exact integers: boolean logic, shifts, bit field manipulation, and bit-level folds and counts.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (srfi 151))
+
+(bitwise-and 6 3)        ;; =&gt; 2
+(bitwise-ior 4 1)        ;; =&gt; 5
+(bitwise-xor 5 3)        ;; =&gt; 6
+(arithmetic-shift 1 4)   ;; =&gt; 16   (shift left by 4)
+(arithmetic-shift 16 -2) ;; =&gt; 4    (shift right)
+(bit-count 7)            ;; =&gt; 3</code></pre>
+<p>It also includes <code>bitwise-not</code>, bit-field operations (<code>bit-field</code>, <code>bit-field-set</code>), and tests like <code>bit-set?</code>.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">39 bindings</p>
 

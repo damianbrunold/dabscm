@@ -135,6 +135,16 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title srfi">(srfi 14)</div>
 <p class="lib-sub">SRFI-14 — Character sets: predicate-wrapped char-set type</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p>SRFI-14 provides character sets: a <code>char-set</code> type with constructors, the standard predefined sets, set algebra, and membership testing. Character sets pair naturally with the predicate-driven operations in SRFI-13.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (srfi 13) (srfi 14))
+
+(char-set-contains? (char-set #\a #\e #\i #\o #\u) #\e)   ;; =&gt; #t
+(string-count "banana" (char-set #\a))                    ;; =&gt; 3</code></pre>
+<p>Predefined sets include <code>char-set:alphabetic</code>, <code>char-set:numeric</code>, <code>char-set:whitespace</code>, etc., and you can combine them with <code>char-set-union</code>, <code>char-set-intersection</code>, and <code>char-set-complement</code>.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">67 bindings</p>
 

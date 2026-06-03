@@ -135,6 +135,16 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title srfi">(srfi 98)</div>
 <p class="lib-sub">SRFI-98 — Environment variables</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p>SRFI-98 provides access to operating-system environment variables.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (srfi 98))
+
+(get-environment-variable "HOME")    ;; =&gt; "/home/you"  (or #f if unset)
+(get-environment-variables)          ;; =&gt; (("HOME" . "/home/you") ...)</code></pre>
+<p><code>get-environment-variable</code> returns a single value (or <code>#f</code>), and <code>get-environment-variables</code> returns the whole environment as an alist.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">2 bindings</p>
 

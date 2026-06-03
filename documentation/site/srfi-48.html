@@ -135,6 +135,17 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title srfi">(srfi 48)</div>
 <p class="lib-sub">SRFI-48 — Intermediate format strings: display, write, numeric bases, pretty-print</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p>SRFI-48 provides intermediate format strings — a richer <code>format</code> than SRFI-28. The first argument is a destination (<code>#f</code> for a string, <code>#t</code> for the current output port, or a port). Directives include <code>~a</code>/<code>~s</code>, numeric bases (<code>~d</code>, <code>~x</code>, <code>~o</code>, <code>~b</code>), <code>~%</code> (newline), and pretty-printing.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (srfi 48))
+
+(format #f "~a + ~a = ~a" 1 2 3)    ;; =&gt; "1 + 2 = 3"
+(format #f "hex: ~x" 255)           ;; =&gt; "hex: ff"
+(format #t "to stdout~%")           ;; writes directly to stdout</code></pre>
+<p>Use <code>#f</code> to build a string, or a port/<code>#t</code> to write directly.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">1 bindings</p>
 

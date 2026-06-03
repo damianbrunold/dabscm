@@ -135,6 +135,21 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title srfi">(srfi 95)</div>
 <p class="lib-sub">SRFI-95 — Sorting and merging: polymorphic sort, merge with optional key</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p>SRFI-95 provides sorting and merging for lists and vectors with a polymorphic <code>sort</code> (and the destructive <code>sort!</code>), plus <code>merge</code> and a key-extraction option.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (srfi 95))
+
+(sort '(3 1 2) &lt;)                 ;; =&gt; (1 2 3)
+(sort (vector 3 1 2) &lt;)           ;; =&gt; #(1 2 3)
+
+;; sort by a key
+(sort '("bbb" "a" "cc") &lt; string-length)   ;; =&gt; ("a" "cc" "bbb")
+
+(merge '(1 3 5) '(2 4 6) &lt;)       ;; =&gt; (1 2 3 4 5 6)</code></pre>
+<p><code>sort</code> returns a new sequence; <code>sort!</code> may rearrange its argument in place. The optional third argument to comparisons is a key procedure applied before comparing.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">5 bindings</p>
 

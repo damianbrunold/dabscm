@@ -135,6 +135,21 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title srfi">(srfi 2)</div>
 <p class="lib-sub">SRFI-2 — and-let*: short-circuiting let</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p>SRFI-2 provides <code>and-let*</code>, a hybrid of <code>and</code> and <code>let*</code>: it binds variables in sequence, short-circuiting to <code>#f</code> as soon as a binding (or a bare test) is false. It's a tidy way to write guarded, sequential computations.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (srfi 2))
+
+(and-let* ((x 5)
+           ((&gt; x 0)))      ;; a bare test clause
+  (* x x))                 ;; =&gt; 25
+
+(and-let* ((p (assq 'b '((a . 1) (b . 2))))
+           (v (cdr p)))
+  (* v 10))                ;; =&gt; 20</code></pre>
+<p>If any binding's value is <code>#f</code> (or a test clause is false), the whole form returns <code>#f</code> without evaluating the body.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">1 bindings</p>
 

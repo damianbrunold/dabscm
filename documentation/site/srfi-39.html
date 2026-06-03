@@ -135,6 +135,20 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title srfi">(srfi 39)</div>
 <p class="lib-sub">SRFI-39 — Parameter objects (re-export from scheme base)</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p>SRFI-39 provides parameter objects: dynamically-scoped, mutable cells created with <code>make-parameter</code> and rebound for the dynamic extent of a body with <code>parameterize</code>. In R7RS this is part of <code>(scheme base)</code>; this library re-exports it.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (srfi 39))
+
+(define verbose (make-parameter #f))
+
+(verbose)                       ;; =&gt; #f   (call with no args to read)
+(parameterize ((verbose #t))
+  (verbose))                    ;; =&gt; #t   (rebound inside the body)
+(verbose)                       ;; =&gt; #f   (restored afterwards)</code></pre>
+<p><code>make-parameter</code> can take a converter that is applied to every value bound to the parameter.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">2 bindings</p>
 

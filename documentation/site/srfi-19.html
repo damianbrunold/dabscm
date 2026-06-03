@@ -135,6 +135,19 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title srfi">(srfi 19)</div>
 <p class="lib-sub">SRFI-19 — Time data types and procedures: time, date, Julian Day, formatting</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p>SRFI-19 is the time and date library: time and date data types, conversions between them (and Julian Day / Modified Julian Day), and flexible parsing and formatting. For lightweight epoch-seconds work see <code>(scm datetime)</code>; reach for SRFI-19 when you need full calendar/timezone handling.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (srfi 19))
+
+(define d (make-date 0 0 0 12 1 1 2024 0))   ;; nsec sec min hour day month year tz
+(date-&gt;string d "~Y-~m-~d")                   ;; =&gt; "2024-01-01"
+
+(current-date)        ;; the current date
+(current-time)        ;; the current time</code></pre>
+<p>Conversions include <code>time-&gt;date</code>, <code>date-&gt;time-utc</code>, <code>date-&gt;julian-day</code>, and the <code>string-&gt;date</code> parser with <code>~</code>-directives.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">80 bindings</p>
 

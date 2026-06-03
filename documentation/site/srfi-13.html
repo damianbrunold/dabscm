@@ -135,6 +135,19 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title srfi">(srfi 13)</div>
 <p class="lib-sub">SRFI-13 — String library: predicate-based string operations</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p>SRFI-13 is the string library: searching, prefixes/suffixes, padding and trimming, case-aware operations, and predicate-driven scanning. It's the preferred toolkit for string manipulation (over <code>(scm string)</code>, which adds regex on top).</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (srfi 13))
+
+(string-index "hello" #\l)        ;; =&gt; 2
+(string-prefix? "he" "hello")     ;; =&gt; #t
+(string-pad "5" 3 #\0)            ;; =&gt; "005"
+(string-trim-both "  hi  ")       ;; =&gt; "hi"
+(string-join '("a" "b" "c") "-")  ;; =&gt; "a-b-c"</code></pre>
+<p>Note the trim family: <code>string-trim</code> trims the left, <code>string-trim-right</code> the right, and <code>string-trim-both</code> both ends. Many procedures accept a char, char-set, or predicate as the criterion.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">94 bindings</p>
 

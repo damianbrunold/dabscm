@@ -135,6 +135,19 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title srfi">(srfi 158)</div>
 <p class="lib-sub">SRFI-158 — Generators and accumulators: lazy sequences, composable pipelines, and value collectors</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p>SRFI-158 provides generators and accumulators: lazy producers of values you can compose into pipelines, and their dual, accumulators that collect values into a result. Generators are plain procedures of no arguments that yield the next value or an eof object.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (srfi 158))
+
+(generator-&gt;list (make-iota-generator 5))     ;; =&gt; (0 1 2 3 4)
+
+(generator-&gt;list
+  (gmap (lambda (x) (* x x))
+        (list-&gt;generator '(1 2 3))))           ;; =&gt; (1 4 9)</code></pre>
+<p>Constructors include <code>generator</code>, <code>list-&gt;generator</code>, and <code>make-range-generator</code>; combinators include <code>gmap</code>, <code>gfilter</code>, and <code>gtake</code>; and <code>generator-&gt;list</code> / <code>generator-fold</code> consume them. Accumulators (<code>list-accumulator</code>, <code>sum-accumulator</code>, …) gather values back up.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">55 bindings</p>
 

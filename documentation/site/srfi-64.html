@@ -135,6 +135,19 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title srfi">(srfi 64)</div>
 <p class="lib-sub">SRFI-64 — A Scheme API for test suites</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p>SRFI-64 is a Scheme API for test suites: bracket tests with <code>test-begin</code> / <code>test-end</code>, assert with <code>test-equal</code> / <code>test-assert</code> / <code>test-error</code>, group with <code>test-group</code>, and plug in test runners. This project's <code>(scm test)</code> wraps it with a summary-reporting runner — import that for the usual workflow.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (srfi 64))
+
+(test-begin "arithmetic")
+(test-equal 4 (+ 2 2))          ;; (test-equal expected actual)
+(test-assert (&gt; 3 2))
+(test-error (vector-ref #(1) 5))
+(test-end "arithmetic")</code></pre>
+<p><code>test-group</code>, <code>test-eqv</code>/<code>test-eq</code>, <code>test-approximate</code>, and <code>test-skip</code> / <code>test-expect-fail</code> round out the API, along with the <code>test-runner-*</code> machinery for custom reporting.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">72 bindings</p>
 
