@@ -135,6 +135,26 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm zip)</div>
 <p class="lib-sub">ZIP archive creation and entry writing</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm zip)</code> reads and writes ZIP archives. Entries are written through output ports (text or binary) and read back by name; the <code>call-with-…</code> forms open and reliably close the archive for you.</p>
+<h2>Writing</h2>
+<p><code>zip-add-text-entry</code> / <code>zip-add-binary-entry</code> return a port you write the entry's contents to:</p>
+<pre><code class="language-scheme">(import (scm zip))
+
+(call-with-output-zip "out.zip"
+  (lambda (z)
+    (let ((p (zip-add-text-entry z "hello.txt")))
+      (display "hi there" p))))</code></pre>
+<h2>Reading</h2>
+<pre><code class="language-scheme">(call-with-input-zip "out.zip"
+  (lambda (z) (zip-entry-names z)))            ;; =&gt; ("hello.txt")
+
+(call-with-input-zip "out.zip"
+  (lambda (z) (utf8-&gt;string (zip-read-entry-bytevector z "hello.txt"))))
+;; =&gt; "hi there"</code></pre>
+<p><code>zip-add-stored-entry</code> writes an uncompressed entry, and <code>zip-files-equal?</code> compares two archives by content (handy in tests).</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">16 bindings</p>
 

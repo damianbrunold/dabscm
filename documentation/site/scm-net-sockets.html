@@ -135,6 +135,24 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm net sockets)</div>
 <p class="lib-sub">TCP socket operations — listen, accept, connect</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm net sockets)</code> provides TCP networking: listen for and accept connections, connect out, and read/write through ordinary Scheme ports (textual or binary). The <code>with-…</code> / <code>call-with-…</code> forms manage socket and listener lifetimes for you.</p>
+<h2>Common uses</h2>
+<p>Connect to a server and write to it:</p>
+<pre><code class="language-scheme">(import (scm net sockets))
+
+(with-tcp-connection "localhost" 8080
+  (lambda (sock)
+    (display "hi" (socket-output-port sock))))</code></pre>
+<p>Listen and accept:</p>
+<pre><code class="language-scheme">(call-with-tcp-server 8080
+  (lambda (listener)
+    (let ((sock (tcp-accept listener)))
+      ;; talk to the client via (socket-input-port sock) / (socket-output-port sock)
+      (socket-close sock))))</code></pre>
+<p>Binary ports are available via <code>socket-binary-input-port</code> / <code>socket-binary-output-port</code> for non-text protocols.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">12 bindings</p>
 

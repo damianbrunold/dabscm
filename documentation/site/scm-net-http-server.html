@@ -135,6 +135,21 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm net http server)</div>
 <p class="lib-sub">HTTP server — listen, accept, and serve requests</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm net http server)</code> is an HTTP server. A handler is a procedure that takes a request and returns a response (see <code>(scm net http request)</code> and <code>(scm net http response)</code>). <code>serve-forever</code> is the simplest entry point; for routing several paths, layer <code>(scm net http route)</code> on top.</p>
+<h2>Common uses</h2>
+<p>Serve a single handler:</p>
+<pre><code class="language-scheme">(import (scm net http server) (scm net http response))
+
+(serve-forever 8080 (lambda (req) (http-ok "hello")))
+
+;; with an explicit thread-pool size and bind address:
+(serve-forever 8080 handler 16 "127.0.0.1")</code></pre>
+<p>Serve static files from a directory:</p>
+<pre><code class="language-scheme">(serve-directory ".")</code></pre>
+<p><code>server-stop</code>, <code>server-wait</code>, and <code>server-install-shutdown-hook</code> manage a running server's lifecycle.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">6 bindings</p>
 

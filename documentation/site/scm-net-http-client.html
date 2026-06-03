@@ -135,6 +135,21 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm net http client)</div>
 <p class="lib-sub">HTTP client — GET, POST, and other request methods</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm net http client)</code> is an HTTP client. The convenience procedures cover the common verbs (<code>http-get</code>, <code>http-post</code>, <code>http-put</code>, <code>http-delete</code>), plus JSON variants that set the appropriate <code>Accept</code> / <code>Content-Type</code> headers. For full control build a request with <code>(scm net http request)</code> and send it with <code>http-send</code>. Every call returns an <code>http-response</code>.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scm net http client))
+
+(http-get "http://example.com/")                  ;; =&gt; an http-response
+(http-post "http://example.com/items" "payload")  ;; POST a body
+
+;; JSON helpers — http-get-json sends Accept: application/json,
+;; http-post-json sends a JSON string body with Content-Type: application/json:
+(http-get-json "http://example.com/api/items")
+(http-post-json "http://example.com/api/items" "{\"name\":\"Ada\"}")</code></pre>
+<p>Responses are the records described in <code>(scm net http response)</code> — read their status, headers, and body with that library's accessors (and parse a JSON body yourself with <code>(scm json simple)</code>).</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">7 bindings</p>
 

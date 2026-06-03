@@ -135,6 +135,23 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm crypto)</div>
 <p class="lib-sub">Cryptographic hashing and encoding utilities</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm crypto)</code> collects cryptographic and encoding primitives: hashing (MD5, SHA-1, SHA-256), HMAC and PBKDF2, symmetric ciphers (AES in CBC/GCM/ECB, ChaCha20-Poly1305), RSA, secure random bytes, and Base64/hex helpers. Hash and cipher functions operate on bytevectors.</p>
+<h2>Common uses</h2>
+<p>Hash some bytes and render the digest as hex:</p>
+<pre><code class="language-scheme">(import (scm crypto))
+
+(bytevector-&gt;hex (sha256-hash (string-&gt;utf8 "abc")))
+;; =&gt; "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+
+(bytevector-&gt;hex #u8(0 15 255))   ;; =&gt; "000fff"
+(hex-&gt;bytevector "deadbeef")      ;; =&gt; #u8(222 173 190 239)</code></pre>
+<p>Base64 encode and decode (both work in terms of bytevectors):</p>
+<pre><code class="language-scheme">(base64-encode (string-&gt;utf8 "hi"))      ;; =&gt; "aGk="
+(utf8-&gt;string (base64-decode "aGk="))    ;; =&gt; "hi"</code></pre>
+<p>Password hashing and constant-time comparison are available via <code>pbkdf2-sha256</code> and <code>constant-time-bytevector=?</code>; <code>random-bytes</code> provides cryptographically secure randomness.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">24 bindings</p>
 

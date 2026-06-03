@@ -135,6 +135,17 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm compression)</div>
 <p class="lib-sub">Data compression and decompression</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm compression)</code> provides raw in-memory compression and decompression of bytevectors in three formats: DEFLATE, zlib, and gzip. Each format has a matching <code>*-compress</code> / <code>*-decompress</code> pair.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scm compression))
+
+(define data (string-&gt;utf8 "hello hello hello"))
+(define packed (deflate-compress data))
+(utf8-&gt;string (deflate-decompress packed))   ;; =&gt; "hello hello hello"</code></pre>
+<p>Use <code>zlib-compress</code> / <code>zlib-decompress</code> for zlib-wrapped streams and <code>gzip-compress</code> / <code>gzip-decompress</code> for the gzip container format. For whole-file archives and external tools see <code>(scm archive)</code>.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">6 bindings</p>
 

@@ -135,6 +135,19 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm net http request)</div>
 <p class="lib-sub">HTTP request construction and accessors</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm net http request)</code> is the HTTP request value type shared by the client and server libraries: a method, URL, headers, and body, with constructors and accessors. The client uses it to describe outgoing requests; a server handler receives one as its argument.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scm net http request))
+
+(define req (make-http-request "GET" "http://example.com/" '() #f))
+
+(http-request-method req)        ;; =&gt; "GET"
+(http-request-url req)           ;; =&gt; "http://example.com/"
+(http-request-header req "Host") ;; =&gt; "example.com"  (case-insensitive lookup)</code></pre>
+<p>Use <code>http-request-body</code> for the body as text and <code>http-request-body-bytes</code> for the raw bytevector (binary uploads).</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">8 bindings</p>
 

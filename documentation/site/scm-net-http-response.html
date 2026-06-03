@@ -135,6 +135,22 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm net http response)</div>
 <p class="lib-sub">HTTP response construction and accessors</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm net http response)</code> is the HTTP response value type plus a set of constructors for common status codes. Server handlers return one of these; the client returns one to you. There are ready-made helpers for typical responses (<code>http-ok</code>, <code>http-not-found</code>, …) and content shortcuts (<code>html-response</code>, <code>json-response</code>).</p>
+<h2>Common uses</h2>
+<p>Build responses in a handler:</p>
+<pre><code class="language-scheme">(import (scm net http response))
+
+(http-ok "Hello, world!")          ;; 200 with a text body
+(http-not-found)                   ;; 404
+(json-response '(("ok" . #t)))     ;; JSON body + Content-Type
+(http-redirect "/login")           ;; 302 to a new location</code></pre>
+<p>Inspect a response (e.g. one returned by the client):</p>
+<pre><code class="language-scheme">(http-response-status resp)              ;; =&gt; 200
+(http-response-header resp "Content-Type")
+(http-response-body resp)</code></pre>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">18 bindings</p>
 

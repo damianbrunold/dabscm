@@ -135,6 +135,21 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm archive)</div>
 <p class="lib-sub">Archive and compression — tar, gzip, bzip2, xz, and zip operations</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm archive)</code> works with whole-file archives and compressed files: it creates, extracts, and lists tar archives and compresses/decompresses individual files with gzip, bzip2, and xz. It also re-exports the in-memory ZIP and compression helpers from <code>(scm zip)</code> and <code>(scm compression)</code>. The tar/bzip2/xz operations shell out to the corresponding native tools.</p>
+<h2>Common uses</h2>
+<p>Create, list, and extract a tar archive:</p>
+<pre><code class="language-scheme">(import (scm archive))
+
+(tar-create "backup.tar.gz" '("src" "docs"))
+(tar-list "backup.tar.gz")                      ;; =&gt; list of entry names
+(tar-extract "backup.tar.gz" '(work-dir . "/tmp/restore"))</code></pre>
+<p>Compress and decompress a single file:</p>
+<pre><code class="language-scheme">(gzip "big.log")        ;; =&gt; big.log.gz
+(gunzip "big.log.gz")   ;; =&gt; big.log</code></pre>
+<p><code>bzip2</code> / <code>bunzip2</code> and <code>xz</code> / <code>unxz</code> work the same way for those formats.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">25 bindings</p>
 

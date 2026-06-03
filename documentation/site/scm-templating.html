@@ -135,6 +135,16 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm templating)</div>
 <p class="lib-sub">Text templating with variable substitution</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm templating)</code> fills <code>{{placeholder}}</code> markers in a template string from a context (an association list of name → value). It can render a template given inline or from a file, and a reusable engine can be created for repeated use.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scm templating))
+
+(template-render "Hello {{name}}!" (list (cons "name" "Ada")))
+;; =&gt; "Hello Ada!"</code></pre>
+<p>Render a template stored in a file with <code>template-render-file</code>, or build a reusable engine with <code>make-template-engine</code> and render through <code>template-engine-render</code>.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">5 bindings</p>
 

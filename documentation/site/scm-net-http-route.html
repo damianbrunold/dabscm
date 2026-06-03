@@ -135,6 +135,30 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm net http route)</div>
 <p class="lib-sub">HTTP request routing for servers</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm net http route)</code> adds request routing on top of the HTTP server: map method</p>
+<ul>
+<li>path patterns to handlers, capture path parameters, and parse query strings. It</li>
+</ul>
+<p>turns a bare request handler into a small web application.</p>
+<h2>Common uses</h2>
+<p>Define routes and run the app:</p>
+<p>A handler receives the request and the captured path parameters:</p>
+<pre><code class="language-scheme">(import (scm net http route) (scm net http response))
+
+(get! "/" (lambda (req params) (http-ok "home")))
+(get! "/users/:id"
+      (lambda (req params)
+        (http-ok (string-append "user " (params-ref params "id")))))
+(post! "/users" (lambda (req params) (http-ok "created")))
+
+(run-app 8080)</code></pre>
+<p>Helpers for working with URLs:</p>
+<pre><code class="language-scheme">(url-path "/users/42?limit=10")          ;; =&gt; "/users/42"
+(parse-query-string "limit=10&amp;page=2")   ;; =&gt; (("limit" . "10") ("page" . "2"))</code></pre>
+<p>For a lower-level explicit router use <code>make-router</code>, <code>router-add!</code>, and <code>router-dispatch</code>.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">17 bindings</p>
 
