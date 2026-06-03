@@ -4,274 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Scm Library Reference</title>
-<style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  :root {
-    --bg: #0f1117;
-    --bg2: #181c27;
-    --bg3: #1e2333;
-    --border: #2a3050;
-    --text: #c9d1e0;
-    --text-dim: #6b7899;
-    --r7rs: #4a9eff;
-    --r7rs-bg: #0d2040;
-    --r7rs-border: #1a3a6a;
-    --scm: #5ec48a;
-    --scm-bg: #0a2018;
-    --scm-border: #1a4a30;
-    --srfi: #c792ea;
-    --srfi-bg: #1a0d2e;
-    --srfi-border: #3a1a5a;
-    --tag-bg: #1e2a45;
-    --tag-text: #8baad4;
-    --heading: #e8edf5;
-    --code: #b8c8e8;
-  }
-
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    line-height: 1.6;
-    min-height: 100vh;
-  }
-
-  header {
-    background: var(--bg2);
-    border-bottom: 1px solid var(--border);
-    padding: 24px 40px;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    display: flex;
-    align-items: center;
-    gap: 24px;
-  }
-
-  header h1 {
-    font-size: 1.3rem;
-    font-weight: 600;
-    color: var(--heading);
-    letter-spacing: -0.02em;
-  }
-
-  header p { color: var(--text-dim); font-size: 0.875rem; }
-
-  #search {
-    margin-left: auto;
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 7px 14px;
-    color: var(--text);
-    font-size: 0.875rem;
-    width: 260px;
-    outline: none;
-    transition: border-color 0.15s;
-  }
-
-  #search:focus { border-color: var(--r7rs); }
-  #search::placeholder { color: var(--text-dim); }
-
-  .layout {
-    display: flex;
-    min-height: calc(100vh - 65px);
-  }
-
-  nav {
-    width: 220px;
-    flex-shrink: 0;
-    background: var(--bg2);
-    border-right: 1px solid var(--border);
-    padding: 24px 0;
-    position: sticky;
-    top: 65px;
-    height: calc(100vh - 65px);
-    overflow-y: auto;
-  }
-
-  nav h2 {
-    font-size: 0.7rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--text-dim);
-    padding: 0 20px 8px;
-    margin-top: 20px;
-  }
-
-  nav h2:first-child { margin-top: 0; }
-
-  nav a {
-    display: block;
-    padding: 5px 20px;
-    font-size: 0.8rem;
-    color: var(--text-dim);
-    text-decoration: none;
-    transition: color 0.1s, background 0.1s;
-    border-left: 2px solid transparent;
-  }
-
-  nav a:hover { color: var(--text); background: var(--bg3); }
-
-  nav a.r7rs { border-left-color: transparent; }
-  nav a.r7rs:hover { color: var(--r7rs); border-left-color: var(--r7rs); }
-  nav a.scm:hover { color: var(--scm); border-left-color: var(--scm); }
-  nav a.srfi:hover { color: var(--srfi); border-left-color: var(--srfi); }
-
-  main {
-    flex: 1;
-    padding: 40px;
-    max-width: 1100px;
-  }
-
-  .section-heading {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 24px;
-    margin-top: 40px;
-  }
-
-  .section-heading:first-child { margin-top: 0; }
-
-  .section-heading h2 {
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--heading);
-  }
-
-  .section-heading hr {
-    flex: 1;
-    border: none;
-    border-top: 1px solid var(--border);
-  }
-
-  .badge {
-    font-size: 0.65rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    padding: 2px 7px;
-    border-radius: 4px;
-  }
-
-  .badge-r7rs { background: var(--r7rs-bg); color: var(--r7rs); border: 1px solid var(--r7rs-border); }
-  .badge-scm  { background: var(--scm-bg);  color: var(--scm);  border: 1px solid var(--scm-border);  }
-  .badge-srfi { background: var(--srfi-bg); color: var(--srfi); border: 1px solid var(--srfi-border); }
-
-  .library {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    margin-bottom: 20px;
-    overflow: hidden;
-    transition: border-color 0.15s;
-  }
-
-  .library:hover { border-color: #3a4560; }
-
-  .library.r7rs { border-left: 3px solid var(--r7rs); }
-  .library.scm  { border-left: 3px solid var(--scm);  }
-  .library.srfi { border-left: 3px solid var(--srfi); }
-
-  .lib-header {
-    display: flex;
-    align-items: baseline;
-    gap: 12px;
-    padding: 16px 20px 12px;
-    border-bottom: 1px solid var(--border);
-    cursor: pointer;
-    user-select: none;
-  }
-
-  .lib-name {
-    font-family: "SF Mono", "Fira Code", "Cascadia Code", Consolas, monospace;
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: var(--heading);
-  }
-
-  .library.r7rs .lib-name { color: var(--r7rs); }
-  .library.scm  .lib-name { color: var(--scm); }
-  .library.srfi .lib-name { color: var(--srfi); }
-
-  .lib-desc {
-    font-size: 0.8rem;
-    color: var(--text-dim);
-  }
-
-  .lib-count {
-    margin-left: auto;
-    font-size: 0.75rem;
-    color: var(--text-dim);
-    white-space: nowrap;
-  }
-
-  .lib-body {
-    padding: 16px 20px;
-  }
-
-  .exports {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-
-  .export {
-    font-family: "SF Mono", "Fira Code", "Cascadia Code", Consolas, monospace;
-    font-size: 0.75rem;
-    padding: 3px 8px;
-    border-radius: 4px;
-    background: var(--tag-bg);
-    color: var(--tag-text);
-    border: 1px solid transparent;
-    transition: background 0.1s, color 0.1s;
-    cursor: pointer;
-  }
-
-  .library.r7rs .export { background: var(--r7rs-bg); color: #6aafe8; border-color: var(--r7rs-border); }
-  .library.scm  .export { background: var(--scm-bg);  color: #5ab87e; border-color: var(--scm-border); }
-  .library.srfi .export { background: var(--srfi-bg); color: #c0a0e0; border-color: var(--srfi-border); }
-
-  .export.highlight {
-    background: #3a2800;
-    color: #ffcc55;
-    border-color: #5a4400;
-  }
-
-  .export.active { background: #3a2800; color: #ffcc55; border-color: #5a4400; }
-  .library.r7rs .export.active { background: #0d2a50; color: #7ac0f0; border-color: #1e4a80; }
-  .library.scm  .export.active { background: #0d2a18; color: #6edd90; border-color: #1a4a28; }
-  .library.srfi .export.active { background: #200d38; color: #d4a8f0; border-color: #4a1a70; }
-
-  .export.hidden { display: none; }
-
-  .doc-panel {
-    display: none;
-    margin-top: 12px;
-    padding: 12px;
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    font-family: "SF Mono", "Fira Code", "Cascadia Code", Consolas, monospace;
-    font-size: 0.8rem;
-    white-space: pre-wrap;
-    color: var(--text);
-  }
-
-  .doc-panel.visible { display: block; }
-
-  .library.hidden { display: none; }
-
-  @media (max-width: 768px) {
-    header { padding: 16px 20px; }
-    main { padding: 20px; }
-    nav { display: none; }
-    #search { width: 180px; }
-  }
-</style>
+<link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
 
@@ -353,6 +86,7 @@
   <a href="#scm-list" class="scm">(scm list)</a>
   <a href="#scm-log" class="scm">(scm log)</a>
   <a href="#scm-macro" class="scm">(scm macro)</a>
+  <a href="#scm-markdown" class="scm">(scm markdown)</a>
   <a href="#scm-match" class="scm">(scm match)</a>
   <a href="#scm-math" class="scm">(scm math)</a>
   <a href="#scm-module" class="scm">(scm module)</a>
@@ -2564,6 +2298,22 @@
     <span class="lib-count" id="scm-duration-count"></span>
   </div>
   <div class="lib-body">
+    <div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm duration)</code> converts between human-friendly duration strings and a plain number of seconds — handy for config values and command-line options like <code>--timeout 30s</code>.</p>
+<h2>Usage</h2>
+<pre><code class="language-scheme">(import (scm duration))
+
+(parse-duration "30")    ;; =&gt; 30      ; a bare number is seconds
+(parse-duration "10m")   ;; =&gt; 600
+(parse-duration "3h")    ;; =&gt; 10800
+(parse-duration "1d")    ;; =&gt; 86400
+(parse-duration "x")     ;; =&gt; #f      ; unparseable input
+
+(format-duration 3600)   ;; =&gt; "1h"
+(format-duration 90)     ;; =&gt; "90s"</code></pre>
+<p><code>parse-duration</code> accepts a bare integer or one suffixed with <code>s</code>/<code>m</code>/<code>h</code>/<code>d</code> (seconds/minutes/hours/days), and returns <code>#f</code> for anything it cannot parse. <code>format-duration</code> is the inverse: it uses a <code>d</code>/<code>h</code>/<code>m</code> suffix when the value divides evenly, otherwise a plain seconds value with an <code>s</code> suffix.</p>
+    </div>
     <div class="exports" data-lib="scm-duration">
       format-duration
       parse-duration
@@ -2747,6 +2497,35 @@
     <span class="lib-count" id="scm-json-simple-count"></span>
   </div>
   <div class="lib-body">
+    <div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm json simple)</code> is a high-level JSON codec that maps JSON to and from ordinary Scheme data. It complements the low-level streaming reader in <code>(scm json)</code>: this one parses a whole document into a value you can walk, and — unlike <code>(scm json)</code> — can also serialize a value back to JSON, with optional pretty-printing.</p>
+<h2>Data mapping</h2>
+<ul>
+<li><strong>object</strong> — alist <code>(("key" . value) ...)</code>, order preserved; <code>'()</code> is <code>{}</code></li>
+<li><strong>array</strong> — vector <code>#(v ...)</code>; <code>#()</code> is <code>[]</code></li>
+<li><strong>string</strong> — string</li>
+<li><strong>number</strong> — exact integer when integral, else inexact real</li>
+<li><strong>true / false</strong> — <code>#t</code> / <code>#f</code></li>
+<li><strong>null</strong> — the symbol <code>null</code> (test with <code>json-null?</code>)</li>
+</ul>
+<p>Objects are alists and arrays are vectors so the two never alias.</p>
+<h2>Parsing</h2>
+<pre><code class="language-scheme">(import (scm json simple))
+
+(json-parse "{\"a\": [1, 2.5, true, null]}")
+;; =&gt; (("a" . #(1 2.5 #t null)))
+
+(json-ref (json-parse "{\"port\": 8080}") "port")   ;; =&gt; 8080</code></pre>
+<p>Use <code>json-read</code> to parse from a port, and <code>json-ref</code> to look a key up in a parsed object with an optional default.</p>
+<h2>Serializing</h2>
+<pre><code class="language-scheme">(json-&gt;string '(("x" . 1) ("y" . #(2 3))))
+;; =&gt; "{\"x\":1,\"y\":[2,3]}"
+
+(json-&gt;pretty-string '(("a" . 1)))
+;; =&gt; "{\n  \"a\": 1\n}"</code></pre>
+<p><code>json-&gt;string</code> is compact; <code>json-&gt;pretty-string</code> uses two-space indentation. Both round-trip a parsed value back to equivalent JSON.</p>
+    </div>
     <div class="exports" data-lib="scm-json-simple">
       json-&gt;pretty-string
       json-&gt;string
@@ -2832,6 +2611,51 @@
       pretty-print
     </div>
     <div class="doc-panel" id="scm-macro-doc-panel"></div>
+  </div>
+</div>
+
+<div class="library scm" id="scm-markdown">
+  <div class="lib-header">
+    <span class="lib-name">(scm markdown)</span>
+    <span class="lib-desc">Markdown parser and HTML renderer (CommonMark subset)</span>
+    <span class="lib-count" id="scm-markdown-count"></span>
+  </div>
+  <div class="lib-body">
+    <div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm markdown)</code> is a small, dependency-free Markdown parser and HTML renderer covering a practical CommonMark subset. It has two entry points: <code>parse-markdown</code> turns Markdown text into an s-expression AST you can walk, and <code>markdown-&gt;html</code> renders that AST to an HTML fragment.</p>
+<p>It is the engine behind this documentation site's library preambles, but it is written to be reusable anywhere you need to turn Markdown into HTML or into your own output format.</p>
+<h2>Rendering Markdown to HTML</h2>
+<p>The common case is one call:</p>
+<pre><code class="language-scheme">(import (scm markdown))
+
+(markdown-&gt;html "# Title\n\nHello **world** and `code`.")
+;; =&gt; "&lt;h1&gt;Title&lt;/h1&gt;\n&lt;p&gt;Hello &lt;strong&gt;world&lt;/strong&gt; and &lt;code&gt;code&lt;/code&gt;.&lt;/p&gt;"</code></pre>
+<p>Text and link URLs are HTML-escaped for you, so user-supplied content is safe to render.</p>
+<h2>Walking the AST</h2>
+<p>When you want to target something other than HTML (a Word document, a terminal, LaTeX, …), parse to the AST and walk it yourself:</p>
+<pre><code class="language-scheme">(parse-markdown "- one\n- two")
+;; =&gt; ((bullet-list (item "one") (item "two")))
+
+(parse-markdown "See [docs](http://example.com).")
+;; =&gt; ((paragraph "See " (link ("docs") "http://example.com") "."))</code></pre>
+<p>Block nodes are <code>heading</code>, <code>paragraph</code>, <code>code-block</code>, <code>blockquote</code>, <code>bullet-list</code>, <code>ordered-list</code> and <code>thematic-break</code>. Inline nodes are plain strings plus <code>strong</code>, <code>emph</code>, <code>code</code> and <code>link</code>. See the library source header for the exact shapes.</p>
+<h2>Supported subset</h2>
+<ul>
+<li>ATX headings (<code>#</code> … <code>######</code>), with trailing <code>#</code>s stripped</li>
+<li>Fenced code blocks (<code>```</code> or <code>~~~</code>) with an optional info/language string</li>
+<li>Bullet lists (<code>-</code>, <code>*</code>, <code>+</code>) and ordered lists (<code>1.</code> / <code>1)</code>)</li>
+<li>Blockquotes (<code>&gt;</code>), parsed recursively</li>
+<li>Thematic breaks (<code>---</code>, <code>***</code>, <code>___</code>)</li>
+<li>Inline code, <code>**strong**</code>, <code>*emphasis*</code>, <code>[links](url)</code> and backslash escapes</li>
+</ul>
+<p>By design it does <strong>not</strong> handle setext headings, reference links, images, raw HTML, tables, or nested lists — keep the input simple and predictable.</p>
+    </div>
+    <div class="exports" data-lib="scm-markdown">
+      markdown-&gt;html
+      parse-markdown
+    </div>
+    <div class="doc-panel" id="scm-markdown-doc-panel"></div>
   </div>
 </div>
 
@@ -3950,6 +3774,40 @@
     <span class="lib-count" id="scm-toml-count"></span>
   </div>
   <div class="lib-body">
+    <div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm toml)</code> reads and writes <a href="https://toml.io">TOML</a> 1.0, mapping it to and from ordinary Scheme data. <code>toml-parse</code> / <code>toml-read</code> turn a document into a value you can walk; <code>toml-&gt;string</code> / <code>toml-write</code> serialize a value back to TOML text.</p>
+<h2>Data mapping</h2>
+<ul>
+<li><strong>table</strong> — alist <code>(("key" . value) ...)</code>, order preserved; <code>'()</code> is the empty table</li>
+<li><strong>array</strong> — vector <code>#(v ...)</code></li>
+<li><strong>string</strong> — string</li>
+<li><strong>integer</strong> — exact integer</li>
+<li><strong>float</strong> — inexact real</li>
+<li><strong>boolean</strong> — <code>#t</code> / <code>#f</code></li>
+<li><strong>date-time</strong> — a <code>toml-datetime</code> record (kind + raw text)</li>
+</ul>
+<p>Because tables are alists and arrays are vectors, the two never alias: any list is a table, any vector an array.</p>
+<h2>Reading</h2>
+<pre><code class="language-scheme">(import (scm toml))
+
+(toml-parse "title = \"TOML\"\n[owner]\nname = \"Tom\"")
+;; =&gt; (("title" . "TOML") ("owner" ("name" . "Tom")))
+
+(toml-ref (toml-parse "port = 8080") "port")   ;; =&gt; 8080</code></pre>
+<p>Use <code>toml-read</code> to parse straight from a port (e.g. a file), and <code>toml-ref</code> to look a key up in a parsed table with an optional default.</p>
+<h2>Writing</h2>
+<pre><code class="language-scheme">(toml-&gt;string '(("a" . 1) ("t" ("b" . 2))))
+;; =&gt; "a = 1\n\n[t]\nb = 2\n"</code></pre>
+<p>Scalar entries are emitted first, then nested tables as <code>[header]</code> sections and arrays of tables as <code>[[header]]</code> sections. Parsed values round-trip back to equivalent TOML.</p>
+<h2>Date-times</h2>
+<p>TOML dates and times parse to a distinct <code>toml-datetime</code> record so they never get confused with strings:</p>
+<pre><code class="language-scheme">(define dt (toml-ref (toml-parse "when = 1979-05-27T07:32:00Z") "when"))
+(toml-datetime? dt)        ;; =&gt; #t
+(toml-datetime-kind dt)    ;; =&gt; offset-date-time
+(toml-datetime-text dt)    ;; =&gt; "1979-05-27T07:32:00Z"</code></pre>
+<p><code>toml-write</code> emits a <code>toml-datetime</code> as its raw text, unquoted.</p>
+    </div>
     <div class="exports" data-lib="scm-toml">
       make-toml-datetime
       toml-&gt;string
@@ -3972,6 +3830,16 @@
     <span class="lib-count" id="scm-uri-count"></span>
   </div>
   <div class="lib-body">
+    <div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm uri)</code> provides URI percent-encoding and decoding — the <code>%XX</code> escaping used in query strings, form bodies, and path segments.</p>
+<h2>Usage</h2>
+<pre><code class="language-scheme">(import (scm uri))
+
+(percent-encode "a b/c")   ;; =&gt; "a%20b%2Fc"
+(percent-decode "a%20b")   ;; =&gt; "a b"</code></pre>
+<p><code>percent-encode</code> leaves the RFC 3986 unreserved set (<code>A–Z a–z 0–9 - _ . ~</code>) untouched and UTF-8-encodes everything else before escaping. <code>percent-decode</code> reverses it, and by default also treats <code>+</code> as a space (the form-urlencoded convention); pass <code>#f</code> as a second argument to keep <code>+</code> literal.</p>
+    </div>
     <div class="exports" data-lib="scm-uri">
       percent-decode
       percent-encode
@@ -4907,6 +4775,10 @@ const docs = {
     "define-if-not-bound": "Syntax: (define-if-not-bound name value)\nLibrary: (scm macro)\nDescription: Defines name to value only if name is not already bound in\nthe current module. Useful for conditional initialization.\nExample:\n  (define-if-not-bound my-var 42)",
     "macroexpand": "Syntax: (macroexpand expr)\nLibrary: (scm core)\nDescription: Fully expands all macros in expr using the Dybvig expander.\nReturns a plain S-expression with all macros expanded.\nExample:\n  (macroexpand '(and 1 2 3)) => (if 1 (and 2 3) #f)",
     "pretty-print": "Syntax: (pretty-print expr port?)\nLibrary: (scm macro)\nDescription: Prints expr in a human-readable indented format to port\n(default: current-output-port). Follows a line-width of 79 characters.\nExample:\n  (pretty-print '(define (f x) (+ x 1)))",
+  },
+  "scm-markdown": {
+    "markdown->html": "Syntax: (markdown->html s)\nLibrary: (scm markdown)\nDescription: Renders the Markdown text in string s to an HTML fragment (no\n  surrounding <html>/<body>). Text and link URLs are HTML-escaped. See the\n  library header for the supported Markdown subset.\nExample:\n  (markdown->html \"# Hi\\n\\nA *para*.\")\n    => \"<h1>Hi</h1>\\n<p>A <em>para</em>.</p>\"",
+    "parse-markdown": "Syntax: (parse-markdown s)\nLibrary: (scm markdown)\nDescription: Parses the Markdown text in string s into a list of block nodes\n  (an s-expression AST). See the library header for the supported subset and\n  the node shapes. Use markdown->html to render the result, or walk the AST\n  yourself to target another backend.\nExample:\n  (parse-markdown \"# Title\\n\\nHello **world**\")\n    => ((heading 1 \"Title\") (paragraph \"Hello \" (strong \"world\")))",
   },
   "scm-math": {
     "factorial": "Syntax: (factorial n)\nLibrary: (scm math)\nDescription: Returns the factorial of non-negative integer n (n!). Uses tail\nrecursion via a named let accumulator.\nExample:\n  (factorial 0) => 1\n  (factorial 5) => 120",

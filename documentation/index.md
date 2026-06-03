@@ -78,6 +78,7 @@
 | [`(scm list)`](libraries/scm-list.md) | Extended list operations — higher-order, sorting, accessors |
 | [`(scm log)`](libraries/scm-log.md) | Structured single-line logging |
 | [`(scm macro)`](libraries/scm-macro.md) | Non-standard macros and meta-programming utilities |
+| [`(scm markdown)`](libraries/scm-markdown.md) | Markdown parser and HTML renderer (CommonMark subset) |
 | [`(scm match)`](libraries/scm-match.md) | Pattern matching |
 | [`(scm math)`](libraries/scm-math.md) | Math constants and non-standard numeric operations |
 | [`(scm module)`](libraries/scm-module.md) | Module system — import, export, search paths, introspection |

@@ -1,0 +1,311 @@
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f1117;
+    --bg2: #181c27;
+    --bg3: #1e2333;
+    --border: #2a3050;
+    --text: #c9d1e0;
+    --text-dim: #6b7899;
+    --r7rs: #4a9eff;
+    --r7rs-bg: #0d2040;
+    --r7rs-border: #1a3a6a;
+    --scm: #5ec48a;
+    --scm-bg: #0a2018;
+    --scm-border: #1a4a30;
+    --srfi: #c792ea;
+    --srfi-bg: #1a0d2e;
+    --srfi-border: #3a1a5a;
+    --tag-bg: #1e2a45;
+    --tag-text: #8baad4;
+    --heading: #e8edf5;
+    --code: #b8c8e8;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 24px 40px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+
+  header h1 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--heading);
+    letter-spacing: -0.02em;
+  }
+
+  header p { color: var(--text-dim); font-size: 0.875rem; }
+
+  #search {
+    margin-left: auto;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 14px;
+    color: var(--text);
+    font-size: 0.875rem;
+    width: 260px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  #search:focus { border-color: var(--r7rs); }
+  #search::placeholder { color: var(--text-dim); }
+
+  .layout {
+    display: flex;
+    min-height: calc(100vh - 65px);
+  }
+
+  nav {
+    width: 220px;
+    flex-shrink: 0;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    padding: 24px 0;
+    position: sticky;
+    top: 65px;
+    height: calc(100vh - 65px);
+    overflow-y: auto;
+  }
+
+  nav h2 {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    padding: 0 20px 8px;
+    margin-top: 20px;
+  }
+
+  nav h2:first-child { margin-top: 0; }
+
+  nav a {
+    display: block;
+    padding: 5px 20px;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    text-decoration: none;
+    transition: color 0.1s, background 0.1s;
+    border-left: 2px solid transparent;
+  }
+
+  nav a:hover { color: var(--text); background: var(--bg3); }
+
+  nav a.r7rs { border-left-color: transparent; }
+  nav a.r7rs:hover { color: var(--r7rs); border-left-color: var(--r7rs); }
+  nav a.scm:hover { color: var(--scm); border-left-color: var(--scm); }
+  nav a.srfi:hover { color: var(--srfi); border-left-color: var(--srfi); }
+
+  main {
+    flex: 1;
+    padding: 40px;
+    max-width: 1100px;
+  }
+
+  .section-heading {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    margin-top: 40px;
+  }
+
+  .section-heading:first-child { margin-top: 0; }
+
+  .section-heading h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--heading);
+  }
+
+  .section-heading hr {
+    flex: 1;
+    border: none;
+    border-top: 1px solid var(--border);
+  }
+
+  .badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 2px 7px;
+    border-radius: 4px;
+  }
+
+  .badge-r7rs { background: var(--r7rs-bg); color: var(--r7rs); border: 1px solid var(--r7rs-border); }
+  .badge-scm  { background: var(--scm-bg);  color: var(--scm);  border: 1px solid var(--scm-border);  }
+  .badge-srfi { background: var(--srfi-bg); color: var(--srfi); border: 1px solid var(--srfi-border); }
+
+  .library {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 20px;
+    overflow: hidden;
+    transition: border-color 0.15s;
+  }
+
+  .library:hover { border-color: #3a4560; }
+
+  .library.r7rs { border-left: 3px solid var(--r7rs); }
+  .library.scm  { border-left: 3px solid var(--scm);  }
+  .library.srfi { border-left: 3px solid var(--srfi); }
+
+  .lib-header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .lib-name {
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", Consolas, monospace;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--heading);
+  }
+
+  .library.r7rs .lib-name { color: var(--r7rs); }
+  .library.scm  .lib-name { color: var(--scm); }
+  .library.srfi .lib-name { color: var(--srfi); }
+
+  .lib-desc {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+  }
+
+  .lib-count {
+    margin-left: auto;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+
+  .lib-body {
+    padding: 16px 20px;
+  }
+
+  .exports {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .export {
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", Consolas, monospace;
+    font-size: 0.75rem;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: var(--tag-bg);
+    color: var(--tag-text);
+    border: 1px solid transparent;
+    transition: background 0.1s, color 0.1s;
+    cursor: pointer;
+  }
+
+  .library.r7rs .export { background: var(--r7rs-bg); color: #6aafe8; border-color: var(--r7rs-border); }
+  .library.scm  .export { background: var(--scm-bg);  color: #5ab87e; border-color: var(--scm-border); }
+  .library.srfi .export { background: var(--srfi-bg); color: #c0a0e0; border-color: var(--srfi-border); }
+
+  .export.highlight {
+    background: #3a2800;
+    color: #ffcc55;
+    border-color: #5a4400;
+  }
+
+  .export.active { background: #3a2800; color: #ffcc55; border-color: #5a4400; }
+  .library.r7rs .export.active { background: #0d2a50; color: #7ac0f0; border-color: #1e4a80; }
+  .library.scm  .export.active { background: #0d2a18; color: #6edd90; border-color: #1a4a28; }
+  .library.srfi .export.active { background: #200d38; color: #d4a8f0; border-color: #4a1a70; }
+
+  .export.hidden { display: none; }
+
+  .doc-panel {
+    display: none;
+    margin-top: 12px;
+    padding: 12px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", Consolas, monospace;
+    font-size: 0.8rem;
+    white-space: pre-wrap;
+    color: var(--text);
+  }
+
+  .doc-panel.visible { display: block; }
+
+  .library.hidden { display: none; }
+
+  @media (max-width: 768px) {
+    header { padding: 16px 20px; }
+    main { padding: 20px; }
+    nav { display: none; }
+    #search { width: 180px; }
+  }
+
+  /* Per-library preamble (rendered from documentation/preambles/<id>.md) */
+  .lib-preamble {
+    margin-bottom: 14px;
+    padding: 12px 14px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.85rem;
+    color: var(--text);
+  }
+  .lib-preamble h1, .lib-preamble h2, .lib-preamble h3 {
+    font-size: 0.9rem;
+    color: var(--heading);
+    margin: 10px 0 6px;
+  }
+  .lib-preamble h1:first-child, .lib-preamble h2:first-child, .lib-preamble h3:first-child { margin-top: 0; }
+  .lib-preamble p { margin: 6px 0; }
+  .lib-preamble ul, .lib-preamble ol { margin: 6px 0 6px 20px; }
+  .lib-preamble li { margin: 2px 0; }
+  .lib-preamble a { color: var(--r7rs); text-decoration: none; }
+  .lib-preamble a:hover { text-decoration: underline; }
+  .lib-preamble code {
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", Consolas, monospace;
+    font-size: 0.8rem;
+    background: var(--tag-bg);
+    color: var(--code);
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
+  .lib-preamble pre {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    overflow-x: auto;
+    margin: 8px 0;
+  }
+  .lib-preamble pre code { background: none; padding: 0; color: var(--code); }
+  .lib-preamble blockquote {
+    border-left: 3px solid var(--border);
+    margin: 8px 0;
+    padding: 2px 0 2px 12px;
+    color: var(--text-dim);
+  }
