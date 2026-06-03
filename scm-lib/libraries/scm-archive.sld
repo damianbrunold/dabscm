@@ -269,6 +269,40 @@ Example:
             (substring s 0 (- n 1))
             s)))
 
+    (define (%backslashes->slashes s)
+      (let* ((n (string-length s))
+             (out (make-string n)))
+        (let loop ((i 0))
+          (if (>= i n)
+              out
+              (begin
+                (string-set! out i
+                  (let ((c (string-ref s i)))
+                    (if (char=? c #\\) #\/ c)))
+                (loop (+ i 1)))))))
+
+    (define (%strip-leading-slashes s)
+      (let ((n (string-length s)))
+        (let loop ((i 0))
+          (cond ((>= i n) "")
+                ((char=? (string-ref s i) #\/) (loop (+ i 1)))
+                (else (substring s i n))))))
+
+    (define (%tar-entry-name path)
+      ;; Normalize an OS path into a relative USTAR entry name: forward
+      ;; slashes, no Windows drive letter, no leading slash. This mirrors what
+      ;; native tar does ("Removing leading / from member names") and keeps
+      ;; archives portable and extractable into an arbitrary work-dir.
+      (let* ((s (%backslashes->slashes path))
+             (s (if (and (>= (string-length s) 2)
+                         (char=? (string-ref s 1) #\:)
+                         (let ((c (string-ref s 0)))
+                           (or (and (char>=? c #\A) (char<=? c #\Z))
+                               (and (char>=? c #\a) (char<=? c #\z)))))
+                    (substring s 2 (string-length s))
+                    s)))
+        (%strip-leading-slashes s)))
+
     (define (%parent-dir path)
       (let loop ((i (- (string-length path) 1)))
         (cond ((< i 0) #f)
@@ -394,7 +428,7 @@ Example:
                               (write-bytevector bytes port)
                               (%pad-block port size)))))
                     rec))
-                (%collect-entries top os-top))))
+                (%collect-entries (%tar-entry-name top) os-top))))
           paths)
         (write-bytevector (make-bytevector 1024 0) port) ; two zero blocks
         (let ((bv (get-output-bytevector port)))
