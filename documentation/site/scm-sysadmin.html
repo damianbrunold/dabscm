@@ -3,15 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>(scm sysadmin) — Scm Library Reference</title>
+<title>(scm sysadmin) — Dabscm Library Reference</title>
 <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
 
 <header>
   <div>
-    <h1><a href="index.html">Scm Library Reference</a></h1>
-    <p>scm &mdash; libraries and their exports</p>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
   </div>
   <div class="search-wrap">
     <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
@@ -21,123 +20,180 @@
 
 <div class="layout">
 
-<nav>
-  <h2>R7RS Standard</h2>
-  <a href="scheme-base.html" class="r7rs">(scheme base)</a>
-  <a href="scheme-case-lambda.html" class="r7rs">(scheme case-lambda)</a>
-  <a href="scheme-char.html" class="r7rs">(scheme char)</a>
-  <a href="scheme-complex.html" class="r7rs">(scheme complex)</a>
-  <a href="scheme-cxr.html" class="r7rs">(scheme cxr)</a>
-  <a href="scheme-eval.html" class="r7rs">(scheme eval)</a>
-  <a href="scheme-file.html" class="r7rs">(scheme file)</a>
-  <a href="scheme-inexact.html" class="r7rs">(scheme inexact)</a>
-  <a href="scheme-lazy.html" class="r7rs">(scheme lazy)</a>
-  <a href="scheme-load.html" class="r7rs">(scheme load)</a>
-  <a href="scheme-process-context.html" class="r7rs">(scheme process-context)</a>
-  <a href="scheme-r5rs.html" class="r7rs">(scheme r5rs)</a>
-  <a href="scheme-read.html" class="r7rs">(scheme read)</a>
-  <a href="scheme-repl.html" class="r7rs">(scheme repl)</a>
-  <a href="scheme-time.html" class="r7rs">(scheme time)</a>
-  <a href="scheme-write.html" class="r7rs">(scheme write)</a>
-  <h2>SRFI Libraries</h2>
-  <a href="srfi-1.html" class="srfi">(srfi 1)</a>
-  <a href="srfi-2.html" class="srfi">(srfi 2)</a>
-  <a href="srfi-8.html" class="srfi">(srfi 8)</a>
-  <a href="srfi-9.html" class="srfi">(srfi 9)</a>
-  <a href="srfi-13.html" class="srfi">(srfi 13)</a>
-  <a href="srfi-14.html" class="srfi">(srfi 14)</a>
-  <a href="srfi-18.html" class="srfi">(srfi 18)</a>
-  <a href="srfi-19.html" class="srfi">(srfi 19)</a>
-  <a href="srfi-26.html" class="srfi">(srfi 26)</a>
-  <a href="srfi-28.html" class="srfi">(srfi 28)</a>
-  <a href="srfi-39.html" class="srfi">(srfi 39)</a>
-  <a href="srfi-48.html" class="srfi">(srfi 48)</a>
-  <a href="srfi-64.html" class="srfi">(srfi 64)</a>
-  <a href="srfi-69.html" class="srfi">(srfi 69)</a>
-  <a href="srfi-95.html" class="srfi">(srfi 95)</a>
-  <a href="srfi-98.html" class="srfi">(srfi 98)</a>
-  <a href="srfi-111.html" class="srfi">(srfi 111)</a>
-  <a href="srfi-125.html" class="srfi">(srfi 125)</a>
-  <a href="srfi-128.html" class="srfi">(srfi 128)</a>
-  <a href="srfi-132.html" class="srfi">(srfi 132)</a>
-  <a href="srfi-133.html" class="srfi">(srfi 133)</a>
-  <a href="srfi-151.html" class="srfi">(srfi 151)</a>
-  <a href="srfi-158.html" class="srfi">(srfi 158)</a>
-  <h2>Scm Extensions</h2>
-  <a href="scm-archive.html" class="scm">(scm archive)</a>
-  <a href="scm-args.html" class="scm">(scm args)</a>
-  <a href="scm-compile.html" class="scm">(scm compile)</a>
-  <a href="scm-compression.html" class="scm">(scm compression)</a>
-  <a href="scm-crypto.html" class="scm">(scm crypto)</a>
-  <a href="scm-csv.html" class="scm">(scm csv)</a>
-  <a href="scm-database-migrations.html" class="scm">(scm database migrations)</a>
-  <a href="scm-database-postgres.html" class="scm">(scm database postgres)</a>
-  <a href="scm-database-sqlserver.html" class="scm">(scm database sqlserver)</a>
-  <a href="scm-datetime.html" class="scm">(scm datetime)</a>
-  <a href="scm-dict.html" class="scm">(scm dict)</a>
-  <a href="scm-doc.html" class="scm">(scm doc)</a>
-  <a href="scm-duration.html" class="scm">(scm duration)</a>
-  <a href="scm-feed.html" class="scm">(scm feed)</a>
-  <a href="scm-fs-find.html" class="scm">(scm fs-find)</a>
-  <a href="scm-fs.html" class="scm">(scm fs)</a>
-  <a href="scm-glob.html" class="scm">(scm glob)</a>
-  <a href="scm-html-builder.html" class="scm">(scm html builder)</a>
-  <a href="scm-html.html" class="scm">(scm html)</a>
-  <a href="scm-io.html" class="scm">(scm io)</a>
-  <a href="scm-json-simple.html" class="scm">(scm json simple)</a>
-  <a href="scm-json.html" class="scm">(scm json)</a>
-  <a href="scm-list.html" class="scm">(scm list)</a>
-  <a href="scm-log.html" class="scm">(scm log)</a>
-  <a href="scm-macro.html" class="scm">(scm macro)</a>
-  <a href="scm-markdown.html" class="scm">(scm markdown)</a>
-  <a href="scm-match.html" class="scm">(scm match)</a>
-  <a href="scm-math.html" class="scm">(scm math)</a>
-  <a href="scm-module.html" class="scm">(scm module)</a>
-  <a href="scm-net-http-client.html" class="scm">(scm net http client)</a>
-  <a href="scm-net-http-cookies.html" class="scm">(scm net http cookies)</a>
-  <a href="scm-net-http-forms.html" class="scm">(scm net http forms)</a>
-  <a href="scm-net-http-multipart.html" class="scm">(scm net http multipart)</a>
-  <a href="scm-net-http-request.html" class="scm">(scm net http request)</a>
-  <a href="scm-net-http-response.html" class="scm">(scm net http response)</a>
-  <a href="scm-net-http-route.html" class="scm">(scm net http route)</a>
-  <a href="scm-net-http-server.html" class="scm">(scm net http server)</a>
-  <a href="scm-net-remote.html" class="scm">(scm net-remote)</a>
-  <a href="scm-net-sockets.html" class="scm">(scm net sockets)</a>
-  <a href="scm-net-websocket.html" class="scm">(scm net websocket)</a>
-  <a href="scm-odf-spreadsheet.html" class="scm">(scm odf spreadsheet)</a>
-  <a href="scm-odf-writer.html" class="scm">(scm odf writer)</a>
-  <a href="scm-ooxml-excel-reader.html" class="scm">(scm ooxml excel-reader)</a>
-  <a href="scm-ooxml-excel.html" class="scm">(scm ooxml excel)</a>
-  <a href="scm-ooxml-word-reader.html" class="scm">(scm ooxml word-reader)</a>
-  <a href="scm-ooxml-word.html" class="scm">(scm ooxml word)</a>
-  <a href="scm-pdf.html" class="scm">(scm pdf)</a>
-  <a href="scm-png.html" class="scm">(scm png)</a>
-  <a href="scm-profiling.html" class="scm">(scm profiling)</a>
-  <a href="scm-qr.html" class="scm">(scm qr)</a>
-  <a href="scm-random-access.html" class="scm">(scm random access)</a>
-  <a href="scm-repl.html" class="scm">(scm repl)</a>
-  <a href="scm-store.html" class="scm">(scm store)</a>
-  <a href="scm-string.html" class="scm">(scm string)</a>
-  <a href="scm-sysadmin.html" class="scm active">(scm sysadmin)</a>
-  <a href="scm-system.html" class="scm">(scm system)</a>
-  <a href="scm-templating.html" class="scm">(scm templating)</a>
-  <a href="scm-terminal.html" class="scm">(scm terminal)</a>
-  <a href="scm-test.html" class="scm">(scm test)</a>
-  <a href="scm-text.html" class="scm">(scm text)</a>
-  <a href="scm-toml.html" class="scm">(scm toml)</a>
-  <a href="scm-uri.html" class="scm">(scm uri)</a>
-  <a href="scm-xml.html" class="scm">(scm xml)</a>
-  <a href="scm-zip.html" class="scm">(scm zip)</a>
+<nav class="toc">
+  <h2>Bindings</h2>
+  <a href="#e0" data-name="absolute-path">absolute-path</a>
+  <a href="#e1" data-name="awk">awk</a>
+  <a href="#e2" data-name="base-name">base-name</a>
+  <a href="#e3" data-name="base64-decode">base64-decode</a>
+  <a href="#e4" data-name="base64-encode">base64-encode</a>
+  <a href="#e5" data-name="bunzip2">bunzip2</a>
+  <a href="#e6" data-name="bytevector-&gt;hex">bytevector-&gt;hex</a>
+  <a href="#e7" data-name="bzip2">bzip2</a>
+  <a href="#e8" data-name="cat">cat</a>
+  <a href="#e9" data-name="cd">cd</a>
+  <a href="#e10" data-name="chmod">chmod</a>
+  <a href="#e11" data-name="chown">chown</a>
+  <a href="#e12" data-name="close-input-zip">close-input-zip</a>
+  <a href="#e13" data-name="close-json">close-json</a>
+  <a href="#e14" data-name="close-output-zip">close-output-zip</a>
+  <a href="#e15" data-name="copy-directory">copy-directory</a>
+  <a href="#e16" data-name="copy-file">copy-file</a>
+  <a href="#e17" data-name="cp">cp</a>
+  <a href="#e18" data-name="csv-line-&gt;fields">csv-line-&gt;fields</a>
+  <a href="#e19" data-name="curl">curl</a>
+  <a href="#e20" data-name="current-directory">current-directory</a>
+  <a href="#e21" data-name="current-pid">current-pid</a>
+  <a href="#e22" data-name="cut">cut</a>
+  <a href="#e23" data-name="deflate-compress">deflate-compress</a>
+  <a href="#e24" data-name="deflate-decompress">deflate-decompress</a>
+  <a href="#e25" data-name="delete-directory">delete-directory</a>
+  <a href="#e26" data-name="delete-file">delete-file</a>
+  <a href="#e27" data-name="df">df</a>
+  <a href="#e28" data-name="diff">diff</a>
+  <a href="#e29" data-name="directory-directories">directory-directories</a>
+  <a href="#e30" data-name="directory-exists?">directory-exists?</a>
+  <a href="#e31" data-name="directory-files">directory-files</a>
+  <a href="#e32" data-name="directory-name">directory-name</a>
+  <a href="#e33" data-name="du">du</a>
+  <a href="#e34" data-name="env-list">env-list</a>
+  <a href="#e35" data-name="file-exists?">file-exists?</a>
+  <a href="#e36" data-name="file-modification-date">file-modification-date</a>
+  <a href="#e37" data-name="file-modification-timestamp">file-modification-timestamp</a>
+  <a href="#e38" data-name="file-size">file-size</a>
+  <a href="#e39" data-name="find-file">find-file</a>
+  <a href="#e40" data-name="format-duration">format-duration</a>
+  <a href="#e41" data-name="format-iso8601">format-iso8601</a>
+  <a href="#e42" data-name="get-bytes">get-bytes</a>
+  <a href="#e43" data-name="get-environment-variable">get-environment-variable</a>
+  <a href="#e44" data-name="getopt">getopt</a>
+  <a href="#e45" data-name="glob">glob</a>
+  <a href="#e46" data-name="glob-match?">glob-match?</a>
+  <a href="#e47" data-name="grep">grep</a>
+  <a href="#e48" data-name="gunzip">gunzip</a>
+  <a href="#e49" data-name="gzip">gzip</a>
+  <a href="#e50" data-name="gzip-compress">gzip-compress</a>
+  <a href="#e51" data-name="gzip-decompress">gzip-decompress</a>
+  <a href="#e52" data-name="head">head</a>
+  <a href="#e53" data-name="hex-&gt;bytevector">hex-&gt;bytevector</a>
+  <a href="#e54" data-name="hexdump">hexdump</a>
+  <a href="#e55" data-name="join-path">join-path</a>
+  <a href="#e56" data-name="json-attribute">json-attribute</a>
+  <a href="#e57" data-name="json-next-object">json-next-object</a>
+  <a href="#e58" data-name="kill">kill</a>
+  <a href="#e59" data-name="ln">ln</a>
+  <a href="#e60" data-name="log-access">log-access</a>
+  <a href="#e61" data-name="log-error">log-error</a>
+  <a href="#e62" data-name="log-info">log-info</a>
+  <a href="#e63" data-name="log-port">log-port</a>
+  <a href="#e64" data-name="log-warn">log-warn</a>
+  <a href="#e65" data-name="make-directory">make-directory</a>
+  <a href="#e66" data-name="md5-hash">md5-hash</a>
+  <a href="#e67" data-name="mktemp">mktemp</a>
+  <a href="#e68" data-name="mktempdir">mktempdir</a>
+  <a href="#e69" data-name="move-directory">move-directory</a>
+  <a href="#e70" data-name="move-file">move-file</a>
+  <a href="#e71" data-name="mv">mv</a>
+  <a href="#e72" data-name="normalized-path">normalized-path</a>
+  <a href="#e73" data-name="now">now</a>
+  <a href="#e74" data-name="open-input-zip-file">open-input-zip-file</a>
+  <a href="#e75" data-name="open-json-file">open-json-file</a>
+  <a href="#e76" data-name="open-json-string">open-json-string</a>
+  <a href="#e77" data-name="open-output-zip-file">open-output-zip-file</a>
+  <a href="#e78" data-name="parent-pid">parent-pid</a>
+  <a href="#e79" data-name="parse-duration">parse-duration</a>
+  <a href="#e80" data-name="parse-iso8601">parse-iso8601</a>
+  <a href="#e81" data-name="parse-pubdate">parse-pubdate</a>
+  <a href="#e82" data-name="parse-rfc822">parse-rfc822</a>
+  <a href="#e83" data-name="path-sep">path-sep</a>
+  <a href="#e84" data-name="percent-decode">percent-decode</a>
+  <a href="#e85" data-name="percent-encode">percent-encode</a>
+  <a href="#e86" data-name="pgrep">pgrep</a>
+  <a href="#e87" data-name="pkill">pkill</a>
+  <a href="#e88" data-name="process-alive?">process-alive?</a>
+  <a href="#e89" data-name="process-kill">process-kill</a>
+  <a href="#e90" data-name="process-pid">process-pid</a>
+  <a href="#e91" data-name="process-wait">process-wait</a>
+  <a href="#e92" data-name="ps">ps</a>
+  <a href="#e93" data-name="ps-info">ps-info</a>
+  <a href="#e94" data-name="readlink">readlink</a>
+  <a href="#e95" data-name="rm">rm</a>
+  <a href="#e96" data-name="rsync">rsync</a>
+  <a href="#e97" data-name="run">run</a>
+  <a href="#e98" data-name="run!">run!</a>
+  <a href="#e99" data-name="run-parallel">run-parallel</a>
+  <a href="#e100" data-name="run-program">run-program</a>
+  <a href="#e101" data-name="run-program/capture">run-program/capture</a>
+  <a href="#e102" data-name="run?">run?</a>
+  <a href="#e103" data-name="scp">scp</a>
+  <a href="#e104" data-name="sed">sed</a>
+  <a href="#e105" data-name="sh">sh</a>
+  <a href="#e106" data-name="sh-lines">sh-lines</a>
+  <a href="#e107" data-name="sha1-hash">sha1-hash</a>
+  <a href="#e108" data-name="sha256-hash">sha256-hash</a>
+  <a href="#e109" data-name="shell-quote">shell-quote</a>
+  <a href="#e110" data-name="sleep">sleep</a>
+  <a href="#e111" data-name="sort-lines">sort-lines</a>
+  <a href="#e112" data-name="special-folder-application-data">special-folder-application-data</a>
+  <a href="#e113" data-name="special-folder-documents">special-folder-documents</a>
+  <a href="#e114" data-name="special-folder-temp">special-folder-temp</a>
+  <a href="#e115" data-name="special-folder-user-home">special-folder-user-home</a>
+  <a href="#e116" data-name="ssh">ssh</a>
+  <a href="#e117" data-name="start-program">start-program</a>
+  <a href="#e118" data-name="stat">stat</a>
+  <a href="#e119" data-name="sys-machine-name">sys-machine-name</a>
+  <a href="#e120" data-name="sys-num-cpu-cores">sys-num-cpu-cores</a>
+  <a href="#e121" data-name="sys-os-version">sys-os-version</a>
+  <a href="#e122" data-name="sys-platform">sys-platform</a>
+  <a href="#e123" data-name="sys-scm-technology">sys-scm-technology</a>
+  <a href="#e124" data-name="sys-scm-version">sys-scm-version</a>
+  <a href="#e125" data-name="sys-user-name">sys-user-name</a>
+  <a href="#e126" data-name="tail">tail</a>
+  <a href="#e127" data-name="tar-create">tar-create</a>
+  <a href="#e128" data-name="tar-extract">tar-extract</a>
+  <a href="#e129" data-name="tar-list">tar-list</a>
+  <a href="#e130" data-name="tee">tee</a>
+  <a href="#e131" data-name="time">time</a>
+  <a href="#e132" data-name="timestamp">timestamp</a>
+  <a href="#e133" data-name="timestamp-&gt;string">timestamp-&gt;string</a>
+  <a href="#e134" data-name="today">today</a>
+  <a href="#e135" data-name="touch">touch</a>
+  <a href="#e136" data-name="tr">tr</a>
+  <a href="#e137" data-name="tree">tree</a>
+  <a href="#e138" data-name="uniq">uniq</a>
+  <a href="#e139" data-name="unxz">unxz</a>
+  <a href="#e140" data-name="uuidgen">uuidgen</a>
+  <a href="#e141" data-name="watch">watch</a>
+  <a href="#e142" data-name="wc">wc</a>
+  <a href="#e143" data-name="wget">wget</a>
+  <a href="#e144" data-name="which">which</a>
+  <a href="#e145" data-name="xargs">xargs</a>
+  <a href="#e146" data-name="xz">xz</a>
+  <a href="#e147" data-name="zip-add-binary-entry">zip-add-binary-entry</a>
+  <a href="#e148" data-name="zip-add-stored-entry">zip-add-stored-entry</a>
+  <a href="#e149" data-name="zip-add-text-entry">zip-add-text-entry</a>
+  <a href="#e150" data-name="zip-entry-names">zip-entry-names</a>
+  <a href="#e151" data-name="zip-files-equal?">zip-files-equal?</a>
+  <a href="#e152" data-name="zip-read-entry-bytevector">zip-read-entry-bytevector</a>
+  <a href="#e153" data-name="zlib-compress">zlib-compress</a>
+  <a href="#e154" data-name="zlib-decompress">zlib-decompress</a>
 </nav>
 
 <main>
 
-<a class="backlink" href="index.html">&larr; All libraries</a>
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="index.html">All libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="index.html#sec-scm">Scm Extensions</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm sysadmin)</span>
+</nav>
+
 <div class="lib-title scm">(scm sysadmin)</div>
 <p class="lib-sub">System administration toolkit aggregating fs, archive, remote, logging, and more</p>
 <div class="lib-preamble">
 <h2>Overview</h2>
-<p><code>(scm sysadmin)</code> is a convenience bundle for system-administration scripting. It imports and re-exports a curated set of libraries so a single import gives you the tools you typically reach for in an ops script: filesystem and find (<code>(scm fs)</code>, <code>(scm fs-find)</code>), text processing (<code>(scm text)</code>), archives (<code>(scm archive)</code>), remote access (<code>(scm net-remote)</code>), process/OS control (<code>(scm system)</code>), date/time and durations (<code>(scm datetime)</code>, <code>(scm duration)</code>), logging (<code>(scm log)</code>), globbing (<code>(scm glob)</code>), crypto (<code>(scm crypto)</code>), URIs (<code>(scm uri)</code>), and JSON/CSV (<code>(scm json)</code>, <code>(scm csv)</code>).</p>
+<p><a class="xref" href="scm-sysadmin.html"><code>(scm sysadmin)</code></a> is a convenience bundle for system-administration scripting. It imports and re-exports a curated set of libraries so a single import gives you the tools you typically reach for in an ops script: filesystem and find (<a class="xref" href="scm-fs.html"><code>(scm fs)</code></a>, <a class="xref" href="scm-fs-find.html"><code>(scm fs-find)</code></a>), text processing (<a class="xref" href="scm-text.html"><code>(scm text)</code></a>), archives (<a class="xref" href="scm-archive.html"><code>(scm archive)</code></a>), remote access (<a class="xref" href="scm-net-remote.html"><code>(scm net-remote)</code></a>), process/OS control (<a class="xref" href="scm-system.html"><code>(scm system)</code></a>), date/time and durations (<a class="xref" href="scm-datetime.html"><code>(scm datetime)</code></a>, <a class="xref" href="scm-duration.html"><code>(scm duration)</code></a>), logging (<a class="xref" href="scm-log.html"><code>(scm log)</code></a>), globbing (<a class="xref" href="scm-glob.html"><code>(scm glob)</code></a>), crypto (<a class="xref" href="scm-crypto.html"><code>(scm crypto)</code></a>), URIs (<a class="xref" href="scm-uri.html"><code>(scm uri)</code></a>), and JSON/CSV (<a class="xref" href="scm-json.html"><code>(scm json)</code></a>, <a class="xref" href="scm-csv.html"><code>(scm csv)</code></a>).</p>
 <h2>Common uses</h2>
 <pre><code class="language-scheme">(import (scm sysadmin))
 
@@ -145,7 +201,7 @@
 (for-each
   (lambda (f) (log-info "cleanup" f) (delete-file f))
   (find-file "/tmp" '(name . "*.old") '(type . file)))</code></pre>
-<p>See the individual libraries listed above for the full set of available procedures; <code>(scm sysadmin)</code> simply saves you from importing them one by one.</p>
+<p>See the individual libraries listed above for the full set of available procedures; <a class="xref" href="scm-sysadmin.html"><code>(scm sysadmin)</code></a> simply saves you from importing them one by one.</p>
 </div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">155 bindings</p>

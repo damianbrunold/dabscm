@@ -3,15 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>(scm io) — Scm Library Reference</title>
+<title>(scm io) — Dabscm Library Reference</title>
 <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
 
 <header>
   <div>
-    <h1><a href="index.html">Scm Library Reference</a></h1>
-    <p>scm &mdash; libraries and their exports</p>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
   </div>
   <div class="search-wrap">
     <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
@@ -21,123 +20,39 @@
 
 <div class="layout">
 
-<nav>
-  <h2>R7RS Standard</h2>
-  <a href="scheme-base.html" class="r7rs">(scheme base)</a>
-  <a href="scheme-case-lambda.html" class="r7rs">(scheme case-lambda)</a>
-  <a href="scheme-char.html" class="r7rs">(scheme char)</a>
-  <a href="scheme-complex.html" class="r7rs">(scheme complex)</a>
-  <a href="scheme-cxr.html" class="r7rs">(scheme cxr)</a>
-  <a href="scheme-eval.html" class="r7rs">(scheme eval)</a>
-  <a href="scheme-file.html" class="r7rs">(scheme file)</a>
-  <a href="scheme-inexact.html" class="r7rs">(scheme inexact)</a>
-  <a href="scheme-lazy.html" class="r7rs">(scheme lazy)</a>
-  <a href="scheme-load.html" class="r7rs">(scheme load)</a>
-  <a href="scheme-process-context.html" class="r7rs">(scheme process-context)</a>
-  <a href="scheme-r5rs.html" class="r7rs">(scheme r5rs)</a>
-  <a href="scheme-read.html" class="r7rs">(scheme read)</a>
-  <a href="scheme-repl.html" class="r7rs">(scheme repl)</a>
-  <a href="scheme-time.html" class="r7rs">(scheme time)</a>
-  <a href="scheme-write.html" class="r7rs">(scheme write)</a>
-  <h2>SRFI Libraries</h2>
-  <a href="srfi-1.html" class="srfi">(srfi 1)</a>
-  <a href="srfi-2.html" class="srfi">(srfi 2)</a>
-  <a href="srfi-8.html" class="srfi">(srfi 8)</a>
-  <a href="srfi-9.html" class="srfi">(srfi 9)</a>
-  <a href="srfi-13.html" class="srfi">(srfi 13)</a>
-  <a href="srfi-14.html" class="srfi">(srfi 14)</a>
-  <a href="srfi-18.html" class="srfi">(srfi 18)</a>
-  <a href="srfi-19.html" class="srfi">(srfi 19)</a>
-  <a href="srfi-26.html" class="srfi">(srfi 26)</a>
-  <a href="srfi-28.html" class="srfi">(srfi 28)</a>
-  <a href="srfi-39.html" class="srfi">(srfi 39)</a>
-  <a href="srfi-48.html" class="srfi">(srfi 48)</a>
-  <a href="srfi-64.html" class="srfi">(srfi 64)</a>
-  <a href="srfi-69.html" class="srfi">(srfi 69)</a>
-  <a href="srfi-95.html" class="srfi">(srfi 95)</a>
-  <a href="srfi-98.html" class="srfi">(srfi 98)</a>
-  <a href="srfi-111.html" class="srfi">(srfi 111)</a>
-  <a href="srfi-125.html" class="srfi">(srfi 125)</a>
-  <a href="srfi-128.html" class="srfi">(srfi 128)</a>
-  <a href="srfi-132.html" class="srfi">(srfi 132)</a>
-  <a href="srfi-133.html" class="srfi">(srfi 133)</a>
-  <a href="srfi-151.html" class="srfi">(srfi 151)</a>
-  <a href="srfi-158.html" class="srfi">(srfi 158)</a>
-  <h2>Scm Extensions</h2>
-  <a href="scm-archive.html" class="scm">(scm archive)</a>
-  <a href="scm-args.html" class="scm">(scm args)</a>
-  <a href="scm-compile.html" class="scm">(scm compile)</a>
-  <a href="scm-compression.html" class="scm">(scm compression)</a>
-  <a href="scm-crypto.html" class="scm">(scm crypto)</a>
-  <a href="scm-csv.html" class="scm">(scm csv)</a>
-  <a href="scm-database-migrations.html" class="scm">(scm database migrations)</a>
-  <a href="scm-database-postgres.html" class="scm">(scm database postgres)</a>
-  <a href="scm-database-sqlserver.html" class="scm">(scm database sqlserver)</a>
-  <a href="scm-datetime.html" class="scm">(scm datetime)</a>
-  <a href="scm-dict.html" class="scm">(scm dict)</a>
-  <a href="scm-doc.html" class="scm">(scm doc)</a>
-  <a href="scm-duration.html" class="scm">(scm duration)</a>
-  <a href="scm-feed.html" class="scm">(scm feed)</a>
-  <a href="scm-fs-find.html" class="scm">(scm fs-find)</a>
-  <a href="scm-fs.html" class="scm">(scm fs)</a>
-  <a href="scm-glob.html" class="scm">(scm glob)</a>
-  <a href="scm-html-builder.html" class="scm">(scm html builder)</a>
-  <a href="scm-html.html" class="scm">(scm html)</a>
-  <a href="scm-io.html" class="scm active">(scm io)</a>
-  <a href="scm-json-simple.html" class="scm">(scm json simple)</a>
-  <a href="scm-json.html" class="scm">(scm json)</a>
-  <a href="scm-list.html" class="scm">(scm list)</a>
-  <a href="scm-log.html" class="scm">(scm log)</a>
-  <a href="scm-macro.html" class="scm">(scm macro)</a>
-  <a href="scm-markdown.html" class="scm">(scm markdown)</a>
-  <a href="scm-match.html" class="scm">(scm match)</a>
-  <a href="scm-math.html" class="scm">(scm math)</a>
-  <a href="scm-module.html" class="scm">(scm module)</a>
-  <a href="scm-net-http-client.html" class="scm">(scm net http client)</a>
-  <a href="scm-net-http-cookies.html" class="scm">(scm net http cookies)</a>
-  <a href="scm-net-http-forms.html" class="scm">(scm net http forms)</a>
-  <a href="scm-net-http-multipart.html" class="scm">(scm net http multipart)</a>
-  <a href="scm-net-http-request.html" class="scm">(scm net http request)</a>
-  <a href="scm-net-http-response.html" class="scm">(scm net http response)</a>
-  <a href="scm-net-http-route.html" class="scm">(scm net http route)</a>
-  <a href="scm-net-http-server.html" class="scm">(scm net http server)</a>
-  <a href="scm-net-remote.html" class="scm">(scm net-remote)</a>
-  <a href="scm-net-sockets.html" class="scm">(scm net sockets)</a>
-  <a href="scm-net-websocket.html" class="scm">(scm net websocket)</a>
-  <a href="scm-odf-spreadsheet.html" class="scm">(scm odf spreadsheet)</a>
-  <a href="scm-odf-writer.html" class="scm">(scm odf writer)</a>
-  <a href="scm-ooxml-excel-reader.html" class="scm">(scm ooxml excel-reader)</a>
-  <a href="scm-ooxml-excel.html" class="scm">(scm ooxml excel)</a>
-  <a href="scm-ooxml-word-reader.html" class="scm">(scm ooxml word-reader)</a>
-  <a href="scm-ooxml-word.html" class="scm">(scm ooxml word)</a>
-  <a href="scm-pdf.html" class="scm">(scm pdf)</a>
-  <a href="scm-png.html" class="scm">(scm png)</a>
-  <a href="scm-profiling.html" class="scm">(scm profiling)</a>
-  <a href="scm-qr.html" class="scm">(scm qr)</a>
-  <a href="scm-random-access.html" class="scm">(scm random access)</a>
-  <a href="scm-repl.html" class="scm">(scm repl)</a>
-  <a href="scm-store.html" class="scm">(scm store)</a>
-  <a href="scm-string.html" class="scm">(scm string)</a>
-  <a href="scm-sysadmin.html" class="scm">(scm sysadmin)</a>
-  <a href="scm-system.html" class="scm">(scm system)</a>
-  <a href="scm-templating.html" class="scm">(scm templating)</a>
-  <a href="scm-terminal.html" class="scm">(scm terminal)</a>
-  <a href="scm-test.html" class="scm">(scm test)</a>
-  <a href="scm-text.html" class="scm">(scm text)</a>
-  <a href="scm-toml.html" class="scm">(scm toml)</a>
-  <a href="scm-uri.html" class="scm">(scm uri)</a>
-  <a href="scm-xml.html" class="scm">(scm xml)</a>
-  <a href="scm-zip.html" class="scm">(scm zip)</a>
+<nav class="toc">
+  <h2>Bindings</h2>
+  <a href="#e0" data-name="call-with-input-string">call-with-input-string</a>
+  <a href="#e1" data-name="call-with-output-bytevector">call-with-output-bytevector</a>
+  <a href="#e2" data-name="call-with-output-string">call-with-output-string</a>
+  <a href="#e3" data-name="field-sep">field-sep</a>
+  <a href="#e4" data-name="file-&gt;lines">file-&gt;lines</a>
+  <a href="#e5" data-name="file-&gt;string">file-&gt;string</a>
+  <a href="#e6" data-name="flush">flush</a>
+  <a href="#e7" data-name="format">format</a>
+  <a href="#e8" data-name="line-sep">line-sep</a>
+  <a href="#e9" data-name="port-position">port-position</a>
+  <a href="#e10" data-name="read-chars">read-chars</a>
+  <a href="#e11" data-name="read-file-lines">read-file-lines</a>
+  <a href="#e12" data-name="read-file-string">read-file-string</a>
+  <a href="#e13" data-name="with-input-from-string">with-input-from-string</a>
 </nav>
 
 <main>
 
-<a class="backlink" href="index.html">&larr; All libraries</a>
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="index.html">All libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="index.html#sec-scm">Scm Extensions</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm io)</span>
+</nav>
+
 <div class="lib-title scm">(scm io)</div>
 <p class="lib-sub">Extended I/O — formatting, port utilities, property lists</p>
 <div class="lib-preamble">
 <h2>Overview</h2>
-<p><code>(scm io)</code> adds I/O conveniences on top of the R7RS ports: string/bytevector capture, <code>format</code>-style output, and a few port utilities. Its <code>format</code> is shared with SRFI-28 and SRFI-48.</p>
+<p><a class="xref" href="scm-io.html"><code>(scm io)</code></a> adds I/O conveniences on top of the R7RS ports: string/bytevector capture, <a class="xref" href="#e7"><code>format</code></a>-style output, and a few port utilities. Its <a class="xref" href="#e7"><code>format</code></a> is shared with SRFI-28 and SRFI-48.</p>
 <h2>Common uses</h2>
 <p>Capture output into a string or bytevector:</p>
 <pre><code class="language-scheme">(import (scm io))
@@ -149,7 +64,7 @@
   (lambda (p) (write-bytevector #u8(1 2 3) p)))     ;; =&gt; #u8(1 2 3)</code></pre>
 <p>Formatted strings — the first argument is the destination (<code>#f</code> for a string, or a port):</p>
 <pre><code class="language-scheme">(format #f "~a + ~a = ~a" 1 2 3)    ;; =&gt; "1 + 2 = 3"</code></pre>
-<p><code>read-chars</code> reads a fixed number of characters, <code>with-input-from-string</code> rebinds the current input port, and <code>port-position</code> / <code>flush</code> round things out.</p>
+<p><a class="xref" href="#e10"><code>read-chars</code></a> reads a fixed number of characters, <a class="xref" href="#e13"><code>with-input-from-string</code></a> rebinds the current input port, and <a class="xref" href="#e9"><code>port-position</code></a> / <a class="xref" href="#e6"><code>flush</code></a> round things out.</p>
 </div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">14 bindings</p>

@@ -152,3 +152,38 @@
   .entry .nodoc { margin-top: 6px; color: var(--text-dim); font-style: italic; font-size: 0.85rem; }
   .entry.target { background: rgba(255, 204, 85, 0.05); border-radius: 6px; }
   .entry.target .entry-name { color: #ffcc55; }
+
+  /* ---- per-library page: breadcrumb ---- */
+  /* The breadcrumb is a <nav>, so it must shed the sidebar nav chrome. */
+  .breadcrumb {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    font-size: 0.8rem;
+    width: auto;
+    height: auto;
+    padding: 0;
+    background: none;
+    border: none;
+    position: static;
+    overflow: visible;
+  }
+  .breadcrumb a { color: var(--text-dim); text-decoration: none; }
+  .breadcrumb a:hover { color: var(--text); }
+  .breadcrumb .sep { color: var(--border); }
+  .breadcrumb .current { color: var(--text); }
+
+  /* ---- per-library page: bindings table of contents (left nav) ---- */
+  nav.toc a {
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", Consolas, monospace;
+    font-size: 0.78rem;
+  }
+  nav.toc a:hover { color: var(--scm); border-left-color: var(--scm); }
+
+  /* ---- preamble cross-reference links ---- */
+  .lib-preamble a.xref { border-bottom: 1px dotted var(--scm); }
+  .lib-preamble a.xref code { color: var(--scm); }
+  .lib-preamble a.xref:hover { border-bottom-style: solid; }
+  .lib-preamble a.xref:hover code { color: var(--text); }

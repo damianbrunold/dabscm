@@ -3,15 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>(scheme base) — Scm Library Reference</title>
+<title>(scheme base) — Dabscm Library Reference</title>
 <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
 
 <header>
   <div>
-    <h1><a href="index.html">Scm Library Reference</a></h1>
-    <p>scm &mdash; libraries and their exports</p>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
   </div>
   <div class="search-wrap">
     <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
@@ -21,123 +20,257 @@
 
 <div class="layout">
 
-<nav>
-  <h2>R7RS Standard</h2>
-  <a href="scheme-base.html" class="r7rs active">(scheme base)</a>
-  <a href="scheme-case-lambda.html" class="r7rs">(scheme case-lambda)</a>
-  <a href="scheme-char.html" class="r7rs">(scheme char)</a>
-  <a href="scheme-complex.html" class="r7rs">(scheme complex)</a>
-  <a href="scheme-cxr.html" class="r7rs">(scheme cxr)</a>
-  <a href="scheme-eval.html" class="r7rs">(scheme eval)</a>
-  <a href="scheme-file.html" class="r7rs">(scheme file)</a>
-  <a href="scheme-inexact.html" class="r7rs">(scheme inexact)</a>
-  <a href="scheme-lazy.html" class="r7rs">(scheme lazy)</a>
-  <a href="scheme-load.html" class="r7rs">(scheme load)</a>
-  <a href="scheme-process-context.html" class="r7rs">(scheme process-context)</a>
-  <a href="scheme-r5rs.html" class="r7rs">(scheme r5rs)</a>
-  <a href="scheme-read.html" class="r7rs">(scheme read)</a>
-  <a href="scheme-repl.html" class="r7rs">(scheme repl)</a>
-  <a href="scheme-time.html" class="r7rs">(scheme time)</a>
-  <a href="scheme-write.html" class="r7rs">(scheme write)</a>
-  <h2>SRFI Libraries</h2>
-  <a href="srfi-1.html" class="srfi">(srfi 1)</a>
-  <a href="srfi-2.html" class="srfi">(srfi 2)</a>
-  <a href="srfi-8.html" class="srfi">(srfi 8)</a>
-  <a href="srfi-9.html" class="srfi">(srfi 9)</a>
-  <a href="srfi-13.html" class="srfi">(srfi 13)</a>
-  <a href="srfi-14.html" class="srfi">(srfi 14)</a>
-  <a href="srfi-18.html" class="srfi">(srfi 18)</a>
-  <a href="srfi-19.html" class="srfi">(srfi 19)</a>
-  <a href="srfi-26.html" class="srfi">(srfi 26)</a>
-  <a href="srfi-28.html" class="srfi">(srfi 28)</a>
-  <a href="srfi-39.html" class="srfi">(srfi 39)</a>
-  <a href="srfi-48.html" class="srfi">(srfi 48)</a>
-  <a href="srfi-64.html" class="srfi">(srfi 64)</a>
-  <a href="srfi-69.html" class="srfi">(srfi 69)</a>
-  <a href="srfi-95.html" class="srfi">(srfi 95)</a>
-  <a href="srfi-98.html" class="srfi">(srfi 98)</a>
-  <a href="srfi-111.html" class="srfi">(srfi 111)</a>
-  <a href="srfi-125.html" class="srfi">(srfi 125)</a>
-  <a href="srfi-128.html" class="srfi">(srfi 128)</a>
-  <a href="srfi-132.html" class="srfi">(srfi 132)</a>
-  <a href="srfi-133.html" class="srfi">(srfi 133)</a>
-  <a href="srfi-151.html" class="srfi">(srfi 151)</a>
-  <a href="srfi-158.html" class="srfi">(srfi 158)</a>
-  <h2>Scm Extensions</h2>
-  <a href="scm-archive.html" class="scm">(scm archive)</a>
-  <a href="scm-args.html" class="scm">(scm args)</a>
-  <a href="scm-compile.html" class="scm">(scm compile)</a>
-  <a href="scm-compression.html" class="scm">(scm compression)</a>
-  <a href="scm-crypto.html" class="scm">(scm crypto)</a>
-  <a href="scm-csv.html" class="scm">(scm csv)</a>
-  <a href="scm-database-migrations.html" class="scm">(scm database migrations)</a>
-  <a href="scm-database-postgres.html" class="scm">(scm database postgres)</a>
-  <a href="scm-database-sqlserver.html" class="scm">(scm database sqlserver)</a>
-  <a href="scm-datetime.html" class="scm">(scm datetime)</a>
-  <a href="scm-dict.html" class="scm">(scm dict)</a>
-  <a href="scm-doc.html" class="scm">(scm doc)</a>
-  <a href="scm-duration.html" class="scm">(scm duration)</a>
-  <a href="scm-feed.html" class="scm">(scm feed)</a>
-  <a href="scm-fs-find.html" class="scm">(scm fs-find)</a>
-  <a href="scm-fs.html" class="scm">(scm fs)</a>
-  <a href="scm-glob.html" class="scm">(scm glob)</a>
-  <a href="scm-html-builder.html" class="scm">(scm html builder)</a>
-  <a href="scm-html.html" class="scm">(scm html)</a>
-  <a href="scm-io.html" class="scm">(scm io)</a>
-  <a href="scm-json-simple.html" class="scm">(scm json simple)</a>
-  <a href="scm-json.html" class="scm">(scm json)</a>
-  <a href="scm-list.html" class="scm">(scm list)</a>
-  <a href="scm-log.html" class="scm">(scm log)</a>
-  <a href="scm-macro.html" class="scm">(scm macro)</a>
-  <a href="scm-markdown.html" class="scm">(scm markdown)</a>
-  <a href="scm-match.html" class="scm">(scm match)</a>
-  <a href="scm-math.html" class="scm">(scm math)</a>
-  <a href="scm-module.html" class="scm">(scm module)</a>
-  <a href="scm-net-http-client.html" class="scm">(scm net http client)</a>
-  <a href="scm-net-http-cookies.html" class="scm">(scm net http cookies)</a>
-  <a href="scm-net-http-forms.html" class="scm">(scm net http forms)</a>
-  <a href="scm-net-http-multipart.html" class="scm">(scm net http multipart)</a>
-  <a href="scm-net-http-request.html" class="scm">(scm net http request)</a>
-  <a href="scm-net-http-response.html" class="scm">(scm net http response)</a>
-  <a href="scm-net-http-route.html" class="scm">(scm net http route)</a>
-  <a href="scm-net-http-server.html" class="scm">(scm net http server)</a>
-  <a href="scm-net-remote.html" class="scm">(scm net-remote)</a>
-  <a href="scm-net-sockets.html" class="scm">(scm net sockets)</a>
-  <a href="scm-net-websocket.html" class="scm">(scm net websocket)</a>
-  <a href="scm-odf-spreadsheet.html" class="scm">(scm odf spreadsheet)</a>
-  <a href="scm-odf-writer.html" class="scm">(scm odf writer)</a>
-  <a href="scm-ooxml-excel-reader.html" class="scm">(scm ooxml excel-reader)</a>
-  <a href="scm-ooxml-excel.html" class="scm">(scm ooxml excel)</a>
-  <a href="scm-ooxml-word-reader.html" class="scm">(scm ooxml word-reader)</a>
-  <a href="scm-ooxml-word.html" class="scm">(scm ooxml word)</a>
-  <a href="scm-pdf.html" class="scm">(scm pdf)</a>
-  <a href="scm-png.html" class="scm">(scm png)</a>
-  <a href="scm-profiling.html" class="scm">(scm profiling)</a>
-  <a href="scm-qr.html" class="scm">(scm qr)</a>
-  <a href="scm-random-access.html" class="scm">(scm random access)</a>
-  <a href="scm-repl.html" class="scm">(scm repl)</a>
-  <a href="scm-store.html" class="scm">(scm store)</a>
-  <a href="scm-string.html" class="scm">(scm string)</a>
-  <a href="scm-sysadmin.html" class="scm">(scm sysadmin)</a>
-  <a href="scm-system.html" class="scm">(scm system)</a>
-  <a href="scm-templating.html" class="scm">(scm templating)</a>
-  <a href="scm-terminal.html" class="scm">(scm terminal)</a>
-  <a href="scm-test.html" class="scm">(scm test)</a>
-  <a href="scm-text.html" class="scm">(scm text)</a>
-  <a href="scm-toml.html" class="scm">(scm toml)</a>
-  <a href="scm-uri.html" class="scm">(scm uri)</a>
-  <a href="scm-xml.html" class="scm">(scm xml)</a>
-  <a href="scm-zip.html" class="scm">(scm zip)</a>
+<nav class="toc">
+  <h2>Bindings</h2>
+  <a href="#e0" data-name="*">*</a>
+  <a href="#e1" data-name="+">+</a>
+  <a href="#e2" data-name="-">-</a>
+  <a href="#e3" data-name="/">/</a>
+  <a href="#e4" data-name="&lt;">&lt;</a>
+  <a href="#e5" data-name="&lt;=">&lt;=</a>
+  <a href="#e6" data-name="=">=</a>
+  <a href="#e7" data-name="&gt;">&gt;</a>
+  <a href="#e8" data-name="&gt;=">&gt;=</a>
+  <a href="#e9" data-name="abs">abs</a>
+  <a href="#e10" data-name="and">and</a>
+  <a href="#e11" data-name="append">append</a>
+  <a href="#e12" data-name="apply">apply</a>
+  <a href="#e13" data-name="assoc">assoc</a>
+  <a href="#e14" data-name="assq">assq</a>
+  <a href="#e15" data-name="assv">assv</a>
+  <a href="#e16" data-name="begin">begin</a>
+  <a href="#e17" data-name="binary-port?">binary-port?</a>
+  <a href="#e18" data-name="boolean=?">boolean=?</a>
+  <a href="#e19" data-name="boolean?">boolean?</a>
+  <a href="#e20" data-name="bytevector">bytevector</a>
+  <a href="#e21" data-name="bytevector-append">bytevector-append</a>
+  <a href="#e22" data-name="bytevector-copy">bytevector-copy</a>
+  <a href="#e23" data-name="bytevector-copy!">bytevector-copy!</a>
+  <a href="#e24" data-name="bytevector-length">bytevector-length</a>
+  <a href="#e25" data-name="bytevector-u8-ref">bytevector-u8-ref</a>
+  <a href="#e26" data-name="bytevector-u8-set!">bytevector-u8-set!</a>
+  <a href="#e27" data-name="bytevector?">bytevector?</a>
+  <a href="#e28" data-name="caar">caar</a>
+  <a href="#e29" data-name="cadr">cadr</a>
+  <a href="#e30" data-name="call-with-current-continuation">call-with-current-continuation</a>
+  <a href="#e31" data-name="call-with-port">call-with-port</a>
+  <a href="#e32" data-name="call-with-values">call-with-values</a>
+  <a href="#e33" data-name="call/cc">call/cc</a>
+  <a href="#e34" data-name="car">car</a>
+  <a href="#e35" data-name="case">case</a>
+  <a href="#e36" data-name="cdar">cdar</a>
+  <a href="#e37" data-name="cddr">cddr</a>
+  <a href="#e38" data-name="cdr">cdr</a>
+  <a href="#e39" data-name="ceiling">ceiling</a>
+  <a href="#e40" data-name="char-&gt;integer">char-&gt;integer</a>
+  <a href="#e41" data-name="char-ready?">char-ready?</a>
+  <a href="#e42" data-name="char&lt;=?">char&lt;=?</a>
+  <a href="#e43" data-name="char&lt;?">char&lt;?</a>
+  <a href="#e44" data-name="char=?">char=?</a>
+  <a href="#e45" data-name="char&gt;=?">char&gt;=?</a>
+  <a href="#e46" data-name="char&gt;?">char&gt;?</a>
+  <a href="#e47" data-name="char?">char?</a>
+  <a href="#e48" data-name="close-input-port">close-input-port</a>
+  <a href="#e49" data-name="close-output-port">close-output-port</a>
+  <a href="#e50" data-name="close-port">close-port</a>
+  <a href="#e51" data-name="complex?">complex?</a>
+  <a href="#e52" data-name="cond">cond</a>
+  <a href="#e53" data-name="cond-expand">cond-expand</a>
+  <a href="#e54" data-name="cons">cons</a>
+  <a href="#e55" data-name="current-error-port">current-error-port</a>
+  <a href="#e56" data-name="current-input-port">current-input-port</a>
+  <a href="#e57" data-name="current-output-port">current-output-port</a>
+  <a href="#e58" data-name="define">define</a>
+  <a href="#e59" data-name="define-record-type">define-record-type</a>
+  <a href="#e60" data-name="define-syntax">define-syntax</a>
+  <a href="#e61" data-name="define-values">define-values</a>
+  <a href="#e62" data-name="denominator">denominator</a>
+  <a href="#e63" data-name="do">do</a>
+  <a href="#e64" data-name="dynamic-wind">dynamic-wind</a>
+  <a href="#e65" data-name="eof-object">eof-object</a>
+  <a href="#e66" data-name="eof-object?">eof-object?</a>
+  <a href="#e67" data-name="eq?">eq?</a>
+  <a href="#e68" data-name="equal?">equal?</a>
+  <a href="#e69" data-name="eqv?">eqv?</a>
+  <a href="#e70" data-name="error">error</a>
+  <a href="#e71" data-name="error-object-irritants">error-object-irritants</a>
+  <a href="#e72" data-name="error-object-message">error-object-message</a>
+  <a href="#e73" data-name="error-object?">error-object?</a>
+  <a href="#e74" data-name="even?">even?</a>
+  <a href="#e75" data-name="exact">exact</a>
+  <a href="#e76" data-name="exact-integer-sqrt">exact-integer-sqrt</a>
+  <a href="#e77" data-name="exact-integer?">exact-integer?</a>
+  <a href="#e78" data-name="exact?">exact?</a>
+  <a href="#e79" data-name="expt">expt</a>
+  <a href="#e80" data-name="features">features</a>
+  <a href="#e81" data-name="file-error?">file-error?</a>
+  <a href="#e82" data-name="floor">floor</a>
+  <a href="#e83" data-name="floor-quotient">floor-quotient</a>
+  <a href="#e84" data-name="floor-remainder">floor-remainder</a>
+  <a href="#e85" data-name="floor/">floor/</a>
+  <a href="#e86" data-name="flush-output-port">flush-output-port</a>
+  <a href="#e87" data-name="for-each">for-each</a>
+  <a href="#e88" data-name="gcd">gcd</a>
+  <a href="#e89" data-name="get-output-bytevector">get-output-bytevector</a>
+  <a href="#e90" data-name="get-output-string">get-output-string</a>
+  <a href="#e91" data-name="guard">guard</a>
+  <a href="#e92" data-name="guard-aux">guard-aux</a>
+  <a href="#e93" data-name="if">if</a>
+  <a href="#e94" data-name="include">include</a>
+  <a href="#e95" data-name="include-ci">include-ci</a>
+  <a href="#e96" data-name="inexact">inexact</a>
+  <a href="#e97" data-name="inexact?">inexact?</a>
+  <a href="#e98" data-name="input-port-open?">input-port-open?</a>
+  <a href="#e99" data-name="input-port?">input-port?</a>
+  <a href="#e100" data-name="integer-&gt;char">integer-&gt;char</a>
+  <a href="#e101" data-name="integer?">integer?</a>
+  <a href="#e102" data-name="lambda">lambda</a>
+  <a href="#e103" data-name="lcm">lcm</a>
+  <a href="#e104" data-name="length">length</a>
+  <a href="#e105" data-name="let">let</a>
+  <a href="#e106" data-name="let*">let*</a>
+  <a href="#e107" data-name="let*-values">let*-values</a>
+  <a href="#e108" data-name="let-syntax">let-syntax</a>
+  <a href="#e109" data-name="let-values">let-values</a>
+  <a href="#e110" data-name="letrec">letrec</a>
+  <a href="#e111" data-name="letrec*">letrec*</a>
+  <a href="#e112" data-name="letrec-syntax">letrec-syntax</a>
+  <a href="#e113" data-name="list">list</a>
+  <a href="#e114" data-name="list-&gt;string">list-&gt;string</a>
+  <a href="#e115" data-name="list-&gt;vector">list-&gt;vector</a>
+  <a href="#e116" data-name="list-copy">list-copy</a>
+  <a href="#e117" data-name="list-ref">list-ref</a>
+  <a href="#e118" data-name="list-set!">list-set!</a>
+  <a href="#e119" data-name="list-tail">list-tail</a>
+  <a href="#e120" data-name="list?">list?</a>
+  <a href="#e121" data-name="make-bytevector">make-bytevector</a>
+  <a href="#e122" data-name="make-list">make-list</a>
+  <a href="#e123" data-name="make-parameter">make-parameter</a>
+  <a href="#e124" data-name="make-string">make-string</a>
+  <a href="#e125" data-name="make-vector">make-vector</a>
+  <a href="#e126" data-name="map">map</a>
+  <a href="#e127" data-name="max">max</a>
+  <a href="#e128" data-name="member">member</a>
+  <a href="#e129" data-name="memq">memq</a>
+  <a href="#e130" data-name="memv">memv</a>
+  <a href="#e131" data-name="min">min</a>
+  <a href="#e132" data-name="modulo">modulo</a>
+  <a href="#e133" data-name="negative?">negative?</a>
+  <a href="#e134" data-name="newline">newline</a>
+  <a href="#e135" data-name="not">not</a>
+  <a href="#e136" data-name="null?">null?</a>
+  <a href="#e137" data-name="number-&gt;string">number-&gt;string</a>
+  <a href="#e138" data-name="number?">number?</a>
+  <a href="#e139" data-name="numerator">numerator</a>
+  <a href="#e140" data-name="odd?">odd?</a>
+  <a href="#e141" data-name="open-input-bytevector">open-input-bytevector</a>
+  <a href="#e142" data-name="open-input-string">open-input-string</a>
+  <a href="#e143" data-name="open-output-bytevector">open-output-bytevector</a>
+  <a href="#e144" data-name="open-output-string">open-output-string</a>
+  <a href="#e145" data-name="or">or</a>
+  <a href="#e146" data-name="output-port-open?">output-port-open?</a>
+  <a href="#e147" data-name="output-port?">output-port?</a>
+  <a href="#e148" data-name="pair?">pair?</a>
+  <a href="#e149" data-name="parameterize">parameterize</a>
+  <a href="#e150" data-name="peek-char">peek-char</a>
+  <a href="#e151" data-name="peek-u8">peek-u8</a>
+  <a href="#e152" data-name="port?">port?</a>
+  <a href="#e153" data-name="positive?">positive?</a>
+  <a href="#e154" data-name="procedure?">procedure?</a>
+  <a href="#e155" data-name="quasiquote">quasiquote</a>
+  <a href="#e156" data-name="quote">quote</a>
+  <a href="#e157" data-name="quotient">quotient</a>
+  <a href="#e158" data-name="raise">raise</a>
+  <a href="#e159" data-name="raise-continuable">raise-continuable</a>
+  <a href="#e160" data-name="rational?">rational?</a>
+  <a href="#e161" data-name="rationalize">rationalize</a>
+  <a href="#e162" data-name="read-bytevector">read-bytevector</a>
+  <a href="#e163" data-name="read-bytevector!">read-bytevector!</a>
+  <a href="#e164" data-name="read-char">read-char</a>
+  <a href="#e165" data-name="read-error?">read-error?</a>
+  <a href="#e166" data-name="read-line">read-line</a>
+  <a href="#e167" data-name="read-string">read-string</a>
+  <a href="#e168" data-name="read-u8">read-u8</a>
+  <a href="#e169" data-name="real?">real?</a>
+  <a href="#e170" data-name="remainder">remainder</a>
+  <a href="#e171" data-name="reverse">reverse</a>
+  <a href="#e172" data-name="round">round</a>
+  <a href="#e173" data-name="set!">set!</a>
+  <a href="#e174" data-name="set-car!">set-car!</a>
+  <a href="#e175" data-name="set-cdr!">set-cdr!</a>
+  <a href="#e176" data-name="square">square</a>
+  <a href="#e177" data-name="string">string</a>
+  <a href="#e178" data-name="string-&gt;list">string-&gt;list</a>
+  <a href="#e179" data-name="string-&gt;number">string-&gt;number</a>
+  <a href="#e180" data-name="string-&gt;symbol">string-&gt;symbol</a>
+  <a href="#e181" data-name="string-&gt;utf8">string-&gt;utf8</a>
+  <a href="#e182" data-name="string-&gt;vector">string-&gt;vector</a>
+  <a href="#e183" data-name="string-append">string-append</a>
+  <a href="#e184" data-name="string-copy">string-copy</a>
+  <a href="#e185" data-name="string-copy!">string-copy!</a>
+  <a href="#e186" data-name="string-fill!">string-fill!</a>
+  <a href="#e187" data-name="string-for-each">string-for-each</a>
+  <a href="#e188" data-name="string-length">string-length</a>
+  <a href="#e189" data-name="string-map">string-map</a>
+  <a href="#e190" data-name="string-ref">string-ref</a>
+  <a href="#e191" data-name="string-set!">string-set!</a>
+  <a href="#e192" data-name="string&lt;=?">string&lt;=?</a>
+  <a href="#e193" data-name="string&lt;?">string&lt;?</a>
+  <a href="#e194" data-name="string=?">string=?</a>
+  <a href="#e195" data-name="string&gt;=?">string&gt;=?</a>
+  <a href="#e196" data-name="string&gt;?">string&gt;?</a>
+  <a href="#e197" data-name="string?">string?</a>
+  <a href="#e198" data-name="substring">substring</a>
+  <a href="#e199" data-name="symbol-&gt;string">symbol-&gt;string</a>
+  <a href="#e200" data-name="symbol=?">symbol=?</a>
+  <a href="#e201" data-name="symbol?">symbol?</a>
+  <a href="#e202" data-name="syntax-error">syntax-error</a>
+  <a href="#e203" data-name="textual-port?">textual-port?</a>
+  <a href="#e204" data-name="truncate">truncate</a>
+  <a href="#e205" data-name="truncate-quotient">truncate-quotient</a>
+  <a href="#e206" data-name="truncate-remainder">truncate-remainder</a>
+  <a href="#e207" data-name="truncate/">truncate/</a>
+  <a href="#e208" data-name="u8-ready?">u8-ready?</a>
+  <a href="#e209" data-name="unless">unless</a>
+  <a href="#e210" data-name="utf8-&gt;string">utf8-&gt;string</a>
+  <a href="#e211" data-name="values">values</a>
+  <a href="#e212" data-name="vector">vector</a>
+  <a href="#e213" data-name="vector-&gt;list">vector-&gt;list</a>
+  <a href="#e214" data-name="vector-&gt;string">vector-&gt;string</a>
+  <a href="#e215" data-name="vector-append">vector-append</a>
+  <a href="#e216" data-name="vector-copy">vector-copy</a>
+  <a href="#e217" data-name="vector-copy!">vector-copy!</a>
+  <a href="#e218" data-name="vector-fill!">vector-fill!</a>
+  <a href="#e219" data-name="vector-for-each">vector-for-each</a>
+  <a href="#e220" data-name="vector-length">vector-length</a>
+  <a href="#e221" data-name="vector-map">vector-map</a>
+  <a href="#e222" data-name="vector-ref">vector-ref</a>
+  <a href="#e223" data-name="vector-set!">vector-set!</a>
+  <a href="#e224" data-name="vector?">vector?</a>
+  <a href="#e225" data-name="when">when</a>
+  <a href="#e226" data-name="with-exception-handler">with-exception-handler</a>
+  <a href="#e227" data-name="write-bytevector">write-bytevector</a>
+  <a href="#e228" data-name="write-char">write-char</a>
+  <a href="#e229" data-name="write-string">write-string</a>
+  <a href="#e230" data-name="write-u8">write-u8</a>
+  <a href="#e231" data-name="zero?">zero?</a>
 </nav>
 
 <main>
 
-<a class="backlink" href="index.html">&larr; All libraries</a>
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="index.html">All libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="index.html#sec-r7rs">R7RS Standard</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scheme base)</span>
+</nav>
+
 <div class="lib-title r7rs">(scheme base)</div>
 <p class="lib-sub">R7RS base library — core forms and procedures</p>
 <div class="lib-preamble">
 <h2>Overview</h2>
-<p><code>(scheme base)</code> is the R7RS base library — the core of the language. It provides the fundamental syntax (<code>define</code>, <code>lambda</code>, <code>let</code> and friends, <code>cond</code>, <code>case</code>, <code>when</code>, <code>unless</code>, <code>do</code>, <code>quasiquote</code>, <code>define-record-type</code>, <code>parameterize</code>, …) and the everyday procedures over pairs/lists, numbers, characters, strings, vectors, bytevectors, symbols, control flow, and basic I/O (string ports, <code>read-line</code>, <code>write-string</code>, …).</p>
+<p><a class="xref" href="scheme-base.html"><code>(scheme base)</code></a> is the R7RS base library — the core of the language. It provides the fundamental syntax (<a class="xref" href="#e58"><code>define</code></a>, <a class="xref" href="#e102"><code>lambda</code></a>, <a class="xref" href="#e105"><code>let</code></a> and friends, <a class="xref" href="#e52"><code>cond</code></a>, <a class="xref" href="#e35"><code>case</code></a>, <a class="xref" href="#e225"><code>when</code></a>, <a class="xref" href="#e209"><code>unless</code></a>, <a class="xref" href="#e63"><code>do</code></a>, <a class="xref" href="#e155"><code>quasiquote</code></a>, <a class="xref" href="#e59"><code>define-record-type</code></a>, <a class="xref" href="#e149"><code>parameterize</code></a>, …) and the everyday procedures over pairs/lists, numbers, characters, strings, vectors, bytevectors, symbols, control flow, and basic I/O (string ports, <a class="xref" href="#e166"><code>read-line</code></a>, <a class="xref" href="#e229"><code>write-string</code></a>, …).</p>
 <h2>Common uses</h2>
 <pre><code class="language-scheme">(import (scheme base))
 

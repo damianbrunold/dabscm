@@ -68,15 +68,28 @@
         var name = (entries[i].getAttribute('data-name') || '').toLowerCase();
         entries[i].style.display = (!q || name.indexOf(q) !== -1) ? '' : 'none';
       }
+      /* Keep the bindings TOC in the sidebar in sync with the filter. */
+      var toc = document.querySelectorAll('nav.toc a[data-name]');
+      for (var j = 0; j < toc.length; j++) {
+        var tn = (toc[j].getAttribute('data-name') || '').toLowerCase();
+        toc[j].style.display = (!q || tn.indexOf(q) !== -1) ? '' : 'none';
+      }
     });
   }
 
-  /* Highlight the entry linked to by the URL fragment. */
-  if (window.location.hash) {
-    var el = document.getElementById(window.location.hash.slice(1));
-    if (el) {
-      el.classList.add('target');
-      el.scrollIntoView({ block: 'center' });
+  /* Highlight the entry linked to by the URL fragment, and keep it in sync
+   * when the fragment changes (e.g. clicking a binding in the TOC). */
+  function highlightHash() {
+    var prev = document.querySelector('.entry.target');
+    if (prev) prev.classList.remove('target');
+    if (window.location.hash) {
+      var el = document.getElementById(window.location.hash.slice(1));
+      if (el) {
+        el.classList.add('target');
+        el.scrollIntoView({ block: 'center' });
+      }
     }
   }
+  highlightHash();
+  window.addEventListener('hashchange', highlightHash);
 })();

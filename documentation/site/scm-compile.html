@@ -3,15 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>(scm compile) — Scm Library Reference</title>
+<title>(scm compile) — Dabscm Library Reference</title>
 <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
 
 <header>
   <div>
-    <h1><a href="index.html">Scm Library Reference</a></h1>
-    <p>scm &mdash; libraries and their exports</p>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
   </div>
   <div class="search-wrap">
     <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
@@ -21,123 +20,42 @@
 
 <div class="layout">
 
-<nav>
-  <h2>R7RS Standard</h2>
-  <a href="scheme-base.html" class="r7rs">(scheme base)</a>
-  <a href="scheme-case-lambda.html" class="r7rs">(scheme case-lambda)</a>
-  <a href="scheme-char.html" class="r7rs">(scheme char)</a>
-  <a href="scheme-complex.html" class="r7rs">(scheme complex)</a>
-  <a href="scheme-cxr.html" class="r7rs">(scheme cxr)</a>
-  <a href="scheme-eval.html" class="r7rs">(scheme eval)</a>
-  <a href="scheme-file.html" class="r7rs">(scheme file)</a>
-  <a href="scheme-inexact.html" class="r7rs">(scheme inexact)</a>
-  <a href="scheme-lazy.html" class="r7rs">(scheme lazy)</a>
-  <a href="scheme-load.html" class="r7rs">(scheme load)</a>
-  <a href="scheme-process-context.html" class="r7rs">(scheme process-context)</a>
-  <a href="scheme-r5rs.html" class="r7rs">(scheme r5rs)</a>
-  <a href="scheme-read.html" class="r7rs">(scheme read)</a>
-  <a href="scheme-repl.html" class="r7rs">(scheme repl)</a>
-  <a href="scheme-time.html" class="r7rs">(scheme time)</a>
-  <a href="scheme-write.html" class="r7rs">(scheme write)</a>
-  <h2>SRFI Libraries</h2>
-  <a href="srfi-1.html" class="srfi">(srfi 1)</a>
-  <a href="srfi-2.html" class="srfi">(srfi 2)</a>
-  <a href="srfi-8.html" class="srfi">(srfi 8)</a>
-  <a href="srfi-9.html" class="srfi">(srfi 9)</a>
-  <a href="srfi-13.html" class="srfi">(srfi 13)</a>
-  <a href="srfi-14.html" class="srfi">(srfi 14)</a>
-  <a href="srfi-18.html" class="srfi">(srfi 18)</a>
-  <a href="srfi-19.html" class="srfi">(srfi 19)</a>
-  <a href="srfi-26.html" class="srfi">(srfi 26)</a>
-  <a href="srfi-28.html" class="srfi">(srfi 28)</a>
-  <a href="srfi-39.html" class="srfi">(srfi 39)</a>
-  <a href="srfi-48.html" class="srfi">(srfi 48)</a>
-  <a href="srfi-64.html" class="srfi">(srfi 64)</a>
-  <a href="srfi-69.html" class="srfi">(srfi 69)</a>
-  <a href="srfi-95.html" class="srfi">(srfi 95)</a>
-  <a href="srfi-98.html" class="srfi">(srfi 98)</a>
-  <a href="srfi-111.html" class="srfi">(srfi 111)</a>
-  <a href="srfi-125.html" class="srfi">(srfi 125)</a>
-  <a href="srfi-128.html" class="srfi">(srfi 128)</a>
-  <a href="srfi-132.html" class="srfi">(srfi 132)</a>
-  <a href="srfi-133.html" class="srfi">(srfi 133)</a>
-  <a href="srfi-151.html" class="srfi">(srfi 151)</a>
-  <a href="srfi-158.html" class="srfi">(srfi 158)</a>
-  <h2>Scm Extensions</h2>
-  <a href="scm-archive.html" class="scm">(scm archive)</a>
-  <a href="scm-args.html" class="scm">(scm args)</a>
-  <a href="scm-compile.html" class="scm active">(scm compile)</a>
-  <a href="scm-compression.html" class="scm">(scm compression)</a>
-  <a href="scm-crypto.html" class="scm">(scm crypto)</a>
-  <a href="scm-csv.html" class="scm">(scm csv)</a>
-  <a href="scm-database-migrations.html" class="scm">(scm database migrations)</a>
-  <a href="scm-database-postgres.html" class="scm">(scm database postgres)</a>
-  <a href="scm-database-sqlserver.html" class="scm">(scm database sqlserver)</a>
-  <a href="scm-datetime.html" class="scm">(scm datetime)</a>
-  <a href="scm-dict.html" class="scm">(scm dict)</a>
-  <a href="scm-doc.html" class="scm">(scm doc)</a>
-  <a href="scm-duration.html" class="scm">(scm duration)</a>
-  <a href="scm-feed.html" class="scm">(scm feed)</a>
-  <a href="scm-fs-find.html" class="scm">(scm fs-find)</a>
-  <a href="scm-fs.html" class="scm">(scm fs)</a>
-  <a href="scm-glob.html" class="scm">(scm glob)</a>
-  <a href="scm-html-builder.html" class="scm">(scm html builder)</a>
-  <a href="scm-html.html" class="scm">(scm html)</a>
-  <a href="scm-io.html" class="scm">(scm io)</a>
-  <a href="scm-json-simple.html" class="scm">(scm json simple)</a>
-  <a href="scm-json.html" class="scm">(scm json)</a>
-  <a href="scm-list.html" class="scm">(scm list)</a>
-  <a href="scm-log.html" class="scm">(scm log)</a>
-  <a href="scm-macro.html" class="scm">(scm macro)</a>
-  <a href="scm-markdown.html" class="scm">(scm markdown)</a>
-  <a href="scm-match.html" class="scm">(scm match)</a>
-  <a href="scm-math.html" class="scm">(scm math)</a>
-  <a href="scm-module.html" class="scm">(scm module)</a>
-  <a href="scm-net-http-client.html" class="scm">(scm net http client)</a>
-  <a href="scm-net-http-cookies.html" class="scm">(scm net http cookies)</a>
-  <a href="scm-net-http-forms.html" class="scm">(scm net http forms)</a>
-  <a href="scm-net-http-multipart.html" class="scm">(scm net http multipart)</a>
-  <a href="scm-net-http-request.html" class="scm">(scm net http request)</a>
-  <a href="scm-net-http-response.html" class="scm">(scm net http response)</a>
-  <a href="scm-net-http-route.html" class="scm">(scm net http route)</a>
-  <a href="scm-net-http-server.html" class="scm">(scm net http server)</a>
-  <a href="scm-net-remote.html" class="scm">(scm net-remote)</a>
-  <a href="scm-net-sockets.html" class="scm">(scm net sockets)</a>
-  <a href="scm-net-websocket.html" class="scm">(scm net websocket)</a>
-  <a href="scm-odf-spreadsheet.html" class="scm">(scm odf spreadsheet)</a>
-  <a href="scm-odf-writer.html" class="scm">(scm odf writer)</a>
-  <a href="scm-ooxml-excel-reader.html" class="scm">(scm ooxml excel-reader)</a>
-  <a href="scm-ooxml-excel.html" class="scm">(scm ooxml excel)</a>
-  <a href="scm-ooxml-word-reader.html" class="scm">(scm ooxml word-reader)</a>
-  <a href="scm-ooxml-word.html" class="scm">(scm ooxml word)</a>
-  <a href="scm-pdf.html" class="scm">(scm pdf)</a>
-  <a href="scm-png.html" class="scm">(scm png)</a>
-  <a href="scm-profiling.html" class="scm">(scm profiling)</a>
-  <a href="scm-qr.html" class="scm">(scm qr)</a>
-  <a href="scm-random-access.html" class="scm">(scm random access)</a>
-  <a href="scm-repl.html" class="scm">(scm repl)</a>
-  <a href="scm-store.html" class="scm">(scm store)</a>
-  <a href="scm-string.html" class="scm">(scm string)</a>
-  <a href="scm-sysadmin.html" class="scm">(scm sysadmin)</a>
-  <a href="scm-system.html" class="scm">(scm system)</a>
-  <a href="scm-templating.html" class="scm">(scm templating)</a>
-  <a href="scm-terminal.html" class="scm">(scm terminal)</a>
-  <a href="scm-test.html" class="scm">(scm test)</a>
-  <a href="scm-text.html" class="scm">(scm text)</a>
-  <a href="scm-toml.html" class="scm">(scm toml)</a>
-  <a href="scm-uri.html" class="scm">(scm uri)</a>
-  <a href="scm-xml.html" class="scm">(scm xml)</a>
-  <a href="scm-zip.html" class="scm">(scm zip)</a>
+<nav class="toc">
+  <h2>Bindings</h2>
+  <a href="#e0" data-name="atom?">atom?</a>
+  <a href="#e1" data-name="bound?">bound?</a>
+  <a href="#e2" data-name="compile">compile</a>
+  <a href="#e3" data-name="constant?">constant?</a>
+  <a href="#e4" data-name="disassemble">disassemble</a>
+  <a href="#e5" data-name="gensym">gensym</a>
+  <a href="#e6" data-name="get-code">get-code</a>
+  <a href="#e7" data-name="get-lambda-env">get-lambda-env</a>
+  <a href="#e8" data-name="get-token">get-token</a>
+  <a href="#e9" data-name="instruction-arg1">instruction-arg1</a>
+  <a href="#e10" data-name="instruction-arg2">instruction-arg2</a>
+  <a href="#e11" data-name="instruction-opcode">instruction-opcode</a>
+  <a href="#e12" data-name="lambda?">lambda?</a>
+  <a href="#e13" data-name="macro?">macro?</a>
+  <a href="#e14" data-name="make-instruction">make-instruction</a>
+  <a href="#e15" data-name="primitive?">primitive?</a>
+  <a href="#e16" data-name="set-code!">set-code!</a>
 </nav>
 
 <main>
 
-<a class="backlink" href="index.html">&larr; All libraries</a>
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="index.html">All libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="index.html#sec-scm">Scm Extensions</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm compile)</span>
+</nav>
+
 <div class="lib-title scm">(scm compile)</div>
 <p class="lib-sub">Compiler introspection, bytecode access, and type predicates</p>
 <div class="lib-preamble">
 <h2>Overview</h2>
-<p><code>(scm compile)</code> exposes the interpreter's compiler internals: compile expressions to bytecode, disassemble lambdas, generate fresh symbols, and test values with low-level predicates. It's mainly useful for tooling, debugging, and metaprogramming.</p>
+<p><a class="xref" href="scm-compile.html"><code>(scm compile)</code></a> exposes the interpreter's compiler internals: compile expressions to bytecode, disassemble lambdas, generate fresh symbols, and test values with low-level predicates. It's mainly useful for tooling, debugging, and metaprogramming.</p>
 <h2>Common uses</h2>
 <pre><code class="language-scheme">(import (scm compile))
 
@@ -146,7 +64,7 @@
 (gensym)            ;; =&gt; a fresh, unique symbol
 
 (disassemble (lambda (x) (+ x 1)))   ;; print the bytecode of a lambda</code></pre>
-<p>Other tools include <code>compile</code> (source → code), <code>get-code</code> / <code>set-code!</code> and the <code>instruction-*</code> accessors for inspecting bytecode, and predicates like <code>constant?</code>, <code>lambda?</code>, and <code>bound?</code>.</p>
+<p>Other tools include <a class="xref" href="#e2"><code>compile</code></a> (source → code), <a class="xref" href="#e6"><code>get-code</code></a> / <a class="xref" href="#e16"><code>set-code!</code></a> and the <code>instruction-*</code> accessors for inspecting bytecode, and predicates like <a class="xref" href="#e3"><code>constant?</code></a>, <a class="xref" href="#e12"><code>lambda?</code></a>, and <a class="xref" href="#e1"><code>bound?</code></a>.</p>
 </div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">17 bindings</p>

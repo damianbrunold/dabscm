@@ -3,15 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>(srfi 1) — Scm Library Reference</title>
+<title>(srfi 1) — Dabscm Library Reference</title>
 <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
 
 <header>
   <div>
-    <h1><a href="index.html">Scm Library Reference</a></h1>
-    <p>scm &mdash; libraries and their exports</p>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
   </div>
   <div class="search-wrap">
     <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
@@ -21,123 +20,176 @@
 
 <div class="layout">
 
-<nav>
-  <h2>R7RS Standard</h2>
-  <a href="scheme-base.html" class="r7rs">(scheme base)</a>
-  <a href="scheme-case-lambda.html" class="r7rs">(scheme case-lambda)</a>
-  <a href="scheme-char.html" class="r7rs">(scheme char)</a>
-  <a href="scheme-complex.html" class="r7rs">(scheme complex)</a>
-  <a href="scheme-cxr.html" class="r7rs">(scheme cxr)</a>
-  <a href="scheme-eval.html" class="r7rs">(scheme eval)</a>
-  <a href="scheme-file.html" class="r7rs">(scheme file)</a>
-  <a href="scheme-inexact.html" class="r7rs">(scheme inexact)</a>
-  <a href="scheme-lazy.html" class="r7rs">(scheme lazy)</a>
-  <a href="scheme-load.html" class="r7rs">(scheme load)</a>
-  <a href="scheme-process-context.html" class="r7rs">(scheme process-context)</a>
-  <a href="scheme-r5rs.html" class="r7rs">(scheme r5rs)</a>
-  <a href="scheme-read.html" class="r7rs">(scheme read)</a>
-  <a href="scheme-repl.html" class="r7rs">(scheme repl)</a>
-  <a href="scheme-time.html" class="r7rs">(scheme time)</a>
-  <a href="scheme-write.html" class="r7rs">(scheme write)</a>
-  <h2>SRFI Libraries</h2>
-  <a href="srfi-1.html" class="srfi active">(srfi 1)</a>
-  <a href="srfi-2.html" class="srfi">(srfi 2)</a>
-  <a href="srfi-8.html" class="srfi">(srfi 8)</a>
-  <a href="srfi-9.html" class="srfi">(srfi 9)</a>
-  <a href="srfi-13.html" class="srfi">(srfi 13)</a>
-  <a href="srfi-14.html" class="srfi">(srfi 14)</a>
-  <a href="srfi-18.html" class="srfi">(srfi 18)</a>
-  <a href="srfi-19.html" class="srfi">(srfi 19)</a>
-  <a href="srfi-26.html" class="srfi">(srfi 26)</a>
-  <a href="srfi-28.html" class="srfi">(srfi 28)</a>
-  <a href="srfi-39.html" class="srfi">(srfi 39)</a>
-  <a href="srfi-48.html" class="srfi">(srfi 48)</a>
-  <a href="srfi-64.html" class="srfi">(srfi 64)</a>
-  <a href="srfi-69.html" class="srfi">(srfi 69)</a>
-  <a href="srfi-95.html" class="srfi">(srfi 95)</a>
-  <a href="srfi-98.html" class="srfi">(srfi 98)</a>
-  <a href="srfi-111.html" class="srfi">(srfi 111)</a>
-  <a href="srfi-125.html" class="srfi">(srfi 125)</a>
-  <a href="srfi-128.html" class="srfi">(srfi 128)</a>
-  <a href="srfi-132.html" class="srfi">(srfi 132)</a>
-  <a href="srfi-133.html" class="srfi">(srfi 133)</a>
-  <a href="srfi-151.html" class="srfi">(srfi 151)</a>
-  <a href="srfi-158.html" class="srfi">(srfi 158)</a>
-  <h2>Scm Extensions</h2>
-  <a href="scm-archive.html" class="scm">(scm archive)</a>
-  <a href="scm-args.html" class="scm">(scm args)</a>
-  <a href="scm-compile.html" class="scm">(scm compile)</a>
-  <a href="scm-compression.html" class="scm">(scm compression)</a>
-  <a href="scm-crypto.html" class="scm">(scm crypto)</a>
-  <a href="scm-csv.html" class="scm">(scm csv)</a>
-  <a href="scm-database-migrations.html" class="scm">(scm database migrations)</a>
-  <a href="scm-database-postgres.html" class="scm">(scm database postgres)</a>
-  <a href="scm-database-sqlserver.html" class="scm">(scm database sqlserver)</a>
-  <a href="scm-datetime.html" class="scm">(scm datetime)</a>
-  <a href="scm-dict.html" class="scm">(scm dict)</a>
-  <a href="scm-doc.html" class="scm">(scm doc)</a>
-  <a href="scm-duration.html" class="scm">(scm duration)</a>
-  <a href="scm-feed.html" class="scm">(scm feed)</a>
-  <a href="scm-fs-find.html" class="scm">(scm fs-find)</a>
-  <a href="scm-fs.html" class="scm">(scm fs)</a>
-  <a href="scm-glob.html" class="scm">(scm glob)</a>
-  <a href="scm-html-builder.html" class="scm">(scm html builder)</a>
-  <a href="scm-html.html" class="scm">(scm html)</a>
-  <a href="scm-io.html" class="scm">(scm io)</a>
-  <a href="scm-json-simple.html" class="scm">(scm json simple)</a>
-  <a href="scm-json.html" class="scm">(scm json)</a>
-  <a href="scm-list.html" class="scm">(scm list)</a>
-  <a href="scm-log.html" class="scm">(scm log)</a>
-  <a href="scm-macro.html" class="scm">(scm macro)</a>
-  <a href="scm-markdown.html" class="scm">(scm markdown)</a>
-  <a href="scm-match.html" class="scm">(scm match)</a>
-  <a href="scm-math.html" class="scm">(scm math)</a>
-  <a href="scm-module.html" class="scm">(scm module)</a>
-  <a href="scm-net-http-client.html" class="scm">(scm net http client)</a>
-  <a href="scm-net-http-cookies.html" class="scm">(scm net http cookies)</a>
-  <a href="scm-net-http-forms.html" class="scm">(scm net http forms)</a>
-  <a href="scm-net-http-multipart.html" class="scm">(scm net http multipart)</a>
-  <a href="scm-net-http-request.html" class="scm">(scm net http request)</a>
-  <a href="scm-net-http-response.html" class="scm">(scm net http response)</a>
-  <a href="scm-net-http-route.html" class="scm">(scm net http route)</a>
-  <a href="scm-net-http-server.html" class="scm">(scm net http server)</a>
-  <a href="scm-net-remote.html" class="scm">(scm net-remote)</a>
-  <a href="scm-net-sockets.html" class="scm">(scm net sockets)</a>
-  <a href="scm-net-websocket.html" class="scm">(scm net websocket)</a>
-  <a href="scm-odf-spreadsheet.html" class="scm">(scm odf spreadsheet)</a>
-  <a href="scm-odf-writer.html" class="scm">(scm odf writer)</a>
-  <a href="scm-ooxml-excel-reader.html" class="scm">(scm ooxml excel-reader)</a>
-  <a href="scm-ooxml-excel.html" class="scm">(scm ooxml excel)</a>
-  <a href="scm-ooxml-word-reader.html" class="scm">(scm ooxml word-reader)</a>
-  <a href="scm-ooxml-word.html" class="scm">(scm ooxml word)</a>
-  <a href="scm-pdf.html" class="scm">(scm pdf)</a>
-  <a href="scm-png.html" class="scm">(scm png)</a>
-  <a href="scm-profiling.html" class="scm">(scm profiling)</a>
-  <a href="scm-qr.html" class="scm">(scm qr)</a>
-  <a href="scm-random-access.html" class="scm">(scm random access)</a>
-  <a href="scm-repl.html" class="scm">(scm repl)</a>
-  <a href="scm-store.html" class="scm">(scm store)</a>
-  <a href="scm-string.html" class="scm">(scm string)</a>
-  <a href="scm-sysadmin.html" class="scm">(scm sysadmin)</a>
-  <a href="scm-system.html" class="scm">(scm system)</a>
-  <a href="scm-templating.html" class="scm">(scm templating)</a>
-  <a href="scm-terminal.html" class="scm">(scm terminal)</a>
-  <a href="scm-test.html" class="scm">(scm test)</a>
-  <a href="scm-text.html" class="scm">(scm text)</a>
-  <a href="scm-toml.html" class="scm">(scm toml)</a>
-  <a href="scm-uri.html" class="scm">(scm uri)</a>
-  <a href="scm-xml.html" class="scm">(scm xml)</a>
-  <a href="scm-zip.html" class="scm">(scm zip)</a>
+<nav class="toc">
+  <h2>Bindings</h2>
+  <a href="#e0" data-name="alist-cons">alist-cons</a>
+  <a href="#e1" data-name="alist-copy">alist-copy</a>
+  <a href="#e2" data-name="alist-delete">alist-delete</a>
+  <a href="#e3" data-name="alist-delete!">alist-delete!</a>
+  <a href="#e4" data-name="any">any</a>
+  <a href="#e5" data-name="append">append</a>
+  <a href="#e6" data-name="append!">append!</a>
+  <a href="#e7" data-name="append-map">append-map</a>
+  <a href="#e8" data-name="append-map!">append-map!</a>
+  <a href="#e9" data-name="append-reverse">append-reverse</a>
+  <a href="#e10" data-name="append-reverse!">append-reverse!</a>
+  <a href="#e11" data-name="assoc">assoc</a>
+  <a href="#e12" data-name="assq">assq</a>
+  <a href="#e13" data-name="assv">assv</a>
+  <a href="#e14" data-name="break">break</a>
+  <a href="#e15" data-name="break!">break!</a>
+  <a href="#e16" data-name="caaaar">caaaar</a>
+  <a href="#e17" data-name="caaadr">caaadr</a>
+  <a href="#e18" data-name="caaar">caaar</a>
+  <a href="#e19" data-name="caadar">caadar</a>
+  <a href="#e20" data-name="caaddr">caaddr</a>
+  <a href="#e21" data-name="caadr">caadr</a>
+  <a href="#e22" data-name="caar">caar</a>
+  <a href="#e23" data-name="cadaar">cadaar</a>
+  <a href="#e24" data-name="cadadr">cadadr</a>
+  <a href="#e25" data-name="cadar">cadar</a>
+  <a href="#e26" data-name="caddar">caddar</a>
+  <a href="#e27" data-name="cadddr">cadddr</a>
+  <a href="#e28" data-name="caddr">caddr</a>
+  <a href="#e29" data-name="cadr">cadr</a>
+  <a href="#e30" data-name="car">car</a>
+  <a href="#e31" data-name="car+cdr">car+cdr</a>
+  <a href="#e32" data-name="cdaaar">cdaaar</a>
+  <a href="#e33" data-name="cdaadr">cdaadr</a>
+  <a href="#e34" data-name="cdaar">cdaar</a>
+  <a href="#e35" data-name="cdadar">cdadar</a>
+  <a href="#e36" data-name="cdaddr">cdaddr</a>
+  <a href="#e37" data-name="cdadr">cdadr</a>
+  <a href="#e38" data-name="cdar">cdar</a>
+  <a href="#e39" data-name="cddaar">cddaar</a>
+  <a href="#e40" data-name="cddadr">cddadr</a>
+  <a href="#e41" data-name="cddar">cddar</a>
+  <a href="#e42" data-name="cdddar">cdddar</a>
+  <a href="#e43" data-name="cddddr">cddddr</a>
+  <a href="#e44" data-name="cdddr">cdddr</a>
+  <a href="#e45" data-name="cddr">cddr</a>
+  <a href="#e46" data-name="cdr">cdr</a>
+  <a href="#e47" data-name="circular-list">circular-list</a>
+  <a href="#e48" data-name="circular-list?">circular-list?</a>
+  <a href="#e49" data-name="concatenate">concatenate</a>
+  <a href="#e50" data-name="concatenate!">concatenate!</a>
+  <a href="#e51" data-name="cons">cons</a>
+  <a href="#e52" data-name="cons*">cons*</a>
+  <a href="#e53" data-name="count">count</a>
+  <a href="#e54" data-name="delete">delete</a>
+  <a href="#e55" data-name="delete!">delete!</a>
+  <a href="#e56" data-name="delete-duplicates">delete-duplicates</a>
+  <a href="#e57" data-name="delete-duplicates!">delete-duplicates!</a>
+  <a href="#e58" data-name="dotted-list?">dotted-list?</a>
+  <a href="#e59" data-name="drop">drop</a>
+  <a href="#e60" data-name="drop-right">drop-right</a>
+  <a href="#e61" data-name="drop-right!">drop-right!</a>
+  <a href="#e62" data-name="drop-while">drop-while</a>
+  <a href="#e63" data-name="eighth">eighth</a>
+  <a href="#e64" data-name="every">every</a>
+  <a href="#e65" data-name="fifth">fifth</a>
+  <a href="#e66" data-name="filter">filter</a>
+  <a href="#e67" data-name="filter!">filter!</a>
+  <a href="#e68" data-name="filter-map">filter-map</a>
+  <a href="#e69" data-name="find">find</a>
+  <a href="#e70" data-name="find-tail">find-tail</a>
+  <a href="#e71" data-name="first">first</a>
+  <a href="#e72" data-name="fold">fold</a>
+  <a href="#e73" data-name="fold-right">fold-right</a>
+  <a href="#e74" data-name="for-each">for-each</a>
+  <a href="#e75" data-name="fourth">fourth</a>
+  <a href="#e76" data-name="iota">iota</a>
+  <a href="#e77" data-name="last">last</a>
+  <a href="#e78" data-name="last-pair">last-pair</a>
+  <a href="#e79" data-name="length">length</a>
+  <a href="#e80" data-name="length+">length+</a>
+  <a href="#e81" data-name="list">list</a>
+  <a href="#e82" data-name="list-copy">list-copy</a>
+  <a href="#e83" data-name="list-copy">list-copy</a>
+  <a href="#e84" data-name="list-index">list-index</a>
+  <a href="#e85" data-name="list-ref">list-ref</a>
+  <a href="#e86" data-name="list-tabulate">list-tabulate</a>
+  <a href="#e87" data-name="list=">list=</a>
+  <a href="#e88" data-name="lset-adjoin">lset-adjoin</a>
+  <a href="#e89" data-name="lset-diff+intersection">lset-diff+intersection</a>
+  <a href="#e90" data-name="lset-diff+intersection!">lset-diff+intersection!</a>
+  <a href="#e91" data-name="lset-difference">lset-difference</a>
+  <a href="#e92" data-name="lset-difference!">lset-difference!</a>
+  <a href="#e93" data-name="lset-intersection">lset-intersection</a>
+  <a href="#e94" data-name="lset-intersection!">lset-intersection!</a>
+  <a href="#e95" data-name="lset-union">lset-union</a>
+  <a href="#e96" data-name="lset-union!">lset-union!</a>
+  <a href="#e97" data-name="lset-xor">lset-xor</a>
+  <a href="#e98" data-name="lset-xor!">lset-xor!</a>
+  <a href="#e99" data-name="lset&lt;=">lset&lt;=</a>
+  <a href="#e100" data-name="lset=">lset=</a>
+  <a href="#e101" data-name="make-list">make-list</a>
+  <a href="#e102" data-name="make-list">make-list</a>
+  <a href="#e103" data-name="map">map</a>
+  <a href="#e104" data-name="map!">map!</a>
+  <a href="#e105" data-name="map-in-order">map-in-order</a>
+  <a href="#e106" data-name="member">member</a>
+  <a href="#e107" data-name="memq">memq</a>
+  <a href="#e108" data-name="memv">memv</a>
+  <a href="#e109" data-name="ninth">ninth</a>
+  <a href="#e110" data-name="not-pair?">not-pair?</a>
+  <a href="#e111" data-name="null-list?">null-list?</a>
+  <a href="#e112" data-name="null?">null?</a>
+  <a href="#e113" data-name="pair-fold">pair-fold</a>
+  <a href="#e114" data-name="pair-fold-right">pair-fold-right</a>
+  <a href="#e115" data-name="pair-for-each">pair-for-each</a>
+  <a href="#e116" data-name="pair?">pair?</a>
+  <a href="#e117" data-name="partition">partition</a>
+  <a href="#e118" data-name="partition!">partition!</a>
+  <a href="#e119" data-name="proper-list?">proper-list?</a>
+  <a href="#e120" data-name="reduce">reduce</a>
+  <a href="#e121" data-name="reduce-right">reduce-right</a>
+  <a href="#e122" data-name="remove">remove</a>
+  <a href="#e123" data-name="remove!">remove!</a>
+  <a href="#e124" data-name="reverse">reverse</a>
+  <a href="#e125" data-name="reverse!">reverse!</a>
+  <a href="#e126" data-name="second">second</a>
+  <a href="#e127" data-name="set-car!">set-car!</a>
+  <a href="#e128" data-name="set-cdr!">set-cdr!</a>
+  <a href="#e129" data-name="seventh">seventh</a>
+  <a href="#e130" data-name="sixth">sixth</a>
+  <a href="#e131" data-name="span">span</a>
+  <a href="#e132" data-name="span!">span!</a>
+  <a href="#e133" data-name="split-at">split-at</a>
+  <a href="#e134" data-name="split-at!">split-at!</a>
+  <a href="#e135" data-name="take">take</a>
+  <a href="#e136" data-name="take!">take!</a>
+  <a href="#e137" data-name="take-right">take-right</a>
+  <a href="#e138" data-name="take-while">take-while</a>
+  <a href="#e139" data-name="take-while!">take-while!</a>
+  <a href="#e140" data-name="tenth">tenth</a>
+  <a href="#e141" data-name="third">third</a>
+  <a href="#e142" data-name="unfold">unfold</a>
+  <a href="#e143" data-name="unfold-right">unfold-right</a>
+  <a href="#e144" data-name="unzip1">unzip1</a>
+  <a href="#e145" data-name="unzip2">unzip2</a>
+  <a href="#e146" data-name="unzip3">unzip3</a>
+  <a href="#e147" data-name="unzip4">unzip4</a>
+  <a href="#e148" data-name="unzip5">unzip5</a>
+  <a href="#e149" data-name="xcons">xcons</a>
+  <a href="#e150" data-name="zip">zip</a>
 </nav>
 
 <main>
 
-<a class="backlink" href="index.html">&larr; All libraries</a>
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="index.html">All libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="index.html#sec-srfi">SRFI Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(srfi 1)</span>
+</nav>
+
 <div class="lib-title srfi">(srfi 1)</div>
 <p class="lib-sub">SRFI-1 — List library: fold, any, every, take, drop, iota, lset ops</p>
 <div class="lib-preamble">
 <h2>Overview</h2>
-<p>SRFI-1 is the comprehensive list library: constructors, folds and reductions, searching and filtering, take/drop, association-list and set operations, and much more. It is the go-to library for list processing (preferred over <code>(scm list)</code>).</p>
+<p>SRFI-1 is the comprehensive list library: constructors, folds and reductions, searching and filtering, take/drop, association-list and set operations, and much more. It is the go-to library for list processing (preferred over <a class="xref" href="scm-list.html"><code>(scm list)</code></a>).</p>
 <h2>Common uses</h2>
 <pre><code class="language-scheme">(import (srfi 1))
 
@@ -147,7 +199,7 @@
 (filter even? '(1 2 3 4))     ;; =&gt; (2 4)
 (any odd? '(2 4 5))           ;; =&gt; #t
 (delete-duplicates '(1 1 2 3 3))   ;; =&gt; (1 2 3)</code></pre>
-<p>It also provides <code>map</code>/<code>for-each</code> variants, <code>append-map</code>, <code>partition</code>, <code>find</code>, <code>count</code>, <code>last</code>, <code>zip</code>/<code>unzip</code>, and the <code>lset-*</code> set operations.</p>
+<p>It also provides <a class="xref" href="#e103"><code>map</code></a>/<a class="xref" href="#e74"><code>for-each</code></a> variants, <a class="xref" href="#e7"><code>append-map</code></a>, <a class="xref" href="#e117"><code>partition</code></a>, <a class="xref" href="#e69"><code>find</code></a>, <a class="xref" href="#e53"><code>count</code></a>, <a class="xref" href="#e77"><code>last</code></a>, <a class="xref" href="#e150"><code>zip</code></a>/<code>unzip</code>, and the <code>lset-*</code> set operations.</p>
 </div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">151 bindings</p>

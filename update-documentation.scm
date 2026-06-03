@@ -303,6 +303,83 @@
 (define scm-libs  (filter (lambda (e) (eq? (lib-category (car e)) 'scm))
                           lib-data))
 
+;;; ── Preamble cross-reference linking ─────────────────────────────────────────
+;;; In rendered preambles, inline `code` spans that name a library (e.g.
+;;; "(scm list)") or an exported binding (e.g. "partition") become links.
+;;; Fenced code blocks emit <code class="..."> and are left untouched.
+
+(define lib-id-by-name
+  ;; "(scm list)" -> "scm-list"
+  (map (lambda (e) (cons (lib-name-str (car e)) (lib-id (car e)))) lib-data))
+
+(define binding-occurrences
+  ;; ("partition" . (lib-id . anchor-index)) for every export of every library.
+  (apply append
+    (map (lambda (e)
+           (let ((id (lib-id (car e))))
+             (let loop ((syms (cdr e)) (i 0) (acc '()))
+               (if (null? syms)
+                   (reverse acc)
+                   (loop (cdr syms) (+ i 1)
+                         (cons (cons (symbol->string (car syms)) (cons id i)) acc))))))
+         lib-data)))
+
+(define (replace-substring s old new)
+  (let ((i (string-contains s old)))
+    (if i
+        (string-append (substring s 0 i) new
+                       (replace-substring
+                        (substring s (+ i (string-length old)) (string-length s))
+                        old new))
+        s)))
+
+(define (html-unescape s)
+  ;; Inverse of html-escape (which emits only &amp; &lt; &gt;).
+  (replace-substring
+   (replace-substring
+    (replace-substring s "&lt;" "<")
+    "&gt;" ">")
+   "&amp;" "&"))
+
+(define (xref-href content current-id)
+  ;; Returns an href linking content (raw text of an inline code span) to a
+  ;; library page or binding anchor, or #f to leave it unlinked. A binding in
+  ;; the current library links to its own anchor; otherwise it links only when
+  ;; exactly one library exports it (ambiguous names are left as plain code).
+  (let ((lib (assoc content lib-id-by-name)))
+    (if lib
+        (string-append (cdr lib) ".html")
+        (let ((occs (filter (lambda (o) (string=? (car o) content))
+                            binding-occurrences)))
+          (cond
+            ((null? occs) #f)
+            ((find (lambda (o) (string=? (cadr o) current-id)) occs)
+             => (lambda (o) (string-append "#e" (number->string (cddr o)))))
+            ((null? (cdr occs))
+             (string-append (cadr (car occs)) ".html#e"
+                            (number->string (cddr (car occs)))))
+            (else #f))))))
+
+(define (linkify-preamble html current-id)
+  (let loop ((s html) (acc '()))
+    (let ((i (string-contains s "<code>")))
+      (if (not i)
+          (apply string-append (reverse (cons s acc)))
+          (let* ((before     (substring s 0 i))
+                 (after-open (substring s (+ i 6) (string-length s)))  ; 6 = len "<code>"
+                 (j          (string-contains after-open "</code>")))
+            (if (not j)
+                (apply string-append (reverse (cons s acc)))
+                (let* ((inner (substring after-open 0 j))
+                       (rest  (substring after-open (+ j 7)             ; 7 = len "</code>"
+                                         (string-length after-open)))
+                       (href  (xref-href (html-unescape inner) current-id))
+                       (piece (if href
+                                  (string-append "<a class=\"xref\" href=\"" href
+                                                 "\"><code>" inner "</code></a>")
+                                  (string-append "<code>" inner "</code>"))))
+                  (loop rest (cons piece (cons before acc))))))))))
+
 ;;; ── Markdown and RTF helpers ─────────────────────────────────────────────────
 
 (define (docs-for-lib id)
@@ -696,7 +773,7 @@
   (display "</head>\n<body>\n\n" port))
 
 (define (site-header port)
-  (display "<header>\n  <div>\n    <h1><a href=\"index.html\">Scm Library Reference</a></h1>\n    <p>scm &mdash; libraries and their exports</p>\n  </div>\n  <div class=\"search-wrap\">\n    <input type=\"search\" id=\"search\" placeholder=\"Search identifiers&hellip;\" autocomplete=\"off\" spellcheck=\"false\">\n    <div class=\"search-results\" id=\"search-results\"></div>\n  </div>\n</header>\n\n" port))
+  (display "<header>\n  <div>\n    <h1><a href=\"index.html\">Dabscm Library Reference</a></h1>\n  </div>\n  <div class=\"search-wrap\">\n    <input type=\"search\" id=\"search\" placeholder=\"Search identifiers&hellip;\" autocomplete=\"off\" spellcheck=\"false\">\n    <div class=\"search-results\" id=\"search-results\"></div>\n  </div>\n</header>\n\n" port))
 
 (define (site-scripts port)
   (display "<script src=\"assets/search-index.js\"></script>\n<script src=\"assets/search.js\"></script>\n</body>\n</html>\n" port))
@@ -722,8 +799,40 @@
   (site-nav-section port "Scm Extensions" scm-libs active-id)
   (display "</nav>\n\n" port))
 
+(define (category-crumb class)
+  ;; (label . index-section-anchor) for a library's category.
+  (cond
+    ((string=? class "r7rs") (cons "R7RS Standard"  "sec-r7rs"))
+    ((string=? class "srfi") (cons "SRFI Libraries" "sec-srfi"))
+    (else                    (cons "Scm Extensions" "sec-scm"))))
+
+(define (site-breadcrumb port class name)
+  (let ((crumb (category-crumb class)))
+    (display "<nav class=\"breadcrumb\" aria-label=\"Breadcrumb\">\n" port)
+    (display "  <a href=\"index.html\">All libraries</a>\n" port)
+    (display "  <span class=\"sep\">&rsaquo;</span>\n" port)
+    (display "  <a href=\"index.html#" port) (display (cdr crumb) port) (display "\">" port)
+    (display (html-escape (car crumb)) port) (display "</a>\n" port)
+    (display "  <span class=\"sep\">&rsaquo;</span>\n" port)
+    (display "  <span class=\"current\">" port) (display (html-escape name) port)
+    (display "</span>\n</nav>\n\n" port)))
+
+(define (site-nav-bindings port exports)
+  (display "<nav class=\"toc\">\n" port)
+  (display "  <h2>Bindings</h2>\n" port)
+  (let loop ((syms exports) (i 0))
+    (unless (null? syms)
+      (let ((sym-str (symbol->string (car syms))))
+        (display "  <a href=\"#e" port) (display (number->string i) port)
+        (display "\" data-name=\"" port) (display (html-escape sym-str) port)
+        (display "\">" port) (display (html-escape sym-str) port)
+        (display "</a>\n" port))
+      (loop (cdr syms) (+ i 1))))
+  (display "</nav>\n\n" port))
+
 (define (site-index-section port heading badge-class badge-label libs)
-  (display "<div class=\"section-heading\">\n  <h2>" port) (display heading port)
+  (display "<div class=\"section-heading\" id=\"sec-" port) (display badge-class port)
+  (display "\">\n  <h2>" port) (display heading port)
   (display "</h2>\n  <hr>\n  <span class=\"badge badge-" port) (display badge-class port)
   (display "\">" port) (display badge-label port) (display "</span>\n</div>\n\n" port)
   (display "<div class=\"lib-grid\">\n" port)
@@ -744,7 +853,7 @@
 (define (emit-site-index)
   (call-with-output-file (join-path site-dir "index.html")
     (lambda (port)
-      (site-head port "Scm Library Reference")
+      (site-head port "Dabscm Library Reference")
       (site-header port)
       (display "<div class=\"layout\">\n\n" port)
       (site-nav port "")
@@ -773,12 +882,12 @@
          (preamble (read-preamble id)))
     (call-with-output-file (join-path site-dir (string-append id ".html"))
       (lambda (port)
-        (site-head port (string-append name " — Scm Library Reference"))
+        (site-head port (string-append name " — Dabscm Library Reference"))
         (site-header port)
         (display "<div class=\"layout\">\n\n" port)
-        (site-nav port id)
+        (site-nav-bindings port exports)
         (display "<main>\n\n" port)
-        (display "<a class=\"backlink\" href=\"index.html\">&larr; All libraries</a>\n" port)
+        (site-breadcrumb port class name)
         (display "<div class=\"lib-title " port) (display class port) (display "\">" port)
         (display (html-escape name) port) (display "</div>\n" port)
         (when (not (string=? desc ""))
@@ -786,7 +895,7 @@
           (display "</p>\n" port))
         (when preamble
           (display "<div class=\"lib-preamble\">\n" port)
-          (display (markdown->html preamble) port)
+          (display (linkify-preamble (markdown->html preamble) id) port)
           (display "\n</div>\n" port))
         (display "<div class=\"toolbar\"><input type=\"search\" id=\"export-filter\" placeholder=\"Filter exports in this library&hellip;\" autocomplete=\"off\" spellcheck=\"false\"></div>\n"
                  port)
