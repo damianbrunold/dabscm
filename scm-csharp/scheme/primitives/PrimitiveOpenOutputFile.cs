@@ -15,11 +15,18 @@ public class PrimitiveOpenOutputFile : Primitive
     {
         return
             "Syntax: (open-output-file filename)\n" +
+            "        (open-output-file filename option ...)\n" +
             "Library: (scheme file)\n" +
             "Description: Takes a filename and returns a textual output port that writes characters to the named file. The file is created or truncated. It is an error if the file cannot be opened.\n" +
+            "  As a non-standard extension, up to three optional arguments may follow the filename. They are symbols (strings are also accepted):\n" +
+            "    - an encoding name selects the character encoding (default 'utf-8; also 'utf-8-bom, 'latin-1 / 'iso-8859-1, 'utf-16, 'utf-16-le)\n" +
+            "    - 'deflate writes a DEFLATE-compressed stream (read it back with open-input-file ... 'deflate)\n" +
+            "    - 'append appends to the file instead of truncating it\n" +
             "Example:\n" +
             "  (define p (open-output-file \"out.txt\"))\n" +
-            "  (write-char #\\A p)";
+            "  (write-char #\\A p)\n" +
+            "  (open-output-file \"log.txt\" 'append 'latin-1)  ; append, Latin-1\n" +
+            "  (open-output-file \"data.z\" 'deflate)           ; compressed output";
     }
     
     public override object Apply(SourcePos? pos, object[] arguments)

@@ -29,6 +29,33 @@ file existence/deletion.
 duration of a thunk; `open-binary-input-file` / `open-binary-output-file` open
 byte streams.
 
+## Non-standard extensions
+
+As an extension, `open-input-file` and `open-output-file` accept optional symbol
+arguments after the filename (strings are also accepted, but symbols read more
+cleanly):
+
+- an **encoding** name selects the character encoding (default `'utf-8`; also
+  `'utf-8-bom`, `'latin-1` / `'iso-8859-1`, `'utf-16`, `'utf-16-le`)
+- `'deflate` transparently DEFLATE-compresses output / decompresses input
+- `'append` (output only) appends to the file instead of truncating it
+
+```scheme
+;; write a Latin-1 file in append mode
+(open-output-file "log.txt" 'append 'latin-1)
+```
+
+The `call-with-…` / `with-…` forms accept the same options by passing a
+`(filename option ...)` list in place of the filename:
+
+```scheme
+;; write and read back a compressed file
+(call-with-output-file '("data.z" deflate)
+  (lambda (p) (write-string "hello" p)))
+(call-with-input-file '("data.z" deflate)
+  (lambda (p) (read-line p)))         ;; => "hello"
+```
+
 
 ## Exports
 
@@ -129,22 +156,35 @@ Example:
 
 ```
 Syntax: (open-input-file filename)
+        (open-input-file filename option ...)
 Library: (scheme file)
 Description: Takes a filename and returns a textual input port that reads characters from the named file. It is an error if the file cannot be opened.
+  As a non-standard extension, up to two optional arguments may follow the filename. They are symbols (strings are also accepted):
+    - an encoding name selects the character encoding (default 'utf-8; also 'latin-1 / 'iso-8859-1, 'utf-16, 'utf-16-le)
+    - 'deflate decompresses a DEFLATE-compressed file while reading (as written by open-output-file ... 'deflate)
 Example:
   (define p (open-input-file "data.txt"))
   (read-char p) => first character of file
+  (open-input-file "legacy.txt" 'latin-1)  ; decode as Latin-1
+  (open-input-file "data.z" 'deflate)      ; read compressed input
 ```
 
 ### `open-output-file`
 
 ```
 Syntax: (open-output-file filename)
+        (open-output-file filename option ...)
 Library: (scheme file)
 Description: Takes a filename and returns a textual output port that writes characters to the named file. The file is created or truncated. It is an error if the file cannot be opened.
+  As a non-standard extension, up to three optional arguments may follow the filename. They are symbols (strings are also accepted):
+    - an encoding name selects the character encoding (default 'utf-8; also 'utf-8-bom, 'latin-1 / 'iso-8859-1, 'utf-16, 'utf-16-le)
+    - 'deflate writes a DEFLATE-compressed stream (read it back with open-input-file ... 'deflate)
+    - 'append appends to the file instead of truncating it
 Example:
   (define p (open-output-file "out.txt"))
   (write-char #\A p)
+  (open-output-file "log.txt" 'append 'latin-1)  ; append, Latin-1
+  (open-output-file "data.z" 'deflate)           ; compressed output
 ```
 
 ### `with-input-from-file`

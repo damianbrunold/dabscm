@@ -15,11 +15,17 @@ public class PrimitiveOpenInputFile : Primitive
     {
         return
             "Syntax: (open-input-file filename)\n" +
+            "        (open-input-file filename option ...)\n" +
             "Library: (scheme file)\n" +
             "Description: Takes a filename and returns a textual input port that reads characters from the named file. It is an error if the file cannot be opened.\n" +
+            "  As a non-standard extension, up to two optional arguments may follow the filename. They are symbols (strings are also accepted):\n" +
+            "    - an encoding name selects the character encoding (default 'utf-8; also 'latin-1 / 'iso-8859-1, 'utf-16, 'utf-16-le)\n" +
+            "    - 'deflate decompresses a DEFLATE-compressed file while reading (as written by open-output-file ... 'deflate)\n" +
             "Example:\n" +
             "  (define p (open-input-file \"data.txt\"))\n" +
-            "  (read-char p) => first character of file";
+            "  (read-char p) => first character of file\n" +
+            "  (open-input-file \"legacy.txt\" 'latin-1)  ; decode as Latin-1\n" +
+            "  (open-input-file \"data.z\" 'deflate)      ; read compressed input";
     }
     
     public override object Apply(SourcePos? pos, object[] arguments)

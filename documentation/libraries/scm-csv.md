@@ -36,9 +36,9 @@ fuller parser if your data embeds the separator in quoted values.
 ```
 Syntax: (csv-line->fields str sep) (csv-line->fields str sep 'trim)
 Library: (scm core)
-Description: Splits a CSV line string using the given separator, stripping surrounding double-quotes from each field. When 'trim is given as a third argument, also trims whitespace from each field.
+Description: Splits a CSV line string using the given separator, stripping surrounding double-quotes from each field, and returns the fields as a vector. When 'trim is given as a third argument, also trims whitespace from each field.
 Example:
-  (csv-line->fields "a,b,c" ",") => ("a" "b" "c")
-  (csv-line->fields "\"hello\",world" ",") => ("hello" "world")
+  (csv-line->fields "a,b,c" ",") => #("a" "b" "c")
+  (csv-line->fields "\"hello\",world" ",") => #("hello" "world")
 ```
 
