@@ -135,6 +135,20 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm fs-find)</div>
 <p class="lib-sub">Filesystem traversal and reporting — find-file, tree, du, df, xargs</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm fs-find)</code> provides higher-level filesystem traversal and reporting, modelled on familiar Unix tools: <code>find-file</code>, <code>du</code>, <code>df</code>, <code>tree</code>, and <code>xargs</code>.</p>
+<h2>Common uses</h2>
+<p>Find files matching criteria (name globs, type, or an arbitrary predicate):</p>
+<pre><code class="language-scheme">(import (scm fs-find))
+
+(find-file "." '(name . "*.scm") '(type . file))
+(find-file "/var/log" `(predicate . ,(lambda (p) (&gt; (file-size p) 1024))))</code></pre>
+<p>Disk usage and free space:</p>
+<pre><code class="language-scheme">(du "/var/log")    ;; total size under a directory
+(df "/")           ;; free space on a filesystem</code></pre>
+<p><code>tree</code> renders a directory tree, and <code>xargs</code> applies a procedure across a list of paths.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">5 bindings</p>
 

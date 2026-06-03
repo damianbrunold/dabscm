@@ -135,6 +135,22 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm io)</div>
 <p class="lib-sub">Extended I/O — formatting, port utilities, property lists</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm io)</code> adds I/O conveniences on top of the R7RS ports: string/bytevector capture, <code>format</code>-style output, and a few port utilities. Its <code>format</code> is shared with SRFI-28 and SRFI-48.</p>
+<h2>Common uses</h2>
+<p>Capture output into a string or bytevector:</p>
+<pre><code class="language-scheme">(import (scm io))
+
+(call-with-output-string
+  (lambda (p) (display "hi " p) (display 42 p)))    ;; =&gt; "hi 42"
+
+(call-with-output-bytevector
+  (lambda (p) (write-bytevector #u8(1 2 3) p)))     ;; =&gt; #u8(1 2 3)</code></pre>
+<p>Formatted strings — the first argument is the destination (<code>#f</code> for a string, or a port):</p>
+<pre><code class="language-scheme">(format #f "~a + ~a = ~a" 1 2 3)    ;; =&gt; "1 + 2 = 3"</code></pre>
+<p><code>read-chars</code> reads a fixed number of characters, <code>with-input-from-string</code> rebinds the current input port, and <code>port-position</code> / <code>flush</code> round things out.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">10 bindings</p>
 

@@ -135,6 +135,24 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm system)</div>
 <p class="lib-sub">System info, environment variables, process execution</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm system)</code> is the interface to the operating system: running external programs (and capturing their output), environment variables, process inspection and control, simple option parsing, and parallel execution.</p>
+<h2>Common uses</h2>
+<p>Run external commands:</p>
+<pre><code class="language-scheme">(import (scm system))
+
+(run "ls" "-l")                           ;; run a program
+(run-program/capture (list "echo" "hi"))  ;; run, capturing stdout
+(sh "date" "+%Y")                         ;; =&gt; "2026\n"  (stdout as a string)</code></pre>
+<p>Environment and processes:</p>
+<pre><code class="language-scheme">(get-environment-variable "HOME")
+(env-list)            ;; all environment variables
+(ps)                  ;; process list</code></pre>
+<p><code>run-parallel</code> maps a procedure over inputs using threads:</p>
+<pre><code class="language-scheme">(run-parallel (lambda (x) (* x x)) '(1 2 3 4))   ;; =&gt; (1 4 9 16)</code></pre>
+<p><code>getopt</code> parses command-line option lists; see also the higher-level <code>(scm args)</code>.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">36 bindings</p>
 

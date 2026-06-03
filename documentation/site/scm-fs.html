@@ -135,6 +135,24 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm fs)</div>
 <p class="lib-sub">Filesystem operations — paths, directories, files</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm fs)</code> is the filesystem toolkit: path manipulation, directory listing and creation, file copy/move/delete, metadata (existence, size, times, permissions), and the current working directory. It's the foundation other libraries (<code>(scm fs-find)</code>, <code>(scm archive)</code>, <code>(scm sysadmin)</code>) build on.</p>
+<h2>Common uses</h2>
+<p>Path manipulation (pure string operations):</p>
+<pre><code class="language-scheme">(import (scm fs))
+
+(join-path "/usr" "local" "bin")   ;; =&gt; "/usr/local/bin"
+(base-name "/a/b/c.txt")           ;; =&gt; "c.txt"
+(directory-name "/a/b/c.txt")      ;; =&gt; "/a/b"</code></pre>
+<p>Working with files and directories:</p>
+<pre><code class="language-scheme">(file-exists? "notes.txt")     ;; =&gt; #t / #f
+(directory-files ".")          ;; =&gt; list of names in the directory
+(copy-file "a.txt" "b.txt")
+(touch "/tmp/marker")
+(delete-file "b.txt")</code></pre>
+<p><code>current-directory</code> / <code>cd</code> manage the working directory; <code>chmod</code>, <code>chown</code>, <code>copy-directory</code>, and <code>delete-directory</code> round out the toolkit.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">46 bindings</p>
 

@@ -135,6 +135,32 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm store)</div>
 <p class="lib-sub">Immutable on-disk indexed record store</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm store)</code> is a small immutable, on-disk, indexed record store built on <code>(scm random access)</code>. Each record has a dense integer key, an opaque payload (any Scheme datum), and indexed fields — <em>scalar</em> fields (one value per record) and <em>multi</em> fields (a set of values per record). You write a batch once, then run random-access queries that never load the whole dataset.</p>
+<h2>Writing</h2>
+<p>Declare the scalar and multi field names, add records (payload + field values), and close:</p>
+<pre><code class="language-scheme">(import (scm store))
+
+(define w (store-writer-open "people.store" '(city) '(tags)))
+(store-writer-add! w '(("name" . "Ada"))
+                     '((city . "Paris") (tags . ("x" "y"))))
+(store-writer-add! w '(("name" . "Bob"))
+                     '((city . "Rome")  (tags . ("y"))))
+(store-writer-close w)</code></pre>
+<h2>Reading and querying</h2>
+<pre><code class="language-scheme">(define s (store-open "people.store"))
+
+(store-count s)              ;; =&gt; 2
+(store-ref s 0)              ;; =&gt; (("name" . "Ada"))   the payload
+
+;; queries are an AND of clauses: (eq f v), (in f (v ...)), (present f)
+(store-query s '((eq city "Paris")))   ;; =&gt; (0)
+(store-query s '((in tags ("y"))))     ;; =&gt; (0 1)
+
+(store-close s)</code></pre>
+<p><code>store-query</code> returns the matching record keys; fetch payloads with <code>store-ref</code>. <code>store-page</code> / <code>store-page-records</code> help with paginated reads.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">13 bindings</p>
 
