@@ -112,6 +112,7 @@
     ((scm system)             . "System info, environment variables, process execution")
     ((scm templating)         . "Text templating with variable substitution")
     ((scm terminal)           . "Terminal control — colors, cursor, raw mode")
+    ((scm toml)               . "TOML reading and writing")
     ((scm xml)                . "XML file reading and navigation")
     ((scm zip)                . "ZIP archive creation and entry writing")
     ((srfi 1)   . "SRFI-1 — List library: fold, any, every, take, drop, iota, lset ops")

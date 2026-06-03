@@ -387,6 +387,7 @@
   <a href="#scm-terminal" class="scm">(scm terminal)</a>
   <a href="#scm-test" class="scm">(scm test)</a>
   <a href="#scm-text" class="scm">(scm text)</a>
+  <a href="#scm-toml" class="scm">(scm toml)</a>
   <a href="#scm-uri" class="scm">(scm uri)</a>
   <a href="#scm-xml" class="scm">(scm xml)</a>
   <a href="#scm-zip" class="scm">(scm zip)</a>
@@ -3942,6 +3943,28 @@
   </div>
 </div>
 
+<div class="library scm" id="scm-toml">
+  <div class="lib-header">
+    <span class="lib-name">(scm toml)</span>
+    <span class="lib-desc">TOML reading and writing</span>
+    <span class="lib-count" id="scm-toml-count"></span>
+  </div>
+  <div class="lib-body">
+    <div class="exports" data-lib="scm-toml">
+      make-toml-datetime
+      toml-&gt;string
+      toml-datetime-kind
+      toml-datetime-text
+      toml-datetime?
+      toml-parse
+      toml-read
+      toml-ref
+      toml-write
+    </div>
+    <div class="doc-panel" id="scm-toml-doc-panel"></div>
+  </div>
+</div>
+
 <div class="library scm" id="scm-uri">
   <div class="lib-header">
     <span class="lib-name">(scm uri)</span>
@@ -5526,6 +5549,13 @@ const docs = {
     "tr": "Syntax: (tr from to [option ...])\nLibrary: (scm text)\nDescription: Returns a procedure that translates characters in a string:\n  each char in `from` is replaced by the char at the same index in `to`.\n  When called on a string, returns the translated string. Option 'delete\n  drops chars in `from` instead (to may be \"\").\nExample:\n  ((tr \"abc\" \"xyz\") \"banana\") => \"yxnxnx\"",
     "uniq": "Syntax: (uniq lines)\nLibrary: (scm text)\nDescription: Returns lines with consecutive duplicates collapsed to a\n  single entry. Matches the behavior of Linux uniq (input should usually\n  be sorted first).\nExample:\n  (uniq '(\"a\" \"a\" \"b\" \"a\")) => (\"a\" \"b\" \"a\")",
     "wc": "Syntax: (wc src [option ...])\nLibrary: (scm text)\nDescription: Returns an alist with keys lines, words, chars for src.\n  Options: 'lines-only ('-l), 'words-only ('-w), 'chars-only ('-c) return\n  just that integer instead of the full alist.\nExample:\n  (wc \"log.txt\") => ((lines . 1234) (words . 9876) (chars . 54321))",
+  },
+  "scm-toml": {
+    "toml->string": "Syntax: (toml->string val)\nLibrary: (scm toml)\nDescription: Returns TOML text for val (a table) as a string (see toml-write).\nExample:\n  (toml->string '((\"a\" . 1))) => \"a = 1\\n\"",
+    "toml-parse": "Syntax: (toml-parse str)\nLibrary: (scm toml)\nDescription: Parses the TOML text in string str and returns its Scheme\n  representation: tables as alists with string keys (order preserved),\n  arrays as vectors, strings as strings, integers as exact integers, floats\n  as inexact reals, booleans as #t/#f, and dates/times as toml-datetime\n  values. The result of a whole document is always a table. Raises an error\n  on malformed input.\nExample:\n  (toml-parse \"title = \\\"TOML\\\"\\n[owner]\\nname = \\\"Tom\\\"\")\n    => ((\"title\" . \"TOML\") (\"owner\" (\"name\" . \"Tom\")))",
+    "toml-read": "Syntax: (toml-read port)\nLibrary: (scm toml)\nDescription: Reads the entire textual input port to a string and parses it\n  as a single TOML document (see toml-parse). Returns the eof object if the\n  port is empty.\nExample:\n  (toml-read (open-input-string \"a = 1\")) => ((\"a\" . 1))",
+    "toml-ref": "Syntax: (toml-ref table key [default])\nLibrary: (scm toml)\nDescription: Looks key (a string) up in table, a parsed TOML table (alist).\n  Returns the associated value, or default if absent (or #f when no default\n  is given).\nExample:\n  (toml-ref '((\"a\" . 1) (\"b\" . 2)) \"b\") => 2\n  (toml-ref '((\"a\" . 1)) \"z\" 'missing) => missing",
+    "toml-write": "Syntax: (toml-write val port)\nLibrary: (scm toml)\nDescription: Writes val to the output port as TOML text. val must be a table\n  (an alist with string keys) using the representation documented for this\n  library. Scalar entries are emitted first, then nested tables as [header]\n  sections and arrays of tables as [[header]] sections.\nExample:\n  (toml-write '((\"a\" . 1) (\"t\" (\"b\" . 2))) (current-output-port))\n    ; prints  a = 1\\n\\n[t]\\nb = 2",
   },
   "scm-uri": {
     "percent-decode": "Syntax: (percent-decode s [plus-as-space?])\nLibrary: (scm uri)\nDescription: Decodes percent-escaped UTF-8 in s. When plus-as-space? is\n  true (the default), '+' is treated as space — appropriate for\n  application/x-www-form-urlencoded bodies and query strings. Pass #f to\n  preserve '+' literally (e.g. for URL path segments).\nExample:\n  (percent-decode \"a%20b\") => \"a b\"\n  (percent-decode \"a+b\") => \"a b\"\n  (percent-decode \"a+b\" #f) => \"a+b\"",

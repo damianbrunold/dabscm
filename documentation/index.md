@@ -112,6 +112,7 @@
 | [`(scm terminal)`](libraries/scm-terminal.md) | Terminal control — colors, cursor, raw mode |
 | [`(scm test)`](libraries/scm-test.md) |  |
 | [`(scm text)`](libraries/scm-text.md) |  |
+| [`(scm toml)`](libraries/scm-toml.md) | TOML reading and writing |
 | [`(scm uri)`](libraries/scm-uri.md) |  |
 | [`(scm xml)`](libraries/scm-xml.md) | XML file reading and navigation |
 | [`(scm zip)`](libraries/scm-zip.md) | ZIP archive creation and entry writing |
