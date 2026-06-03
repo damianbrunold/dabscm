@@ -1,5 +1,7 @@
 # `(scm test)`
 
+Test framework — SRFI-64 runner with summary reporting
+
 ## Exports
 
 ### `last-run-failed-tests`

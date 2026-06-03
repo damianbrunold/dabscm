@@ -1,5 +1,7 @@
 # `(scm uri)`
 
+URI percent-encoding and decoding
+
 ## Exports
 
 ### `percent-decode`

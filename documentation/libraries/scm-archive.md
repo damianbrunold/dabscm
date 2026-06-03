@@ -1,5 +1,7 @@
 # `(scm archive)`
 
+Archive and compression — tar, gzip, bzip2, xz, and zip operations
+
 ## Exports
 
 ### `bunzip2`

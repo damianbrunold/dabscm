@@ -1,5 +1,7 @@
 # `(scm json simple)`
 
+High-level JSON codec — parse and serialize JSON as Scheme data
+
 ## Exports
 
 ### `json->pretty-string`

@@ -1,5 +1,7 @@
 # `(scm html)`
 
+HTML escaping and tag stripping
+
 ## Exports
 
 ### `html-attr-escape`

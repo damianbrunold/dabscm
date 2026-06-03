@@ -1,5 +1,7 @@
 # `(scm database migrations)`
 
+Forward-only SQL migration runner
+
 ## Exports
 
 ### `migrations-applied`

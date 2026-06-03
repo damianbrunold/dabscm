@@ -1,5 +1,7 @@
 # `(scm random access)`
 
+Random-access file I/O — seek, read, write, truncate
+
 ## Exports
 
 ### `call-with-random-access-file`

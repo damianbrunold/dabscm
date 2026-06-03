@@ -1,5 +1,7 @@
 # `(scm sysadmin)`
 
+System administration toolkit aggregating fs, archive, remote, logging, and more
+
 ## Exports
 
 ### `absolute-path`

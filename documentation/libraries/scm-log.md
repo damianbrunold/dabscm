@@ -1,5 +1,7 @@
 # `(scm log)`
 
+Structured single-line logging
+
 ## Exports
 
 ### `log-access`

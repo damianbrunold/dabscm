@@ -1,5 +1,7 @@
 # `(scm repl)`
 
+REPL support — completions, syntax info, core form names
+
 ## Exports
 
 ### `repl-completions`

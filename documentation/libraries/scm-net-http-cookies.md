@@ -1,5 +1,7 @@
 # `(scm net http cookies)`
 
+HTTP cookie header parsing and Set-Cookie formatting
+
 ## Exports
 
 ### `cookie-ref`

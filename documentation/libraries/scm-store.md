@@ -1,5 +1,7 @@
 # `(scm store)`
 
+Immutable on-disk indexed record store
+
 ## Exports
 
 ### `store-close`

@@ -1,5 +1,7 @@
 # `(scm feed)`
 
+Atom and RSS 2.0 feed parsing
+
 ## Exports
 
 ### `local-name`

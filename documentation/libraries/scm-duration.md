@@ -1,5 +1,7 @@
 # `(scm duration)`
 
+Duration string parsing and formatting (seconds, minutes, hours, days)
+
 ## Exports
 
 ### `format-duration`

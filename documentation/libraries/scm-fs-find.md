@@ -1,5 +1,7 @@
 # `(scm fs-find)`
 
+Filesystem traversal and reporting — find-file, tree, du, df, xargs
+
 ## Exports
 
 ### `df`

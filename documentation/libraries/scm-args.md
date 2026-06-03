@@ -1,5 +1,7 @@
 # `(scm args)`
 
+Declarative command-line argument parsing — options, flags, positionals, typed values
+
 ## Exports
 
 ### `arg-parser?`

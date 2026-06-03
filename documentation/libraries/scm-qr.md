@@ -1,5 +1,7 @@
 # `(scm qr)`
 
+QR code encoding — PNG, SVG, and ASCII output
+
 ## Exports
 
 ### `qr->ascii`

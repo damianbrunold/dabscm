@@ -1,5 +1,7 @@
 # `(scm text)`
 
+Text processing utilities — awk, sed, grep, cut, sort, diff, and more
+
 ## Exports
 
 ### `awk`

@@ -1,5 +1,7 @@
 # `(scm html builder)`
 
+SXML-shaped HTML5 builder with automatic escaping
+
 ## Exports
 
 ### `html->port`

@@ -1,5 +1,7 @@
 # `(scm net-remote)`
 
+Remote operations — curl, wget, ssh, scp, rsync
+
 ## Exports
 
 ### `curl`

@@ -1,5 +1,7 @@
 # `(scm ooxml excel-reader)`
 
+Excel workbook reading (OOXML/XLSX format)
+
 ## Exports
 
 ### `read-workbook`

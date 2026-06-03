@@ -1,5 +1,7 @@
 # `(scm ooxml word-reader)`
 
+Word document text reading (OOXML/DOCX format)
+
 ## Exports
 
 ### `document-headings`

@@ -1,5 +1,7 @@
 # `(scm png)`
 
+PNG image writing — grayscale, RGB, and RGBA
+
 ## Exports
 
 ### `crc32`
