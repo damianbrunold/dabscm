@@ -135,6 +135,18 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm database sqlserver)</div>
 <p class="lib-sub">SQL Server database connectivity</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm database sqlserver)</code> is a Microsoft SQL Server client. Its API mirrors <code>(scm database postgres)</code> with an <code>ss-</code> prefix: connect, run queries and statements, read results as rows or alists, and stream large results with cursors.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scm database sqlserver))
+
+(with-ss-connection "localhost" 1433 "user" "pass" "db"
+  (lambda (conn)
+    (define res (ss-query conn "SELECT id, name FROM users"))
+    (ss-result-&gt;alist-list res)))</code></pre>
+<p><code>ss-exec</code> runs non-row statements; <code>ss-result-columns</code> / <code>ss-result-rows</code> read a result directly; and <code>ss-cursor-open</code> / <code>ss-cursor-fetch</code> / <code>ss-cursor-for-each</code> iterate large result sets.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">14 bindings</p>
 

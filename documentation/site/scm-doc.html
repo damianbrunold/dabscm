@@ -135,6 +135,18 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm doc)</div>
 <p class="lib-sub">Documentation access</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm doc)</code> gives programmatic access to the interpreter's built-in documentation: the docstrings attached to procedures and the info text of primitives. It's what tooling (and this reference generator) uses to read a binding's documentation.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scm doc))
+
+(display (procedure-doc 'car))
+;; Syntax: (car pair)
+;; Library: (scheme base)
+;; Description: Returns the car of pair. ...</code></pre>
+<p><code>procedure-doc</code> returns the documentation string for a symbol (or <code>#f</code> if none). <code>doc</code> is the underlying primitive it builds on.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">2 bindings</p>
 

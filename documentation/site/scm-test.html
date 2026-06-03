@@ -135,6 +135,21 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm test)</div>
 <p class="lib-sub">Test framework — SRFI-64 runner with summary reporting</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm test)</code> is the project's test framework: a SRFI-64 test runner (<code>scm-test-runner</code>) with concise summary reporting, re-exporting the SRFI-64 API (<code>test-begin</code>, <code>test-equal</code>, <code>test-assert</code>, <code>test-group</code>, …). It's what the test suites under <code>scm-tests/</code> use.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scm test))
+
+(test-runner-factory scm-test-runner)
+
+(test-begin "arithmetic")
+(test-equal 4 (+ 2 2))
+(test-assert (&gt; 3 2))
+(test-error (/ 1 0))
+(test-end "arithmetic")</code></pre>
+<p>Group related checks with <code>test-group</code>. After a run, <code>last-run-total-tests</code> and <code>last-run-failed-tests</code> report the totals (handy for build scripts). See <code>(srfi 64)</code> for the full assertion and runner API.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">23 bindings</p>
 

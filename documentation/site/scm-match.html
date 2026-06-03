@@ -135,6 +135,26 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm match)</div>
 <p class="lib-sub">Pattern matching</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm match)</code> is a pattern-matching library: <code>match</code> tests a value against a series of patterns and evaluates the body of the first that fits, binding pattern variables along the way. There are also <code>match-lambda</code>, <code>match-let</code>, and friends.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scm match))
+
+(match 42
+  (0 'zero)
+  (x x))                        ;; =&gt; 42  (x binds the value)
+
+(match '(1 2 3)
+  ((a b c) (+ a b c)))          ;; =&gt; 6
+
+(match (cons 1 2)
+  ((x . y) (list y x)))         ;; =&gt; (2 1)
+
+(match '(1 2 3)
+  ((first . rest) rest))        ;; =&gt; (2 3)</code></pre>
+<p>Patterns include literals, the wildcard <code>_</code>, variables, and pair/list destructuring. <code>match-lambda</code> builds a procedure that matches its argument, and <code>match-let</code> / <code>match-let*</code> / <code>match-letrec</code> destructure in bindings.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">6 bindings</p>
 

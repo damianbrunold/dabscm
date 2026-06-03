@@ -135,6 +135,19 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm log)</div>
 <p class="lib-sub">Structured single-line logging</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm log)</code> is structured single-line logging. Each entry is one line of the form <code>YYYY-MM-DD HH:MM:SS LEVEL [module] message</code>, written to the port returned by the <code>log-port</code> parameter (the current error port by default).</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scm log))
+
+(log-info  "auth"  "login ok for user 42")
+(log-warn  "feeds" "fetch timed out, will retry")
+(log-error "db"    "connection refused")</code></pre>
+<p>The first argument is a short module/category tag, the second the message. <code>log-access</code> writes access-log style entries. Redirect output by parameterizing <code>log-port</code> — handy for tests or for sending logs to a file:</p>
+<pre><code class="language-scheme">(parameterize ((log-port (current-output-port)))
+  (log-info "demo" "hello"))</code></pre>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">5 bindings</p>
 

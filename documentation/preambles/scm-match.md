@@ -1,7 +1,3 @@
-# `(scm match)`
-
-Pattern matching
-
 ## Overview
 
 `(scm match)` is a pattern-matching library: `match` tests a value against a
@@ -30,31 +26,3 @@ variables along the way. There are also `match-lambda`, `match-let`, and friends
 Patterns include literals, the wildcard `_`, variables, and pair/list
 destructuring. `match-lambda` builds a procedure that matches its argument, and
 `match-let` / `match-let*` / `match-letrec` destructure in bindings.
-
-
-## Exports
-
-### `match`
-
-*(no documentation)*
-
-### `match-lambda`
-
-*(no documentation)*
-
-### `match-lambda*`
-
-*(no documentation)*
-
-### `match-let`
-
-*(no documentation)*
-
-### `match-let*`
-
-*(no documentation)*
-
-### `match-letrec`
-
-*(no documentation)*
-

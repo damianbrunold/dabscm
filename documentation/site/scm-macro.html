@@ -135,6 +135,18 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm macro)</div>
 <p class="lib-sub">Non-standard macros and meta-programming utilities</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm macro)</code> provides metaprogramming conveniences: expand macros to see what they produce, pretty-print s-expressions, and define a binding only if it isn't already bound.</p>
+<h2>Common uses</h2>
+<p>Expand a macro one level to inspect its output:</p>
+<pre><code class="language-scheme">(import (scm macro))
+
+(macroexpand '(when #t 1 2))   ;; =&gt; (if #t (begin 1 2))</code></pre>
+<p>Pretty-print a datum, and define a fallback binding:</p>
+<pre><code class="language-scheme">(pretty-print '(a (b c) (d (e f))))
+(define-if-not-bound my-var 42)   ;; defines my-var only if undefined</code></pre>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">3 bindings</p>
 

@@ -135,6 +135,19 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm database postgres)</div>
 <p class="lib-sub">PostgreSQL database connectivity</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm database postgres)</code> is a PostgreSQL client: connect, run queries and statements (with parameter binding), read results as rows or alists, and stream large results with server-side cursors. The <code>with-…</code> forms manage connection and query lifetimes.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scm database postgres))
+
+(with-pg-connection "localhost" 5432 "user" "pass" "db"
+  (lambda (conn)
+    ;; parameterized query — $1, $2, ... placeholders
+    (define res (pg-query conn "SELECT id, name FROM users WHERE id = $1" 42))
+    (pg-result-&gt;alist-list res)))   ;; =&gt; ((("id" . 42) ("name" . "Ada")))</code></pre>
+<p><code>pg-exec</code> runs statements that don't return rows; <code>pg-result-columns</code> / <code>pg-result-rows</code> access a result directly; and <code>pg-cursor-open</code> / <code>pg-cursor-fetch</code> / <code>pg-cursor-for-each</code> iterate large result sets without loading them all at once. See <code>(scm database migrations)</code> to apply schema migrations.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">23 bindings</p>
 

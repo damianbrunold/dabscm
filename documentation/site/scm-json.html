@@ -135,6 +135,17 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm json)</div>
 <p class="lib-sub">JSON file reading</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm json)</code> is a low-level, streaming JSON reader: open a reader over a file or string, then pull top-level objects from it one at a time. It's well suited to large inputs or newline-delimited JSON. For parsing a whole document into Scheme data — and for <em>writing</em> JSON — use the higher-level <code>(scm json simple)</code>.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scm json))
+
+(define r (open-json-string "{\"a\": 1, \"b\": [2, 3]}"))
+(json-next-object r)    ;; =&gt; the next parsed object, or #f at end
+(close-json r)</code></pre>
+<p>Read from a file with <code>open-json-file</code>, and pull successive objects with <code>json-next-object</code> (returns <code>#f</code> when exhausted). <code>json-attribute</code> reads a named attribute from a reader.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">5 bindings</p>
 

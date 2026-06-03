@@ -135,6 +135,19 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm compile)</div>
 <p class="lib-sub">Compiler introspection, bytecode access, and type predicates</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm compile)</code> exposes the interpreter's compiler internals: compile expressions to bytecode, disassemble lambdas, generate fresh symbols, and test values with low-level predicates. It's mainly useful for tooling, debugging, and metaprogramming.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scm compile))
+
+(macro? car)        ;; =&gt; #f
+(primitive? car)    ;; =&gt; #t
+(gensym)            ;; =&gt; a fresh, unique symbol
+
+(disassemble (lambda (x) (+ x 1)))   ;; print the bytecode of a lambda</code></pre>
+<p>Other tools include <code>compile</code> (source → code), <code>get-code</code> / <code>set-code!</code> and the <code>instruction-*</code> accessors for inspecting bytecode, and predicates like <code>constant?</code>, <code>lambda?</code>, and <code>bound?</code>.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">17 bindings</p>
 

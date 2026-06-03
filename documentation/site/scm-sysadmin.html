@@ -135,6 +135,18 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm sysadmin)</div>
 <p class="lib-sub">System administration toolkit aggregating fs, archive, remote, logging, and more</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm sysadmin)</code> is a convenience bundle for system-administration scripting. It imports and re-exports a curated set of libraries so a single import gives you the tools you typically reach for in an ops script: filesystem and find (<code>(scm fs)</code>, <code>(scm fs-find)</code>), text processing (<code>(scm text)</code>), archives (<code>(scm archive)</code>), remote access (<code>(scm net-remote)</code>), process/OS control (<code>(scm system)</code>), date/time and durations (<code>(scm datetime)</code>, <code>(scm duration)</code>), logging (<code>(scm log)</code>), globbing (<code>(scm glob)</code>), crypto (<code>(scm crypto)</code>), URIs (<code>(scm uri)</code>), and JSON/CSV (<code>(scm json)</code>, <code>(scm csv)</code>).</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scm sysadmin))
+
+;; everything from the bundled libraries is now available:
+(for-each
+  (lambda (f) (log-info "cleanup" f) (delete-file f))
+  (find-file "/tmp" '(name . "*.old") '(type . file)))</code></pre>
+<p>See the individual libraries listed above for the full set of available procedures; <code>(scm sysadmin)</code> simply saves you from importing them one by one.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">155 bindings</p>
 

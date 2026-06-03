@@ -135,6 +135,26 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm args)</div>
 <p class="lib-sub">Declarative command-line argument parsing — options, flags, positionals, typed values</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm args)</code> is declarative command-line argument parsing. You describe a grammar once — options, flags, key/value options, and positionals, each optionally typed — and hand it to <code>parse-args</code>, which validates the input, converts values to their declared types, and gives you a result to query. It also renders <code>--help</code> and handles <code>--version</code> for you.</p>
+<h2>Common uses</h2>
+<p>Build a parser and parse an argument list:</p>
+<pre><code class="language-scheme">(import (scm args))
+
+(define cli
+  (make-arg-parser
+    'options (list (flag 'verbose 'short #\v 'long "verbose")
+                   (opt  'count   'short #\c 'long "count" 'type arg:integer))
+    'positionals (list (pos 'file 'type arg:string))))
+
+(define r (parse-args cli '("-v" "--count" "3" "in.txt")))
+
+(args-ref r 'verbose)   ;; =&gt; #t
+(args-ref r 'count)     ;; =&gt; 3   (converted to an integer)
+(args-ref r 'file)      ;; =&gt; "in.txt"</code></pre>
+<p>With no argument list, <code>parse-args</code> reads the script's own arguments. Built-in types include <code>arg:string</code>, <code>arg:integer</code>, <code>arg:number</code>, <code>arg:boolean</code>, <code>arg:symbol</code>, <code>arg:one-of</code>, and <code>arg:list</code>; define your own with <code>make-arg-type</code>. <code>format-help</code> renders usage text, and the <code>define-cli</code> macro offers a compact declarative form.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">23 bindings</p>
 

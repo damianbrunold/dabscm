@@ -135,6 +135,19 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm profiling)</div>
 <p class="lib-sub">Execution profiling and performance measurement</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm profiling)</code> measures where time goes: instrument procedures, run your workload, then read or print a report of call counts and timings. Uninstrument to restore normal execution.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scm profiling))
+
+(profile-reset!)
+(profile-instrument!)      ;; start collecting
+;; ... run the code you want to measure ...
+(profile-report)           ;; print a report
+(profile-uninstrument!)    ;; stop collecting</code></pre>
+<p><code>profile-data</code> returns the raw measurements if you'd rather format them yourself.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">5 bindings</p>
 

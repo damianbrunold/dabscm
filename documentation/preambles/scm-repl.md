@@ -1,7 +1,3 @@
-# `(scm repl)`
-
-REPL support — completions, syntax info, core form names
-
 ## Overview
 
 `(scm repl)` provides the support a REPL or editor integration needs:
@@ -19,23 +15,3 @@ powers interactive features rather than being used in scripts.
 ```
 
 `repl-syntax-info` returns structured syntax details for a symbol.
-
-
-## Exports
-
-### `repl-completions`
-
-*(no documentation)*
-
-### `repl-core-form-names`
-
-*(no documentation)*
-
-### `repl-info-line`
-
-*(no documentation)*
-
-### `repl-syntax-info`
-
-*(no documentation)*
-

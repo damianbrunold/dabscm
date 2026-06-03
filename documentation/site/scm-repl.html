@@ -135,6 +135,17 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm repl)</div>
 <p class="lib-sub">REPL support — completions, syntax info, core form names</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm repl)</code> provides the support a REPL or editor integration needs: identifier completion, syntax information, and a short info line for a binding. It powers interactive features rather than being used in scripts.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scm repl))
+
+(repl-completions "appen")   ;; =&gt; ("append")   completions for a prefix
+(repl-info-line 'car)        ;; a one-line summary for a binding
+(repl-core-form-names)       ;; the names of the core special forms</code></pre>
+<p><code>repl-syntax-info</code> returns structured syntax details for a symbol.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">4 bindings</p>
 

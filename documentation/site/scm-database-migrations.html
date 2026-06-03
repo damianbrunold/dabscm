@@ -135,6 +135,20 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm database migrations)</div>
 <p class="lib-sub">Forward-only SQL migration runner</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm database migrations)</code> is a forward-only SQL migration runner. It applies the <code>.sql</code> files in a directory in lexical order (conventionally <code>NNNN_name.sql</code>), records each applied file in a tracking table so it never runs twice, and wraps each migration in its own transaction. It is database-agnostic: you supply two callbacks that talk to your actual connection, so it works with PostgreSQL, SQL Server, SQLite, or an in-memory test database.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scm database migrations) (scm database postgres))
+
+(with-pg-connection "localhost" 5432 "user" "pass" "db"
+  (lambda (conn)
+    (run-migrations!
+      (lambda (sql) (pg-exec conn sql))                 ;; exec-sql!
+      (lambda (sql) (pg-result-rows (pg-query conn sql))) ;; query-rows
+      "db/migrations")))</code></pre>
+<p><code>migrations-applied</code> and <code>migrations-pending</code> report which migrations have run and which are outstanding. Options (an alist) let you customize the tracking table name and its <code>CREATE TABLE</code> statement.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">3 bindings</p>
 
