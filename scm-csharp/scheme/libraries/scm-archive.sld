@@ -529,20 +529,31 @@ Example:
                  (if (= start i) acc (cons (substring s start i) acc))))
           (else (loop (+ i 1) start acc)))))
 
+    (define %slurp-chunk-size 1048576) ; 1 MiB
+
     (define (slurp-bytes path)
+      ;; Read the whole file in bulk chunks and concatenate once. The
+      ;; previous implementation read one byte at a time with read-u8 into
+      ;; a list, then reversed it and copied element-by-element into a
+      ;; bytevector — O(n) boxed allocations and VM dispatches per byte,
+      ;; which dominated tar/gzip runtime on large files even though the
+      ;; underlying binary port is already buffered. read-bytevector does a
+      ;; single bulk read per chunk, and bytevector-copy! a single bulk copy.
       (call-with-port (open-binary-input-file path)
         (lambda (p)
-          (let loop ((acc '()))
-            (let ((b (read-u8 p)))
-              (if (eof-object? b)
-                  (let* ((n (length acc))
-                         (bv (make-bytevector n)))
-                    (let fill ((lst (reverse acc)) (i 0))
-                      (cond
-                        ((null? lst) bv)
-                        (else (bytevector-u8-set! bv i (car lst))
-                              (fill (cdr lst) (+ i 1))))))
-                  (loop (cons b acc))))))))
+          (let loop ((chunks '()) (total 0))
+            (let ((chunk (read-bytevector %slurp-chunk-size p)))
+              (if (eof-object? chunk)
+                  (let ((out (make-bytevector total 0)))
+                    (let fill ((cs (reverse chunks)) (off 0))
+                      (if (null? cs)
+                          out
+                          (let* ((c (car cs))
+                                 (n (bytevector-length c)))
+                            (bytevector-copy! out off c 0 n)
+                            (fill (cdr cs) (+ off n))))))
+                  (loop (cons chunk chunks)
+                        (+ total (bytevector-length chunk)))))))))
 
     (define (dump-bytes path bv)
       (call-with-port (open-binary-output-file path)
