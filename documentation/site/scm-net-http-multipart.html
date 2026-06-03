@@ -135,6 +135,22 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm net http multipart)</div>
 <p class="lib-sub">multipart/form-data parsing (RFC 7578)</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm net http multipart)</code> parses <code>multipart/form-data</code> request bodies (RFC 7578) — the format browsers use for file uploads. Each parsed part is an alist with the keys <code>name</code>, <code>filename</code>, <code>content-type</code>, and <code>body</code>; <code>part-ref</code> reads a field from a part.</p>
+<h2>Common uses</h2>
+<p>Find the boundary from the <code>Content-Type</code> header, then parse the body:</p>
+<pre><code class="language-scheme">(import (scm net http multipart))
+
+(multipart-boundary "multipart/form-data; boundary=abc123")  ;; =&gt; "abc123"
+
+(define parts
+  (parse-multipart body (multipart-boundary content-type)))
+
+(part-ref (car parts) 'name)        ;; =&gt; "avatar"
+(part-ref (car parts) 'filename)    ;; =&gt; "photo.png"</code></pre>
+<p>Use <code>parse-multipart</code> when each character of the body is one byte (text), and <code>parse-multipart-bytes</code> when the body is a bytevector — the latter keeps binary attachments (images, PDFs) intact.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">4 bindings</p>
 

@@ -135,6 +135,17 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm net-remote)</div>
 <p class="lib-sub">Remote operations — curl, wget, ssh, scp, rsync</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm net-remote)</code> wraps the standard remote-access command-line tools — <code>curl</code>, <code>wget</code>, <code>ssh</code>, <code>scp</code>, and <code>rsync</code> — so they can be driven from Scheme. Each procedure shells out to the corresponding native program, which must be installed.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scm net-remote))
+
+(ssh "deploy@web1" "systemctl status nginx" '(port . 2222))
+(scp "build.tar.gz" "deploy@web1:/srv/releases/" '(port . 2222))
+(rsync "build/" "deploy@web1:/srv/app/" 'archive 'delete 'verbose)</code></pre>
+<p><code>curl</code> and <code>wget</code> fetch URLs. Options are passed as trailing arguments — symbols for flags (e.g. <code>'archive</code>) and <code>(key . value)</code> pairs for valued options (e.g. <code>'(port . 2222)</code>).</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">5 bindings</p>
 

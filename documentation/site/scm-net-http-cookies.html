@@ -135,6 +135,21 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm net http cookies)</div>
 <p class="lib-sub">HTTP cookie header parsing and Set-Cookie formatting</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm net http cookies)</code> parses incoming <code>Cookie</code> headers and formats outgoing <code>Set-Cookie</code> headers — the small pieces a web app needs for cookie handling.</p>
+<h2>Common uses</h2>
+<p>Parse a request's <code>Cookie</code> header into an alist and look a value up:</p>
+<pre><code class="language-scheme">(import (scm net http cookies))
+
+(parse-cookie-header "sid=abc; pref=dark")
+;; =&gt; (("sid" . "abc") ("pref" . "dark"))
+
+(cookie-ref '(("sid" . "abc")) "sid")   ;; =&gt; "abc"</code></pre>
+<p>Format a <code>Set-Cookie</code> value (name, value, max-age in seconds, path):</p>
+<pre><code class="language-scheme">(format-set-cookie "sid" "abc" 3600 "/")</code></pre>
+<p>Cookie values are not percent-decoded — many are opaque tokens, so the caller decides whether decoding is appropriate.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">3 bindings</p>
 

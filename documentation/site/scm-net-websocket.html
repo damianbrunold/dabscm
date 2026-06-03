@@ -135,6 +135,19 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm net websocket)</div>
 <p class="lib-sub">WebSocket client and server support</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm net websocket)</code> provides WebSocket support for both sides of a connection: upgrade an accepted server connection with <code>ws-accept</code>, or open a client connection with <code>ws-connect</code>, then exchange messages with <code>ws-send</code> / <code>ws-receive</code>.</p>
+<h2>Common uses</h2>
+<p>Client:</p>
+<pre><code class="language-scheme">(import (scm net websocket))
+
+(define ws (ws-connect "ws://example.com/socket"))
+(ws-send ws "hello")
+(ws-receive ws)     ;; =&gt; the next message
+(ws-close ws)</code></pre>
+<p>On the server side, <code>ws-accept</code> upgrades an accepted TCP connection to a WebSocket, after which the same <code>ws-send</code> / <code>ws-receive</code> / <code>ws-close</code> apply. <code>ws?</code> tests whether a value is a WebSocket.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">6 bindings</p>
 

@@ -135,6 +135,21 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm net http forms)</div>
 <p class="lib-sub">application/x-www-form-urlencoded form and query parsing</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm net http forms)</code> parses <code>application/x-www-form-urlencoded</code> bodies and query strings into an alist of decoded key/value pairs, with helpers for looking values up.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scm net http forms))
+
+(parse-www-form "name=Ada&amp;age=37")
+;; =&gt; (("name" . "Ada") ("age" . "37"))
+
+(form-ref '(("a" . "1")) "a")        ;; =&gt; "1"
+(form-ref '() "a" "-")               ;; =&gt; "-"   (default when absent)</code></pre>
+<p><code>form-refs-by-prefix</code> collects all entries whose key starts with a given prefix — useful for grouped fields like <code>opt-a</code>, <code>opt-b</code>:</p>
+<pre><code class="language-scheme">(form-refs-by-prefix '(("opt-a" . "1") ("name" . "x") ("opt-b" . "2")) "opt-")
+;; =&gt; the opt-* entries</code></pre>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">3 bindings</p>
 
