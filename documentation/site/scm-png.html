@@ -135,6 +135,19 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm png)</div>
 <p class="lib-sub">PNG image writing — grayscale, RGB, and RGBA</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm png)</code> is a minimal PNG writer: it turns raw 8-bit pixel data into a valid PNG bytevector. It supports grayscale, RGB, grayscale+alpha, and RGBA, all at bit depth 8, with one helper per color type plus a generic <code>png-encode</code>.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scm png))
+
+;; a 2x1 grayscale image (one black pixel, one white)
+(png-encode-grayscale 2 1 (bytevector 0 255))   ;; =&gt; a PNG bytevector
+
+;; generic form: width height pixels color-type (0=gray, 2=RGB, 4=GA, 6=RGBA)
+(png-encode 2 2 (bytevector 0 255 255 0) 0)</code></pre>
+<p>Write the bytevector to disk with <code>write-png-file</code>. Pixels are row-major, top-to-bottom, with no padding; sample order within a pixel follows the color type. <code>crc32</code> is exposed for callers that need it.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">6 bindings</p>
 

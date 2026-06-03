@@ -135,6 +135,20 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm odf writer)</div>
 <p class="lib-sub">ODF text document creation (ODT format)</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm odf writer)</code> creates text documents in the OpenDocument (<code>.odt</code>) format. Its API mirrors <code>(scm ooxml word)</code>: build a document, add paragraphs and styled text runs, apply styles, and save.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scm odf writer))
+
+(define doc (make-document))
+(define p (document-add-paragraph! doc))
+(paragraph-add-run! p "Hello, ")
+(paragraph-add-run! p "world" bold size: 14)
+
+(document-save doc "letter.odt")</code></pre>
+<p><code>paragraph-add-run!</code> accepts the same optional formatting as the Word writer (<code>font:</code>, <code>size:</code>, <code>color:</code>, <code>bold</code>, <code>italic</code>, <code>underline</code>). Define reusable styles with <code>document-define-style!</code> / <code>document-add-named-style!</code>, and use <code>document-save-to-bytevector</code> for in-memory bytes.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">30 bindings</p>
 

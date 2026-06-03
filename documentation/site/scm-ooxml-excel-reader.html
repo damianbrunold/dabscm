@@ -135,6 +135,20 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm ooxml excel-reader)</div>
 <p class="lib-sub">Excel workbook reading (OOXML/XLSX format)</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm ooxml excel-reader)</code> reads Excel workbooks in the OOXML (<code>.xlsx</code>) format — the counterpart to <code>(scm ooxml excel)</code>. Open a workbook from a file or bytevector, enumerate its sheets, and read cell values.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scm ooxml excel-reader))
+
+(define wb (read-workbook "report.xlsx"))
+
+(workbook-sheet-names wb)               ;; =&gt; ("Sheet1" ...)
+(define sheet (workbook-sheet wb 0))    ;; first sheet (by index)
+(sheet-ref sheet 1 1)                   ;; cell at row 1, col 1
+(sheet-rows sheet)                      ;; all rows as lists of cell values</code></pre>
+<p><code>read-workbook-from-bytevector</code> reads from in-memory bytes (e.g. an upload). <code>sheet-dimensions</code> reports the used range, and <code>sheet-cells</code> gives the populated cells.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">10 bindings</p>
 

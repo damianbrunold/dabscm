@@ -135,6 +135,19 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm qr)</div>
 <p class="lib-sub">QR code encoding — PNG, SVG, and ASCII output</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm qr)</code> is a pure-Scheme QR-code encoder (ISO/IEC 18004). <code>qr-encode</code> builds a QR matrix from a string; render it to PNG, SVG, or ASCII, or inspect the matrix directly. It supports versions 1–40 and error-correction levels L/M/Q/H.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scm qr) (scm png))
+
+(define m (qr-encode "https://example.org"))   ;; a QR matrix
+
+(write-png-file "qr.png" (qr-&gt;png m))          ;; PNG file
+(qr-&gt;svg m 4 4)                                ;; =&gt; SVG string
+(display (qr-&gt;ascii m))                         ;; print to the terminal</code></pre>
+<p>Pass an error-correction level as a trailing argument to <code>qr-encode</code> (<code>'L</code>, <code>'M</code>, <code>'Q</code>, <code>'H</code>; default <code>'M</code>). The matrix accessors (<code>qr-matrix-size</code>, <code>qr-matrix-ref</code>, <code>qr-matrix-version</code>, …) expose the raw modules.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">10 bindings</p>
 

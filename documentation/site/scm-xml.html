@@ -135,6 +135,20 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm xml)</div>
 <p class="lib-sub">XML file reading and navigation</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm xml)</code> is a streaming (pull) XML reader. You open a reader over a file, string, or bytevector, then call <code>xml-read</code> to advance node by node, querying the current node's type, name, value, and attributes as you go. This keeps memory use low for large documents.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scm xml))
+
+(define r (open-xml-string "&lt;a x=\"1\"&gt;&lt;b&gt;hi&lt;/b&gt;&lt;/a&gt;"))
+
+(xml-read r)          ;; advance to the next node =&gt; #t (or #f at end)
+(xml-node-type r)     ;; =&gt; element
+(xml-name r)          ;; =&gt; "a"
+(xml-attribute r "x") ;; =&gt; "1"</code></pre>
+<p>Drive it in a loop until <code>xml-read</code> returns <code>#f</code>. <code>xml-value</code> reads text content, <code>xml-read-to</code> skips ahead to a named element, and <code>close-xml</code> releases the reader. Open from a file or bytes with <code>open-xml-file</code> / <code>open-xml-bytevector</code>.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">10 bindings</p>
 

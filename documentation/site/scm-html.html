@@ -135,6 +135,19 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm html)</div>
 <p class="lib-sub">HTML escaping and tag stripping</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm html)</code> provides the small, safety-critical HTML string operations: escaping text and attribute values, and stripping tags from a fragment. For building HTML from a tree see <code>(scm html builder)</code>.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scm html))
+
+(html-escape "a &lt;b&gt; &amp; c")     ;; =&gt; "a &amp;lt;b&amp;gt; &amp;amp; c"
+(html-attr-escape "x\"y")     ;; =&gt; escaped for use in an attribute value
+
+(strip-html-tags "&lt;p&gt;hello   &lt;b&gt;world&lt;/b&gt;&lt;/p&gt;")   ;; =&gt; "hello world"
+(strip-html-tags "plain")                          ;; =&gt; "plain"</code></pre>
+<p><code>strip-html-tags</code> removes tags and collapses whitespace, but does not decode HTML entities — escape again with <code>html-escape</code> if you re-emit the result into HTML.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">3 bindings</p>
 

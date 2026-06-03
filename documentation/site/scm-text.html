@@ -135,6 +135,20 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm text)</div>
 <p class="lib-sub">Text processing utilities — awk, sed, grep, cut, sort, diff, and more</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm text)</code> is a toolbox of Unix-style text utilities — <code>grep</code>, <code>sed</code>, <code>awk</code>, <code>cut</code>, <code>sort-lines</code>, <code>head</code>, <code>tail</code>, <code>uniq</code>, <code>wc</code>, <code>tr</code>, <code>diff</code>, <code>cat</code>, <code>tee</code>, <code>hexdump</code>. Each takes a <em>source</em> that may be a filename string, a list of strings (one per line), or an input port, so you can pipe data through them in Scheme. Where a matching native tool is on PATH it may be used; pass <code>'pure</code> to force the pure-Scheme path.</p>
+<h2>Common uses</h2>
+<p>Working on a list of lines (no files needed):</p>
+<pre><code class="language-scheme">(import (scm text))
+
+(grep "b" '("alpha" "beta" "bravo"))         ;; =&gt; ("beta" "bravo")
+(sort-lines '("charlie" "alpha" "bravo"))    ;; =&gt; ("alpha" "bravo" "charlie")
+(sed "a" "A" '("banana") 'pure)              ;; =&gt; ("bAnana")</code></pre>
+<p>Or against a file:</p>
+<pre><code class="language-scheme">(grep "ERROR" "log.txt" 'ignore-case 'line-number)</code></pre>
+<p>Options are trailing symbols (e.g. <code>'ignore-case</code>, <code>'invert-match</code>, <code>'line-number</code>, <code>'count</code>) mirroring the familiar command-line flags.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">14 bindings</p>
 

@@ -135,6 +135,23 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm terminal)</div>
 <p class="lib-sub">Terminal control — colors, cursor, raw mode</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm terminal)</code> controls the terminal: ANSI colors and text styles, cursor movement, screen clearing, raw/echo modes, and password input. The SGR helpers return escape-sequence strings you embed in output; the <code>with-…</code> forms manage mode changes safely.</p>
+<h2>Common uses</h2>
+<p>Colored, styled output (compose escape strings, then reset):</p>
+<pre><code class="language-scheme">(import (scm terminal))
+
+(display (string-append (sgr-fg 'red) "error" (sgr-reset)))
+(display (string-append (sgr-bold) "important" (sgr-reset)))
+(display (string-append (sgr-fg 255 128 0) "orange" (sgr-reset)))  ;; 24-bit RGB</code></pre>
+<p>Cursor and screen control (these write the escape sequence directly):</p>
+<pre><code class="language-scheme">(clear-screen)
+(cursor-position 1 1)   ;; move to row 1, column 1 (1-based)</code></pre>
+<p>Run a block with the terminal in raw mode, or read a password without echo:</p>
+<pre><code class="language-scheme">(with-terminal-raw (lambda () ...))
+(define pw (read-password "Password: "))</code></pre>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">40 bindings</p>
 

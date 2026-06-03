@@ -135,6 +135,19 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm ooxml word-reader)</div>
 <p class="lib-sub">Word document text reading (OOXML/DOCX format)</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm ooxml word-reader)</code> reads the text content of Word documents in the OOXML (<code>.docx</code>) format — the counterpart to <code>(scm ooxml word)</code>. Open a document, get its paragraphs and their text, and inspect styles and heading levels.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scm ooxml word-reader))
+
+(define doc (read-document "letter.docx"))
+
+(document-text doc)         ;; =&gt; the whole document as text
+(document-paragraphs doc)   ;; =&gt; the paragraphs
+(document-headings doc)     ;; =&gt; the heading paragraphs</code></pre>
+<p>Per-paragraph accessors include <code>paragraph-text</code>, <code>paragraph-style</code>, <code>paragraph-heading-level</code>, and <code>paragraph-in-table?</code>. <code>read-document-from-bytevector</code> reads from in-memory bytes.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">9 bindings</p>
 

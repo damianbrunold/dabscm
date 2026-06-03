@@ -135,6 +135,24 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm pdf)</div>
 <p class="lib-sub">PDF document creation — pages, drawing, fonts, text flow, TTF embedding, images, links, outlines</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm pdf)</code> creates PDF documents from scratch: add pages, draw vector paths and shapes, set fonts (including embedded TrueType), place text and images, and add links and outline bookmarks. You build a document, append pages, draw on them, and serialize the result to a bytevector or file.</p>
+<h2>Common uses</h2>
+<p>A minimal document:</p>
+<pre><code class="language-scheme">(import (scm pdf))
+
+(define doc (make-pdf))
+(pdf-add-page! doc)          ;; A4 by default
+(pdf-save doc "blank.pdf")</code></pre>
+<p>Draw some text:</p>
+<pre><code class="language-scheme">(define doc (make-pdf))
+(define page (pdf-add-page! doc pdf-page-size-letter))
+(define helv (pdf-use-font doc 'helvetica))
+(pdf-draw-text page helv 12 100 700 "Hello, world!")   ;; baseline at (100,700)
+(pdf-save doc "hello.pdf")</code></pre>
+<p>Coordinates are in points with the origin at the bottom-left. There is a full path/painting API (<code>pdf-move-to</code>, <code>pdf-line-to</code>, <code>pdf-rect</code>, <code>pdf-stroke</code>, <code>pdf-fill</code>, …), <code>pdf-flow-text</code> for wrapped paragraphs, plus image, link, and outline support. Use <code>pdf-&gt;bytevector</code> to get the document as bytes instead of writing a file.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">89 bindings</p>
 

@@ -135,6 +135,21 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm odf spreadsheet)</div>
 <p class="lib-sub">ODF spreadsheet creation (ODS format)</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm odf spreadsheet)</code> creates spreadsheets in the OpenDocument (<code>.ods</code>) format. Its API mirrors <code>(scm ooxml excel)</code>: build a workbook, add worksheets, set cells, and save. Use whichever format your consumers need.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scm odf spreadsheet))
+
+(define wb (make-workbook))
+(define ws (workbook-add-worksheet! wb "Sheet1"))
+
+(worksheet-set-cell! ws "A1" "Name" 'string #f)
+(worksheet-set-cell! ws "B1" 42     'num    #f)
+
+(workbook-save wb "report.ods")</code></pre>
+<p>Cells use A1 notation; the type is <code>'string</code>, <code>'num</code>, or <code>'boolean</code>, and the last argument is a style (<code>#f</code> for none). Column widths, row heights, named styles, and streaming workbooks are supported, and <code>workbook-save-to-bytevector</code> returns the file as bytes.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">27 bindings</p>
 

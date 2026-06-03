@@ -135,6 +135,20 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm ooxml word)</div>
 <p class="lib-sub">Word document creation (OOXML/DOCX format)</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm ooxml word)</code> creates Word documents in the OOXML (<code>.docx</code>) format. Build a document, add paragraphs and styled text runs, apply named or inline styles, add tables/images/headings, and save. To read existing documents, see <code>(scm ooxml word-reader)</code>. (This is the library that renders this project's own <code>reference.docx</code>.)</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scm ooxml word))
+
+(define doc (make-document))
+(define p (document-add-paragraph! doc))
+(paragraph-add-run! p "Hello, " )
+(paragraph-add-run! p "world" bold size: 14)
+
+(document-save doc "letter.docx")</code></pre>
+<p><code>paragraph-add-run!</code> takes optional formatting: <code>font:</code>, <code>size:</code>, <code>color:</code>, and the flags <code>bold</code>, <code>italic</code>, <code>underline</code>. Headings come from <code>document-add-heading!</code>, reusable styles from <code>document-define-style!</code>, and <code>document-save-to-bytevector</code> returns the file as bytes.</p>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">30 bindings</p>
 

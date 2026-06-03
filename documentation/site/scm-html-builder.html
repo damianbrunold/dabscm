@@ -135,6 +135,28 @@
 <a class="backlink" href="index.html">&larr; All libraries</a>
 <div class="lib-title scm">(scm html builder)</div>
 <p class="lib-sub">SXML-shaped HTML5 builder with automatic escaping</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><code>(scm html builder)</code> renders HTML from an SXML-style tree. Strings and numbers in content position are escaped automatically — the default is safe, so forgetting to escape a user value cannot produce XSS. Already-trusted HTML is opted in explicitly with <code>raw</code>.</p>
+<h2>Tree shape</h2>
+<ul>
+<li><code>"text"</code> → escaped text</li>
+<li><code>(tag body ...)</code> → <code>&lt;tag&gt;body…&lt;/tag&gt;</code></li>
+<li><code>(tag (@ (attr value) ...) body ...)</code> → element with attributes</li>
+<li><code>(raw "&lt;b&gt;x&lt;/b&gt;")</code> → emitted verbatim (trusted)</li>
+</ul>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scm html builder))
+
+(html-&gt;string '(p "a &amp; b" (b "x")))
+;; =&gt; "&lt;p&gt;a &amp;amp; b&lt;b&gt;x&lt;/b&gt;&lt;/p&gt;"
+
+(html-&gt;string `(div ,(raw "&lt;b&gt;bold&lt;/b&gt;")))
+;; =&gt; "&lt;div&gt;&lt;b&gt;bold&lt;/b&gt;&lt;/div&gt;"</code></pre>
+<p><code>html-&gt;port</code> writes directly to a port. <code>html5</code> wraps a tree into a full document with the <code>&lt;!doctype html&gt;</code> declaration — render the result with <code>html-&gt;string</code>:</p>
+<pre><code class="language-scheme">(html-&gt;string (html5 '(body "hi")))
+;; =&gt; "&lt;!doctype html&gt;\n&lt;html&gt;&lt;body&gt;hi&lt;/body&gt;&lt;/html&gt;"</code></pre>
+</div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">6 bindings</p>
 
