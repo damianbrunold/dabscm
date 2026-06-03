@@ -1493,8 +1493,12 @@ Description: Creates a tar archive at path archive containing the listed
   paths. archive's extension determines compression: .tar.gz/.tgz uses
   gzip; .tar.bz2/.tbz uses bzip2; otherwise plain tar.
   Options: 'gzip (force -z), 'bzip2 (force -j), 'verbose (-v),
-  '(work-dir . dir) (run as if cwd = dir).
-  Shells out to the native tar command.
+  '(work-dir . dir) (run as if cwd = dir), 'pure (force the built-in
+  implementation even when native tar is present).
+  Uses the native tar command when available. If no native tar is found,
+  a built-in pure-Scheme USTAR implementation handles plain .tar and
+  .tar.gz archives (regular files and directories only); .tar.bz2/.tar.xz
+  still require native tools.
 Example:
   (tar-create "backup.tar.gz" '("src" "docs"))</pre>
 </div>
@@ -1504,7 +1508,11 @@ Example:
 Library: (scm archive)
 Description: Extracts archive into the current directory (or 'work-dir).
   Compression is auto-detected from extension or forced via 'gzip / 'bzip2.
-  Options: '(work-dir . dir), 'verbose.
+  Options: '(work-dir . dir), 'verbose, 'pure (force the built-in
+  implementation even when native tar is present).
+  Uses the native tar command when available; otherwise a built-in
+  pure-Scheme implementation extracts plain .tar and .tar.gz archives
+  (.tar.bz2/.tar.xz still require native tools).
 Example:
   (tar-extract "backup.tar.gz" '(work-dir . "/tmp/restore"))</pre>
 </div>
@@ -1514,6 +1522,11 @@ Example:
 Library: (scm archive)
 Description: Returns a list of entry names contained in archive.
   Compression is auto-detected; force with 'gzip or 'bzip2.
+  Options: 'gzip, 'bzip2, 'pure (force the built-in implementation even
+  when native tar is present).
+  Uses the native tar command when available; otherwise a built-in
+  pure-Scheme implementation lists plain .tar and .tar.gz archives
+  (.tar.bz2/.tar.xz still require native tools).
 Example:
   (tar-list "backup.tar.gz")</pre>
 </div>

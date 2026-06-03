@@ -21,6 +21,15 @@
 
 (define base (mktempdir '(prefix . "arch-test")))
 
+(define (file-contents path)
+  (call-with-port (open-input-file path)
+    (lambda (p)
+      (let loop ((acc '()))
+        (let ((c (read-char p)))
+          (if (eof-object? c)
+              (list->string (reverse acc))
+              (loop (cons c acc))))))))
+
 (test-begin "scm-archive")
 
 (let ((src (string-append base "/src")))
@@ -42,6 +51,44 @@
            (test-equal 2 (length (find-file out '(type . file)))))))
       (else
        (test-equal #t #t))))
+
+  ;; The 'pure option forces the built-in pure-Scheme USTAR implementation,
+  ;; so these run regardless of whether a native tar is present.
+  (test-group "tar pure fallback"
+    ;; .tar.gz round-trip
+    (let ((tgz (string-append base "/pure.tar.gz"))
+          (out (string-append base "/pure-out")))
+      (test-equal #t (tar-create tgz (list src) 'pure))
+      (test-equal #t (>= (length (tar-list tgz 'pure)) 2))
+      (make-directory out)
+      (test-equal #t (tar-extract tgz 'pure `(work-dir . ,out)))
+      (let ((files (find-file out '(type . file))))
+        (test-equal 2 (length files))
+        ;; contents preserved byte-for-byte
+        (test-equal '("hello\n" "world\n")
+                    (list-sort string<? (map file-contents files)))))
+    ;; plain .tar (no compression)
+    (let ((tar (string-append base "/pure.tar"))
+          (out (string-append base "/pure-out-plain")))
+      (test-equal #t (tar-create tar (list src) 'pure))
+      (test-equal #t (>= (length (tar-list tar 'pure)) 2))
+      (make-directory out)
+      (test-equal #t (tar-extract tar 'pure `(work-dir . ,out)))
+      (test-equal 2 (length (find-file out '(type . file)))))
+    ;; bzip2/xz require native tar even in pure mode
+    (test-equal 'errored
+                (guard (e (#t 'errored))
+                  (tar-create (string-append base "/x.tar.bz2") (list src) 'pure)))
+    ;; cross-compatibility with native tar when it is available
+    (when (which "tar")
+      (let ((from-pure (string-append base "/cross-pure.tar.gz"))
+            (from-native (string-append base "/cross-native.tar.gz")))
+        ;; native tar reads a pure-created archive
+        (test-equal #t (tar-create from-pure (list src) 'pure))
+        (test-equal #t (>= (length (tar-list from-pure)) 2))
+        ;; the pure reader reads a native-created archive
+        (test-equal #t (tar-create from-native (list src)))
+        (test-equal #t (>= (length (tar-list from-native 'pure)) 2)))))
 
   (test-group "gzip / gunzip"
     (cond
