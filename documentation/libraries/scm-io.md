@@ -77,6 +77,38 @@ Example:
 
 *(no documentation)*
 
+### `file->lines`
+
+```
+Syntax: (file->lines path option ...)
+Library: (scm io)
+Description: Like read-file-lines, but returns #f if the file cannot be opened
+  or read (for example it does not exist) instead of raising an error. Each
+  option is passed on to open-input-file; supported options are an encoding
+  (such as 'utf-8, 'latin-1 or 'utf-16) and the symbol 'deflate to transparently
+  inflate deflate-compressed input. The input port is always closed.
+Example:
+  (file->lines "hello.txt") => ("hello" "world")
+  (file->lines "data.txt" 'latin-1) => ("...")
+  (file->lines "missing.txt") => #f
+```
+
+### `file->string`
+
+```
+Syntax: (file->string path option ...)
+Library: (scm io)
+Description: Like read-file-string, but returns #f if the file cannot be opened
+  or read (for example it does not exist) instead of raising an error. Each
+  option is passed on to open-input-file; supported options are an encoding
+  (such as 'utf-8, 'latin-1 or 'utf-16) and the symbol 'deflate to transparently
+  inflate deflate-compressed input. The input port is always closed.
+Example:
+  (file->string "hello.txt") => "hello\nworld\n"
+  (file->string "data.txt" 'latin-1) => "..."
+  (file->string "missing.txt") => #f
+```
+
 ### `flush`
 
 ```
@@ -144,6 +176,40 @@ Description: Reads up to n characters from the textual input port and returns th
 Example:
   (define p (open-input-string "hello"))
   (read-chars 3 p) => "hel"
+```
+
+### `read-file-lines`
+
+```
+Syntax: (read-file-lines path option ...)
+Library: (scm io)
+Description: Reads the entire contents of the file at path and returns it as a
+  list of strings, one per line, with line terminators removed. Each option is
+  passed on to open-input-file; supported options are an encoding (such as
+  'utf-8, 'latin-1 or 'utf-16) and the symbol 'deflate to transparently inflate
+  deflate-compressed input. If the file cannot be opened or read (for example
+  it does not exist), an error is raised. Use file->lines for a variant that
+  returns #f on error instead. The input port is always closed.
+Example:
+  (read-file-lines "hello.txt") => ("hello" "world")
+  (read-file-lines "data.txt" 'latin-1) => ("...")
+```
+
+### `read-file-string`
+
+```
+Syntax: (read-file-string path option ...)
+Library: (scm io)
+Description: Reads the entire contents of the file at path and returns it as a
+  string. Each option is passed on to open-input-file; supported options are
+  an encoding (such as 'utf-8, 'latin-1 or 'utf-16) and the symbol 'deflate to
+  transparently inflate deflate-compressed input. If the file cannot be opened
+  or read (for example it does not exist), an error is raised. Use file->string
+  for a variant that returns #f on error instead. The input port is always
+  closed.
+Example:
+  (read-file-string "hello.txt") => "hello\nworld\n"
+  (read-file-string "data.txt" 'latin-1) => "..."
 ```
 
 ### `with-input-from-string`

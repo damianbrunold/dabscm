@@ -152,7 +152,7 @@
 <p><code>read-chars</code> reads a fixed number of characters, <code>with-input-from-string</code> rebinds the current input port, and <code>port-position</code> / <code>flush</code> round things out.</p>
 </div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
-<p class="export-count">10 bindings</p>
+<p class="export-count">14 bindings</p>
 
 <div class="entry" id="e0" data-name="call-with-input-string">
   <div class="entry-name">call-with-input-string</div>
@@ -190,7 +190,35 @@ Example:
   <div class="entry-name">field-sep</div>
   <div class="nodoc">(no documentation)</div>
 </div>
-<div class="entry" id="e4" data-name="flush">
+<div class="entry" id="e4" data-name="file-&gt;lines">
+  <div class="entry-name">file-&gt;lines</div>
+  <pre class="entry-doc">Syntax: (file-&gt;lines path option ...)
+Library: (scm io)
+Description: Like read-file-lines, but returns #f if the file cannot be opened
+  or read (for example it does not exist) instead of raising an error. Each
+  option is passed on to open-input-file; supported options are an encoding
+  (such as 'utf-8, 'latin-1 or 'utf-16) and the symbol 'deflate to transparently
+  inflate deflate-compressed input. The input port is always closed.
+Example:
+  (file-&gt;lines "hello.txt") =&gt; ("hello" "world")
+  (file-&gt;lines "data.txt" 'latin-1) =&gt; ("...")
+  (file-&gt;lines "missing.txt") =&gt; #f</pre>
+</div>
+<div class="entry" id="e5" data-name="file-&gt;string">
+  <div class="entry-name">file-&gt;string</div>
+  <pre class="entry-doc">Syntax: (file-&gt;string path option ...)
+Library: (scm io)
+Description: Like read-file-string, but returns #f if the file cannot be opened
+  or read (for example it does not exist) instead of raising an error. Each
+  option is passed on to open-input-file; supported options are an encoding
+  (such as 'utf-8, 'latin-1 or 'utf-16) and the symbol 'deflate to transparently
+  inflate deflate-compressed input. The input port is always closed.
+Example:
+  (file-&gt;string "hello.txt") =&gt; "hello\nworld\n"
+  (file-&gt;string "data.txt" 'latin-1) =&gt; "..."
+  (file-&gt;string "missing.txt") =&gt; #f</pre>
+</div>
+<div class="entry" id="e6" data-name="flush">
   <div class="entry-name">flush</div>
   <pre class="entry-doc">Syntax: (flush-output-port) (flush-output-port port)
 Library: (scheme base)
@@ -198,7 +226,7 @@ Description: Flushes any buffered output in the given output port (or current ou
 Example:
   (flush-output-port)</pre>
 </div>
-<div class="entry" id="e5" data-name="format">
+<div class="entry" id="e7" data-name="format">
   <div class="entry-name">format</div>
   <pre class="entry-doc">Syntax: (format dest fmt val ...)
 Library: (scm io), (srfi 28), (srfi 48)
@@ -229,11 +257,11 @@ Example:
   (format #f "~a + ~a = ~a" 1 2 3) =&gt; "1 + 2 = 3"
   (format #f "~d in hex is ~x" 255 255) =&gt; "255 in hex is ff"</pre>
 </div>
-<div class="entry" id="e6" data-name="line-sep">
+<div class="entry" id="e8" data-name="line-sep">
   <div class="entry-name">line-sep</div>
   <div class="nodoc">(no documentation)</div>
 </div>
-<div class="entry" id="e7" data-name="port-position">
+<div class="entry" id="e9" data-name="port-position">
   <div class="entry-name">port-position</div>
   <pre class="entry-doc">Syntax: (port-position port)
 Library: (scm core)
@@ -242,7 +270,7 @@ Example:
   (define p (open-input-string "hello"))
   (port-position p) =&gt; ("{string}" 1 1)</pre>
 </div>
-<div class="entry" id="e8" data-name="read-chars">
+<div class="entry" id="e10" data-name="read-chars">
   <div class="entry-name">read-chars</div>
   <pre class="entry-doc">Syntax: (read-chars n port)
 Library: (scm io)
@@ -251,7 +279,37 @@ Example:
   (define p (open-input-string "hello"))
   (read-chars 3 p) =&gt; "hel"</pre>
 </div>
-<div class="entry" id="e9" data-name="with-input-from-string">
+<div class="entry" id="e11" data-name="read-file-lines">
+  <div class="entry-name">read-file-lines</div>
+  <pre class="entry-doc">Syntax: (read-file-lines path option ...)
+Library: (scm io)
+Description: Reads the entire contents of the file at path and returns it as a
+  list of strings, one per line, with line terminators removed. Each option is
+  passed on to open-input-file; supported options are an encoding (such as
+  'utf-8, 'latin-1 or 'utf-16) and the symbol 'deflate to transparently inflate
+  deflate-compressed input. If the file cannot be opened or read (for example
+  it does not exist), an error is raised. Use file-&gt;lines for a variant that
+  returns #f on error instead. The input port is always closed.
+Example:
+  (read-file-lines "hello.txt") =&gt; ("hello" "world")
+  (read-file-lines "data.txt" 'latin-1) =&gt; ("...")</pre>
+</div>
+<div class="entry" id="e12" data-name="read-file-string">
+  <div class="entry-name">read-file-string</div>
+  <pre class="entry-doc">Syntax: (read-file-string path option ...)
+Library: (scm io)
+Description: Reads the entire contents of the file at path and returns it as a
+  string. Each option is passed on to open-input-file; supported options are
+  an encoding (such as 'utf-8, 'latin-1 or 'utf-16) and the symbol 'deflate to
+  transparently inflate deflate-compressed input. If the file cannot be opened
+  or read (for example it does not exist), an error is raised. Use file-&gt;string
+  for a variant that returns #f on error instead. The input port is always
+  closed.
+Example:
+  (read-file-string "hello.txt") =&gt; "hello\nworld\n"
+  (read-file-string "data.txt" 'latin-1) =&gt; "..."</pre>
+</div>
+<div class="entry" id="e13" data-name="with-input-from-string">
   <div class="entry-name">with-input-from-string</div>
   <pre class="entry-doc">Syntax: (with-input-from-string str thunk)
 Library: (scm io)
