@@ -153,7 +153,7 @@
 <pre><code class="language-scheme">(string-replace-all "a.b.c" "." "/")   ;; =&gt; "a/b/c"</code></pre>
 </div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
-<p class="export-count">8 bindings</p>
+<p class="export-count">9 bindings</p>
 
 <div class="entry" id="e0" data-name="string-contains-from">
   <div class="entry-name">string-contains-from</div>
@@ -186,7 +186,17 @@ Example:
   (string-replace-all "hello world" "world" "there") =&gt; "hello there"
   (string-replace-all "aabbcc" "b" "x") =&gt; "aaxxcc"</pre>
 </div>
-<div class="entry" id="e3" data-name="string-split">
+<div class="entry" id="e3" data-name="string-replace-all-regex">
+  <div class="entry-name">string-replace-all-regex</div>
+  <pre class="entry-doc">Syntax: (string-replace-all-regex s pattern replacement)
+Library: (scm string)
+Description: Returns a new string with all matches of the regular expression pattern in s replaced by replacement. The replacement may refer to captured groups with ~0 (the whole match), ~1, ~2, ... (parenthesized groups). Use ~~ for a literal tilde. References to groups that did not participate in the match expand to the empty string.
+Example:
+  (string-replace-all-regex "hello world" "o" "0") =&gt; "hell0 w0rld"
+  (string-replace-all-regex "2024-01-31" "([0-9]+)-([0-9]+)-([0-9]+)" "~3.~2.~1") =&gt; "31.01.2024"
+  (string-replace-all-regex "abc123def456" "[0-9]+" "#") =&gt; "abc#def#"</pre>
+</div>
+<div class="entry" id="e4" data-name="string-split">
   <div class="entry-name">string-split</div>
   <pre class="entry-doc">Syntax: (string-split s pattern?)
 Library: (scm string)
@@ -195,7 +205,7 @@ Example:
   (string-split "a b c") =&gt; ("a" "b" "c")
   (string-split "a,b,c" ",") =&gt; ("a" "b" "c")</pre>
 </div>
-<div class="entry" id="e4" data-name="string-split-char">
+<div class="entry" id="e5" data-name="string-split-char">
   <div class="entry-name">string-split-char</div>
   <pre class="entry-doc">Syntax: (string-split-char s ch)
 Library: (scm string)
@@ -206,7 +216,7 @@ Example:
   (string-split-char "a,b,,c" #\,) =&gt; ("a" "b" "" "c")
   (string-split-char "" #\,) =&gt; ("")</pre>
 </div>
-<div class="entry" id="e5" data-name="string-split-lines">
+<div class="entry" id="e6" data-name="string-split-lines">
   <div class="entry-name">string-split-lines</div>
   <pre class="entry-doc">Syntax: (string-split-lines s)
 Library: (scm string)
@@ -216,7 +226,7 @@ Example:
   (string-split-lines "a\nb\n") =&gt; ("a" "b" "")
   (string-split-lines "a\r\nb") =&gt; ("a" "b")</pre>
 </div>
-<div class="entry" id="e6" data-name="string-split-vector">
+<div class="entry" id="e7" data-name="string-split-vector">
   <div class="entry-name">string-split-vector</div>
   <pre class="entry-doc">Syntax: (string-split-vector s pattern?)
 Library: (scm string)
@@ -225,7 +235,7 @@ Example:
   (string-split-vector "a b c") =&gt; #("a" "b" "c")
   (string-split-vector "a,b,c" ",") =&gt; #("a" "b" "c")</pre>
 </div>
-<div class="entry" id="e7" data-name="symbol-starts-with?">
+<div class="entry" id="e8" data-name="symbol-starts-with?">
   <div class="entry-name">symbol-starts-with?</div>
   <pre class="entry-doc">Syntax: (symbol-starts-with? sym str)
 Library: (scm string)

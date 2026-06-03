@@ -406,6 +406,7 @@ public class Primitives
         Bind(new PrimitiveStringPrefixP());
         Bind(new PrimitiveStringRef());
         Bind(new PrimitiveStringReplace());
+        Bind(new PrimitiveStringReplaceRegex());
         Bind(new PrimitiveStringSetB());
         Bind(new PrimitiveStringSplit());
         Bind(new PrimitiveStringSplitVector());

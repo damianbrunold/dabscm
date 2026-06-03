@@ -76,6 +76,18 @@ Example:
   (string-replace-all "aabbcc" "b" "x") => "aaxxcc"
 ```
 
+### `string-replace-all-regex`
+
+```
+Syntax: (string-replace-all-regex s pattern replacement)
+Library: (scm string)
+Description: Returns a new string with all matches of the regular expression pattern in s replaced by replacement. The replacement may refer to captured groups with ~0 (the whole match), ~1, ~2, ... (parenthesized groups). Use ~~ for a literal tilde. References to groups that did not participate in the match expand to the empty string.
+Example:
+  (string-replace-all-regex "hello world" "o" "0") => "hell0 w0rld"
+  (string-replace-all-regex "2024-01-31" "([0-9]+)-([0-9]+)-([0-9]+)" "~3.~2.~1") => "31.01.2024"
+  (string-replace-all-regex "abc123def456" "[0-9]+" "#") => "abc#def#"
+```
+
 ### `string-split`
 
 ```

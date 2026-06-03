@@ -414,6 +414,7 @@ public class Primitives {
         bind(new PrimitiveStringPrefixP());
         bind(new PrimitiveStringRef());
         bind(new PrimitiveStringReplace());
+        bind(new PrimitiveStringReplaceRegex());
         bind(new PrimitiveStringSetB());
         bind(new PrimitiveStringSplit());
         bind(new PrimitiveStringSplitVector());

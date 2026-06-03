@@ -110,6 +110,16 @@
   (=> (string-matches "2024-03-15" "([0-9]+)-([0-9]+)-([0-9]+)") '("2024-03-15" "2024" "03" "15")))
 
 (test-group
+  (=> ; string-replace-all-regex
+  (string-replace-all-regex "hello world" "o" "0") "hell0 w0rld")
+  (=> (string-replace-all-regex "abc123def456" "[0-9]+" "#") "abc#def#")
+  (=> (string-replace-all-regex "2024-01-31" "([0-9]+)-([0-9]+)-([0-9]+)" "~3.~2.~1") "31.01.2024")
+  (=> (string-replace-all-regex "John Smith" "([a-z]+) ([a-z]+)" "~2 ~1") "John Smith")
+  (=> (string-replace-all-regex "John Smith" "([A-Za-z]+) ([A-Za-z]+)" "~2, ~1") "Smith, John")
+  (=> (string-replace-all-regex "a-b" "(a)-(b)" "~1~~~2") "a~b")
+  (=> (string-replace-all-regex "no match here" "xyz" "Q") "no match here"))
+
+(test-group
   (=> (string-split-vector "a b c") '#("a" "b" "c")))
 
 (test-group
