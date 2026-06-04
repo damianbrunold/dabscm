@@ -49,10 +49,28 @@
 (test-group "parse-markdown: lists"
   (test-equal '((bullet-list (item "one") (item "two")))
               (parse-markdown "- one\n- two"))
+  ;; *, + and - are all accepted bullet markers
+  (test-equal '((bullet-list (item "a") (item "b")))
+              (parse-markdown "* a\n+ b"))
   (test-equal '((ordered-list 1 (item "a") (item "b")))
               (parse-markdown "1. a\n2. b"))
   (test-equal '((ordered-list 3 (item "x")))
               (parse-markdown "3. x")))
+
+(test-group "parse-markdown: nested lists"
+  ;; a deeper-indented bullet starts a sub-list under the item above it
+  (test-equal '((bullet-list
+                  (item "a" (bullet-list (item "b") (item "c")))
+                  (item "d")))
+              (parse-markdown "- a\n  - b\n  - c\n- d"))
+  ;; an ordered sub-list nested under a bullet item
+  (test-equal '((bullet-list
+                  (item "a" (ordered-list 1 (item "x") (item "y")))))
+              (parse-markdown "- a\n  1. x\n  2. y"))
+  ;; three levels deep
+  (test-equal '((bullet-list
+                  (item "a" (bullet-list (item "b" (bullet-list (item "c")))))))
+              (parse-markdown "- a\n  - b\n    - c")))
 
 (test-group "parse-markdown: fenced code"
   (test-equal '((code-block "scheme" "(+ 1 2)"))
@@ -78,7 +96,20 @@
   (test-equal "<ul>\n<li>a</li>\n<li>b</li>\n</ul>"
               (markdown->html "- a\n- b"))
   (test-equal "<ol start=\"2\">\n<li>x</li>\n</ol>"
-              (markdown->html "2. x")))
+              (markdown->html "2. x"))
+  ;; a nested sub-list is rendered inside its parent <li>
+  (test-equal
+    "<ul>\n<li>a\n<ul>\n<li>b</li>\n<li>c</li>\n</ul>\n</li>\n<li>d</li>\n</ul>"
+    (markdown->html "- a\n  - b\n  - c\n- d")))
+
+(test-group "markdown->html: unsafe links dropped"
+  ;; javascript:/data: schemes are stripped; only the text survives
+  (test-equal "<p>t</p>" (markdown->html "[t](javascript:x)"))
+  (test-equal "<p>t</p>" (markdown->html "[t](data:text/html,x)"))
+  ;; safe schemes and relative URLs are kept
+  (test-equal "<p><a href=\"/a\">t</a></p>" (markdown->html "[t](/a)"))
+  (test-equal "<p><a href=\"mailto:a@b\">t</a></p>"
+              (markdown->html "[t](mailto:a@b)")))
 
 (test-group "markdown->html: inline"
   (test-equal "<p>a <strong>b</strong> c</p>" (markdown->html "a **b** c"))

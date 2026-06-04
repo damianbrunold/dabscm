@@ -19,6 +19,8 @@
     ;;   - blockquotes             > ... (parsed recursively)
     ;;   - bullet lists            -, *, + markers
     ;;   - ordered lists           1. / 1) markers
+    ;;   - nested lists            by indentation (a deeper-indented item
+    ;;                             starts a sub-list under the item above it)
     ;;   - thematic breaks         ---  ***  ___
     ;;   - paragraphs              (soft line breaks join with a space)
     ;;
@@ -26,13 +28,16 @@
     ;;   - code spans              `code` (and ``code with ` inside``)
     ;;   - strong                  **text**  __text__
     ;;   - emphasis                *text*    _text_
-    ;;   - links                   [text](url)
+    ;;   - links                   [text](url) — URLs with an unsafe scheme
+    ;;                             (javascript:, data:, ...) are dropped and
+    ;;                             only the link text is rendered
     ;;   - backslash escapes       \* \_ \` \[ ...
     ;;
     ;; Not supported (by design — keep it small): setext headings,
-    ;; reference links, images, raw HTML, tables, nested lists, and the
-    ;; full CommonMark emphasis flanking rules (a pragmatic approximation
-    ;; is used; intraword underscores are treated as literal text).
+    ;; reference links, images, raw HTML, tables, and the full CommonMark
+    ;; emphasis flanking rules (a pragmatic approximation is used; intraword
+    ;; underscores are treated as literal text). Blank lines terminate a
+    ;; list, so only "tight" lists are produced.
     ;;
     ;; AST shape:
     ;;   block  = (heading <level> <inline> ...)
@@ -42,7 +47,8 @@
     ;;          | (bullet-list <item> ...)
     ;;          | (ordered-list <start> <item> ...)
     ;;          | (thematic-break)
-    ;;   item   = (item <inline> ...)
+    ;;   item   = (item <inline> ... <list-block> ...)  ; trailing sub-lists
+    ;;            where <list-block> is a (bullet-list ...) / (ordered-list ...)
     ;;   inline = <string>                       ; literal text
     ;;          | (strong <inline> ...)
     ;;          | (emph   <inline> ...)
@@ -63,6 +69,19 @@
           (if (and (< i n) (ws? (string-ref s i)))
               (loop (+ i 1))
               (substring s i n)))))
+
+    (define (line-indent line)
+      ;; Number of leading-whitespace columns; a tab advances to the next
+      ;; multiple of 4. Used to decide list nesting depth.
+      (let ((n (string-length line)))
+        (let loop ((i 0) (col 0))
+          (if (< i n)
+              (let ((c (string-ref line i)))
+                (cond
+                  ((char=? c #\space) (loop (+ i 1) (+ col 1)))
+                  ((char=? c #\tab) (loop (+ i 1) (+ col (- 4 (modulo col 4)))))
+                  (else col)))
+              col))))
 
     (define (blank-line? line)
       (string-every (lambda (c) (char-whitespace? c)) line))
@@ -287,6 +306,15 @@
                    (cons (string->number (substring l 0 i))
                          (string-trim-both (substring l (+ i 2) n))))))))
 
+    (define (list-item line)
+      ;; (type content start-num indent), where type is 'bullet or 'ordered
+      ;; and start-num is #f for bullets; or #f when line is not a list item.
+      (let ((o (ordered-content line)))
+        (if o
+            (list 'ordered (cdr o) (car o) (line-indent line))
+            (let ((b (bullet-content line)))
+              (and b (list 'bullet b #f (line-indent line)))))))
+
     (define (block-start? line)
       (or (blank-line? line)
           (thematic-break? line)
@@ -355,19 +383,34 @@ Example:
                   i))))
 
     (define (collect-list lines n start)
-      (let ((ordered (and (ordered-content (vector-ref lines start)) #t)))
+      ;; Parse one list whose items share the indentation of lines[start].
+      ;; A line indented deeper than this level begins a nested list that
+      ;; hangs off the item above it; a shallower or non-item line ends the
+      ;; list. Returns (list-node . next-index).
+      (let* ((first (list-item (vector-ref lines start)))
+             (level (list-ref first 3))
+             (ordered (eq? (car first) 'ordered)))
         (let loop ((i start) (items '()) (start-num #f))
-          (if (>= i n)
-              (cons (finish-list ordered (reverse items) start-num) i)
-              (let* ((line (vector-ref lines i))
-                     (b (and (not ordered) (bullet-content line)))
-                     (o (and ordered (ordered-content line))))
-                (cond
-                  (b (loop (+ i 1) (cons (cons 'item (parse-inlines b)) items) start-num))
-                  (o (loop (+ i 1)
-                           (cons (cons 'item (parse-inlines (cdr o))) items)
-                           (or start-num (car o))))
-                  (else (cons (finish-list ordered (reverse items) start-num) i))))))))
+          (let ((it (and (< i n) (list-item (vector-ref lines i)))))
+            (if (and it
+                     (eq? (eq? (car it) 'ordered) ordered)
+                     (= (list-ref it 3) level))
+                ;; A sibling item at this level. Consume it, then absorb any
+                ;; deeper-indented lines that follow as nested child lists.
+                (let ((content (cadr it))
+                      (num (caddr it)))
+                  (let gather ((j (+ i 1)) (children '()))
+                    (let ((nx (and (< j n) (list-item (vector-ref lines j)))))
+                      (if (and nx (> (list-ref nx 3) level))
+                          (let ((sub (collect-list lines n j)))
+                            (gather (cdr sub) (cons (car sub) children)))
+                          (loop j
+                                (cons (cons 'item
+                                            (append (parse-inlines content)
+                                                    (reverse children)))
+                                      items)
+                                (or start-num num))))))
+                (cons (finish-list ordered (reverse items) start-num) i))))))
 
     (define (finish-list ordered items start-num)
       (if ordered
@@ -408,6 +451,32 @@ Example:
           s)
         (get-output-string out)))
 
+    (define (url-has-foreign-scheme? u)
+      ;; #t when a ':' appears before the first '/', '?' or '#' — i.e. the
+      ;; URL carries an explicit scheme rather than being relative.
+      (let ((n (string-length u)))
+        (let loop ((i 0))
+          (and (< i n)
+               (let ((c (string-ref u i)))
+                 (cond
+                   ((char=? c #\:) #t)
+                   ((or (char=? c #\/) (char=? c #\?) (char=? c #\#)) #f)
+                   (else (loop (+ i 1)))))))))
+
+    (define (safe-url? raw)
+      ;; Allow http(s), mailto, tel, ftp and scheme-less (relative) URLs.
+      ;; Everything else — javascript:, data:, vbscript:, ... — is rejected
+      ;; so markdown->html stays XSS-safe on untrusted input.
+      (let* ((u (string-trim-both raw))
+             (lc (string-downcase u)))
+        (and (> (string-length u) 0)
+             (or (string-prefix? "http://" lc)
+                 (string-prefix? "https://" lc)
+                 (string-prefix? "mailto:" lc)
+                 (string-prefix? "tel:" lc)
+                 (string-prefix? "ftp://" lc)
+                 (not (url-has-foreign-scheme? u))))))
+
     (define (render-inline node)
       (cond
         ((string? node) (esc-text node))
@@ -416,8 +485,13 @@ Example:
            ((strong) (string-append "<strong>" (render-inlines (cdr node)) "</strong>"))
            ((emph)   (string-append "<em>" (render-inlines (cdr node)) "</em>"))
            ((code)   (string-append "<code>" (esc-text (cadr node)) "</code>"))
-           ((link)   (string-append "<a href=\"" (esc-attr (caddr node)) "\">"
-                                    (render-inlines (cadr node)) "</a>"))
+           ((link)
+            (let ((url (caddr node)))
+              (if (safe-url? url)
+                  (string-append "<a href=\"" (esc-attr url) "\">"
+                                 (render-inlines (cadr node)) "</a>")
+                  ;; Unsafe scheme: drop the anchor, keep the text.
+                  (render-inlines (cadr node)))))
            (else "")))
         (else "")))
 
@@ -452,9 +526,31 @@ Example:
         ((thematic-break) "<hr>")
         (else "")))
 
+    (define (inline-node? x)
+      (or (string? x)
+          (and (pair? x) (memq (car x) '(strong emph code link)))))
+
+    (define (split-leading-inlines nodes)
+      ;; An item's children are its inline content followed by any nested
+      ;; list blocks. Split at the first block node.
+      (let loop ((ns nodes) (inl '()))
+        (if (and (pair? ns) (inline-node? (car ns)))
+            (loop (cdr ns) (cons (car ns) inl))
+            (values (reverse inl) ns))))
+
     (define (render-items items)
       (apply string-append
-             (map (lambda (it) (string-append "<li>" (render-inlines (cdr it)) "</li>\n"))
+             (map (lambda (it)
+                    (call-with-values
+                      (lambda () (split-leading-inlines (cdr it)))
+                      (lambda (inlines blocks)
+                        (string-append
+                          "<li>"
+                          (render-inlines inlines)
+                          (if (null? blocks)
+                              ""
+                              (string-append "\n" (render-blocks blocks) "\n"))
+                          "</li>\n"))))
                   items)))
 
     (define (render-blocks blocks)
