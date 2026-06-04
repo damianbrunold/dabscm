@@ -34,30 +34,31 @@
   <a href="#e9" data-name="pkill">pkill</a>
   <a href="#e10" data-name="process-alive?">process-alive?</a>
   <a href="#e11" data-name="process-kill">process-kill</a>
-  <a href="#e12" data-name="process-pid">process-pid</a>
-  <a href="#e13" data-name="process-wait">process-wait</a>
-  <a href="#e14" data-name="ps">ps</a>
-  <a href="#e15" data-name="ps-info">ps-info</a>
-  <a href="#e16" data-name="run">run</a>
-  <a href="#e17" data-name="run!">run!</a>
-  <a href="#e18" data-name="run-parallel">run-parallel</a>
-  <a href="#e19" data-name="run-program">run-program</a>
-  <a href="#e20" data-name="run-program/capture">run-program/capture</a>
-  <a href="#e21" data-name="run?">run?</a>
-  <a href="#e22" data-name="sh">sh</a>
-  <a href="#e23" data-name="sh-lines">sh-lines</a>
-  <a href="#e24" data-name="shell-quote">shell-quote</a>
-  <a href="#e25" data-name="sleep">sleep</a>
-  <a href="#e26" data-name="start-program">start-program</a>
-  <a href="#e27" data-name="sys-machine-name">sys-machine-name</a>
-  <a href="#e28" data-name="sys-num-cpu-cores">sys-num-cpu-cores</a>
-  <a href="#e29" data-name="sys-os-version">sys-os-version</a>
-  <a href="#e30" data-name="sys-platform">sys-platform</a>
-  <a href="#e31" data-name="sys-scm-technology">sys-scm-technology</a>
-  <a href="#e32" data-name="sys-scm-version">sys-scm-version</a>
-  <a href="#e33" data-name="sys-user-name">sys-user-name</a>
-  <a href="#e34" data-name="uuidgen">uuidgen</a>
-  <a href="#e35" data-name="watch">watch</a>
+  <a href="#e12" data-name="process-kill-on-exit">process-kill-on-exit</a>
+  <a href="#e13" data-name="process-pid">process-pid</a>
+  <a href="#e14" data-name="process-wait">process-wait</a>
+  <a href="#e15" data-name="ps">ps</a>
+  <a href="#e16" data-name="ps-info">ps-info</a>
+  <a href="#e17" data-name="run">run</a>
+  <a href="#e18" data-name="run!">run!</a>
+  <a href="#e19" data-name="run-parallel">run-parallel</a>
+  <a href="#e20" data-name="run-program">run-program</a>
+  <a href="#e21" data-name="run-program/capture">run-program/capture</a>
+  <a href="#e22" data-name="run?">run?</a>
+  <a href="#e23" data-name="sh">sh</a>
+  <a href="#e24" data-name="sh-lines">sh-lines</a>
+  <a href="#e25" data-name="shell-quote">shell-quote</a>
+  <a href="#e26" data-name="sleep">sleep</a>
+  <a href="#e27" data-name="start-program">start-program</a>
+  <a href="#e28" data-name="sys-machine-name">sys-machine-name</a>
+  <a href="#e29" data-name="sys-num-cpu-cores">sys-num-cpu-cores</a>
+  <a href="#e30" data-name="sys-os-version">sys-os-version</a>
+  <a href="#e31" data-name="sys-platform">sys-platform</a>
+  <a href="#e32" data-name="sys-scm-technology">sys-scm-technology</a>
+  <a href="#e33" data-name="sys-scm-version">sys-scm-version</a>
+  <a href="#e34" data-name="sys-user-name">sys-user-name</a>
+  <a href="#e35" data-name="uuidgen">uuidgen</a>
+  <a href="#e36" data-name="watch">watch</a>
 </nav>
 
 <main>
@@ -86,12 +87,12 @@
 <pre><code class="language-scheme">(get-environment-variable "HOME")
 (env-list)            ;; all environment variables
 (ps)                  ;; process list</code></pre>
-<p><a class="xref" href="#e18"><code>run-parallel</code></a> maps a procedure over inputs using threads:</p>
+<p><a class="xref" href="#e19"><code>run-parallel</code></a> maps a procedure over inputs using threads:</p>
 <pre><code class="language-scheme">(run-parallel (lambda (x) (* x x)) '(1 2 3 4))   ;; =&gt; (1 4 9 16)</code></pre>
 <p><a class="xref" href="#e4"><code>getopt</code></a> parses command-line option lists; see also the higher-level <a class="xref" href="scm-args.html"><code>(scm args)</code></a>.</p>
 </div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
-<p class="export-count">36 bindings</p>
+<p class="export-count">37 bindings</p>
 
 <div class="entry" id="e0" data-name="current-pid">
   <div class="entry-name">current-pid</div>
@@ -216,7 +217,16 @@ Example:
   (process-kill p)        ; graceful where supported
   (process-kill p #t)     ; force</pre>
 </div>
-<div class="entry" id="e12" data-name="process-pid">
+<div class="entry" id="e12" data-name="process-kill-on-exit">
+  <div class="entry-name">process-kill-on-exit</div>
+  <pre class="entry-doc">Syntax: (process-kill-on-exit handle)
+Library: (scm system)
+Description: Registers a process started by start-program to be killed forcefully when this (parent) process exits, via a JVM shutdown hook fired on SIGINT, SIGTERM, SIGHUP and normal exit. Prevents orphaned children — e.g. a dev supervisor's server child left holding a port after the supervisor is stopped. Already-exited handles are pruned, so the registry stays bounded across repeated restarts. Returns #t.
+Example:
+  (define p (start-program '("scm" "server.scm")))
+  (process-kill-on-exit p)</pre>
+</div>
+<div class="entry" id="e13" data-name="process-pid">
   <div class="entry-name">process-pid</div>
   <pre class="entry-doc">Syntax: (process-pid handle)
 Library: (scm system)
@@ -224,7 +234,7 @@ Description: Returns the OS process id of a process handle returned by start-pro
 Example:
   (process-pid p) =&gt; 12345</pre>
 </div>
-<div class="entry" id="e13" data-name="process-wait">
+<div class="entry" id="e14" data-name="process-wait">
   <div class="entry-name">process-wait</div>
   <pre class="entry-doc">Syntax: (process-wait handle [timeout-ms])
 Library: (scm system)
@@ -233,7 +243,7 @@ Example:
   (process-wait p)            =&gt; 0
   (process-wait p 5000)       =&gt; 0 or #f</pre>
 </div>
-<div class="entry" id="e14" data-name="ps">
+<div class="entry" id="e15" data-name="ps">
   <div class="entry-name">ps</div>
   <pre class="entry-doc">Syntax: (ps)
 Library: (scm system)
@@ -250,7 +260,7 @@ Description: Returns a list of alists describing the processes currently
 Example:
   (length (ps)) =&gt; 312</pre>
 </div>
-<div class="entry" id="e15" data-name="ps-info">
+<div class="entry" id="e16" data-name="ps-info">
   <div class="entry-name">ps-info</div>
   <pre class="entry-doc">Syntax: (ps-info pid)
 Library: (scm system)
@@ -260,7 +270,7 @@ Description: Returns an alist describing the process with the given pid,
 Example:
   (cdr (assq 'command (ps-info (current-pid)))) =&gt; "scm"</pre>
 </div>
-<div class="entry" id="e16" data-name="run">
+<div class="entry" id="e17" data-name="run">
   <div class="entry-name">run</div>
   <pre class="entry-doc">Syntax: (run prog arg ...)
 Library: (scm system)
@@ -269,7 +279,7 @@ Description: Varargs wrapper around run-program. Runs the external program
 Example:
   (run "echo" "hello") =&gt; 0</pre>
 </div>
-<div class="entry" id="e17" data-name="run!">
+<div class="entry" id="e18" data-name="run!">
   <div class="entry-name">run!</div>
   <pre class="entry-doc">Syntax: (run! prog arg ...)
 Library: (scm system)
@@ -278,7 +288,7 @@ Description: Like run, but raises an error when the program exits non-zero
 Example:
   (run! "true") =&gt; 0</pre>
 </div>
-<div class="entry" id="e18" data-name="run-parallel">
+<div class="entry" id="e19" data-name="run-parallel">
   <div class="entry-name">run-parallel</div>
   <pre class="entry-doc">Syntax: (run-parallel fn values)
 Library: (scm system)
@@ -288,7 +298,7 @@ Description: Runs fn in parallel over each element of values using one thread pe
 Example:
   (run-parallel (lambda (x) (* x x)) '(1 2 3 4)) =&gt; (1 4 9 16)</pre>
 </div>
-<div class="entry" id="e19" data-name="run-program">
+<div class="entry" id="e20" data-name="run-program">
   <div class="entry-name">run-program</div>
   <pre class="entry-doc">Syntax: (run-program cmd)
 Library: (scm system)
@@ -296,7 +306,7 @@ Description: Executes the external program specified as a list (program arg1 arg
 Example:
   (run-program '("echo" "hello")) =&gt; 0</pre>
 </div>
-<div class="entry" id="e20" data-name="run-program/capture">
+<div class="entry" id="e21" data-name="run-program/capture">
   <div class="entry-name">run-program/capture</div>
   <pre class="entry-doc">Syntax: (run-program/capture cmd [options])
 Library: (scm system)
@@ -304,7 +314,7 @@ Description: Executes the external program specified as a list (program arg1 arg
 Example:
   (run-program/capture '("echo" "hello")) =&gt; (0 "hello\n" "")</pre>
 </div>
-<div class="entry" id="e21" data-name="run?">
+<div class="entry" id="e22" data-name="run?">
   <div class="entry-name">run?</div>
   <pre class="entry-doc">Syntax: (run? prog arg ...)
 Library: (scm system)
@@ -313,7 +323,7 @@ Description: Returns #t when the program exits with status 0, #f otherwise.
 Example:
   (run? "test" "-f" "/etc/hosts") =&gt; #t</pre>
 </div>
-<div class="entry" id="e22" data-name="sh">
+<div class="entry" id="e23" data-name="sh">
   <div class="entry-name">sh</div>
   <pre class="entry-doc">Syntax: (sh prog arg ...)
 Library: (scm system)
@@ -322,7 +332,7 @@ Description: Runs the program and returns its captured stdout as a string.
 Example:
   (sh "date" "+%Y") =&gt; "2026\n"</pre>
 </div>
-<div class="entry" id="e23" data-name="sh-lines">
+<div class="entry" id="e24" data-name="sh-lines">
   <div class="entry-name">sh-lines</div>
   <pre class="entry-doc">Syntax: (sh-lines prog arg ...)
 Library: (scm system)
@@ -331,7 +341,7 @@ Description: Like sh but returns stdout split into a list of lines
 Example:
   (sh-lines "ls" "/tmp") =&gt; ("file1" "file2")</pre>
 </div>
-<div class="entry" id="e24" data-name="shell-quote">
+<div class="entry" id="e25" data-name="shell-quote">
   <div class="entry-name">shell-quote</div>
   <pre class="entry-doc">Syntax: (shell-quote s)
 Library: (scm system)
@@ -341,7 +351,7 @@ Description: Returns s quoted such that it can be safely passed as a single
 Example:
   (shell-quote "it's fine") =&gt; "'it'\\''s fine'"</pre>
 </div>
-<div class="entry" id="e25" data-name="sleep">
+<div class="entry" id="e26" data-name="sleep">
   <div class="entry-name">sleep</div>
   <pre class="entry-doc">Syntax: (sleep seconds)
 Library: (scm system)
@@ -351,7 +361,7 @@ Description: Pauses the current thread for the given number of seconds
 Example:
   (sleep 1.5)</pre>
 </div>
-<div class="entry" id="e26" data-name="start-program">
+<div class="entry" id="e27" data-name="start-program">
   <div class="entry-name">start-program</div>
   <pre class="entry-doc">Syntax: (start-program cmd-and-args [options])
 Library: (scm system)
@@ -361,7 +371,7 @@ Example:
   (process-kill p)
   (process-wait p)</pre>
 </div>
-<div class="entry" id="e27" data-name="sys-machine-name">
+<div class="entry" id="e28" data-name="sys-machine-name">
   <div class="entry-name">sys-machine-name</div>
   <pre class="entry-doc">Syntax: (sys-machine-name)
 Library: (scm system)
@@ -369,7 +379,7 @@ Description: Returns the hostname of the current machine as a string.
 Example:
   (sys-machine-name) =&gt; "myhost"</pre>
 </div>
-<div class="entry" id="e28" data-name="sys-num-cpu-cores">
+<div class="entry" id="e29" data-name="sys-num-cpu-cores">
   <div class="entry-name">sys-num-cpu-cores</div>
   <pre class="entry-doc">Syntax: (sys-num-cpu-cores)
 Library: (scm system)
@@ -377,7 +387,7 @@ Description: Returns the number of logical CPU cores available to the current pr
 Example:
   (sys-num-cpu-cores) =&gt; 8</pre>
 </div>
-<div class="entry" id="e29" data-name="sys-os-version">
+<div class="entry" id="e30" data-name="sys-os-version">
   <div class="entry-name">sys-os-version</div>
   <pre class="entry-doc">Syntax: (sys-os-version)
 Library: (scm system)
@@ -385,7 +395,7 @@ Description: Returns a list describing the operating system: (platform version-s
 Example:
   (sys-os-version) =&gt; (linux "Unix 5.15.0.0" 5 15 "")</pre>
 </div>
-<div class="entry" id="e30" data-name="sys-platform">
+<div class="entry" id="e31" data-name="sys-platform">
   <div class="entry-name">sys-platform</div>
   <pre class="entry-doc">Syntax: (sys-platform)
 Library: (scm system)
@@ -393,7 +403,7 @@ Description: Returns a symbol identifying the current operating system platform:
 Example:
   (sys-platform) =&gt; linux</pre>
 </div>
-<div class="entry" id="e31" data-name="sys-scm-technology">
+<div class="entry" id="e32" data-name="sys-scm-technology">
   <div class="entry-name">sys-scm-technology</div>
   <pre class="entry-doc">Syntax: (sys-scm-technology)
 Library: (scm system)
@@ -401,7 +411,7 @@ Description: Returns a symbol identifying the SCM implementation technology: csh
 Example:
   (sys-scm-technology) =&gt; java</pre>
 </div>
-<div class="entry" id="e32" data-name="sys-scm-version">
+<div class="entry" id="e33" data-name="sys-scm-version">
   <div class="entry-name">sys-scm-version</div>
   <pre class="entry-doc">Syntax: (sys-scm-version)
 Library: (scm system)
@@ -409,7 +419,7 @@ Description: Returns the SCM interpreter version as a string.
 Example:
   (sys-scm-version) =&gt; "0.0.1"</pre>
 </div>
-<div class="entry" id="e33" data-name="sys-user-name">
+<div class="entry" id="e34" data-name="sys-user-name">
   <div class="entry-name">sys-user-name</div>
   <pre class="entry-doc">Syntax: (sys-user-name)
 Library: (scm system)
@@ -417,7 +427,7 @@ Description: Returns the name of the currently logged-in user as a string.
 Example:
   (sys-user-name) =&gt; "alice"</pre>
 </div>
-<div class="entry" id="e34" data-name="uuidgen">
+<div class="entry" id="e35" data-name="uuidgen">
   <div class="entry-name">uuidgen</div>
   <pre class="entry-doc">Syntax: (uuidgen)
 Library: (scm system)
@@ -427,7 +437,7 @@ Description: Returns a random RFC 4122 version 4 UUID as a string in
 Example:
   (uuidgen) =&gt; "e3b0c442-98fc-4c14-9afb-f4ca495991b9"</pre>
 </div>
-<div class="entry" id="e35" data-name="watch">
+<div class="entry" id="e36" data-name="watch">
   <div class="entry-name">watch</div>
   <pre class="entry-doc">Syntax: (watch thunk [option ...])
 Library: (scm system)

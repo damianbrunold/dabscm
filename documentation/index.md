@@ -104,6 +104,7 @@
 | [`(scm profiling)`](libraries/scm-profiling.md) | Execution profiling and performance measurement |
 | [`(scm qr)`](libraries/scm-qr.md) | QR code encoding — PNG, SVG, and ASCII output |
 | [`(scm random access)`](libraries/scm-random-access.md) | Random-access file I/O — seek, read, write, truncate |
+| [`(scm reloader)`](libraries/scm-reloader.md) |  |
 | [`(scm repl)`](libraries/scm-repl.md) | REPL support — completions, syntax info, core form names |
 | [`(scm store)`](libraries/scm-store.md) | Immutable on-disk indexed record store |
 | [`(scm string)`](libraries/scm-string.md) | Extended string operations — search, split, trim, convert |

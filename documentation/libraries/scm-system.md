@@ -185,6 +185,17 @@ Example:
   (process-kill p #t)     ; force
 ```
 
+### `process-kill-on-exit`
+
+```
+Syntax: (process-kill-on-exit handle)
+Library: (scm system)
+Description: Registers a process started by start-program to be killed forcefully when this (parent) process exits, via a JVM shutdown hook fired on SIGINT, SIGTERM, SIGHUP and normal exit. Prevents orphaned children — e.g. a dev supervisor's server child left holding a port after the supervisor is stopped. Already-exited handles are pruned, so the registry stays bounded across repeated restarts. Returns #t.
+Example:
+  (define p (start-program '("scm" "server.scm")))
+  (process-kill-on-exit p)
+```
+
 ### `process-pid`
 
 ```

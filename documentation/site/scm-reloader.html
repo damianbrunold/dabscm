@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm reloader) — Dabscm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="toc">
+  <h2>Bindings</h2>
+  <a href="#e0" data-name="files-with-suffix">files-with-suffix</a>
+  <a href="#e1" data-name="supervise">supervise</a>
+</nav>
+
+<main>
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="index.html">All libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="index.html#sec-scm">Scm Extensions</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm reloader)</span>
+</nav>
+
+<div class="lib-title scm">(scm reloader)</div>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">2 bindings</p>
+
+<div class="entry" id="e0" data-name="files-with-suffix">
+  <div class="entry-name">files-with-suffix</div>
+  <pre class="entry-doc">Syntax: (files-with-suffix dir suffix)
+Library: (scm reloader)
+Description: Returns the immediate (non-recursive) entries of dir whose
+  name ends in suffix, each as a "dir/name" path string. Handy for
+  building a watch set, e.g. (files-with-suffix src-dir ".sld").
+Example:
+  (files-with-suffix "src" ".sld") =&gt; ("src/a.sld" "src/b.sld")</pre>
+</div>
+<div class="entry" id="e1" data-name="supervise">
+  <div class="entry-name">supervise</div>
+  <pre class="entry-doc">Syntax: (supervise command watch opts)
+Library: (scm reloader)
+Description: Runs a development supervisor loop forever. `command` is the
+  child argv as a list of strings (or a thunk returning one); `watch` is a
+  thunk returning the list of file paths to watch (re-evaluated each poll,
+  so newly added files are picked up); `opts` is an alist of options:
+    (label . str)               log prefix, shown as "[label]" (default "reloader")
+    (work-dir . str)            child working directory (default: inherit)
+    (root . str)                strip this prefix from logged paths (default: none)
+    (poll-interval . secs)      file poll cadence (default 0.5)
+    (debounce-interval . secs)  settle wait after a change (default 0.3)
+    (base-backoff-ticks . n)    first crash retry delay, in polls (default 2)
+    (max-backoff-ticks . n)     crash retry delay cap, in polls (default 20)
+    (healthy-ticks . n)         polls alive before the backoff resets (default 10)
+  The child is restarted immediately on any watched-file change, and
+  auto-retried on an exponential backoff if it exits on its own. Does not
+  return.
+Example:
+  (supervise (list "scm" "bin/server.scm" cfg)
+             (lambda () (cons cfg (files-with-suffix "src" ".sld")))
+             `((label . "dev-server") (work-dir . ,root) (root . ,root)))</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>
