@@ -14,6 +14,7 @@
           pkill
           process-alive?
           process-kill
+          process-kill-on-exit
           process-pid
           process-wait
           ps
@@ -48,6 +49,7 @@
     (define get-bytes (%primitive "get-bytes"))
     (define process-alive? (%primitive "process-alive?"))
     (define process-kill   (%primitive "process-kill"))
+    (define process-kill-on-exit (%primitive "process-kill-on-exit"))
     (define process-pid    (%primitive "process-pid"))
     (define process-wait   (%primitive "process-wait"))
     (define current-pid    (%primitive "current-pid"))

@@ -326,6 +326,7 @@ public class Primitives
         Bind(new PrimitiveProcedureDoc(modules));
         Bind(new PrimitiveProcessAliveQ());
         Bind(new PrimitiveProcessKill());
+        Bind(new PrimitiveProcessKillOnExit());
         Bind(new PrimitiveProcessNanosecond());
         Bind(new PrimitiveProcessPid());
         Bind(new PrimitiveProcessWait());

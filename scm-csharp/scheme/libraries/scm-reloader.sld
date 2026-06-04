@@ -129,11 +129,18 @@ Example:
           (display msg) (newline))
 
         (define (start-child)
-          (let ((argv (resolve-command command)))
-            (log (string-append "starting: " (join-with " " argv)))
-            (if work-dir
-                (start-program argv `((work-dir ,work-dir)))
-                (start-program argv '()))))
+          (let* ((argv (resolve-command command))
+                 (proc (begin
+                         (log (string-append "starting: " (join-with " " argv)))
+                         (if work-dir
+                             (start-program argv `((work-dir ,work-dir)))
+                             (start-program argv '())))))
+            ;; Ensure the child dies with us: if the supervisor is stopped
+            ;; (SIGINT/SIGTERM/SIGHUP/normal exit) it would otherwise orphan
+            ;; the child, leaving e.g. a server holding its port and breaking
+            ;; the next start with "Address already in use".
+            (process-kill-on-exit proc)
+            proc))
 
         (define (stop-child proc)
           (when (process-alive? proc)
