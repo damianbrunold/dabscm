@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm geiser) — Dabscm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="toc">
+  <h2>Bindings</h2>
+  <a href="#e0" data-name="geiser:add-to-load-path">geiser:add-to-load-path</a>
+  <a href="#e1" data-name="geiser:autodoc">geiser:autodoc</a>
+  <a href="#e2" data-name="geiser:completions">geiser:completions</a>
+  <a href="#e3" data-name="geiser:eval">geiser:eval</a>
+  <a href="#e4" data-name="geiser:load-file">geiser:load-file</a>
+  <a href="#e5" data-name="geiser:macroexpand">geiser:macroexpand</a>
+  <a href="#e6" data-name="geiser:module-completions">geiser:module-completions</a>
+  <a href="#e7" data-name="geiser:module-exports">geiser:module-exports</a>
+  <a href="#e8" data-name="geiser:module-location">geiser:module-location</a>
+  <a href="#e9" data-name="geiser:newline">geiser:newline</a>
+  <a href="#e10" data-name="geiser:no-values">geiser:no-values</a>
+  <a href="#e11" data-name="geiser:symbol-location">geiser:symbol-location</a>
+</nav>
+
+<main>
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="index.html">All libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="index.html#sec-scm">Scm Extensions</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm geiser)</span>
+</nav>
+
+<div class="lib-title scm">(scm geiser)</div>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">12 bindings</p>
+
+<div class="entry" id="e0" data-name="geiser:add-to-load-path">
+  <div class="entry-name">geiser:add-to-load-path</div>
+  <pre class="entry-doc">Syntax: (geiser:add-to-load-path directory)
+Library: (scm geiser)
+Description: Geiser protocol entry point. Prepends directory to the module
+search path.</pre>
+</div>
+<div class="entry" id="e1" data-name="geiser:autodoc">
+  <div class="entry-name">geiser:autodoc</div>
+  <pre class="entry-doc">Syntax: (geiser:autodoc ids)
+Library: (scm geiser)
+Description: Geiser protocol entry point for autodoc (echo-area signatures).
+Given a list of operator symbols, returns their argument descriptions derived
+from the documented Syntax: lines.
+Example:
+  (geiser:autodoc '(map))</pre>
+</div>
+<div class="entry" id="e2" data-name="geiser:completions">
+  <div class="entry-name">geiser:completions</div>
+  <pre class="entry-doc">Syntax: (geiser:completions prefix)
+Library: (scm geiser)
+Description: Geiser protocol entry point for identifier completion. Returns the
+list of names visible in the current module that start with prefix.
+Example:
+  (geiser:completions "ca") =&gt; ("caar" "cadr" "car" "case" ...)</pre>
+</div>
+<div class="entry" id="e3" data-name="geiser:eval">
+  <div class="entry-name">geiser:eval</div>
+  <pre class="entry-doc">Syntax: (geiser:eval module form)
+Library: (scm geiser)
+Description: Geiser protocol entry point. Evaluates form in the namespace of
+module (a library-name list, or #f for the REPL namespace) while capturing
+default output, and returns an association list of the form
+((result &lt;printed-value&gt;) (output . &lt;captured-output&gt;)) that the Geiser Emacs
+frontend reads back. Evaluation errors are reported in the result instead of
+being raised.
+Example:
+  (geiser:eval #f '(+ 1 2)) =&gt; ((result "3") (output . ""))</pre>
+</div>
+<div class="entry" id="e4" data-name="geiser:load-file">
+  <div class="entry-name">geiser:load-file</div>
+  <pre class="entry-doc">Syntax: (geiser:load-file path)
+Library: (scm geiser)
+Description: Geiser protocol entry point used when loading a file from Emacs.
+Loads path while capturing output and returns the same retort alist as
+geiser:eval.
+Example:
+  (geiser:load-file "foo.scm")</pre>
+</div>
+<div class="entry" id="e5" data-name="geiser:macroexpand">
+  <div class="entry-name">geiser:macroexpand</div>
+  <pre class="entry-doc">Syntax: (geiser:macroexpand form)
+Library: (scm geiser)
+Description: Geiser protocol entry point for macro expansion. Returns the fully
+expanded form rendered as a string.
+Example:
+  (geiser:macroexpand '(when #t 1)) =&gt; "(if #t (begin 1) )"</pre>
+</div>
+<div class="entry" id="e6" data-name="geiser:module-completions">
+  <div class="entry-name">geiser:module-completions</div>
+  <pre class="entry-doc">Syntax: (geiser:module-completions prefix)
+Library: (scm geiser)
+Description: Geiser protocol entry point for module-name completion. Returns the
+list of loaded module names (as written strings) starting with prefix.
+Example:
+  (geiser:module-completions "(scheme") =&gt; ("(scheme base)" ...)</pre>
+</div>
+<div class="entry" id="e7" data-name="geiser:module-exports">
+  <div class="entry-name">geiser:module-exports</div>
+  <pre class="entry-doc">Syntax: (geiser:module-exports module)
+Library: (scm geiser)
+Description: Geiser protocol entry point for the module browser. Returns the
+exported bindings of module grouped into procs/syntax/vars.</pre>
+</div>
+<div class="entry" id="e8" data-name="geiser:module-location">
+  <div class="entry-name">geiser:module-location</div>
+  <pre class="entry-doc">Syntax: (geiser:module-location module)
+Library: (scm geiser)
+Description: Geiser protocol entry point for jumping to a module definition. Not
+tracked in this implementation; always returns the empty list.</pre>
+</div>
+<div class="entry" id="e9" data-name="geiser:newline">
+  <div class="entry-name">geiser:newline</div>
+  <pre class="entry-doc">Syntax: (geiser:newline)
+Library: (scm geiser)
+Description: Geiser protocol entry point. Writes a newline to the current output
+port.</pre>
+</div>
+<div class="entry" id="e10" data-name="geiser:no-values">
+  <div class="entry-name">geiser:no-values</div>
+  <pre class="entry-doc">Syntax: (geiser:no-values)
+Library: (scm geiser)
+Description: Geiser protocol entry point representing the absence of a value.
+Returns an unspecified value.</pre>
+</div>
+<div class="entry" id="e11" data-name="geiser:symbol-location">
+  <div class="entry-name">geiser:symbol-location</div>
+  <pre class="entry-doc">Syntax: (geiser:symbol-location symbol)
+Library: (scm geiser)
+Description: Geiser protocol entry point for jumping to a definition. Per-symbol
+source locations are not tracked in this implementation, so this always returns
+the empty list (Geiser then reports no location).</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

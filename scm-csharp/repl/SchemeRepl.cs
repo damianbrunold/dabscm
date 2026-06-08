@@ -49,6 +49,29 @@ static class InteractiveRepl
         }
     }
 
+    // REPL loop for Emacs/Geiser. Unlike RunCooked, the prompt is always
+    // emitted (even when stdin is a pipe) because Geiser detects readiness by
+    // matching the "> " prompt, and results are written with their machine
+    // representation so Geiser can read the retort alist back.
+    public static void RunGeiser(Scheme scheme)
+    {
+        var stdin = new TextStream(Console.In, "{stdin}");
+        Console.Write("> "); Console.Out.Flush();
+        while (true)
+        {
+            try
+            {
+                var expr = scheme.Read(stdin);
+                if (expr.Equals(Value.EOF)) break;
+                var v = scheme.Eval(expr);
+                Console.WriteLine(Value.PrintRep(v));
+            }
+            catch (SchemeError e) { e.PrintStackTrace(); }
+            Console.Out.Flush();
+            Console.Write("> "); Console.Out.Flush();
+        }
+    }
+
     private static string? HistoryPath()
     {
         var custom = Environment.GetEnvironmentVariable("DABSCM_HISTORY");
@@ -75,7 +98,26 @@ class SchemeRepl
             {
                 args = args.Where(a => a != "--sysadmin").ToArray();
             }
+            bool geiser = args.Contains("--geiser");
+            if (geiser)
+            {
+                args = args.Where(a => a != "--geiser").ToArray();
+            }
             Scheme.CommandLineArgs = args;
+            if (geiser)
+            {
+                try
+                {
+                    var scheme = Scheme.ForRepl();
+                    scheme.EvalString("(import (scm geiser))", "{geiser}");
+                    InteractiveRepl.RunGeiser(scheme);
+                }
+                catch (SchemeError e)
+                {
+                    e.PrintStackTrace();
+                }
+                return 0;
+            }
             if (args.Length > 0 && (args[0] == "--version" || args[0] == "-v"))
             {
                 var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "unknown";

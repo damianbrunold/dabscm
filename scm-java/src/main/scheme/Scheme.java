@@ -281,6 +281,30 @@ public class Scheme implements IEvaluator {
         }
     }
 
+    // REPL loop for Emacs/Geiser. Unlike the cooked branch of repl(), the
+    // prompt is always emitted (even when stdin is a pipe) because Geiser
+    // detects readiness by matching the "> " prompt, and results are written
+    // with their machine representation so Geiser can read the retort back.
+    public void replGeiser() throws IOException {
+        System.out.print("> ");
+        System.out.flush();
+        TextStream in = new TextStream(new PushbackReader(new InputStreamReader(System.in)), "{stdin}");
+        while (true) {
+            try {
+                Object expr = read(in);
+                if (expr == Value.EOF) break;
+                Object value = eval(expr);
+                flushOutputPorts();
+                System.out.println(Value.printRep(value));
+            } catch (SchemeError e) {
+                e.printStackTrace();
+                flushOutputPorts();
+            }
+            System.out.print("> ");
+            System.out.flush();
+        }
+    }
+
     private void interactiveRepl(Terminal term) throws IOException {
         Path histFile = historyPath();
         History history = new History(histFile);
@@ -327,17 +351,32 @@ public class Scheme implements IEvaluator {
     public static void main(String... args) throws IOException {
         List<String> filteredArgs = new ArrayList<>();
         boolean sysadmin = false;
+        boolean geiser = false;
         for (String arg : args) {
             if (arg.equals("--strict")) {
                 strictImports = true;
             } else if (arg.equals("--sysadmin")) {
                 sysadmin = true;
+            } else if (arg.equals("--geiser")) {
+                geiser = true;
             } else {
                 filteredArgs.add(arg);
             }
         }
         args = filteredArgs.toArray(new String[0]);
         commandLineArgs = args;
+        if (geiser) {
+            try {
+                var scheme = Scheme.forRepl();
+                scheme.evalString("(import (scm geiser))", "{geiser}");
+                scheme.replGeiser();
+                scheme.flushOutputPorts();
+            } catch (SchemeError e) {
+                e.printStackTrace();
+            }
+            System.out.flush();
+            return;
+        }
         if (args.length > 0 && (args[0].equals("--version") || args[0].equals("-v"))) {
             try (var stream = Scheme.class.getResourceAsStream("/version.txt")) {
                 String version = stream != null ? new String(stream.readAllBytes()).trim() : "unknown";

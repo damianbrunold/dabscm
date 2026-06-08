@@ -69,6 +69,7 @@
 | [`(scm feed)`](libraries/scm-feed.md) | Atom and RSS 2.0 feed parsing |
 | [`(scm fs-find)`](libraries/scm-fs-find.md) | Filesystem traversal and reporting — find-file, tree, du, df, xargs |
 | [`(scm fs)`](libraries/scm-fs.md) | Filesystem operations — paths, directories, files |
+| [`(scm geiser)`](libraries/scm-geiser.md) |  |
 | [`(scm glob)`](libraries/scm-glob.md) | Filename globbing and pattern matching |
 | [`(scm html builder)`](libraries/scm-html-builder.md) | SXML-shaped HTML5 builder with automatic escaping |
 | [`(scm html)`](libraries/scm-html.md) | HTML escaping and tag stripping |
