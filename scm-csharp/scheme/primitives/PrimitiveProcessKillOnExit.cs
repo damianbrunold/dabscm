@@ -31,7 +31,9 @@ public class PrimitiveProcessKillOnExit : Primitive
     {
         foreach (var kv in Tracked)
         {
-            try { if (!kv.Value.HasExited) kv.Value.Kill(); } catch { }
+            // Tree-kill: the tracked handle is often a wrapper whose grandchild
+            // holds the port, and a plain Kill() spares descendants.
+            try { if (!kv.Value.HasExited) kv.Value.Kill(entireProcessTree: true); } catch { }
         }
     }
 

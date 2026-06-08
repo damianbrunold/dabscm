@@ -40,7 +40,9 @@ public class PrimitiveProcessKillOnExit extends Primitive {
         if (HOOK_INSTALLED.compareAndSet(false, true)) {
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 for (Process p : TRACKED) {
-                    try { if (p.isAlive()) p.destroyForcibly(); } catch (Exception ignored) {}
+                    // Tree-kill: the tracked handle is often a wrapper whose
+                    // grandchild holds the port (see ProcessUtil.destroyTree).
+                    try { if (p.isAlive()) ProcessUtil.destroyTree(p, true); } catch (Exception ignored) {}
                 }
             }));
         }

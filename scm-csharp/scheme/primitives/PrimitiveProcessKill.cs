@@ -42,7 +42,10 @@ public class PrimitiveProcessKill : Primitive
             else
             {
                 // Forceful — and the only option for console processes on Windows.
-                sp.process.Kill();
+                // Kill the whole tree: on Windows the child is often a wrapper
+                // (cmd.exe/scm.bat) whose grandchild holds the port, and a plain
+                // Kill() spares descendants, leaving the port bound.
+                sp.process.Kill(entireProcessTree: true);
             }
         }
         catch (InvalidOperationException) { /* already exited */ }

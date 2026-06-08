@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
 
 /**
  * Helpers for launching external programs in a way that matches the C#
@@ -19,6 +20,29 @@ import java.util.Locale;
  */
 final class ProcessUtil {
     private ProcessUtil() {}
+
+    /**
+     * Destroys a process and all of its descendants. Process.destroy() /
+     * destroyForcibly() terminate only the direct child; on Windows that child
+     * is often a wrapper (e.g. cmd.exe running scm.bat, which in turn spawns the
+     * real JVM/server as a grandchild), so killing it alone leaves the
+     * grandchild alive — still holding its listening port. The dev-server
+     * reloader then can't rebind on restart and spins forever. We snapshot the
+     * descendant handles *before* killing the parent, since the reported
+     * parent/child links are lost once the parent exits, then destroy each.
+     */
+    static void destroyTree(Process process, boolean force) {
+        List<ProcessHandle> descendants =
+            process.descendants().collect(Collectors.toList());
+        if (force) process.destroyForcibly();
+        else       process.destroy();
+        for (ProcessHandle h : descendants) {
+            try {
+                if (force) h.destroyForcibly();
+                else       h.destroy();
+            } catch (Exception ignored) {}
+        }
+    }
 
     static boolean isWindows() {
         return System.getProperty("os.name", "")

@@ -25,8 +25,10 @@ public class PrimitiveProcessKill extends Primitive {
         boolean force = arguments.length > 1 && arguments[1] != Value.F;
         if (!sp.process.isAlive()) return Value.T;
         try {
-            if (force) sp.process.destroyForcibly();
-            else       sp.process.destroy();
+            // Kill the whole process tree, not just the direct child: on Windows
+            // the child is often a wrapper (cmd.exe/scm.bat) whose grandchild
+            // holds the port, and Process.destroy() spares descendants.
+            ProcessUtil.destroyTree(sp.process, force);
         } catch (Exception ignored) {}
         return Value.T;
     }
