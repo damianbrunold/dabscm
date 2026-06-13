@@ -415,6 +415,9 @@ public class Primitives
         Bind(new PrimitiveStringToDateDays());
         Bind(new PrimitiveStringToDateSeconds());
         Bind(new PrimitiveStringToNumber());
+        Bind(new PrimitiveJsonSimpleToString());
+        Bind(new PrimitiveJsonSimpleToPrettyString());
+        Bind(new PrimitiveJsonSimpleParse());
         Bind(new PrimitiveStringToSymbol());
         Bind(new PrimitiveStringToUtf8());
         Bind(new PrimitiveStringUpcase());
