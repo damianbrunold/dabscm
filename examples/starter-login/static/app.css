@@ -1,0 +1,121 @@
+/* Theme tokens. Light is the default; dark overrides the same variables.
+   The OS preference is applied two ways: the inline <head> script sets
+   data-theme before first paint, and the @media block is the fallback
+   when JavaScript is disabled. */
+:root {
+  --bg: #ffffff;
+  --fg: #1a1a1a;
+  --muted: #666;
+  --border: #e2e2e2;
+  --row: #fafafa;
+  --card: #fbfbfb;
+  --accent: #2563eb;
+  --danger: #b91c1c;
+  --ok: #15803d;
+  color-scheme: light;
+}
+[data-theme="dark"] {
+  --bg: #16181d;
+  --fg: #e8e8e8;
+  --muted: #9aa0aa;
+  --border: #2c2f36;
+  --row: #1d2026;
+  --card: #1b1e24;
+  --accent: #6ea8fe;
+  --danger: #f87171;
+  --ok: #4ade80;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #16181d; --fg: #e8e8e8; --muted: #9aa0aa; --border: #2c2f36;
+    --row: #1d2026; --card: #1b1e24; --accent: #6ea8fe;
+    --danger: #f87171; --ok: #4ade80; color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: var(--fg);
+  background: var(--bg);
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+.app-header h1 { font-size: 1.25rem; margin: 0; }
+.app-header h1 a { color: inherit; text-decoration: none; }
+
+.nav { display: flex; align-items: center; gap: 1rem; }
+.nav a { color: var(--accent); text-decoration: none; }
+.nav a:hover { text-decoration: underline; }
+/* The username link is quieter than a regular nav link. */
+.nav a.who { color: var(--muted); }
+.nav a.who:hover { color: var(--accent); }
+
+.icon-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 2.25rem; height: 2.25rem; padding: 0;
+  color: var(--fg); background: transparent;
+  border: 1px solid var(--border); border-radius: 0.5rem; cursor: pointer;
+}
+.icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+.i-sun { display: none; }
+.i-moon { display: inline; }
+[data-theme="dark"] .i-sun { display: inline; }
+[data-theme="dark"] .i-moon { display: none; }
+
+main { max-width: 720px; margin: 2rem auto; padding: 0 1.25rem; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+}
+.narrow { max-width: 22rem; margin: 3rem auto; }
+
+form label { display: block; margin-bottom: 0.85rem; font-weight: 600; }
+form input {
+  display: block; width: 100%; margin-top: 0.25rem;
+  padding: 0.5rem 0.6rem; font: inherit;
+  color: var(--fg); background: var(--bg);
+  border: 1px solid var(--border); border-radius: 0.4rem;
+}
+form input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+button.primary {
+  margin-top: 0.5rem; padding: 0.55rem 1.1rem; font: inherit; font-weight: 600;
+  color: #fff; background: var(--accent);
+  border: 0; border-radius: 0.4rem; cursor: pointer;
+}
+button.primary:hover { filter: brightness(1.05); }
+
+/* Log out, separated from the password form at the bottom of the card. */
+.logout-form { margin-top: 1.25rem; padding-top: 1rem;
+  border-top: 1px solid var(--border); }
+.logout-form button { padding: 0.5rem 1.1rem; font: inherit; color: var(--fg);
+  background: transparent; border: 1px solid var(--border);
+  border-radius: 0.4rem; cursor: pointer; }
+.logout-form button:hover { border-color: var(--accent); color: var(--accent); }
+
+.notice { padding: 0.6rem 0.8rem; border-radius: 0.4rem; margin: 0 0 1rem; }
+.notice.error { color: var(--danger); border: 1px solid var(--danger); }
+.notice.success { color: var(--ok); border: 1px solid var(--ok); }
+
+table.data { width: 100%; border-collapse: collapse; }
+table.data th, table.data td {
+  padding: 0.5rem 0.75rem; text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+table.data thead th { color: var(--muted); font-weight: 600; }
+table.data tbody tr:nth-child(even) { background: var(--row); }
+table.data .num { text-align: right; font-variant-numeric: tabular-nums; }

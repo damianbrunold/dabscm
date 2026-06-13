@@ -1,0 +1,2 @@
+# Local config holds DB credentials and the cookie secret.
+config.scm

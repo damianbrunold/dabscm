@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily restart of starter-admin at 04:00
+
+[Timer]
+OnCalendar=*-*-* 04:00:00
+Persistent=true
+RandomizedDelaySec=2m
+Unit=starter-admin-restart.service
+
+[Install]
+WantedBy=timers.target

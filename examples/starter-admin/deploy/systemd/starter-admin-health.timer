@@ -1,0 +1,11 @@
+[Unit]
+Description=Run the starter-admin health probe every minute
+
+[Timer]
+OnBootSec=60s
+OnUnitActiveSec=60s
+AccuracySec=15s
+Unit=starter-admin-health.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,7 @@
+[
+  { "name": "Widgets",   "count": 42 },
+  { "name": "Gadgets",   "count": 17 },
+  { "name": "Sprockets", "count": 88 },
+  { "name": "Cogs",      "count": 5  },
+  { "name": "Flanges",   "count": 23 }
+]

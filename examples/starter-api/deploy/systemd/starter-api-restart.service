@@ -1,0 +1,6 @@
+[Unit]
+Description=Daily restart of starter-api (clears slow leaks, picks up config)
+
+[Service]
+Type=oneshot
+ExecStart=/bin/systemctl try-restart starter-api.service

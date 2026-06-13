@@ -1,0 +1,32 @@
+[Unit]
+Description=starter-api scheme JSON API
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=www
+Group=www
+WorkingDirectory=/opt/starter-api
+# Path to the scm interpreter binary.
+ExecStart=/usr/local/bin/scm bin/server.scm config.scm
+
+Restart=always
+RestartSec=3s
+TimeoutStopSec=15s
+
+StandardOutput=journal
+StandardError=journal
+
+# --- hardening ---
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=full
+ProtectHome=read-only
+# Reads config; reads/writes the user and item data files.
+ReadWritePaths=/opt/starter-api/data
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,6 @@
+[Unit]
+Description=Daily restart of starter-public (clears slow leaks, picks up config)
+
+[Service]
+Type=oneshot
+ExecStart=/bin/systemctl try-restart starter-public.service

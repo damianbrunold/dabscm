@@ -1,0 +1,6 @@
+[Unit]
+Description=Daily restart of starter-login (clears slow leaks, picks up config)
+
+[Service]
+Type=oneshot
+ExecStart=/bin/systemctl try-restart starter-login.service

@@ -1,0 +1,31 @@
+[Unit]
+Description=starter-admin scheme webapp
+After=network-online.target postgresql.service
+Wants=network-online.target
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=www
+Group=www
+WorkingDirectory=/opt/starter-admin
+# Path to the scm interpreter binary. Migrations run automatically at start.
+ExecStart=/usr/local/bin/scm bin/server.scm config.scm
+
+Restart=always
+RestartSec=3s
+TimeoutStopSec=15s
+
+StandardOutput=journal
+StandardError=journal
+
+# --- hardening ---
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=full
+ProtectHome=read-only
+# Static + config are read-only; all persistent state lives in PostgreSQL.
+
+[Install]
+WantedBy=multi-user.target

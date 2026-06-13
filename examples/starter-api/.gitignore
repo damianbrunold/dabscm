@@ -1,0 +1,5 @@
+# Local config (secrets) and the generated credential store.
+config.scm
+data/users.scm
+data/users.scm.tmp
+data/items.scm.tmp

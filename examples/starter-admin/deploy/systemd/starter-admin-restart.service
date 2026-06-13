@@ -1,0 +1,6 @@
+[Unit]
+Description=Daily restart of starter-admin (clears slow leaks, picks up config)
+
+[Service]
+Type=oneshot
+ExecStart=/bin/systemctl try-restart starter-admin.service

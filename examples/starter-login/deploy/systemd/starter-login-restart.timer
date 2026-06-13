@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily restart of starter-login at 04:00
+
+[Timer]
+OnCalendar=*-*-* 04:00:00
+Persistent=true
+RandomizedDelaySec=2m
+Unit=starter-login-restart.service
+
+[Install]
+WantedBy=timers.target

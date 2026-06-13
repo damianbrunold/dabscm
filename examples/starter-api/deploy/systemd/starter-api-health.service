@@ -1,0 +1,16 @@
+[Unit]
+Description=starter-api health probe (restarts the app if /healthz fails)
+After=starter-api.service
+
+[Service]
+Type=oneshot
+# Two-strike: probe with a 5s budget; on failure wait 5s and retry. Only
+# then restart, so a single slow request cannot bounce the daemon.
+ExecStart=/bin/sh -c '\
+  if ! curl -fsS --max-time 5 http://127.0.0.1:8084/healthz >/dev/null; then \
+    sleep 5; \
+    if ! curl -fsS --max-time 5 http://127.0.0.1:8084/healthz >/dev/null; then \
+      echo "starter-api healthz failed twice; restarting"; \
+      /bin/systemctl restart starter-api.service; \
+    fi; \
+  fi'

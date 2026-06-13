@@ -1,0 +1,32 @@
+[Unit]
+Description=starter-login scheme webapp
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=www
+Group=www
+WorkingDirectory=/opt/starter-login
+# Path to the scm interpreter binary.
+ExecStart=/usr/local/bin/scm bin/server.scm config.scm
+
+Restart=always
+RestartSec=3s
+TimeoutStopSec=15s
+
+StandardOutput=journal
+StandardError=journal
+
+# --- hardening ---
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=full
+ProtectHome=read-only
+# The app reads config + static and reads/writes the credential store.
+ReadWritePaths=/opt/starter-login/data
+
+[Install]
+WantedBy=multi-user.target

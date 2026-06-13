@@ -1,0 +1,85 @@
+/* Theme tokens. Light is the default; dark overrides the same variables.
+   The OS preference is applied two ways: the inline <head> script sets
+   data-theme before first paint, and the @media block below is the
+   fallback when JavaScript is disabled. */
+:root {
+  --bg: #ffffff;
+  --fg: #1a1a1a;
+  --muted: #666;
+  --border: #e2e2e2;
+  --row: #fafafa;
+  --accent: #2563eb;
+  color-scheme: light;
+}
+[data-theme="dark"] {
+  --bg: #16181d;
+  --fg: #e8e8e8;
+  --muted: #9aa0aa;
+  --border: #2c2f36;
+  --row: #1d2026;
+  --accent: #6ea8fe;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #16181d;
+    --fg: #e8e8e8;
+    --muted: #9aa0aa;
+    --border: #2c2f36;
+    --row: #1d2026;
+    --accent: #6ea8fe;
+    color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: var(--fg);
+  background: var(--bg);
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+.app-header h1 { font-size: 1.25rem; margin: 0; }
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  color: var(--fg);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+.icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Show exactly one icon depending on the active theme. */
+.i-sun { display: none; }
+.i-moon { display: inline; }
+[data-theme="dark"] .i-sun { display: inline; }
+[data-theme="dark"] .i-moon { display: none; }
+
+main { max-width: 720px; margin: 2rem auto; padding: 0 1.25rem; }
+
+table.data { width: 100%; border-collapse: collapse; }
+table.data th, table.data td {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+table.data thead th { color: var(--muted); font-weight: 600; }
+table.data tbody tr:nth-child(even) { background: var(--row); }
+table.data .num { text-align: right; font-variant-numeric: tabular-nums; }
