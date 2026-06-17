@@ -21,12 +21,18 @@ public class PrimitiveProcessWait : Primitive
         SchemeProcess sp = (SchemeProcess) Value.AsNativeValue(arguments[0]).value;
         if (arguments.Length == 1)
         {
+            // Parameterless WaitForExit also drains the async output handlers, so
+            // the log is fully written before we release it.
             sp.process.WaitForExit();
+            sp.CloseLog();
             return (long) sp.process.ExitCode;
         }
         int timeoutMs = IntegerMath.ToInt(arguments[1]);
         if (sp.process.WaitForExit(timeoutMs))
+        {
+            sp.CloseLog();
             return (long) sp.process.ExitCode;
+        }
         return Value.F;
     }
 }

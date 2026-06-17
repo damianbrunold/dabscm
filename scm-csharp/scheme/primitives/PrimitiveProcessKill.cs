@@ -29,37 +29,43 @@ public class PrimitiveProcessKill : Primitive
         SchemeProcess sp = (SchemeProcess) Value.AsNativeValue(arguments[0]).value;
         bool force = arguments.Length > 1 && !arguments[1].Equals(Value.F);
 
-        if (sp.process.HasExited) return Value.T;
+        if (sp.process.HasExited) { sp.CloseLog(); return Value.T; }
 
+        // POSIX, non-forceful: SIGTERM so the child can drain gracefully. The log
+        // stays open — the child keeps writing until it exits; process-wait
+        // closes it then.
+        bool graceful = !force && !RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
         try
         {
-            if (!force && !RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            if (graceful)
             {
-                // POSIX: deliver SIGTERM so the child can run its shutdown
-                // hook (e.g. drain HTTP requests) before exiting.
                 kill(sp.process.Id, SIGTERM);
-            }
-            else if (sp.jobHandle != IntPtr.Zero)
-            {
-                // Forceful — and the only option for console processes on Windows.
-                // The process is contained in a kill-on-close Job Object, so
-                // terminating the job takes down the entire descendant tree at
-                // once — including reloader grandchildren that a snapshot-based
-                // tree walk races against and leaves alive.
-                WindowsJobObject.Terminate(sp.jobHandle);
-                sp.jobHandle = IntPtr.Zero;
             }
             else
             {
-                // No job (job creation failed): fall back to the tree walk. On
-                // Windows the child is often a wrapper (cmd.exe/scm.bat) whose
-                // grandchild holds the port, and a plain Kill() spares
-                // descendants, leaving the port bound.
-                sp.process.Kill(entireProcessTree: true);
+                // Forceful path (always on Windows, where console processes have
+                // no graceful-close API). Mirror the Python original, which
+                // enumerated the whole tree and TerminateProcess'd every pid:
+                // rely on the framework tree-walk, which works even where the Job
+                // Object is ineffective (e.g. the child is already job-contained
+                // on a locked-down box, so AssignProcessToJobObject was refused).
+                // Terminate the job too when we have one — a race-free bonus, not
+                // the sole mechanism it used to be.
+                if (sp.jobHandle != IntPtr.Zero)
+                {
+                    try { WindowsJobObject.Terminate(sp.jobHandle); } catch { /* already gone */ }
+                    sp.jobHandle = IntPtr.Zero;
+                }
+                try { sp.process.Kill(entireProcessTree: true); }
+                catch (InvalidOperationException) { /* already exited */ }
             }
         }
         catch (InvalidOperationException) { /* already exited */ }
         catch (Exception) { /* tolerate platform quirks */ }
+
+        // After a forceful stop the child is gone, so release the log handle now
+        // (a graceful SIGTERM leaves it draining; process-wait closes it then).
+        if (!graceful) sp.CloseLog();
         return Value.T;
     }
 }

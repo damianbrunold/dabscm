@@ -4,7 +4,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -27,55 +26,41 @@ final class ProcessUtil {
      * destroyForcibly() terminate only the direct child; on Windows that child
      * is often a wrapper (e.g. cmd.exe running scm.bat, which in turn spawns the
      * real JVM/server as a grandchild), so killing it alone leaves the
-     * grandchild alive — still holding its listening port. The dev-server
-     * reloader then can't rebind on restart and spins forever.
+     * grandchild alive — still holding its listening port.
      *
-     * The C# build contains each process in a kill-on-close Windows Job Object
-     * and terminates the job atomically. Java (compiled for release 11, with no
-     * native interop / JNA available) cannot create a Job Object, so on Windows
-     * we delegate to the OS's own whole-tree kill, "taskkill /T", which reaches
-     * grandchildren (e.g. a Flask reloader worker) the same way. We still
-     * snapshot the descendant handles *before* killing — the reported
-     * parent/child links are lost once the parent exits — and destroy that
-     * snapshot afterwards as a backstop for anything taskkill missed.
+     * This mirrors the Python original's psutil kill_proc_tree: snapshot the
+     * whole descendant tree *while the root is still alive* (afterwards the
+     * reported parent/child links vanish), then terminate every process via the
+     * JDK's own native facility — ProcessHandle.destroy[Forcibly]() maps to
+     * TerminateProcess on Windows and kill() on POSIX. Crucially it does NOT
+     * shell out to "taskkill" (a separate executable an application-control
+     * allowlist can block on locked-down Windows) and does NOT depend on a
+     * Windows Job Object (assignment is refused when the process is already
+     * job-contained, as security tooling often arranges). Per-pid TerminateProcess
+     * is an in-process kernel call, which is exactly what worked under psutil.
      */
     static void destroyTree(Process process, boolean force) {
-        List<ProcessHandle> descendants =
-            process.descendants().collect(Collectors.toList());
-        if (isWindows()) {
-            taskkillTree(process.pid(), force);
-        } else if (force) {
-            process.destroyForcibly();
-        } else {
-            process.destroy();
-        }
-        for (ProcessHandle h : descendants) {
+        // Snapshot children first, root last (psutil order): a child can't be
+        // reparented onto a still-living ancestor we have not killed yet.
+        List<ProcessHandle> tree =
+            new ArrayList<>(process.descendants().collect(Collectors.toList()));
+        tree.add(process.toHandle());
+        destroyAll(tree, force);
+        // Brief settle, then a second sweep over the same handles for anything
+        // that survived the first signal (mirrors psutil's wait_procs follow-up).
+        try { Thread.sleep(100); }
+        catch (InterruptedException ie) { Thread.currentThread().interrupt(); }
+        destroyAll(tree, true);
+    }
+
+    private static void destroyAll(List<ProcessHandle> handles, boolean force) {
+        for (ProcessHandle h : handles) {
+            if (!h.isAlive()) continue;
             try {
                 if (force) h.destroyForcibly();
                 else       h.destroy();
             } catch (Exception ignored) {}
         }
-    }
-
-    // Windows whole-tree kill via taskkill. "/T" terminates the process and the
-    // tree of children it spawned; "/F" forces termination (the only option for
-    // console processes, which have no graceful-close path). Best-effort: errors
-    // and a missing taskkill are tolerated, with the descendant-snapshot destroy
-    // in destroyTree as the fallback.
-    private static void taskkillTree(long pid, boolean force) {
-        List<String> argv = new ArrayList<>();
-        argv.add("taskkill");
-        if (force) argv.add("/F");
-        argv.add("/T");
-        argv.add("/PID");
-        argv.add(Long.toString(pid));
-        try {
-            Process k = new ProcessBuilder(argv)
-                .redirectOutput(ProcessBuilder.Redirect.DISCARD)
-                .redirectError(ProcessBuilder.Redirect.DISCARD)
-                .start();
-            k.waitFor(10, TimeUnit.SECONDS);
-        } catch (Exception ignored) {}
     }
 
     static boolean isWindows() {

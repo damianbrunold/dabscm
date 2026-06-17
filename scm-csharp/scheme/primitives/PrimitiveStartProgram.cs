@@ -63,13 +63,22 @@ public class PrimitiveStartProgram : Primitive
             var proc = new Process();
             proc.StartInfo = psi;
 
+            var sp = new SchemeProcess(proc);
+
             if (logfile != null)
             {
                 var writer = new StreamWriter(
                     new FileStream(logfile, FileMode.Create, FileAccess.Write, FileShare.Read))
                     { AutoFlush = true };
-                proc.OutputDataReceived += (s, e) => { if (e.Data != null) writer.WriteLine(e.Data); };
-                proc.ErrorDataReceived  += (s, e) => { if (e.Data != null) writer.WriteLine(e.Data); };
+                sp.AttachLog(writer);
+                proc.OutputDataReceived += (s, e) => { if (e.Data != null) sp.WriteLogLine(e.Data); };
+                proc.ErrorDataReceived  += (s, e) => { if (e.Data != null) sp.WriteLogLine(e.Data); };
+                // Release the log handle if the child exits on its own (crash or
+                // self-stop), so the supervisor never keeps the file open behind
+                // an instance it no longer tracks. process-kill / process-wait
+                // close it on the explicit-stop path; this covers the rest.
+                proc.EnableRaisingEvents = true;
+                proc.Exited += (s, e) => sp.CloseLog();
             }
 
             proc.Start();
@@ -79,8 +88,6 @@ public class PrimitiveStartProgram : Primitive
                 proc.BeginOutputReadLine();
                 proc.BeginErrorReadLine();
             }
-
-            var sp = new SchemeProcess(proc);
 
             // On Windows, contain the whole descendant tree in a kill-on-close
             // Job Object so process-kill can take it down atomically (the
