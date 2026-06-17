@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
@@ -25,9 +26,12 @@ public class PrimitivePsInfo : Primitive
         try { p = Process.GetProcessById((int) pid); }
         catch (Exception) { return Value.F; }
         if (p == null) return Value.F;
+        bool linux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
+        Dictionary<int, int>? ppidMap =
+            RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? ProcUtil.WindowsPpidMap() : null;
         try
         {
-            return PsPrimitiveHelpers.BuildInfo(p, RuntimeInformation.IsOSPlatform(OSPlatform.Linux));
+            return PsPrimitiveHelpers.BuildInfo(p, linux, ppidMap);
         }
         finally { p.Dispose(); }
     }

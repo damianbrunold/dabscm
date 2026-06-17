@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
@@ -32,11 +33,15 @@ public class PrimitivePs : Primitive
         try { procs = Process.GetProcesses(); }
         catch (Exception) { return Value.NIL; }
         bool linux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
+        bool windows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+        // .NET's Process exposes no parent pid; on Windows take one toolhelp
+        // snapshot for the whole pid -> ppid map (#f-valued elsewhere).
+        Dictionary<int, int>? ppidMap = windows ? ProcUtil.WindowsPpidMap() : null;
         foreach (Process p in procs)
         {
             try
             {
-                result = new Pair(PsPrimitiveHelpers.BuildInfo(p, linux), result);
+                result = new Pair(PsPrimitiveHelpers.BuildInfo(p, linux, ppidMap), result);
             }
             catch (Exception) { /* skip processes that vanish mid-iteration */ }
             finally { p.Dispose(); }
@@ -47,7 +52,7 @@ public class PrimitivePs : Primitive
 
 internal static class PsPrimitiveHelpers
 {
-    public static object BuildInfo(Process p, bool linux)
+    public static object BuildInfo(Process p, bool linux, Dictionary<int, int>? ppidMap)
     {
         long pid = p.Id;
         string pidStr = pid.ToString();
@@ -59,6 +64,10 @@ internal static class PsPrimitiveHelpers
             if (pp.HasValue) ppid = (long) pp.Value;
             long? uid = ProcUtil.ReadUid(pidStr);
             if (uid.HasValue) user = (long) uid.Value;
+        }
+        else if (ppidMap != null && ppidMap.TryGetValue((int) pid, out int wppid))
+        {
+            ppid = (long) wppid;
         }
         object command = Value.F;
         try

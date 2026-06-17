@@ -1,10 +1,71 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices;
 
 namespace scheme;
 
 internal static class ProcUtil
 {
+    // --- Windows parent-pid lookup ------------------------------------------
+    // .NET's managed Process class exposes no parent pid, so on Windows we take
+    // one toolhelp snapshot of every process and read th32ParentProcessID. This
+    // uses only kernel32 (a system DLL — no package dependency). The result is a
+    // whole-system pid -> ppid map, built once per (ps) call rather than per pid.
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    private struct PROCESSENTRY32W
+    {
+        public uint dwSize;
+        public uint cntUsage;
+        public uint th32ProcessID;
+        public IntPtr th32DefaultHeapID;
+        public uint th32ModuleID;
+        public uint cntThreads;
+        public uint th32ParentProcessID;
+        public int pcPriClassBase;
+        public uint dwFlags;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
+        public string szExeFile;
+    }
+
+    private const uint TH32CS_SNAPPROCESS = 0x00000002;
+    private static readonly IntPtr INVALID_HANDLE_VALUE = new IntPtr(-1);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern IntPtr CreateToolhelp32Snapshot(uint dwFlags, uint th32ProcessID);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool Process32FirstW(IntPtr hSnapshot, ref PROCESSENTRY32W lppe);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool Process32NextW(IntPtr hSnapshot, ref PROCESSENTRY32W lppe);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool CloseHandle(IntPtr hObject);
+
+    // Snapshot every process and return a pid -> ppid map. Empty on failure.
+    // Only meaningful on Windows; never called on other platforms.
+    public static Dictionary<int, int> WindowsPpidMap()
+    {
+        var map = new Dictionary<int, int>();
+        IntPtr snap = INVALID_HANDLE_VALUE;
+        try
+        {
+            snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+            if (snap == INVALID_HANDLE_VALUE) return map;
+            var entry = new PROCESSENTRY32W { dwSize = (uint) Marshal.SizeOf<PROCESSENTRY32W>() };
+            if (Process32FirstW(snap, ref entry))
+            {
+                do { map[(int) entry.th32ProcessID] = (int) entry.th32ParentProcessID; }
+                while (Process32NextW(snap, ref entry));
+            }
+        }
+        catch (Exception) { /* fall back to an empty map -> ppid stays #f */ }
+        finally { if (snap != INVALID_HANDLE_VALUE) CloseHandle(snap); }
+        return map;
+    }
+
     // Parse /proc/<pid>/stat and return the parent pid (4th field), tolerating
     // spaces or parens inside the second "comm" field (which is wrapped in
     // parens).
