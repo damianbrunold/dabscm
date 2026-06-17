@@ -39,12 +39,22 @@ public class PrimitiveProcessKill : Primitive
                 // hook (e.g. drain HTTP requests) before exiting.
                 kill(sp.process.Id, SIGTERM);
             }
-            else
+            else if (sp.jobHandle != IntPtr.Zero)
             {
                 // Forceful — and the only option for console processes on Windows.
-                // Kill the whole tree: on Windows the child is often a wrapper
-                // (cmd.exe/scm.bat) whose grandchild holds the port, and a plain
-                // Kill() spares descendants, leaving the port bound.
+                // The process is contained in a kill-on-close Job Object, so
+                // terminating the job takes down the entire descendant tree at
+                // once — including reloader grandchildren that a snapshot-based
+                // tree walk races against and leaves alive.
+                WindowsJobObject.Terminate(sp.jobHandle);
+                sp.jobHandle = IntPtr.Zero;
+            }
+            else
+            {
+                // No job (job creation failed): fall back to the tree walk. On
+                // Windows the child is often a wrapper (cmd.exe/scm.bat) whose
+                // grandchild holds the port, and a plain Kill() spares
+                // descendants, leaving the port bound.
                 sp.process.Kill(entireProcessTree: true);
             }
         }

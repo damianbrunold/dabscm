@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -27,21 +28,54 @@ final class ProcessUtil {
      * is often a wrapper (e.g. cmd.exe running scm.bat, which in turn spawns the
      * real JVM/server as a grandchild), so killing it alone leaves the
      * grandchild alive — still holding its listening port. The dev-server
-     * reloader then can't rebind on restart and spins forever. We snapshot the
-     * descendant handles *before* killing the parent, since the reported
-     * parent/child links are lost once the parent exits, then destroy each.
+     * reloader then can't rebind on restart and spins forever.
+     *
+     * The C# build contains each process in a kill-on-close Windows Job Object
+     * and terminates the job atomically. Java (compiled for release 11, with no
+     * native interop / JNA available) cannot create a Job Object, so on Windows
+     * we delegate to the OS's own whole-tree kill, "taskkill /T", which reaches
+     * grandchildren (e.g. a Flask reloader worker) the same way. We still
+     * snapshot the descendant handles *before* killing — the reported
+     * parent/child links are lost once the parent exits — and destroy that
+     * snapshot afterwards as a backstop for anything taskkill missed.
      */
     static void destroyTree(Process process, boolean force) {
         List<ProcessHandle> descendants =
             process.descendants().collect(Collectors.toList());
-        if (force) process.destroyForcibly();
-        else       process.destroy();
+        if (isWindows()) {
+            taskkillTree(process.pid(), force);
+        } else if (force) {
+            process.destroyForcibly();
+        } else {
+            process.destroy();
+        }
         for (ProcessHandle h : descendants) {
             try {
                 if (force) h.destroyForcibly();
                 else       h.destroy();
             } catch (Exception ignored) {}
         }
+    }
+
+    // Windows whole-tree kill via taskkill. "/T" terminates the process and the
+    // tree of children it spawned; "/F" forces termination (the only option for
+    // console processes, which have no graceful-close path). Best-effort: errors
+    // and a missing taskkill are tolerated, with the descendant-snapshot destroy
+    // in destroyTree as the fallback.
+    private static void taskkillTree(long pid, boolean force) {
+        List<String> argv = new ArrayList<>();
+        argv.add("taskkill");
+        if (force) argv.add("/F");
+        argv.add("/T");
+        argv.add("/PID");
+        argv.add(Long.toString(pid));
+        try {
+            Process k = new ProcessBuilder(argv)
+                .redirectOutput(ProcessBuilder.Redirect.DISCARD)
+                .redirectError(ProcessBuilder.Redirect.DISCARD)
+                .start();
+            k.waitFor(10, TimeUnit.SECONDS);
+        } catch (Exception ignored) {}
     }
 
     static boolean isWindows() {

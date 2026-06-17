@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 
 namespace scheme;
 
@@ -79,7 +80,19 @@ public class PrimitiveStartProgram : Primitive
                 proc.BeginErrorReadLine();
             }
 
-            return new NativeValue(new SchemeProcess(proc));
+            var sp = new SchemeProcess(proc);
+
+            // On Windows, contain the whole descendant tree in a kill-on-close
+            // Job Object so process-kill can take it down atomically (the
+            // entireProcessTree walk otherwise misses reloader grandchildren).
+            // On failure jobHandle stays Zero and process-kill falls back.
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                try { sp.jobHandle = WindowsJobObject.CreateAndAssign(proc.Handle); }
+                catch { /* fall back to Kill(entireProcessTree) on stop */ }
+            }
+
+            return new NativeValue(sp);
         }
         catch (Exception e)
         {
