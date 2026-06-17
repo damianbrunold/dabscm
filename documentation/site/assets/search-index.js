@@ -434,6 +434,7 @@ window.SEARCH_INDEX = [
 {"k":"sym","n":"exit","l":"(scheme process-context)","id":"scheme-process-context","a":"e2"},
 {"k":"sym","n":"get-environment-variable","l":"(scheme process-context)","id":"scheme-process-context","a":"e3"},
 {"k":"sym","n":"get-environment-variables","l":"(scheme process-context)","id":"scheme-process-context","a":"e4"},
+{"k":"sym","n":"set-exit-code!","l":"(scheme process-context)","id":"scheme-process-context","a":"e5"},
 {"k":"sym","n":"*","l":"(scheme r5rs)","id":"scheme-r5rs","a":"e0"},
 {"k":"sym","n":"+","l":"(scheme r5rs)","id":"scheme-r5rs","a":"e1"},
 {"k":"sym","n":"-","l":"(scheme r5rs)","id":"scheme-r5rs","a":"e2"},

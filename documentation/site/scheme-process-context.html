@@ -27,6 +27,7 @@
   <a href="#e2" data-name="exit">exit</a>
   <a href="#e3" data-name="get-environment-variable">get-environment-variable</a>
   <a href="#e4" data-name="get-environment-variables">get-environment-variables</a>
+  <a href="#e5" data-name="set-exit-code!">set-exit-code!</a>
 </nav>
 
 <main>
@@ -55,7 +56,7 @@
 <p><a class="xref" href="#e1"><code>emergency-exit</code></a> exits immediately without running outstanding cleanup (dynamic-wind after-thunks).</p>
 </div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
-<p class="export-count">5 bindings</p>
+<p class="export-count">6 bindings</p>
 
 <div class="entry" id="e0" data-name="command-line">
   <div class="entry-name">command-line</div>
@@ -99,6 +100,17 @@ Library: (scheme process-context)
 Description: Returns an association list of all environment variables as (name . value) pairs, where both are strings.
 Example:
   (assoc "HOME" (get-environment-variables)) =&gt; ("HOME" . "/home/user")</pre>
+</div>
+<div class="entry" id="e5" data-name="set-exit-code!">
+  <div class="entry-name">set-exit-code!</div>
+  <pre class="entry-doc">Syntax: (set-exit-code! code)
+Library: (scheme process-context)
+Description: Records the exit code the process should return when the
+  current script finishes, without terminating immediately (unlike exit).
+  The standalone script runner honours this after the script completes.
+  code must be an exact integer. Returns an unspecified value.
+Example:
+  (set-exit-code! 1)</pre>
 </div>
 
 </main>

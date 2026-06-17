@@ -78,3 +78,16 @@ Example:
   (assoc "HOME" (get-environment-variables)) => ("HOME" . "/home/user")
 ```
 
+### `set-exit-code!`
+
+```
+Syntax: (set-exit-code! code)
+Library: (scheme process-context)
+Description: Records the exit code the process should return when the
+  current script finishes, without terminating immediately (unlike exit).
+  The standalone script runner honours this after the script completes.
+  code must be an exact integer. Returns an unspecified value.
+Example:
+  (set-exit-code! 1)
+```
+
