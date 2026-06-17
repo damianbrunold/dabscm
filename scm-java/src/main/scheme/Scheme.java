@@ -20,6 +20,12 @@ public class Scheme implements IEvaluator {
     public static String[] commandLineArgs = new String[0];
     public static boolean strictImports = false;
 
+    // Deferred process exit code, set via the set-exit-code! primitive. The
+    // standalone script runner honours this after a script completes normally,
+    // letting a script (e.g. the test framework) signal failure without
+    // terminating the process. Defaults to 0 (success).
+    public static int pendingExitCode = 0;
+
     private Modules modules;
     private Compiler compiler;
     private VM vm;
@@ -456,6 +462,14 @@ public class Scheme implements IEvaluator {
                 scheme.bind("script-name", script.toCharArray());
                 scheme.bind("script-arguments", arguments);
                 var result = scheme.evalFile(new File(script));
+                // A deferred exit code (set via set-exit-code!) takes precedence
+                // so a script can signal failure without terminating; otherwise
+                // an integer result is the code.
+                if (pendingExitCode != 0) {
+                    scheme.flushOutputPorts();
+                    System.out.flush();
+                    System.exit(pendingExitCode);
+                }
                 if (Value.isInteger(result)) {
                     scheme.flushOutputPorts();
                     System.out.flush();

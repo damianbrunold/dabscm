@@ -200,6 +200,13 @@ class SchemeRepl
                     scheme.Bind("script-arguments", arguments);
                     var result = scheme.EvalFile(script);
                     //scheme.DumpCallCounts();
+                    // A deferred exit code (set via set-exit-code!) takes
+                    // precedence so a script can signal failure without
+                    // terminating; otherwise an integer result is the code.
+                    if (Scheme.PendingExitCode != 0)
+                    {
+                        return Scheme.PendingExitCode;
+                    }
                     if (Value.IsInteger(result))
                     {
                         return (int) Value.AsInteger(result);
@@ -208,6 +215,7 @@ class SchemeRepl
                 catch (SchemeError e)
                 {
                     e.PrintStackTrace();
+                    return 1;
                 }
             }
             else

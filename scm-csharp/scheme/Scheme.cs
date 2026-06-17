@@ -8,6 +8,12 @@ public class Scheme : IEvaluator
     public static string[] CommandLineArgs = Array.Empty<string>();
     public static bool StrictImports = false;
 
+    // Deferred process exit code, set via the set-exit-code! primitive. The
+    // standalone script runner honours this after a script completes normally,
+    // letting a script (e.g. the test framework) signal failure without
+    // terminating the process. Defaults to 0 (success).
+    public static int PendingExitCode = 0;
+
     private Modules modules;
     private Compiler compiler;
     private VM vm;

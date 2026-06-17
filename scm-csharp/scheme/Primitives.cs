@@ -153,6 +153,7 @@ public class Primitives
         Bind(new PrimitiveExceptionHandlersGet());
         Bind(new PrimitiveExceptionHandlersSet());
         Bind(new PrimitiveExit());
+        Bind(new PrimitiveSetExitCode());
         Bind(new PrimitiveExpt());
         Bind(new PrimitiveFeaturesList());
         Bind(new PrimitiveFileErrorP());

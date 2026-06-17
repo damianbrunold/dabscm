@@ -161,6 +161,7 @@ public class Primitives {
         bind(new PrimitiveExceptionHandlersGet());
         bind(new PrimitiveExceptionHandlersSet());
         bind(new PrimitiveExit(modules));
+        bind(new PrimitiveSetExitCode());
         bind(new PrimitiveExpt());
         bind(new PrimitiveFeaturesList());
         bind(new PrimitiveFileErrorP());

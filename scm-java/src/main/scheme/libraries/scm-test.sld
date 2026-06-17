@@ -31,6 +31,11 @@
           (srfi 151)
           (srfi 64))
   (begin
+    ;; Records a non-zero process exit code without terminating, so a standalone
+    ;; test run signals failure via its exit status while the in-process test
+    ;; harness (which reads last-run-failed-tests) is unaffected.
+    (define %set-exit-code! (%primitive "set-exit-code!"))
+
     (define *last-total* 0)
     (define *last-failed* 0)
 
@@ -84,6 +89,10 @@
                           "OK"
                           (format #f "FAIL, ~a failed tests" failed)))
               (set! *last-total* total)
-              (set! *last-failed* failed))))
+              (set! *last-failed* failed)
+              ;; Signal failure through the process exit code (deferred, so all
+              ;; suites in a file still run). Never resets to 0, so an earlier
+              ;; failing suite is not masked by a later passing one.
+              (when (> failed 0) (%set-exit-code! 1)))))
         runner))
     ))
