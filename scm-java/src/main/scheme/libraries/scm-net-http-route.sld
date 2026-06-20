@@ -4,6 +4,7 @@
           (scheme char)
           (scm string)
           (srfi 13)
+          (scm uri)
           (scm net http server)
           (scm net http request)
           (scm net http response))
@@ -76,10 +77,12 @@ Example:
       "Syntax: (parse-query-string qs)
 Library: (scm net http route)
 Description: Parses a query string (e.g. \"a=1&b=2\") into an alist of
-  (key . value) string pairs. Percent-encoded characters are not decoded in v1.
-  Returns '() for an empty string.
+  (key . value) string pairs. Keys and values are percent-decoded as UTF-8
+  and '+' is treated as space, matching application/x-www-form-urlencoded
+  (see parse-www-form). Returns '() for an empty string.
 Example:
   (parse-query-string \"limit=10&page=2\") => ((\"limit\" . \"10\") (\"page\" . \"2\"))
+  (parse-query-string \"q=Z%C3%BCrich\") => ((\"q\" . \"Zürich\"))
   (parse-query-string \"\") => ()"
       (if (string=? qs "")
           '()
@@ -87,10 +90,10 @@ Example:
                  (let ((n (string-length pair)))
                    (let loop ((i 0))
                      (cond
-                       ((= i n) (cons pair ""))
+                       ((= i n) (cons (percent-decode pair) ""))
                        ((char=? (string-ref pair i) #\=)
-                        (cons (substring pair 0 i)
-                              (substring pair (+ i 1) n)))
+                        (cons (percent-decode (substring pair 0 i))
+                              (percent-decode (substring pair (+ i 1) n))))
                        (else (loop (+ i 1)))))))
                (string-split qs "&"))))
 
@@ -113,7 +116,13 @@ Example:
           (else (loop (cdr segs) (cons (car segs) acc))))))
 
     (define (match-path pattern-segs actual-segs)
-      ;; Returns params alist on match, #f on no match.
+      ;; Returns params alist on match, #f on no match. A :named segment
+      ;; captures one path segment, percent-decoded as UTF-8. Decoding happens
+      ;; AFTER the split on '/', so a %2F inside a segment decodes to a literal
+      ;; slash in the value rather than acting as a delimiter. '+' is kept
+      ;; literal (plus-as-space? #f) — unlike query strings, '+' is an ordinary
+      ;; character in a path segment. The '*' wildcard captures the remaining
+      ;; path verbatim (raw); decode it per-segment in the handler if needed.
       (let loop ((pat pattern-segs) (act actual-segs) (params '()))
         (cond
           ((and (null? pat) (null? act))
@@ -126,7 +135,7 @@ Example:
                 (char=? (string-ref (car pat) 0) #\:))
            (loop (cdr pat) (cdr act)
                  (cons (cons (substring (car pat) 1 (string-length (car pat)))
-                             (car act))
+                             (percent-decode (car act) #f))
                        params)))
           ((string=? (car pat) (car act))
            (loop (cdr pat) (cdr act) params))
@@ -174,7 +183,9 @@ Library: (scm net http route)
 Description: Registers a route on router. method is e.g. \"GET\" (case-insensitive).
   pattern is a path like \"/users/:id\" where :id captures a segment. * as the
   last segment captures the remaining path. handler is (lambda (req params) ...)
-  where params is an alist of captured path parameters.
+  where params is an alist of captured path parameters. :named segments are
+  percent-decoded as UTF-8 (with '+' kept literal); the * wildcard is captured
+  raw.
 Example:
   (router-add! r \"GET\" \"/users/:id\"
     (lambda (req params)
