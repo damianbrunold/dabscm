@@ -98,6 +98,40 @@ Example:
   (display "hello" (socket-output-port sock))
 ```
 
+### `socket-read-line`
+
+```
+Syntax: (socket-read-line socket)
+Library: (scm net sockets)
+Description: Reads one line directly from the socket's raw underlying stream, byte
+  by byte with no buffering, decoding the bytes as UTF-8. A trailing CR is dropped
+  and the line is terminated by LF; the returned string does not include the line
+  ending. Returns an end-of-file object if the stream is closed before any byte is
+  read. Because it never buffers ahead, it is safe for line-oriented protocols (such
+  as SMTP) where a buffered reader would consume bytes past a protocol boundary like
+  a STARTTLS upgrade.
+Example:
+  (socket-read-line sock) => "220 mail.example.com ESMTP"
+```
+
+### `socket-starttls!`
+
+```
+Syntax: (socket-starttls! socket host)
+Syntax: (socket-starttls! socket host verify?)
+Library: (scm net sockets)
+Description: Upgrades an already-connected plaintext socket to TLS in place (the
+  STARTTLS mechanism of SMTP/IMAP/etc.). Wraps the socket's raw underlying stream in
+  a TLS stream and rebuilds the socket's input and output ports over it, so subsequent
+  socket-input-port / socket-output-port use the encrypted channel. host is the server
+  name used for certificate validation. When verify? is omitted or true, the server
+  certificate chain and host name are validated; #f disables validation (insecure).
+  The pre-upgrade dialogue must be read with socket-read-line so no plaintext past the
+  upgrade boundary is buffered. Returns the socket.
+Example:
+  (socket-starttls! sock "smtp.example.com")
+```
+
 ### `socket?`
 
 ```
@@ -146,6 +180,21 @@ Library: (scm net sockets)
 Description: Returns #t if x is a TCP listener.
 Example:
   (tcp-listener? (tcp-listen 8080)) => #t
+```
+
+### `tls-connect`
+
+```
+Syntax: (tls-connect host port)
+Syntax: (tls-connect host port verify?)
+Library: (scm net sockets)
+Description: Connects to a TCP server at host:port and immediately performs a TLS
+  handshake (implicit TLS, as used by SMTPS on port 465 or HTTPS). Returns a socket
+  whose ports read and write encrypted data transparently. When verify? is omitted or
+  true, the server certificate chain and host name are validated; passing #f disables
+  validation (insecure, for testing only).
+Example:
+  (define sock (tls-connect "smtp.example.com" 465))
 ```
 
 ### `with-tcp-connection`

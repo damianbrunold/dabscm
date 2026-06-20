@@ -83,6 +83,7 @@
 | [`(scm match)`](libraries/scm-match.md) | Pattern matching |
 | [`(scm math)`](libraries/scm-math.md) | Math constants and non-standard numeric operations |
 | [`(scm module)`](libraries/scm-module.md) | Module system — import, export, search paths, introspection |
+| [`(scm net email)`](libraries/scm-net-email.md) |  |
 | [`(scm net http client)`](libraries/scm-net-http-client.md) | HTTP client — GET, POST, and other request methods |
 | [`(scm net http cookies)`](libraries/scm-net-http-cookies.md) | HTTP cookie header parsing and Set-Cookie formatting |
 | [`(scm net http forms)`](libraries/scm-net-http-forms.md) | application/x-www-form-urlencoded form and query parsing |
@@ -92,6 +93,7 @@
 | [`(scm net http route)`](libraries/scm-net-http-route.md) | HTTP request routing for servers |
 | [`(scm net http server)`](libraries/scm-net-http-server.md) | HTTP server — listen, accept, and serve requests |
 | [`(scm net-remote)`](libraries/scm-net-remote.md) | Remote operations — curl, wget, ssh, scp, rsync |
+| [`(scm net smtp)`](libraries/scm-net-smtp.md) |  |
 | [`(scm net sockets)`](libraries/scm-net-sockets.md) | TCP socket operations — listen, accept, connect |
 | [`(scm net websocket)`](libraries/scm-net-websocket.md) | WebSocket client and server support |
 | [`(scm odf spreadsheet)`](libraries/scm-odf-spreadsheet.md) | ODF spreadsheet creation (ODS format) |

@@ -88,10 +88,12 @@ Example:
 Syntax: (parse-query-string qs)
 Library: (scm net http route)
 Description: Parses a query string (e.g. "a=1&b=2") into an alist of
-  (key . value) string pairs. Percent-encoded characters are not decoded in v1.
-  Returns '() for an empty string.
+  (key . value) string pairs. Keys and values are percent-decoded as UTF-8
+  and '+' is treated as space, matching application/x-www-form-urlencoded
+  (see parse-www-form). Returns '() for an empty string.
 Example:
   (parse-query-string "limit=10&page=2") => (("limit" . "10") ("page" . "2"))
+  (parse-query-string "q=Z%C3%BCrich") => (("q" . "Zürich"))
   (parse-query-string "") => ()
 ```
 
@@ -134,7 +136,9 @@ Library: (scm net http route)
 Description: Registers a route on router. method is e.g. "GET" (case-insensitive).
   pattern is a path like "/users/:id" where :id captures a segment. * as the
   last segment captures the remaining path. handler is (lambda (req params) ...)
-  where params is an alist of captured path parameters.
+  where params is an alist of captured path parameters. :named segments are
+  percent-decoded as UTF-8 (with '+' kept literal); the * wildcard is captured
+  raw.
 Example:
   (router-add! r "GET" "/users/:id"
     (lambda (req params)
