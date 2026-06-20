@@ -689,17 +689,17 @@ END
                (= n 124)                         ; |
                (= n 126))))))                    ; ~
 
+    ;; Graphic = visible characters: letters, digits, punctuation, symbols.
+    ;; Built compositionally (rather than a hardcoded ASCII range) so it stays
+    ;; consistent with the Unicode-aware char-set:letter/char-set:digit; e.g. a
+    ;; Latin-1 letter such as #\ü is a letter and therefore also graphic.
     (define char-set:graphic
-      (%make-char-set
-       (lambda (c)
-         (let ((n (char->integer c)))
-           (and (>= n 33) (<= n 126))))))
+      (char-set-union char-set:letter char-set:digit
+                      char-set:punctuation char-set:symbol))
 
+    ;; Printing = graphic characters plus whitespace.
     (define char-set:printing
-      (%make-char-set
-       (lambda (c)
-         (let ((n (char->integer c)))
-           (and (>= n 32) (<= n 126))))))
+      (char-set-union char-set:graphic char-set:whitespace))
 
     (define char-set:blank
       (%make-char-set
