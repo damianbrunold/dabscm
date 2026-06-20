@@ -384,6 +384,8 @@ public class Primitives
         Bind(new PrimitiveSocketInputPort());
         Bind(new PrimitiveSocketOutputPort());
         Bind(new PrimitiveSocketP());
+        Bind(new PrimitiveSocketReadLine());
+        Bind(new PrimitiveSocketStarttls());
         Bind(new PrimitiveSpecialFolderApplicationData());
         Bind(new PrimitiveSpecialFolderDocuments());
         Bind(new PrimitiveSpecialFolderTemp());
@@ -442,6 +444,7 @@ public class Primitives
         Bind(new PrimitiveTcpListen());
         Bind(new PrimitiveTcpListenerP());
         Bind(new PrimitiveTdsConnect());
+        Bind(new PrimitiveTlsConnect());
         Bind(new PrimitiveTerminalByteReadyP());
         Bind(new PrimitiveTerminalEnableAnsiB());
         Bind(new PrimitiveTerminalP());
