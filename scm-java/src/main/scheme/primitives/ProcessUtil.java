@@ -6,6 +6,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
 
+import scheme.Pair;
+import scheme.Value;
+
 /**
  * Helpers for launching external programs in a way that matches the C#
  * implementation across platforms.
@@ -20,6 +23,32 @@ import java.util.stream.Collectors;
  */
 final class ProcessUtil {
     private ProcessUtil() {}
+
+    /**
+     * Applies the optional 'env option to a ProcessBuilder. The value is an
+     * alist of (name value) or (name . value) pairs of strings; each is added
+     * to (or overrides) the child's inherited environment. Absent / NIL is a
+     * no-op. Used by run-program, run-program/capture and start-program so
+     * callers can pass e.g. PGPASSWORD or a server URL to a child (and, since
+     * children inherit the augmented environment, transitively to its own
+     * children).
+     */
+    static void applyEnv(ProcessBuilder pb, Object options) {
+        Object env = PrimitiveGetProperty.getProperty(options, "env", Value.F);
+        if (env == Value.F || env == Value.NIL) return;
+        Object p = env;
+        while (p != Value.NIL) {
+            Pair entry = Value.asPair(p);
+            Pair kv = Value.asPair(entry.car);
+            String name = new String(Value.asString(kv.car));
+            Object v = kv.cdr;
+            String value = Value.isPair(v)
+                ? new String(Value.asString(Value.asPair(v).car))
+                : new String(Value.asString(v));
+            pb.environment().put(name, value);
+            p = entry.cdr;
+        }
+    }
 
     /**
      * Destroys a process and all of its descendants. Process.destroy() /

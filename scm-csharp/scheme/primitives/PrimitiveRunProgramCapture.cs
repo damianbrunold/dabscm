@@ -14,7 +14,8 @@ public class PrimitiveRunProgramCapture : Primitive
         "(program arg1 arg2 ...), waits for it to complete, and returns a list " +
         "(exit-code stdout stderr) where stdout and stderr are captured as strings. " +
         "options is an alist with optional keys: 'work-dir <path>, 'stdin <string> " +
-        "(text to write to the child's standard input). Returns #f on failure.\n" +
+        "(text to write to the child's standard input), 'env <alist of (name value) " +
+        "string pairs added to the child environment>. Returns #f on failure.\n" +
         "Example:\n" +
         "  (run-program/capture '(\"echo\" \"hello\")) => (0 \"hello\\n\" \"\")";
 
@@ -55,6 +56,8 @@ public class PrimitiveRunProgramCapture : Primitive
                     stdinText = new String(Value.AsString(stdinVal));
                     psi.RedirectStandardInput = true;
                 }
+
+                ProcessEnvUtil.Apply(psi, options);
             }
 
             var process = new Process();

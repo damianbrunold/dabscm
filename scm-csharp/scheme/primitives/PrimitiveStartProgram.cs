@@ -15,7 +15,8 @@ public class PrimitiveStartProgram : Primitive
         "Description: Starts an external program without waiting for it to finish " +
         "and returns a process handle (a native value). cmd-and-args is a list " +
         "(program arg1 arg2 ...). options is an alist with optional keys: " +
-        "'work-dir <path>, 'log-file <path> (redirects stdout+stderr to this file). " +
+        "'work-dir <path>, 'log-file <path> (redirects stdout+stderr to this file), " +
+        "'env <alist of (name value) string pairs added to the child environment>. " +
         "Use process-pid, process-kill, process-wait, process-alive? on the handle.\n" +
         "Example:\n" +
         "  (define p (start-program '(\"sleep\" \"30\")))\n" +
@@ -58,6 +59,8 @@ public class PrimitiveStartProgram : Primitive
                     psi.RedirectStandardOutput = true;
                     psi.RedirectStandardError = true;
                 }
+
+                ProcessEnvUtil.Apply(psi, options);
             }
 
             var proc = new Process();
