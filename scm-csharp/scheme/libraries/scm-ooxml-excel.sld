@@ -5,7 +5,12 @@
           worksheet-set-cell!
           worksheet-set-col-width!
           worksheet-set-row-height!
+          worksheet-set-row-hidden!
           worksheet-set-autofilter!
+          worksheet-set-autofilter-column!
+          worksheet-merge-cells!
+          worksheet-freeze-panes!
+          worksheet-add-image!
           workbook-save
           workbook-save-to-bytevector
           make-style
@@ -183,6 +188,11 @@ Example:
         ((spreadsheetml-main)
          (string-append ns-base-spreadsheetml "/main"))))
 
+    (define ns-drawingml-ss
+      "http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing")
+    (define ns-drawingml-main
+      "http://schemas.openxmlformats.org/drawingml/2006/main")
+
     (define (rel-type type)
       (case type
         ((office-doc)
@@ -192,7 +202,11 @@ Example:
         ((worksheet)
          (string-append ns-base-office-doc "/relationships/worksheet"))
         ((shared-strings)
-         (string-append ns-base-office-doc "/relationships/sharedStrings"))))
+         (string-append ns-base-office-doc "/relationships/sharedStrings"))
+        ((drawing)
+         (string-append ns-base-office-doc "/relationships/drawing"))
+        ((image)
+         (string-append ns-base-office-doc "/relationships/image"))))
 
     (define (content-type type)
       (case type
@@ -207,7 +221,9 @@ Example:
         ((styles)
          (string-append content-type-base ".spreadsheetml.styles+xml"))
         ((shared-strings)
-         (string-append content-type-base ".spreadsheetml.sharedStrings+xml"))))
+         (string-append content-type-base ".spreadsheetml.sharedStrings+xml"))
+        ((drawing)
+         (string-append content-type-base ".drawing+xml"))))
 
     (define (make-cell id value type style)
       (vector 'cell id value type style))
@@ -254,31 +270,128 @@ Example:
 
     (define (workbook-worksheets! wb sheets) (vector-set! wb 3 sheets))
 
+    ;; ── drawings / images ─────────────────────────────────────────────────
+    ;; The image plan assigns each image-bearing sheet a drawing index and each
+    ;; image a global media index. Entry shape: (vector ws draw entries) where
+    ;; entries is a list of (media-idx . anchor); anchor is #(cell bytes ext w h).
+
+    (define (collect-image-plan wb)
+      (let loop ((sheets (workbook-worksheets wb)) (draw 1) (media 1) (acc '()))
+        (cond
+          ((null? sheets) (reverse acc))
+          (else
+           (let ((imgs (reverse (worksheet-images (car sheets)))))
+             (if (null? imgs)
+                 (loop (cdr sheets) draw media acc)
+                 (let lp ((is imgs) (m media) (entries '()))
+                   (if (null? is)
+                       (loop (cdr sheets) (+ draw 1) m
+                             (cons (vector (car sheets) draw (reverse entries)) acc))
+                       (lp (cdr is) (+ m 1)
+                           (cons (cons m (car is)) entries))))))))))
+
+    (define (cell->col0row0 cell)
+      (let ((s (cell-id-split cell)))
+        (cons (- (col-string->index (car s)) 1)
+              (- (string->number (cdr s)) 1))))
+
+    (define (render-anchor port a i)
+      (let* ((cr   (cell->col0row0 (img-cell a)))
+             (col0 (car cr)) (row0 (cdr cr))
+             (cx   (* (img-w a) 9525))      ; 1 px = 9525 EMU
+             (cy   (* (img-h a) 9525)))
+        (display "<xdr:oneCellAnchor>" port)
+        (format port "<xdr:from><xdr:col>~a</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>~a</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from>" col0 row0)
+        (format port "<xdr:ext cx=\"~a\" cy=\"~a\"/>" cx cy)
+        (display "<xdr:pic>" port)
+        (format port "<xdr:nvPicPr><xdr:cNvPr id=\"~a\" name=\"Image ~a\"/><xdr:cNvPicPr/></xdr:nvPicPr>" (+ i 1) i)
+        (format port "<xdr:blipFill><a:blip r:embed=\"rId~a\"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill>" i)
+        (format port "<xdr:spPr><a:xfrm><a:off x=\"0\" y=\"0\"/><a:ext cx=\"~a\" cy=\"~a\"/></a:xfrm><a:prstGeom prst=\"rect\"><a:avLst/></a:prstGeom></xdr:spPr>" cx cy)
+        (display "</xdr:pic><xdr:clientData/></xdr:oneCellAnchor>" port)))
+
+    (define (render-drawing entries)
+      (call-with-output-string
+       (lambda (port)
+         (display xml-preamble port)
+         (format port "<xdr:wsDr xmlns:xdr=\"~a\" xmlns:a=\"~a\" xmlns:r=\"~a\">"
+                 ns-drawingml-ss ns-drawingml-main (ns 'doc-relationships))
+         (let loop ((es entries) (i 1))
+           (unless (null? es)
+             (render-anchor port (cdr (car es)) i)
+             (loop (cdr es) (+ i 1))))
+         (display "</xdr:wsDr>" port))))
+
+    (define (render-drawing-rels entries)
+      (call-with-output-string
+       (lambda (port)
+         (display xml-preamble port)
+         (format port "<Relationships xmlns=\"~a\">" (ns 'relationships))
+         (let loop ((es entries) (i 1))
+           (unless (null? es)
+             (format port "<Relationship Id=\"rId~a\" Type=\"~a\" Target=\"../media/image~a.~a\"/>"
+                     i (rel-type 'image) (car (car es)) (img-ext (cdr (car es))))
+             (loop (cdr es) (+ i 1))))
+         (display "</Relationships>" port))))
+
+    (define (render-sheet-drawing-rels draw)
+      (call-with-output-string
+       (lambda (port)
+         (display xml-preamble port)
+         (format port "<Relationships xmlns=\"~a\">" (ns 'relationships))
+         (format port "<Relationship Id=\"rId1\" Type=\"~a\" Target=\"../drawings/drawing~a.xml\"/>"
+                 (rel-type 'drawing) draw)
+         (display "</Relationships>" port))))
+
     (define (workbook-write-zip wb zp)
       (define (add-zip-entry name contents)
         (call-with-output-zip-entry
          zp name
          (lambda (port) (display contents port))
          0))
-      (add-zip-entry "_rels/.rels"
-                     (render-rels))
-      (add-zip-entry "[Content_Types].xml"
-                     (render-content-types wb))
-      (add-zip-entry "xl/_rels/workbook.xml.rels"
-                     (render-wb-rels wb))
-      (add-zip-entry "xl/workbook.xml"
-                     (render-workbook wb))
-      (add-zip-entry "xl/sharedStrings.xml"
-                     (shared-strings-render (workbook-shared-strings wb)))
-      (when (> (workbook-styles-count wb) 0)
-        (add-zip-entry "xl/styles.xml"
-                       ((workbook-styles wb) 'render)))
-      (let loop ((sheets (workbook-worksheets wb)))
-        (unless (null? sheets)
-          (add-zip-entry (format #f "xl/worksheets/sheet~a.xml"
-                                 (worksheet-id (car sheets)))
-                         (render-worksheet (car sheets)))
-          (loop (cdr sheets)))))
+      (define (add-binary-entry name bytes)
+        (let ((p (zip-add-binary-entry zp name)))
+          (write-bytevector bytes p)
+          (flush-output-port p)))
+      (let ((plan (collect-image-plan wb)))
+        (add-zip-entry "_rels/.rels"
+                       (render-rels))
+        (add-zip-entry "[Content_Types].xml"
+                       (render-content-types wb plan))
+        (add-zip-entry "xl/_rels/workbook.xml.rels"
+                       (render-wb-rels wb))
+        (add-zip-entry "xl/workbook.xml"
+                       (render-workbook wb))
+        (add-zip-entry "xl/sharedStrings.xml"
+                       (shared-strings-render (workbook-shared-strings wb)))
+        (when (> (workbook-styles-count wb) 0)
+          (add-zip-entry "xl/styles.xml"
+                         ((workbook-styles wb) 'render)))
+        (let loop ((sheets (workbook-worksheets wb)))
+          (unless (null? sheets)
+            (add-zip-entry (format #f "xl/worksheets/sheet~a.xml"
+                                   (worksheet-id (car sheets)))
+                           (render-worksheet (car sheets)))
+            (loop (cdr sheets))))
+        ;; images: media bytes + per-sheet drawing + rels
+        (for-each
+         (lambda (rec)
+           (let ((ws      (vector-ref rec 0))
+                 (draw    (vector-ref rec 1))
+                 (entries (vector-ref rec 2)))
+             (for-each
+              (lambda (e)
+                (add-binary-entry
+                 (format #f "xl/media/image~a.~a" (car e) (img-ext (cdr e)))
+                 (img-bytes (cdr e))))
+              entries)
+             (add-zip-entry (format #f "xl/drawings/drawing~a.xml" draw)
+                            (render-drawing entries))
+             (add-zip-entry (format #f "xl/drawings/_rels/drawing~a.xml.rels" draw)
+                            (render-drawing-rels entries))
+             (add-zip-entry (format #f "xl/worksheets/_rels/sheet~a.xml.rels"
+                                    (worksheet-id ws))
+                            (render-sheet-drawing-rels draw))))
+         plan)))
 
     (define (workbook-save wb filename)
       "Syntax: (workbook-save wb filename)
@@ -323,7 +436,12 @@ Example:
           new-sheet)))
 
     (define (make-worksheet name i ss)
-      (vector 'ws name i (make-dict) ss (make-dict) (make-dict) #f))
+      (vector 'ws name i (make-dict) ss (make-dict) (make-dict) #f
+              '()          ;; 8  merged-cells (list of range strings)
+              #f           ;; 9  freeze-panes (cell ref string or #f)
+              (make-dict)  ;; 10 hidden-rows (row-string -> #t)
+              '()          ;; 11 autofilter-columns (list of (col-idx . values))
+              '()))        ;; 12 images (list of image-anchor vectors)
 
     (define (worksheet-name ws)        (vector-ref ws 1))
     (define (worksheet-id ws)          (vector-ref ws 2))
@@ -332,6 +450,18 @@ Example:
     (define (worksheet-col-widths ws)  (vector-ref ws 5))
     (define (worksheet-row-heights ws) (vector-ref ws 6))
     (define (worksheet-autofilter ws)  (vector-ref ws 7))
+    (define (worksheet-merged-cells ws)       (vector-ref ws 8))
+    (define (worksheet-freeze ws)             (vector-ref ws 9))
+    (define (worksheet-hidden-rows ws)        (vector-ref ws 10))
+    (define (worksheet-autofilter-columns ws) (vector-ref ws 11))
+    (define (worksheet-images ws)             (vector-ref ws 12))
+
+    ;; image anchor: #(cell bytes ext width-px height-px)
+    (define (img-cell a)  (vector-ref a 0))
+    (define (img-bytes a) (vector-ref a 1))
+    (define (img-ext a)   (vector-ref a 2))
+    (define (img-w a)     (vector-ref a 3))
+    (define (img-h a)     (vector-ref a 4))
 
     (define (worksheet-set-col-width! ws col width)
       "Syntax: (worksheet-set-col-width! ws col width)
@@ -367,6 +497,72 @@ Example:
           (ws 'set-autofilter! ref)
           (vector-set! ws 7 ref)))
 
+    (define (worksheet-set-row-hidden! ws row hidden?)
+      "Syntax: (worksheet-set-row-hidden! ws row hidden?)
+Library: (scm ooxml excel)
+Description: Marks the 1-based row index in worksheet ws as hidden (when hidden?
+is true) or visible. Works for both regular and streaming worksheets.
+Example:
+  (worksheet-set-row-hidden! ws 5 #t)"
+      (if (procedure? ws)
+          (ws 'set-row-hidden! row hidden?)
+          (dict-put (worksheet-hidden-rows ws) (number->string row) hidden?)))
+
+    (define (worksheet-set-autofilter-column! ws col-idx values)
+      "Syntax: (worksheet-set-autofilter-column! ws col-idx values)
+Library: (scm ooxml excel)
+Description: Adds a filter to one column of an AutoFilter previously set with
+worksheet-set-autofilter!. col-idx is the 0-based column index relative to the
+first column of the AutoFilter range; values is a list of strings to keep
+visible. Works for both regular and streaming worksheets.
+Example:
+  (worksheet-set-autofilter! ws \"A3:J100\")
+  (worksheet-set-autofilter-column! ws 0 '(\"++\" \"--\"))"
+      (if (procedure? ws)
+          (ws 'set-autofilter-column! col-idx values)
+          (vector-set! ws 11 (cons (cons col-idx values)
+                                   (worksheet-autofilter-columns ws)))))
+
+    (define (worksheet-merge-cells! ws ref)
+      "Syntax: (worksheet-merge-cells! ws ref)
+Library: (scm ooxml excel)
+Description: Merges the cell range ref (an A1-notation range string such as
+\"A2:G2\") in worksheet ws. The value of the top-left cell of the range is shown
+across the merged area. Works for both regular and streaming worksheets.
+Example:
+  (worksheet-merge-cells! ws \"A2:G2\")"
+      (if (procedure? ws)
+          (ws 'merge-cells! ref)
+          (vector-set! ws 8 (cons ref (worksheet-merged-cells ws)))))
+
+    (define (worksheet-freeze-panes! ws cell)
+      "Syntax: (worksheet-freeze-panes! ws cell)
+Library: (scm ooxml excel)
+Description: Freezes rows and/or columns in worksheet ws so that everything
+above and to the left of cell stays visible while scrolling. cell is an
+A1-notation cell string: \"A4\" freezes the top 3 rows; \"B1\" freezes column A;
+\"B4\" freezes both. Works for both regular and streaming worksheets.
+Example:
+  (worksheet-freeze-panes! ws \"A4\")"
+      (if (procedure? ws)
+          (ws 'freeze-panes! cell)
+          (vector-set! ws 9 cell)))
+
+    (define (worksheet-add-image! ws cell bytes ext width-px height-px)
+      "Syntax: (worksheet-add-image! ws cell bytes ext width-px height-px)
+Library: (scm ooxml excel)
+Description: Embeds an image in worksheet ws with its top-left corner anchored
+at cell (an A1-notation string). bytes is the image data (a bytevector); ext is
+the lowercase file extension \"png\" or \"jpeg\". width-px and height-px are the
+display size in pixels. Only supported on regular (non-streaming) worksheets.
+Example:
+  (worksheet-add-image! ws \"A1\" png-bytes \"png\" 120 60)"
+      (when (procedure? ws)
+        (error "worksheet-add-image!: not supported on streaming worksheets"))
+      (vector-set! ws 12
+        (cons (vector cell bytes ext width-px height-px)
+              (worksheet-images ws))))
+
     (define (worksheet-set-cell! ws id value type style)
       "Syntax: (worksheet-set-cell! ws id value type style)
 Library: (scm ooxml excel)
@@ -399,11 +595,66 @@ Example:
         (format port "<c r=\"~a\"~a~a><v>~a</v></c>"
                 (cell-id cell) style-attr type-attr (cell-value cell))))
 
+    (define (render-freeze-pane port cell)
+      ;; cell is the top-left cell of the unfrozen region, e.g. "A4" freezes
+      ;; the top 3 rows; "B1" freezes column A; "B4" freezes both.
+      (let* ((split  (cell-id-split cell))
+             (xsplit (- (col-string->index (car split)) 1))
+             (ysplit (- (string->number (cdr split)) 1))
+             (active (cond ((and (> xsplit 0) (> ysplit 0)) "bottomRight")
+                           ((> ysplit 0) "bottomLeft")
+                           (else "topRight"))))
+        (display "<sheetViews><sheetView workbookViewId=\"0\">" port)
+        (display "<pane" port)
+        (when (> xsplit 0) (format port " xSplit=\"~a\"" xsplit))
+        (when (> ysplit 0) (format port " ySplit=\"~a\"" ysplit))
+        (format port " topLeftCell=\"~a\" activePane=\"~a\" state=\"frozen\"/>"
+                cell active)
+        (format port "<selection pane=\"~a\" activeCell=\"~a\" sqref=\"~a\"/>"
+                active cell cell)
+        (display "</sheetView></sheetViews>" port)))
+
+    (define (render-autofilter port ref columns)
+      ;; columns is a list of (col-idx . values); empty -> self-closing tag
+      (if (null? columns)
+          (format port "<autoFilter ref=\"~a\"/>" ref)
+          (begin
+            (format port "<autoFilter ref=\"~a\">" ref)
+            (for-each
+             (lambda (col)
+               (format port "<filterColumn colId=\"~a\"><filters>" (car col))
+               (for-each (lambda (v)
+                           (format port "<filter val=\"~a\"/>" (xml-escape v)))
+                         (cdr col))
+               (display "</filters></filterColumn>" port))
+             columns)
+            (display "</autoFilter>" port))))
+
+    (define (render-merge-cells port refs)
+      (unless (null? refs)
+        (format port "<mergeCells count=\"~a\">" (length refs))
+        (for-each (lambda (ref) (format port "<mergeCell ref=\"~a\"/>" ref)) refs)
+        (display "</mergeCells>" port)))
+
+    (define (render-row-open port row ht hidden?)
+      (display "<row r=\"" port)
+      (display row port)
+      (display "\"" port)
+      (when ht
+        (display " ht=\"" port) (display ht port)
+        (display "\" customHeight=\"1\"" port))
+      (when hidden? (display " hidden=\"1\"" port))
+      (display ">" port))
+
     (define (render-worksheet ws)
       (call-with-output-string
        (lambda (port)
          (display xml-preamble port)
-         (format port "<worksheet xmlns=\"~a\">" (ns 'spreadsheetml-main))
+         (format port "<worksheet xmlns=\"~a\" xmlns:r=\"~a\">"
+                 (ns 'spreadsheetml-main) (ns 'doc-relationships))
+         ;; Freeze panes (must precede cols/sheetData)
+         (let ((fz (worksheet-freeze ws)))
+           (when fz (render-freeze-pane port fz)))
          ;; Column widths
          (unless (= 0 (dict-size (worksheet-col-widths ws)))
            (display "<cols>" port)
@@ -415,16 +666,17 @@ Example:
                      (sorted-col-entries (worksheet-col-widths ws)))
            (display "</cols>" port))
          (display "<sheetData>" port)
-         (let ((row-heights (worksheet-row-heights ws)))
+         (let ((row-heights  (worksheet-row-heights ws))
+               (hidden-rows  (worksheet-hidden-rows ws)))
            (let loop-rows ((rows (sorted-dict-entries (worksheet-rows ws))))
              (unless (null? rows)
                (let* ((row  (caar rows))
                       (data (cdar rows))
                       (rh   (and (dict-contains row-heights row)
-                                 (dict-get row-heights row))))
-                 (if rh
-                     (format port "<row r=\"~a\" ht=\"~a\" customHeight=\"1\">" row rh)
-                     (format port "<row r=\"~a\">" row))
+                                 (dict-get row-heights row)))
+                      (hid  (and (dict-contains hidden-rows row)
+                                 (dict-get hidden-rows row))))
+                 (render-row-open port row rh hid)
                  (let loop-cells ((cells (sorted-cell-values data)))
                    (unless (null? cells)
                      (render-cell port (car cells))
@@ -432,10 +684,17 @@ Example:
                  (display "</row>" port))
                (loop-rows (cdr rows)))))
          (display "</sheetData>" port)
-         ;; Autofilter
+         ;; Autofilter (with optional per-column filters)
          (let ((af (worksheet-autofilter ws)))
            (when af
-             (format port "<autoFilter ref=\"~a\"/>" af)))
+             (render-autofilter port af
+                                (reverse (worksheet-autofilter-columns ws)))))
+         ;; Merged cells (after autoFilter per schema order)
+         (render-merge-cells port (reverse (worksheet-merged-cells ws)))
+         ;; Drawing (images) — the relationship + parts are written by
+         ;; workbook-write-zip; each image-bearing sheet uses rId1 here.
+         (unless (null? (worksheet-images ws))
+           (display "<drawing r:id=\"rId1\"/>" port))
          (display "</worksheet>" port))))
 
     ;; Style system
@@ -485,11 +744,17 @@ Example:
             ((get) (vector left right top bottom diagonal))))))
 
     (define (make-alignment)
-      (let ((rotation 0))
+      (let ((rotation 0)
+            (wrap #f)
+            (vertical #f)
+            (horizontal #f))
         (lambda (action . args)
           (case action
-            ((set-rotation) (set! rotation (car args)))
-            ((get) rotation)))))
+            ((set-rotation)   (set! rotation (car args)))
+            ((set-wrap)       (set! wrap (car args)))
+            ((set-vertical)   (set! vertical (car args)))
+            ((set-horizontal) (set! horizontal (car args)))
+            ((get) (vector rotation wrap vertical horizontal))))))
 
     (define (make-style)
       "Syntax: (make-style)
@@ -550,7 +815,10 @@ Example:
                  (let ((prop (car props))
                        (val (cadr props)))
                    (case prop
-                     ((rotation) (alignment 'set-rotation val)))
+                     ((rotation)   (alignment 'set-rotation val))
+                     ((wrap)       (alignment 'set-wrap val))
+                     ((vertical)   (alignment 'set-vertical val))
+                     ((horizontal) (alignment 'set-horizontal val)))
                    (loop (cddr props))))))
             ((get-font)      (font 'get))
             ((get-fill)      (fill 'get))
@@ -562,7 +830,7 @@ Example:
             (fills (list (vector "none" #f #f)
                          (vector "gray125" #f #f)))
             (borders (list (vector #f #f #f #f #f)))
-            (alignments (list 0))
+            (alignments (list (vector 0 #f #f #f)))
             (styles '()))
         (lambda (action . args)
           (case action
@@ -696,12 +964,21 @@ Example:
                                     (vector-ref style 0)
                                     (vector-ref style 1)
                                     (vector-ref style 2))
-                            ;; Add alignment if rotation is set
+                            ;; Add alignment if any alignment property is set
                             (let ((alignment-id (vector-ref style 3)))
                               (unless (zero? alignment-id)
-                                (let ((rotation (list-ref alignments alignment-id)))
-                                  (unless (zero? rotation)
-                                    (format port "<alignment textRotation=\"~a\"/>" rotation)))))
+                                (let* ((al   (list-ref alignments alignment-id))
+                                       (rot  (vector-ref al 0))
+                                       (wrap (vector-ref al 1))
+                                       (vert (vector-ref al 2))
+                                       (horiz (vector-ref al 3)))
+                                  (display "<alignment" port)
+                                  (unless (zero? rot)
+                                    (format port " textRotation=\"~a\"" rot))
+                                  (when wrap (display " wrapText=\"1\"" port))
+                                  (when vert (format port " vertical=\"~a\"" vert))
+                                  (when horiz (format port " horizontal=\"~a\"" horiz))
+                                  (display "/>" port))))
                             (display "</xf>" port))
                           styles)
                 (display "</cellXfs>" port)
@@ -757,8 +1034,24 @@ Example:
                  "xl/workbook.xml")
          (display "</Relationships>" port))))
 
-    (define (render-content-types wb)
-      (let ((sheets (workbook-worksheets wb)))
+    (define (image-ext-content-type ext)
+      (cond ((string=? ext "png")  "image/png")
+            ((string=? ext "jpeg") "image/jpeg")
+            ((string=? ext "jpg")  "image/jpeg")
+            ((string=? ext "gif")  "image/gif")
+            (else "application/octet-stream")))
+
+    (define (render-content-types wb plan)
+      (let ((sheets (workbook-worksheets wb))
+            (img-exts '()))
+        ;; collect distinct image extensions across the plan
+        (for-each (lambda (rec)
+                    (for-each (lambda (e)
+                                (let ((ext (img-ext (cdr e))))
+                                  (unless (member ext img-exts)
+                                    (set! img-exts (cons ext img-exts)))))
+                              (vector-ref rec 2)))
+                  plan)
         (call-with-output-string
          (lambda (port)
            (display xml-preamble port)
@@ -767,6 +1060,16 @@ Example:
                    (content-type 'rel+xml))
            (format port "<Default Extension=\"xml\" ContentType=\"~a\"/>"
                    (content-type 'xml))
+           (for-each (lambda (ext)
+                       (format port "<Default Extension=\"~a\" ContentType=\"~a\"/>"
+                               ext (image-ext-content-type ext)))
+                     img-exts)
+           (for-each (lambda (rec)
+                       (format port "<Override PartName=\"~a\" ContentType=\"~a\"/>"
+                               (format #f "/xl/drawings/drawing~a.xml"
+                                       (vector-ref rec 1))
+                               (content-type 'drawing)))
+                     plan)
            (format port "<Override PartName=\"~a\" ContentType=\"~a\"/>"
                    "/xl/workbook.xml"
                    (content-type 'wb))
@@ -829,13 +1132,18 @@ Example:
     (define (make-streaming-worksheet ss port)
       (let ((col-widths    (make-dict))
             (row-heights   (make-dict))
+            (hidden-rows   (make-dict))
             (autofilter    #f)
+            (autofilter-cols '())
+            (merged-cells  '())
+            (freeze        #f)
             (current-row   #f)
             (current-cells (make-dict))
             (header-emitted #f))
 
         (define (emit-header!)
           (unless header-emitted
+            (when freeze (render-freeze-pane port freeze))
             (unless (= 0 (dict-size col-widths))
               (display "<cols>" port)
               (for-each (lambda (e)
@@ -850,11 +1158,11 @@ Example:
 
         (define (flush-row!)
           (when current-row
-            (let ((rh (and (dict-contains row-heights current-row)
-                           (dict-get row-heights current-row))))
-              (if rh
-                  (format port "<row r=\"~a\" ht=\"~a\" customHeight=\"1\">" current-row rh)
-                  (format port "<row r=\"~a\">" current-row))
+            (let ((rh  (and (dict-contains row-heights current-row)
+                            (dict-get row-heights current-row)))
+                  (hid (and (dict-contains hidden-rows current-row)
+                            (dict-get hidden-rows current-row))))
+              (render-row-open port current-row rh hid)
               (for-each (lambda (cell) (render-cell port cell))
                         ;; do not sort - for performance reasons
                         ;; use non-streaming version for random access
@@ -884,14 +1192,24 @@ Example:
              (dict-put col-widths (car args) (cadr args)))
             ((set-row-height!)
              (dict-put row-heights (number->string (car args)) (cadr args)))
+            ((set-row-hidden!)
+             (dict-put hidden-rows (number->string (car args)) (cadr args)))
             ((set-autofilter!)
              (set! autofilter (car args)))
+            ((set-autofilter-column!)
+             (set! autofilter-cols
+                   (cons (cons (car args) (cadr args)) autofilter-cols)))
+            ((merge-cells!)
+             (set! merged-cells (cons (car args) merged-cells)))
+            ((freeze-panes!)
+             (set! freeze (car args)))
             ((finish!)
              (emit-header!)
              (flush-row!)
              (display "</sheetData>" port)
              (when autofilter
-               (format port "<autoFilter ref=\"~a\"/>" autofilter))
+               (render-autofilter port autofilter (reverse autofilter-cols)))
+             (render-merge-cells port (reverse merged-cells))
              (display "</worksheet>" port))))))
 
     ;; Streaming-table: vector #(tag ss port col-letters row-num
@@ -1075,7 +1393,7 @@ Example:
             (let* ((fake-ws (vector 'ws name 1 #f #f #f #f #f))
                    (fake-wb (vector 'wb ss styles (list fake-ws))))
               (add-zip-entry "_rels/.rels"                (render-rels))
-              (add-zip-entry "[Content_Types].xml"        (render-content-types fake-wb))
+              (add-zip-entry "[Content_Types].xml"        (render-content-types fake-wb (quote ())))
               (add-zip-entry "xl/_rels/workbook.xml.rels" (render-wb-rels fake-wb))
               (add-zip-entry "xl/workbook.xml"            (render-workbook fake-wb))
               (add-zip-entry "xl/sharedStrings.xml"       (shared-strings-render ss))
@@ -1113,7 +1431,7 @@ Example:
                                   (display (cdr pair) p)
                                   (flush-output-port p)))
                               (list (cons "_rels/.rels"                (render-rels))
-                                    (cons "[Content_Types].xml"        (render-content-types fake-wb))
+                                    (cons "[Content_Types].xml"        (render-content-types fake-wb (quote ())))
                                     (cons "xl/_rels/workbook.xml.rels" (render-wb-rels fake-wb))
                                     (cons "xl/workbook.xml"            (render-workbook fake-wb))
                                     (cons "xl/sharedStrings.xml"       (shared-strings-render ss))))
@@ -1173,7 +1491,7 @@ Example:
             (let* ((fake-ws (vector 'ws name 1 #f #f #f #f #f))
                    (fake-wb (vector 'wb ss styles (list fake-ws))))
               (add-zip-entry "_rels/.rels"                (render-rels))
-              (add-zip-entry "[Content_Types].xml"        (render-content-types fake-wb))
+              (add-zip-entry "[Content_Types].xml"        (render-content-types fake-wb (quote ())))
               (add-zip-entry "xl/_rels/workbook.xml.rels" (render-wb-rels fake-wb))
               (add-zip-entry "xl/workbook.xml"            (render-workbook fake-wb))
               (add-zip-entry "xl/sharedStrings.xml"       (shared-strings-render ss))
@@ -1213,7 +1531,7 @@ Example:
                                   (display (cdr pair) p)
                                   (flush-output-port p)))
                               (list (cons "_rels/.rels"                (render-rels))
-                                    (cons "[Content_Types].xml"        (render-content-types fake-wb))
+                                    (cons "[Content_Types].xml"        (render-content-types fake-wb (quote ())))
                                     (cons "xl/_rels/workbook.xml.rels" (render-wb-rels fake-wb))
                                     (cons "xl/workbook.xml"            (render-workbook fake-wb))
                                     (cons "xl/sharedStrings.xml"       (shared-strings-render ss))))
@@ -1232,6 +1550,7 @@ Example:
                 ;; flags (no value)
                 ((eq? arg 'bold)     (loop (cdr args)  (cons #t (cons 'bold result))))
                 ((eq? arg 'italic)   (loop (cdr args)  (cons #t (cons 'italic result))))
+                ((eq? arg 'wrap)     (loop (cdr args)  (cons #t (cons 'wrap result))))
                 ;; key-value pairs
                 ((eq? arg 'name:)    (loop (cddr args) (cons (cadr args) (cons 'name result))))
                 ((eq? arg 'family:)  (loop (cddr args) (cons (cadr args) (cons 'family result))))
@@ -1246,6 +1565,9 @@ Example:
                 ((eq? arg 'bottom:)  (loop (cddr args) (cons (cadr args) (cons 'bottom result))))
                 ((eq? arg 'diagonal:)(loop (cddr args) (cons (cadr args) (cons 'diagonal result))))
                 ((eq? arg 'rotation:)(loop (cddr args) (cons (cadr args) (cons 'rotation result))))
+                ((eq? arg 'wrap:)      (loop (cddr args) (cons (cadr args) (cons 'wrap result))))
+                ((eq? arg 'vertical:)  (loop (cddr args) (cons (cadr args) (cons 'vertical result))))
+                ((eq? arg 'horizontal:)(loop (cddr args) (cons (cadr args) (cons 'horizontal result))))
                 (else (loop (cdr args) result)))))))
 
     (define (workbook-add-style-impl wb sections)
@@ -1272,7 +1594,7 @@ font, fill, border, and alignment followed by property keyword/value pairs.
 Font properties: name: family: size: color: bold italic
 Fill properties: type: fgcolor: bgcolor:
 Border properties: left: right: top: bottom: diagonal:
-Alignment properties: rotation:
+Alignment properties: rotation: wrap (flag) wrap: vertical: horizontal:
 Color values may be symbols (e.g. 'red) or 8-char ARGB hex strings.
 Example:
 (workbook-add-style wb (fill fgcolor: lightblue))

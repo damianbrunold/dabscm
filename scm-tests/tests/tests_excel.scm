@@ -275,4 +275,144 @@
     (test-equal #t           (sheet-ref sheet 2 2))   ; boolean
     (test-equal "inline"     (sheet-ref sheet 3 1)))) ; inline string
 
+;; ── Merged cells, freeze panes, hidden rows, autofilter columns, alignment ──
+
+(define (read-sheet1-xml path)
+  (call-with-input-zip path
+    (lambda (z) (utf8->string (zip-read-entry-bytevector z "xl/worksheets/sheet1.xml")))))
+
+(define (read-styles-xml path)
+  (call-with-input-zip path
+    (lambda (z) (utf8->string (zip-read-entry-bytevector z "xl/styles.xml")))))
+
+;; merged cells: <mergeCells> emitted after sheetData
+(test-group "merge-cells"
+  (let* ((path (join-path (special-folder-temp) "test-scm-excel-merge.xlsx"))
+         (wb   (make-workbook))
+         (ws   (workbook-add-worksheet! wb "S")))
+    (worksheet-set-cell! ws "A1" "title" 'string #f)
+    (worksheet-merge-cells! ws "A1:G1")
+    (workbook-save wb path)
+    (let ((xml (read-sheet1-xml path)))
+      (test-equal #t (and (string-contains xml "<mergeCells count=\"1\">") #t))
+      (test-equal #t (and (string-contains xml "<mergeCell ref=\"A1:G1\"/>") #t))
+      ;; mergeCells comes after sheetData close
+      (test-equal #t (< (string-contains xml "</sheetData>")
+                        (string-contains xml "<mergeCells"))))))
+
+;; freeze panes at A4 -> ySplit=3, frozen, before sheetData
+(test-group "freeze-panes"
+  (let* ((path (join-path (special-folder-temp) "test-scm-excel-freeze.xlsx"))
+         (wb   (make-workbook))
+         (ws   (workbook-add-worksheet! wb "S")))
+    (worksheet-set-cell! ws "A1" "x" 'string #f)
+    (worksheet-freeze-panes! ws "A4")
+    (workbook-save wb path)
+    (let ((xml (read-sheet1-xml path)))
+      (test-equal #t (and (string-contains xml "ySplit=\"3\"") #t))
+      (test-equal #t (and (string-contains xml "topLeftCell=\"A4\"") #t))
+      (test-equal #t (and (string-contains xml "state=\"frozen\"") #t))
+      (test-equal #t (and (string-contains xml "activePane=\"bottomLeft\"") #t))
+      ;; xSplit not emitted for a pure row freeze
+      (test-equal #f (string-contains xml "xSplit"))
+      ;; sheetViews precede sheetData
+      (test-equal #t (< (string-contains xml "<sheetViews>")
+                        (string-contains xml "<sheetData>"))))))
+
+;; freeze at B4 -> both splits, bottomRight
+(test-group "freeze-panes-both"
+  (let* ((path (join-path (special-folder-temp) "test-scm-excel-freeze2.xlsx"))
+         (wb   (make-workbook))
+         (ws   (workbook-add-worksheet! wb "S")))
+    (worksheet-set-cell! ws "A1" "x" 'string #f)
+    (worksheet-freeze-panes! ws "B4")
+    (workbook-save wb path)
+    (let ((xml (read-sheet1-xml path)))
+      (test-equal #t (and (string-contains xml "xSplit=\"1\"") #t))
+      (test-equal #t (and (string-contains xml "ySplit=\"3\"") #t))
+      (test-equal #t (and (string-contains xml "activePane=\"bottomRight\"") #t)))))
+
+;; hidden rows: hidden="1" on the row tag
+(test-group "row-hidden"
+  (let* ((path (join-path (special-folder-temp) "test-scm-excel-hidden.xlsx"))
+         (wb   (make-workbook))
+         (ws   (workbook-add-worksheet! wb "S")))
+    (worksheet-set-cell! ws "A1" "a" 'string #f)
+    (worksheet-set-cell! ws "A2" "b" 'string #f)
+    (worksheet-set-row-hidden! ws 2 #t)
+    (workbook-save wb path)
+    (let ((xml (read-sheet1-xml path)))
+      (test-equal #t (and (string-contains xml "<row r=\"2\" hidden=\"1\">") #t))
+      ;; row 1 stays visible
+      (test-equal #t (and (string-contains xml "<row r=\"1\">") #t)))))
+
+;; autofilter with a per-column filter
+(test-group "autofilter-column"
+  (let* ((path (join-path (special-folder-temp) "test-scm-excel-aff.xlsx"))
+         (wb   (make-workbook))
+         (ws   (workbook-add-worksheet! wb "S")))
+    (worksheet-set-cell! ws "A3" "Status" 'string #f)
+    (worksheet-set-cell! ws "A4" " ++" 'string #f)
+    (worksheet-set-autofilter! ws "A3:A4")
+    (worksheet-set-autofilter-column! ws 0 '("++" "--"))
+    (workbook-save wb path)
+    (let ((xml (read-sheet1-xml path)))
+      (test-equal #t (and (string-contains xml "<autoFilter ref=\"A3:A4\">") #t))
+      (test-equal #t (and (string-contains xml "<filterColumn colId=\"0\">") #t))
+      (test-equal #t (and (string-contains xml "<filter val=\"++\"/>") #t))
+      (test-equal #t (and (string-contains xml "<filter val=\"--\"/>") #t)))))
+
+;; alignment: wrap + vertical center reach styles.xml
+(test-group "alignment-wrap-vertical"
+  (let* ((path (join-path (special-folder-temp) "test-scm-excel-align.xlsx"))
+         (wb   (make-workbook))
+         (ws   (workbook-add-worksheet! wb "S"))
+         (st   (workbook-add-style wb (alignment wrap vertical: "center"))))
+    (worksheet-set-cell! ws "A1" "wrapped text" 'string st)
+    (workbook-save wb path)
+    (let ((xml (read-styles-xml path)))
+      (test-equal #t (and (string-contains xml "wrapText=\"1\"") #t))
+      (test-equal #t (and (string-contains xml "vertical=\"center\"") #t)))))
+
+;; alignment: rotation still works (regression)
+(test-group "alignment-rotation"
+  (let* ((path (join-path (special-folder-temp) "test-scm-excel-rot.xlsx"))
+         (wb   (make-workbook))
+         (ws   (workbook-add-worksheet! wb "S"))
+         (st   (workbook-add-style wb (alignment rotation: 90))))
+    (worksheet-set-cell! ws "A1" "v" 'string st)
+    (workbook-save wb path)
+    (test-equal #t (and (string-contains (read-styles-xml path)
+                                         "textRotation=\"90\"") #t))))
+
+;; image embedding: media bytes + drawing + rels + content-types + sheet tag
+(test-group "image-embed"
+  (let* ((path (join-path (special-folder-temp) "test-scm-excel-img.xlsx"))
+         (png  (bytevector 137 80 78 71 13 10 26 10 1 2 3 4 5))
+         (wb   (make-workbook))
+         (ws   (workbook-add-worksheet! wb "S")))
+    (worksheet-set-cell! ws "A1" "x" 'string #f)
+    (worksheet-add-image! ws "B2" png "png" 100 50)
+    (workbook-save wb path)
+    (call-with-input-zip path
+      (lambda (z)
+        (let ((media (zip-read-entry-bytevector z "xl/media/image1.png"))
+              (draw  (utf8->string
+                      (zip-read-entry-bytevector z "xl/drawings/drawing1.xml")))
+              (srels (utf8->string
+                      (zip-read-entry-bytevector
+                       z "xl/worksheets/_rels/sheet1.xml.rels")))
+              (ct    (utf8->string
+                      (zip-read-entry-bytevector z "[Content_Types].xml")))
+              (sheet (utf8->string
+                      (zip-read-entry-bytevector z "xl/worksheets/sheet1.xml"))))
+          (test-equal png media)                       ; bytes preserved
+          (test-equal #t (and (string-contains draw "oneCellAnchor") #t))
+          (test-equal #t (and (string-contains draw "r:embed=\"rId1\"") #t))
+          (test-equal #t (and (string-contains srels "drawing1.xml") #t))
+          (test-equal #t (and (string-contains ct "Extension=\"png\"") #t))
+          (test-equal #t (and (string-contains ct "drawing1.xml") #t))
+          (test-equal #t (and (string-contains sheet
+                                "<drawing r:id=\"rId1\"/>") #t)))))))
+
 (test-end "excel")
