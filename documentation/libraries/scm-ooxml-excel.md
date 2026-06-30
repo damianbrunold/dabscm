@@ -256,7 +256,7 @@ font, fill, border, and alignment followed by property keyword/value pairs.
 Font properties: name: family: size: color: bold italic
 Fill properties: type: fgcolor: bgcolor:
 Border properties: left: right: top: bottom: diagonal:
-Alignment properties: rotation:
+Alignment properties: rotation: wrap (flag) wrap: vertical: horizontal:
 Color values may be symbols (e.g. 'red) or 8-char ARGB hex strings.
 Example:
 (workbook-add-style wb (fill fgcolor: lightblue))
@@ -317,6 +317,44 @@ Example:
   ((workbook-styles wb) 'styles-count) => 0
 ```
 
+### `worksheet-add-image!`
+
+```
+Syntax: (worksheet-add-image! ws cell bytes ext width-px height-px)
+Library: (scm ooxml excel)
+Description: Embeds an image in worksheet ws with its top-left corner anchored
+at cell (an A1-notation string). bytes is the image data (a bytevector); ext is
+the lowercase file extension "png" or "jpeg". width-px and height-px are the
+display size in pixels. Only supported on regular (non-streaming) worksheets.
+Example:
+  (worksheet-add-image! ws "A1" png-bytes "png" 120 60)
+```
+
+### `worksheet-freeze-panes!`
+
+```
+Syntax: (worksheet-freeze-panes! ws cell)
+Library: (scm ooxml excel)
+Description: Freezes rows and/or columns in worksheet ws so that everything
+above and to the left of cell stays visible while scrolling. cell is an
+A1-notation cell string: "A4" freezes the top 3 rows; "B1" freezes column A;
+"B4" freezes both. Works for both regular and streaming worksheets.
+Example:
+  (worksheet-freeze-panes! ws "A4")
+```
+
+### `worksheet-merge-cells!`
+
+```
+Syntax: (worksheet-merge-cells! ws ref)
+Library: (scm ooxml excel)
+Description: Merges the cell range ref (an A1-notation range string such as
+"A2:G2") in worksheet ws. The value of the top-left cell of the range is shown
+across the merged area. Works for both regular and streaming worksheets.
+Example:
+  (worksheet-merge-cells! ws "A2:G2")
+```
+
 ### `worksheet-set-autofilter!`
 
 ```
@@ -326,6 +364,20 @@ Description: Adds an AutoFilter to worksheet ws over the cell range ref. ref is
 an A1-notation range string. Works for both regular and streaming worksheets.
 Example:
   (worksheet-set-autofilter! ws "A1:E1")
+```
+
+### `worksheet-set-autofilter-column!`
+
+```
+Syntax: (worksheet-set-autofilter-column! ws col-idx values)
+Library: (scm ooxml excel)
+Description: Adds a filter to one column of an AutoFilter previously set with
+worksheet-set-autofilter!. col-idx is the 0-based column index relative to the
+first column of the AutoFilter range; values is a list of strings to keep
+visible. Works for both regular and streaming worksheets.
+Example:
+  (worksheet-set-autofilter! ws "A3:J100")
+  (worksheet-set-autofilter-column! ws 0 '("++" "--"))
 ```
 
 ### `worksheet-set-cell!`
@@ -365,5 +417,16 @@ Description: Sets the height (in points) of the 1-based row index in worksheet
 ws. Works for both regular and streaming worksheets.
 Example:
   (worksheet-set-row-height! ws 1 30)
+```
+
+### `worksheet-set-row-hidden!`
+
+```
+Syntax: (worksheet-set-row-hidden! ws row hidden?)
+Library: (scm ooxml excel)
+Description: Marks the 1-based row index in worksheet ws as hidden (when hidden?
+is true) or visible. Works for both regular and streaming worksheets.
+Example:
+  (worksheet-set-row-hidden! ws 5 #t)
 ```
 

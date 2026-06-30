@@ -45,10 +45,15 @@
   <a href="#e20" data-name="workbook-save">workbook-save</a>
   <a href="#e21" data-name="workbook-save-to-bytevector">workbook-save-to-bytevector</a>
   <a href="#e22" data-name="workbook-styles">workbook-styles</a>
-  <a href="#e23" data-name="worksheet-set-autofilter!">worksheet-set-autofilter!</a>
-  <a href="#e24" data-name="worksheet-set-cell!">worksheet-set-cell!</a>
-  <a href="#e25" data-name="worksheet-set-col-width!">worksheet-set-col-width!</a>
-  <a href="#e26" data-name="worksheet-set-row-height!">worksheet-set-row-height!</a>
+  <a href="#e23" data-name="worksheet-add-image!">worksheet-add-image!</a>
+  <a href="#e24" data-name="worksheet-freeze-panes!">worksheet-freeze-panes!</a>
+  <a href="#e25" data-name="worksheet-merge-cells!">worksheet-merge-cells!</a>
+  <a href="#e26" data-name="worksheet-set-autofilter!">worksheet-set-autofilter!</a>
+  <a href="#e27" data-name="worksheet-set-autofilter-column!">worksheet-set-autofilter-column!</a>
+  <a href="#e28" data-name="worksheet-set-cell!">worksheet-set-cell!</a>
+  <a href="#e29" data-name="worksheet-set-col-width!">worksheet-set-col-width!</a>
+  <a href="#e30" data-name="worksheet-set-row-height!">worksheet-set-row-height!</a>
+  <a href="#e31" data-name="worksheet-set-row-hidden!">worksheet-set-row-hidden!</a>
 </nav>
 
 <main>
@@ -79,7 +84,7 @@
 <p>Cells are addressed in A1 notation; the type is <code>'string</code> or <code>'num</code>, and the last argument is a style index (<code>#f</code> for none). Create styles with <a class="xref" href="#e4"><code>make-style</code></a> / <a class="xref" href="#e18"><code>workbook-add-style</code></a>, set column widths and row heights, and add autofilters. <a class="xref" href="#e21"><code>workbook-save-to-bytevector</code></a> returns the file as bytes.</p>
 </div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
-<p class="export-count">27 bindings</p>
+<p class="export-count">32 bindings</p>
 
 <div class="entry" id="e0" data-name="call-with-streaming-table">
   <div class="entry-name">call-with-streaming-table</div>
@@ -270,7 +275,7 @@ font, fill, border, and alignment followed by property keyword/value pairs.
 Font properties: name: family: size: color: bold italic
 Fill properties: type: fgcolor: bgcolor:
 Border properties: left: right: top: bottom: diagonal:
-Alignment properties: rotation:
+Alignment properties: rotation: wrap (flag) wrap: vertical: horizontal:
 Color values may be symbols (e.g. 'red) or 8-char ARGB hex strings.
 Example:
 (workbook-add-style wb (fill fgcolor: lightblue))
@@ -322,7 +327,39 @@ workbook-add-style.
 Example:
   ((workbook-styles wb) 'styles-count) =&gt; 0</pre>
 </div>
-<div class="entry" id="e23" data-name="worksheet-set-autofilter!">
+<div class="entry" id="e23" data-name="worksheet-add-image!">
+  <div class="entry-name">worksheet-add-image!</div>
+  <pre class="entry-doc">Syntax: (worksheet-add-image! ws cell bytes ext width-px height-px)
+Library: (scm ooxml excel)
+Description: Embeds an image in worksheet ws with its top-left corner anchored
+at cell (an A1-notation string). bytes is the image data (a bytevector); ext is
+the lowercase file extension "png" or "jpeg". width-px and height-px are the
+display size in pixels. Only supported on regular (non-streaming) worksheets.
+Example:
+  (worksheet-add-image! ws "A1" png-bytes "png" 120 60)</pre>
+</div>
+<div class="entry" id="e24" data-name="worksheet-freeze-panes!">
+  <div class="entry-name">worksheet-freeze-panes!</div>
+  <pre class="entry-doc">Syntax: (worksheet-freeze-panes! ws cell)
+Library: (scm ooxml excel)
+Description: Freezes rows and/or columns in worksheet ws so that everything
+above and to the left of cell stays visible while scrolling. cell is an
+A1-notation cell string: "A4" freezes the top 3 rows; "B1" freezes column A;
+"B4" freezes both. Works for both regular and streaming worksheets.
+Example:
+  (worksheet-freeze-panes! ws "A4")</pre>
+</div>
+<div class="entry" id="e25" data-name="worksheet-merge-cells!">
+  <div class="entry-name">worksheet-merge-cells!</div>
+  <pre class="entry-doc">Syntax: (worksheet-merge-cells! ws ref)
+Library: (scm ooxml excel)
+Description: Merges the cell range ref (an A1-notation range string such as
+"A2:G2") in worksheet ws. The value of the top-left cell of the range is shown
+across the merged area. Works for both regular and streaming worksheets.
+Example:
+  (worksheet-merge-cells! ws "A2:G2")</pre>
+</div>
+<div class="entry" id="e26" data-name="worksheet-set-autofilter!">
   <div class="entry-name">worksheet-set-autofilter!</div>
   <pre class="entry-doc">Syntax: (worksheet-set-autofilter! ws ref)
 Library: (scm ooxml excel)
@@ -331,7 +368,19 @@ an A1-notation range string. Works for both regular and streaming worksheets.
 Example:
   (worksheet-set-autofilter! ws "A1:E1")</pre>
 </div>
-<div class="entry" id="e24" data-name="worksheet-set-cell!">
+<div class="entry" id="e27" data-name="worksheet-set-autofilter-column!">
+  <div class="entry-name">worksheet-set-autofilter-column!</div>
+  <pre class="entry-doc">Syntax: (worksheet-set-autofilter-column! ws col-idx values)
+Library: (scm ooxml excel)
+Description: Adds a filter to one column of an AutoFilter previously set with
+worksheet-set-autofilter!. col-idx is the 0-based column index relative to the
+first column of the AutoFilter range; values is a list of strings to keep
+visible. Works for both regular and streaming worksheets.
+Example:
+  (worksheet-set-autofilter! ws "A3:J100")
+  (worksheet-set-autofilter-column! ws 0 '("++" "--"))</pre>
+</div>
+<div class="entry" id="e28" data-name="worksheet-set-cell!">
   <div class="entry-name">worksheet-set-cell!</div>
   <pre class="entry-doc">Syntax: (worksheet-set-cell! ws id value type style)
 Library: (scm ooxml excel)
@@ -345,7 +394,7 @@ Example:
   (worksheet-set-cell! ws "B2" 42 'num #f)
   (worksheet-set-cell! ws "C3" "hi" 'string my-style)</pre>
 </div>
-<div class="entry" id="e25" data-name="worksheet-set-col-width!">
+<div class="entry" id="e29" data-name="worksheet-set-col-width!">
   <div class="entry-name">worksheet-set-col-width!</div>
   <pre class="entry-doc">Syntax: (worksheet-set-col-width! ws col width)
 Library: (scm ooxml excel)
@@ -355,7 +404,7 @@ Example:
   (worksheet-set-col-width! ws "A" 20)
   (worksheet-set-col-width! ws "B" 12.5)</pre>
 </div>
-<div class="entry" id="e26" data-name="worksheet-set-row-height!">
+<div class="entry" id="e30" data-name="worksheet-set-row-height!">
   <div class="entry-name">worksheet-set-row-height!</div>
   <pre class="entry-doc">Syntax: (worksheet-set-row-height! ws row height)
 Library: (scm ooxml excel)
@@ -363,6 +412,15 @@ Description: Sets the height (in points) of the 1-based row index in worksheet
 ws. Works for both regular and streaming worksheets.
 Example:
   (worksheet-set-row-height! ws 1 30)</pre>
+</div>
+<div class="entry" id="e31" data-name="worksheet-set-row-hidden!">
+  <div class="entry-name">worksheet-set-row-hidden!</div>
+  <pre class="entry-doc">Syntax: (worksheet-set-row-hidden! ws row hidden?)
+Library: (scm ooxml excel)
+Description: Marks the 1-based row index in worksheet ws as hidden (when hidden?
+is true) or visible. Works for both regular and streaming worksheets.
+Example:
+  (worksheet-set-row-hidden! ws 5 #t)</pre>
 </div>
 
 </main>
