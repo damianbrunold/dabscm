@@ -650,8 +650,14 @@ Example:
       (call-with-output-string
        (lambda (port)
          (display xml-preamble port)
-         (format port "<worksheet xmlns=\"~a\" xmlns:r=\"~a\">"
-                 (ns 'spreadsheetml-main) (ns 'doc-relationships))
+         ;; Only declare the relationships namespace when this sheet actually
+         ;; references it (a drawing/image); otherwise emit the plain root so
+         ;; image-free workbooks stay byte-identical.
+         (if (null? (worksheet-images ws))
+             (format port "<worksheet xmlns=\"~a\">"
+                     (ns 'spreadsheetml-main))
+             (format port "<worksheet xmlns=\"~a\" xmlns:r=\"~a\">"
+                     (ns 'spreadsheetml-main) (ns 'doc-relationships)))
          ;; Freeze panes (must precede cols/sheetData)
          (let ((fz (worksheet-freeze ws)))
            (when fz (render-freeze-pane port fz)))
