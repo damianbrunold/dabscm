@@ -16,6 +16,19 @@
   (test-equal '((paragraph "one two")) (parse-markdown "one\ntwo"))
   (test-equal '((paragraph "a") (paragraph "b")) (parse-markdown "a\n\nb")))
 
+(test-group "parse-markdown: hard line breaks"
+  ;; a trailing backslash forces a line break within a paragraph
+  (test-equal '((paragraph "a" (break) "b")) (parse-markdown "a\\\nb"))
+  ;; two or more trailing spaces do the same
+  (test-equal '((paragraph "a" (break) "b")) (parse-markdown "a  \nb"))
+  ;; several breaks in a row (e.g. the lines of a prayer)
+  (test-equal '((paragraph "l1" (break) "l2" (break) "l3"))
+              (parse-markdown "l1\\\nl2\\\nl3"))
+  ;; a soft break (no marker) still joins with a space
+  (test-equal '((paragraph "a b")) (parse-markdown "a\nb"))
+  ;; a trailing marker on the final line has no line to break and is ignored
+  (test-equal '((paragraph "a")) (parse-markdown "a  ")))
+
 (test-group "parse-markdown: inline strong/emph"
   (test-equal '((paragraph "Hello " (strong "world")))
               (parse-markdown "Hello **world**"))
@@ -110,6 +123,13 @@
   (test-equal "<p><a href=\"/a\">t</a></p>" (markdown->html "[t](/a)"))
   (test-equal "<p><a href=\"mailto:a@b\">t</a></p>"
               (markdown->html "[t](mailto:a@b)")))
+
+(test-group "markdown->html: hard line breaks"
+  ;; both hard-break spellings render as <br> inside a proportional <p>
+  (test-equal "<p>a<br>b</p>" (markdown->html "a\\\nb"))
+  (test-equal "<p>a<br>b</p>" (markdown->html "a  \nb"))
+  ;; a plain soft break stays a space
+  (test-equal "<p>a b</p>" (markdown->html "a\nb")))
 
 (test-group "markdown->html: inline"
   (test-equal "<p>a <strong>b</strong> c</p>" (markdown->html "a **b** c"))

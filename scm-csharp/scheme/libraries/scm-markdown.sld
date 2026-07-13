@@ -32,6 +32,12 @@
     ;;                             (javascript:, data:, ...) are dropped and
     ;;                             only the link text is rendered
     ;;   - backslash escapes       \* \_ \` \[ ...
+    ;;   - hard line breaks        a line ending in a backslash \ or in two
+    ;;                             or more spaces forces a <br>; the line
+    ;;                             break is kept while the text stays in the
+    ;;                             normal proportional font (unlike a fenced
+    ;;                             code block, which keeps breaks but renders
+    ;;                             in a monospace font)
     ;;
     ;; Not supported (by design — keep it small): setext headings,
     ;; reference links, images, raw HTML, tables, and the full CommonMark
@@ -54,6 +60,7 @@
     ;;          | (emph   <inline> ...)
     ;;          | (code   <string>)
     ;;          | (link   (<inline> ...) <url>)
+    ;;          | (break)                        ; hard line break -> <br>
     ;; ================================================================
 
     ;; ---- small string helpers --------------------------------------
@@ -417,11 +424,55 @@ Example:
           (cons 'ordered-list (cons (or start-num 1) items))
           (cons 'bullet-list items)))
 
+    (define (hard-break-line? raw)
+      ;; A CommonMark hard line break: the raw line ends with a backslash or
+      ;; with two or more spaces. The break is kept as a <br> while the text
+      ;; stays in the normal proportional font.
+      (let ((len (string-length raw)))
+        (and (> len 0)
+             (or (char=? (string-ref raw (- len 1)) #\\)
+                 (and (>= len 2)
+                      (char=? (string-ref raw (- len 1)) #\space)
+                      (char=? (string-ref raw (- len 2)) #\space))))))
+
+    (define (strip-hard-break raw)
+      ;; The content of a hard-break line, with its trailing backslash marker
+      ;; removed (trailing spaces are dropped by the trim).
+      (let ((r (string-trim-right raw)))
+        (string-trim-both
+          (if (and (> (string-length r) 0)
+                   (char=? (string-ref r (- (string-length r) 1)) #\\))
+              (substring r 0 (- (string-length r) 1))
+              r))))
+
+    (define (paragraph-inlines raw-lines)
+      ;; Group a paragraph's raw lines into segments separated by hard line
+      ;; breaks. Within a segment, lines are joined with a space (soft break)
+      ;; and parsed as one run of inlines; segments are joined by (break)
+      ;; nodes. A trailing marker on the final line has no following line and
+      ;; is ignored.
+      (let loop ((lines raw-lines) (seg '()) (acc '()))
+        (cond
+          ((null? lines)
+           (if (null? seg)
+               acc
+               (append acc (parse-inlines (string-join (reverse seg) " ")))))
+          ((and (pair? (cdr lines)) (hard-break-line? (car lines)))
+           (let ((seg (cons (strip-hard-break (car lines)) seg)))
+             (loop (cdr lines) '()
+                   (append acc
+                           (parse-inlines (string-join (reverse seg) " "))
+                           (list '(break))))))
+          (else
+           (loop (cdr lines)
+                 (cons (string-trim-both (car lines)) seg)
+                 acc)))))
+
     (define (collect-paragraph lines n start)
       (let loop ((i start) (body '()))
         (if (and (< i n) (not (block-start? (vector-ref lines i))))
-            (loop (+ i 1) (cons (string-trim-both (vector-ref lines i)) body))
-            (cons (cons 'paragraph (parse-inlines (string-join (reverse body) " ")))
+            (loop (+ i 1) (cons (vector-ref lines i) body))
+            (cons (cons 'paragraph (paragraph-inlines (reverse body)))
                   i))))
 
     ;; ---- HTML rendering --------------------------------------------
@@ -485,6 +536,7 @@ Example:
            ((strong) (string-append "<strong>" (render-inlines (cdr node)) "</strong>"))
            ((emph)   (string-append "<em>" (render-inlines (cdr node)) "</em>"))
            ((code)   (string-append "<code>" (esc-text (cadr node)) "</code>"))
+           ((break)  "<br>")
            ((link)
             (let ((url (caddr node)))
               (if (safe-url? url)
@@ -528,7 +580,7 @@ Example:
 
     (define (inline-node? x)
       (or (string? x)
-          (and (pair? x) (memq (car x) '(strong emph code link)))))
+          (and (pair? x) (memq (car x) '(strong emph code link break)))))
 
     (define (split-leading-inlines nodes)
       ;; An item's children are its inline content followed by any nested
