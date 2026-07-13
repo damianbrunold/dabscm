@@ -21,6 +21,16 @@ public class PrimitiveNormalizedPath extends Primitive {
                "  (normalized-path \"./foo/../bar\") => \"bar\"";
     }
 
+    // For a relative input, return its path relative to the working
+    // directory (e.g. "./foo/../bar" => "bar", "." => "."), matching the
+    // C# build's Path.GetRelativePath. A plain substring of the workdir
+    // prefix is wrong: it leaves a leading separator ("/bar") and yields
+    // "" when the path canonicalises to the workdir itself.
+    private static String relativeTo(File workdir, File path) {
+        var rel = workdir.toPath().relativize(path.toPath()).toString();
+        return rel.isEmpty() ? "." : rel;
+    }
+
     @Override
     public Object apply(SourcePos pos, Object[] arguments) {
         checkArgs(pos, arguments, 1, 1);
@@ -30,13 +40,15 @@ public class PrimitiveNormalizedPath extends Primitive {
             if (path.isAbsolute()) {
                 return path.getCanonicalPath().toCharArray();
             } else {
-                return path.getCanonicalPath().substring(workdir.getCanonicalPath().length()).toCharArray();
+                return relativeTo(workdir.getCanonicalFile(),
+                                  path.getCanonicalFile()).toCharArray();
             }
         } catch (Exception e) {
             if (path.isAbsolute()) {
                 return path.getAbsolutePath().toCharArray();
             } else {
-                return path.getAbsolutePath().substring(workdir.getAbsolutePath().length());
+                return relativeTo(workdir.getAbsoluteFile(),
+                                  path.getAbsoluteFile()).toCharArray();
             }
         }
     }

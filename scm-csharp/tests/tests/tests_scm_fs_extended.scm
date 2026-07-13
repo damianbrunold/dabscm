@@ -79,6 +79,15 @@
     (test-equal #t (directory-exists? dd))
     (test-equal #t (file-exists? (string-append dd "/x")))))
 
+(test-group "normalized-path (relative)"
+  ;; A relative input returns its path relative to the working directory,
+  ;; with NO leading separator; the working directory itself normalises to
+  ;; ".". Regression: the Java build used to strip the workdir prefix by
+  ;; substring, yielding "" for "." and "/bar" for "./foo/../bar".
+  (test-equal "." (normalized-path "."))
+  (test-equal "bar" (normalized-path "./foo/../bar"))
+  (test-equal "sub" (normalized-path "sub")))
+
 (rm base 'recursive)
 
 (test-end "scm-fs-extended")
