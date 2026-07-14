@@ -470,11 +470,11 @@ public class Value {
         if (Double.isInfinite(d)) return d > 0 ? "+inf.0" : "-inf.0";
         if (Double.isNaN(d)) return "+nan.0";
         for (int p = 15; p <= 17; p++) {
-            String s = String.format("%." + p + "g", d);
+            String s = String.format(java.util.Locale.ROOT, "%." + p + "g", d);
             if (Double.parseDouble(s) == d)
                 return normalizeDouble(s);
         }
-        return normalizeDouble(String.format("%.17g", d));
+        return normalizeDouble(String.format(java.util.Locale.ROOT, "%.17g", d));
     }
 
     private static String normalizeDouble(String s) {
