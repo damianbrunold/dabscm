@@ -4,6 +4,7 @@ After=starter-admin.service
 
 [Service]
 Type=oneshot
+ExecCondition=/usr/bin/systemctl is-active --quiet starter-admin.service
 # Two-strike: probe with a 5s budget; on failure wait 5s and retry. Only
 # then restart, so a single slow request cannot bounce the daemon.
 ExecStart=/bin/sh -c '\

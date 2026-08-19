@@ -4,6 +4,7 @@ After=starter-api.service
 
 [Service]
 Type=oneshot
+ExecCondition=/usr/bin/systemctl is-active --quiet starter-api.service
 # Two-strike: probe with a 5s budget; on failure wait 5s and retry. Only
 # then restart, so a single slow request cannot bounce the daemon.
 ExecStart=/bin/sh -c '\
