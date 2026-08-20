@@ -3,10 +3,6 @@
 /scm.jar
 /documentation/reference.pdf
 
-# C# build output
-bin/
-obj/
-
 # Java build output
 scm-java/build/
 scm-java/scm.jar
