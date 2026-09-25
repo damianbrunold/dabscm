@@ -1048,8 +1048,9 @@ Library: (scheme base)
 Description: The arguments to for-each are like the arguments to map, but
   for-each calls proc for its side effects rather than for its values. Unlike
   map, for-each is guaranteed to call proc on the elements of the lists in
-  order from the first element(s) to the last. The return values of for-each
-  are unspecified.
+  order from the first element(s) to the last. If more than one list is given
+  and not all lists have the same length, for-each terminates when the
+  shortest list runs out. The return values of for-each are unspecified.
 Example:
   (for-each display '(a b c))    ; displays abc
   (for-each + '(1 2 3) '(4 5 6)) ; calls +, side effects only
@@ -2339,8 +2340,9 @@ Syntax: (string-map proc string1 string2 ...)
        (string-map proc string [start [end]])
 Library: (scheme base) (srfi 13)
 Description: When given multiple strings, applies proc element-wise to the
-  characters of the strings and returns a string of the results. If multiple
-  strings are given, they must all have the same length (R7RS).
+  characters of the strings and returns a string of the results. If the
+  strings differ in length, string-map terminates when the shortest string
+  runs out (R7RS).
   When given optional integer start/end indices, maps proc over the characters
   of string[start..end) and returns a new string (SRFI-13).
 Example:

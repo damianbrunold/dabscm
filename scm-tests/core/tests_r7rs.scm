@@ -214,7 +214,11 @@
   (import (scheme base))
   (=> (let ((acc '()))
     (string-for-each (lambda (c) (set! acc (cons c acc))) "ih")
-    acc) '(#\h #\i)))
+    acc) '(#\h #\i))
+  (=> (let ((acc '()))
+    (string-for-each (lambda (a b) (set! acc (cons (list a b) acc))) "abc" "x")
+    acc) '((#\a #\x)))
+  (=> (string-map (lambda (a b) b) "abc" "xy") "xy"))
 
 (test-group
   (import (scheme char))
@@ -480,7 +484,23 @@
     r) '(3 2 1))
   (=> (let ((r '()))
     (for-each (lambda (x y) (set! r (cons (+ x y) r))) '(1 2) '(10 20))
-    r) '(22 11)))
+    r) '(22 11))
+  ;; unequal lengths: terminates when the shortest list runs out
+  (=> (let ((r '()))
+    (for-each (lambda (x y) (set! r (cons (+ x y) r))) '(1 2 3) '(10 20))
+    r) '(22 11))
+  (=> (let ((r '()))
+    (for-each (lambda (x y) (set! r (cons (+ x y) r))) '(1 2) '(10 20 30))
+    r) '(22 11))
+  (=> (let ((r '()))
+    (for-each (lambda (x y z) (set! r (cons (list x y z) r)))
+              '(1 2 3) '(a) '(p q))
+    r) '((1 a p)))
+  (=> (let ((r '()))
+    (for-each (lambda (x y) (set! r (cons x r))) '(1 2) '())
+    r) '())
+  (=> (map + '(1 2 3) '(10 20)) '(11 22))
+  (=> (map + '(1 2) '(10 20 30)) '(11 22)))
 
 (test-group
   (import (scheme base))
@@ -582,7 +602,11 @@
   (import (scheme base))
   (=> (let ((r '()))
     (vector-for-each (lambda (x) (set! r (cons x r))) #(1 2 3))
-    r) '(3 2 1)))
+    r) '(3 2 1))
+  (=> (let ((r '()))
+    (vector-for-each (lambda (x y) (set! r (cons (+ x y) r))) #(1 2 3) #(10))
+    r) '(11))
+  (=> (vector-map + #(1 2) #(10 20 30)) '#(11 22)))
 
 (test-group
   (import (scheme char))

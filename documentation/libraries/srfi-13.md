@@ -563,8 +563,9 @@ Syntax: (string-map proc string1 string2 ...)
        (string-map proc string [start [end]])
 Library: (scheme base) (srfi 13)
 Description: When given multiple strings, applies proc element-wise to the
-  characters of the strings and returns a string of the results. If multiple
-  strings are given, they must all have the same length (R7RS).
+  characters of the strings and returns a string of the results. If the
+  strings differ in length, string-map terminates when the shortest string
+  runs out (R7RS).
   When given optional integer start/end indices, maps proc over the characters
   of string[start..end) and returns a new string (SRFI-13).
 Example:
