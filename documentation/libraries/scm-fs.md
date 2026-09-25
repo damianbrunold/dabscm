@@ -515,7 +515,7 @@ Example:
 ```
 Syntax: (which program)
 Library: (scm fs)
-Description: Searches the directories in PATH for an executable named program and returns its full path as a string, or #f if not found.
+Description: Searches the directories in PATH for an executable named program and returns its full path as a string, or #f if not found. On Windows, a program name without an extension is tried with each PATHEXT extension (e.g. "psql" finds psql.exe).
 Example:
   (which "ls") => "/usr/bin/ls"
   (which "nonexistent") => #f
