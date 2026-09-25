@@ -23,6 +23,9 @@ public class PrimitiveStartProgram : Primitive
         "  (process-kill p)\n" +
         "  (process-wait p)";
 
+    [DllImport("kernel32.dll")]
+    private static extern IntPtr GetConsoleWindow();
+
     public override object Apply(SourcePos? pos, object[] arguments)
     {
         CheckArgs(pos, arguments, 1, 2);
@@ -43,7 +46,14 @@ public class PrimitiveStartProgram : Primitive
         {
             var psi = new ProcessStartInfo(cmd, args);
             psi.UseShellExecute = false;
-            psi.CreateNoWindow = true;
+            // Mirror the JDK: suppress a console window only when we have no
+            // console ourselves. With one, the child shares it and so receives
+            // Ctrl+C / Ctrl+Break like the rest of the console group — as child
+            // processes of the Java implementation (and on POSIX, the foreground
+            // process group) do. CreateNoWindow gave it a hidden console of its
+            // own, so it never saw Ctrl+C at all.
+            psi.CreateNoWindow = !RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                                 || GetConsoleWindow() == IntPtr.Zero;
 
             string? logfile = null;
             if (options != Value.NIL)

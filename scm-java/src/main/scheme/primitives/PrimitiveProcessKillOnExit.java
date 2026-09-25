@@ -9,6 +9,16 @@ public class PrimitiveProcessKillOnExit extends Primitive {
     // all calls so a single JVM shutdown hook suffices.
     private static final Set<Process> TRACKED = new CopyOnWriteArraySet<>();
     private static final AtomicBoolean HOOK_INSTALLED = new AtomicBoolean(false);
+    // Set once the shutdown hook has fired. The main thread keeps running
+    // while hooks run, so a child registered after that point (e.g. a
+    // supervisor mid-restart) would never be killed; kill it on registration.
+    private static volatile boolean exiting = false;
+
+    private static void killTree(Process p) {
+        // Tree-kill: the tracked handle is often a wrapper whose grandchild
+        // holds the port (see ProcessUtil.destroyTree).
+        try { if (p.isAlive()) ProcessUtil.destroyTree(p, true); } catch (Exception ignored) {}
+    }
 
     @Override
     public String name() { return "process-kill-on-exit"; }
@@ -37,13 +47,11 @@ public class PrimitiveProcessKillOnExit extends Primitive {
             if (!p.isAlive()) TRACKED.remove(p);
         }
         TRACKED.add(sp.process);
+        if (exiting) killTree(sp.process);
         if (HOOK_INSTALLED.compareAndSet(false, true)) {
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                for (Process p : TRACKED) {
-                    // Tree-kill: the tracked handle is often a wrapper whose
-                    // grandchild holds the port (see ProcessUtil.destroyTree).
-                    try { if (p.isAlive()) ProcessUtil.destroyTree(p, true); } catch (Exception ignored) {}
-                }
+                exiting = true;
+                for (Process p : TRACKED) killTree(p);
             }));
         }
         return Value.T;
