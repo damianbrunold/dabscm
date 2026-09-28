@@ -41,7 +41,6 @@ public class PrimitiveOpenOutputFile extends Primitive {
             Charset encoding = StandardCharsets.UTF_8;
             boolean append = false;
             boolean deflate = false;
-            @SuppressWarnings("unused")
             boolean add_bom = false;
             for (var i = 1; i < arguments.length; i++) {
                 String arg;
@@ -60,15 +59,21 @@ public class PrimitiveOpenOutputFile extends Primitive {
                     append = true;
                 }
             }
+            // like C#'s StreamWriter: emit the BOM only at the start of the
+            // file (fresh/truncated, or appending to an empty file)
+            if (append && add_bom && Files.exists(LongPath.of(filename)) && Files.size(LongPath.of(filename)) > 0) {
+                add_bom = false;
+            }
             OutputStream fos = append
                 ? Files.newOutputStream(LongPath.of(filename), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
                 : Files.newOutputStream(LongPath.of(filename), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-            if (deflate) {
-                return new TextOutputStream(new BufferedWriter(new OutputStreamWriter(new DeflaterOutputStream(fos, new Deflater(Deflater.DEFAULT_COMPRESSION, true)), encoding), 8192));
-            } else {
-                // TODO handle BOM?
-                return new TextOutputStream(new BufferedWriter(new OutputStreamWriter(fos, encoding), 8192));
+            BufferedWriter writer = deflate
+                ? new BufferedWriter(new OutputStreamWriter(new DeflaterOutputStream(fos, new Deflater(Deflater.DEFAULT_COMPRESSION, true)), encoding), 8192)
+                : new BufferedWriter(new OutputStreamWriter(fos, encoding), 8192);
+            if (add_bom) {
+                writer.write('\uFEFF');
             }
+            return new TextOutputStream(writer);
         } catch (Exception e) {
             throw new SchemeError(pos, new FileErrorObject("open-output-file: io failure", new Object[] { filename }));
         }
