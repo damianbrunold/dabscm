@@ -53,13 +53,12 @@ public class PrimitiveRunProgram : Primitive
 
             if (options != Value.NIL)
             {
-                var val = PrimitiveGetProperty.GetProperty(
-                    options,
-                    "work-dir",
-                    "."
-                );
-                var workdir = new String(Value.AsString(val));
-                process.StartInfo.WorkingDirectory = workdir;
+                // no 'work-dir -> inherit the current directory
+                var val = PrimitiveGetProperty.GetProperty(options, "work-dir", Value.F);
+                if (!val.Equals(Value.F))
+                {
+                    process.StartInfo.WorkingDirectory = new String(Value.AsString(val));
+                }
                 ProcessEnvUtil.Apply(process.StartInfo, options);
             }
 
