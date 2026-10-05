@@ -54,11 +54,12 @@
   <a href="#e29" data-name="sys-num-cpu-cores">sys-num-cpu-cores</a>
   <a href="#e30" data-name="sys-os-version">sys-os-version</a>
   <a href="#e31" data-name="sys-platform">sys-platform</a>
-  <a href="#e32" data-name="sys-scm-technology">sys-scm-technology</a>
-  <a href="#e33" data-name="sys-scm-version">sys-scm-version</a>
-  <a href="#e34" data-name="sys-user-name">sys-user-name</a>
-  <a href="#e35" data-name="uuidgen">uuidgen</a>
-  <a href="#e36" data-name="watch">watch</a>
+  <a href="#e32" data-name="sys-scm-command">sys-scm-command</a>
+  <a href="#e33" data-name="sys-scm-technology">sys-scm-technology</a>
+  <a href="#e34" data-name="sys-scm-version">sys-scm-version</a>
+  <a href="#e35" data-name="sys-user-name">sys-user-name</a>
+  <a href="#e36" data-name="uuidgen">uuidgen</a>
+  <a href="#e37" data-name="watch">watch</a>
 </nav>
 
 <main>
@@ -92,7 +93,7 @@
 <p><a class="xref" href="#e4"><code>getopt</code></a> parses command-line option lists; see also the higher-level <a class="xref" href="scm-args.html"><code>(scm args)</code></a>.</p>
 </div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
-<p class="export-count">37 bindings</p>
+<p class="export-count">38 bindings</p>
 
 <div class="entry" id="e0" data-name="current-pid">
   <div class="entry-name">current-pid</div>
@@ -403,7 +404,16 @@ Description: Returns a symbol identifying the current operating system platform:
 Example:
   (sys-platform) =&gt; linux</pre>
 </div>
-<div class="entry" id="e32" data-name="sys-scm-technology">
+<div class="entry" id="e32" data-name="sys-scm-command">
+  <div class="entry-name">sys-scm-command</div>
+  <pre class="entry-doc">Syntax: (sys-scm-command)
+Library: (scm system)
+Description: Returns the command line (a list of strings) that starts the currently running SCM interpreter. Append a script path and its arguments to run it with the same implementation (java or csharp) and installation, independent of what scm is on PATH.
+Example:
+  (sys-scm-command) =&gt; ("/usr/lib/jvm/java-21/bin/java" "-jar" "/opt/dabscm/scm.jar")
+  (run-program (append (sys-scm-command) (list "build.scm")))</pre>
+</div>
+<div class="entry" id="e33" data-name="sys-scm-technology">
   <div class="entry-name">sys-scm-technology</div>
   <pre class="entry-doc">Syntax: (sys-scm-technology)
 Library: (scm system)
@@ -411,7 +421,7 @@ Description: Returns a symbol identifying the SCM implementation technology: csh
 Example:
   (sys-scm-technology) =&gt; java</pre>
 </div>
-<div class="entry" id="e33" data-name="sys-scm-version">
+<div class="entry" id="e34" data-name="sys-scm-version">
   <div class="entry-name">sys-scm-version</div>
   <pre class="entry-doc">Syntax: (sys-scm-version)
 Library: (scm system)
@@ -419,7 +429,7 @@ Description: Returns the SCM interpreter version as a string.
 Example:
   (sys-scm-version) =&gt; "0.0.1"</pre>
 </div>
-<div class="entry" id="e34" data-name="sys-user-name">
+<div class="entry" id="e35" data-name="sys-user-name">
   <div class="entry-name">sys-user-name</div>
   <pre class="entry-doc">Syntax: (sys-user-name)
 Library: (scm system)
@@ -427,7 +437,7 @@ Description: Returns the name of the currently logged-in user as a string.
 Example:
   (sys-user-name) =&gt; "alice"</pre>
 </div>
-<div class="entry" id="e35" data-name="uuidgen">
+<div class="entry" id="e36" data-name="uuidgen">
   <div class="entry-name">uuidgen</div>
   <pre class="entry-doc">Syntax: (uuidgen)
 Library: (scm system)
@@ -437,7 +447,7 @@ Description: Returns a random RFC 4122 version 4 UUID as a string in
 Example:
   (uuidgen) =&gt; "e3b0c442-98fc-4c14-9afb-f4ca495991b9"</pre>
 </div>
-<div class="entry" id="e36" data-name="watch">
+<div class="entry" id="e37" data-name="watch">
   <div class="entry-name">watch</div>
   <pre class="entry-doc">Syntax: (watch thunk [option ...])
 Library: (scm system)
