@@ -34,6 +34,7 @@
           sys-num-cpu-cores
           sys-os-version
           sys-platform
+          sys-scm-command
           sys-scm-technology
           sys-scm-version
           sys-user-name
@@ -79,6 +80,7 @@ Example:
     (define sys-num-cpu-cores (%primitive "sys-num-cpu-cores"))
     (define sys-os-version (%primitive "sys-os-version"))
     (define sys-platform (%primitive "sys-platform"))
+    (define sys-scm-command (%primitive "sys-scm-command"))
     (define sys-scm-technology (%primitive "sys-scm-technology"))
     (define sys-scm-version (%primitive "sys-scm-version"))
     (define sys-user-name (%primitive "sys-user-name"))

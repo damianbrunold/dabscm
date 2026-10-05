@@ -442,6 +442,7 @@ public class Primitives {
         bind(new PrimitiveSysNumCPUCores());
         bind(new PrimitiveSysOsVersion());
         bind(new PrimitiveSysPlatform());
+        bind(new PrimitiveSysScmCommand());
         bind(new PrimitiveSysScmTechnology());
         bind(new PrimitiveSysScmVersion());
         bind(new PrimitiveSysUserName());

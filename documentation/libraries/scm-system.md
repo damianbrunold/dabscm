@@ -411,6 +411,17 @@ Example:
   (sys-platform) => linux
 ```
 
+### `sys-scm-command`
+
+```
+Syntax: (sys-scm-command)
+Library: (scm system)
+Description: Returns the command line (a list of strings) that starts the currently running SCM interpreter. Append a script path and its arguments to run it with the same implementation (java or csharp) and installation, independent of what scm is on PATH.
+Example:
+  (sys-scm-command) => ("/usr/lib/jvm/java-21/bin/java" "-jar" "/opt/dabscm/scm.jar")
+  (run-program (append (sys-scm-command) (list "build.scm")))
+```
+
 ### `sys-scm-technology`
 
 ```
