@@ -30,9 +30,15 @@ HTTPS server certificates are verified against the platform's trusted root
 certificates. On Windows both implementations accept certificates trusted by
 the Windows certificate store (e.g. corporate root CAs deployed by group
 policy); the Java implementation additionally accepts certificates trusted by
-the JDK's own trust store.
+the JDK's own trust store. Like Windows itself, the Java implementation on
+Windows also downloads intermediate certificates that the server does not
+send, from the CA issuer URL in the certificate (AIA).
 
 Setting the environment variable `SCM_TLS_INSECURE=1` (or `true` / `yes`)
 disables certificate and host name verification for all requests of this
 library. This is insecure and meant only as a last resort for misconfigured
 intranet servers; a warning is printed to stderr when it takes effect.
+
+Setting `SCM_TLS_DEBUG=1` makes the Java implementation print the trust stores
+it loaded and, when a certificate is rejected, the chain sent by the server
+and each trust store's reason to stderr.
