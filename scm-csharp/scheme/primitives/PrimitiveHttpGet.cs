@@ -26,7 +26,7 @@ public class PrimitiveHttpGet : Primitive
         int timeoutSeconds = arguments.Length == 3
             ? (int)Value.AsInteger(arguments[2])
             : SchemeHttpRequest.DefaultTimeoutSeconds;
-        using var client = new HttpClient();
+        using var client = TlsTrust.CreateHttpClient();
         client.Timeout = timeoutSeconds > 0
             ? System.TimeSpan.FromSeconds(timeoutSeconds)
             : System.Threading.Timeout.InfiniteTimeSpan;

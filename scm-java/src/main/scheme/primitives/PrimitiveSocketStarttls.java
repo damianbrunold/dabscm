@@ -33,7 +33,7 @@ public class PrimitiveSocketStarttls extends Primitive {
         boolean verify = !(arguments.length > 2 && Boolean.FALSE.equals(arguments[2]));
         try {
             SSLSocketFactory factory = verify
-                ? (SSLSocketFactory) SSLSocketFactory.getDefault()
+                ? TlsTrust.verifyingContext().getSocketFactory()
                 : PrimitiveTlsConnect.insecureFactory();
             SSLSocket tls = (SSLSocket) factory.createSocket(
                 ss.socket, host, ss.socket.getPort(), true);

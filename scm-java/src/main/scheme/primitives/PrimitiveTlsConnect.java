@@ -30,7 +30,7 @@ public class PrimitiveTlsConnect extends Primitive {
         boolean verify = !(arguments.length > 2 && Boolean.FALSE.equals(arguments[2]));
         try {
             SSLSocketFactory factory = verify
-                ? (SSLSocketFactory) SSLSocketFactory.getDefault()
+                ? TlsTrust.verifyingContext().getSocketFactory()
                 : insecureFactory();
             SSLSocket s = (SSLSocket) factory.createSocket(host, port);
             s.setTcpNoDelay(true);

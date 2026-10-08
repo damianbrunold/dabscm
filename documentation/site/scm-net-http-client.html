@@ -57,6 +57,9 @@
 (http-get-json "http://example.com/api/items")
 (http-post-json "http://example.com/api/items" "{\"name\":\"Ada\"}")</code></pre>
 <p>Responses are the records described in <a class="xref" href="scm-net-http-response.html"><code>(scm net http response)</code></a> — read their status, headers, and body with that library's accessors (and parse a JSON body yourself with <a class="xref" href="scm-json-simple.html"><code>(scm json simple)</code></a>).</p>
+<h2>HTTPS certificate verification</h2>
+<p>HTTPS server certificates are verified against the platform's trusted root certificates. On Windows both implementations accept certificates trusted by the Windows certificate store (e.g. corporate root CAs deployed by group policy); the Java implementation additionally accepts certificates trusted by the JDK's own trust store.</p>
+<p>Setting the environment variable <code>SCM_TLS_INSECURE=1</code> (or <code>true</code> / <code>yes</code>) disables certificate and host name verification for all requests of this library. This is insecure and meant only as a last resort for misconfigured intranet servers; a warning is printed to stderr when it takes effect.</p>
 </div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">7 bindings</p>

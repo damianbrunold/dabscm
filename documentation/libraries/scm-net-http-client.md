@@ -28,6 +28,19 @@ Responses are the records described in `(scm net http response)` — read their
 status, headers, and body with that library's accessors (and parse a JSON body
 yourself with `(scm json simple)`).
 
+## HTTPS certificate verification
+
+HTTPS server certificates are verified against the platform's trusted root
+certificates. On Windows both implementations accept certificates trusted by
+the Windows certificate store (e.g. corporate root CAs deployed by group
+policy); the Java implementation additionally accepts certificates trusted by
+the JDK's own trust store.
+
+Setting the environment variable `SCM_TLS_INSECURE=1` (or `true` / `yes`)
+disables certificate and host name verification for all requests of this
+library. This is insecure and meant only as a last resort for misconfigured
+intranet servers; a warning is printed to stderr when it takes effect.
+
 
 ## Exports
 

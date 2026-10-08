@@ -47,7 +47,7 @@ public class PrimitiveHttpPost extends Primitive {
                     hlist = hp.cdr;
                 }
             }
-            HttpClient client = HttpClient.newHttpClient();
+            HttpClient client = TlsTrust.httpClient();
             HttpResponse<String> resp = client.send(builder.build(), HttpResponse.BodyHandlers.ofString());
             return PrimitiveHttpGet.buildResponse(resp);
         } catch (Exception e) {
