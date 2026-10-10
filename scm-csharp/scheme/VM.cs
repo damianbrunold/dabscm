@@ -836,8 +836,11 @@ public class VM
                 case Opcode.VECTOR_REF: {
                     _intrinsicName = "vector-ref"; _intrinsicPos = instruction.pos;
                     object idx = Pop();
-                    object vec = Pop();
-                    Push(Value.AsVector(vec)[IntegerMath.ToInt(idx)]);
+                    var vec = Value.AsVector(Pop());
+                    int i = IntegerMath.ToInt(idx);
+                    if (i < 0 || i >= vec.Length)
+                        throw new SchemeError(instruction.pos, "vector-ref: index out of range: ~a", idx);
+                    Push(vec[i]);
                     break;
                 }
 
@@ -845,8 +848,11 @@ public class VM
                     _intrinsicName = "vector-set!"; _intrinsicPos = instruction.pos;
                     object val = Pop();
                     object idx = Pop();
-                    object vec = Pop();
-                    Value.AsVector(vec)[IntegerMath.ToInt(idx)] = val;
+                    var vec = Value.AsVector(Pop());
+                    int i = IntegerMath.ToInt(idx);
+                    if (i < 0 || i >= vec.Length)
+                        throw new SchemeError(instruction.pos, "vector-set!: index out of range: ~a", idx);
+                    vec[i] = val;
                     Push(new Values());
                     break;
                 }

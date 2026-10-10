@@ -161,10 +161,10 @@ Example:
 ```
 Syntax: (port-position port)
 Library: (scm core)
-Description: Returns the current position of the textual input port as a list (filename line column).
+Description: Returns the current position of the textual input port as a list (filename line column): line 1-based, column 0-based, filename "{string}" for string ports.
 Example:
   (define p (open-input-string "hello"))
-  (port-position p) => ("{string}" 1 1)
+  (port-position p) => ("{string}" 1 0)
 ```
 
 ### `read-chars`

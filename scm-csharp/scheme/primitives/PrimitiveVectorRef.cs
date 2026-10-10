@@ -23,13 +23,11 @@ public class PrimitiveVectorRef : Primitive
         CheckArgs(pos, arguments, 2, 3);
         var v = Value.AsVector(arguments[0]);
         var idx = IntegerMath.ToInt(arguments[1]);
-        if (idx >= v.Length && arguments.Length == 3)
+        if (idx < 0 || idx >= v.Length)
         {
-            return arguments[2];
+            if (arguments.Length == 3) return arguments[2];
+            throw new SchemeError(pos, "vector-ref: index out of range: ~a", arguments[1]);
         }
-        else
-        {
-            return v[idx];
-        }
+        return v[idx];
     }
 }

@@ -23,10 +23,10 @@ public class PrimitiveVectorRef extends Primitive {
         checkArgs(pos, arguments, 2, 3);
         Object[] v = Value.asVector(arguments[0]);
         int idx = IntegerMath.toInt(arguments[1]);
-        if (idx >= v.length && arguments.length == 3) {
-            return arguments[2];
-        } else {
-            return v[idx];
+        if (idx < 0 || idx >= v.length) {
+            if (arguments.length == 3) return arguments[2];
+            throw new SchemeError(pos, "vector-ref: index out of range: ~a", arguments[1]);
         }
+        return v[idx];
     }
 }

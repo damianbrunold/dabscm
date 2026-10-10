@@ -1,5 +1,6 @@
 (import (scheme base)
         (scheme file)
+        (scheme read)
         (scheme write)
         (scm test)
         (scm io)
@@ -99,5 +100,16 @@
     (test-equal "caf\xe9;" (file->string path 'latin-1))
     (test-equal '("caf\xe9;") (file->lines path 'latin-1)))
   (teardown))
+
+(test-group "port-position"
+  (let ((p (open-input-string "(a)\n\n  (b)")))
+    (test-equal '("{string}" 1 0) (port-position p))
+    (read p)
+    (read-char p) (read-char p) (read-char p) (read-char p)
+    (let ((pos (port-position p)))
+      (test-equal "line is a number" #t (number? (cadr pos)))
+      (test-equal "line" 3 (cadr pos))
+      (test-equal "column + 1" 3 (+ 1 (list-ref pos 2)))
+      (test-equal "filename is a string" #t (string? (car pos))))))
 
 (test-end "scm-io")

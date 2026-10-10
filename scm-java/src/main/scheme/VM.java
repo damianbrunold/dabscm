@@ -781,8 +781,11 @@ public class VM {
                 case VECTOR_REF: {
                     intrinsicName = "vector-ref"; intrinsicPos = instruction.pos;
                     Object idx = pop();
-                    Object vec = pop();
-                    push(Value.asVector(vec)[IntegerMath.toInt(idx)]);
+                    Object[] vec = Value.asVector(pop());
+                    int i = IntegerMath.toInt(idx);
+                    if (i < 0 || i >= vec.length)
+                        throw new SchemeError(instruction.pos, "vector-ref: index out of range: ~a", idx);
+                    push(vec[i]);
                     break;
                 }
 
@@ -790,8 +793,11 @@ public class VM {
                     intrinsicName = "vector-set!"; intrinsicPos = instruction.pos;
                     Object val = pop();
                     Object idx = pop();
-                    Object vec = pop();
-                    Value.asVector(vec)[IntegerMath.toInt(idx)] = val;
+                    Object[] vec = Value.asVector(pop());
+                    int i = IntegerMath.toInt(idx);
+                    if (i < 0 || i >= vec.length)
+                        throw new SchemeError(instruction.pos, "vector-set!: index out of range: ~a", idx);
+                    vec[i] = val;
                     push(new Values());
                     break;
                 }

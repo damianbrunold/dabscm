@@ -178,6 +178,21 @@
   (=> (guard (exn
           (#t 'caught))
     (+ 1 1)) 2)
+  ;; out-of-range vector access is a catchable error (VM intrinsic and
+  ;; first-class primitive alike)
+  (=> (guard (exn ((error-object? exn) (error-object-message exn)))
+        (vector-ref (vector 1 2) 5))
+      "vector-ref: index out of range: 5")
+  (=> (guard (exn ((error-object? exn) 'caught))
+        (vector-ref (vector 1 2) -1))
+      'caught)
+  (=> (guard (exn ((error-object? exn) (error-object-message exn)))
+        (vector-set! (vector 1 2) 2 0))
+      "vector-set!: index out of range: 2")
+  (=> (let ((vr vector-ref))
+        (guard (exn ((error-object? exn) (error-object-message exn)))
+          (vr (vector 1 2) 7)))
+      "vector-ref: index out of range: 7")
   (=> (guard (exn
           ((equal? exn 'foo) 'got-foo))
     (raise 'foo)) 'got-foo)

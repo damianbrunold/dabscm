@@ -180,10 +180,10 @@ Example:
   <div class="entry-name">port-position</div>
   <pre class="entry-doc">Syntax: (port-position port)
 Library: (scm core)
-Description: Returns the current position of the textual input port as a list (filename line column).
+Description: Returns the current position of the textual input port as a list (filename line column): line 1-based, column 0-based, filename "{string}" for string ports.
 Example:
   (define p (open-input-string "hello"))
-  (port-position p) =&gt; ("{string}" 1 1)</pre>
+  (port-position p) =&gt; ("{string}" 1 0)</pre>
 </div>
 <div class="entry" id="e10" data-name="read-chars">
   <div class="entry-name">read-chars</div>

@@ -18,10 +18,10 @@ public class PrimitivePortPosition extends Primitive {
     public String info() {
         return "Syntax: (port-position port)\n" +
                "Library: (scm core)\n" +
-               "Description: Returns the current position of the textual input port as a list (filename line column).\n" +
+               "Description: Returns the current position of the textual input port as a list (filename line column): line 1-based, column 0-based, filename \"{string}\" for string ports.\n" +
                "Example:\n" +
                "  (define p (open-input-string \"hello\"))\n" +
-               "  (port-position p) => (\"{string}\" 1 1)";
+               "  (port-position p) => (\"{string}\" 1 0)";
     }
     
     @Override
@@ -34,12 +34,15 @@ public class PrimitivePortPosition extends Primitive {
         else {
             port = Value.asInputPort(arguments[0]);
         }
+	// line/column as Scheme integers (Long); string ports have no file
+	// name and report "{string}"
+	String filename = port.filename();
 	return new Pair(
-	    port.filename(),
+	    (filename != null ? filename : "{string}").toCharArray(),
 	    new Pair(
-		port.line(),
+		(long) port.line(),
 		new Pair(
-		    port.column(),
+		    (long) port.column(),
 		    Value.NIL)));
     }
 }
