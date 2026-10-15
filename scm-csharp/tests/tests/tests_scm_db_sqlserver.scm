@@ -79,6 +79,9 @@
       (test-equal '(#("1") #("3"))
         (q "SELECT v FROM (VALUES (N'1'),(N'2'),(N'3')) t(v) WHERE v IN $1 ORDER BY v" '("1" "3")))
       (test-equal '(#("O'Brien")) (q "SELECT $1" "O'Brien"))
+      ;; batches spanning several TDS packets (one TLS record per packet)
+      (test-equal '(#("1"))
+        (q (string-append "SELECT 1 /*" (make-string 20000 #\space) "*/")))
       (test-equal 20000
         (length (q "SELECT TOP 20000 a.object_id FROM sys.all_objects a CROSS JOIN sys.all_objects b"))))
     (test-group "live: errors"

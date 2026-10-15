@@ -252,8 +252,10 @@ Example:
     (define (tds-send-packet! out type-byte payload-bv)
       "Syntax: (tds-send-packet! out type-byte payload-bv)
 Library: (scm database sqlserver)
-Description: Sends a TDS packet of the given type containing payload-bv. Splits into
-  multiple packets (max 4088 bytes payload each) if necessary, setting EOM on the last.
+Description: Sends a TDS message of the given type containing payload-bv. Splits it into
+  packets (max 4088 bytes payload each), setting EOM on the last. Each packet is written
+  and flushed on its own: over TLS, SQL Server expects every TDS packet in its own TLS
+  record(s) and drops the connection when a record holds parts of two packets.
 Example:
   (tds-send-packet! out #x01 sql-bytes)"
       (let* ((max-payload 4088)
@@ -263,18 +265,17 @@ Example:
             (let* ((remaining  (- total-len offset))
                    (chunk-len  (min remaining max-payload))
                    (is-last    (= (+ offset chunk-len) total-len))
-                   (status     (if is-last #x01 #x00))
-                   (pkt-total  (+ 8 chunk-len)))
-              (write-u8 type-byte out)
-              (write-u8 status out)
-              (write-u8 (quotient pkt-total 256) out)
-              (write-u8 (modulo pkt-total 256) out)
-              (write-u8 0 out) (write-u8 0 out)    ; SPID
-              (write-u8 pkt-id out)
-              (write-u8 0 out)                     ; window
-              (write-bytevector payload-bv out offset (+ offset chunk-len))
-              (loop (+ offset chunk-len) (+ pkt-id 1)))))
-        (flush-output-port out)))
+                   (pkt-total  (+ 8 chunk-len))
+                   (pkt        (make-bytevector pkt-total 0)))
+              (bytevector-u8-set! pkt 0 type-byte)
+              (bytevector-u8-set! pkt 1 (if is-last #x01 #x00))
+              (bytevector-u8-set! pkt 2 (quotient pkt-total 256))
+              (bytevector-u8-set! pkt 3 (modulo pkt-total 256))
+              (bytevector-u8-set! pkt 6 (modulo pkt-id 256))
+              (bytevector-copy! pkt 8 payload-bv offset (+ offset chunk-len))
+              (write-bytevector pkt out)
+              (flush-output-port out)
+              (loop (+ offset chunk-len) (+ pkt-id 1)))))))
 
     (define (tds-read-packet-header! in)
       "Syntax: (tds-read-packet-header! in)
