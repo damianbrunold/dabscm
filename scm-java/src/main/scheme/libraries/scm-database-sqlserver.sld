@@ -1,9 +1,11 @@
 (define-library (scm database sqlserver)
-  (import (scm core) (scheme base) (scm net sockets))
+  (import (scm core) (scheme base) (scheme char) (scheme inexact) (srfi 151) (scm net sockets))
   (export ss-connect
           ss-close
           ss-query
           ss-exec
+          ss-format-sql
+          ss-sql-literal
           ss-result-columns
           ss-result-rows
           ss-result->alist-list
@@ -163,28 +165,36 @@ Example:
               (- u max)
               u))))
 
-    ;; --- UTF-16 LE encoding/decoding (BMP only) ---
+    ;; --- UTF-16 LE encoding/decoding (surrogate pairs for non-BMP) ---
 
     (define (string->utf16le s)
       "Syntax: (string->utf16le s)
 Library: (scm database sqlserver)
-Description: Converts a string to a UTF-16 LE bytevector (BMP characters only; 2 bytes per char).
+Description: Converts a string to a UTF-16 LE bytevector. Characters outside the BMP are
+  encoded as surrogate pairs.
 Example:
   (string->utf16le \"hello\") => #u8(104 0 101 0 108 0 108 0 111 0)"
-      (let* ((len (string-length s))
-             (bv  (make-bytevector (* 2 len))))
-        (let loop ((i 0))
-          (if (= i len) bv
-              (let ((cp (char->integer (string-ref s i))))
-                (bytevector-u8-set! bv (* 2 i)       (modulo cp 256))
-                (bytevector-u8-set! bv (+ (* 2 i) 1) (quotient cp 256))
-                (loop (+ i 1)))))))
+      (let ((out (open-output-bytevector)))
+        (define (put16 u)
+          (write-u8 (modulo u 256) out)
+          (write-u8 (quotient u 256) out))
+        (string-for-each
+         (lambda (ch)
+           (let ((cp (char->integer ch)))
+             (if (< cp #x10000)
+                 (put16 cp)
+                 (let ((v (- cp #x10000)))
+                   (put16 (+ #xD800 (quotient v #x400)))
+                   (put16 (+ #xDC00 (modulo v #x400)))))))
+         s)
+        (get-output-bytevector out)))
 
     (define (utf16le->string bv offset len-bytes)
       "Syntax: (utf16le->string bv offset len-bytes)
 Library: (scm database sqlserver)
 Description: Converts a UTF-16 LE bytevector slice to a string. len-bytes is the number of
-  bytes (not characters). BMP characters only.
+  bytes (not characters). Code units are kept as they are (scm strings are UTF-16, so a
+  surrogate pair stays a pair, as in string literals).
 Example:
   (utf16le->string #u8(104 0 101 0) 0 4) => \"he\""
       (let* ((nchars (quotient len-bytes 2))
@@ -192,10 +202,49 @@ Example:
         (let loop ((i 0))
           (if (= i nchars) result
               (let* ((b0 (bytevector-u8-ref bv (+ offset (* 2 i))))
-                     (b1 (bytevector-u8-ref bv (+ offset (* 2 i) 1)))
-                     (cp (+ b0 (* b1 256))))
-                (string-set! result i (integer->char cp))
+                     (b1 (bytevector-u8-ref bv (+ offset (* 2 i) 1))))
+                (string-set! result i (integer->char (+ b0 (* b1 256))))
                 (loop (+ i 1)))))))
+
+    ;; --- Single-byte code pages (varchar/char/text with non-UTF8 collations) ---
+
+    ;; Windows-1252 code points for bytes #x80-#x9F (#f = undefined); other bytes map 1:1.
+    (define %cp1252-high
+      (vector #x20AC #f #x201A #x0192 #x201E #x2026 #x2020 #x2021
+              #x02C6 #x2030 #x0160 #x2039 #x0152 #f #x017D #f
+              #f #x2018 #x2019 #x201C #x201D #x2022 #x2013 #x2014
+              #x02DC #x2122 #x0161 #x203A #x0153 #f #x017E #x0178))
+
+    (define (cp1252->string bv)
+      "Syntax: (cp1252->string bv)
+Library: (scm database sqlserver)
+Description: Decodes a Windows-1252 bytevector to a string (the code page of the Latin1_General
+  and SQL_Latin1_General collations). Undefined bytes map to U+FFFD.
+Example:
+  (cp1252->string #u8(#x5A #xFC #x72 #x69 #x63 #x68)) => \"Zürich\""
+      (let ((n (bytevector-length bv))
+            (out (open-output-string)))
+        (let loop ((i 0))
+          (if (= i n)
+              (get-output-string out)
+              (let ((b (bytevector-u8-ref bv i)))
+                (write-char
+                 (integer->char
+                  (if (and (>= b #x80) (< b #xA0))
+                      (or (vector-ref %cp1252-high (- b #x80)) #xFFFD)
+                      b))
+                 out)
+                (loop (+ i 1)))))))
+
+    ;; Collation: 4 bytes LE (LCID:20, flags:8 incl. fUTF8 at bit 26, version:4) + SortId(1).
+    ;; Returns 'utf8 for UTF-8 collations, otherwise 'cp1252 (Western collations; other code
+    ;; pages are decoded as cp1252 as well).
+    (define (tds-collation-codec coll-bv)
+      (let ((info (tds-bv-u32-le coll-bv 0)))
+        (if (odd? (quotient info #x4000000)) 'utf8 'cp1252)))
+
+    (define (tds-decode-bytes bv codec)
+      (if (eq? codec 'utf8) (utf8->string bv) (cp1252->string bv)))
 
     ;; --- TDS packet framing ---
     ;; TDS header: type(1) status(1) length(2,BE) SPID(2) packetId(1) window(1) = 8 bytes
@@ -298,30 +347,37 @@ Example:
 
     ;; --- Login7 ---
 
-    (define (tds-send-login7! out user password database)
-      "Syntax: (tds-send-login7! out user password database)
+    (define (tds-send-login7! out user password database . opt)
+      "Syntax: (tds-send-login7! out user password database [host-name server-name app-name])
 Library: (scm database sqlserver)
 Description: Builds and sends a TDS Login7 packet (type 0x10) with SQL Server authentication.
   The password is obfuscated per the TDS specification. All strings are UTF-16 LE.
 Example:
   (tds-send-login7! out \"sa\" \"Password123!\" \"master\")"
-      (let* ((user-bv    (string->utf16le user))
-             (user-len   (string-length user))
-             (pass-utf16 (string->utf16le password))
-             (pass-bv    (tds-obfuscate-password-bv pass-utf16))
-             (pass-len   (string-length password))
-             (app-bv     (string->utf16le "scm"))
-             (app-len    3)
-             (db-bv      (string->utf16le database))
-             (db-len     (string-length database))
-             ;; Variable data starts at offset 94 (from start of Login7 body including Length field)
-             (base      94)
-             (user-off  base)
-             (pass-off  (+ user-off (* 2 user-len)))
-             (app-off   (+ pass-off (* 2 pass-len)))
-             (db-off    (+ app-off (* 2 app-len)))
-             (total-len (+ db-off (* 2 db-len)))
-             (buf       (open-output-bytevector)))
+      (let* ((opt-ref    (lambda (i dflt) (if (> (length opt) i) (list-ref opt i) dflt)))
+             (host-name  (opt-ref 0 ""))
+             (server     (opt-ref 1 ""))
+             (app-name   (opt-ref 2 "scm"))
+             (enc        (lambda (str) (string->utf16le str)))
+             (host-bv    (enc host-name))
+             (user-bv    (enc user))
+             (pass-bv    (tds-obfuscate-password-bv (enc password)))
+             (app-bv     (enc app-name))
+             (server-bv  (enc server))
+             (lib-bv     (enc "scm"))
+             (db-bv      (enc database))
+             (nchars     (lambda (bv) (quotient (bytevector-length bv) 2)))
+             ;; Variable data starts at offset 94 (fixed part incl. the Length field)
+             (base       94)
+             (host-off   base)
+             (user-off   (+ host-off (bytevector-length host-bv)))
+             (pass-off   (+ user-off (bytevector-length user-bv)))
+             (app-off    (+ pass-off (bytevector-length pass-bv)))
+             (server-off (+ app-off (bytevector-length app-bv)))
+             (lib-off    (+ server-off (bytevector-length server-bv)))
+             (db-off     (+ lib-off (bytevector-length lib-bv)))
+             (total-len  (+ db-off (bytevector-length db-bv)))
+             (buf        (open-output-bytevector)))
         ;; Fixed header (36 bytes)
         (tds-write-u32-le! total-len buf)      ; Length (total Login7 size)
         (tds-write-u32-le! #x74000004 buf)     ; TDSVersion 7.4
@@ -330,50 +386,32 @@ Example:
         (tds-write-u32-le! 0 buf)              ; ClientPID
         (tds-write-u32-le! 0 buf)              ; ConnectionID
         ;; Flags (4 bytes)
-        (write-u8 #x00 buf)                    ; OptionFlags1
-        (write-u8 #x00 buf)                    ; OptionFlags2 (bit6=0 = SQL auth)
+        (write-u8 #xE0 buf)                    ; OptionFlags1: USE_DB_ON, INIT_DB_FATAL, SET_LANG_ON
+        (write-u8 #x03 buf)                    ; OptionFlags2: INIT_LANG_FATAL, ODBC_ON (bit7=0 = SQL auth)
         (write-u8 #x00 buf)                    ; TypeFlags
         (write-u8 #x00 buf)                    ; OptionFlags3
         ;; Locale (8 bytes)
         (tds-write-u32-le! 0 buf)              ; ClientTimezone
         (tds-write-u32-le! #x0409 buf)         ; ClientLCID (en-US)
         ;; OffLen table (58 bytes)
-        (tds-write-u16-le! base buf)           ; HostName offset (empty)
-        (tds-write-u16-le! 0 buf)              ; HostName length
-        (tds-write-u16-le! user-off buf)       ; UserName offset
-        (tds-write-u16-le! user-len buf)       ; UserName length (chars)
-        (tds-write-u16-le! pass-off buf)       ; Password offset
-        (tds-write-u16-le! pass-len buf)       ; Password length (chars)
-        (tds-write-u16-le! app-off buf)        ; AppName offset
-        (tds-write-u16-le! app-len buf)        ; AppName length
-        (tds-write-u16-le! base buf)           ; ServerName offset (empty)
-        (tds-write-u16-le! 0 buf)              ; ServerName length
+        (tds-write-u16-le! host-off buf)   (tds-write-u16-le! (nchars host-bv) buf)
+        (tds-write-u16-le! user-off buf)   (tds-write-u16-le! (nchars user-bv) buf)
+        (tds-write-u16-le! pass-off buf)   (tds-write-u16-le! (nchars pass-bv) buf)
+        (tds-write-u16-le! app-off buf)    (tds-write-u16-le! (nchars app-bv) buf)
+        (tds-write-u16-le! server-off buf) (tds-write-u16-le! (nchars server-bv) buf)
         (tds-write-u32-le! 0 buf)              ; Unused/Extension
-        (tds-write-u16-le! base buf)           ; CltIntName offset (empty)
-        (tds-write-u16-le! 0 buf)              ; CltIntName length
-        (tds-write-u16-le! base buf)           ; Language offset (empty)
-        (tds-write-u16-le! 0 buf)              ; Language length
-        (tds-write-u16-le! db-off buf)         ; Database offset
-        (tds-write-u16-le! db-len buf)         ; Database length (chars)
+        (tds-write-u16-le! lib-off buf)    (tds-write-u16-le! (nchars lib-bv) buf)
+        (tds-write-u16-le! db-off buf)     (tds-write-u16-le! 0 buf) ; Language (empty)
+        (tds-write-u16-le! db-off buf)     (tds-write-u16-le! (nchars db-bv) buf)
         ;; ClientID: 6-byte MAC address (zeros)
-        (write-u8 0 buf) (write-u8 0 buf) (write-u8 0 buf)
-        (write-u8 0 buf) (write-u8 0 buf) (write-u8 0 buf)
-        ;; SSPI
-        (tds-write-u16-le! base buf)           ; SSPI offset
-        (tds-write-u16-le! 0 buf)              ; SSPI length
-        ;; AtchDBFile
-        (tds-write-u16-le! base buf)           ; AtchDBFile offset
-        (tds-write-u16-le! 0 buf)              ; AtchDBFile length
-        ;; ChangePassword
-        (tds-write-u16-le! base buf)           ; ChangePassword offset
-        (tds-write-u16-le! 0 buf)              ; ChangePassword length
-        ;; SSPILong
+        (write-bytevector (make-bytevector 6 0) buf)
+        (tds-write-u16-le! total-len buf) (tds-write-u16-le! 0 buf)  ; SSPI
+        (tds-write-u16-le! total-len buf) (tds-write-u16-le! 0 buf)  ; AtchDBFile
+        (tds-write-u16-le! total-len buf) (tds-write-u16-le! 0 buf)  ; ChangePassword
         (tds-write-u32-le! 0 buf)              ; SSPILong
         ;; Variable-length data
-        (write-bytevector user-bv buf)
-        (write-bytevector pass-bv buf)
-        (write-bytevector app-bv buf)
-        (write-bytevector db-bv buf)
+        (for-each (lambda (bv) (write-bytevector bv buf))
+                  (list host-bv user-bv pass-bv app-bv server-bv lib-bv db-bv))
         ;; Send as TDS type 0x10 (Login7)
         (tds-send-packet! out #x10 (get-output-bytevector buf))))
 
@@ -499,6 +537,31 @@ Example:
                                 (string-ref "0123456789ABCDEF" lo))))
               (loop (+ i 1) (cons hex acc))))))
 
+    ;; Decode a little-endian IEEE 754 binary32/binary64 bytevector to a number string
+    (define (tds-ieee->string bv)
+      "Syntax: (tds-ieee->string bv)
+Library: (scm database sqlserver)
+Description: Decodes a 4- or 8-byte little-endian IEEE 754 value (REAL / FLOAT) and returns
+  it as a decimal number string.
+Example:
+  (tds-ieee->string #u8(0 0 0 0 0 0 240 63)) => \"1.0\""
+      (let* ((n        (bytevector-length bv))
+             (bits     (tds-bv-uint-le bv 0 n))
+             (ebits    (if (= n 4) 8 11))
+             (mbits    (if (= n 4) 23 52))
+             (bias     (- (expt 2 (- ebits 1)) 1))
+             (sign     (if (>= bits (expt 2 (- (* 8 n) 1))) -1 1))
+             (e        (modulo (quotient bits (expt 2 mbits)) (expt 2 ebits)))
+             (m        (modulo bits (expt 2 mbits))))
+        (cond
+          ((= e (- (expt 2 ebits) 1))
+           (if (= m 0) (if (< sign 0) "-inf" "inf") "nan"))
+          (else
+           (let ((v (if (= e 0)
+                        (* m (expt 2 (- 1 bias mbits)))
+                        (* (+ m (expt 2 mbits)) (expt 2 (- e bias mbits))))))
+             (number->string (inexact (* sign v))))))))
+
     ;; Format a UNIQUEIDENTIFIER (16-byte GUID) with SQL Server's mixed-endian layout
     (define (tds-guid->string bv)
       "Syntax: (tds-guid->string bv)
@@ -540,7 +603,7 @@ Example:
         ((= type-byte #x24)
          (list (read-u8 bv-in)))
         ;; Variable nullable types: 1-byte max-size
-        ((or (= type-byte #x26) (= type-byte #x68) (= type-byte #x6B)
+        ((or (= type-byte #x26) (= type-byte #x68) (= type-byte #x6D)
              (= type-byte #x6F) (= type-byte #x6E))
          (list (read-u8 bv-in)))
         ;; DECIMALN / NUMERICN: max-size(1) + precision(1) + scale(1)
@@ -549,11 +612,24 @@ Example:
                 (precision (read-u8 bv-in))
                 (scale     (read-u8 bv-in)))
            (list max-size precision scale)))
-        ;; VARCHAR / CHAR: max-len(2,LE) + collation(5)
+        ;; VARCHAR / CHAR: max-len(2,LE) + collation(5) -> (max-len codec)
         ((or (= type-byte #xA7) (= type-byte #xAF))
-         (let ((max-len (tds-read-u16-le! bv-in)))
-           (read-bytevector 5 bv-in)  ; skip collation
-           (list max-len)))
+         (let* ((max-len (tds-read-u16-le! bv-in))
+                (coll    (read-bytevector 5 bv-in)))
+           (list max-len (tds-collation-codec coll))))
+        ;; TEXT / NTEXT: max-len(4) + collation(5) + table name; IMAGE: no collation
+        ((or (= type-byte #x23) (= type-byte #x63) (= type-byte #x22))
+         (tds-read-u32-le! bv-in)
+         (let ((codec (if (= type-byte #x22)
+                          'binary
+                          (tds-collation-codec (read-bytevector 5 bv-in)))))
+           (let ((parts (read-u8 bv-in)))
+             (do ((i 0 (+ i 1))) ((= i parts))
+               (read-bytevector (* 2 (tds-read-u16-le! bv-in)) bv-in)))
+           (list codec)))
+        ;; SQL_VARIANT: max-len(4)
+        ((= type-byte #x62)
+         (list (tds-read-u32-le! bv-in)))
         ;; VARBINARY / BINARY: max-len(2,LE), no collation
         ((or (= type-byte #xA5) (= type-byte #xA8))
          (let ((max-len (tds-read-u16-le! bv-in)))
@@ -588,7 +664,7 @@ Example:
       "Syntax: (tds-parse-colmetadata! bv-in)
 Library: (scm database sqlserver)
 Description: Parses a COLMETADATA token from a binary input port. Returns a vector of
-  column descriptors, each a vector #(name type-byte params).
+  column descriptors, each a vector #(name type-byte params hidden?).
 Example:
   (tds-parse-colmetadata! bv-in) => #(#(\"id\" #x26 (4)) #(\"name\" #xE7 (50)))"
       (let ((count (tds-read-u16-le! bv-in)))
@@ -598,14 +674,17 @@ Example:
               (if (= i count)
                   (list->vector (reverse cols))
                   (let* ((_         (read-bytevector 4 bv-in))   ; UserType (4 bytes, TDS 7.2+)
-                         (_         (read-bytevector 2 bv-in))   ; Flags
+                         (flags     (tds-read-u16-le! bv-in))    ; Flags (bit 13 = fHidden)
                          (type-byte (read-u8 bv-in))
                          (params    (tds-read-col-typeinfo! bv-in type-byte))
                          ;; ColName: BLength(1) chars, each 2 bytes UTF-16LE
                          (name-len  (read-u8 bv-in))
                          (name-bv   (read-bytevector (* 2 name-len) bv-in))
                          (name      (utf16le->string name-bv 0 (* 2 name-len))))
-                    (loop (+ i 1) (cons (vector name type-byte params) cols))))))))
+                    (loop (+ i 1)
+                          (cons (vector name type-byte params
+                                        (odd? (quotient flags #x2000)))
+                                cols))))))))
 
     ;; --- ROW value reading ---
 
@@ -613,8 +692,9 @@ Example:
     (define (tds-read-plp! bv-in is-unicode)
       "Syntax: (tds-read-plp! bv-in is-unicode)
 Library: (scm database sqlserver)
-Description: Reads a PLP-encoded value (used for varchar(max) and nvarchar(max)).
-  is-unicode should be #t for NVARCHAR, #f for VARCHAR. Returns a string or #f for NULL.
+Description: Reads a PLP-encoded value (used for varchar(max), nvarchar(max), varbinary(max), xml).
+  is-unicode is #t for UTF-16 data, 'binary for raw bytes (returns a bytevector), or a codec
+  ('utf8 / 'cp1252) for byte strings. Returns the value or #f for NULL.
 Example:
   (tds-read-plp! bv-in #t) => \"hello world\""
       (let* ((lo (tds-read-u32-le! bv-in))
@@ -626,9 +706,11 @@ Example:
                 (if (= chunk-len 0)
                     ;; End of PLP: assemble and decode
                     (let* ((all-bv (apply bytevector-append (reverse chunks))))
-                      (if is-unicode
-                          (utf16le->string all-bv 0 (bytevector-length all-bv))
-                          (utf8->string all-bv)))
+                      (cond ((eq? is-unicode #t)
+                             (utf16le->string all-bv 0 (bytevector-length all-bv)))
+                            ((eq? is-unicode 'binary) all-bv)
+                            ((eq? is-unicode 'utf8) (utf8->string all-bv))
+                            (else (tds-decode-bytes all-bv is-unicode))))
                     (loop (cons (read-bytevector chunk-len bv-in) chunks))))))))
 
     ;; Read one column value from a ROW token stream, based on column descriptor
@@ -657,12 +739,12 @@ Example:
                 (hi        (tds-read-u32-le! bv-in))
                 (hi-signed (if (>= hi #x80000000) (- hi #x100000000) hi)))
            (number->string (+ lo (* hi-signed #x100000000)))))
-        ;; Fixed REAL (4 bytes, IEEE 754) - return hex
+        ;; Fixed REAL (4 bytes, IEEE 754)
         ((= type-byte #x3C)
-         (tds-bv->hex (read-bytevector 4 bv-in)))
-        ;; Fixed FLOAT (8 bytes, IEEE 754) - return hex
+         (tds-ieee->string (read-bytevector 4 bv-in)))
+        ;; Fixed FLOAT (8 bytes, IEEE 754)
         ((= type-byte #x3E)
-         (tds-bv->hex (read-bytevector 8 bv-in)))
+         (tds-ieee->string (read-bytevector 8 bv-in)))
         ;; Fixed DATETIME (8 bytes: int32 days LE + uint32 1/300-sec LE)
         ((= type-byte #x3D)
          (let* ((days (tds-read-i32-le! bv-in))
@@ -697,11 +779,11 @@ Example:
          (let ((actual (read-u8 bv-in)))
            (if (= actual 0) #f
                (if (= (read-u8 bv-in) 0) "0" "1"))))
-        ;; FLOATN: 1-byte actual size, then IEEE bytes - return hex
-        ((= type-byte #x6B)
+        ;; FLOATN: 1-byte actual size, then IEEE bytes
+        ((= type-byte #x6D)
          (let ((actual (read-u8 bv-in)))
            (if (= actual 0) #f
-               (tds-bv->hex (read-bytevector actual bv-in)))))
+               (tds-ieee->string (read-bytevector actual bv-in)))))
         ;; MONEYN: 1-byte actual size
         ((= type-byte #x6E)
          (let ((actual (read-u8 bv-in)))
@@ -763,11 +845,12 @@ Example:
         ((or (= type-byte #xA7) (= type-byte #xAF))
          (let ((max-len (if (null? type-params) 0 (car type-params))))
            (if (= max-len #xFFFF)
-               (tds-read-plp! bv-in #f)
+               (tds-read-plp! bv-in (cadr type-params))
                (let ((len (tds-read-u16-le! bv-in)))
                  (cond ((= len #xFFFF) #f)
                        ((= len 0) "")
-                       (else (utf8->string (read-bytevector len bv-in))))))))
+                       (else (tds-decode-bytes (read-bytevector len bv-in)
+                                               (cadr type-params))))))))
         ;; NVARCHAR / NCHAR (UTF-16 LE): 2-byte LE length
         ((or (= type-byte #xE7) (= type-byte #xEF))
          (let ((max-len (if (null? type-params) 0 (car type-params))))
@@ -781,8 +864,8 @@ Example:
         ((or (= type-byte #xA5) (= type-byte #xA8))
          (let ((max-len (if (null? type-params) 0 (car type-params))))
            (if (= max-len #xFFFF)
-               (let ((plp (tds-read-plp! bv-in #f)))
-                 (if plp (tds-bv->hex (string->utf8 plp)) #f))
+               (let ((plp (tds-read-plp! bv-in 'binary)))
+                 (if plp (tds-bv->hex plp) #f))
                (let ((len (tds-read-u16-le! bv-in)))
                  (cond ((= len #xFFFF) #f)
                        ((= len 0) "")
@@ -836,7 +919,23 @@ Example:
                                 tz-sign (tds-pad tz-h 2) ":" (tds-pad tz-m 2))))))
         ;; XML: read as PLP string
         ((= type-byte #xF1)
-         (tds-read-plp! bv-in #f))
+         (tds-read-plp! bv-in #t))
+        ;; TEXT / NTEXT / IMAGE: textptr-len(1) [textptr + timestamp(8) + len(4) + data]
+        ((or (= type-byte #x23) (= type-byte #x63) (= type-byte #x22))
+         (let ((ptr-len (read-u8 bv-in)))
+           (if (= ptr-len 0) #f
+               (begin
+                 (read-bytevector ptr-len bv-in)
+                 (read-bytevector 8 bv-in)
+                 (let* ((len (tds-read-u32-le! bv-in))
+                        (bv  (if (= len 0) (bytevector) (read-bytevector len bv-in))))
+                   (cond ((= type-byte #x63) (utf16le->string bv 0 len))
+                         ((= type-byte #x22) (tds-bv->hex bv))
+                         (else (tds-decode-bytes bv (car type-params)))))))))
+        ;; SQL_VARIANT: 4-byte length, then raw value (returned as hex)
+        ((= type-byte #x62)
+         (let ((len (tds-read-u32-le! bv-in)))
+           (if (= len 0) #f (tds-bv->hex (read-bytevector len bv-in)))))
         ;; Fallback for unknown types: try 1-byte length prefix
         (else
          (let ((len (read-u8 bv-in)))
@@ -849,144 +948,200 @@ Example:
     (define (tds-parse-error-token! body)
       "Syntax: (tds-parse-error-token! body)
 Library: (scm database sqlserver)
-Description: Parses an ERROR token body bytevector and raises a Scheme error with the message text.
+Description: Parses an ERROR token body bytevector and raises a Scheme error whose message
+  is the server text; the irritants are the error number, state and severity.
 Example:
   (tds-parse-error-token! body)"
       (let* ((bv-err  (open-input-bytevector body))
-             (_       (read-bytevector 4 bv-err))  ; error number
-             (_       (read-u8 bv-err))            ; state
-             (_       (read-u8 bv-err))            ; class/severity
+             (number  (tds-read-u32-le! bv-err))
+             (state   (read-u8 bv-err))
+             (class   (read-u8 bv-err))
              (msg-len (tds-read-u16-le! bv-err))
              (msg-bv  (read-bytevector (* 2 msg-len) bv-err))
              (msg     (utf16le->string msg-bv 0 (* 2 msg-len))))
-        (error "ss: SQL Server error" msg)))
+        (error (string-append "ss: SQL Server error " (number->string number) ": " msg)
+               number state class)))
+
+    ;; Tokens with a 2-byte length prefix that carry nothing we need:
+    ;; INFO, ENVCHANGE, LOGINACK, ORDER, COLINFO, TABNAME
+    (define (tds-skippable-u16-token? token)
+      (memv token '(#xAB #xE3 #xAD #xA9 #xA5 #xA4)))
+
+    ;; Skip a token's body if it is a known no-data token; returns #t if skipped
+    (define (tds-skip-token! token bv-in)
+      (cond
+        ((tds-skippable-u16-token? token)
+         (read-bytevector (tds-read-u16-le! bv-in) bv-in)
+         #t)
+        ;; SESSIONSTATE (0xE4) / FEATUREEXTACK-free DATACLASSIFICATION use 4-byte lengths
+        ((= token #xE4)
+         (read-bytevector (tds-read-u32-le! bv-in) bv-in)
+         #t)
+        ;; RETURNSTATUS (0x79): 4-byte return code
+        ((= token #x79)
+         (read-bytevector 4 bv-in)
+         #t)
+        ;; FEATUREEXTACK (0xAE): (featureId(1) [len(4) data])* terminated by 0xFF
+        ((= token #xAE)
+         (let loop ()
+           (let ((fid (read-u8 bv-in)))
+             (unless (or (eof-object? fid) (= fid #xFF))
+               (read-bytevector (tds-read-u32-le! bv-in) bv-in)
+               (loop))))
+         #t)
+        (else #f)))
+
+    ;; DONE / DONEPROC / DONEINPROC body: status(2) curCmd(2) rowCount(8); returns status
+    (define (tds-read-done! bv-in)
+      (let* ((status (tds-read-u16-le! bv-in)))
+        (tds-read-u16-le! bv-in)
+        (read-bytevector 8 bv-in)
+        status))
 
     ;; Read token stream until login completion; raises on ERROR tokens
     (define (tds-read-login-response! bv-in)
       "Syntax: (tds-read-login-response! bv-in)
 Library: (scm database sqlserver)
-Description: Reads the login response token stream until DONE. Raises an error on ERROR tokens.
+Description: Reads the login response token stream until DONE. Raises an error on ERROR
+  tokens, or when no LOGINACK was received.
 Example:
   (tds-read-login-response! bv-in)"
-      (let loop ()
-        (let ((token (read-u8 bv-in)))
-          (cond
-            ((eof-object? token) #t)
-            ;; LOGINACK (0xAD): login success
-            ((= token #xAD)
-             (let ((len (tds-read-u16-le! bv-in)))
-               (read-bytevector len bv-in)
-               (loop)))
-            ;; ENVCHANGE (0xE3): environment changes
-            ((= token #xE3)
-             (let ((len (tds-read-u16-le! bv-in)))
-               (read-bytevector len bv-in)
-               (loop)))
-            ;; INFO (0xAB): informational message
-            ((= token #xAB)
-             (let ((len (tds-read-u16-le! bv-in)))
-               (read-bytevector len bv-in)
-               (loop)))
-            ;; ERROR (0xAA): raise error
-            ((= token #xAA)
-             (let* ((len  (tds-read-u16-le! bv-in))
-                    (body (read-bytevector len bv-in)))
-               (tds-parse-error-token! body)))
-            ;; DONE / DONEPROC / DONEINPROC (0xFD/0xFE/0xFF)
-            ((or (= token #xFD) (= token #xFE) (= token #xFF))
-             (read-bytevector 8 bv-in)  ; DONE body is always 8 bytes
-             (loop))
-            ;; RETURNSTATUS (0x79): 4-byte return code
-            ((= token #x79)
-             (read-bytevector 4 bv-in)
-             (loop))
-            ;; Unknown token: can't safely continue (unknown length)
-            (else
-             (error "ss: unexpected token during login" token))))))
-
-    ;; Read full result from token stream; returns #(cols rows)
-    (define (tds-read-result! bv-in)
-      "Syntax: (tds-read-result! bv-in)
-Library: (scm database sqlserver)
-Description: Reads the complete token stream from bv-in until DONE. Collects COLMETADATA
-  and ROW tokens into a result vector #(cols rows) where cols is a column name vector
-  and rows is a list of row vectors. Returns #f values for NULL columns.
-Example:
-  (tds-read-result! bv-in) => #(#(\"id\" \"name\") (#(\"1\" \"alice\")))"
-      (let loop ((cols #f) (rows '()))
+      (let loop ((acked #f))
         (let ((token (read-u8 bv-in)))
           (cond
             ((eof-object? token)
-             (vector (or cols (vector)) (reverse rows)))
-            ;; COLMETADATA (0x81)
-            ((= token #x81)
-             (let ((new-cols (tds-parse-colmetadata! bv-in)))
-               (loop (or new-cols cols) rows)))
-            ;; ROW (0xD1)
-            ((= token #xD1)
-             (if (not cols)
-                 (error "ss: ROW token before COLMETADATA")
-                 (let ((row (let col-loop ((i 0) (vals '()))
-                              (if (= i (vector-length cols))
-                                  (list->vector (reverse vals))
-                                  (let* ((col       (vector-ref cols i))
-                                         (type-byte (vector-ref col 1))
-                                         (params    (vector-ref col 2))
-                                         (val       (tds-read-col-value! bv-in type-byte params)))
-                                    (col-loop (+ i 1) (cons val vals)))))))
-                   (loop cols (cons row rows)))))
-            ;; DONE / DONEPROC / DONEINPROC (0xFD/0xFE/0xFF)
-            ((or (= token #xFD) (= token #xFE) (= token #xFF))
-             (let* ((status   (tds-read-u16-le! bv-in))
-                    (_        (tds-read-u16-le! bv-in))  ; curCmd
-                    (_        (read-bytevector 8 bv-in))) ; rowCount (skip)
-               ;; Stop on first DONE with no "more results" flag
-               (if (= (bitwise-and status #x01) 0)
-                   (vector (or cols (vector)) (reverse rows))
-                   (loop cols rows))))
-            ;; ERROR (0xAA): raise error
+             (unless acked (error "ss: login failed (no LOGINACK from server)"))
+             #t)
+            ((= token #xAD)
+             (read-bytevector (tds-read-u16-le! bv-in) bv-in)
+             (loop #t))
             ((= token #xAA)
              (let* ((len  (tds-read-u16-le! bv-in))
                     (body (read-bytevector len bv-in)))
                (tds-parse-error-token! body)))
-            ;; INFO / ENVCHANGE / RETURNSTATUS / LOGINACK: skip
-            ((= token #xAB)
-             (let ((len (tds-read-u16-le! bv-in)))
-               (read-bytevector len bv-in)
-               (loop cols rows)))
+            ((or (= token #xFD) (= token #xFE) (= token #xFF))
+             (tds-read-done! bv-in)
+             (loop acked))
+            ((tds-skip-token! token bv-in) (loop acked))
+            (else
+             (error "ss: unexpected token during login" token))))))
+
+    ;; Read one ROW (0xD1) or NBCROW (0xD2) into a vector
+    (define (tds-read-row! bv-in cols nbc?)
+      (let* ((ncols  (vector-length cols))
+             (bitmap (and nbc? (read-bytevector (quotient (+ ncols 7) 8) bv-in)))
+             (row    (make-vector ncols #f)))
+        (define (null-bit? i)
+          (odd? (quotient (bytevector-u8-ref bitmap (quotient i 8))
+                          (expt 2 (modulo i 8)))))
+        (do ((i 0 (+ i 1))) ((= i ncols) row)
+          (unless (and bitmap (null-bit? i))
+            (let ((col (vector-ref cols i)))
+              (vector-set! row i (tds-read-col-value! bv-in
+                                                      (vector-ref col 1)
+                                                      (vector-ref col 2))))))))
+
+    ;; Read full result from token stream; returns #(cols rows)
+    ;; ENVCHANGE body: type(1) + new/old values. Types 8 (begin transaction) carries the
+    ;; new transaction descriptor; 9/10/17/18 (commit/rollback/defect/ended) reset it.
+    (define (tds-apply-envchange! body conn)
+      (when (and conn (> (bytevector-length body) 0))
+        (let ((type (bytevector-u8-ref body 0)))
+          (cond
+            ((and (= type 8) (>= (bytevector-length body) 10))
+             (vector-set! conn 3 (bytevector-copy body 2 10)))
+            ((memv type '(9 10 17 18))
+             (vector-set! conn 3 (make-bytevector 8 0)))))))
+
+    (define (tds-read-result! bv-in . opt-conn)
+      "Syntax: (tds-read-result! bv-in)
+Library: (scm database sqlserver)
+Description: Reads the complete token stream of one response. Collects COLMETADATA and
+  ROW / NBCROW tokens into a result vector #(cols rows) where cols is a column name
+  vector and rows is a list of row vectors (#f for NULL). Rows of several result sets
+  are concatenated; cols are those of the last result set. Raises on ERROR tokens.
+Example:
+  (tds-read-result! bv-in) => #(#(\"id\" \"name\") (#(\"1\" \"alice\")))"
+      (let loop ((cols #f) (rows '()) (err #f))
+        (let ((token (read-u8 bv-in)))
+          (define (finish)
+            (if err
+                (tds-parse-error-token! err)
+                (let* ((cols    (or cols (vector)))
+                       (visible (let vis ((i (- (vector-length cols) 1)) (acc '()))
+                                  (if (< i 0) acc
+                                      (vis (- i 1)
+                                           (if (vector-ref (vector-ref cols i) 3)
+                                               acc
+                                               (cons i acc))))))
+                       (strip   (if (= (length visible) (vector-length cols))
+                                    (lambda (row) row)
+                                    (lambda (row)
+                                      (list->vector (map (lambda (i) (vector-ref row i))
+                                                         visible))))))
+                  (vector (list->vector (map (lambda (i) (vector-ref (vector-ref cols i) 0))
+                                             visible))
+                          (map strip (reverse rows))))))
+          (cond
+            ((eof-object? token) (finish))
+            ((= token #x81)
+             (let ((new-cols (tds-parse-colmetadata! bv-in)))
+               (loop (or new-cols cols) rows err)))
+            ((or (= token #xD1) (= token #xD2))
+             (if (not cols)
+                 (error "ss: ROW token before COLMETADATA")
+                 (loop cols (cons (tds-read-row! bv-in cols (= token #xD2)) rows) err)))
+            ((or (= token #xFD) (= token #xFE) (= token #xFF))
+             ;; the response is fully buffered (up to EOM), so read on until EOF
+             (tds-read-done! bv-in)
+             (loop cols rows err))
+            ;; ERROR: remember the first one, keep reading so the stream stays in sync
+            ((= token #xAA)
+             (let* ((len  (tds-read-u16-le! bv-in))
+                    (body (read-bytevector len bv-in)))
+               (loop cols rows (or err body))))
             ((= token #xE3)
-             (let ((len (tds-read-u16-le! bv-in)))
-               (read-bytevector len bv-in)
-               (loop cols rows)))
-            ((= token #x79)
-             (read-bytevector 4 bv-in)
-             (loop cols rows))
-            ((= token #xAD)
-             (let ((len (tds-read-u16-le! bv-in)))
-               (read-bytevector len bv-in)
-               (loop cols rows)))
-            ;; Unknown token: cannot safely continue
+             (tds-apply-envchange! (read-bytevector (tds-read-u16-le! bv-in) bv-in)
+                                   (and (pair? opt-conn) (car opt-conn)))
+             (loop cols rows err))
+            ((tds-skip-token! token bv-in) (loop cols rows err))
             (else
              (error "ss: unexpected token in result stream" token))))))
 
     ;; --- Connection lifecycle ---
 
-    (define (ss-connect host port user password database)
-      "Syntax: (ss-connect host port user password database)
+    (define (ss-option opts key dflt)
+      (let ((p (assq key opts))) (if p (cdr p) dflt)))
+
+    (define (ss-connect host port user password database . rest)
+      "Syntax: (ss-connect host port user password database [options])
 Library: (scm database sqlserver)
 Description: Opens a TDS connection to SQL Server, performs TLS negotiation (via tds-connect),
-  and completes Login7 SQL Server authentication. Returns a connection vector #(in out sock).
+  and completes Login7 SQL Server authentication. Returns a connection vector
+  #(in out sock transaction-descriptor).
+  options is an alist:
+    (encrypt . #t)                   ; #t = TLS for the whole session (default),
+                                     ; #f = no TLS (only if the server allows it)
+    (trust-server-certificate . #t)  ; #t = accept any server certificate (default),
+                                     ; #f = validate the chain and host name
+    (host-in-certificate . \"name\")   ; expected certificate host name (default: host)
+    (app-name . \"scm\")               ; application name shown in sys.dm_exec_sessions
 Example:
-  (define conn (ss-connect \"localhost\" 1433 \"sa\" \"Password123!\" \"master\"))"
-      (let* ((sock ((%primitive "tds-connect") host port))
-             (in   (socket-binary-input-port sock))
-             (out  (socket-binary-output-port sock)))
-        ;; Send Login7
-        (tds-send-login7! out user password database)
-        ;; Read and validate login response
-        (let ((body (tds-read-all-packets! in)))
-          (tds-read-login-response! (open-input-bytevector body)))
-        (vector in out sock)))
+  (define conn (ss-connect \"localhost\" 1433 \"sa\" \"Password123!\" \"master\"
+                           '((trust-server-certificate . #f))))"
+      (let* ((opts    (if (null? rest) '() (car rest)))
+             (encrypt (ss-option opts 'encrypt #t))
+             (trust   (ss-option opts 'trust-server-certificate #t))
+             (cn      (ss-option opts 'host-in-certificate host))
+             (sock    ((%primitive "tds-connect") host port encrypt (not trust) cn))
+             (in      (socket-binary-input-port sock))
+             (out     (socket-binary-output-port sock)))
+        (guard (e (#t (guard (e2 (#t #f)) (socket-close sock)) (raise e)))
+          (tds-send-login7! out user password database
+                            "scm" host (ss-option opts 'app-name "scm"))
+          (let ((body (tds-read-all-packets! in)))
+            (tds-read-login-response! (open-input-bytevector body))))
+        (vector in out sock (make-bytevector 8 0))))
 
     (define (ss-close conn)
       "Syntax: (ss-close conn)
@@ -996,30 +1151,138 @@ Example:
   (ss-close conn)"
       (socket-close (vector-ref conn 2)))
 
+    ;; --- Parameter formatting ---
+
+    (define (ss-sql-literal v)
+      "Syntax: (ss-sql-literal v)
+Library: (scm database sqlserver)
+Description: Converts a Scheme value to a T-SQL literal: strings -> N'...' (quotes doubled),
+  exact integers and finite reals -> numbers, #t/#f -> 1/0, 'null -> NULL, bytevectors ->
+  0x..., lists -> (a, b, ...) for IN, with '() -> (NULL).
+Example:
+  (ss-sql-literal \"O'Brien\") => \"N'O''Brien'\""
+      (cond
+        ((string? v)
+         (let ((out (open-output-string)))
+           (write-string "N'" out)
+           (string-for-each (lambda (c)
+                              (if (char=? c #\') (write-string "''" out) (write-char c out)))
+                            v)
+           (write-string "'" out)
+           (get-output-string out)))
+        ((and (integer? v) (exact? v)) (number->string v))
+        ((and (real? v) (not (nan? v)) (not (infinite? v)))
+         (number->string (if (exact? v) (inexact v) v)))
+        ((eq? v #t) "1")
+        ((eq? v #f) "0")
+        ((eq? v 'null) "NULL")
+        ((bytevector? v) (string-append "0x" (tds-bv->hex v)))
+        ((null? v) "(NULL)")
+        ((pair? v)
+         (let loop ((xs v) (acc '()))
+           (if (null? xs)
+               (string-append "(" (apply string-append (reverse acc)) ")")
+               (loop (cdr xs)
+                     (cons (string-append (if (null? acc) "" ", ") (ss-sql-literal (car xs)))
+                           acc)))))
+        (else (error "ss-sql-literal: unsupported parameter value" v))))
+
+    (define (ss-format-sql sql params)
+      "Syntax: (ss-format-sql sql params)
+Library: (scm database sqlserver)
+Description: Returns sql with $1, $2, ... replaced by the T-SQL literals of the
+  corresponding (1-indexed) params. Placeholders inside string literals, quoted
+  identifiers (\"...\" and [...]) and comments are left alone. Raises on $0 or $N
+  out of range.
+Example:
+  (ss-format-sql \"WHERE f.jahr = $1 AND f.burnr IN $2\" '(2024 (\"1\" \"2\")))
+  => \"WHERE f.jahr = 2024 AND f.burnr IN (N'1', N'2')\""
+      (let* ((n   (string-length sql))
+             (pv  (list->vector params))
+             (out (open-output-string)))
+        (define (at i) (string-ref sql i))
+        (define (digit? i) (and (< i n) (char-numeric? (at i))))
+        (define (copy-until! i close)
+          ;; copy from i (opening char already written) through the closing char
+          (let loop ((i i))
+            (cond ((>= i n) i)
+                  ((char=? (at i) close)
+                   (write-char close out)
+                   (if (and (< (+ i 1) n) (char=? (at (+ i 1)) close) (not (char=? close #\])))
+                       (begin (write-char close out) (loop (+ i 2)))
+                       (+ i 1)))
+                  (else (write-char (at i) out) (loop (+ i 1))))))
+        (let loop ((i 0))
+          (if (>= i n)
+              (get-output-string out)
+              (let ((c (at i)))
+                (cond
+                  ((char=? c #\') (write-char c out) (loop (copy-until! (+ i 1) #\')))
+                  ((char=? c #\") (write-char c out) (loop (copy-until! (+ i 1) #\")))
+                  ((char=? c #\[) (write-char c out) (loop (copy-until! (+ i 1) #\])))
+                  ((and (char=? c #\-) (< (+ i 1) n) (char=? (at (+ i 1)) #\-))
+                   (let cl ((i i))
+                     (cond ((>= i n) (loop i))
+                           ((char=? (at i) #\newline) (loop i))
+                           (else (write-char (at i) out) (cl (+ i 1))))))
+                  ((and (char=? c #\/) (< (+ i 1) n) (char=? (at (+ i 1)) #\*))
+                   (let cl ((i i))
+                     (cond ((>= i n) (loop i))
+                           ((and (char=? (at i) #\*) (< (+ i 1) n) (char=? (at (+ i 1)) #\/))
+                            (write-string "*/" out) (loop (+ i 2)))
+                           (else (write-char (at i) out) (cl (+ i 1))))))
+                  ((and (char=? c #\$) (digit? (+ i 1)))
+                   (let num ((j (+ i 1)) (k 0))
+                     (if (digit? j)
+                         (num (+ j 1) (+ (* k 10) (- (char->integer (at j)) 48)))
+                         (begin
+                           (when (or (< k 1) (> k (vector-length pv)))
+                             (error (string-append "ss-format-sql: $" (number->string k)
+                                                   " but only "
+                                                   (number->string (vector-length pv))
+                                                   " param(s) supplied")))
+                           (write-string (ss-sql-literal (vector-ref pv (- k 1))) out)
+                           (loop j)))))
+                  (else (write-char c out) (loop (+ i 1)))))))))
+
     ;; --- Query execution ---
 
-    (define (ss-query conn sql)
-      "Syntax: (ss-query conn sql)
+    ;; ALL_HEADERS with a Transaction Descriptor header (required for TDS 7.2+ SQLBatch).
+    ;; The descriptor is the one of the open transaction (from ENVCHANGE), zeros otherwise.
+    (define (tds-all-headers txn)
+      (let ((buf (open-output-bytevector)))
+        (tds-write-u32-le! 22 buf)            ; TotalLength
+        (tds-write-u32-le! 18 buf)            ; HeaderLength
+        (tds-write-u16-le! 2 buf)             ; HeaderType: transaction descriptor
+        (write-bytevector txn buf)            ; TransactionDescriptor (8 bytes)
+        (tds-write-u32-le! 1 buf)             ; OutstandingRequestCount
+        (get-output-bytevector buf)))
+
+    (define (ss-query conn sql . params)
+      "Syntax: (ss-query conn sql [param ...])
 Library: (scm database sqlserver)
-Description: Executes a SQL query and returns a result object #(cols rows). Use
+Description: Executes a SQL batch and returns a result object #(cols rows). $1, $2, ...
+  in sql are replaced by the T-SQL literals of the params (see ss-format-sql). Use
   ss-result-columns and ss-result-rows to access the result.
 Example:
-  (define result (ss-query conn \"SELECT id, name FROM users\"))"
+  (define result (ss-query conn \"SELECT id, name FROM users WHERE id = $1\" 42))"
       (let* ((in   (vector-ref conn 0))
              (out  (vector-ref conn 1))
-             (bv   (string->utf16le sql)))
-        ;; SQL Batch: type 0x01, payload is UTF-16 LE SQL text
+             (text (if (null? params) sql (ss-format-sql sql params)))
+             (bv   (bytevector-append (tds-all-headers (vector-ref conn 3))
+                                      (string->utf16le text))))
+        ;; SQL Batch: type 0x01, ALL_HEADERS + UTF-16 LE SQL text
         (tds-send-packet! out #x01 bv)
         (let ((body (tds-read-all-packets! in)))
-          (tds-read-result! (open-input-bytevector body)))))
+          (tds-read-result! (open-input-bytevector body) conn))))
 
-    (define (ss-exec conn sql)
-      "Syntax: (ss-exec conn sql)
+    (define (ss-exec conn sql . params)
+      "Syntax: (ss-exec conn sql [param ...])
 Library: (scm database sqlserver)
 Description: Executes a SQL statement and discards the result. Suitable for DDL and DML.
 Example:
   (ss-exec conn \"CREATE TABLE #t (id INT, name NVARCHAR(50))\")"
-      (ss-query conn sql)
+      (apply ss-query conn sql params)
       #t)
 
     ;; --- Public result accessors ---
@@ -1106,15 +1369,22 @@ Example:
                          (vector-set! cursor 3 #t)
                          (guard (e (#t #f)) (ss-exec conn "ROLLBACK TRANSACTION"))
                          (raise exn)))
-              (let* ((result (ss-query conn (string-append
-                                            "FETCH NEXT FROM " name)))
-                     (cols   (ss-result-columns result))
-                     (rows   (ss-result-rows result)))
+              ;; T-SQL FETCH returns one row per statement: send n of them in one batch
+              (let* ((stmt   (string-append "FETCH NEXT FROM " name ";"))
+                     (result (ss-query conn (apply string-append
+                                                   (vector->list (make-vector n stmt)))))
+                     (cols0  (ss-result-columns result))
+                     ;; T-SQL FETCH appends a ROWSTAT status column: drop it
+                     (strip? (and (> (vector-length cols0) 0)
+                                  (equal? (vector-ref cols0 (- (vector-length cols0) 1))
+                                          "ROWSTAT")))
+                     (cut    (lambda (v) (if strip? (vector-copy v 0 (- (vector-length v) 1)) v)))
+                     (cols   (cut cols0))
+                     (rows   (map cut (ss-result-rows result))))
                 (if (not (vector-ref cursor 2))
                     (vector-set! cursor 2 cols))
-                (if (null? rows)
-                    (begin (vector-set! cursor 3 #t) '())
-                    rows))))))
+                (if (< (length rows) n) (vector-set! cursor 3 'eof))
+                rows)))))
 
     (define (ss-cursor-columns cursor)
       "Syntax: (ss-cursor-columns cursor)
@@ -1131,7 +1401,7 @@ Description: Closes the cursor, deallocates it, and commits the transaction. Ret
   Safe to call multiple times; subsequent calls are no-ops.
 Example:
   (ss-cursor-close cur)"
-      (if (vector-ref cursor 3)
+      (if (eq? (vector-ref cursor 3) #t)
           #t
           (let ((conn (vector-ref cursor 0))
                 (name (vector-ref cursor 1)))

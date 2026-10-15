@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Net.Sockets;
 using System.Net.Security;
+using System.Security.Authentication;
 
 namespace scheme;
 
@@ -11,43 +12,92 @@ public class PrimitiveTdsConnect : Primitive
 
     public override string Info() =>
         "Syntax: (tds-connect host port)\n" +
+        "Syntax: (tds-connect host port encrypt? verify? cert-host)\n" +
         "Library: (scm core)\n" +
-        "Description: Connects to a SQL Server at the given host and port using TDS with TLS.\n" +
-        "  Performs the PreLogin exchange and TLS handshake (wrapped in TDS type 0x17 packets)\n" +
-        "  then returns a socket suitable for use with the (scm database sqlserver) library.\n" +
+        "Description: Connects to a SQL Server at the given host and port using TDS.\n" +
+        "  Performs the PreLogin exchange and, when encrypt? is true (default), the TLS\n" +
+        "  handshake (wrapped in TDS PRELOGIN packets); the whole session is then encrypted.\n" +
+        "  With verify? true the certificate chain and host name (cert-host, default host)\n" +
+        "  are validated, otherwise any certificate is accepted (default). With encrypt? #f\n" +
+        "  no TLS is used, which fails if the server requires encryption.\n" +
+        "  SCM_TDS_DEBUG=1 prints the negotiation to stderr.\n" +
+        "  Returns a socket suitable for use with the (scm database sqlserver) library.\n" +
         "Example:\n" +
         "  (define sock (tds-connect \"localhost\" 1433))";
 
+    const int EncryptOff = 0, EncryptOn = 1, EncryptNotSup = 2, EncryptReq = 3;
+
+    private static bool Debug()
+    {
+        string? v = Environment.GetEnvironmentVariable("SCM_TDS_DEBUG");
+        if (v == null) return false;
+        v = v.Trim().ToLowerInvariant();
+        return v == "1" || v == "true" || v == "yes";
+    }
+
+    private static void Log(string msg)
+    {
+        if (Debug()) Console.Error.WriteLine("scm-tds: " + msg);
+    }
+
     public override object Apply(SourcePos? pos, object[] arguments)
     {
-        CheckArgs(pos, arguments, 2, 2);
+        CheckArgs(pos, arguments, 2, 5);
         string host = new String(Value.AsString(arguments[0]));
         int port = IntegerMath.ToInt(arguments[1]);
+        bool encrypt = !(arguments.Length > 2 && arguments[2] is bool b2 && !b2);
+        bool verify = arguments.Length > 3 && !(arguments[3] is bool b3 && !b3);
+        string certHost = arguments.Length > 4 && !(arguments[4] is bool b4 && !b4)
+            ? new String(Value.AsString(arguments[4])) : host;
+        if (verify && TlsTrust.InsecureRequested())
+        {
+            Console.Error.WriteLine(
+                "warning: SCM_TLS_INSECURE is set, SQL Server certificate verification is disabled");
+            verify = false;
+        }
+        string step = "connect";
         try
         {
-            var client = new TcpClient(host, port);
+            var client = new TcpClient();
+            client.NoDelay = true;
+            client.Connect(host, port);
             var netStream = client.GetStream();
+            Log("tcp connected to " + host + ":" + port);
 
-            // Send PreLogin with ENCRYPT_ON, read response
-            SendPreLogin(netStream);
-            ReadPreLoginResponse(netStream);
+            step = "prelogin";
+            SendPreLogin(netStream, encrypt ? EncryptOn : EncryptNotSup);
+            int serverEnc = ReadPreLoginResponse(netStream);
+            Log("server encryption flag " + serverEnc);
+            if (encrypt && serverEnc == EncryptNotSup)
+                throw new IOException("server does not support encryption (use encrypt #f)");
+            if (!encrypt && (serverEnc == EncryptReq || serverEnc == EncryptOn))
+                throw new IOException("server requires encryption");
+            if (!encrypt)
+                return new NativeValue(new SchemeSocket(client));
 
-            // TLS handshake wrapped in TDS type 0x17 packets
+            step = "tls";
             var tlsStream = new TdsTlsStream(netStream);
-            var ssl = new SslStream(tlsStream, false, (s, c, ch, e) => true);
-            ssl.AuthenticateAsClient(host);
+            var ssl = new SslStream(tlsStream, false,
+                (s, cert, chain, errors) => !verify || errors == SslPolicyErrors.None);
+            ssl.AuthenticateAsClient(new SslClientAuthenticationOptions
+            {
+                TargetHost = certHost,
+                EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12
+            });
             tlsStream.SetHandshakeComplete();
+            Log("tls " + ssl.SslProtocol + " " + ssl.NegotiatedCipherSuite
+                + (ssl.RemoteCertificate != null ? ", server certificate " + ssl.RemoteCertificate.Subject : ""));
 
             return new NativeValue(new SchemeSocket(client, ssl));
         }
         catch (Exception e)
         {
-            throw new SchemeError(pos, "tds-connect: " + e.Message);
+            throw new SchemeError(pos, "tds-connect (" + step + "): " + e.Message);
         }
     }
 
-    // Send a TDS PreLogin packet (type 0x12) with ENCRYPT_ON
-    private static void SendPreLogin(Stream stream)
+    // Send a TDS PreLogin packet (type 0x12) with the given ENCRYPTION option
+    private static void SendPreLogin(Stream stream, int encryption)
     {
         // Body: VERSION option (offset=11, len=6) + ENCRYPTION option (offset=17, len=1) + terminator
         byte[] body = new byte[]
@@ -56,36 +106,61 @@ public class PrimitiveTdsConnect : Primitive
             0x01, 0x00, 0x11, 0x00, 0x01,              // ENCRYPTION: offset=17, length=1
             0xFF,                                       // terminator
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00,        // VERSION value (all zeros)
-            0x01                                        // ENCRYPTION = ENCRYPT_ON
+            (byte)encryption
         };
         WriteTdsPacket(stream, 0x12, body);
     }
 
-    // Read and discard the server's PreLogin response
-    private static void ReadPreLoginResponse(Stream stream)
+    // Read the server's PreLogin response (all packets up to EOM); returns its ENCRYPTION value
+    private static int ReadPreLoginResponse(Stream stream)
     {
-        byte[] header = new byte[8];
-        ReadExact(stream, header, 0, 8);
-        int length = (header[2] << 8) | header[3];
-        byte[] body = new byte[length - 8];
-        ReadExact(stream, body, 0, body.Length);
+        var acc = new MemoryStream();
+        while (true)
+        {
+            byte[] header = new byte[8];
+            ReadExact(stream, header, 0, 8);
+            int length = (header[2] << 8) | header[3];
+            byte[] part = new byte[length - 8];
+            ReadExact(stream, part, 0, part.Length);
+            acc.Write(part, 0, part.Length);
+            if ((header[1] & 0x01) != 0) break;
+        }
+        byte[] body = acc.ToArray();
+        int enc = EncryptNotSup;
+        for (int i = 0; i + 4 < body.Length && body[i] != 0xFF; i += 5)
+        {
+            int token = body[i];
+            int off = (body[i + 1] << 8) | body[i + 2];
+            int len = (body[i + 3] << 8) | body[i + 4];
+            if (token == 0x00 && len >= 4 && off + 4 <= body.Length)
+                Log("server version " + body[off] + "." + body[off + 1] + "." + ((body[off + 2] << 8) | body[off + 3]));
+            if (token == 0x01 && len >= 1 && off < body.Length) enc = body[off];
+        }
+        return enc;
     }
 
-    // Write a TDS packet: header(8) + payload
+    // Write a TDS message: payload split into packets of at most 4096 bytes, EOM on the last
     private static void WriteTdsPacket(Stream stream, byte type, byte[] payload)
+        => WriteTdsPacket(stream, type, payload, 0, payload.Length);
+
+    internal static void WriteTdsPacket(Stream stream, byte type, byte[] payload, int offset, int count)
     {
-        int total = 8 + payload.Length;
-        byte[] header = new byte[8];
-        header[0] = type;
-        header[1] = 0x01;               // EOM status (last packet)
-        header[2] = (byte)(total >> 8);
-        header[3] = (byte)(total & 0xFF);
-        header[4] = 0x00;               // SPID high
-        header[5] = 0x00;               // SPID low
-        header[6] = 0x01;               // packet ID
-        header[7] = 0x00;               // window
-        stream.Write(header, 0, 8);
-        stream.Write(payload, 0, payload.Length);
+        const int max = 4096 - 8;
+        int pos = 0, id = 1;
+        do
+        {
+            int n = Math.Min(max, count - pos);
+            bool last = pos + n >= count;
+            byte[] header = new byte[8];
+            header[0] = type;
+            header[1] = (byte)(last ? 0x01 : 0x00);   // EOM status
+            header[2] = (byte)((n + 8) >> 8);
+            header[3] = (byte)((n + 8) & 0xFF);
+            header[6] = (byte)id++;                   // packet ID
+            stream.Write(header, 0, 8);
+            stream.Write(payload, offset + pos, n);
+            pos += n;
+        } while (pos < count);
         stream.Flush();
     }
 
@@ -100,7 +175,7 @@ public class PrimitiveTdsConnect : Primitive
         }
     }
 
-    // Wraps a Stream to inject/strip TDS type-0x17 packet framing during TLS handshake.
+    // Wraps a Stream to inject/strip TDS PRELOGIN (0x12) packet framing during the TLS handshake.
     // After SetHandshakeComplete(), all I/O passes through to the inner stream unchanged.
     private sealed class TdsTlsStream : Stream
     {
@@ -130,18 +205,8 @@ public class PrimitiveTdsConnect : Primitive
                 _inner.Write(buffer, offset, count);
                 return;
             }
-            // Wrap TLS bytes in a TDS type 0x17 packet
-            int total = 8 + count;
-            byte[] hdr = new byte[8];
-            hdr[0] = 0x17;
-            hdr[1] = 0x01;               // EOM
-            hdr[2] = (byte)(total >> 8);
-            hdr[3] = (byte)(total & 0xFF);
-            hdr[4] = 0x00; hdr[5] = 0x00;
-            hdr[6] = 0x01; hdr[7] = 0x00;
-            _inner.Write(hdr, 0, 8);
-            _inner.Write(buffer, offset, count);
-            _inner.Flush();
+            // Wrap TLS bytes in TDS PRELOGIN (0x12) packets
+            WriteTdsPacket(_inner, 0x12, buffer, offset, count);
         }
 
         public override int Read(byte[] buffer, int offset, int count)

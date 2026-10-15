@@ -40,12 +40,21 @@ Example:
 ### `ss-connect`
 
 ```
-Syntax: (ss-connect host port user password database)
+Syntax: (ss-connect host port user password database [options])
 Library: (scm database sqlserver)
 Description: Opens a TDS connection to SQL Server, performs TLS negotiation (via tds-connect),
-  and completes Login7 SQL Server authentication. Returns a connection vector #(in out sock).
+  and completes Login7 SQL Server authentication. Returns a connection vector
+  #(in out sock transaction-descriptor).
+  options is an alist:
+    (encrypt . #t)                   ; #t = TLS for the whole session (default),
+                                     ; #f = no TLS (only if the server allows it)
+    (trust-server-certificate . #t)  ; #t = accept any server certificate (default),
+                                     ; #f = validate the chain and host name
+    (host-in-certificate . "name")   ; expected certificate host name (default: host)
+    (app-name . "scm")               ; application name shown in sys.dm_exec_sessions
 Example:
-  (define conn (ss-connect "localhost" 1433 "sa" "Password123!" "master"))
+  (define conn (ss-connect "localhost" 1433 "sa" "Password123!" "master"
+                           '((trust-server-certificate . #f))))
 ```
 
 ### `ss-cursor-close`
@@ -105,22 +114,37 @@ Example:
 ### `ss-exec`
 
 ```
-Syntax: (ss-exec conn sql)
+Syntax: (ss-exec conn sql [param ...])
 Library: (scm database sqlserver)
 Description: Executes a SQL statement and discards the result. Suitable for DDL and DML.
 Example:
   (ss-exec conn "CREATE TABLE #t (id INT, name NVARCHAR(50))")
 ```
 
+### `ss-format-sql`
+
+```
+Syntax: (ss-format-sql sql params)
+Library: (scm database sqlserver)
+Description: Returns sql with $1, $2, ... replaced by the T-SQL literals of the
+  corresponding (1-indexed) params. Placeholders inside string literals, quoted
+  identifiers ("..." and [...]) and comments are left alone. Raises on $0 or $N
+  out of range.
+Example:
+  (ss-format-sql "WHERE f.jahr = $1 AND f.burnr IN $2" '(2024 ("1" "2")))
+  => "WHERE f.jahr = 2024 AND f.burnr IN (N'1', N'2')"
+```
+
 ### `ss-query`
 
 ```
-Syntax: (ss-query conn sql)
+Syntax: (ss-query conn sql [param ...])
 Library: (scm database sqlserver)
-Description: Executes a SQL query and returns a result object #(cols rows). Use
+Description: Executes a SQL batch and returns a result object #(cols rows). $1, $2, ...
+  in sql are replaced by the T-SQL literals of the params (see ss-format-sql). Use
   ss-result-columns and ss-result-rows to access the result.
 Example:
-  (define result (ss-query conn "SELECT id, name FROM users"))
+  (define result (ss-query conn "SELECT id, name FROM users WHERE id = $1" 42))
 ```
 
 ### `ss-result->alist-list`
@@ -153,6 +177,18 @@ Description: Returns the list of row vectors from a query result. Each row is a 
   string values, or #f for NULL values.
 Example:
   (ss-result-rows result) => (#("1" "alice") #("2" "bob"))
+```
+
+### `ss-sql-literal`
+
+```
+Syntax: (ss-sql-literal v)
+Library: (scm database sqlserver)
+Description: Converts a Scheme value to a T-SQL literal: strings -> N'...' (quotes doubled),
+  exact integers and finite reals -> numbers, #t/#f -> 1/0, 'null -> NULL, bytevectors ->
+  0x..., lists -> (a, b, ...) for IN, with '() -> (NULL).
+Example:
+  (ss-sql-literal "O'Brien") => "N'O''Brien'"
 ```
 
 ### `with-ss-connection`
