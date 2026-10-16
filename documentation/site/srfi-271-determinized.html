@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(srfi 271 determinized) — Dabscm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="toc">
+  <h2>Bindings</h2>
+  <a href="#e0" data-name="make-random-port">make-random-port</a>
+  <a href="#e1" data-name="random-port-initialization-error?">random-port-initialization-error?</a>
+  <a href="#e2" data-name="random-port-state">random-port-state</a>
+  <a href="#e3" data-name="random-port-state=?">random-port-state=?</a>
+  <a href="#e4" data-name="random-port-state?">random-port-state?</a>
+  <a href="#e5" data-name="random-port?">random-port?</a>
+</nav>
+
+<main>
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="index.html">All libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="index.html#sec-srfi">SRFI Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(srfi 271 determinized)</span>
+</nav>
+
+<div class="lib-title srfi">(srfi 271 determinized)</div>
+<p class="lib-sub">SRFI-271 — Determinized random ports: seedable ports with saveable state (ChaCha20)</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p>The determinized random ports of SRFI-271: seedable binary input ports whose byte stream is fully determined by their state. A state can be taken from a port at any time, written out, read back, and passed to <a class="xref" href="#e0"><code>make-random-port</code></a> to resume the exact same stream. The algorithm is ChaCha20 (a 256-bit key, see <a class="xref" href="srfi-271-determinized-chacha20.html"><code>(srfi 271 determinized chacha20)</code></a>); a state is the vector <code>#(chacha20 key counter offset)</code>.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (srfi 271 determinized))
+
+;; Seed from 32 bytes of any binary input port...
+(define p (make-random-port (open-input-bytevector (make-bytevector 32 7))))
+(read-bytevector 4 p)               ;; =&gt; always the same bytes
+
+;; ...or from a cryptographically random port (no argument).
+(define q (make-random-port))
+
+;; Save and resume.
+(define state (random-port-state q))
+(define q2 (make-random-port state))
+(equal? (read-bytevector 8 q) (read-bytevector 8 q2))   ;; =&gt; #t</code></pre>
+<p>If the initializer port delivers fewer than 32 bytes, or only zero bytes, <a class="xref" href="#e0"><code>make-random-port</code></a> raises an object satisfying <a class="xref" href="#e1"><code>random-port-initialization-error?</code></a>.</p>
+</div>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">6 bindings</p>
+
+<div class="entry" id="e0" data-name="make-random-port">
+  <div class="entry-name">make-random-port</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e1" data-name="random-port-initialization-error?">
+  <div class="entry-name">random-port-initialization-error?</div>
+  <pre class="entry-doc">Syntax: (random-port-initialization-error? obj)
+Library: (srfi 271 determinized)
+Description: Returns #t if obj is the object raised by make-random-port when
+  the initializer port does not deliver enough usable data (fewer than 32
+  bytes, or 32 zero bytes), #f otherwise.
+Example:
+  (guard (e ((random-port-initialization-error? e) 'too-short))
+    (make-random-port (open-input-bytevector #u8(1 2 3)))) =&gt; too-short</pre>
+</div>
+<div class="entry" id="e2" data-name="random-port-state">
+  <div class="entry-name">random-port-state</div>
+  <pre class="entry-doc">Syntax: (random-port-state random-port)
+Library: (srfi 271 determinized)
+Description: Returns the current state of random-port.  Passing it to
+  make-random-port creates a port that delivers the same bytes as
+  random-port does from now on.  A byte returned by peek-u8 but not yet
+  read counts as not consumed.
+Example:
+  (let* ((p (make-random-port))
+         (q (make-random-port (random-port-state p))))
+    (equal? (read-bytevector 8 p) (read-bytevector 8 q))) =&gt; #t</pre>
+</div>
+<div class="entry" id="e3" data-name="random-port-state=?">
+  <div class="entry-name">random-port-state=?</div>
+  <pre class="entry-doc">Syntax: (random-port-state=? state1 state2 ...)
+Library: (srfi 271 determinized)
+Description: Returns #t if all the given random port states are equal.
+  Ports created from equal states produce identical byte sequences.
+Example:
+  (let ((p (make-random-port)))
+    (random-port-state=? (random-port-state p) (random-port-state p))) =&gt; #t</pre>
+</div>
+<div class="entry" id="e4" data-name="random-port-state?">
+  <div class="entry-name">random-port-state?</div>
+  <pre class="entry-doc">Syntax: (random-port-state? obj)
+Library: (srfi 271 determinized)
+Description: Returns #t if obj is a valid random port state, i.e. a vector
+  #(chacha20 key counter offset) with key a bytevector of 32 bytes that are
+  not all zero, counter an exact integer in [0, 2^63) and offset an exact
+  integer in [0, 63].
+Example:
+  (random-port-state? (vector 'chacha20 (make-bytevector 32 1) 0 0)) =&gt; #t</pre>
+</div>
+<div class="entry" id="e5" data-name="random-port?">
+  <div class="entry-name">random-port?</div>
+  <pre class="entry-doc">Syntax: (random-port? obj)
+Library: (srfi 271 determinized)
+Description: Returns #t if obj is a random port made by make-random-port of
+  this library, #f otherwise.
+Example:
+  (random-port? (make-random-port)) =&gt; #t</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

@@ -19,9 +19,9 @@ public class PrimitiveFeaturesList : Primitive
 
         var features = new List<string> { "r7rs", "scm", "exact-closed", "ieee-float",
             "srfi-1", "srfi-2", "srfi-8", "srfi-9", "srfi-13", "srfi-14",
-            "srfi-18", "srfi-19", "srfi-26", "srfi-28", "srfi-39", "srfi-64",
+            "srfi-18", "srfi-19", "srfi-26", "srfi-27", "srfi-28", "srfi-39", "srfi-64",
             "srfi-69", "srfi-95", "srfi-98", "srfi-111", "srfi-125", "srfi-128",
-            "srfi-132", "srfi-133", "srfi-151", "srfi-158" };
+            "srfi-132", "srfi-133", "srfi-151", "srfi-158", "srfi-194", "srfi-271" };
 
         // OS platform
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))

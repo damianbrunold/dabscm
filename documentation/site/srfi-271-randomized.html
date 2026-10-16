@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(srfi 271 randomized) — Dabscm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="toc">
+  <h2>Bindings</h2>
+  <a href="#e0" data-name="make-random-port">make-random-port</a>
+  <a href="#e1" data-name="random-port?">random-port?</a>
+</nav>
+
+<main>
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="index.html">All libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="index.html#sec-srfi">SRFI Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(srfi 271 randomized)</span>
+</nav>
+
+<div class="lib-title srfi">(srfi 271 randomized)</div>
+<p class="lib-sub">SRFI-271 — Randomized random ports (same as (srfi 271))</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p>The randomized random ports of SRFI-271: binary input ports delivering an endless stream of cryptographically random bytes from the operating system's secure random number generator. <a class="xref" href="srfi-271.html"><code>(srfi 271)</code></a> exports the same procedures.</p>
+<pre><code class="language-scheme">(import (srfi 271 randomized))
+
+(read-bytevector 32 (make-random-port))</code></pre>
+</div>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">2 bindings</p>
+
+<div class="entry" id="e0" data-name="make-random-port">
+  <div class="entry-name">make-random-port</div>
+  <pre class="entry-doc">Syntax: (make-random-port)
+Library: (srfi 271 randomized), (srfi 271)
+Description: Returns a new random port: a binary input port delivering an
+  endless stream of cryptographically random bytes from the operating
+  system's secure random number generator.  It never returns an eof object.
+Example:
+  (bytevector-length (read-bytevector 16 (make-random-port))) =&gt; 16</pre>
+</div>
+<div class="entry" id="e1" data-name="random-port?">
+  <div class="entry-name">random-port?</div>
+  <pre class="entry-doc">Syntax: (random-port? obj)
+Library: (srfi 271 randomized), (srfi 271)
+Description: Returns #t if obj is a random port made by make-random-port
+  of this library, #f otherwise.
+Example:
+  (random-port? (make-random-port)) =&gt; #t
+  (random-port? (open-input-bytevector #u8(1 2))) =&gt; #f</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

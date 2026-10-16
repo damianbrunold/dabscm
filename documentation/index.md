@@ -34,6 +34,7 @@
 | [`(srfi 18)`](libraries/srfi-18.md) | SRFI-18 — Multithreading: threads, mutexes, condition variables |
 | [`(srfi 19)`](libraries/srfi-19.md) | SRFI-19 — Time data types and procedures: time, date, Julian Day, formatting |
 | [`(srfi 26)`](libraries/srfi-26.md) | SRFI-26 — cut/cute: partial application via slot notation |
+| [`(srfi 27)`](libraries/srfi-27.md) | SRFI-27 — Sources of random bits: random integers and reals, seedable random sources |
 | [`(srfi 28)`](libraries/srfi-28.md) | SRFI-28 — Basic format strings |
 | [`(srfi 39)`](libraries/srfi-39.md) | SRFI-39 — Parameter objects (re-export from scheme base) |
 | [`(srfi 48)`](libraries/srfi-48.md) | SRFI-48 — Intermediate format strings: display, write, numeric bases, pretty-print |
@@ -48,6 +49,11 @@
 | [`(srfi 133)`](libraries/srfi-133.md) | SRFI-133 — Vector libraries |
 | [`(srfi 151)`](libraries/srfi-151.md) | SRFI-151 — Bitwise operations: logic, shifts, fields, and folds on exact integers |
 | [`(srfi 158)`](libraries/srfi-158.md) | SRFI-158 — Generators and accumulators: lazy sequences, composable pipelines, and value collectors |
+| [`(srfi 194)`](libraries/srfi-194.md) | SRFI-194 — Random data generators: uniform and non-uniform distributions as generators |
+| [`(srfi 271)`](libraries/srfi-271.md) | SRFI-271 — Random ports: cryptographically random bytes as a binary input port |
+| [`(srfi 271 determinized)`](libraries/srfi-271-determinized.md) | SRFI-271 — Determinized random ports: seedable ports with saveable state (ChaCha20) |
+| [`(srfi 271 determinized chacha20)`](libraries/srfi-271-determinized-chacha20.md) | SRFI-271 — Determinized random ports using ChaCha20 |
+| [`(srfi 271 randomized)`](libraries/srfi-271-randomized.md) | SRFI-271 — Randomized random ports (same as (srfi 271)) |
 
 ## Scm Extension Libraries
 

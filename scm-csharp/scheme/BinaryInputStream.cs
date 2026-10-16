@@ -6,14 +6,29 @@ public class BinaryInputStream
     private int peeked = -2; // -2 = no peek buffered, -1 = EOF
     public bool IsOpen { get; private set; } = true;
 
-    public BinaryInputStream(Stream stream)
+    // The stream as passed in, unwrapped.
+    public Stream Source { get; }
+
+    // True if peek-u8 has taken a byte from the stream that the reader has
+    // not consumed yet.
+    public bool HasPeekedByte => peeked >= 0;
+
+    public BinaryInputStream(Stream stream) : this(stream, true)
     {
+    }
+
+    // buffered = false reads straight from the stream, so that nothing is
+    // consumed ahead of the reader (e.g. a deterministic random port whose
+    // position is observable).
+    public BinaryInputStream(Stream stream, bool buffered)
+    {
+        Source = stream;
         // Wrap unbuffered streams (e.g. NetworkStream) with a buffer so
         // small reads — read-u8 in particular — don't pay a syscall /
         // managed↔native transition per byte. Wire-protocol parsers
         // (postgres, sqlserver) read length prefixes byte-by-byte and
         // are dominated by that overhead without buffering.
-        if (stream is BufferedStream || stream is MemoryStream)
+        if (!buffered || stream is BufferedStream || stream is MemoryStream)
         {
             this.stream = stream;
         }

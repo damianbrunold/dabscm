@@ -7,22 +7,38 @@ import java.io.InputStream;
 
 public class BinaryInputStream {
     private InputStream stream;
+    private final InputStream source; // the stream as passed in, unwrapped
     private int peeked = -2; // -2 = no peek buffered, -1 = EOF
     public boolean isOpen = true;
 
     public BinaryInputStream(InputStream stream) {
+        this(stream, true);
+    }
+
+    // buffered = false reads straight from the stream, so that nothing is
+    // consumed ahead of the reader (e.g. a deterministic random port whose
+    // position is observable).
+    public BinaryInputStream(InputStream stream, boolean buffered) {
+        this.source = stream;
         // Wrap unbuffered streams (e.g. socket input) with a buffer so
         // small reads — readByte in particular — don't pay a syscall
         // per byte. Wire-protocol parsers (postgres, sqlserver) read
         // length prefixes byte-by-byte and are dominated by that
         // overhead without buffering.
-        if (stream instanceof BufferedInputStream
+        if (!buffered
+                || stream instanceof BufferedInputStream
                 || stream instanceof ByteArrayInputStream) {
             this.stream = stream;
         } else {
             this.stream = new BufferedInputStream(stream, 8192);
         }
     }
+
+    public InputStream getSource() { return source; }
+
+    // True if peek-u8 has taken a byte from the stream that the reader has
+    // not consumed yet.
+    public boolean hasPeekedByte() { return peeked >= 0; }
 
     // Bulk read: fills buf[offset..offset+count] from the stream,
     // honouring any peeked byte first. Returns the number of bytes

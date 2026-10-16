@@ -48,6 +48,7 @@
   <a href="srfi-18.html" class="srfi">(srfi 18)</a>
   <a href="srfi-19.html" class="srfi">(srfi 19)</a>
   <a href="srfi-26.html" class="srfi">(srfi 26)</a>
+  <a href="srfi-27.html" class="srfi">(srfi 27)</a>
   <a href="srfi-28.html" class="srfi">(srfi 28)</a>
   <a href="srfi-39.html" class="srfi">(srfi 39)</a>
   <a href="srfi-48.html" class="srfi">(srfi 48)</a>
@@ -62,6 +63,11 @@
   <a href="srfi-133.html" class="srfi">(srfi 133)</a>
   <a href="srfi-151.html" class="srfi">(srfi 151)</a>
   <a href="srfi-158.html" class="srfi">(srfi 158)</a>
+  <a href="srfi-194.html" class="srfi">(srfi 194)</a>
+  <a href="srfi-271.html" class="srfi">(srfi 271)</a>
+  <a href="srfi-271-determinized.html" class="srfi">(srfi 271 determinized)</a>
+  <a href="srfi-271-determinized-chacha20.html" class="srfi">(srfi 271 determinized chacha20)</a>
+  <a href="srfi-271-randomized.html" class="srfi">(srfi 271 randomized)</a>
   <h2>Scm Extensions</h2>
   <a href="scm-archive.html" class="scm">(scm archive)</a>
   <a href="scm-args.html" class="scm">(scm args)</a>
@@ -135,7 +141,7 @@
 
 <main>
 
-<p class="intro">A browsable reference for the scm interpreter's libraries — 16 R7RS, 23 SRFI, and 68 extension libraries. Pick a library below, or use the search box to jump straight to any binding.</p>
+<p class="intro">A browsable reference for the scm interpreter's libraries — 16 R7RS, 29 SRFI, and 68 extension libraries. Pick a library below, or use the search box to jump straight to any binding.</p>
 
 <div class="section-heading" id="sec-r7rs">
   <h2>R7RS Standard Libraries</h2>
@@ -253,6 +259,10 @@
     <span class="name">(srfi 26)</span>
     <span class="desc">SRFI-26 — cut/cute: partial application via slot notation</span>
   </a>
+  <a class="lib-card srfi" href="srfi-27.html">
+    <span class="name">(srfi 27)</span>
+    <span class="desc">SRFI-27 — Sources of random bits: random integers and reals, seedable random sources</span>
+  </a>
   <a class="lib-card srfi" href="srfi-28.html">
     <span class="name">(srfi 28)</span>
     <span class="desc">SRFI-28 — Basic format strings</span>
@@ -308,6 +318,26 @@
   <a class="lib-card srfi" href="srfi-158.html">
     <span class="name">(srfi 158)</span>
     <span class="desc">SRFI-158 — Generators and accumulators: lazy sequences, composable pipelines, and value collectors</span>
+  </a>
+  <a class="lib-card srfi" href="srfi-194.html">
+    <span class="name">(srfi 194)</span>
+    <span class="desc">SRFI-194 — Random data generators: uniform and non-uniform distributions as generators</span>
+  </a>
+  <a class="lib-card srfi" href="srfi-271.html">
+    <span class="name">(srfi 271)</span>
+    <span class="desc">SRFI-271 — Random ports: cryptographically random bytes as a binary input port</span>
+  </a>
+  <a class="lib-card srfi" href="srfi-271-determinized.html">
+    <span class="name">(srfi 271 determinized)</span>
+    <span class="desc">SRFI-271 — Determinized random ports: seedable ports with saveable state (ChaCha20)</span>
+  </a>
+  <a class="lib-card srfi" href="srfi-271-determinized-chacha20.html">
+    <span class="name">(srfi 271 determinized chacha20)</span>
+    <span class="desc">SRFI-271 — Determinized random ports using ChaCha20</span>
+  </a>
+  <a class="lib-card srfi" href="srfi-271-randomized.html">
+    <span class="name">(srfi 271 randomized)</span>
+    <span class="desc">SRFI-271 — Randomized random ports (same as (srfi 271))</span>
   </a>
 </div>
 

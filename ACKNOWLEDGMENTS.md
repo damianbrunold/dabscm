@@ -86,13 +86,35 @@ The string processing library is based on the SRFI-13 reference implementation
 by Olin Shivers. The code has been adapted to work within the R7RS library
 system with docstrings added for the project's documentation infrastructure.
 
+### SRFI-27 (Sources of Random Bits)
+
+- **File:** `scm-lib/libraries/srfi-27.sld`
+- **Author:** Sebastian Egner (original reference implementation)
+- **License:** MIT (Copyright (C) Sebastian Egner (2002))
+
+The random source library is a port of the SRFI-27 reference implementation
+of Pierre L'Ecuyer's MRG32k3a generator by Sebastian Egner (the generic part
+and the 54-bit integer back end). `random-source-randomize!` was changed to
+seed from the operating system's cryptographic random number generator.
+
+### SRFI-194 (Random Data Generators)
+
+- **Files:** `scm-lib/libraries/srfi-194.sld`, `scm-tests/tests/tests_srfi_194.scm` (partial)
+- **Authors:** Arvydas Silanskas, Bradley J Lucier, Linas Vepštas, John Cowan
+  (reference implementation and test suite)
+- **License:** MIT
+
+The random data generators are a port of the SRFI-194 reference
+implementation, including the Zipf (ZRI) and sphere/ellipsoid/ball
+generators. Some tests are adapted from its test suite.
+
 ## SRFI Implementations
 
-The following 22 SRFIs are implemented: 1, 2, 8, 9, 13, 14, 18, 19, 26, 28,
-39, 64, 69, 95, 98, 111, 125, 128, 132, 133, 151, 158.
+The following 25 SRFIs are implemented: 1, 2, 8, 9, 13, 14, 18, 19, 26, 27,
+28, 39, 64, 69, 95, 98, 111, 125, 128, 132, 133, 151, 158, 194, 271.
 
-Except for SRFI-1, SRFI-9, SRFI-13, SRFI-26, and the SRFI-11 `let-values`
-noted above, these are original implementations written for this project, not
+Except for SRFI-1, SRFI-9, SRFI-13, SRFI-26, SRFI-27, SRFI-194, and the
+SRFI-11 `let-values` noted above, these are original implementations written for this project, not
 copies of the SRFI reference implementations. The SRFI specifications are published by the Scheme
 community at <https://srfi.schemers.org/>.
 

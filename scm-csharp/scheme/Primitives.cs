@@ -62,6 +62,8 @@ public class Primitives
         Bind(new PrimitiveCar());
         Bind(new PrimitiveCdr());
         Bind(new PrimitiveCeiling());
+        Bind(new PrimitiveChaCha20PortP());
+        Bind(new PrimitiveChaCha20PortState());
         Bind(new PrimitiveChaCha20Poly1305Decrypt());
         Bind(new PrimitiveChaCha20Poly1305Encrypt());
         Bind(new PrimitiveCharAlphabeticP());
@@ -241,6 +243,7 @@ public class Primitives
         Bind(new PrimitiveMD5Hash());
         Bind(new PrimitiveMacroexpand(modules));
         Bind(new PrimitiveMakeBytevector());
+        Bind(new PrimitiveMakeChaCha20Port());
         Bind(new PrimitiveMakeConditionVariable());
         Bind(new PrimitiveMakeDict());
         Bind(new PrimitiveMakeDirectory());
@@ -253,6 +256,7 @@ public class Primitives
         Bind(new PrimitiveMakeParameterCore());
         Bind(new PrimitiveMakePolar());
         Bind(new PrimitiveMakeRecord());
+        Bind(new PrimitiveMakeSecureRandomPort());
         Bind(new PrimitiveMakeRectangular());
         Bind(new PrimitiveMakeString());
         Bind(new PrimitiveMakeSymlink());
@@ -368,6 +372,7 @@ public class Primitives
         Bind(new PrimitiveSHA1Hash());
         Bind(new PrimitiveSHA256Hash());
         Bind(new PrimitiveSecond());
+        Bind(new PrimitiveSecureRandomPortP());
         Bind(new PrimitiveServerInstallShutdownHook());
         Bind(new PrimitiveServerStop());
         Bind(new PrimitiveServerWait());

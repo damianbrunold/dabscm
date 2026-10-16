@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(srfi 27) — Dabscm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="toc">
+  <h2>Bindings</h2>
+  <a href="#e0" data-name="default-random-source">default-random-source</a>
+  <a href="#e1" data-name="make-random-source">make-random-source</a>
+  <a href="#e2" data-name="random-integer">random-integer</a>
+  <a href="#e3" data-name="random-real">random-real</a>
+  <a href="#e4" data-name="random-source-make-integers">random-source-make-integers</a>
+  <a href="#e5" data-name="random-source-make-reals">random-source-make-reals</a>
+  <a href="#e6" data-name="random-source-pseudo-randomize!">random-source-pseudo-randomize!</a>
+  <a href="#e7" data-name="random-source-randomize!">random-source-randomize!</a>
+  <a href="#e8" data-name="random-source-state-ref">random-source-state-ref</a>
+  <a href="#e9" data-name="random-source-state-set!">random-source-state-set!</a>
+  <a href="#e10" data-name="random-source?">random-source?</a>
+</nav>
+
+<main>
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="index.html">All libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="index.html#sec-srfi">SRFI Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(srfi 27)</span>
+</nav>
+
+<div class="lib-title srfi">(srfi 27)</div>
+<p class="lib-sub">SRFI-27 — Sources of random bits: random integers and reals, seedable random sources</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p>SRFI-27 provides sources of random bits: uniformly distributed random integers and reals, drawn from <em>random sources</em> whose state can be saved, restored, and deterministically seeded. The generator is Pierre L'Ecuyer's MRG32k3a (period about 2^191), ported from the SRFI's reference implementation.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (srfi 27))
+
+(random-integer 6)          ;; =&gt; 0..5
+(random-real)               ;; =&gt; a flonum strictly between 0 and 1
+(random-integer (expt 10 30)) ;; arbitrarily large ranges work too</code></pre>
+<p><a class="xref" href="#e0"><code>default-random-source</code></a> starts in the same state on every run. For different numbers each run, randomize it (from the operating system's cryptographic random number generator):</p>
+<pre><code class="language-scheme">(random-source-randomize! default-random-source)</code></pre>
+<p>For reproducible, independent streams (e.g. one per thread, or per simulation run), create your own sources and pseudo-randomize them:</p>
+<pre><code class="language-scheme">(define s (make-random-source))
+(random-source-pseudo-randomize! s 1 0)     ;; stream (1, 0)
+(define dice (random-source-make-integers s))
+(dice 6)
+
+(define saved (random-source-state-ref s))  ;; writable/readable state
+(random-source-state-set! s saved)</code></pre>
+<p>Random sources are not synchronized; give each thread its own source. For cryptographic purposes use <a class="xref" href="scm-crypto.html#e16"><code>random-bytes</code></a> from <a class="xref" href="scm-crypto.html"><code>(scm crypto)</code></a> or the random ports of <a class="xref" href="srfi-271.html"><code>(srfi 271)</code></a> instead.</p>
+</div>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">11 bindings</p>
+
+<div class="entry" id="e0" data-name="default-random-source">
+  <div class="entry-name">default-random-source</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e1" data-name="make-random-source">
+  <div class="entry-name">make-random-source</div>
+  <pre class="entry-doc">Syntax: (make-random-source)
+Library: (srfi 27)
+Description: Creates a new random source.  Every new source starts in the
+  same state, so it yields the same sequence until it is randomized,
+  pseudo-randomized or given another state.  The generator is L'Ecuyer's
+  MRG32k3a.
+Example:
+  (let ((s (make-random-source)))
+    ((random-source-make-integers s) 100)) =&gt; 85</pre>
+</div>
+<div class="entry" id="e2" data-name="random-integer">
+  <div class="entry-name">random-integer</div>
+  <pre class="entry-doc">Syntax: (random-integer n)
+Library: (srfi 27)
+Description: Returns the next uniformly distributed integer in
+  {0, ..., n-1} from default-random-source.  n must be a positive exact
+  integer.  default-random-source starts in a fixed state, so call
+  (random-source-randomize! default-random-source) first for different
+  numbers on every run.
+Example:
+  (&lt; (random-integer 10) 10) =&gt; #t</pre>
+</div>
+<div class="entry" id="e3" data-name="random-real">
+  <div class="entry-name">random-real</div>
+  <pre class="entry-doc">Syntax: (random-real)
+Library: (srfi 27)
+Description: Returns the next uniformly distributed flonum strictly between
+  0 and 1 from default-random-source.
+Example:
+  (&lt; 0 (random-real) 1) =&gt; #t</pre>
+</div>
+<div class="entry" id="e4" data-name="random-source-make-integers">
+  <div class="entry-name">random-source-make-integers</div>
+  <pre class="entry-doc">Syntax: (random-source-make-integers s)
+Library: (srfi 27)
+Description: Returns a procedure (rand n) that takes a positive exact
+  integer n and returns the next uniformly distributed integer in
+  {0, ..., n-1} from the random source s.  n may be arbitrarily large.
+Example:
+  (let ((rand (random-source-make-integers (make-random-source))))
+    (&lt; (rand 6) 6)) =&gt; #t</pre>
+</div>
+<div class="entry" id="e5" data-name="random-source-make-reals">
+  <div class="entry-name">random-source-make-reals</div>
+  <pre class="entry-doc">Syntax: (random-source-make-reals s)
+       (random-source-make-reals s unit)
+Library: (srfi 27)
+Description: Returns a procedure of no arguments that returns the next
+  uniformly distributed flonum strictly between 0 and 1 from the random
+  source s.  The optional unit (0 &lt; unit &lt; 1) is the maximum spacing
+  between possible results; smaller values than the default ~2.3e-10 draw
+  several numbers per result.
+Example:
+  (let ((rand (random-source-make-reals (make-random-source))))
+    (&lt; 0 (rand) 1)) =&gt; #t</pre>
+</div>
+<div class="entry" id="e6" data-name="random-source-pseudo-randomize!">
+  <div class="entry-name">random-source-pseudo-randomize!</div>
+  <pre class="entry-doc">Syntax: (random-source-pseudo-randomize! s i j)
+Library: (srfi 27)
+Description: Sets the random source s to the initial state of the
+  (i, j)-th independent stream, where i and j are non-negative exact
+  integers.  This is fully deterministic: use it to obtain reproducible yet
+  independent streams, e.g. one per thread or per simulation run.  Streams
+  are distinct for i, j &lt; 2^28.
+Example:
+  (let ((a (make-random-source)) (b (make-random-source)))
+    (random-source-pseudo-randomize! a 1 2)
+    (random-source-pseudo-randomize! b 1 2)
+    (= ((random-source-make-integers a) 1000000)
+       ((random-source-make-integers b) 1000000))) =&gt; #t</pre>
+</div>
+<div class="entry" id="e7" data-name="random-source-randomize!">
+  <div class="entry-name">random-source-randomize!</div>
+  <pre class="entry-doc">Syntax: (random-source-randomize! s)
+Library: (srfi 27)
+Description: Sets the random source s to a truly random state, drawn from
+  the operating system's cryptographic random number generator.
+Example:
+  (let ((s (make-random-source)))
+    (random-source-randomize! s)
+    (random-source? s)) =&gt; #t</pre>
+</div>
+<div class="entry" id="e8" data-name="random-source-state-ref">
+  <div class="entry-name">random-source-state-ref</div>
+  <pre class="entry-doc">Syntax: (random-source-state-ref s)
+Library: (srfi 27)
+Description: Returns the current state of the random source s as an
+  external object (a list (lecuyer-mrg32k3a x10 x11 x12 x20 x21 x22)) that
+  can be written, read back and passed to random-source-state-set!.
+Example:
+  (car (random-source-state-ref (make-random-source))) =&gt; lecuyer-mrg32k3a</pre>
+</div>
+<div class="entry" id="e9" data-name="random-source-state-set!">
+  <div class="entry-name">random-source-state-set!</div>
+  <pre class="entry-doc">Syntax: (random-source-state-set! s state)
+Library: (srfi 27)
+Description: Sets the state of the random source s to state, which must
+  have been obtained from random-source-state-ref.
+Example:
+  (let* ((s (make-random-source))
+         (rand (random-source-make-integers s))
+         (st (random-source-state-ref s))
+         (a (rand 1000000)))
+    (random-source-state-set! s st)
+    (= a (rand 1000000))) =&gt; #t</pre>
+</div>
+<div class="entry" id="e10" data-name="random-source?">
+  <div class="entry-name">random-source?</div>
+  <pre class="entry-doc">Syntax: (random-source? obj)
+Library: (srfi 27)
+Description: Returns #t if obj is a random source, #f otherwise.
+Example:
+  (random-source? default-random-source) =&gt; #t</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>
