@@ -29,7 +29,7 @@ public class PrimitiveTerminalSize : Primitive
             int rows = Console.WindowHeight;
             if (cols <= 0 || rows <= 0)
                 return (object)false;
-            return new Pair(cols, rows);
+            return new Pair((long) cols, (long) rows);
         }
         catch
         {

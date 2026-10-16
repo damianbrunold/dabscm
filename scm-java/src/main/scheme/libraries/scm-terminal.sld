@@ -568,7 +568,14 @@ Example:
 
     (define (%decode-ss3-key byte)
       ;; Decode an SS3 sequence (ESC O ...) into a key symbol.
+      ;; Arrow keys come as ESC O A..D when the terminal is in application
+      ;; cursor mode (e.g. after the terminfo keypad_xmit string, as .NET's
+      ;; console sends on Unix).
       (case (integer->char byte)
+        ((#\A) 'up)
+        ((#\B) 'down)
+        ((#\C) 'right)
+        ((#\D) 'left)
         ((#\P) 'f1)
         ((#\Q) 'f2)
         ((#\R) 'f3)
