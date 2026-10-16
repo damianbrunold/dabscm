@@ -28,7 +28,7 @@ public class PrimitiveFloor : Primitive
         }
         else if (Value.IsRational(arguments[0]))
         {
-            return (long)Math.Floor(Value.AsRational(arguments[0]).ToDouble());
+            return Value.AsRational(arguments[0]).Floor();
         }
         else
         {

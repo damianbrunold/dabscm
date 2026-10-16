@@ -27,7 +27,7 @@ public class PrimitiveTruncate : Primitive
         }
         else if (Value.IsRational(arguments[0]))
         {
-            return (long)Math.Truncate(Value.AsRational(arguments[0]).ToDouble());
+            return Value.AsRational(arguments[0]).Truncate();
         }
         else
         {

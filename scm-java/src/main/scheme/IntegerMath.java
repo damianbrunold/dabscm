@@ -100,12 +100,12 @@ public final class IntegerMath {
             long la = (long)(Long) a, lb = (long)(Long) b;
             if (la == Long.MIN_VALUE && lb == -1) return 0L;
             long r = la % lb;
-            if ((r >= 0) != (lb >= 0)) return r + lb;
+            if (r != 0 && (r < 0) != (lb < 0)) return r + lb;
             return r;
         }
         BigInteger ba = toBigInteger(a), bb = toBigInteger(b);
         BigInteger r = ba.remainder(bb);
-        if ((r.signum() >= 0) != (bb.signum() >= 0)) r = r.add(bb);
+        if (r.signum() != 0 && (r.signum() < 0) != (bb.signum() < 0)) r = r.add(bb);
         return normalize(r);
     }
 

@@ -992,7 +992,12 @@ Example:
   (floor-quotient 5 2)   => 2
   (floor-quotient -5 2)  => -3
   (floor-quotient 5 -2)  => -3"
-      (exact (floor (/ n d))))
+      ;; n minus its floor remainder is a multiple of d; for inexact arguments
+      ;; (then the remainder is inexact) computed exactly and rounded once
+      (let ((m (modulo n d)))
+        (if (exact? m)
+            (quotient (- n m) d)
+            (inexact (floor-quotient (exact n) (exact d))))))
     (define (floor-remainder n d)
       "Syntax: (floor-remainder n1 n2)
 Library: (scheme base)
@@ -1003,7 +1008,7 @@ Example:
   (floor-remainder 5 2)   => 1
   (floor-remainder -5 2)  => 1
   (floor-remainder 5 -2)  => -1"
-      (- n (* (floor-quotient n d) d)))
+      (modulo n d))
     (define (floor/ n d)
       "Syntax: (floor/ n1 n2)
 Library: (scheme base)

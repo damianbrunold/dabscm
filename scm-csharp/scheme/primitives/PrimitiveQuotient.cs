@@ -28,7 +28,7 @@ public class PrimitiveQuotient : Primitive
         }
         else
         {
-            return (double) ((long) (ToReal(arguments[0]) / ToReal(arguments[1])));
+            return InexactIntegerOp(arguments[0], arguments[1], IntegerMath.GenericQuotient);
         }
     }
 }

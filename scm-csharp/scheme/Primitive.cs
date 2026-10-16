@@ -147,6 +147,21 @@ public abstract class Primitive
         return ExactCompare(Complex.ToExact(d), x);
     }
 
+    /// <summary>
+    /// quotient, remainder and modulo with an inexact argument: computed
+    /// exactly on the integer values, the result as a (correctly rounded)
+    /// double. A non-integral argument is a wrong argument type.
+    /// </summary>
+    protected static double InexactIntegerOp(object a, object b, Func<object, object, object> op)
+        => IntegerMath.ToDouble(op(ExactIntegerOf(a), ExactIntegerOf(b)));
+
+    private static object ExactIntegerOf(object v)
+    {
+        if (Value.IsInteger(v)) return v;
+        if (v is double d && double.IsFinite(d) && d == Math.Truncate(d)) return Complex.ToExact(d);
+        throw new WrongTypeException(v, "integer");
+    }
+
     private static void CheckExact(object v)
     {
         if (!(v is long || v is System.Numerics.BigInteger || v is Rational))

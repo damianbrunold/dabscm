@@ -28,14 +28,7 @@ public class PrimitiveModulo : Primitive
         }
         else
         {
-            double a = ToReal(arguments[0]);
-            double b = ToReal(arguments[1]);
-            double r = a % b;
-            if ((r >= 0) != (b >= 0))
-            {
-                return r + b;
-            }
-            return r;
+            return InexactIntegerOp(arguments[0], arguments[1], IntegerMath.GenericModulo);
         }
     }
 }

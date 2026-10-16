@@ -24,7 +24,7 @@ public class PrimitiveQuotient extends Primitive {
             return IntegerMath.genericQuotient(arguments[0], arguments[1]);
         }
         else {
-            return (double) ((long) (toReal(arguments[0]) / toReal(arguments[1])));
+            return inexactIntegerOp(arguments[0], arguments[1], IntegerMath::genericQuotient);
         }
     }
 }

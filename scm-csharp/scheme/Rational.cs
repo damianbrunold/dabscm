@@ -102,9 +102,55 @@ public class Rational : IEquatable<Rational>, IComparable<Rational>
         return Create(num, den);
     }
 
+    // Correctly rounded (to nearest, ties to even), also when numerator or
+    // denominator is beyond the double range or the result is subnormal.
     public double ToDouble()
     {
-        return IntegerMath.ToDouble(Numerator) / IntegerMath.ToDouble(Denominator);
+        const long exactLimit = 1L << 53;
+        if (Numerator is long n && Denominator is long d && n >= -exactLimit && n <= exactLimit && d <= exactLimit)
+            return (double)n / (double)d;   // exact operands, so the division rounds correctly
+        BigInteger num = IntegerMath.ToBigInteger(Numerator), den = IntegerMath.ToBigInteger(Denominator);
+        bool negative = num.Sign < 0;
+        if (negative) num = -num;
+        // E = floor(log2(num/den)) is e or e - 1
+        long e = num.GetBitLength() - den.GetBitLength();
+        bool atLeast = e >= 0 ? num >= den << (int)e : num << (int)-e >= den;
+        long E = atLeast ? e : e - 1;
+        if (E > 1023) return negative ? double.NegativeInfinity : double.PositiveInfinity;
+        // q = num/den in units of the result's last place, rounded half to even
+        int lsb = (int)Math.Max(E - 52, -1074);
+        BigInteger a = lsb < 0 ? num << -lsb : num, b = lsb > 0 ? den << lsb : den;
+        BigInteger q = BigInteger.DivRem(a, b, out BigInteger r);
+        int half = (r << 1).CompareTo(b);
+        if (half > 0 || (half == 0 && !q.IsEven)) q += 1;
+        double result = Math.ScaleB((double)q, lsb);   // q <= 2^53, so exact unless it overflows
+        return negative ? -result : result;
+    }
+
+    // floor, ceiling, truncate and round (half to even), exactly; the
+    // denominator is positive.
+    public object Floor()
+    {
+        object q = IntegerMath.GenericQuotient(Numerator, Denominator);
+        return IntegerMath.IsNegative(Numerator) ? IntegerMath.GenericSub(q, 1L) : q;
+    }
+
+    public object Ceiling()
+    {
+        object q = IntegerMath.GenericQuotient(Numerator, Denominator);
+        return IntegerMath.IsNegative(Numerator) ? q : IntegerMath.GenericAdd(q, 1L);
+    }
+
+    public object Truncate() => IntegerMath.GenericQuotient(Numerator, Denominator);
+
+    public object Round()
+    {
+        object fl = Floor();
+        object twiceFrac = IntegerMath.GenericMul(IntegerMath.GenericModulo(Numerator, Denominator), 2L);
+        int c = IntegerMath.Compare(twiceFrac, Denominator);
+        if (c < 0) return fl;
+        if (c > 0) return IntegerMath.GenericAdd(fl, 1L);
+        return IntegerMath.IsZero(IntegerMath.GenericModulo(fl, 2L)) ? fl : IntegerMath.GenericAdd(fl, 1L);
     }
 
     public override string ToString() => $"{Numerator}/{Denominator}";

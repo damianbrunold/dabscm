@@ -90,8 +90,58 @@ public final class Rational implements Comparable<Rational> {
         return create(num, den);
     }
 
+    // Correctly rounded (to nearest, ties to even), also when numerator or
+    // denominator is beyond the double range or the result is subnormal.
     public double toDouble() {
-        return IntegerMath.toDouble(numerator) / IntegerMath.toDouble(denominator);
+        final long exactLimit = 1L << 53;
+        if (numerator instanceof Long && denominator instanceof Long) {
+            long n = (Long) numerator, d = (Long) denominator;
+            if (n >= -exactLimit && n <= exactLimit && d <= exactLimit)
+                return (double) n / (double) d;   // exact operands, so the division rounds correctly
+        }
+        BigInteger num = IntegerMath.toBigInteger(numerator), den = IntegerMath.toBigInteger(denominator);
+        boolean negative = num.signum() < 0;
+        if (negative) num = num.negate();
+        // E = floor(log2(num/den)) is e or e - 1
+        long e = (long) num.bitLength() - den.bitLength();
+        boolean atLeast = e >= 0 ? num.compareTo(den.shiftLeft((int) e)) >= 0
+                                 : num.shiftLeft((int) -e).compareTo(den) >= 0;
+        long bigE = atLeast ? e : e - 1;
+        if (bigE > 1023) return negative ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
+        // q = num/den in units of the result's last place, rounded half to even
+        int lsb = (int) Math.max(bigE - 52, -1074);
+        BigInteger a = lsb < 0 ? num.shiftLeft(-lsb) : num, b = lsb > 0 ? den.shiftLeft(lsb) : den;
+        BigInteger[] qr = a.divideAndRemainder(b);
+        BigInteger q = qr[0];
+        int half = qr[1].shiftLeft(1).compareTo(b);
+        if (half > 0 || (half == 0 && q.testBit(0))) q = q.add(BigInteger.ONE);
+        double result = Math.scalb(q.doubleValue(), lsb);   // q <= 2^53, so exact unless it overflows
+        return negative ? -result : result;
+    }
+
+    // floor, ceiling, truncate and round (half to even), exactly; the
+    // denominator is positive.
+    public Object floor() {
+        Object q = IntegerMath.genericQuotient(numerator, denominator);
+        return IntegerMath.isNegative(numerator) ? IntegerMath.genericSub(q, 1L) : q;
+    }
+
+    public Object ceiling() {
+        Object q = IntegerMath.genericQuotient(numerator, denominator);
+        return IntegerMath.isNegative(numerator) ? q : IntegerMath.genericAdd(q, 1L);
+    }
+
+    public Object truncate() {
+        return IntegerMath.genericQuotient(numerator, denominator);
+    }
+
+    public Object round() {
+        Object fl = floor();
+        Object twiceFrac = IntegerMath.genericMul(IntegerMath.genericModulo(numerator, denominator), 2L);
+        int c = IntegerMath.compare(twiceFrac, denominator);
+        if (c < 0) return fl;
+        if (c > 0) return IntegerMath.genericAdd(fl, 1L);
+        return IntegerMath.isZero(IntegerMath.genericModulo(fl, 2L)) ? fl : IntegerMath.genericAdd(fl, 1L);
     }
 
     @Override

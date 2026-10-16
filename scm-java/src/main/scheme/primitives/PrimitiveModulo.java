@@ -26,13 +26,7 @@ public class PrimitiveModulo extends Primitive {
             return IntegerMath.genericModulo(arguments[0], arguments[1]);
         }
         else {
-            double a = toReal(arguments[0]);
-            double b = toReal(arguments[1]);
-            double r = a % b;
-            if ((r >= 0) != (b >= 0)) {
-                return r + b;
-            }
-            return r;
+            return inexactIntegerOp(arguments[0], arguments[1], IntegerMath::genericModulo);
         }
     }
 }

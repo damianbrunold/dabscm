@@ -102,12 +102,12 @@ public static class IntegerMath
         {
             if (la == long.MinValue && lb == -1) return 0L;
             long r = la % lb;
-            if ((r >= 0) != (lb >= 0)) return r + lb;
+            if (r != 0 && (r < 0) != (lb < 0)) return r + lb;
             return r;
         }
         BigInteger ba = ToBigInteger(a), bb = ToBigInteger(b);
         BigInteger r2 = BigInteger.Remainder(ba, bb);
-        if ((r2.Sign >= 0) != (bb.Sign >= 0)) r2 += bb;
+        if (!r2.IsZero && (r2.Sign < 0) != (bb.Sign < 0)) r2 += bb;
         return Normalize(r2);
     }
 
@@ -170,7 +170,24 @@ public static class IntegerMath
     public static double ToDouble(object value)
     {
         if (value is long l) return (double)l;
-        return (double)(BigInteger)value;
+        return ToDouble((BigInteger)value);
+    }
+
+    // Correctly rounded (to nearest, ties to even); the (double) cast of a
+    // BigInteger is not (it truncates).
+    public static double ToDouble(BigInteger value)
+    {
+        if (value >= long.MinValue && value <= long.MaxValue) return (double)(long)value;
+        bool negative = value.Sign < 0;
+        if (negative) value = -value;
+        int shift = (int)value.GetBitLength() - 53;   // > 10 here
+        if (shift > 1024) return negative ? double.NegativeInfinity : double.PositiveInfinity;
+        BigInteger q = value >> shift;
+        BigInteger rest = value - (q << shift);
+        int half = (rest << 1).CompareTo(BigInteger.One << shift);
+        if (half > 0 || (half == 0 && !q.IsEven)) q += 1;
+        double result = Math.ScaleB((double)(long)q, shift);   // q <= 2^53; overflows to infinity
+        return negative ? -result : result;
     }
 
     // --- Bitwise operations ---

@@ -150,6 +150,24 @@ public abstract class Primitive {
         return exactCompare(Complex.toExact(d), x);
     }
 
+    /**
+     * quotient, remainder and modulo with an inexact argument: computed
+     * exactly on the integer values, the result as a (correctly rounded)
+     * double. A non-integral argument is a wrong argument type.
+     */
+    protected static double inexactIntegerOp(Object a, Object b, java.util.function.BinaryOperator<Object> op) {
+        return IntegerMath.toDouble(op.apply(exactIntegerOf(a), exactIntegerOf(b)));
+    }
+
+    private static Object exactIntegerOf(Object v) {
+        if (Value.isInteger(v)) return v;
+        if (v instanceof Double) {
+            double d = (Double) v;
+            if (Double.isFinite(d) && d == Math.rint(d)) return Complex.toExact(v);
+        }
+        throw new WrongTypeException(v, "integer");
+    }
+
     private static void checkExact(Object v) {
         if (!(v instanceof Long || v instanceof BigInteger || v instanceof Rational))
             throw new WrongTypeException(v, "number");

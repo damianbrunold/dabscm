@@ -28,11 +28,11 @@ public class PrimitiveRound : Primitive
         }
         else if (Value.IsRational(arguments[0]))
         {
-            return (long)Math.Round(Value.AsRational(arguments[0]).ToDouble(), MidpointRounding.ToEven);
+            return Value.AsRational(arguments[0]).Round();
         }
         else
         {
-            return Math.Round(ToReal(arguments[0]));
+            return Math.Round(ToReal(arguments[0]), MidpointRounding.ToEven);
         }
     }
 }

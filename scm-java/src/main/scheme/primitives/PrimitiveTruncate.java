@@ -1,8 +1,6 @@
 package scheme.primitives;
 
 import scheme.*;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 
 public class PrimitiveTruncate extends Primitive {
     @Override
@@ -26,17 +24,11 @@ public class PrimitiveTruncate extends Primitive {
         if (Value.isInteger(arguments[0])) {
             return arguments[0];
         } else if (Value.isRational(arguments[0])) {
-            double d = Value.asRational(arguments[0]).toDouble();
-            double t = d < 0 ? Math.ceil(d) : Math.floor(d);
-            if (t >= Long.MIN_VALUE && t <= Long.MAX_VALUE) return (long) t;
-            return IntegerMath.normalize(new BigDecimal(d).setScale(0, RoundingMode.DOWN).toBigInteger());
+            return Value.asRational(arguments[0]).truncate();
         } else {
+            // stays inexact; also for infinities, NaN and beyond the long range
             double d = toReal(arguments[0]);
-            double t = d < 0 ? Math.ceil(d) : Math.floor(d);
-            if (t >= Long.MIN_VALUE && t <= Long.MAX_VALUE) {
-                return t;
-            }
-            return IntegerMath.normalize(new BigDecimal(d).setScale(0, RoundingMode.DOWN).toBigInteger());
+            return d < 0 ? Math.ceil(d) : Math.floor(d);
         }
     }
 }

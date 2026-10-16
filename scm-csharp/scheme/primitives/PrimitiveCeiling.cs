@@ -28,7 +28,7 @@ public class PrimitiveCeiling : Primitive
         }
         else if (Value.IsRational(arguments[0]))
         {
-            return (long)Math.Ceiling(Value.AsRational(arguments[0]).ToDouble());
+            return Value.AsRational(arguments[0]).Ceiling();
         }
         else
         {

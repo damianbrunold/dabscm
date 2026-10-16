@@ -72,7 +72,7 @@ public class Complex : IEquatable<Complex>
     {
         if (v is double) return v;
         if (v is long l) return (double)l;
-        if (v is BigInteger bi) return (double)bi;
+        if (v is BigInteger bi) return IntegerMath.ToDouble(bi);
         if (v is Rational r) return r.ToDouble();
         return 0.0;
     }

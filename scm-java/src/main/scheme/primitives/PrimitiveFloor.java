@@ -1,8 +1,6 @@
 package scheme.primitives;
 
 import scheme.*;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 
 public class PrimitiveFloor extends Primitive {
     @Override
@@ -27,15 +25,11 @@ public class PrimitiveFloor extends Primitive {
         if (Value.isInteger(arguments[0])) {
             return arguments[0];
         } else if (Value.isRational(arguments[0])) {
-            double d = Math.floor(Value.asRational(arguments[0]).toDouble());
-            if (d >= Long.MIN_VALUE && d <= Long.MAX_VALUE) return (long) d;
-            return IntegerMath.normalize(new BigDecimal(d).setScale(0, RoundingMode.FLOOR).toBigInteger());
+            return Value.asRational(arguments[0]).floor();
         } else {
-            double d = Math.floor(toReal(arguments[0]));
-            if (d >= Long.MIN_VALUE && d <= Long.MAX_VALUE) {
-                return d;
-            }
-            return IntegerMath.normalize(new BigDecimal(d).setScale(0, RoundingMode.FLOOR).toBigInteger());
+            // stays inexact; also for infinities, NaN and beyond the long range
+            double d = toReal(arguments[0]);
+            return Math.floor(d);
         }
     }
 }
