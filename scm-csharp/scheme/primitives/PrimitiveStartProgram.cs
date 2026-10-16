@@ -54,6 +54,13 @@ public class PrimitiveStartProgram : Primitive
             // own, so it never saw Ctrl+C at all.
             psi.CreateNoWindow = !RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
                                  || GetConsoleWindow() == IntPtr.Zero;
+            // Give the child a private stdin pipe, as the JDK's ProcessBuilder
+            // does by default. Inheriting our console input let children (and
+            // their descendants) steal keystrokes and, on Windows, where the
+            // input mode belongs to the shared console, switch line/echo mode
+            // back on under a terminal-raw! UI. The pipe is left open (not
+            // closed) so programs that exit on stdin EOF keep running.
+            psi.RedirectStandardInput = true;
 
             string? logfile = null;
             if (options != Value.NIL)
