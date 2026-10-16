@@ -25,7 +25,8 @@ public class PrimitiveIntegerP extends Primitive {
         if (Value.isInteger(arguments[0])) return Value.T;
         if (Value.isReal(arguments[0])) {
             double val = toReal(arguments[0]);
-            return val == (double) ((long) val) ? Value.T : Value.F;
+            // not via (long): integral doubles beyond 2^63 are integers too
+            return Double.isFinite(val) && val == Math.rint(val) ? Value.T : Value.F;
         }
         return Value.F;
     }
