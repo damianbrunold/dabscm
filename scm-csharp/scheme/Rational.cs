@@ -54,7 +54,8 @@ public class Rational : IEquatable<Rational>, IComparable<Rational>
     {
         if (v is long l) return new Rational(l, 1L);
         if (v is BigInteger) return new Rational(v, 1L);
-        return (Rational)v;
+        if (v is Rational r) return r;
+        throw new WrongTypeException(v, "number");
     }
 
     private static long LongGcd(long a, long b)

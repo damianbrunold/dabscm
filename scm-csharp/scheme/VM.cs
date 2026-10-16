@@ -15,8 +15,6 @@ public class VM
 
     private int nargs = 0;
     private int flattened = 0;
-    private string? _intrinsicName;   // set before each intrinsic for error messages
-    private SourcePos? _intrinsicPos;
 
     public Dictionary<string, int> call_counts = new();
     public object winders = Value.NIL;
@@ -37,6 +35,45 @@ public class VM
     private static readonly PrimitiveNumgreater s_primitiveNumGt = new();
     private static readonly PrimitiveNumlessequal s_primitiveNumLte = new();
     private static readonly PrimitiveNumgreaterequal s_primitiveNumGte = new();
+
+    // The Scheme name of an opcode that can fail with a wrong argument type,
+    // for the error message; null for the VM's internal opcodes.
+    private static string? OpcodeErrorName(Opcode op) => op switch
+    {
+        Opcode.CAR => "car",
+        Opcode.CDR => "cdr",
+        Opcode.CONS => "cons",
+        Opcode.IS_NULL => "null?",
+        Opcode.IS_PAIR => "pair?",
+        Opcode.NOT => "not",
+        Opcode.ADD or Opcode.LVAR_ADD_IMM => "+",
+        Opcode.SUB or Opcode.LVAR_SUB_IMM => "-",
+        Opcode.MUL => "*",
+        Opcode.DIV => "/",
+        Opcode.NUM_EQ => "=",
+        Opcode.NUM_LT => "<",
+        Opcode.NUM_GT => ">",
+        Opcode.NUM_LTE => "<=",
+        Opcode.NUM_GTE => ">=",
+        Opcode.EQ_P => "eq?",
+        Opcode.EQV_P => "eqv?",
+        Opcode.VECTOR_REF => "vector-ref",
+        Opcode.VECTOR_SET => "vector-set!",
+        Opcode.FLATTEN_APPLY => "apply",
+        _ => null
+    };
+
+    // "Failed in <name>: wrong argument type", with the offending value as
+    // irritant when the cast site reported it (WrongTypeException).
+    private static SchemeError WrongArgumentTypeError(SourcePos? pos, string name, InvalidCastException e)
+    {
+        string message = "Failed in " + name + ": wrong argument type";
+        if (e is not WrongTypeException wt)
+            return new SchemeError(pos, new ErrorObject(message, Array.Empty<object>()));
+        if (WrongTypeException.IsHostValue(wt.Value))
+            message += " (host " + wt.Value.GetType().Name + ", not a Scheme " + wt.Expected + ")";
+        return new SchemeError(pos, new ErrorObject(message, new[] { wt.Value }));
+    }
 
     private static double VmToReal(object v)
     {
@@ -369,10 +406,10 @@ public class VM
                             ReturnArgs(args);
                             throw;
                         }
-                        catch (InvalidCastException)
+                        catch (InvalidCastException e)
                         {
                             ReturnArgs(args);
-                            throw new SchemeError(instruction.pos, "Failed in " + Value.AsPrimitive(f).Name() + ": wrong argument type");
+                            throw WrongArgumentTypeError(instruction.pos, Value.AsPrimitive(f).Name(), e);
                         }
                         catch (Exception e)
                         {
@@ -560,36 +597,30 @@ public class VM
                         "raise: exception handler returned", Array.Empty<object>()));
 
                 case Opcode.CAR:
-                    _intrinsicName = "car"; _intrinsicPos = instruction.pos;
                     Push(Value.AsPair(Pop()).car);
                     break;
 
                 case Opcode.CDR:
-                    _intrinsicName = "cdr"; _intrinsicPos = instruction.pos;
                     Push(Value.AsPair(Pop()).cdr);
                     break;
 
                 case Opcode.CONS: {
-                    _intrinsicName = "cons"; _intrinsicPos = instruction.pos;
                     object icdr = Pop(), icar = Pop();
                     Push(new Pair(icar, icdr));
                     break;
                 }
 
                 case Opcode.IS_NULL:
-                    _intrinsicName = "null?"; _intrinsicPos = instruction.pos;
                     Push(Pop() == Value.NIL ? Value.T : Value.F);
                     break;
 
                 case Opcode.IS_PAIR: {
-                    _intrinsicName = "pair?"; _intrinsicPos = instruction.pos;
                     object ipv = Pop();
                     Push(Value.IsPair(ipv) ? Value.T : Value.F);
                     break;
                 }
 
                 case Opcode.NOT:
-                    _intrinsicName = "not"; _intrinsicPos = instruction.pos;
                     Push(Pop().Equals(Value.F) ? Value.T : Value.F);
                     break;
 
@@ -624,7 +655,6 @@ public class VM
                 }
 
                 case Opcode.ADD: {
-                    _intrinsicName = "+"; _intrinsicPos = instruction.pos;
                     int n = (int)instruction.arg1!;
                     if (n == 0) { Push(0L); break; }
                     if (n == 2) {
@@ -650,7 +680,6 @@ public class VM
                 }
 
                 case Opcode.SUB: {
-                    _intrinsicName = "-"; _intrinsicPos = instruction.pos;
                     int n = (int)instruction.arg1!;
                     if (n == 1) {
                         object ia = Pop();
@@ -683,7 +712,6 @@ public class VM
                 }
 
                 case Opcode.MUL: {
-                    _intrinsicName = "*"; _intrinsicPos = instruction.pos;
                     int n = (int)instruction.arg1!;
                     if (n == 0) { Push(1L); break; }
                     if (n == 2) {
@@ -709,7 +737,6 @@ public class VM
                 }
 
                 case Opcode.DIV: {
-                    _intrinsicName = "/"; _intrinsicPos = instruction.pos;
                     int n = (int)instruction.arg1!;
                     if (n == 2) {
                         object ib = Pop(), ia = Pop();
@@ -734,7 +761,6 @@ public class VM
                 }
 
                 case Opcode.NUM_EQ: {
-                    _intrinsicName = "="; _intrinsicPos = instruction.pos;
                     int n = (int)instruction.arg1!;
                     if (n == 2) {
                         object ib = Pop(), ia = Pop();
@@ -752,7 +778,6 @@ public class VM
                 }
 
                 case Opcode.NUM_LT: {
-                    _intrinsicName = "<"; _intrinsicPos = instruction.pos;
                     int n = (int)instruction.arg1!;
                     if (n == 2) {
                         object ib = Pop(), ia = Pop();
@@ -769,7 +794,6 @@ public class VM
                 }
 
                 case Opcode.NUM_GT: {
-                    _intrinsicName = ">"; _intrinsicPos = instruction.pos;
                     int n = (int)instruction.arg1!;
                     if (n == 2) {
                         object ib = Pop(), ia = Pop();
@@ -786,7 +810,6 @@ public class VM
                 }
 
                 case Opcode.NUM_LTE: {
-                    _intrinsicName = "<="; _intrinsicPos = instruction.pos;
                     int n = (int)instruction.arg1!;
                     if (n == 2) {
                         object ib = Pop(), ia = Pop();
@@ -803,7 +826,6 @@ public class VM
                 }
 
                 case Opcode.NUM_GTE: {
-                    _intrinsicName = ">="; _intrinsicPos = instruction.pos;
                     int n = (int)instruction.arg1!;
                     if (n == 2) {
                         object ib = Pop(), ia = Pop();
@@ -820,21 +842,18 @@ public class VM
                 }
 
                 case Opcode.EQ_P: {
-                    _intrinsicName = "eq?"; _intrinsicPos = instruction.pos;
                     object ib = Pop(), ia = Pop();
                     Push(PrimitiveEqP.Eq(ia, ib) ? Value.T : Value.F);
                     break;
                 }
 
                 case Opcode.EQV_P: {
-                    _intrinsicName = "eqv?"; _intrinsicPos = instruction.pos;
                     object ib = Pop(), ia = Pop();
                     Push(PrimitiveEqvP.Eqv(ia, ib) ? Value.T : Value.F);
                     break;
                 }
 
                 case Opcode.VECTOR_REF: {
-                    _intrinsicName = "vector-ref"; _intrinsicPos = instruction.pos;
                     object idx = Pop();
                     var vec = Value.AsVector(Pop());
                     int i = IntegerMath.ToInt(idx);
@@ -845,7 +864,6 @@ public class VM
                 }
 
                 case Opcode.VECTOR_SET: {
-                    _intrinsicName = "vector-set!"; _intrinsicPos = instruction.pos;
                     object val = Pop();
                     object idx = Pop();
                     var vec = Value.AsVector(Pop());
@@ -880,15 +898,18 @@ public class VM
             exceptionHandlers = savedExceptionHandlers;
             throw;
         }
-        catch (InvalidCastException)
+        catch (InvalidCastException e)
         {
-            string name = _intrinsicName ?? "intrinsic";
-            var err = new SchemeError(_intrinsicPos, "Failed in " + name + ": wrong argument type");
+            // No opcode changes ip or fn before it can fail a cast, so the
+            // failing instruction is the one fetched last.
+            Instruction? failed = fn != null && ip > 0 && ip <= fn.code.Count ? fn.code[ip - 1] : null;
+            string name = failed == null ? "VM"
+                : OpcodeErrorName(failed.opcode) ?? failed.opcode + " instruction";
+            var err = WrongArgumentTypeError(failed?.pos, name, e);
             err.schemeCallStack = ExtractCallStack();
             if (exceptionHandlers != Value.NIL)
             {
-                object condition = new ErrorObject(err.Message, Array.Empty<object>());
-                SetupRaiseCall(condition);
+                SetupRaiseCall(err.errorObject!);
                 goto continueExecution;
             }
             sp = savedSp;
