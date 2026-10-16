@@ -1,5 +1,6 @@
 package scheme.primitives;
 
+import java.math.BigInteger;
 import scheme.*;
 
 public class PrimitiveExact extends Primitive {
@@ -51,48 +52,51 @@ public class PrimitiveExact extends Primitive {
         return doubleToRational(d);
     }
 
-    /**
-     * Convert a non-integral double to the simplest rational whose double
-     * representation equals d, using the continued fraction algorithm.
-     */
+    // The simplest rational (smallest denominator) that reads back as d: the
+    // simplest one in d's rounding interval, halfway to the neighbouring
+    // doubles with both ends included on a tie-to-even. Computed exactly, so
+    // it works across the whole range, subnormals included.
     private static Object doubleToRational(double d) {
         boolean negative = d < 0;
-        double x = Math.abs(d);
+        double x = Math.abs(d);   // > 0 and not integral (handled by the caller)
+        BigInteger[] v = exactParts(x), prev = exactParts(Math.nextDown(x)), next = exactParts(Math.nextUp(x));
+        BigInteger n = v[0], m = v[1];
+        BigInteger loN = n.multiply(prev[1]).add(prev[0].multiply(m)), loD = m.multiply(prev[1]).shiftLeft(1);
+        BigInteger hiN = n.multiply(next[1]).add(next[0].multiply(m)), hiD = m.multiply(next[1]).shiftLeft(1);
+        boolean closed = (Double.doubleToLongBits(x) & 1) == 0;
 
-        // Continued fraction convergents: p[-1]/q[-1] = 1/0, p[0]/q[0] = 0/1
-        long p0 = 0, q0 = 1;
-        long p1 = 1, q1 = 0;
-
-        double rem = x;
-        for (int i = 0; i < 100; i++) { // safety limit
-            long a = (long) Math.floor(rem);
-
-            // Next convergent: p2/q2 = a * p1 + p0, a * q1 + q0
-            long p2 = a * p1 + p0;
-            long q2 = a * q1 + q0;
-
-            // Check if this convergent equals d when converted back to double
-            if (q2 != 0 && (double) p2 / (double) q2 == x) {
-                if (negative) p2 = -p2;
-                if (q2 == 1) return p2;
-                return Rational.create(p2, q2);
-            }
-
-            // Prepare for next iteration
-            double frac = rem - a;
-            if (frac == 0.0) break; // exact integer (shouldn't reach here)
-            rem = 1.0 / frac;
-
-            p0 = p1; q0 = q1;
-            p1 = p2; q1 = q2;
-
-            // Guard against overflow
-            if (p1 > Long.MAX_VALUE / 1000 || q1 > Long.MAX_VALUE / 1000) break;
+        // Continued fraction of the simplest rational between lo and hi: take
+        // an integer in the interval if there is one, else the common integer
+        // part and continue with the reciprocals of the fractional parts
+        // (which swaps the ends). hiD == 0 stands for +infinity.
+        java.util.List<BigInteger> terms = new java.util.ArrayList<>();
+        while (true) {
+            BigInteger fl = loN.divide(loD);
+            BigInteger c = closed && fl.multiply(loD).equals(loN) ? fl : fl.add(BigInteger.ONE);
+            int cmp = hiD.signum() == 0 ? -1 : c.multiply(hiD).compareTo(hiN);
+            if (cmp < 0 || (closed && cmp == 0)) { terms.add(c); break; }
+            terms.add(fl);
+            BigInteger nLoN = hiD, nLoD = hiN.subtract(fl.multiply(hiD));   // 1 / (hi - fl)
+            BigInteger nHiN = loD, nHiD = loN.subtract(fl.multiply(loD));   // 1 / (lo - fl)
+            loN = nLoN; loD = nLoD; hiN = nHiN; hiD = nHiD;
         }
+        BigInteger p = terms.get(terms.size() - 1), q = BigInteger.ONE;
+        for (int i = terms.size() - 2; i >= 0; i--) {
+            BigInteger np = terms.get(i).multiply(p).add(q);
+            q = p; p = np;
+        }
+        return Rational.create(IntegerMath.normalize(negative ? p.negate() : p), IntegerMath.normalize(q));
+    }
 
-        // Fallback: return the last convergent even if not exact
-        if (negative) p1 = -p1;
-        if (q1 == 1) return p1;
-        return Rational.create(p1, q1);
+    // x (finite, >= 0) as {num, den}.
+    private static BigInteger[] exactParts(double x) {
+        long bits = Double.doubleToLongBits(x);
+        int biased = (int) ((bits >> 52) & 0x7FFL);
+        long mantissa = bits & 0xFFFFFFFFFFFFFL;
+        if (biased != 0) mantissa |= 1L << 52; else biased = 1;
+        int exp = biased - 1023 - 52;
+        BigInteger num = BigInteger.valueOf(mantissa), den = BigInteger.ONE;
+        if (exp >= 0) num = num.shiftLeft(exp); else den = den.shiftLeft(-exp);
+        return new BigInteger[] { num, den };
     }
 }

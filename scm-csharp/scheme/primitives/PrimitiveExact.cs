@@ -55,51 +55,53 @@ public class PrimitiveExact : Primitive
         return DoubleToRational(d);
     }
 
-    /// <summary>
-    /// Convert a non-integral double to the simplest rational whose double
-    /// representation equals d, using the continued fraction algorithm.
-    /// </summary>
+    // The simplest rational (smallest denominator) that reads back as d: the
+    // simplest one in d's rounding interval, halfway to the neighbouring
+    // doubles with both ends included on a tie-to-even. Computed exactly, so
+    // it works across the whole range, subnormals included.
     private static object DoubleToRational(double d)
     {
         bool negative = d < 0;
-        double x = Math.Abs(d);
+        double x = Math.Abs(d);   // > 0 and not integral (handled by the caller)
+        ExactParts(x, out BigInteger n, out BigInteger m);
+        ExactParts(Math.BitDecrement(x), out BigInteger pn, out BigInteger pm);
+        ExactParts(Math.BitIncrement(x), out BigInteger nn, out BigInteger nm);
+        BigInteger loN = n * pm + pn * m, loD = 2 * m * pm;
+        BigInteger hiN = n * nm + nn * m, hiD = 2 * m * nm;
+        bool closed = (BitConverter.DoubleToInt64Bits(x) & 1) == 0;
 
-        // Continued fraction convergents: p[-1]/q[-1] = 1/0, p[0]/q[0] = 0/1
-        long p0 = 0, q0 = 1;
-        long p1 = 1, q1 = 0;
-
-        double rem = x;
-        for (int i = 0; i < 100; i++) // safety limit
+        // Continued fraction of the simplest rational between lo and hi: take
+        // an integer in the interval if there is one, else the common integer
+        // part and continue with the reciprocals of the fractional parts
+        // (which swaps the ends). hiD == 0 stands for +infinity.
+        var terms = new List<BigInteger>();
+        while (true)
         {
-            long a = (long)Math.Floor(rem);
-
-            // Next convergent: p2/q2 = a * p1 + p0, a * q1 + q0
-            long p2 = a * p1 + p0;
-            long q2 = a * q1 + q0;
-
-            // Check if this convergent equals d when converted back to double
-            if (q2 != 0 && (double)p2 / (double)q2 == x)
-            {
-                if (negative) p2 = -p2;
-                if (q2 == 1) return p2;
-                return Rational.Create(p2, q2);
-            }
-
-            // Prepare for next iteration
-            double frac = rem - a;
-            if (frac == 0.0) break; // exact integer (shouldn't reach here)
-            rem = 1.0 / frac;
-
-            p0 = p1; q0 = q1;
-            p1 = p2; q1 = q2;
-
-            // Guard against overflow
-            if (p1 > long.MaxValue / 1000 || q1 > long.MaxValue / 1000) break;
+            BigInteger fl = BigInteger.Divide(loN, loD);
+            BigInteger c = closed && fl * loD == loN ? fl : fl + 1;
+            int cmp = hiD.IsZero ? -1 : (c * hiD).CompareTo(hiN);
+            if (cmp < 0 || (closed && cmp == 0)) { terms.Add(c); break; }
+            terms.Add(fl);
+            BigInteger nLoN = hiD, nLoD = hiN - fl * hiD;   // 1 / (hi - fl)
+            BigInteger nHiN = loD, nHiD = loN - fl * loD;   // 1 / (lo - fl)
+            loN = nLoN; loD = nLoD; hiN = nHiN; hiD = nHiD;
         }
+        BigInteger p = terms[terms.Count - 1], q = BigInteger.One;
+        for (int i = terms.Count - 2; i >= 0; i--)
+            (p, q) = (terms[i] * p + q, p);
+        return Rational.Create(IntegerMath.Normalize(negative ? -p : p), IntegerMath.Normalize(q));
+    }
 
-        // Fallback: return the last convergent even if not exact
-        if (negative) p1 = -p1;
-        if (q1 == 1) return p1;
-        return Rational.Create(p1, q1);
+    // x (finite, >= 0) as num/den.
+    private static void ExactParts(double x, out BigInteger num, out BigInteger den)
+    {
+        long bits = BitConverter.DoubleToInt64Bits(x);
+        int biased = (int)((bits >> 52) & 0x7FF);
+        long mantissa = bits & 0xFFFFFFFFFFFFF;
+        if (biased != 0) mantissa |= 1L << 52; else biased = 1;
+        int exp = biased - 1023 - 52;
+        num = mantissa;
+        den = BigInteger.One;
+        if (exp >= 0) num <<= exp; else den <<= -exp;
     }
 }
