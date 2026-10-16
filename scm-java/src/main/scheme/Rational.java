@@ -48,7 +48,8 @@ public final class Rational implements Comparable<Rational> {
     public static Rational lift(Object v) {
         if (v instanceof Long) return new Rational(v, 1L);
         if (v instanceof BigInteger) return new Rational(v, 1L);
-        return (Rational) v;
+        if (v instanceof Rational) return (Rational) v;
+        throw new WrongTypeException(v, "number");
     }
 
     private static long longGcd(long a, long b) {

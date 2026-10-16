@@ -20,8 +20,6 @@ public class VM {
 
     private int nargs = 0;
     private int flattened = 0;
-    private String intrinsicName;   // set before each intrinsic for error messages
-    private SourcePos intrinsicPos;
 
     public HashMap<String, Integer> call_counts = new HashMap<>();
     public Object winders = Value.NIL;
@@ -40,6 +38,46 @@ public class VM {
     private static final PrimitiveNumgreater S_NUM_GT = new PrimitiveNumgreater();
     private static final PrimitiveNumlessequal S_NUM_LTE = new PrimitiveNumlessequal();
     private static final PrimitiveNumgreaterequal S_NUM_GTE = new PrimitiveNumgreaterequal();
+
+    // The Scheme name of an opcode that can fail with a wrong argument type,
+    // for the error message; null for the VM's internal opcodes.
+    private static String opcodeErrorName(Opcode op) {
+        switch (op) {
+            case CAR: return "car";
+            case CDR: return "cdr";
+            case CONS: return "cons";
+            case IS_NULL: return "null?";
+            case IS_PAIR: return "pair?";
+            case NOT: return "not";
+            case ADD: case LVAR_ADD_IMM: return "+";
+            case SUB: case LVAR_SUB_IMM: return "-";
+            case MUL: return "*";
+            case DIV: return "/";
+            case NUM_EQ: return "=";
+            case NUM_LT: return "<";
+            case NUM_GT: return ">";
+            case NUM_LTE: return "<=";
+            case NUM_GTE: return ">=";
+            case EQ_P: return "eq?";
+            case EQV_P: return "eqv?";
+            case VECTOR_REF: return "vector-ref";
+            case VECTOR_SET: return "vector-set!";
+            case FLATTEN_APPLY: return "apply";
+            default: return null;
+        }
+    }
+
+    // "Failed in <name>: wrong argument type", with the offending value as
+    // irritant when the cast site reported it (WrongTypeException).
+    private static SchemeError wrongArgumentTypeError(SourcePos pos, String name, ClassCastException e) {
+        String message = "Failed in " + name + ": wrong argument type";
+        if (!(e instanceof WrongTypeException))
+            return new SchemeError(pos, new ErrorObject(message, new Object[0]));
+        WrongTypeException wt = (WrongTypeException) e;
+        if (WrongTypeException.isHostValue(wt.value))
+            message += " (host " + wt.value.getClass().getSimpleName() + ", not a Scheme " + wt.expected + ")";
+        return new SchemeError(pos, new ErrorObject(message, new Object[] { wt.value }));
+    }
 
     private static double vmToReal(Object v) {
         if (v instanceof Long) return (double)(long)(Long)v;
@@ -336,9 +374,7 @@ public class VM {
                             throw e;
                         } catch (ClassCastException e) {
                             returnArgs(args);
-                            throw new SchemeError(instruction.pos,
-                                                  "Failed in " + Value.asPrimitive(f).name()
-                                                  + ": wrong argument type");
+                            throw wrongArgumentTypeError(instruction.pos, Value.asPrimitive(f).name(), e);
                         } catch (Exception e) {
                             returnArgs(args);
                             throw new SchemeError(instruction.pos,
@@ -504,36 +540,30 @@ public class VM {
                         "raise: exception handler returned", new Object[0]));
 
                 case CAR:
-                    intrinsicName = "car"; intrinsicPos = instruction.pos;
                     push(Value.asPair(pop()).car);
                     break;
 
                 case CDR:
-                    intrinsicName = "cdr"; intrinsicPos = instruction.pos;
                     push(Value.asPair(pop()).cdr);
                     break;
 
                 case CONS: {
-                    intrinsicName = "cons"; intrinsicPos = instruction.pos;
                     Object icdr = pop(), icar = pop();
                     push(new Pair(icar, icdr));
                     break;
                 }
 
                 case IS_NULL:
-                    intrinsicName = "null?"; intrinsicPos = instruction.pos;
                     push(pop() == Value.NIL ? Value.T : Value.F);
                     break;
 
                 case IS_PAIR: {
-                    intrinsicName = "pair?"; intrinsicPos = instruction.pos;
                     Object ipv = pop();
                     push(Value.isPair(ipv) ? Value.T : Value.F);
                     break;
                 }
 
                 case NOT:
-                    intrinsicName = "not"; intrinsicPos = instruction.pos;
                     push(pop().equals(Value.F) ? Value.T : Value.F);
                     break;
 
@@ -568,7 +598,6 @@ public class VM {
                 }
 
                 case ADD: {
-                    intrinsicName = "+"; intrinsicPos = instruction.pos;
                     int n = (int) instruction.arg1;
                     if (n == 0) { push(0L); break; }
                     if (n == 2) {
@@ -594,7 +623,6 @@ public class VM {
                 }
 
                 case SUB: {
-                    intrinsicName = "-"; intrinsicPos = instruction.pos;
                     int n = (int) instruction.arg1;
                     if (n == 1) {
                         Object ia = pop();
@@ -627,7 +655,6 @@ public class VM {
                 }
 
                 case MUL: {
-                    intrinsicName = "*"; intrinsicPos = instruction.pos;
                     int n = (int) instruction.arg1;
                     if (n == 0) { push(1L); break; }
                     if (n == 2) {
@@ -653,7 +680,6 @@ public class VM {
                 }
 
                 case DIV: {
-                    intrinsicName = "/"; intrinsicPos = instruction.pos;
                     int n = (int) instruction.arg1;
                     if (n == 2) {
                         Object ib = pop(), ia = pop();
@@ -679,7 +705,6 @@ public class VM {
                 }
 
                 case NUM_EQ: {
-                    intrinsicName = "="; intrinsicPos = instruction.pos;
                     int n = (int) instruction.arg1;
                     if (n == 2) {
                         Object ib = pop(), ia = pop();
@@ -697,7 +722,6 @@ public class VM {
                 }
 
                 case NUM_LT: {
-                    intrinsicName = "<"; intrinsicPos = instruction.pos;
                     int n = (int) instruction.arg1;
                     if (n == 2) {
                         Object ib = pop(), ia = pop();
@@ -714,7 +738,6 @@ public class VM {
                 }
 
                 case NUM_GT: {
-                    intrinsicName = ">"; intrinsicPos = instruction.pos;
                     int n = (int) instruction.arg1;
                     if (n == 2) {
                         Object ib = pop(), ia = pop();
@@ -731,7 +754,6 @@ public class VM {
                 }
 
                 case NUM_LTE: {
-                    intrinsicName = "<="; intrinsicPos = instruction.pos;
                     int n = (int) instruction.arg1;
                     if (n == 2) {
                         Object ib = pop(), ia = pop();
@@ -748,7 +770,6 @@ public class VM {
                 }
 
                 case NUM_GTE: {
-                    intrinsicName = ">="; intrinsicPos = instruction.pos;
                     int n = (int) instruction.arg1;
                     if (n == 2) {
                         Object ib = pop(), ia = pop();
@@ -765,21 +786,18 @@ public class VM {
                 }
 
                 case EQ_P: {
-                    intrinsicName = "eq?"; intrinsicPos = instruction.pos;
                     Object ib = pop(), ia = pop();
                     push(PrimitiveEqP.eq(ia, ib) ? Value.T : Value.F);
                     break;
                 }
 
                 case EQV_P: {
-                    intrinsicName = "eqv?"; intrinsicPos = instruction.pos;
                     Object ib = pop(), ia = pop();
                     push(PrimitiveEqvP.eqv(ia, ib) ? Value.T : Value.F);
                     break;
                 }
 
                 case VECTOR_REF: {
-                    intrinsicName = "vector-ref"; intrinsicPos = instruction.pos;
                     Object idx = pop();
                     Object[] vec = Value.asVector(pop());
                     int i = IntegerMath.toInt(idx);
@@ -790,7 +808,6 @@ public class VM {
                 }
 
                 case VECTOR_SET: {
-                    intrinsicName = "vector-set!"; intrinsicPos = instruction.pos;
                     Object val = pop();
                     Object idx = pop();
                     Object[] vec = Value.asVector(pop());
@@ -822,12 +839,18 @@ public class VM {
                 throw e;
             }
         } catch (ClassCastException cce) {
-            String name = intrinsicName != null ? intrinsicName : "intrinsic";
-            SchemeError err = new SchemeError(intrinsicPos, "Failed in " + name + ": wrong argument type");
+            // No opcode changes ip or fn before it can fail a cast, so the
+            // failing instruction is the one fetched last.
+            Instruction failed = fn != null && ip > 0 && ip <= fn.code.size() ? fn.code.get(ip - 1) : null;
+            String name = "VM";
+            if (failed != null) {
+                name = opcodeErrorName(failed.opcode);
+                if (name == null) name = failed.opcode + " instruction";
+            }
+            SchemeError err = wrongArgumentTypeError(failed != null ? failed.pos : null, name, cce);
             err.schemeCallStack = extractCallStack();
             if (exceptionHandlers != Value.NIL) {
-                Object condition = new ErrorObject(err.getMessage(), new Object[0]);
-                setupRaiseCall(condition);
+                setupRaiseCall(err.errorObject);
                 continueExecution = true;
             } else {
                 sp = savedSp;

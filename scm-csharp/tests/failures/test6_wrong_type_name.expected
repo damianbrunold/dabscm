@@ -1,0 +1,4 @@
+Failed in -: wrong argument type: x (test6_wrong_type_name.scm 6:3)
+Scheme call stack:
+  at f (test6_wrong_type_name.scm 6:3)
+  at <toplevel> (test6_wrong_type_name.scm 12:1)
