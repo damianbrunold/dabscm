@@ -102,8 +102,11 @@ public class Complex : IEquatable<Complex>
         bool neg = d < 0;
         if (neg) d = -d;
         long bits = BitConverter.DoubleToInt64Bits(d);
-        int exp = (int)((bits >> 52) & 0x7FF) - 1023 - 52;
-        long mantissa = (bits & 0xFFFFFFFFFFFFF) | (1L << 52);
+        int biased = (int)((bits >> 52) & 0x7FF);
+        long mantissa = bits & 0xFFFFFFFFFFFFF;
+        // subnormals have no implicit leading 1 and the exponent of biased 1
+        if (biased != 0) mantissa |= 1L << 52; else biased = 1;
+        int exp = biased - 1023 - 52;
         BigInteger num = mantissa;
         BigInteger den = BigInteger.One;
         if (exp >= 0) { num <<= exp; }

@@ -89,8 +89,11 @@ public final class Complex {
         boolean neg = d < 0;
         if (neg) d = -d;
         long bits = Double.doubleToLongBits(d);
-        int exp = (int)((bits >> 52) & 0x7FFL) - 1023 - 52;
-        long mantissa = (bits & 0xFFFFFFFFFFFFFL) | (1L << 52);
+        int biased = (int)((bits >> 52) & 0x7FFL);
+        long mantissa = bits & 0xFFFFFFFFFFFFFL;
+        // subnormals have no implicit leading 1 and the exponent of biased 1
+        if (biased != 0) mantissa |= 1L << 52; else biased = 1;
+        int exp = biased - 1023 - 52;
         BigInteger num = BigInteger.valueOf(mantissa);
         BigInteger den = BigInteger.ONE;
         if (exp >= 0) { num = num.shiftLeft(exp); }

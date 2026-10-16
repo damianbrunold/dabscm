@@ -88,58 +88,73 @@ public abstract class Primitive
     }
 
     /// <summary>
-    /// Compare mixed exact/inexact numbers without precision loss.
-    /// Converts the inexact value to exact (BigInteger) when it's integral,
-    /// avoiding the double→long cast that loses precision beyond 2^53.
+    /// = for real numbers that are not both integers or both doubles.
+    /// Exact numbers (integers, rationals) are compared exactly, a finite
+    /// double against an exact number via its exact value. A non-number
+    /// throws WrongTypeException ("wrong argument type" with the value).
     /// </summary>
     public static bool MixedNumericEquals(object a, object b)
     {
-        double d; object exact;
-        if (Value.IsReal(a) && Value.IsInteger(b)) { d = Value.AsReal(a); exact = b; }
-        else if (Value.IsInteger(a) && Value.IsReal(b)) { d = Value.AsReal(b); exact = a; }
-        else { return AsDouble(a) == AsDouble(b); }
-
-        if (double.IsNaN(d) || double.IsInfinity(d)) return false;
-        if (d != Math.Floor(d)) return false; // non-integral double ≠ integer
-        // Convert double to BigInteger for precise comparison
-        return IntegerMath.GenericEquals(new System.Numerics.BigInteger(d), exact);
+        if (a is double da) return b is double db ? da == db : DoubleExactCompare(da, b, true) == 0;
+        if (b is double db2) return DoubleExactCompare(db2, a, true) == 0;
+        CheckExact(a); CheckExact(b);
+        return ExactCompare(a, b) == 0;
     }
 
     /// <summary>
-    /// Compare mixed exact/inexact for ordering (< or >).
-    /// Returns negative if a < b, positive if a > b, 0 if equal.
+    /// Ordering for real numbers that are not both integers or both doubles,
+    /// exact like MixedNumericEquals. Returns negative if a &lt; b, positive if
+    /// a &gt; b, 0 if equal (and for NaN).
     /// </summary>
     public static int MixedNumericCompare(object a, object b)
     {
-        double d; object exact; bool flipped;
-        if (Value.IsReal(a) && Value.IsInteger(b)) { d = Value.AsReal(a); exact = b; flipped = false; }
-        else if (Value.IsInteger(a) && Value.IsReal(b)) { d = Value.AsReal(b); exact = a; flipped = true; }
-        else { double da = AsDouble(a), db = AsDouble(b); return da < db ? -1 : da > db ? 1 : 0; }
-
-        if (double.IsNaN(d)) return 0; // NaN comparisons are unordered
-        if (double.IsPositiveInfinity(d)) return flipped ? -1 : 1;
-        if (double.IsNegativeInfinity(d)) return flipped ? 1 : -1;
-
-        // Convert double to BigInteger for precise comparison
-        var bi = new System.Numerics.BigInteger(d);
-        double frac = d - Math.Truncate(d);
-
-        int cmp;
-        if (exact is long el) cmp = bi.CompareTo(new System.Numerics.BigInteger(el));
-        else cmp = bi.CompareTo((System.Numerics.BigInteger)exact);
-
-        // If integer parts equal but double has fractional part, the double is larger/smaller
-        if (cmp == 0 && frac != 0.0) cmp = frac > 0 ? 1 : -1;
-
-        return flipped ? -cmp : cmp;
+        if (a is double da) return b is double db ? DoubleCompare(da, db) : DoubleExactCompare(da, b, false);
+        if (b is double db2) return -DoubleExactCompare(db2, a, false);
+        CheckExact(a); CheckExact(b);
+        return ExactCompare(a, b);
     }
 
-    private static double AsDouble(object a)
+    private const long MaxExactDouble = 1L << 53;
+
+    private static int DoubleCompare(double a, double b) => a < b ? -1 : a > b ? 1 : 0;
+
+    // Compares double d with exact x; for equality (forEquals), NaN and
+    // infinities are unequal to everything (1), for ordering NaN gives 0.
+    private static int DoubleExactCompare(double d, object x, bool forEquals)
     {
-        if (a is double d) return d;
-        if (a is long l) return (double)l;
-        if (a is System.Numerics.BigInteger bi) return (double)bi;
-        if (a is Rational r) return AsDouble(r.Numerator) / AsDouble(r.Denominator);
-        return 0.0;
+        CheckExact(x);
+        // Fast paths without allocation. A long within 2^53 is exact as a
+        // double. n/d of longs within 2^53 is correctly rounded, and rounding
+        // keeps the order, so a rounded value other than d orders like x.
+        if (x is long l && l >= -MaxExactDouble && l <= MaxExactDouble)
+            return forEquals ? (d == (double)l ? 0 : 1) : DoubleCompare(d, (double)l);
+        if (x is Rational r && r.Numerator is long n && r.Denominator is long den
+            && n >= -MaxExactDouble && n <= MaxExactDouble && den <= MaxExactDouble)
+        {
+            double xd = (double)n / (double)den;
+            if (xd != d) return forEquals ? 1 : DoubleCompare(d, xd);
+        }
+        if (double.IsNaN(d)) return forEquals ? 1 : 0;
+        if (double.IsInfinity(d)) return d > 0 ? 1 : -1;
+        return ExactCompare(Complex.ToExact(d), x);
+    }
+
+    private static void CheckExact(object v)
+    {
+        if (!(v is long || v is System.Numerics.BigInteger || v is Rational))
+            throw new WrongTypeException(v, "number");
+    }
+
+    // Both exact; rational denominators are positive.
+    private static int ExactCompare(object a, object b)
+    {
+        if (a is Rational ra)
+        {
+            if (b is Rational rb) return ra.CompareTo(rb);
+            return IntegerMath.Compare(ra.Numerator, IntegerMath.GenericMul(b, ra.Denominator));
+        }
+        if (b is Rational rb2)
+            return IntegerMath.Compare(IntegerMath.GenericMul(a, rb2.Denominator), rb2.Numerator);
+        return IntegerMath.Compare(a, b);
     }
 }

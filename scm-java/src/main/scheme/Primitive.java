@@ -76,56 +76,85 @@ public abstract class Primitive {
     }
 
     /**
-     * Compare mixed exact/inexact numbers without precision loss.
-     * Converts the inexact value to exact (BigInteger) when it's integral,
-     * avoiding the double->long cast that loses precision beyond 2^53.
+     * = for real numbers that are not both integers or both doubles.
+     * Exact numbers (integers, rationals) are compared exactly, a finite
+     * double against an exact number via its exact value. A non-number
+     * throws WrongTypeException ("wrong argument type" with the value).
      */
     public static boolean mixedNumericEquals(Object a, Object b) {
-        double d; Object exact;
-        if (Value.isReal(a) && Value.isInteger(b)) { d = Value.asReal(a); exact = b; }
-        else if (Value.isInteger(a) && Value.isReal(b)) { d = Value.asReal(b); exact = a; }
-        else { return asDouble(a) == asDouble(b); }
-
-        if (Double.isNaN(d) || Double.isInfinite(d)) return false;
-        if (d != Math.floor(d)) return false; // non-integral double != integer
-        // Convert double to BigInteger for precise comparison
-        return IntegerMath.genericEquals(new java.math.BigDecimal(d).toBigInteger(), exact);
+        if (a instanceof Double) {
+            double da = (Double) a;
+            return b instanceof Double ? da == (Double) b : doubleExactCompare(da, b, true) == 0;
+        }
+        if (b instanceof Double) return doubleExactCompare((Double) b, a, true) == 0;
+        checkExact(a); checkExact(b);
+        return exactCompare(a, b) == 0;
     }
 
     /**
-     * Compare mixed exact/inexact for ordering (< or >).
-     * Returns negative if a < b, positive if a > b, 0 if equal.
+     * Ordering for real numbers that are not both integers or both doubles,
+     * exact like mixedNumericEquals. Returns negative if a < b, positive if
+     * a > b, 0 if equal (and for NaN).
      */
     public static int mixedNumericCompare(Object a, Object b) {
-        double d; Object exact; boolean flipped;
-        if (Value.isReal(a) && Value.isInteger(b)) { d = Value.asReal(a); exact = b; flipped = false; }
-        else if (Value.isInteger(a) && Value.isReal(b)) { d = Value.asReal(b); exact = a; flipped = true; }
-        else { double da = asDouble(a), db = asDouble(b); return da < db ? -1 : da > db ? 1 : 0; }
-
-        if (Double.isNaN(d)) return 0; // NaN comparisons are unordered
-        if (d == Double.POSITIVE_INFINITY) return flipped ? -1 : 1;
-        if (d == Double.NEGATIVE_INFINITY) return flipped ? 1 : -1;
-
-        // Convert double to BigInteger for precise comparison
-        BigInteger bi = new java.math.BigDecimal(d).toBigInteger();
-        double trunc = d < 0 ? Math.ceil(d) : Math.floor(d);
-        double frac = d - trunc;
-
-        int cmp;
-        if (exact instanceof Long) cmp = bi.compareTo(BigInteger.valueOf((long)(Long) exact));
-        else cmp = bi.compareTo((BigInteger) exact);
-
-        // If integer parts equal but double has fractional part, the double is larger/smaller
-        if (cmp == 0 && frac != 0.0) cmp = frac > 0 ? 1 : -1;
-
-        return flipped ? -cmp : cmp;
+        if (a instanceof Double) {
+            double da = (Double) a;
+            return b instanceof Double ? doubleCompare(da, (Double) b) : doubleExactCompare(da, b, false);
+        }
+        if (b instanceof Double) return -doubleExactCompare((Double) b, a, false);
+        checkExact(a); checkExact(b);
+        return exactCompare(a, b);
     }
 
-    private static double asDouble(Object a) {
-        if (a instanceof Double) return (double)(Double) a;
-        if (a instanceof Long) return (double)(long)(Long) a;
-        if (a instanceof BigInteger) return ((BigInteger) a).doubleValue();
-        if (a instanceof Rational) return asDouble(((Rational) a).numerator) / asDouble(((Rational) a).denominator);
-        return 0.0;
+    private static final long MAX_EXACT_DOUBLE = 1L << 53;
+
+    private static int doubleCompare(double a, double b) {
+        return a < b ? -1 : a > b ? 1 : 0;
+    }
+
+    // Compares double d with exact x; for equality (forEquals), NaN and
+    // infinities are unequal to everything (1), for ordering NaN gives 0.
+    private static int doubleExactCompare(double d, Object x, boolean forEquals) {
+        checkExact(x);
+        // Fast paths without allocation. A long within 2^53 is exact as a
+        // double. n/d of longs within 2^53 is correctly rounded, and rounding
+        // keeps the order, so a rounded value other than d orders like x.
+        if (x instanceof Long) {
+            long l = (Long) x;
+            if (l >= -MAX_EXACT_DOUBLE && l <= MAX_EXACT_DOUBLE)
+                return forEquals ? (d == (double) l ? 0 : 1) : doubleCompare(d, (double) l);
+        }
+        if (x instanceof Rational) {
+            Rational r = (Rational) x;
+            if (r.numerator instanceof Long && r.denominator instanceof Long) {
+                long n = (Long) r.numerator, den = (Long) r.denominator;
+                if (n >= -MAX_EXACT_DOUBLE && n <= MAX_EXACT_DOUBLE && den <= MAX_EXACT_DOUBLE) {
+                    double xd = (double) n / (double) den;
+                    if (xd != d) return forEquals ? 1 : doubleCompare(d, xd);
+                }
+            }
+        }
+        if (Double.isNaN(d)) return forEquals ? 1 : 0;
+        if (Double.isInfinite(d)) return d > 0 ? 1 : -1;
+        return exactCompare(Complex.toExact(d), x);
+    }
+
+    private static void checkExact(Object v) {
+        if (!(v instanceof Long || v instanceof BigInteger || v instanceof Rational))
+            throw new WrongTypeException(v, "number");
+    }
+
+    // Both exact; rational denominators are positive.
+    private static int exactCompare(Object a, Object b) {
+        if (a instanceof Rational) {
+            Rational ra = (Rational) a;
+            if (b instanceof Rational) return ra.compareTo((Rational) b);
+            return IntegerMath.compare(ra.numerator, IntegerMath.genericMul(b, ra.denominator));
+        }
+        if (b instanceof Rational) {
+            Rational rb = (Rational) b;
+            return IntegerMath.compare(IntegerMath.genericMul(a, rb.denominator), rb.numerator);
+        }
+        return IntegerMath.compare(a, b);
     }
 }
