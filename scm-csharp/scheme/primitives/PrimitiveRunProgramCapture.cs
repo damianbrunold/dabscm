@@ -37,7 +37,7 @@ public class PrimitiveRunProgramCapture : Primitive
                 p = pp.cdr;
             }
 
-            var psi = new ProcessStartInfo(cmd, args);
+            var psi = ProcUtil.CreateStartInfo(cmd, args);
             psi.UseShellExecute = false;
             psi.CreateNoWindow = true;
             psi.RedirectStandardOutput = true;

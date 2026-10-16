@@ -49,7 +49,7 @@ public class PrimitiveRunProgram : Primitive
             }
 
             var process = new Process();
-            process.StartInfo = new ProcessStartInfo(cmd, args);
+            process.StartInfo = ProcUtil.CreateStartInfo(cmd, args);
 
             if (options != Value.NIL)
             {

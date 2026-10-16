@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Text;
 using System.Runtime.InteropServices;
 
 namespace scheme;
@@ -124,5 +126,118 @@ internal static class ProcUtil
             return null;
         }
         catch (Exception) { return null; }
+    }
+
+    // --- launching .bat/.cmd scripts on Windows -----------------------------
+    // With UseShellExecute = false, .NET hands the program to CreateProcess,
+    // which only appends ".exe" to a name without an extension, so a "scm"
+    // that is really scm.bat on PATH is not found. run-program,
+    // run-program/capture and start-program therefore build their
+    // ProcessStartInfo here: on Windows, a program that resolves (via PATH and
+    // PATHEXT, honouring extension precedence so a .exe still wins) to a
+    // .bat/.cmd script is run through cmd.exe, as the Java implementation's
+    // ProcessUtil.resolveBatchLauncher does. Everything else is unchanged.
+    //
+    // The command line is `cmd.exe /d /s /c "<quoted script> <quoted args>"`:
+    // /s makes cmd strip exactly the outer quotes, so paths and arguments with
+    // spaces survive; /d skips AutoRun commands.
+    public static ProcessStartInfo CreateStartInfo(string cmd, List<string> args)
+    {
+        string? batch = OperatingSystem.IsWindows() ? ResolveBatch(cmd) : null;
+        if (batch == null) return new ProcessStartInfo(cmd, args);
+        var sb = new StringBuilder("/d /s /c \"");
+        sb.Append(QuoteArg(batch));
+        foreach (var a in args)
+        {
+            sb.Append(' ');
+            sb.Append(QuoteArg(a));
+        }
+        sb.Append('"');
+        return new ProcessStartInfo("cmd.exe", sb.ToString());
+    }
+
+    // The full path of prog iff it resolves to a .bat/.cmd file, else null.
+    private static string? ResolveBatch(string prog)
+    {
+        if (IsBatch(Path.GetExtension(prog))) return FindOnPath(prog) ?? prog;
+        if (Path.HasExtension(prog)) return null; // e.g. .exe: leave it alone
+
+        var exts = PathExt();
+        if (HasPathSeparator(prog))
+        {
+            foreach (var ext in exts)
+                if (File.Exists(prog + ext))
+                    return IsBatch(ext) ? Path.GetFullPath(prog + ext) : null;
+            return null;
+        }
+        var path = Environment.GetEnvironmentVariable("PATH");
+        if (path == null) return null;
+        foreach (var dir in path.Split(Path.PathSeparator))
+        {
+            if (dir.Length == 0) continue;
+            foreach (var ext in exts)
+            {
+                var f = Path.Combine(dir, prog + ext);
+                if (File.Exists(f)) return IsBatch(ext) ? f : null;
+            }
+        }
+        return null;
+    }
+
+    private static string? FindOnPath(string prog)
+    {
+        if (File.Exists(prog)) return Path.GetFullPath(prog);
+        if (HasPathSeparator(prog)) return null;
+        var path = Environment.GetEnvironmentVariable("PATH");
+        if (path == null) return null;
+        foreach (var dir in path.Split(Path.PathSeparator))
+        {
+            if (dir.Length == 0) continue;
+            var f = Path.Combine(dir, prog);
+            if (File.Exists(f)) return f;
+        }
+        return null;
+    }
+
+    private static List<string> PathExt()
+    {
+        var pe = Environment.GetEnvironmentVariable("PATHEXT");
+        if (string.IsNullOrEmpty(pe)) pe = ".COM;.EXE;.BAT;.CMD";
+        var exts = new List<string>();
+        foreach (var e in pe.Split(';'))
+        {
+            var t = e.Trim();
+            if (t.Length > 0) exts.Add(t);
+        }
+        return exts;
+    }
+
+    private static bool IsBatch(string ext) =>
+        ext.Equals(".bat", StringComparison.OrdinalIgnoreCase)
+        || ext.Equals(".cmd", StringComparison.OrdinalIgnoreCase);
+
+    private static bool HasPathSeparator(string prog) =>
+        prog.IndexOf('\\') >= 0 || prog.IndexOf('/') >= 0;
+
+    // Quote one argument by the MSVC runtime rules (as ProcessStartInfo's
+    // ArgumentList does): wrap in quotes when it is empty or contains
+    // whitespace or a quote; double the backslashes before a quote.
+    private static string QuoteArg(string a)
+    {
+        if (a.Length > 0 && a.IndexOfAny(new[] { ' ', '\t', '\n', '\v', '"' }) < 0)
+            return a;
+        var sb = new StringBuilder("\"");
+        int backslashes = 0;
+        foreach (var c in a)
+        {
+            if (c == '\\') { backslashes++; continue; }
+            if (c == '"') sb.Append('\\', backslashes * 2 + 1);
+            else sb.Append('\\', backslashes);
+            backslashes = 0;
+            sb.Append(c);
+        }
+        sb.Append('\\', backslashes * 2);
+        sb.Append('"');
+        return sb.ToString();
     }
 }

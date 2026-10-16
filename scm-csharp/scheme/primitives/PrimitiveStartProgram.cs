@@ -44,7 +44,7 @@ public class PrimitiveStartProgram : Primitive
 
         try
         {
-            var psi = new ProcessStartInfo(cmd, args);
+            var psi = ProcUtil.CreateStartInfo(cmd, args);
             psi.UseShellExecute = false;
             // Mirror the JDK: suppress a console window only when we have no
             // console ourselves. With one, the child shares it and so receives

@@ -13,13 +13,12 @@ import scheme.Value;
  * Helpers for launching external programs in a way that matches the C#
  * implementation across platforms.
  *
- * On Windows, Java's CreateProcess (used by ProcessBuilder) can only launch
- * real executables (.exe/.com); it cannot run .bat/.cmd batch scripts directly.
- * The C# Process class, on the other hand, resolves such scripts via PATH and
- * PATHEXT and launches them transparently. To keep run-program,
- * run-program/capture and start-program behaving identically in both
- * implementations, we detect when the requested program resolves to a batch
- * script and rewrite the command to run through "cmd.exe /c".
+ * On Windows, CreateProcess (used by ProcessBuilder) can only launch real
+ * executables (.exe/.com); it cannot run .bat/.cmd batch scripts found via
+ * PATH/PATHEXT. So for run-program, run-program/capture and start-program we
+ * detect when the requested program resolves to a batch script and rewrite
+ * the command to run through "cmd.exe /c". The C# implementation does the
+ * same in ProcUtil.CreateStartInfo.
  */
 final class ProcessUtil {
     private ProcessUtil() {}
