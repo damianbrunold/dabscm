@@ -29,9 +29,9 @@ public class PrimitiveNumgreaterequal extends Primitive {
             if (Value.isInteger(current) && Value.isInteger(next)) {
                 if (IntegerMath.compare(current, next) < 0) return false;
             } else if (Value.isReal(current) && Value.isReal(next)) {
-                if (Value.asReal(current) < Value.asReal(next)) return false;
+                if (!(Value.asReal(current) >= Value.asReal(next))) return false;   // false for NaN
             } else {
-                if (mixedNumericCompare(current, next) < 0) return false;
+                if (!numGreaterEq(current, next)) return false;
             }
             current = next;
         }

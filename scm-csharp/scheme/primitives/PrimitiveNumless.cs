@@ -33,11 +33,11 @@ public class PrimitiveNumless : Primitive
             }
             else if (Value.IsReal(current) && Value.IsReal(next))
             {
-                if (Value.AsReal(current) >= Value.AsReal(next)) return false;
+                if (!(Value.AsReal(current) < Value.AsReal(next))) return false;   // false for NaN
             }
             else
             {
-                if (MixedNumericCompare(current, next) >= 0) return false;
+                if (!NumLess(current, next)) return false;
             }
             current = next;
         }

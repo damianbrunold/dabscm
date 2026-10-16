@@ -93,27 +93,38 @@ public abstract class Primitive {
 
     /**
      * Ordering for real numbers that are not both integers or both doubles,
-     * exact like mixedNumericEquals. Returns negative if a < b, positive if
-     * a > b, 0 if equal (and for NaN).
+     * exact like mixedNumericEquals. Returns -1 if a < b, 1 if a > b, 0 if
+     * equal and UNORDERED if one is NaN (then every comparison is false).
      */
     public static int mixedNumericCompare(Object a, Object b) {
         if (a instanceof Double) {
             double da = (Double) a;
             return b instanceof Double ? doubleCompare(da, (Double) b) : doubleExactCompare(da, b, false);
         }
-        if (b instanceof Double) return -doubleExactCompare((Double) b, a, false);
+        if (b instanceof Double) {
+            int c = doubleExactCompare((Double) b, a, false);
+            return c == UNORDERED ? c : -c;
+        }
         checkExact(a); checkExact(b);
         return exactCompare(a, b);
     }
 
+    public static final int UNORDERED = 2;
+
+    // <, >, <= and >= for operands mixedNumericCompare accepts.
+    public static boolean numLess(Object a, Object b) { return mixedNumericCompare(a, b) == -1; }
+    public static boolean numGreater(Object a, Object b) { return mixedNumericCompare(a, b) == 1; }
+    public static boolean numLessEq(Object a, Object b) { int c = mixedNumericCompare(a, b); return c == -1 || c == 0; }
+    public static boolean numGreaterEq(Object a, Object b) { int c = mixedNumericCompare(a, b); return c == 0 || c == 1; }
+
     private static final long MAX_EXACT_DOUBLE = 1L << 53;
 
     private static int doubleCompare(double a, double b) {
-        return a < b ? -1 : a > b ? 1 : 0;
+        return a < b ? -1 : a > b ? 1 : a == b ? 0 : UNORDERED;
     }
 
     // Compares double d with exact x; for equality (forEquals), NaN and
-    // infinities are unequal to everything (1), for ordering NaN gives 0.
+    // infinities are unequal to everything (1), for ordering NaN is UNORDERED.
     private static int doubleExactCompare(double d, Object x, boolean forEquals) {
         checkExact(x);
         // Fast paths without allocation. A long within 2^53 is exact as a
@@ -134,7 +145,7 @@ public abstract class Primitive {
                 }
             }
         }
-        if (Double.isNaN(d)) return forEquals ? 1 : 0;
+        if (Double.isNaN(d)) return forEquals ? 1 : UNORDERED;
         if (Double.isInfinite(d)) return d > 0 ? 1 : -1;
         return exactCompare(Complex.toExact(d), x);
     }
@@ -148,13 +159,13 @@ public abstract class Primitive {
     private static int exactCompare(Object a, Object b) {
         if (a instanceof Rational) {
             Rational ra = (Rational) a;
-            if (b instanceof Rational) return ra.compareTo((Rational) b);
-            return IntegerMath.compare(ra.numerator, IntegerMath.genericMul(b, ra.denominator));
+            if (b instanceof Rational) return Integer.signum(ra.compareTo((Rational) b));
+            return Integer.signum(IntegerMath.compare(ra.numerator, IntegerMath.genericMul(b, ra.denominator)));
         }
         if (b instanceof Rational) {
             Rational rb = (Rational) b;
-            return IntegerMath.compare(IntegerMath.genericMul(a, rb.denominator), rb.numerator);
+            return Integer.signum(IntegerMath.compare(IntegerMath.genericMul(a, rb.denominator), rb.numerator));
         }
-        return IntegerMath.compare(a, b);
+        return Integer.signum(IntegerMath.compare(a, b));
     }
 }

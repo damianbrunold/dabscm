@@ -784,7 +784,7 @@ public class VM
                         if (ia is long ial && ib is long ibl) { Push(ial < ibl ? Value.T : Value.F); break; }
                         if (Value.IsInteger(ia) && Value.IsInteger(ib)) { Push(IntegerMath.Compare(ia, ib) < 0 ? Value.T : Value.F); break; }
                         if (ia is Complex || ib is Complex) throw new SchemeError(instruction.pos, "<: complex numbers are not ordered");
-                        Push(Primitive.MixedNumericCompare(ia, ib) < 0 ? Value.T : Value.F); break;
+                        Push(Primitive.NumLess(ia, ib) ? Value.T : Value.F); break;
                     }
                     object[] iarr = RentArgs(n);
                     for (int i = n - 1; i >= 0; i--) iarr[i] = Pop();
@@ -800,7 +800,7 @@ public class VM
                         if (ia is long ial && ib is long ibl) { Push(ial > ibl ? Value.T : Value.F); break; }
                         if (Value.IsInteger(ia) && Value.IsInteger(ib)) { Push(IntegerMath.Compare(ia, ib) > 0 ? Value.T : Value.F); break; }
                         if (ia is Complex || ib is Complex) throw new SchemeError(instruction.pos, ">: complex numbers are not ordered");
-                        Push(Primitive.MixedNumericCompare(ia, ib) > 0 ? Value.T : Value.F); break;
+                        Push(Primitive.NumGreater(ia, ib) ? Value.T : Value.F); break;
                     }
                     object[] iarr = RentArgs(n);
                     for (int i = n - 1; i >= 0; i--) iarr[i] = Pop();
@@ -816,7 +816,7 @@ public class VM
                         if (ia is long ial && ib is long ibl) { Push(ial <= ibl ? Value.T : Value.F); break; }
                         if (Value.IsInteger(ia) && Value.IsInteger(ib)) { Push(IntegerMath.Compare(ia, ib) <= 0 ? Value.T : Value.F); break; }
                         if (ia is Complex || ib is Complex) throw new SchemeError(instruction.pos, "<=: complex numbers are not ordered");
-                        Push(Primitive.MixedNumericCompare(ia, ib) <= 0 ? Value.T : Value.F); break;
+                        Push(Primitive.NumLessEq(ia, ib) ? Value.T : Value.F); break;
                     }
                     object[] iarr = RentArgs(n);
                     for (int i = n - 1; i >= 0; i--) iarr[i] = Pop();
@@ -832,7 +832,7 @@ public class VM
                         if (ia is long ial && ib is long ibl) { Push(ial >= ibl ? Value.T : Value.F); break; }
                         if (Value.IsInteger(ia) && Value.IsInteger(ib)) { Push(IntegerMath.Compare(ia, ib) >= 0 ? Value.T : Value.F); break; }
                         if (ia is Complex || ib is Complex) throw new SchemeError(instruction.pos, ">=: complex numbers are not ordered");
-                        Push(Primitive.MixedNumericCompare(ia, ib) >= 0 ? Value.T : Value.F); break;
+                        Push(Primitive.NumGreaterEq(ia, ib) ? Value.T : Value.F); break;
                     }
                     object[] iarr = RentArgs(n);
                     for (int i = n - 1; i >= 0; i--) iarr[i] = Pop();

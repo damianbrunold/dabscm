@@ -728,7 +728,7 @@ public class VM {
                         if (ia instanceof Long && ib instanceof Long) { push((long)(Long)ia < (long)(Long)ib ? Value.T : Value.F); break; }
                         if (Value.isInteger(ia) && Value.isInteger(ib)) { push(IntegerMath.compare(ia, ib) < 0 ? Value.T : Value.F); break; }
                         if (ia instanceof Complex || ib instanceof Complex) throw new SchemeError(instruction.pos, "<: complex numbers are not ordered");
-                        push(Primitive.mixedNumericCompare(ia, ib) < 0 ? Value.T : Value.F); break;
+                        push(Primitive.numLess(ia, ib) ? Value.T : Value.F); break;
                     }
                     Object[] iarr = rentArgs(n);
                     for (int i = n - 1; i >= 0; i--) iarr[i] = pop();
@@ -744,7 +744,7 @@ public class VM {
                         if (ia instanceof Long && ib instanceof Long) { push((long)(Long)ia > (long)(Long)ib ? Value.T : Value.F); break; }
                         if (Value.isInteger(ia) && Value.isInteger(ib)) { push(IntegerMath.compare(ia, ib) > 0 ? Value.T : Value.F); break; }
                         if (ia instanceof Complex || ib instanceof Complex) throw new SchemeError(instruction.pos, ">: complex numbers are not ordered");
-                        push(Primitive.mixedNumericCompare(ia, ib) > 0 ? Value.T : Value.F); break;
+                        push(Primitive.numGreater(ia, ib) ? Value.T : Value.F); break;
                     }
                     Object[] iarr = rentArgs(n);
                     for (int i = n - 1; i >= 0; i--) iarr[i] = pop();
@@ -760,7 +760,7 @@ public class VM {
                         if (ia instanceof Long && ib instanceof Long) { push((long)(Long)ia <= (long)(Long)ib ? Value.T : Value.F); break; }
                         if (Value.isInteger(ia) && Value.isInteger(ib)) { push(IntegerMath.compare(ia, ib) <= 0 ? Value.T : Value.F); break; }
                         if (ia instanceof Complex || ib instanceof Complex) throw new SchemeError(instruction.pos, "<=: complex numbers are not ordered");
-                        push(Primitive.mixedNumericCompare(ia, ib) <= 0 ? Value.T : Value.F); break;
+                        push(Primitive.numLessEq(ia, ib) ? Value.T : Value.F); break;
                     }
                     Object[] iarr = rentArgs(n);
                     for (int i = n - 1; i >= 0; i--) iarr[i] = pop();
@@ -776,7 +776,7 @@ public class VM {
                         if (ia instanceof Long && ib instanceof Long) { push((long)(Long)ia >= (long)(Long)ib ? Value.T : Value.F); break; }
                         if (Value.isInteger(ia) && Value.isInteger(ib)) { push(IntegerMath.compare(ia, ib) >= 0 ? Value.T : Value.F); break; }
                         if (ia instanceof Complex || ib instanceof Complex) throw new SchemeError(instruction.pos, ">=: complex numbers are not ordered");
-                        push(Primitive.mixedNumericCompare(ia, ib) >= 0 ? Value.T : Value.F); break;
+                        push(Primitive.numGreaterEq(ia, ib) ? Value.T : Value.F); break;
                     }
                     Object[] iarr = rentArgs(n);
                     for (int i = n - 1; i >= 0; i--) iarr[i] = pop();

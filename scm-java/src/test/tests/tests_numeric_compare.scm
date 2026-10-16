@@ -71,4 +71,16 @@
   (test-equal #f (= 1/2 +nan.0))
   (test-equal #f (< 1/2 +nan.0)))
 
+;; Every ordering comparison with NaN is false (<= and >= used to be #t
+;; through the intrinsics, < and > through the primitives).
+(test-group "nan"
+  (test-equal '(#f #f #f #f #f) (list (< +nan.0 1) (> +nan.0 1) (<= +nan.0 1) (>= +nan.0 1) (= +nan.0 1)))
+  (test-equal '(#f #f #f #f #f) (list (< 1.0 +nan.0) (> 1.0 +nan.0) (<= 1.0 +nan.0) (>= 1.0 +nan.0) (= 1.0 +nan.0)))
+  (test-equal '(#f #f #f #f) (list (< 1/2 +nan.0) (> +nan.0 1/2) (<= +nan.0 1/2) (>= 1/2 +nan.0)))
+  (test-equal '(#f #f #f #f #f) (list (<= +nan.0 +nan.0) (>= +nan.0 +nan.0) (= +nan.0 +nan.0) (< +nan.0 +inf.0) (> +inf.0 +nan.0)))
+  (test-equal '(#f #f #f #f) (list (via-primitive < 1.0 +nan.0) (via-primitive > +nan.0 1.0)
+                                  (via-primitive <= +nan.0 1) (via-primitive >= 1/2 +nan.0)))
+  (test-equal #f (<= 0 +nan.0 1))
+  (test-equal #f (via-primitive < 0 1 +nan.0)))
+
 (test-end "numeric-compare")

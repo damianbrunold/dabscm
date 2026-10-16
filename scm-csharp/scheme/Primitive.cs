@@ -103,23 +103,31 @@ public abstract class Primitive
 
     /// <summary>
     /// Ordering for real numbers that are not both integers or both doubles,
-    /// exact like MixedNumericEquals. Returns negative if a &lt; b, positive if
-    /// a &gt; b, 0 if equal (and for NaN).
+    /// exact like MixedNumericEquals. Returns -1 if a &lt; b, 1 if a &gt; b, 0 if
+    /// equal and Unordered if one is NaN (then every comparison is false).
     /// </summary>
     public static int MixedNumericCompare(object a, object b)
     {
         if (a is double da) return b is double db ? DoubleCompare(da, db) : DoubleExactCompare(da, b, false);
-        if (b is double db2) return -DoubleExactCompare(db2, a, false);
+        if (b is double db2) { int c = DoubleExactCompare(db2, a, false); return c == Unordered ? c : -c; }
         CheckExact(a); CheckExact(b);
         return ExactCompare(a, b);
     }
 
+    public const int Unordered = 2;
+
+    // <, >, <= and >= for operands MixedNumericCompare accepts.
+    public static bool NumLess(object a, object b) => MixedNumericCompare(a, b) == -1;
+    public static bool NumGreater(object a, object b) => MixedNumericCompare(a, b) == 1;
+    public static bool NumLessEq(object a, object b) { int c = MixedNumericCompare(a, b); return c == -1 || c == 0; }
+    public static bool NumGreaterEq(object a, object b) { int c = MixedNumericCompare(a, b); return c == 0 || c == 1; }
+
     private const long MaxExactDouble = 1L << 53;
 
-    private static int DoubleCompare(double a, double b) => a < b ? -1 : a > b ? 1 : 0;
+    private static int DoubleCompare(double a, double b) => a < b ? -1 : a > b ? 1 : a == b ? 0 : Unordered;
 
     // Compares double d with exact x; for equality (forEquals), NaN and
-    // infinities are unequal to everything (1), for ordering NaN gives 0.
+    // infinities are unequal to everything (1), for ordering NaN is Unordered.
     private static int DoubleExactCompare(double d, object x, bool forEquals)
     {
         CheckExact(x);
@@ -134,7 +142,7 @@ public abstract class Primitive
             double xd = (double)n / (double)den;
             if (xd != d) return forEquals ? 1 : DoubleCompare(d, xd);
         }
-        if (double.IsNaN(d)) return forEquals ? 1 : 0;
+        if (double.IsNaN(d)) return forEquals ? 1 : Unordered;
         if (double.IsInfinity(d)) return d > 0 ? 1 : -1;
         return ExactCompare(Complex.ToExact(d), x);
     }
@@ -150,11 +158,11 @@ public abstract class Primitive
     {
         if (a is Rational ra)
         {
-            if (b is Rational rb) return ra.CompareTo(rb);
-            return IntegerMath.Compare(ra.Numerator, IntegerMath.GenericMul(b, ra.Denominator));
+            if (b is Rational rb) return Math.Sign(ra.CompareTo(rb));
+            return Math.Sign(IntegerMath.Compare(ra.Numerator, IntegerMath.GenericMul(b, ra.Denominator)));
         }
         if (b is Rational rb2)
-            return IntegerMath.Compare(IntegerMath.GenericMul(a, rb2.Denominator), rb2.Numerator);
-        return IntegerMath.Compare(a, b);
+            return Math.Sign(IntegerMath.Compare(IntegerMath.GenericMul(a, rb2.Denominator), rb2.Numerator));
+        return Math.Sign(IntegerMath.Compare(a, b));
     }
 }
