@@ -71,17 +71,24 @@
 
 ;; Iteration - vector-fold
 (test-group "iteration - vector-fold"
-  (test-equal 15 (vector-fold (lambda (i sum x) (+ sum x)) 0 '#(1 2 3 4 5)))
-  (test-equal '(c b a) (vector-fold (lambda (i acc x) (cons x acc)) '() '#(a b c)))
-  (test-equal 2 (vector-fold (lambda (i count x y) (if (equal? x y) (+ count 1) count))
+  (test-equal 15 (vector-fold (lambda (sum x) (+ sum x)) 0 '#(1 2 3 4 5)))
+  (test-equal '(c b a) (vector-fold (lambda (acc x) (cons x acc)) '() '#(a b c)))
+  (test-equal 2 (vector-fold (lambda (count x y) (if (equal? x y) (+ count 1) count))
                  0 '#(a b c) '#(a x c)))
-  (test-equal 0 (vector-fold (lambda (i sum x) (+ sum x)) 0 '#())))
+  (test-equal 0 (vector-fold (lambda (sum x) (+ sum x)) 0 '#()))
+  ;; SRFI 133, not SRFI 43: kons gets no index
+  (test-equal 3 (vector-fold (lambda (len str) (max len (string-length str)))
+                             0 '#("a" "abc" "ab")))
+  (test-equal '(5 7 9) (reverse (vector-fold (lambda (acc x y) (cons (+ x y) acc))
+                                             '() '#(1 2 3) '#(4 5 6)))))
 
 ;; Iteration - vector-fold-right
 (test-group "iteration - vector-fold-right"
-  (test-equal '(a b c) (vector-fold-right (lambda (i tail x) (cons x tail)) '() '#(a b c)))
-  (test-equal 6 (vector-fold-right (lambda (i sum x) (+ sum x)) 0 '#(1 2 3)))
-  (test-equal '() (vector-fold-right (lambda (i acc x) (cons x acc)) '() '#())))
+  (test-equal '(a b c) (vector-fold-right (lambda (tail x) (cons x tail)) '() '#(a b c)))
+  (test-equal 6 (vector-fold-right (lambda (sum x) (+ sum x)) 0 '#(1 2 3)))
+  (test-equal '() (vector-fold-right (lambda (acc x) (cons x acc)) '() '#()))
+  (test-equal '((1 . 4) (2 . 5)) (vector-fold-right (lambda (acc x y) (cons (cons x y) acc))
+                                                    '() '#(1 2 3) '#(4 5))))
 
 ;; Iteration - vector-map, vector-map!, vector-for-each
 (test-group "iteration - vector-map and friends"

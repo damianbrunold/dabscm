@@ -180,31 +180,32 @@ Example:
     (define (vector-fold kons knil . vecs)
       "Syntax: (vector-fold kons knil vec1 vec2 ...)
 Library: (srfi 133)
-Description: Left fold over vectors. kons is called as (kons index state
-  val1 val2 ...) for each index from 0 to length-1, where length is the
-  minimum length of the given vectors.
+Description: Left fold over vectors. kons is called as (kons state val1
+  val2 ...) for each index from 0 to length-1, where length is the minimum
+  length of the given vectors.  (Unlike SRFI 43, no index is passed.)
 Example:
-  (vector-fold (lambda (i sum x) (+ sum x)) 0 '#(1 2 3)) => 6"
+  (vector-fold (lambda (sum x) (+ sum x)) 0 '#(1 2 3)) => 6"
       (let ((len (apply min (map vector-length vecs))))
         (let loop ((i 0) (state knil))
           (if (= i len) state
               (loop (+ i 1)
-                    (apply kons i state
+                    (apply kons state
                            (map (lambda (v) (vector-ref v i)) vecs)))))))
 
     (define (vector-fold-right kons knil . vecs)
       "Syntax: (vector-fold-right kons knil vec1 vec2 ...)
 Library: (srfi 133)
-Description: Right fold over vectors. kons is called as (kons index state
-  val1 val2 ...) for each index from length-1 down to 0.
+Description: Right fold over vectors. kons is called as (kons state val1
+  val2 ...) for each index from length-1 down to 0.  (Unlike SRFI 43, no
+  index is passed.)
 Example:
-  (vector-fold-right (lambda (i tail x) (cons x tail)) '() '#(a b c))
+  (vector-fold-right (lambda (tail x) (cons x tail)) '() '#(a b c))
     => (a b c)"
       (let ((len (apply min (map vector-length vecs))))
         (let loop ((i (- len 1)) (state knil))
           (if (< i 0) state
               (loop (- i 1)
-                    (apply kons i state
+                    (apply kons state
                            (map (lambda (v) (vector-ref v i)) vecs)))))))
 
     (define (vector-map! f . vecs)
