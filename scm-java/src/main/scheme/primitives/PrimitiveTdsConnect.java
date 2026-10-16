@@ -15,6 +15,8 @@ public class PrimitiveTdsConnect extends Primitive {
                "Syntax: (tds-connect host port encrypt? verify? cert-host)\n" +
                "Library: (scm core)\n" +
                "Description: Connects to a SQL Server at the given host and port using TDS.\n" +
+               "  port is a TCP port number or an instance name (string), which is resolved\n" +
+               "  through the SQL Server Browser service (see sql-browser-port).\n" +
                "  Performs the PreLogin exchange and, when encrypt? is true (default), the TLS\n" +
                "  handshake (wrapped in TDS PRELOGIN packets); the whole session is then encrypted.\n" +
                "  With verify? true the certificate chain and host name (cert-host, default host)\n" +
@@ -42,7 +44,6 @@ public class PrimitiveTdsConnect extends Primitive {
     public Object apply(SourcePos pos, Object[] arguments) {
         checkArgs(pos, arguments, 2, 5);
         String host = new String(Value.asString(arguments[0]));
-        int port = IntegerMath.toInt(arguments[1]);
         boolean encrypt = !(arguments.length > 2 && Boolean.FALSE.equals(arguments[2]));
         boolean verify = arguments.length > 3 && !Boolean.FALSE.equals(arguments[3]);
         String certHost = arguments.length > 4 && !Boolean.FALSE.equals(arguments[4])
@@ -54,6 +55,16 @@ public class PrimitiveTdsConnect extends Primitive {
         }
         String step = "connect";
         try {
+            int port;
+            if (Value.isString(arguments[1])) {
+                step = "instance lookup";
+                String instance = new String(Value.asString(arguments[1]));
+                port = PrimitiveSqlBrowserPort.lookup(host, instance, 5000);
+                log("instance " + instance + " on " + host + " listens on tcp port " + port);
+                step = "connect";
+            } else {
+                port = IntegerMath.toInt(arguments[1]);
+            }
             Socket socket = new Socket();
             socket.connect(new InetSocketAddress(host, port), 30000);
             socket.setTcpNoDelay(true);

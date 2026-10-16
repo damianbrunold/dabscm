@@ -1,6 +1,7 @@
 (define-library (scm database sqlserver)
   (import (scm core) (scheme base) (scheme char) (scheme inexact) (srfi 151) (scm net sockets))
   (export ss-connect
+          ss-instance-port
           ss-close
           ss-query
           ss-exec
@@ -1120,6 +1121,9 @@ Library: (scm database sqlserver)
 Description: Opens a TDS connection to SQL Server, performs TLS negotiation (via tds-connect),
   and completes Login7 SQL Server authentication. Returns a connection vector
   #(in out sock transaction-descriptor).
+  port is a TCP port number, or the name of a named instance (a string such as
+  \"SQLEXPRESS\"), whose port is then looked up through the SQL Server Browser
+  service on UDP 1434 (see ss-instance-port).
   options is an alist:
     (encrypt . #t)                   ; #t = TLS for the whole session (default),
                                      ; #f = no TLS (only if the server allows it)
@@ -1129,7 +1133,8 @@ Description: Opens a TDS connection to SQL Server, performs TLS negotiation (via
     (app-name . \"scm\")               ; application name shown in sys.dm_exec_sessions
 Example:
   (define conn (ss-connect \"localhost\" 1433 \"sa\" \"Password123!\" \"master\"
-                           '((trust-server-certificate . #f))))"
+                           '((trust-server-certificate . #f))))
+  (define conn2 (ss-connect \"dbhost\" \"SQLEXPRESS\" \"app\" \"secret\" \"appdb\"))"
       (let* ((opts    (if (null? rest) '() (car rest)))
              (encrypt (ss-option opts 'encrypt #t))
              (trust   (ss-option opts 'trust-server-certificate #t))
@@ -1143,6 +1148,16 @@ Example:
           (let ((body (tds-read-all-packets! in)))
             (tds-read-login-response! (open-input-bytevector body))))
         (vector in out sock (make-bytevector 8 0))))
+
+    (define (ss-instance-port host instance . rest)
+      "Syntax: (ss-instance-port host instance [timeout-ms])
+Library: (scm database sqlserver)
+Description: Returns the TCP port of the named SQL Server instance on host, as reported
+  by the SQL Server Browser service (UDP 1434). Raises an error when the browser does
+  not answer within timeout-ms (default 5000) or does not know the instance.
+Example:
+  (ss-instance-port \"dbhost\" \"SQLEXPRESS\") ; => 49170"
+      (apply (%primitive "sql-browser-port") host instance rest))
 
     (define (ss-close conn)
       "Syntax: (ss-close conn)

@@ -31,13 +31,14 @@
   <a href="#e6" data-name="ss-cursor-open">ss-cursor-open</a>
   <a href="#e7" data-name="ss-exec">ss-exec</a>
   <a href="#e8" data-name="ss-format-sql">ss-format-sql</a>
-  <a href="#e9" data-name="ss-query">ss-query</a>
-  <a href="#e10" data-name="ss-result-&gt;alist-list">ss-result-&gt;alist-list</a>
-  <a href="#e11" data-name="ss-result-columns">ss-result-columns</a>
-  <a href="#e12" data-name="ss-result-rows">ss-result-rows</a>
-  <a href="#e13" data-name="ss-sql-literal">ss-sql-literal</a>
-  <a href="#e14" data-name="with-ss-connection">with-ss-connection</a>
-  <a href="#e15" data-name="with-ss-query">with-ss-query</a>
+  <a href="#e9" data-name="ss-instance-port">ss-instance-port</a>
+  <a href="#e10" data-name="ss-query">ss-query</a>
+  <a href="#e11" data-name="ss-result-&gt;alist-list">ss-result-&gt;alist-list</a>
+  <a href="#e12" data-name="ss-result-columns">ss-result-columns</a>
+  <a href="#e13" data-name="ss-result-rows">ss-result-rows</a>
+  <a href="#e14" data-name="ss-sql-literal">ss-sql-literal</a>
+  <a href="#e15" data-name="with-ss-connection">with-ss-connection</a>
+  <a href="#e16" data-name="with-ss-query">with-ss-query</a>
 </nav>
 
 <main>
@@ -62,10 +63,10 @@
   (lambda (conn)
     (define res (ss-query conn "SELECT id, name FROM users"))
     (ss-result-&gt;alist-list res)))</code></pre>
-<p><a class="xref" href="#e7"><code>ss-exec</code></a> runs non-row statements; <a class="xref" href="#e11"><code>ss-result-columns</code></a> / <a class="xref" href="#e12"><code>ss-result-rows</code></a> read a result directly; and <a class="xref" href="#e6"><code>ss-cursor-open</code></a> / <a class="xref" href="#e4"><code>ss-cursor-fetch</code></a> / <a class="xref" href="#e5"><code>ss-cursor-for-each</code></a> iterate large result sets.</p>
+<p><a class="xref" href="#e7"><code>ss-exec</code></a> runs non-row statements; <a class="xref" href="#e12"><code>ss-result-columns</code></a> / <a class="xref" href="#e13"><code>ss-result-rows</code></a> read a result directly; and <a class="xref" href="#e6"><code>ss-cursor-open</code></a> / <a class="xref" href="#e4"><code>ss-cursor-fetch</code></a> / <a class="xref" href="#e5"><code>ss-cursor-for-each</code></a> iterate large result sets.</p>
 </div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
-<p class="export-count">16 bindings</p>
+<p class="export-count">17 bindings</p>
 
 <div class="entry" id="e0" data-name="ss-close">
   <div class="entry-name">ss-close</div>
@@ -82,6 +83,9 @@ Library: (scm database sqlserver)
 Description: Opens a TDS connection to SQL Server, performs TLS negotiation (via tds-connect),
   and completes Login7 SQL Server authentication. Returns a connection vector
   #(in out sock transaction-descriptor).
+  port is a TCP port number, or the name of a named instance (a string such as
+  "SQLEXPRESS"), whose port is then looked up through the SQL Server Browser
+  service on UDP 1434 (see ss-instance-port).
   options is an alist:
     (encrypt . #t)                   ; #t = TLS for the whole session (default),
                                      ; #f = no TLS (only if the server allows it)
@@ -91,7 +95,8 @@ Description: Opens a TDS connection to SQL Server, performs TLS negotiation (via
     (app-name . "scm")               ; application name shown in sys.dm_exec_sessions
 Example:
   (define conn (ss-connect "localhost" 1433 "sa" "Password123!" "master"
-                           '((trust-server-certificate . #f))))</pre>
+                           '((trust-server-certificate . #f))))
+  (define conn2 (ss-connect "dbhost" "SQLEXPRESS" "app" "secret" "appdb"))</pre>
 </div>
 <div class="entry" id="e2" data-name="ss-cursor-close">
   <div class="entry-name">ss-cursor-close</div>
@@ -157,7 +162,17 @@ Example:
   (ss-format-sql "WHERE f.jahr = $1 AND f.burnr IN $2" '(2024 ("1" "2")))
   =&gt; "WHERE f.jahr = 2024 AND f.burnr IN (N'1', N'2')"</pre>
 </div>
-<div class="entry" id="e9" data-name="ss-query">
+<div class="entry" id="e9" data-name="ss-instance-port">
+  <div class="entry-name">ss-instance-port</div>
+  <pre class="entry-doc">Syntax: (ss-instance-port host instance [timeout-ms])
+Library: (scm database sqlserver)
+Description: Returns the TCP port of the named SQL Server instance on host, as reported
+  by the SQL Server Browser service (UDP 1434). Raises an error when the browser does
+  not answer within timeout-ms (default 5000) or does not know the instance.
+Example:
+  (ss-instance-port "dbhost" "SQLEXPRESS") ; =&gt; 49170</pre>
+</div>
+<div class="entry" id="e10" data-name="ss-query">
   <div class="entry-name">ss-query</div>
   <pre class="entry-doc">Syntax: (ss-query conn sql [param ...])
 Library: (scm database sqlserver)
@@ -167,7 +182,7 @@ Description: Executes a SQL batch and returns a result object #(cols rows). $1, 
 Example:
   (define result (ss-query conn "SELECT id, name FROM users WHERE id = $1" 42))</pre>
 </div>
-<div class="entry" id="e10" data-name="ss-result-&gt;alist-list">
+<div class="entry" id="e11" data-name="ss-result-&gt;alist-list">
   <div class="entry-name">ss-result-&gt;alist-list</div>
   <pre class="entry-doc">Syntax: (ss-result-&gt;alist-list result)
 Library: (scm database sqlserver)
@@ -176,7 +191,7 @@ Description: Converts a query result to a list of association lists, one per row
 Example:
   (ss-result-&gt;alist-list result) =&gt; (("id" . "1") ("name" . "alice")) ...)</pre>
 </div>
-<div class="entry" id="e11" data-name="ss-result-columns">
+<div class="entry" id="e12" data-name="ss-result-columns">
   <div class="entry-name">ss-result-columns</div>
   <pre class="entry-doc">Syntax: (ss-result-columns result)
 Library: (scm database sqlserver)
@@ -184,7 +199,7 @@ Description: Returns the column name vector from a query result.
 Example:
   (ss-result-columns result) =&gt; #("id" "name")</pre>
 </div>
-<div class="entry" id="e12" data-name="ss-result-rows">
+<div class="entry" id="e13" data-name="ss-result-rows">
   <div class="entry-name">ss-result-rows</div>
   <pre class="entry-doc">Syntax: (ss-result-rows result)
 Library: (scm database sqlserver)
@@ -193,7 +208,7 @@ Description: Returns the list of row vectors from a query result. Each row is a 
 Example:
   (ss-result-rows result) =&gt; (#("1" "alice") #("2" "bob"))</pre>
 </div>
-<div class="entry" id="e13" data-name="ss-sql-literal">
+<div class="entry" id="e14" data-name="ss-sql-literal">
   <div class="entry-name">ss-sql-literal</div>
   <pre class="entry-doc">Syntax: (ss-sql-literal v)
 Library: (scm database sqlserver)
@@ -203,7 +218,7 @@ Description: Converts a Scheme value to a T-SQL literal: strings -&gt; N'...' (q
 Example:
   (ss-sql-literal "O'Brien") =&gt; "N'O''Brien'"</pre>
 </div>
-<div class="entry" id="e14" data-name="with-ss-connection">
+<div class="entry" id="e15" data-name="with-ss-connection">
   <div class="entry-name">with-ss-connection</div>
   <pre class="entry-doc">Syntax: (with-ss-connection host port user password database proc)
 Library: (scm database sqlserver)
@@ -213,7 +228,7 @@ Example:
   (with-ss-connection "localhost" 1433 "sa" "pass" "master"
     (lambda (conn) (ss-result-&gt;alist-list (ss-query conn "SELECT 1 AS n"))))</pre>
 </div>
-<div class="entry" id="e15" data-name="with-ss-query">
+<div class="entry" id="e16" data-name="with-ss-query">
   <div class="entry-name">with-ss-query</div>
   <pre class="entry-doc">Syntax: (with-ss-query host port user password database sql proc)
 Library: (scm database sqlserver)

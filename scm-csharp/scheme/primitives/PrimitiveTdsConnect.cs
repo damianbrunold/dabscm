@@ -15,6 +15,8 @@ public class PrimitiveTdsConnect : Primitive
         "Syntax: (tds-connect host port encrypt? verify? cert-host)\n" +
         "Library: (scm core)\n" +
         "Description: Connects to a SQL Server at the given host and port using TDS.\n" +
+        "  port is a TCP port number or an instance name (string), which is resolved\n" +
+        "  through the SQL Server Browser service (see sql-browser-port).\n" +
         "  Performs the PreLogin exchange and, when encrypt? is true (default), the TLS\n" +
         "  handshake (wrapped in TDS PRELOGIN packets); the whole session is then encrypted.\n" +
         "  With verify? true the certificate chain and host name (cert-host, default host)\n" +
@@ -44,7 +46,6 @@ public class PrimitiveTdsConnect : Primitive
     {
         CheckArgs(pos, arguments, 2, 5);
         string host = new String(Value.AsString(arguments[0]));
-        int port = IntegerMath.ToInt(arguments[1]);
         bool encrypt = !(arguments.Length > 2 && arguments[2] is bool b2 && !b2);
         bool verify = arguments.Length > 3 && !(arguments[3] is bool b3 && !b3);
         string certHost = arguments.Length > 4 && !(arguments[4] is bool b4 && !b4)
@@ -58,6 +59,19 @@ public class PrimitiveTdsConnect : Primitive
         string step = "connect";
         try
         {
+            int port;
+            if (Value.IsString(arguments[1]))
+            {
+                step = "instance lookup";
+                string instance = new String(Value.AsString(arguments[1]));
+                port = PrimitiveSqlBrowserPort.Lookup(host, instance, 5000);
+                Log("instance " + instance + " on " + host + " listens on tcp port " + port);
+                step = "connect";
+            }
+            else
+            {
+                port = IntegerMath.ToInt(arguments[1]);
+            }
             var client = new TcpClient();
             client.NoDelay = true;
             client.Connect(host, port);

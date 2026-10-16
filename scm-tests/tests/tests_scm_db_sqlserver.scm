@@ -42,6 +42,14 @@
   (test-equal #t (guard (e (#t #t)) (ss-format-sql "$2" '(1)) #f))
   (test-equal #t (guard (e (#t #t)) (ss-format-sql "$0" '(1)) #f)))
 
+;; No SQL Browser on loopback (or one that does not know the instance):
+;; the lookup times out / fails with a catchable error.
+(test-group "ss-instance-port"
+  (test-equal #t
+    (guard (e (#t (error-object? e)))
+      (ss-instance-port "127.0.0.1" "SCM_NO_SUCH_INSTANCE" 400)
+      #f)))
+
 (define mssql-env (get-environment-variable "SCM_TEST_MSSQL"))
 
 (define (split-colon s)

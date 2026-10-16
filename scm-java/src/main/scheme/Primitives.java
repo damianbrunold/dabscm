@@ -403,6 +403,7 @@ public class Primitives {
         bind(new PrimitiveSpecialFolderDocuments());
         bind(new PrimitiveSpecialFolderTemp());
         bind(new PrimitiveSpecialFolderUserHome());
+        bind(new PrimitiveSqlBrowserPort());
         bind(new PrimitiveSqrt());
         bind(new PrimitiveStartProgram());
         bind(new PrimitiveString());

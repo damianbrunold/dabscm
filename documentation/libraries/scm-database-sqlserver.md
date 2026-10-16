@@ -45,6 +45,9 @@ Library: (scm database sqlserver)
 Description: Opens a TDS connection to SQL Server, performs TLS negotiation (via tds-connect),
   and completes Login7 SQL Server authentication. Returns a connection vector
   #(in out sock transaction-descriptor).
+  port is a TCP port number, or the name of a named instance (a string such as
+  "SQLEXPRESS"), whose port is then looked up through the SQL Server Browser
+  service on UDP 1434 (see ss-instance-port).
   options is an alist:
     (encrypt . #t)                   ; #t = TLS for the whole session (default),
                                      ; #f = no TLS (only if the server allows it)
@@ -55,6 +58,7 @@ Description: Opens a TDS connection to SQL Server, performs TLS negotiation (via
 Example:
   (define conn (ss-connect "localhost" 1433 "sa" "Password123!" "master"
                            '((trust-server-certificate . #f))))
+  (define conn2 (ss-connect "dbhost" "SQLEXPRESS" "app" "secret" "appdb"))
 ```
 
 ### `ss-cursor-close`
@@ -133,6 +137,18 @@ Description: Returns sql with $1, $2, ... replaced by the T-SQL literals of the
 Example:
   (ss-format-sql "WHERE f.jahr = $1 AND f.burnr IN $2" '(2024 ("1" "2")))
   => "WHERE f.jahr = 2024 AND f.burnr IN (N'1', N'2')"
+```
+
+### `ss-instance-port`
+
+```
+Syntax: (ss-instance-port host instance [timeout-ms])
+Library: (scm database sqlserver)
+Description: Returns the TCP port of the named SQL Server instance on host, as reported
+  by the SQL Server Browser service (UDP 1434). Raises an error when the browser does
+  not answer within timeout-ms (default 5000) or does not know the instance.
+Example:
+  (ss-instance-port "dbhost" "SQLEXPRESS") ; => 49170
 ```
 
 ### `ss-query`

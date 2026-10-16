@@ -395,6 +395,7 @@ public class Primitives
         Bind(new PrimitiveSpecialFolderDocuments());
         Bind(new PrimitiveSpecialFolderTemp());
         Bind(new PrimitiveSpecialFolderUserHome());
+        Bind(new PrimitiveSqlBrowserPort());
         Bind(new PrimitiveSqrt());
         Bind(new PrimitiveStartProgram());
         Bind(new PrimitiveString());
