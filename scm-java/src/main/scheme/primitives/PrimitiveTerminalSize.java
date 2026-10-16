@@ -54,7 +54,7 @@ public class PrimitiveTerminalSize extends Primitive {
         int cols = Integer.parseInt(parts[1]);
         if (rows <= 0 || cols <= 0)
             return false;
-        return new Pair(cols, rows);
+        return new Pair((long) cols, (long) rows);
     }
 
     private Object getSizeWindows() throws Exception {
@@ -78,6 +78,6 @@ public class PrimitiveTerminalSize extends Primitive {
         p.waitFor();
         if (cols <= 0 || rows <= 0)
             return false;
-        return new Pair(cols, rows);
+        return new Pair((long) cols, (long) rows);
     }
 }

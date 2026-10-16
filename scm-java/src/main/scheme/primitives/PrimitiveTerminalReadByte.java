@@ -27,7 +27,7 @@ public class PrimitiveTerminalReadByte extends Primitive {
             int b = System.in.read();
             if (b == -1)
                 return Value.EOF;
-            return b;
+            return (long) b;
         } catch (Exception e) {
             throw new SchemeError(pos, "terminal-read-byte: io failure: ~a", e.getMessage());
         }
