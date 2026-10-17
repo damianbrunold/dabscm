@@ -603,7 +603,8 @@ Description: Returns a sorted list of file and directory paths matching
   globstar matching zero or more directory levels). Dotfiles are not
   matched by *, ?, or ** unless the pattern segment explicitly starts
   with a dot. Returns an empty list if no matches are found or the
-  base directory does not exist.
+  base directory does not exist. On Windows, both / and \ separate path
+  segments in the pattern; returned paths use \.
 Example:
   (glob "src/*.scm") => ("src/bar.scm" "src/foo.scm")
   (glob "**/*.sld") => ("lib/a.sld" "lib/sub/b.sld")

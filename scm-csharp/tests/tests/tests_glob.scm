@@ -167,6 +167,16 @@
     (list-sort string<?
       (map base-name results))))
 
+  ;; / separates segments on every platform (also on Windows, where the
+  ;; native separator is \)
+  (test-equal (list (join-path test-base "src" "lib" "core.scm")
+                    (join-path test-base "src" "lib" "helper.scm"))
+  (glob (string-append test-base "/src/lib/*.scm")))
+
+  (test-equal '("core.scm" "helper.scm" "main.scm" "test1.scm" "test2.scm" "util.scm")
+  (let ((results (glob (string-append test-base "/src/**/*.scm"))))
+    (list-sort string<? (map base-name results))))
+
   (cleanup-test-dirs)
   ;; Verify cleanup
   (test-equal #f (directory-exists? test-base)))

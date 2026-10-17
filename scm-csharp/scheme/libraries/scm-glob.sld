@@ -243,6 +243,13 @@ Example:
             (substring path 2 len)
             path)))
 
+    (define (%native-pattern pattern)
+      "On Windows, / is a path separator too: convert it to \\ so that
+patterns like \"legacy/log-*.txt\" split into segments. Elsewhere unchanged."
+      (if (char=? %path-sep-char #\\)
+          (string-map (lambda (c) (if (char=? c #\/) #\\ c)) pattern)
+          pattern))
+
     (define (glob pattern)
       "Syntax: (glob pattern)
 Library: (scm glob)
@@ -252,11 +259,13 @@ Description: Returns a sorted list of file and directory paths matching
   globstar matching zero or more directory levels). Dotfiles are not
   matched by *, ?, or ** unless the pattern segment explicitly starts
   with a dot. Returns an empty list if no matches are found or the
-  base directory does not exist.
+  base directory does not exist. On Windows, both / and \\ separate path
+  segments in the pattern; returned paths use \\.
 Example:
   (glob \"src/*.scm\") => (\"src/bar.scm\" \"src/foo.scm\")
   (glob \"**/*.sld\") => (\"lib/a.sld\" \"lib/sub/b.sld\")"
-      (let* ((segs (%split-path pattern))
+      (let* ((pattern (%native-pattern pattern))
+             (segs (%split-path pattern))
              (absolute? (%absolute-path? pattern))
              (has-drive? (and (not (null? segs))
                               (%drive-prefix? (car segs))))
