@@ -128,4 +128,17 @@
            (loop (+ i 1)))
           (else #f))))))
 
+(test-group "scrypt"
+  ;; RFC 7914 section 12 test vectors
+  (test-equal "77d6576238657b203b19ca42c18a0497f16b4844e3074ae8dfdffa3fede21442fcd0069ded0948f8326a753a0fc81f17e8d3e0fb2e0d3628cf35e20c38d18906"
+    (bytevector->hex (scrypt "" #u8() 16 1 1 64)))
+  (test-equal "fdbabe1c9d3472007856e7190d01e9fe7c6ad7cbc8237830e77376634b3731622eaf30d92e22a3886ff109279d9830dac727afb94a83ee6d8360cbdfa2cc0640"
+    (bytevector->hex (scrypt "password" (string->utf8 "NaCl") 1024 8 16 64)))
+  (test-equal "7023bdcb3afd7348461c06cd81fd38ebfda8fbba904f8e3ea9b543f6545da1f2d5432955613f0fcf62d49705242a9af9e61e85dc0d651e40dfcf017b45575887"
+    (bytevector->hex (scrypt (string->utf8 "pleaseletmein") (string->utf8 "SodiumChloride") 16384 8 1 64)))
+  ;; Werkzeug's default parameters, non-ASCII password (UTF-8)
+  (test-equal "99897f8444a2c1077f6f1d7d149ea7d107f9841bf90ecb1d4c946b0286ea994db262bd896fd2ecbbb5ce39a33eedb94bf25dd92c25e8db7507fc597dfa341ffa"
+    (bytevector->hex (scrypt "p\xe4;sswort" (string->utf8 "salt") 32768 8 1 64)))
+  (test-error (scrypt "pw" #u8() 1000 8 1 64)))
+
 (test-end "crypto")

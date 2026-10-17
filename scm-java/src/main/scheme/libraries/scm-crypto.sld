@@ -5,6 +5,7 @@
           sha256-hash
           hmac-sha256
           pbkdf2-sha256
+          scrypt
           base64-encode
           base64-decode
           random-bytes
@@ -30,6 +31,7 @@
     (define sha256-hash            (%primitive "sha256-hash"))
     (define hmac-sha256            (%primitive "hmac-sha256"))
     (define pbkdf2-sha256          (%primitive "pbkdf2-sha256"))
+    (define scrypt                 (%primitive "scrypt"))
     (define base64-encode          (%primitive "base64-encode"))
     (define base64-decode          (%primitive "base64-decode"))
     (define random-bytes           (%primitive "random-bytes"))

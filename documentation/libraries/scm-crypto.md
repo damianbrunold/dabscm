@@ -261,6 +261,16 @@ Example:
   (define priv (cadr kp))
 ```
 
+### `scrypt`
+
+```
+Syntax: (scrypt password salt n r p length)
+Library: (scm crypto)
+Description: Derives a key using scrypt (RFC 7914). Password is a string (UTF-8) or bytevector, salt is a bytevector. n is the CPU/memory cost (a power of 2 greater than 1), r the block size, p the parallelization. Returns a bytevector of given length.
+Example:
+  (scrypt "password" salt-bv 32768 8 1 64) => #u8(...)
+```
+
 ### `sha1-hash`
 
 ```

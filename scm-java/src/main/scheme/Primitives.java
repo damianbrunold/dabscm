@@ -323,6 +323,7 @@ public class Primitives {
         bind(new PrimitiveOutputPortOpenP());
         bind(new PrimitiveOutputPortP());
         bind(new PrimitivePBKDF2SHA256());
+        bind(new PrimitiveScrypt());
         bind(new PrimitivePairP());
         bind(new PrimitivePairSource());
         bind(new PrimitivePathExistsP());

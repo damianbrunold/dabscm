@@ -315,6 +315,7 @@ public class Primitives
         Bind(new PrimitiveOutputPortOpenP());
         Bind(new PrimitiveOutputPortP());
         Bind(new PrimitivePBKDF2SHA256());
+        Bind(new PrimitiveScrypt());
         Bind(new PrimitivePairP());
         Bind(new PrimitivePairSource());
         Bind(new PrimitiveParentPid());
