@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm ooxml excel template) — Dabscm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="toc">
+  <h2>Bindings</h2>
+  <a href="#e0" data-name="open-xlsx-template">open-xlsx-template</a>
+  <a href="#e1" data-name="xlsx-add-conditional-formats!">xlsx-add-conditional-formats!</a>
+  <a href="#e2" data-name="xlsx-add-data-validations!">xlsx-add-data-validations!</a>
+  <a href="#e3" data-name="xlsx-add-dxf!">xlsx-add-dxf!</a>
+  <a href="#e4" data-name="xlsx-cell-ref">xlsx-cell-ref</a>
+  <a href="#e5" data-name="xlsx-collapse-outline-cols!">xlsx-collapse-outline-cols!</a>
+  <a href="#e6" data-name="xlsx-column-styles">xlsx-column-styles</a>
+  <a href="#e7" data-name="xlsx-derive-xf!">xlsx-derive-xf!</a>
+  <a href="#e8" data-name="xlsx-formula">xlsx-formula</a>
+  <a href="#e9" data-name="xlsx-formula-text">xlsx-formula-text</a>
+  <a href="#e10" data-name="xlsx-formula?">xlsx-formula?</a>
+  <a href="#e11" data-name="xlsx-full-calc-on-load!">xlsx-full-calc-on-load!</a>
+  <a href="#e12" data-name="xlsx-number-format-id!">xlsx-number-format-id!</a>
+  <a href="#e13" data-name="xlsx-part-names">xlsx-part-names</a>
+  <a href="#e14" data-name="xlsx-part-text">xlsx-part-text</a>
+  <a href="#e15" data-name="xlsx-quote-sheet-name">xlsx-quote-sheet-name</a>
+  <a href="#e16" data-name="xlsx-remove-conditional-formats!">xlsx-remove-conditional-formats!</a>
+  <a href="#e17" data-name="xlsx-remove-part!">xlsx-remove-part!</a>
+  <a href="#e18" data-name="xlsx-replace-sheet-data!">xlsx-replace-sheet-data!</a>
+  <a href="#e19" data-name="xlsx-replace-text!">xlsx-replace-text!</a>
+  <a href="#e20" data-name="xlsx-save">xlsx-save</a>
+  <a href="#e21" data-name="xlsx-save-to-bytevector">xlsx-save-to-bytevector</a>
+  <a href="#e22" data-name="xlsx-set-autofilter!">xlsx-set-autofilter!</a>
+  <a href="#e23" data-name="xlsx-set-cells!">xlsx-set-cells!</a>
+  <a href="#e24" data-name="xlsx-set-defined-name!">xlsx-set-defined-name!</a>
+  <a href="#e25" data-name="xlsx-set-part-text!">xlsx-set-part-text!</a>
+  <a href="#e26" data-name="xlsx-sheet-names">xlsx-sheet-names</a>
+  <a href="#e27" data-name="xlsx-sheet-part">xlsx-sheet-part</a>
+  <a href="#e28" data-name="xlsx-template?">xlsx-template?</a>
+</nav>
+
+<main>
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="index.html">All libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="index.html#sec-scm">Scm Extensions</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm ooxml excel template)</span>
+</nav>
+
+<div class="lib-title scm">(scm ooxml excel template)</div>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">29 bindings</p>
+
+<div class="entry" id="e0" data-name="open-xlsx-template">
+  <div class="entry-name">open-xlsx-template</div>
+  <pre class="entry-doc">Syntax: (open-xlsx-template path-or-bytevector)
+Library: (scm ooxml excel template)
+Description: Opens an XLSX workbook from a file path or a bytevector holding
+  its bytes and returns a template object. All parts are read into memory;
+  parts that are never patched are written back unchanged by xlsx-save.
+Example:
+  (define tpl (open-xlsx-template "Vorlage.xlsx"))</pre>
+</div>
+<div class="entry" id="e1" data-name="xlsx-add-conditional-formats!">
+  <div class="entry-name">xlsx-add-conditional-formats!</div>
+  <pre class="entry-doc">Syntax: (xlsx-add-conditional-formats! tpl sheet-name specs)
+Library: (scm ooxml excel template)
+Description: Adds expression-based conditional formatting. Each spec is
+  (sqref rule ...) where each rule is (formula dxf-id) or
+  (formula dxf-id stop-if-true?). formula uses English function names and
+  relative references are relative to the top-left cell of sqref. dxf-id
+  comes from xlsx-add-dxf!. Rules get increasing priorities in the given
+  order, after any existing rules.
+Example:
+  (xlsx-add-conditional-formats! tpl "Data"
+    (list (list "A2:H100" (list "$B2&lt;&gt;$B1" sep-dxf))))</pre>
+</div>
+<div class="entry" id="e2" data-name="xlsx-add-data-validations!">
+  <div class="entry-name">xlsx-add-data-validations!</div>
+  <pre class="entry-doc">Syntax: (xlsx-add-data-validations! tpl sheet-name specs)
+Library: (scm ooxml excel template)
+Description: Adds list data validations (dropdowns), replacing any existing
+  validations of the sheet. Each spec is (sqref items): items is a list of
+  strings (inline list; joined length must not exceed 255 characters and
+  items must not contain commas) or a string formula such as
+  "Lists!$A$1:$A$7". Invalid entries are rejected with an error message.
+Example:
+  (xlsx-add-data-validations! tpl "Data"
+    (list (list "F2:F100" '("ok" "Verstoss"))))</pre>
+</div>
+<div class="entry" id="e3" data-name="xlsx-add-dxf!">
+  <div class="entry-name">xlsx-add-dxf!</div>
+  <pre class="entry-doc">Syntax: (xlsx-add-dxf! tpl options)
+Library: (scm ooxml excel template)
+Description: Adds a differential format (used by conditional formatting) to
+  xl/styles.xml and returns its index. options is an alist with keys
+  font-color (ARGB string), bold, italic (booleans), fill (ARGB string,
+  solid background) and border-left/-right/-top/-bottom (border style such
+  as "thin"), border-color (ARGB, default automatic).
+Example:
+  (xlsx-add-dxf! tpl '((fill . "FFFFFF00")))  =&gt; 0
+  (xlsx-add-dxf! tpl '((border-top . "thin")))  =&gt; 1</pre>
+</div>
+<div class="entry" id="e4" data-name="xlsx-cell-ref">
+  <div class="entry-name">xlsx-cell-ref</div>
+  <pre class="entry-doc">Syntax: (xlsx-cell-ref row col)
+Library: (scm ooxml excel template)
+Description: Returns the A1-style reference for a 1-based row and column.
+Example:
+  (xlsx-cell-ref 3 28) =&gt; "AB3"</pre>
+</div>
+<div class="entry" id="e5" data-name="xlsx-collapse-outline-cols!">
+  <div class="entry-name">xlsx-collapse-outline-cols!</div>
+  <pre class="entry-doc">Syntax: (xlsx-collapse-outline-cols! tpl sheet-name level)
+Library: (scm ooxml excel template)
+Description: Collapses grouped columns: every &lt;col&gt; with an outlineLevel &gt;=
+  level is hidden and the column following each such group is marked
+  collapsed (like Outline.ShowLevels ColumnLevels:=level-1).
+Example:
+  (xlsx-collapse-outline-cols! tpl "Data" 1)</pre>
+</div>
+<div class="entry" id="e6" data-name="xlsx-column-styles">
+  <div class="entry-name">xlsx-column-styles</div>
+  <pre class="entry-doc">Syntax: (xlsx-column-styles tpl sheet-name)
+Library: (scm ooxml excel template)
+Description: Returns a procedure mapping a 1-based column index to the
+  column's default cellXfs index from &lt;cols&gt; (0 when none). Cells written
+  without a style do not inherit the column style, so pass these on.
+Example:
+  ((xlsx-column-styles tpl "Data") 3) =&gt; 60</pre>
+</div>
+<div class="entry" id="e7" data-name="xlsx-derive-xf!">
+  <div class="entry-name">xlsx-derive-xf!</div>
+  <pre class="entry-doc">Syntax: (xlsx-derive-xf! tpl base-xf-index format-code)
+Library: (scm ooxml excel template)
+Description: Returns the index of a cellXfs entry equal to base-xf-index but
+  with number format format-code, adding it on first use (cached per
+  template).
+Example:
+  (xlsx-derive-xf! tpl 36 "@") =&gt; 94</pre>
+</div>
+<div class="entry" id="e8" data-name="xlsx-formula">
+  <div class="entry-name">xlsx-formula</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e9" data-name="xlsx-formula-text">
+  <div class="entry-name">xlsx-formula-text</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e10" data-name="xlsx-formula?">
+  <div class="entry-name">xlsx-formula?</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e11" data-name="xlsx-full-calc-on-load!">
+  <div class="entry-name">xlsx-full-calc-on-load!</div>
+  <pre class="entry-doc">Syntax: (xlsx-full-calc-on-load! tpl)
+Library: (scm ooxml excel template)
+Description: Makes the spreadsheet application recalculate all formulas when
+  the workbook is opened (calcPr fullCalcOnLoad) and removes a stale
+  xl/calcChain.xml with its relationship and content type.
+Example:
+  (xlsx-full-calc-on-load! tpl)</pre>
+</div>
+<div class="entry" id="e12" data-name="xlsx-number-format-id!">
+  <div class="entry-name">xlsx-number-format-id!</div>
+  <pre class="entry-doc">Syntax: (xlsx-number-format-id! tpl format-code)
+Library: (scm ooxml excel template)
+Description: Returns the numFmtId for format-code, using the built-in id
+  where one exists ("@" =&gt; 49), an existing custom format, or adding a new
+  custom &lt;numFmt&gt; (id &gt;= 164) to xl/styles.xml.
+Example:
+  (xlsx-number-format-id! tpl ";;;@") =&gt; 164</pre>
+</div>
+<div class="entry" id="e13" data-name="xlsx-part-names">
+  <div class="entry-name">xlsx-part-names</div>
+  <pre class="entry-doc">Syntax: (xlsx-part-names tpl)
+Library: (scm ooxml excel template)
+Description: Returns the names of all zip parts of the template, in order.
+Example:
+  (member "xl/styles.xml" (xlsx-part-names tpl)) =&gt; ("xl/styles.xml" ...)</pre>
+</div>
+<div class="entry" id="e14" data-name="xlsx-part-text">
+  <div class="entry-name">xlsx-part-text</div>
+  <pre class="entry-doc">Syntax: (xlsx-part-text tpl name)
+Library: (scm ooxml excel template)
+Description: Returns the text (UTF-8 decoded) of part name, or #f if the part
+  does not exist.
+Example:
+  (xlsx-part-text tpl "xl/workbook.xml") =&gt; "&lt;?xml ..."</pre>
+</div>
+<div class="entry" id="e15" data-name="xlsx-quote-sheet-name">
+  <div class="entry-name">xlsx-quote-sheet-name</div>
+  <pre class="entry-doc">Syntax: (xlsx-quote-sheet-name name)
+Library: (scm ooxml excel template)
+Description: Returns name ready for use in a formula or defined name: quoted
+  with single quotes (inner quotes doubled) unless it consists only of
+  letters, digits and underscores.
+Example:
+  (xlsx-quote-sheet-name "Lies mich") =&gt; "'Lies mich'"</pre>
+</div>
+<div class="entry" id="e16" data-name="xlsx-remove-conditional-formats!">
+  <div class="entry-name">xlsx-remove-conditional-formats!</div>
+  <pre class="entry-doc">Syntax: (xlsx-remove-conditional-formats! tpl sheet-name)
+Library: (scm ooxml excel template)
+Description: Removes all (non-extension) conditional formatting of a sheet.
+Example:
+  (xlsx-remove-conditional-formats! tpl "Data")</pre>
+</div>
+<div class="entry" id="e17" data-name="xlsx-remove-part!">
+  <div class="entry-name">xlsx-remove-part!</div>
+  <pre class="entry-doc">Syntax: (xlsx-remove-part! tpl name)
+Library: (scm ooxml excel template)
+Description: Removes part name from the template (no-op if absent). Content
+  type overrides and relationships pointing at it are not touched.
+Example:
+  (xlsx-remove-part! tpl "xl/calcChain.xml")</pre>
+</div>
+<div class="entry" id="e18" data-name="xlsx-replace-sheet-data!">
+  <div class="entry-name">xlsx-replace-sheet-data!</div>
+  <pre class="entry-doc">Syntax: (xlsx-replace-sheet-data! tpl sheet-name keep-rows writer)
+Library: (scm ooxml excel template)
+Description: Replaces the rows of a worksheet. Template rows with a row number
+  &lt;= keep-rows (e.g. a header row) are kept, all others dropped. writer is
+  called during xlsx-save with one argument, an emit procedure:
+  (emit values) or (emit values styles) appends the next row (starting at
+  keep-rows + 1) and returns its row number. values is a list from column A;
+  each element is #f (no value), a string, a number, #t or an xlsx-formula.
+  styles is an optional parallel list of cellXfs indices (#f = none). Rows
+  are streamed into the zip entry, so writer may emit many rows. writer runs
+  once per save. The worksheet's &lt;dimension&gt; element is dropped (optional;
+  recomputed by the application).
+Example:
+  (xlsx-replace-sheet-data! tpl "Data" 1
+    (lambda (emit)
+      (emit (list "a" 1 (xlsx-formula "B2*2")))))</pre>
+</div>
+<div class="entry" id="e19" data-name="xlsx-replace-text!">
+  <div class="entry-name">xlsx-replace-text!</div>
+  <pre class="entry-doc">Syntax: (xlsx-replace-text! tpl replacements)
+Library: (scm ooxml excel template)
+Description: Replaces literal text placeholders in the shared strings and in
+  all drawings (text boxes). replacements is an alist of (from . to) plain
+  strings; both are XML-escaped. A placeholder split across formatting runs
+  is not found.
+Example:
+  (xlsx-replace-text! tpl '(("{DATUM}" . "30. Juni 2026")))</pre>
+</div>
+<div class="entry" id="e20" data-name="xlsx-save">
+  <div class="entry-name">xlsx-save</div>
+  <pre class="entry-doc">Syntax: (xlsx-save tpl filename)
+Library: (scm ooxml excel template)
+Description: Writes the (patched) workbook to filename. Row writers given to
+  xlsx-replace-sheet-data! run now. Returns 'ok.
+Example:
+  (xlsx-save tpl "out.xlsx") =&gt; ok</pre>
+</div>
+<div class="entry" id="e21" data-name="xlsx-save-to-bytevector">
+  <div class="entry-name">xlsx-save-to-bytevector</div>
+  <pre class="entry-doc">Syntax: (xlsx-save-to-bytevector tpl)
+Library: (scm ooxml excel template)
+Description: Like xlsx-save, but returns the workbook bytes as a bytevector.
+Example:
+  (bytevector? (xlsx-save-to-bytevector tpl)) =&gt; #t</pre>
+</div>
+<div class="entry" id="e22" data-name="xlsx-set-autofilter!">
+  <div class="entry-name">xlsx-set-autofilter!</div>
+  <pre class="entry-doc">Syntax: (xlsx-set-autofilter! tpl sheet-name range)
+Library: (scm ooxml excel template)
+Description: Sets the autofilter of a sheet to range (e.g. "A1:BE500"),
+  replacing an existing one, and updates the hidden _xlnm._FilterDatabase
+  defined name accordingly.
+Example:
+  (xlsx-set-autofilter! tpl "Data" "A1:H100")</pre>
+</div>
+<div class="entry" id="e23" data-name="xlsx-set-cells!">
+  <div class="entry-name">xlsx-set-cells!</div>
+  <pre class="entry-doc">Syntax: (xlsx-set-cells! tpl sheet-name specs)
+Library: (scm ooxml excel template)
+Description: Sets individual cells of a worksheet. Each spec is
+  (ref value) or (ref value style): ref is an A1 reference, value as for
+  xlsx-replace-sheet-data!. Without a style the existing cell's style is
+  kept. Existing cells are replaced, missing cells and rows inserted in
+  order. Not usable on a sheet whose rows were replaced.
+Example:
+  (xlsx-set-cells! tpl "Summary"
+    (list (list "C2" "Spital X") (list "E15" (xlsx-formula "SUM(A1:A9)"))))</pre>
+</div>
+<div class="entry" id="e24" data-name="xlsx-set-defined-name!">
+  <div class="entry-name">xlsx-set-defined-name!</div>
+  <pre class="entry-doc">Syntax: (xlsx-set-defined-name! tpl name value [local-sheet [hidden?]])
+Library: (scm ooxml excel template)
+Description: Sets (or adds) a defined name in xl/workbook.xml. local-sheet is
+  a sheet name for a sheet-scoped name or #f for a global one.
+Example:
+  (xlsx-set-defined-name! tpl "Codes" "Lists!$A$1:$A$9")</pre>
+</div>
+<div class="entry" id="e25" data-name="xlsx-set-part-text!">
+  <div class="entry-name">xlsx-set-part-text!</div>
+  <pre class="entry-doc">Syntax: (xlsx-set-part-text! tpl name text)
+Library: (scm ooxml excel template)
+Description: Replaces (or adds) part name with the given text.
+Example:
+  (xlsx-set-part-text! tpl "xl/workbook.xml" xml)</pre>
+</div>
+<div class="entry" id="e26" data-name="xlsx-sheet-names">
+  <div class="entry-name">xlsx-sheet-names</div>
+  <pre class="entry-doc">Syntax: (xlsx-sheet-names tpl)
+Library: (scm ooxml excel template)
+Description: Returns the worksheet names in workbook order.
+Example:
+  (xlsx-sheet-names tpl) =&gt; ("Lies mich" "Legende" ...)</pre>
+</div>
+<div class="entry" id="e27" data-name="xlsx-sheet-part">
+  <div class="entry-name">xlsx-sheet-part</div>
+  <pre class="entry-doc">Syntax: (xlsx-sheet-part tpl sheet-name)
+Library: (scm ooxml excel template)
+Description: Returns the zip part name holding the worksheet called
+  sheet-name. An error is raised for unknown sheets.
+Example:
+  (xlsx-sheet-part tpl "Leistungscontrolling") =&gt; "xl/worksheets/sheet4.xml"</pre>
+</div>
+<div class="entry" id="e28" data-name="xlsx-template?">
+  <div class="entry-name">xlsx-template?</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

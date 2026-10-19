@@ -103,6 +103,13 @@ Example:
                                       (else           (list c)))))
               (loop (cdr chars) (append (reverse replacement) acc))))))
 
+    (define (t-needs-preserve? s)
+      ;; Leading/trailing whitespace in <t> is dropped unless preserved.
+      (let ((n (string-length s)))
+        (and (> n 0)
+             (or (char-whitespace? (string-ref s 0))
+                 (char-whitespace? (string-ref s (- n 1)))))))
+
     (define (cell-id-split id)
       ;; Returns (col . row) e.g. "AA12" -> ("AA" . "12")
       (let loop ((i 0))
@@ -1027,7 +1034,11 @@ Example:
                    (dict-size dict))
            (do ((values (dict-keys dict) (cdr values)))
                ((null? values))
-             (format port "<si><t>~a</t></si>" (xml-escape (car values))))
+             (let ((v (car values)))
+               (format port (if (t-needs-preserve? v)
+                                "<si><t xml:space=\"preserve\">~a</t></si>"
+                                "<si><t>~a</t></si>")
+                       (xml-escape v))))
            (display "</sst>" port)))))
 
     (define (render-rels)
@@ -1130,7 +1141,7 @@ Example:
                     (name (worksheet-name ws))
                     (i    (worksheet-id ws)))
                (format port "<sheet name=\"~a\" sheetId=\"~a\" r:id=\"rId~a\"/>"
-                       name i i))
+                       (xml-escape name) i i))
              (loop (cdr sheets))))
          (display "</sheets>" port)
          (display "</workbook>" port))))

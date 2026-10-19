@@ -105,6 +105,7 @@
 | [`(scm odf spreadsheet)`](libraries/scm-odf-spreadsheet.md) | ODF spreadsheet creation (ODS format) |
 | [`(scm odf writer)`](libraries/scm-odf-writer.md) | ODF text document creation (ODT format) |
 | [`(scm ooxml excel-reader)`](libraries/scm-ooxml-excel-reader.md) | Excel workbook reading (OOXML/XLSX format) |
+| [`(scm ooxml excel template)`](libraries/scm-ooxml-excel-template.md) |  |
 | [`(scm ooxml excel)`](libraries/scm-ooxml-excel.md) | Excel workbook and worksheet creation (OOXML/XLSX format) |
 | [`(scm ooxml word-reader)`](libraries/scm-ooxml-word-reader.md) | Word document text reading (OOXML/DOCX format) |
 | [`(scm ooxml word)`](libraries/scm-ooxml-word.md) | Word document creation (OOXML/DOCX format) |
