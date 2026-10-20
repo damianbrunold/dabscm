@@ -61,6 +61,7 @@
 |---------|-------------|
 | [`(scm archive)`](libraries/scm-archive.md) | Archive and compression — tar, gzip, bzip2, xz, and zip operations |
 | [`(scm args)`](libraries/scm-args.md) | Declarative command-line argument parsing — options, flags, positionals, typed values |
+| [`(scm bytevector)`](libraries/scm-bytevector.md) | Multi-byte integers and IEEE floats in bytevectors, either byte order |
 | [`(scm compile)`](libraries/scm-compile.md) | Compiler introspection, bytecode access, and type predicates |
 | [`(scm compression)`](libraries/scm-compression.md) | Data compression and decompression |
 | [`(scm crypto)`](libraries/scm-crypto.md) | Cryptographic hashing and encoding utilities |
@@ -76,6 +77,10 @@
 | [`(scm fs-find)`](libraries/scm-fs-find.md) | Filesystem traversal and reporting — find-file, tree, du, df, xargs |
 | [`(scm fs)`](libraries/scm-fs.md) | Filesystem operations — paths, directories, files |
 | [`(scm geiser)`](libraries/scm-geiser.md) |  |
+| [`(scm geo shapefile)`](libraries/scm-geo-shapefile.md) | Reading ESRI shapefiles and dBASE tables |
+| [`(scm geo topojson)`](libraries/scm-geo-topojson.md) | Writing TopoJSON with shared arcs, simplification and quantization |
+| [`(scm geo topology)`](libraries/scm-geo-topology.md) | Planar graphs of polygon layers — overlay, dissolve, gap and sliver cleanup |
+| [`(scm geo)`](libraries/scm-geo.md) | Planar geometry of features — rings, areas, simplification, label points, GeoJSON |
 | [`(scm glob)`](libraries/scm-glob.md) | Filename globbing and pattern matching |
 | [`(scm html builder)`](libraries/scm-html-builder.md) | SXML-shaped HTML5 builder with automatic escaping |
 | [`(scm html)`](libraries/scm-html.md) | HTML escaping and tag stripping |

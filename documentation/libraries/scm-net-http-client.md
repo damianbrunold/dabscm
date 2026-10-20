@@ -71,6 +71,18 @@ Example:
   (http-response-status (http-get "http://example.com/")) => 200
 ```
 
+### `http-get-bytevector`
+
+```
+Syntax: (http-get-bytevector url) (http-get-bytevector url headers) (http-get-bytevector url headers timeout-seconds)
+Library: (scm net http client)
+Description: Performs an HTTP GET request like http-get, but keeps the body as it
+  arrived: http-response-body of the response returned is a bytevector. Use it for
+  downloading binary files such as images or ZIP archives.
+Example:
+  (bytevector-length (http-response-body (http-get-bytevector "http://example.com/a.zip"))) => 81234
+```
+
 ### `http-get-json`
 
 ```

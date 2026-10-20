@@ -3,6 +3,7 @@
           (scm net http request)
           (scm net http response))
   (export http-get
+          http-get-bytevector
           http-post
           http-send
           http-put
@@ -11,6 +12,7 @@
           http-post-json)
   (begin
     (define http-get  (%primitive "http-get"))
+    (define http-get-bytevector (%primitive "http-get-bytevector"))
     (define http-post (%primitive "http-post"))
     (define http-send (%primitive "http-send"))
 

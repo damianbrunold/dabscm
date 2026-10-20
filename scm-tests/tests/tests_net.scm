@@ -129,6 +129,21 @@
                          (guard (e (#t (loop (+ n 1)))) (send))
                          (send))))
              (_ (server-stop server)))
+        (http-response-body resp))))
+  ;; http-get-bytevector keeps a binary body as it arrived: bytes that are
+  ;; not valid UTF-8 survive.
+  (test-equal (bytevector 80 75 3 4 0 255 128 10)
+    (guard (exn (#t #f))
+      (let* ((server (tcp-http-serve 18097
+                       (lambda (req)
+                         (make-http-response 200 '(("Content-Type" . "application/zip"))
+                                             (bytevector 80 75 3 4 0 255 128 10)))))
+             (get (lambda () (http-get-bytevector "http://localhost:18097/a.zip")))
+             (resp (let loop ((n 0))
+                     (if (< n 3)
+                         (guard (e (#t (loop (+ n 1)))) (get))
+                         (get))))
+             (_ (server-stop server)))
         (http-response-body resp)))))
 
 ;;; ---- Hardening tests (max-body, 503 saturation, host bind) ----

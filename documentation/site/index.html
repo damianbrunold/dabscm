@@ -71,6 +71,7 @@
   <h2>Scm Extensions</h2>
   <a href="scm-archive.html" class="scm">(scm archive)</a>
   <a href="scm-args.html" class="scm">(scm args)</a>
+  <a href="scm-bytevector.html" class="scm">(scm bytevector)</a>
   <a href="scm-compile.html" class="scm">(scm compile)</a>
   <a href="scm-compression.html" class="scm">(scm compression)</a>
   <a href="scm-crypto.html" class="scm">(scm crypto)</a>
@@ -86,6 +87,10 @@
   <a href="scm-fs-find.html" class="scm">(scm fs-find)</a>
   <a href="scm-fs.html" class="scm">(scm fs)</a>
   <a href="scm-geiser.html" class="scm">(scm geiser)</a>
+  <a href="scm-geo-shapefile.html" class="scm">(scm geo shapefile)</a>
+  <a href="scm-geo-topojson.html" class="scm">(scm geo topojson)</a>
+  <a href="scm-geo-topology.html" class="scm">(scm geo topology)</a>
+  <a href="scm-geo.html" class="scm">(scm geo)</a>
   <a href="scm-glob.html" class="scm">(scm glob)</a>
   <a href="scm-html-builder.html" class="scm">(scm html builder)</a>
   <a href="scm-html.html" class="scm">(scm html)</a>
@@ -142,7 +147,7 @@
 
 <main>
 
-<p class="intro">A browsable reference for the scm interpreter's libraries — 16 R7RS, 29 SRFI, and 69 extension libraries. Pick a library below, or use the search box to jump straight to any binding.</p>
+<p class="intro">A browsable reference for the scm interpreter's libraries — 16 R7RS, 29 SRFI, and 74 extension libraries. Pick a library below, or use the search box to jump straight to any binding.</p>
 
 <div class="section-heading" id="sec-r7rs">
   <h2>R7RS Standard Libraries</h2>
@@ -357,6 +362,10 @@
     <span class="name">(scm args)</span>
     <span class="desc">Declarative command-line argument parsing — options, flags, positionals, typed values</span>
   </a>
+  <a class="lib-card scm" href="scm-bytevector.html">
+    <span class="name">(scm bytevector)</span>
+    <span class="desc">Multi-byte integers and IEEE floats in bytevectors, either byte order</span>
+  </a>
   <a class="lib-card scm" href="scm-compile.html">
     <span class="name">(scm compile)</span>
     <span class="desc">Compiler introspection, bytecode access, and type predicates</span>
@@ -416,6 +425,22 @@
   <a class="lib-card scm" href="scm-geiser.html">
     <span class="name">(scm geiser)</span>
     <span class="desc"></span>
+  </a>
+  <a class="lib-card scm" href="scm-geo-shapefile.html">
+    <span class="name">(scm geo shapefile)</span>
+    <span class="desc">Reading ESRI shapefiles and dBASE tables</span>
+  </a>
+  <a class="lib-card scm" href="scm-geo-topojson.html">
+    <span class="name">(scm geo topojson)</span>
+    <span class="desc">Writing TopoJSON with shared arcs, simplification and quantization</span>
+  </a>
+  <a class="lib-card scm" href="scm-geo-topology.html">
+    <span class="name">(scm geo topology)</span>
+    <span class="desc">Planar graphs of polygon layers — overlay, dissolve, gap and sliver cleanup</span>
+  </a>
+  <a class="lib-card scm" href="scm-geo.html">
+    <span class="name">(scm geo)</span>
+    <span class="desc">Planar geometry of features — rings, areas, simplification, label points, GeoJSON</span>
   </a>
   <a class="lib-card scm" href="scm-glob.html">
     <span class="name">(scm glob)</span>

@@ -24,11 +24,12 @@
   <h2>Bindings</h2>
   <a href="#e0" data-name="http-delete">http-delete</a>
   <a href="#e1" data-name="http-get">http-get</a>
-  <a href="#e2" data-name="http-get-json">http-get-json</a>
-  <a href="#e3" data-name="http-post">http-post</a>
-  <a href="#e4" data-name="http-post-json">http-post-json</a>
-  <a href="#e5" data-name="http-put">http-put</a>
-  <a href="#e6" data-name="http-send">http-send</a>
+  <a href="#e2" data-name="http-get-bytevector">http-get-bytevector</a>
+  <a href="#e3" data-name="http-get-json">http-get-json</a>
+  <a href="#e4" data-name="http-post">http-post</a>
+  <a href="#e5" data-name="http-post-json">http-post-json</a>
+  <a href="#e6" data-name="http-put">http-put</a>
+  <a href="#e7" data-name="http-send">http-send</a>
 </nav>
 
 <main>
@@ -45,7 +46,7 @@
 <p class="lib-sub">HTTP client — GET, POST, and other request methods</p>
 <div class="lib-preamble">
 <h2>Overview</h2>
-<p><a class="xref" href="scm-net-http-client.html"><code>(scm net http client)</code></a> is an HTTP client. The convenience procedures cover the common verbs (<a class="xref" href="#e1"><code>http-get</code></a>, <a class="xref" href="#e3"><code>http-post</code></a>, <a class="xref" href="#e5"><code>http-put</code></a>, <a class="xref" href="#e0"><code>http-delete</code></a>), plus JSON variants that set the appropriate <code>Accept</code> / <code>Content-Type</code> headers. For full control build a request with <a class="xref" href="scm-net-http-request.html"><code>(scm net http request)</code></a> and send it with <a class="xref" href="#e6"><code>http-send</code></a>. Every call returns an <code>http-response</code>.</p>
+<p><a class="xref" href="scm-net-http-client.html"><code>(scm net http client)</code></a> is an HTTP client. The convenience procedures cover the common verbs (<a class="xref" href="#e1"><code>http-get</code></a>, <a class="xref" href="#e4"><code>http-post</code></a>, <a class="xref" href="#e6"><code>http-put</code></a>, <a class="xref" href="#e0"><code>http-delete</code></a>), plus JSON variants that set the appropriate <code>Accept</code> / <code>Content-Type</code> headers. For full control build a request with <a class="xref" href="scm-net-http-request.html"><code>(scm net http request)</code></a> and send it with <a class="xref" href="#e7"><code>http-send</code></a>. Every call returns an <code>http-response</code>.</p>
 <h2>Common uses</h2>
 <pre><code class="language-scheme">(import (scm net http client))
 
@@ -63,7 +64,7 @@
 <p>Setting <code>SCM_TLS_DEBUG=1</code> makes the Java implementation print the trust stores it loaded and, when a certificate is rejected, the chain sent by the server and each trust store's reason to stderr.</p>
 </div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
-<p class="export-count">7 bindings</p>
+<p class="export-count">8 bindings</p>
 
 <div class="entry" id="e0" data-name="http-delete">
   <div class="entry-name">http-delete</div>
@@ -82,7 +83,17 @@ Description: Performs an HTTP GET request and returns an http-response object.
 Example:
   (http-response-status (http-get "http://example.com/")) =&gt; 200</pre>
 </div>
-<div class="entry" id="e2" data-name="http-get-json">
+<div class="entry" id="e2" data-name="http-get-bytevector">
+  <div class="entry-name">http-get-bytevector</div>
+  <pre class="entry-doc">Syntax: (http-get-bytevector url) (http-get-bytevector url headers) (http-get-bytevector url headers timeout-seconds)
+Library: (scm net http client)
+Description: Performs an HTTP GET request like http-get, but keeps the body as it
+  arrived: http-response-body of the response returned is a bytevector. Use it for
+  downloading binary files such as images or ZIP archives.
+Example:
+  (bytevector-length (http-response-body (http-get-bytevector "http://example.com/a.zip"))) =&gt; 81234</pre>
+</div>
+<div class="entry" id="e3" data-name="http-get-json">
   <div class="entry-name">http-get-json</div>
   <pre class="entry-doc">Syntax: (http-get-json url)
 Library: (scm net http client)
@@ -91,7 +102,7 @@ Description: Performs an HTTP GET request with Accept: application/json header.
 Example:
   (http-get-json "http://example.com/api/items")</pre>
 </div>
-<div class="entry" id="e3" data-name="http-post">
+<div class="entry" id="e4" data-name="http-post">
   <div class="entry-name">http-post</div>
   <pre class="entry-doc">Syntax: (http-post url body) (http-post url body headers) (http-post url body headers timeout-seconds)
 Library: (scm net http client)
@@ -100,7 +111,7 @@ Description: Performs an HTTP POST request with the given body string and return
 Example:
   (http-post "http://example.com/api" "{}")</pre>
 </div>
-<div class="entry" id="e4" data-name="http-post-json">
+<div class="entry" id="e5" data-name="http-post-json">
   <div class="entry-name">http-post-json</div>
   <pre class="entry-doc">Syntax: (http-post-json url body)
 Library: (scm net http client)
@@ -109,7 +120,7 @@ Description: Performs an HTTP POST with Content-Type: application/json. body sho
 Example:
   (http-post-json "http://example.com/api" "{\"x\":1}")</pre>
 </div>
-<div class="entry" id="e5" data-name="http-put">
+<div class="entry" id="e6" data-name="http-put">
   <div class="entry-name">http-put</div>
   <pre class="entry-doc">Syntax: (http-put url body)
 Library: (scm net http client)
@@ -117,7 +128,7 @@ Description: Performs an HTTP PUT request with the given body and returns an htt
 Example:
   (http-put "http://example.com/item/1" "updated")</pre>
 </div>
-<div class="entry" id="e6" data-name="http-send">
+<div class="entry" id="e7" data-name="http-send">
   <div class="entry-name">http-send</div>
   <pre class="entry-doc">Syntax: (http-send request)
 Library: (scm net http client)

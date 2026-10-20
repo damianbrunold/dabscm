@@ -56,6 +56,18 @@ public class Primitives
         Bind(new PrimitiveBytevectorP());
         Bind(new PrimitiveBytevectorU8Ref());
         Bind(new PrimitiveBytevectorU8SetB());
+        Bind(new PrimitiveBytevectorU16Ref());
+        Bind(new PrimitiveBytevectorU16SetB());
+        Bind(new PrimitiveBytevectorS16Ref());
+        Bind(new PrimitiveBytevectorS16SetB());
+        Bind(new PrimitiveBytevectorU32Ref());
+        Bind(new PrimitiveBytevectorU32SetB());
+        Bind(new PrimitiveBytevectorS32Ref());
+        Bind(new PrimitiveBytevectorS32SetB());
+        Bind(new PrimitiveBytevectorIeeeSingleRef());
+        Bind(new PrimitiveBytevectorIeeeSingleSetB());
+        Bind(new PrimitiveBytevectorIeeeDoubleRef());
+        Bind(new PrimitiveBytevectorIeeeDoubleSetB());
         Bind(new PrimitiveCaar());
         Bind(new PrimitiveCadar());
         Bind(new PrimitiveCadr());
@@ -203,6 +215,7 @@ public class Primitives
         Bind(new PrimitiveHashTableValues());
         Bind(new PrimitiveHtmlEscape());
         Bind(new PrimitiveHttpGet());
+        Bind(new PrimitiveHttpGetBytevector());
         Bind(new PrimitiveHttpPost());
         Bind(new PrimitiveHttpRequestBody());
         Bind(new PrimitiveHttpRequestBodyBytes());

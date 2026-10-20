@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm geo topojson) — Dabscm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="toc">
+  <h2>Bindings</h2>
+  <a href="#e0" data-name="features-&gt;topojson">features-&gt;topojson</a>
+</nav>
+
+<main>
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="index.html">All libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="index.html#sec-scm">Scm Extensions</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm geo topojson)</span>
+</nav>
+
+<div class="lib-title scm">(scm geo topojson)</div>
+<p class="lib-sub">Writing TopoJSON with shared arcs, simplification and quantization</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><a class="xref" href="scm-geo-topojson.html"><code>(scm geo topojson)</code></a> writes polygon features as a TopoJSON topology: every border shared by two rings, in one layer or across layers, is stored once as an arc that both rings refer to. Borders are matched by exactly equal coordinates, as <a class="xref" href="scm-geo-topology.html"><code>(scm geo topology)</code></a> produces them.</p>
+<p>Options:</p>
+<ul>
+<li><code>(simplify . tolerance)</code>: Douglas-Peucker on each arc. A shared arc is</li>
+</ul>
+<p>simplified once for both sides, so neighbours stay gap-free; rings that would collapse keep enough points to remain polygons.</p>
+<ul>
+<li><code>(quantization . n)</code>: integer coordinates on an n by n grid, delta-encoded,</li>
+</ul>
+<p>with a <code>transform</code>.</p>
+<ul>
+<li><code>(thresholds . name)</code> and <code>(threshold-scale . factor)</code>: a member with each</li>
+</ul>
+<p>point's Douglas-Peucker removal threshold, so a reader can simplify further to any tolerance in one pass.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scm json simple) (scm geo topojson))
+
+(call-with-output-file "cantons.topo.json"
+  (lambda (p)
+    (write-string
+     (json-&gt;string
+      (features-&gt;topojson (list (cons "cantons" cantons))
+                          '((simplify . 20) (quantization . 100000))))
+     p)))</code></pre>
+</div>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">1 bindings</p>
+
+<div class="entry" id="e0" data-name="features-&gt;topojson">
+  <div class="entry-name">features-&gt;topojson</div>
+  <pre class="entry-doc">Syntax: (features-&gt;topojson layers [options])
+Library: (scm geo topojson)
+Description: Returns a TopoJSON topology of the polygon features in layers, an
+  alist from layer name (a string) to a list of features, as data for (scm
+  json simple): write it with json-&gt;string. Each layer becomes a
+  GeometryCollection of Polygon and MultiPolygon geometries with the
+  features' properties; borders shared by rings, within a layer or across
+  layers, are stored once as shared arcs. Outer rings run clockwise, holes
+  counter-clockwise, as TopoJSON tools expect. options is an alist:
+  (simplify . tolerance) simplifies every arc with Douglas-Peucker, shared
+  arcs once for both sides, so neighbours stay gap-free; rings that would
+  collapse keep enough points to stay polygons. (quantization . n) quantizes
+  coordinates to an n by n grid and delta-encodes the arcs, adding a
+  transform. (thresholds . name) adds a member name with, per arc, the
+  Douglas-Peucker removal threshold of each point after quantization (-1 for
+  the ends, which are always kept; see path-dp-thresholds), multiplied by
+  (threshold-scale . factor), 1 by default, and rounded: with it a reader
+  simplifies any arc to any tolerance in one pass.
+Example:
+  (json-&gt;string (features-&gt;topojson (list (cons "cantons" features))
+                                    '((simplify . 20) (quantization . 100000))))</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

@@ -103,6 +103,47 @@
                            (http-get "http://localhost:18098/ping"))
                          (http-get "http://localhost:18098/ping")))))
              (_ (server-stop server)))
+        (http-response-body resp))))
+  ;; A bytevector body is sent byte for byte (no UTF-8 round trip), and a
+  ;; caller-supplied Content-Type reaches the server.
+  (test-equal "application/octet-stream 0,255,128,10"
+    (guard (exn (#t #f))
+      (let* ((server (tcp-http-serve 18097
+                       (lambda (req)
+                         (let ((bv (http-request-body-bytes req)))
+                           (http-ok
+                            (string-append
+                             (http-request-header req "Content-Type") " "
+                             (number->string (bytevector-u8-ref bv 0)) ","
+                             (number->string (bytevector-u8-ref bv 1)) ","
+                             (number->string (bytevector-u8-ref bv 2)) ","
+                             (number->string (bytevector-u8-ref bv 3))))))))
+             (send (lambda ()
+                     (http-send
+                      (make-http-request
+                       "PUT" "http://localhost:18097/bin"
+                       '(("Content-Type" . "application/octet-stream"))
+                       (bytevector 0 255 128 10)))))
+             (resp (let loop ((n 0))
+                     (if (< n 3)
+                         (guard (e (#t (loop (+ n 1)))) (send))
+                         (send))))
+             (_ (server-stop server)))
+        (http-response-body resp))))
+  ;; http-get-bytevector keeps a binary body as it arrived: bytes that are
+  ;; not valid UTF-8 survive.
+  (test-equal (bytevector 80 75 3 4 0 255 128 10)
+    (guard (exn (#t #f))
+      (let* ((server (tcp-http-serve 18097
+                       (lambda (req)
+                         (make-http-response 200 '(("Content-Type" . "application/zip"))
+                                             (bytevector 80 75 3 4 0 255 128 10)))))
+             (get (lambda () (http-get-bytevector "http://localhost:18097/a.zip")))
+             (resp (let loop ((n 0))
+                     (if (< n 3)
+                         (guard (e (#t (loop (+ n 1)))) (get))
+                         (get))))
+             (_ (server-stop server)))
         (http-response-body resp)))))
 
 ;;; ---- Hardening tests (max-body, 503 saturation, host bind) ----

@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm geo) — Dabscm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="toc">
+  <h2>Bindings</h2>
+  <a href="#e0" data-name="bbox-overlap?">bbox-overlap?</a>
+  <a href="#e1" data-name="bbox-union">bbox-union</a>
+  <a href="#e2" data-name="feature-geometry">feature-geometry</a>
+  <a href="#e3" data-name="feature-properties">feature-properties</a>
+  <a href="#e4" data-name="feature-ref">feature-ref</a>
+  <a href="#e5" data-name="feature-rings">feature-rings</a>
+  <a href="#e6" data-name="feature?">feature?</a>
+  <a href="#e7" data-name="features-&gt;geojson">features-&gt;geojson</a>
+  <a href="#e8" data-name="geojson-&gt;features">geojson-&gt;features</a>
+  <a href="#e9" data-name="geometry-parts">geometry-parts</a>
+  <a href="#e10" data-name="geometry-type">geometry-type</a>
+  <a href="#e11" data-name="make-feature">make-feature</a>
+  <a href="#e12" data-name="make-multipoint">make-multipoint</a>
+  <a href="#e13" data-name="make-polygon">make-polygon</a>
+  <a href="#e14" data-name="make-polyline">make-polyline</a>
+  <a href="#e15" data-name="path-dp-thresholds">path-dp-thresholds</a>
+  <a href="#e16" data-name="path-simplify">path-simplify</a>
+  <a href="#e17" data-name="point-in-ring?">point-in-ring?</a>
+  <a href="#e18" data-name="point-in-rings?">point-in-rings?</a>
+  <a href="#e19" data-name="polygon-inner-point">polygon-inner-point</a>
+  <a href="#e20" data-name="ring-area">ring-area</a>
+  <a href="#e21" data-name="ring-bbox">ring-bbox</a>
+  <a href="#e22" data-name="ring-groups">ring-groups</a>
+  <a href="#e23" data-name="ring-point-count">ring-point-count</a>
+  <a href="#e24" data-name="ring-reverse">ring-reverse</a>
+  <a href="#e25" data-name="rings-&gt;polygons">rings-&gt;polygons</a>
+  <a href="#e26" data-name="rings-area">rings-area</a>
+  <a href="#e27" data-name="rings-bbox">rings-bbox</a>
+</nav>
+
+<main>
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="index.html">All libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="index.html#sec-scm">Scm Extensions</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm geo)</span>
+</nav>
+
+<div class="lib-title scm">(scm geo)</div>
+<p class="lib-sub">Planar geometry of features — rings, areas, simplification, label points, GeoJSON</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><a class="xref" href="scm-geo.html"><code>(scm geo)</code></a> is the base of the geo libraries: features (a geometry with properties), polygon rings and the planar geometry done on them. Coordinates are plain numbers in any planar system (metres in a national grid, say); nothing is projected.</p>
+<ul>
+<li>A <strong>feature</strong> is made with <a class="xref" href="#e11"><code>make-feature</code></a> from an alist of properties</li>
+</ul>
+<p>(string keys, as <a class="xref" href="scm-json-simple.html"><code>(scm json simple)</code></a> uses) and a geometry.</p>
+<ul>
+<li>A <strong>geometry</strong> is a tagged list: <code>(polygon ring ...)</code>, <code>(polyline path ...)</code></li>
+</ul>
+<p>or <code>(multipoint point ...)</code>, made with <a class="xref" href="#e13"><code>make-polygon</code></a>, <a class="xref" href="#e14"><code>make-polyline</code></a> and <a class="xref" href="#e12"><code>make-multipoint</code></a>.</p>
+<ul>
+<li>A <strong>ring</strong> or path is a flat vector of coordinates <code>#(x0 y0 x1 y1 ...)</code>; a</li>
+</ul>
+<p>ring is closed, its last point equal to its first. A polygon's rings may come in any order and orientation: the area inside an odd number of them is the polygon. <a class="xref" href="#e25"><code>rings-&gt;polygons</code></a> sorts them into outer rings and holes.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scm geo))
+
+(define ring #(0 0 4 0 4 4 0 4 0 0))
+(ring-area ring)                        ;; =&gt; 16.0, positive: counter-clockwise
+(point-in-ring? 1 1 ring)               ;; =&gt; #t
+(path-simplify #(0 0 1 0.1 2 0) 0.5)    ;; =&gt; #(0 0 2 0), Douglas-Peucker
+(polygon-inner-point (list ring))       ;; =&gt; #(2.0 2.0), a label point</code></pre>
+<p><a class="xref" href="#e7"><code>features-&gt;geojson</code></a> and <a class="xref" href="#e8"><code>geojson-&gt;features</code></a> convert to and from GeoJSON in the representation of <a class="xref" href="scm-json-simple.html"><code>(scm json simple)</code></a>. Shapefiles are read with <a class="xref" href="scm-geo-shapefile.html"><code>(scm geo shapefile)</code></a>, overlays and dissolves are done with <a class="xref" href="scm-geo-topology.html"><code>(scm geo topology)</code></a>, and <a class="xref" href="scm-geo-topojson.html"><code>(scm geo topojson)</code></a> writes the result.</p>
+</div>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">28 bindings</p>
+
+<div class="entry" id="e0" data-name="bbox-overlap?">
+  <div class="entry-name">bbox-overlap?</div>
+  <pre class="entry-doc">Syntax: (bbox-overlap? a b)
+Library: (scm geo)
+Description: Returns #t when the bounding boxes a and b overlap or touch.
+Example:
+  (bbox-overlap? #(0 0 1 1) #(1 1 2 2)) =&gt; #t</pre>
+</div>
+<div class="entry" id="e1" data-name="bbox-union">
+  <div class="entry-name">bbox-union</div>
+  <pre class="entry-doc">Syntax: (bbox-union a b)
+Library: (scm geo)
+Description: Returns the smallest bounding box containing the bounding boxes a
+  and b; either may be #f, meaning empty.
+Example:
+  (bbox-union #(0 0 1 1) #(2 -1 3 0)) =&gt; #(0 -1 3 1)</pre>
+</div>
+<div class="entry" id="e2" data-name="feature-geometry">
+  <div class="entry-name">feature-geometry</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e3" data-name="feature-properties">
+  <div class="entry-name">feature-properties</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e4" data-name="feature-ref">
+  <div class="entry-name">feature-ref</div>
+  <pre class="entry-doc">Syntax: (feature-ref feature key [default])
+Library: (scm geo)
+Description: Returns the value of the property named key (a string) of feature,
+  or default (#f when omitted) when the feature has no such property. A
+  property that is present but empty holds the symbol null.
+Example:
+  (feature-ref (make-feature '(("name" . "Bern")) (make-polygon '())) "name") =&gt; "Bern"</pre>
+</div>
+<div class="entry" id="e5" data-name="feature-rings">
+  <div class="entry-name">feature-rings</div>
+  <pre class="entry-doc">Syntax: (feature-rings feature)
+Library: (scm geo)
+Description: Returns the rings of feature's polygon geometry, or the empty list
+  when its geometry is not a polygon.
+Example:
+  (feature-rings (make-feature '() (make-polygon (list #(0 0 1 0 1 1 0 0))))) =&gt; (#(0 0 1 0 1 1 0 0))</pre>
+</div>
+<div class="entry" id="e6" data-name="feature?">
+  <div class="entry-name">feature?</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e7" data-name="features-&gt;geojson">
+  <div class="entry-name">features-&gt;geojson</div>
+  <pre class="entry-doc">Syntax: (features-&gt;geojson features)
+Library: (scm geo)
+Description: Returns a GeoJSON FeatureCollection of features, as data for
+  (scm json simple): write it with json-&gt;string. Polygons have their outer
+  rings counter-clockwise and their holes clockwise (RFC 7946).
+Example:
+  (json-&gt;string (features-&gt;geojson (list (make-feature '(("id" . 1)) (make-multipoint (list #(1 2)))))))
+  =&gt; "{\"type\":\"FeatureCollection\",\"features\":[...]}"</pre>
+</div>
+<div class="entry" id="e8" data-name="geojson-&gt;features">
+  <div class="entry-name">geojson-&gt;features</div>
+  <pre class="entry-doc">Syntax: (geojson-&gt;features json)
+Library: (scm geo)
+Description: Returns the features of json, a GeoJSON FeatureCollection as
+  parsed by (scm json simple). Features without geometry are skipped.
+Example:
+  (length (geojson-&gt;features (json-parse "{\"type\":\"FeatureCollection\",\"features\":[]}"))) =&gt; 0</pre>
+</div>
+<div class="entry" id="e9" data-name="geometry-parts">
+  <div class="entry-name">geometry-parts</div>
+  <pre class="entry-doc">Syntax: (geometry-parts geometry)
+Library: (scm geo)
+Description: Returns the parts of geometry: the rings of a polygon, the paths
+  of a polyline, the points of a multipoint.
+Example:
+  (geometry-parts (make-multipoint (list #(1 2)))) =&gt; (#(1 2))</pre>
+</div>
+<div class="entry" id="e10" data-name="geometry-type">
+  <div class="entry-name">geometry-type</div>
+  <pre class="entry-doc">Syntax: (geometry-type geometry)
+Library: (scm geo)
+Description: Returns the type of geometry: one of the symbols polygon,
+  polyline or multipoint.
+Example:
+  (geometry-type (make-polyline '())) =&gt; polyline</pre>
+</div>
+<div class="entry" id="e11" data-name="make-feature">
+  <div class="entry-name">make-feature</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e12" data-name="make-multipoint">
+  <div class="entry-name">make-multipoint</div>
+  <pre class="entry-doc">Syntax: (make-multipoint points)
+Library: (scm geo)
+Description: Returns a point geometry made of points, a list of vectors #(x y).
+Example:
+  (geometry-type (make-multipoint (list #(1 2)))) =&gt; multipoint</pre>
+</div>
+<div class="entry" id="e13" data-name="make-polygon">
+  <div class="entry-name">make-polygon</div>
+  <pre class="entry-doc">Syntax: (make-polygon rings)
+Library: (scm geo)
+Description: Returns a polygon geometry made of rings, a list of closed rings,
+  each a flat vector #(x0 y0 x1 y1 ... x0 y0). Outer rings and holes may come
+  in any order; the area inside an odd number of rings is the polygon.
+Example:
+  (geometry-type (make-polygon (list #(0 0 1 0 1 1 0 0)))) =&gt; polygon</pre>
+</div>
+<div class="entry" id="e14" data-name="make-polyline">
+  <div class="entry-name">make-polyline</div>
+  <pre class="entry-doc">Syntax: (make-polyline paths)
+Library: (scm geo)
+Description: Returns a polyline geometry made of paths, a list of flat
+  coordinate vectors #(x0 y0 x1 y1 ...).
+Example:
+  (geometry-parts (make-polyline (list #(0 0 5 5)))) =&gt; (#(0 0 5 5))</pre>
+</div>
+<div class="entry" id="e15" data-name="path-dp-thresholds">
+  <div class="entry-name">path-dp-thresholds</div>
+  <pre class="entry-doc">Syntax: (path-dp-thresholds path)
+Library: (scm geo)
+Description: Returns a vector with one Douglas-Peucker removal threshold per
+  point of path, a flat coordinate vector: simplifying to a tolerance keeps
+  the points whose threshold exceeds it, and the points marked -1 always (the
+  ends). Thresholds never grow down the split tree, so this gives exactly what
+  Douglas-Peucker gives at that tolerance. A closed path (first point equal to
+  last) is first split at the point farthest from its start, which is kept
+  like an end, so a ring never collapses to a line.
+Example:
+  (path-dp-thresholds #(0 0 1 1 2 0)) =&gt; #(-1 1 -1)</pre>
+</div>
+<div class="entry" id="e16" data-name="path-simplify">
+  <div class="entry-name">path-simplify</div>
+  <pre class="entry-doc">Syntax: (path-simplify path tolerance [thresholds])
+Library: (scm geo)
+Description: Returns path, a flat coordinate vector, simplified with
+  Douglas-Peucker to tolerance: every point removed lies within tolerance of
+  the simplified line. thresholds, as returned by path-dp-thresholds, saves
+  computing them again.
+Example:
+  (path-simplify #(0 0 1 0.1 2 0) 0.5) =&gt; #(0 0 2 0)</pre>
+</div>
+<div class="entry" id="e17" data-name="point-in-ring?">
+  <div class="entry-name">point-in-ring?</div>
+  <pre class="entry-doc">Syntax: (point-in-ring? x y ring)
+Library: (scm geo)
+Description: Returns #t when the point (x, y) lies inside ring (even-odd rule).
+  A point exactly on the boundary may count as either.
+Example:
+  (point-in-ring? 1 1 #(0 0 2 0 2 2 0 2 0 0)) =&gt; #t</pre>
+</div>
+<div class="entry" id="e18" data-name="point-in-rings?">
+  <div class="entry-name">point-in-rings?</div>
+  <pre class="entry-doc">Syntax: (point-in-rings? x y rings)
+Library: (scm geo)
+Description: Returns #t when the point (x, y) lies inside an odd number of
+  rings, that is inside the polygon they make up.
+Example:
+  (point-in-rings? 1.5 1.5 (list #(0 0 4 0 4 4 0 4 0 0) #(1 1 1 2 2 2 2 1 1 1))) =&gt; #f</pre>
+</div>
+<div class="entry" id="e19" data-name="polygon-inner-point">
+  <div class="entry-name">polygon-inner-point</div>
+  <pre class="entry-doc">Syntax: (polygon-inner-point rings [precision])
+Library: (scm geo)
+Description: Returns a point #(x y) inside the polygon made of rings that lies
+  as far from its boundary as possible, to within precision (by default a
+  thousandth of the polygon's larger side): the pole of inaccessibility, a
+  good place for a label. Uses a quadtree search (the polylabel algorithm).
+Example:
+  (polygon-inner-point (list #(0 0 4 0 4 4 0 4 0 0)) 0.01) =&gt; #(2 2)</pre>
+</div>
+<div class="entry" id="e20" data-name="ring-area">
+  <div class="entry-name">ring-area</div>
+  <pre class="entry-doc">Syntax: (ring-area ring)
+Library: (scm geo)
+Description: Returns the signed planar area of ring, a closed flat coordinate
+  vector: positive when the ring runs counter-clockwise (with y pointing up),
+  negative when it runs clockwise.
+Example:
+  (ring-area #(0 0 2 0 2 2 0 2 0 0)) =&gt; 4.0</pre>
+</div>
+<div class="entry" id="e21" data-name="ring-bbox">
+  <div class="entry-name">ring-bbox</div>
+  <pre class="entry-doc">Syntax: (ring-bbox ring)
+Library: (scm geo)
+Description: Returns the bounding box of ring (or of any flat coordinate
+  vector) as #(xmin ymin xmax ymax).
+Example:
+  (ring-bbox #(0 0 3 1 1 2 0 0)) =&gt; #(0 0 3 2)</pre>
+</div>
+<div class="entry" id="e22" data-name="ring-groups">
+  <div class="entry-name">ring-groups</div>
+  <pre class="entry-doc">Syntax: (ring-groups rings)
+Library: (scm geo)
+Description: Groups rings into polygons as rings-&gt;polygons does, but returns
+  the rings by position: a list of polygons, each a list of pairs (index .
+  reverse?), the outer ring first, where index is the position of the ring in
+  rings and reverse? tells whether it runs the wrong way (outer rings
+  counter-clockwise, holes clockwise).
+Example:
+  (ring-groups (list #(0 0 4 0 4 4 0 4 0 0) #(1 1 2 1 2 2 1 2 1 1))) =&gt; (((0 . #f) (1 . #t)))</pre>
+</div>
+<div class="entry" id="e23" data-name="ring-point-count">
+  <div class="entry-name">ring-point-count</div>
+  <pre class="entry-doc">Syntax: (ring-point-count ring)
+Library: (scm geo)
+Description: Returns the number of points in ring (or in any flat coordinate
+  vector), counting a closed ring's last point, which repeats its first.
+Example:
+  (ring-point-count #(0 0 1 0 1 1 0 0)) =&gt; 4</pre>
+</div>
+<div class="entry" id="e24" data-name="ring-reverse">
+  <div class="entry-name">ring-reverse</div>
+  <pre class="entry-doc">Syntax: (ring-reverse ring)
+Library: (scm geo)
+Description: Returns ring with its points in the opposite order.
+Example:
+  (ring-reverse #(0 0 1 0 1 1 0 0)) =&gt; #(0 0 1 1 1 0 0 0)</pre>
+</div>
+<div class="entry" id="e25" data-name="rings-&gt;polygons">
+  <div class="entry-name">rings-&gt;polygons</div>
+  <pre class="entry-doc">Syntax: (rings-&gt;polygons rings)
+Library: (scm geo)
+Description: Groups rings into polygons and returns a list of them, each a
+  list whose first ring is the outer ring and whose other rings are its holes.
+  Outer rings are made counter-clockwise and holes clockwise; a hole goes to
+  the smallest outer ring that contains it. Rings without area are dropped.
+Example:
+  (length (rings-&gt;polygons (list #(0 0 4 0 4 4 0 4 0 0) #(1 1 2 1 2 2 1 2 1 1)))) =&gt; 1</pre>
+</div>
+<div class="entry" id="e26" data-name="rings-area">
+  <div class="entry-name">rings-area</div>
+  <pre class="entry-doc">Syntax: (rings-area rings)
+Library: (scm geo)
+Description: Returns the area enclosed by rings, outer rings counted positive
+  and holes negative whatever their orientation: the absolute area of a ring
+  inside an even number of other rings is added, the others subtracted.
+Example:
+  (rings-area (list #(0 0 4 0 4 4 0 4 0 0) #(1 1 1 2 2 2 2 1 1 1))) =&gt; 15.0</pre>
+</div>
+<div class="entry" id="e27" data-name="rings-bbox">
+  <div class="entry-name">rings-bbox</div>
+  <pre class="entry-doc">Syntax: (rings-bbox rings)
+Library: (scm geo)
+Description: Returns the bounding box of a list of rings, or #f when the list
+  is empty.
+Example:
+  (rings-bbox (list #(0 0 1 0 0 0) #(5 5 6 6 5 5))) =&gt; #(0 0 6 6)</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

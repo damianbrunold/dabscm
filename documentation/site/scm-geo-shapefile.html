@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm geo shapefile) — Dabscm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="toc">
+  <h2>Bindings</h2>
+  <a href="#e0" data-name="dbf-&gt;records">dbf-&gt;records</a>
+  <a href="#e1" data-name="read-shapefile">read-shapefile</a>
+  <a href="#e2" data-name="shapefile-&gt;features">shapefile-&gt;features</a>
+</nav>
+
+<main>
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="index.html">All libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="index.html#sec-scm">Scm Extensions</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm geo shapefile)</span>
+</nav>
+
+<div class="lib-title scm">(scm geo shapefile)</div>
+<p class="lib-sub">Reading ESRI shapefiles and dBASE tables</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><a class="xref" href="scm-geo-shapefile.html"><code>(scm geo shapefile)</code></a> reads ESRI shapefiles into the features of <a class="xref" href="scm-geo.html"><code>(scm geo)</code></a>: the geometry from the <code>.shp</code> file, the attributes from the dBASE table in the <code>.dbf</code> file, decoded as UTF-8 or Latin-1 as the <code>.cpg</code> file says. Polygons, polylines and points are read, with or without Z and M values (which are dropped).</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scm geo) (scm geo shapefile))
+
+(define cantons (read-shapefile "cantons.shp"))
+(map (lambda (f) (feature-ref f "NAME")) cantons)   ;; =&gt; ("Zürich" ...)</code></pre>
+<p><a class="xref" href="#e2"><code>shapefile-&gt;features</code></a> takes the files' contents as bytevectors instead, so a shapefile can be read straight out of a ZIP archive with <a class="xref" href="scm-zip.html"><code>(scm zip)</code></a>:</p>
+<pre><code class="language-scheme">(call-with-input-zip "boundaries.zip"
+  (lambda (z)
+    (shapefile-&gt;features (zip-read-entry-bytevector z "cantons.shp")
+                         (zip-read-entry-bytevector z "cantons.dbf")
+                         'utf-8)))</code></pre>
+</div>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">3 bindings</p>
+
+<div class="entry" id="e0" data-name="dbf-&gt;records">
+  <div class="entry-name">dbf-&gt;records</div>
+  <pre class="entry-doc">Syntax: (dbf-&gt;records dbf [encoding])
+Library: (scm geo shapefile)
+Description: Returns the records of a dBASE table, dbf a bytevector with the
+  contents of a .dbf file, as a list of alists from field name to value.
+  Character fields become strings (decoded with encoding, the symbol utf-8,
+  the default, or latin-1) without trailing blanks, numeric and float fields
+  numbers (exact when integral), logical fields #t or #f, date fields strings
+  "YYYY-MM-DD". An empty value is the symbol null, as in (scm json simple).
+  Deleted records are skipped.
+Example:
+  (dbf-&gt;records dbf-bytes) =&gt; ((("NAME" . "Bern") ("KANTONSNUM" . 2)) ...)</pre>
+</div>
+<div class="entry" id="e1" data-name="read-shapefile">
+  <div class="entry-name">read-shapefile</div>
+  <pre class="entry-doc">Syntax: (read-shapefile path [encoding])
+Library: (scm geo shapefile)
+Description: Reads the ESRI shapefile path (the .shp file) and its attribute
+  table (the .dbf file next to it) and returns a list of features, in file
+  order. Text attributes are decoded with encoding, the symbol utf-8 or
+  latin-1; by default the one named in the .cpg file next to it, else utf-8.
+  See shapefile-&gt;features for the geometry and attribute types.
+Example:
+  (map (lambda (f) (feature-ref f "NAME")) (read-shapefile "cantons.shp")) =&gt; ("Zürich" ...)</pre>
+</div>
+<div class="entry" id="e2" data-name="shapefile-&gt;features">
+  <div class="entry-name">shapefile-&gt;features</div>
+  <pre class="entry-doc">Syntax: (shapefile-&gt;features shp dbf [encoding])
+Library: (scm geo shapefile)
+Description: Returns the features of a shapefile given as bytevectors: shp the
+  contents of the .shp file, dbf those of the .dbf file or #f. This reads a
+  shapefile straight out of a ZIP archive. Polygons (types 5, 15, 25) become
+  polygon geometries, polylines (3, 13, 23) polylines and points (1, 8, 11,
+  18, 21, 28) multipoints; Z and M values are dropped. A null shape has the
+  geometry #f. Attributes are as returned by dbf-&gt;records.
+Example:
+  (length (shapefile-&gt;features shp-bytes dbf-bytes 'utf-8)) =&gt; 26</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>
