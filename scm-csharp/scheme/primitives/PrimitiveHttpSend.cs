@@ -24,10 +24,19 @@ public class PrimitiveHttpSend : Primitive
             ? System.TimeSpan.FromSeconds(req.TimeoutSeconds)
             : System.Threading.Timeout.InfiniteTimeSpan;
         var message = new HttpRequestMessage(new HttpMethod(req.Method), req.Url);
-        foreach (var (name, value) in req.Headers)
-            message.Headers.TryAddWithoutValidation(name, value);
-        if (req.Body != null)
+        if (req.BodyBytes != null)
+            message.Content = new ByteArrayContent(req.BodyBytes);
+        else if (req.Body != null)
             message.Content = new StringContent(req.Body, Encoding.UTF8);
+        // Content-Type and the other entity headers belong to the content, not
+        // the message: added to message.Headers they are silently dropped.
+        foreach (var (name, value) in req.Headers)
+        {
+            if (message.Headers.TryAddWithoutValidation(name, value)) continue;
+            if (message.Content == null) continue;
+            message.Content.Headers.Remove(name);
+            message.Content.Headers.TryAddWithoutValidation(name, value);
+        }
         var response = client.SendAsync(message).GetAwaiter().GetResult();
         return PrimitiveHttpGet.BuildResponse(response);
     }

@@ -9,7 +9,8 @@ public class PrimitiveMakeHttpRequest : Primitive
     public override string Info() =>
         "Syntax: (make-http-request method url headers body) (make-http-request method url headers body timeout-seconds)\n" +
         "Library: (scm net http request)\n" +
-        "Description: Creates an HTTP request object. headers is an alist of (name . value) pairs. body is a string or #f.\n" +
+        "Description: Creates an HTTP request object. headers is an alist of (name . value) pairs. body is a string, a bytevector, or #f.\n" +
+        "  A string body is sent UTF-8 encoded; a bytevector body is sent byte for byte.\n" +
         "  Optional timeout-seconds overrides the default request timeout (600s); <= 0 means no timeout.\n" +
         "Example:\n" +
         "  (make-http-request \"GET\" \"/\" '() #f)";
@@ -30,8 +31,18 @@ public class PrimitiveMakeHttpRequest : Primitive
             headers.Add((key, val));
             hlist = hp.cdr;
         }
-        string? body = arguments[3].Equals(Value.F) ? null : new String(Value.AsString(arguments[3]));
-        var req = new SchemeHttpRequest(method, url, headers, body);
+        string? body = null;
+        byte[]? bodyBytes = null;
+        if (arguments[3] is byte[] bv)
+        {
+            bodyBytes = bv;
+            body = System.Text.Encoding.UTF8.GetString(bv);
+        }
+        else if (!arguments[3].Equals(Value.F))
+        {
+            body = new String(Value.AsString(arguments[3]));
+        }
+        var req = new SchemeHttpRequest(method, url, headers, body, bodyBytes);
         if (arguments.Length == 5)
             req.TimeoutSeconds = (int)Value.AsInteger(arguments[4]);
         return new NativeValue(req);
