@@ -247,7 +247,7 @@ public class VM
         continueExecution:
         try
         {
-        while (ip < this.fn.code.Count)
+        while (ip < this.fn!.code.Count)
         {
             Instruction instruction = this.fn.code[ip++];
             switch (instruction.opcode)

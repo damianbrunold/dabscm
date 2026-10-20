@@ -1,6 +1,6 @@
 # dabscm
 
-A Scheme R7RS interpreter with parallel implementations in C# (.NET 8) and
+A Scheme R7RS interpreter with parallel implementations in C# (.NET 10) and
 Java 11. The two implementations share a common `library.scm` and a common
 set of `.sld` library files, kept in sync from a single source of truth.
 
@@ -54,7 +54,7 @@ Do not run the C# and Java test suites in parallel — they share files and
 directories in the temp folder and will collide.
 
 Requirements:
-- .NET 8 SDK (`dotnet`)
+- .NET 10 SDK (`dotnet`)
 - JDK 11 or later (`java`, `javac`, `jar`)
 
 ## Running

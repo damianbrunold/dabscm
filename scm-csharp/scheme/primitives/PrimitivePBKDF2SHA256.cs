@@ -25,7 +25,6 @@ public class PrimitivePBKDF2SHA256 : Primitive
         byte[] salt = Value.AsBytevector(arguments[1]);
         int iterations = IntegerMath.ToInt(arguments[2]);
         int length = IntegerMath.ToInt(arguments[3]);
-        using var pbkdf2 = new Rfc2898DeriveBytes(password, salt, iterations, HashAlgorithmName.SHA256);
-        return pbkdf2.GetBytes(length);
+        return Rfc2898DeriveBytes.Pbkdf2(password, salt, iterations, HashAlgorithmName.SHA256, length);
     }
 }

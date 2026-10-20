@@ -28,7 +28,7 @@ You need a dabscm executable that understands the `--geiser` flag (dabscm
 **1.9.3 or later**). Build it from the repository root:
 
 ```bash
-# C# build -> produces scm-csharp/repl/bin/Release/net8.0/scm
+# C# build -> produces scm-csharp/repl/bin/Release/net10.0/scm
 ./builder.sh build-scm-csharp.scm
 
 # or the Java build -> produces scm-java/scm.jar
@@ -41,7 +41,7 @@ configuration below). A common setup is a small wrapper on your `PATH`:
 ```bash
 # ~/bin/scm  (C# build)
 #!/bin/bash
-exec /path/to/dabscm/scm-csharp/repl/bin/Release/net8.0/scm "$@"
+exec /path/to/dabscm/scm-csharp/repl/bin/Release/net10.0/scm "$@"
 ```
 
 ```bash
