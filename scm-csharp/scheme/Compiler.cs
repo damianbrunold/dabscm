@@ -27,7 +27,34 @@ public class Compiler
         ["eqv?"] = (Opcode.EQV_P,  2),
         ["vector-ref"]  = (Opcode.VECTOR_REF,  2),
         ["vector-set!"] = (Opcode.VECTOR_SET,  3),
+        ["list"] = (Opcode.LIST,   -1),
     };
+
+    private static readonly string[] s_cxrNames =
+    {
+        "caar", "cadr", "cadar", "cdar", "cddr",
+        "caaar", "caadr", "caddr", "cdaar", "cdadr", "cddar", "cdddr",
+        "caaaar", "caaadr", "caadar", "caaddr", "cadaar", "cadadr", "caddar", "cadddr",
+        "cdaaar", "cdaadr", "cdadar", "cdaddr", "cddaar", "cddadr", "cdddar", "cddddr"
+    };
+
+    static Compiler()
+    {
+        foreach (var name in s_cxrNames)
+            s_intrinsics[name] = (Opcode.CXR, 1);
+    }
+
+    /// <summary>
+    /// The car/cdr steps of a c[ad]+r name as bits, first step lowest
+    /// (1 = cdr, 0 = car), above a leading 1: caddr -> 0b1011.
+    /// </summary>
+    public static int CxrPath(string name)
+    {
+        int path = 1;
+        for (int i = 1; i < name.Length - 1; i++)
+            path = (path << 1) | (name[i] == 'd' ? 1 : 0);
+        return path;
+    }
 
     public Compiler(Modules modules)
     {
@@ -513,16 +540,19 @@ public class Compiler
                     int argc = (args == Value.NIL ? 0 : Value.AsPair(args).Length());
                     if (info.arity == -1 || argc == info.arity)
                     {
+                        object opInstr = info.op == Opcode.CXR
+                            ? Gen(pos, info.op, CxrPath(intrinsicName), intrinsicName)
+                            : Gen(pos, info.op, argc);
                         if (more)
                         {
                             return Seq(pos,
                                 CompList(pos, args, env),
-                                Gen(pos, info.op, argc),
+                                opInstr,
                                 val ? (object)Value.NIL : Gen(pos, Opcode.POP));
                         }
                         return Seq(pos,
                             CompList(pos, args, env),
-                            Gen(pos, info.op, argc),
+                            opInstr,
                             Gen(pos, Opcode.RETURN));
                     }
                 }

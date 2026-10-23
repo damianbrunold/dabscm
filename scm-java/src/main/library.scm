@@ -47,7 +47,7 @@
 (define second (%primitive "second"))
 (define length (%primitive "length"))
 (define member (%primitive "member"))
-(define list (lambda x x))
+(define list (%primitive "list"))
 
 ;; Source location
 (define current-source-location (%primitive "current-source-location"))
@@ -61,29 +61,9 @@
 (define generate-temporaries (%primitive "generate-temporaries"))
 
 
-(define (cdar pair)
-  "Syntax: (cdar pair)
-Library: (scheme base)
-Description: Returns the cdr of the car of pair. Equivalent to (cdr (car pair)).
-Example:
-  (cdar '((1 2) 3)) => (2)"
-  (cdr (car pair)))
-
-(define (cddr pair)
-  "Syntax: (cddr pair)
-Library: (scheme base)
-Description: Returns the cdr of the cdr of pair. Equivalent to (cdr (cdr pair)).
-Example:
-  (cddr '(1 2 3)) => (3)"
-  (cdr (cdr pair)))
-
-(define (caddr pair)
-  "Syntax: (caddr pair)
-Library: (scheme base)
-Description: Returns the car of the cdr of the cdr of pair. Equivalent to (car (cdr (cdr pair))). This is the third element of a list.
-Example:
-  (caddr '(1 2 3)) => 3"
-  (car (cdr (cdr pair))))
+(define cdar (%primitive "cdar"))
+(define cddr (%primitive "cddr"))
+(define caddr (%primitive "caddr"))
 
 (define (third pair)
   "Syntax: (third pair)
@@ -198,17 +178,7 @@ Example:
           (loop (- n 1) (cons (vector-ref v n) r))))))
 
 
-(define (reverse ls)
-  "Syntax: (reverse list)
-Library: (scheme base)
-Description: Returns a newly allocated list containing the elements of list in reverse order.
-Example:
-  (reverse '(1 2 3)) => (3 2 1)
-  (reverse '()) => ()"
-  (let loop ((ls ls) (acc '()))
-    (if (null? ls)
-	acc
-	(loop (cdr ls) (cons (car ls) acc)))))
+(define reverse (%primitive "reverse"))
 
 (define-syntax case
   "Syntax: (case key ((datum ...) expr ...) ... (else expr ...))

@@ -898,7 +898,7 @@
   (=> (calc '(mul (add 1 -2) (pow 2 7))) '("invalid operator" pow)))
 
 (test-group
-  (=> list "#<list>"))
+  (=> list "#<p:list>"))
 
 (test-group
   (define x 'a)

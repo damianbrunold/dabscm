@@ -774,6 +774,24 @@ public class VM {
                     stack[sp - 1] = Value.asPair(stack[sp - 1]).cdr;
                     break;
 
+                case CXR: {
+                    Object v = stack[sp - 1];
+                    for (int p = instruction.i1; p != 1; p >>>= 1)
+                        v = (p & 1) != 0 ? Value.asPair(v).cdr : Value.asPair(v).car;
+                    stack[sp - 1] = v;
+                    break;
+                }
+
+                case LIST: {
+                    Object lst = Value.NIL;
+                    for (int i = instruction.i1; i > 0; i--) {
+                        lst = new Pair(stack[--sp], lst);
+                        stack[sp] = null;
+                    }
+                    stack[sp++] = lst;
+                    break;
+                }
+
                 case CONS: {
                     Object icdr = stack[--sp];
                     stack[sp - 1] = new Pair(stack[sp - 1], icdr);
@@ -1022,7 +1040,8 @@ public class VM {
             Instruction failed = fn != null && ip > 0 && ip <= fn.code.size() ? fn.code.get(ip - 1) : null;
             String name = "VM";
             if (failed != null) {
-                name = opcodeErrorName(failed.opcode);
+                name = failed.opcode == Opcode.CXR ? (String) failed.arg2
+                     : opcodeErrorName(failed.opcode);
                 if (name == null) name = failed.opcode + " instruction";
             }
             SchemeError err = wrongArgumentTypeError(failed != null ? failed.pos : null, name, cce);

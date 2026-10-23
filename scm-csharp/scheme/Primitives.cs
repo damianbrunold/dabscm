@@ -71,6 +71,7 @@ public class Primitives
         Bind(new PrimitiveCaar());
         Bind(new PrimitiveCadar());
         Bind(new PrimitiveCadr());
+        foreach (var name in PrimitiveCxr.Names) Bind(new PrimitiveCxr(name));
         Bind(new PrimitiveCar());
         Bind(new PrimitiveCdr());
         Bind(new PrimitiveCeiling());
@@ -247,6 +248,7 @@ public class Primitives
         Bind(new PrimitiveKill());
         Bind(new PrimitiveLambdaP());
         Bind(new PrimitiveLength());
+        Bind(new PrimitiveList());
         Bind(new PrimitiveListP());
         Bind(new PrimitiveListRef());
         Bind(new PrimitiveLoad(modules));
@@ -380,6 +382,7 @@ public class Primitives
         Bind(new PrimitiveRecordSetB());
         Bind(new PrimitiveRemainder());
         Bind(new PrimitiveResetModules(modules));
+        Bind(new PrimitiveReverse());
         Bind(new PrimitiveRound());
         Bind(new PrimitiveRsaDecrypt());
         Bind(new PrimitiveRsaEncrypt());

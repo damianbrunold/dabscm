@@ -78,6 +78,7 @@ public class Primitives {
         bind(new PrimitiveCaar());
         bind(new PrimitiveCadar());
         bind(new PrimitiveCadr());
+        for (String name : PrimitiveCxr.NAMES) bind(new PrimitiveCxr(name));
         bind(new PrimitiveCar());
         bind(new PrimitiveCdr());
         bind(new PrimitiveCeiling());
@@ -255,6 +256,7 @@ public class Primitives {
         bind(new PrimitiveKill());
         bind(new PrimitiveLambdaP());
         bind(new PrimitiveLength());
+        bind(new PrimitiveList());
         bind(new PrimitiveListP());
         bind(new PrimitiveListRef());
         bind(new PrimitiveLoad(modules));
@@ -388,6 +390,7 @@ public class Primitives {
         bind(new PrimitiveRecordSetB());
         bind(new PrimitiveRemainder());
         bind(new PrimitiveResetModules(modules));
+        bind(new PrimitiveReverse());
         bind(new PrimitiveRound());
         bind(new PrimitiveRsaDecrypt());
         bind(new PrimitiveRsaEncrypt());

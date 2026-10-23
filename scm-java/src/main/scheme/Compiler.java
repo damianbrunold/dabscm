@@ -13,6 +13,13 @@ public class Compiler {
     private Modules modules;
     private BindingTable bindingTable;
 
+    private static final String[] CXR_NAMES = {
+        "caar", "cadr", "cadar", "cdar", "cddr",
+        "caaar", "caadr", "caddr", "cdaar", "cdadr", "cddar", "cdddr",
+        "caaaar", "caaadr", "caadar", "caaddr", "cadaar", "cadadr", "caddar", "cadddr",
+        "cdaaar", "cdaadr", "cdadar", "cdaddr", "cddaar", "cddadr", "cdddar", "cddddr"
+    };
+
     // Intrinsic opcodes: bare calls to these names (when not shadowed) skip SAVE/GVAR/CALLJ
     private static final Map<String, int[]> INTRINSICS = new HashMap<>();
     // int[] = { opcode ordinal, arity (-1 = variable) }
@@ -36,6 +43,20 @@ public class Compiler {
         INTRINSICS.put("eqv?", new int[]{ Opcode.EQV_P.ordinal(),  2 });
         INTRINSICS.put("vector-ref",  new int[]{ Opcode.VECTOR_REF.ordinal(),  2 });
         INTRINSICS.put("vector-set!", new int[]{ Opcode.VECTOR_SET.ordinal(),  3 });
+        INTRINSICS.put("list", new int[]{ Opcode.LIST.ordinal(),   -1 });
+        for (String name : CXR_NAMES)
+            INTRINSICS.put(name, new int[]{ Opcode.CXR.ordinal(), 1 });
+    }
+
+    /**
+     * The car/cdr steps of a c[ad]+r name as bits, first step lowest
+     * (1 = cdr, 0 = car), above a leading 1: caddr -> 0b1011.
+     */
+    public static int cxrPath(String name) {
+        int path = 1;
+        for (int i = 1; i < name.length() - 1; i++)
+            path = (path << 1) | (name.charAt(i) == 'd' ? 1 : 0);
+        return path;
     }
 
     public Compiler(Modules modules) {
@@ -460,15 +481,18 @@ public class Compiler {
                     int argc = (args == Value.NIL ? 0 : Value.asPair(args).length());
                     if (info[1] == -1 || argc == info[1]) {
                         Opcode op = Opcode.values()[info[0]];
+                        Object opInstr = op == Opcode.CXR
+                            ? gen(pos, op, cxrPath(intrinsicName), intrinsicName)
+                            : gen(pos, op, argc);
                         if (more) {
                             return seq(pos,
                                        compList(pos, args, env),
-                                       gen(pos, op, argc),
+                                       opInstr,
                                        val ? Value.NIL : gen(pos, Opcode.POP));
                         }
                         return seq(pos,
                                    compList(pos, args, env),
-                                   gen(pos, op, argc),
+                                   opInstr,
                                    gen(pos, Opcode.RETURN));
                     }
                 }

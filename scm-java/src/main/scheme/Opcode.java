@@ -41,4 +41,6 @@ public enum Opcode
     LVAR_VREF,                                // LVAR + CONST k + VECTOR_REF
     LVAR_NULL_FJUMP, LVAR_PAIR_FJUMP,         // LVAR + IS_NULL/IS_PAIR + FJUMP
     CONST_EQ_FJUMP,                           // CONST + EQ_P + FJUMP
+    // (c[ad]+r x): path bits + name (Compiler.cxrPath); (list a ...): n
+    CXR, LIST,
 }

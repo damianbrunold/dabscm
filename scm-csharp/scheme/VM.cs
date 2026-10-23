@@ -858,6 +858,25 @@ public class VM
                     stack[sp - 1] = Value.AsPair(stack[sp - 1]).cdr;
                     break;
 
+                case Opcode.CXR: {
+                    object v = stack[sp - 1];
+                    for (int p = instruction.i1; p != 1; p >>= 1)
+                        v = (p & 1) != 0 ? Value.AsPair(v).cdr : Value.AsPair(v).car;
+                    stack[sp - 1] = v;
+                    break;
+                }
+
+                case Opcode.LIST: {
+                    object lst = Value.NIL;
+                    for (int i = instruction.i1; i > 0; i--)
+                    {
+                        lst = new Pair(stack[--sp], lst);
+                        stack[sp] = null!;
+                    }
+                    stack[sp++] = lst;
+                    break;
+                }
+
                 case Opcode.CONS: {
                     object icdr = stack[--sp];
                     stack[sp - 1] = new Pair(stack[sp - 1], icdr);
@@ -1123,6 +1142,7 @@ public class VM
             // failing instruction is the one fetched last.
             Instruction? failed = ip > 0 && ip <= fn.code.Count ? fn.code[ip - 1] : null;
             string name = failed == null ? "VM"
+                : failed.opcode == Opcode.CXR ? (string)failed.arg2!
                 : OpcodeErrorName(failed.opcode) ?? failed.opcode + " instruction";
             var err = WrongArgumentTypeError(failed?.pos, name, e);
             this.fn = fn; this.ip = ip; this.env = env; this.sp = sp;
