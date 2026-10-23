@@ -134,11 +134,11 @@
   ;; not valid UTF-8 survive.
   (test-equal (bytevector 80 75 3 4 0 255 128 10)
     (guard (exn (#t #f))
-      (let* ((server (tcp-http-serve 18097
+      (let* ((server (tcp-http-serve 18087
                        (lambda (req)
                          (make-http-response 200 '(("Content-Type" . "application/zip"))
                                              (bytevector 80 75 3 4 0 255 128 10)))))
-             (get (lambda () (http-get-bytevector "http://localhost:18097/a.zip")))
+             (get (lambda () (http-get-bytevector "http://localhost:18087/a.zip")))
              (resp (let loop ((n 0))
                      (if (< n 3)
                          (guard (e (#t (loop (+ n 1)))) (get))
@@ -151,7 +151,7 @@
   ;; 413 Payload Too Large: max-body-bytes=8 rejects a 100-byte body.
   (test-equal 413
     (guard (exn (#t -1))
-      (let* ((server (tcp-http-serve 18097
+      (let* ((server (tcp-http-serve 18086
                                      (lambda (req) (http-ok "should-not-run"))
                                      0   ; max-threads (default)
                                      ""  ; host (default)
@@ -160,10 +160,10 @@
              (resp (let loop ((n 0))
                      (if (< n 3)
                          (guard (e (#t (loop (+ n 1))))
-                           (http-post "http://localhost:18097/"
+                           (http-post "http://localhost:18086/"
                                       "01234567890123456789"
                                       '(("Content-Type" . "text/plain"))))
-                         (http-post "http://localhost:18097/"
+                         (http-post "http://localhost:18086/"
                                     "01234567890123456789"
                                     '(("Content-Type" . "text/plain")))))))
         (server-stop server 0)

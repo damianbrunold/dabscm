@@ -9,10 +9,13 @@ public class Instruction {
     public Opcode opcode;
     public Object arg1;
     public Object arg2;
-    // arg1/arg2 as ints when they are Integers (frame/var indexes, jump
-    // targets, arg counts): read by the VM without unboxing
+    // third operand of the fused opcodes (see hasArg3)
+    public Object arg3;
+    // arg1/arg2/arg3 as ints when they are Integers (frame/var indexes,
+    // jump targets, arg counts): read by the VM without unboxing
     public int i1;
     public int i2;
+    public int i3;
     public SourcePos pos;
     // Cached binding cell for GVAR/GSET fast path. Populated on first
     // successful resolution. Once set, the cell reference is stable for
@@ -44,6 +47,17 @@ public class Instruction {
     public void decodeInts() {
         if (arg1 instanceof Integer) i1 = (Integer) arg1;
         if (arg2 instanceof Integer) i2 = (Integer) arg2;
+        if (arg3 instanceof Integer) i3 = (Integer) arg3;
+    }
+
+    public static boolean hasArg3(Opcode opcode) {
+        switch (opcode) {
+            case GCALLS: case GCALLJ: case LVAR_VREF:
+            case LVAR_NULL_FJUMP: case LVAR_PAIR_FJUMP:
+                return true;
+            default:
+                return false;
+        }
     }
 
     public Instruction withPos(SourcePos pos)
@@ -64,6 +78,9 @@ public class Instruction {
                 } else {
                     result.append(" ").append(arg2);
                 }
+            }
+            if (arg3 != null) {
+                result.append(" ").append(arg3);
             }
             if (pos != null) {
                 result.append(" ").append(pos);

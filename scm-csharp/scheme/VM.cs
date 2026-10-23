@@ -5,6 +5,10 @@ namespace scheme;
 public class VM
 {
     private Modules modules;
+
+    // The VM state. While Execute runs it lives in Execute's locals; these
+    // fields hold it only where code outside the dispatch loop needs it
+    // (SetupRaiseCall, ExtractCallStack) and between executes.
     private Lambda? fn;
     private int ip;
     private object env = Value.NIL;
@@ -40,8 +44,8 @@ public class VM
     // for the error message; null for the VM's internal opcodes.
     private static string? OpcodeErrorName(Opcode op) => op switch
     {
-        Opcode.CAR => "car",
-        Opcode.CDR => "cdr",
+        Opcode.CAR or Opcode.LVAR_CAR => "car",
+        Opcode.CDR or Opcode.LVAR_CDR => "cdr",
         Opcode.CONS => "cons",
         Opcode.IS_NULL => "null?",
         Opcode.IS_PAIR => "pair?",
@@ -57,7 +61,7 @@ public class VM
         Opcode.NUM_GTE => ">=",
         Opcode.EQ_P => "eq?",
         Opcode.EQV_P => "eqv?",
-        Opcode.VECTOR_REF => "vector-ref",
+        Opcode.VECTOR_REF or Opcode.LVAR_VREF => "vector-ref",
         Opcode.VECTOR_SET => "vector-set!",
         Opcode.FLATTEN_APPLY => "apply",
         _ => null
@@ -158,41 +162,48 @@ public class VM
 
     // An environment is a chain of frames: object[] with the parent
     // environment in slot 0 and the frame's variables from slot 1.
-    private object Getenv(int frame, int variable)
+    private static object Getenv(object env, int frame, int variable)
     {
         var f = (object[])env;
         for (int i = 0; i < frame; i++) f = (object[])f[0];
         return f[variable + 1];
     }
 
-    private void Setenv(int frame, int variable, object value)
+    private static void Setenv(object env, int frame, int variable, object value)
     {
         var f = (object[])env;
         for (int i = 0; i < frame; i++) f = (object[])f[0];
         f[variable + 1] = value;
     }
 
-    // Opt A: array-based stack operations
+    // The dispatch loop pushes without a bounds check: an instruction
+    // pushes at most one value and jumps only forward, so the rest of the
+    // current function needs at most one slot per remaining instruction.
+    // That room is made whenever a function is entered or returned to, at
+    // backward jumps (only possible in code from set-code!) and by the
+    // instructions that push many values.
+    private object[] EnsureStack(object[] stack, int needed)
+    {
+        if (needed <= stack.Length) return stack;
+        var bigger = new object[Math.Max(stack.Length * 2, needed)];
+        Array.Copy(stack, bigger, stack.Length);
+        stackArr = bigger;
+        return bigger;
+    }
+
+    // Opt A: array-based stack; Push for the code outside the dispatch loop
     private void Push(object value)
     {
-        if (sp == stackArr.Length)
-        {
-            var bigger = new object[stackArr.Length * 2];
-            Array.Copy(stackArr, bigger, sp);
-            stackArr = bigger;
-        }
+        stackArr = EnsureStack(stackArr, sp + 1);
         stackArr[sp++] = value;
     }
 
-    private object Pop()
-    {
-        object value = stackArr[--sp];
-        stackArr[sp] = null!; // clear for GC
-        return value;
-    }
+    // Booleans boxed once: the VM pushes these instead of boxing Value.T
+    // and Value.F at every test (eq? compares booleans by value).
+    private static readonly object True = Value.T;
+    private static readonly object False = Value.F;
 
-    private object Top() => stackArr[sp - 1];
-    private object Second() => stackArr[sp - 2];
+    private static bool IsFalse(object value) => value is bool b && !b;
 
     private static object PrimaryValue(object value)
     {
@@ -221,6 +232,266 @@ public class VM
         return frames;
     }
 
+    // Cold paths of the dispatch loop, kept out of Execute so that the JIT
+    // compiles the loop itself well.
+
+    // The binding cell of a global variable, cached in the instruction
+    // (GVAR, GCALLS, GCALLJ).
+    private Cell GlobalCell(Instruction instruction, object symbolObj, string moduleName)
+    {
+        var cell = instruction.cachedCell;
+        if (cell != null && instruction.cachedCellGeneration == modules.CacheGeneration)
+            return cell;
+        try
+        {
+            var symbol = Value.AsSymbol(symbolObj);
+            var module = modules.GetModuleRequired(instruction.pos, moduleName);
+            var resolved = module.ResolveCell(symbol);
+            if (resolved == null)
+                throw new SchemeError(instruction.pos, module.Name + ": ~a is not bound", symbol);
+            instruction.cachedCell = resolved;
+            instruction.cachedCellGeneration = modules.CacheGeneration;
+            return resolved;
+        }
+        catch (SchemeError)
+        {
+            throw;
+        }
+        catch (Exception)
+        {
+            throw new SchemeError(instruction.pos, "internal error");
+        }
+    }
+
+    private void GlobalSet(Instruction instruction, object value)
+    {
+        var module = modules.GetModuleRequired(instruction.pos, (string) instruction.arg2!);
+        var symbol = Value.AsSymbol(instruction.arg1!);
+        if (Scheme.StrictImports && module.Name == "user program")
+        {
+            if (module.Provenance.TryGetValue(symbol, out var origin) &&
+                origin != module.Name && origin != "scm core")
+            {
+                throw new SchemeError(instruction.pos,
+                    "program: cannot redefine imported symbol '~a' from '~a'",
+                    symbol, origin);
+            }
+        }
+        module.Bind(symbol, value);
+        instruction.cachedCell = module.ResolveCell(symbol);
+        instruction.cachedCellGeneration = modules.CacheGeneration;
+        if (Value.IsLambda(value))
+        {
+            Value.AsLambda(value).name = instruction.arg1?.ToString() ?? "?";
+        }
+    }
+
+    private static SchemeError ArityError(Lambda fn, Instruction instruction, int nargs, string expected)
+    {
+        return new SchemeError(
+            instruction.pos,
+            (fn.name != null ? fn.name + " " : "") +
+            "Wrong number of arguments: "
+            + instruction.arg1! + expected + " expected, "
+            + nargs + " supplied"
+        );
+    }
+
+    // Applies the primitive f to the argcount values at stack[sp..], which
+    // the caller has popped; their slots are cleared.
+    private object ApplyPrimitive(object f, SourcePos? pos, object[] stack, int sp, int argcount)
+    {
+        var prim = Value.AsPrimitive(f);
+        // Opt C: use pooled arg arrays
+        object[] args = RentArgs(argcount);
+        for (int i = 0; i < argcount; i++)
+        {
+            args[i] = PrimaryValue(stack[sp + i]);
+            stack[sp + i] = null!;
+        }
+        object result;
+        try
+        {
+            result = prim.Apply(pos, args);
+        }
+        catch (SchemeError)
+        {
+            ReturnArgs(args);
+            throw;
+        }
+        catch (InvalidCastException e)
+        {
+            ReturnArgs(args);
+            throw WrongArgumentTypeError(pos, prim.Name(), e);
+        }
+        catch (Exception e)
+        {
+            ReturnArgs(args);
+            throw new SchemeError(pos, "Failed in " + prim.Name() + ": " + e.Message);
+        }
+        // If a primitive stored the args array directly in the result (e.g. `values`),
+        // clone it before clearing so the result isn't corrupted.
+        if (result is Values pooledVals && object.ReferenceEquals(pooledVals.values, args))
+            pooledVals.values = (object[])args.Clone();
+        ReturnArgs(args);
+        return result;
+    }
+
+    // An arithmetic intrinsic with other than the inlined argument count:
+    // the n values at stack[sp..], popped by the caller.
+    private object ApplyIntrinsic(Primitive prim, SourcePos? pos, object[] stack, int sp, int n)
+    {
+        object[] iarr = RentArgs(n);
+        Array.Copy(stack, sp, iarr, 0, n);
+        object result = prim.Apply(pos, iarr);
+        ReturnArgs(iarr);
+        return result;
+    }
+
+    // The two-argument arithmetic beyond fixnums without overflow.
+    private static object Add2(object ia, object ib)
+    {
+        if (Value.IsInteger(ia) && Value.IsInteger(ib)) return IntegerMath.GenericAdd(ia, ib);
+        if (ia is double || ib is double)
+        {
+            if (ia is Complex || ib is Complex) return Complex.Add(ia, ib);
+            return VmToReal(ia) + VmToReal(ib);
+        }
+        if (ia is Complex || ib is Complex) return Complex.Add(ia, ib);
+        return Rational.Add(ia, ib);
+    }
+
+    private static object Sub2(object ia, object ib)
+    {
+        if (Value.IsInteger(ia) && Value.IsInteger(ib)) return IntegerMath.GenericSub(ia, ib);
+        if (ia is double || ib is double)
+        {
+            if (ia is Complex || ib is Complex) return Complex.Sub(ia, ib);
+            return VmToReal(ia) - VmToReal(ib);
+        }
+        if (ia is Complex || ib is Complex) return Complex.Sub(ia, ib);
+        return Rational.Sub(ia, ib);
+    }
+
+    private static object Mul2(object ia, object ib)
+    {
+        if (Value.IsInteger(ia) && Value.IsInteger(ib)) return IntegerMath.GenericMul(ia, ib);
+        if (ia is double || ib is double)
+        {
+            if (ia is Complex || ib is Complex) return Complex.Mul(ia, ib);
+            return VmToReal(ia) * VmToReal(ib);
+        }
+        if (ia is Complex || ib is Complex) return Complex.Mul(ia, ib);
+        return Rational.Mul(ia, ib);
+    }
+
+    private static object Div2(SourcePos? pos, object ia, object ib)
+    {
+        if (ia is long ial && ib is long ibl)
+        {
+            if (ibl == 0) throw new SchemeError(pos, "/: Division by zero");
+            return Rational.Div(ial, ibl);
+        }
+        if (ia is double || ib is double)
+        {
+            if (ia is Complex || ib is Complex) return Complex.Div(ia, ib);
+            double dib = VmToReal(ib);
+            if (dib == 0.0) throw new SchemeError(pos, "/: Division by ~s", dib);
+            return VmToReal(ia) / dib;
+        }
+        if (ia is Complex || ib is Complex) return Complex.Div(ia, ib);
+        return Rational.Div(ia, ib);
+    }
+
+    private static object Negate(object ia)
+    {
+        if (ia is long ial) return IntegerMath.Negate(ial);
+        if (Value.IsBigInteger(ia)) return IntegerMath.GenericNegate(ia);
+        if (ia is double iad) return -iad;
+        if (ia is Complex) return Complex.Negate(ia);
+        return Rational.Sub(0L, ia);
+    }
+
+    // =, <, >, <=, >= on two numbers that are not both fixnums.
+    private static bool Compare2(Opcode op, SourcePos? pos, object ia, object ib)
+    {
+        if (op == Opcode.NUM_EQ)
+        {
+            if (Value.IsInteger(ia) && Value.IsInteger(ib)) return IntegerMath.GenericEquals(ia, ib);
+            if (ia is double iad && ib is double ibd) return iad == ibd;
+            if (ia is Complex || ib is Complex) return Complex.NumericEquals(ia, ib);
+            return Primitive.MixedNumericEquals(ia, ib);
+        }
+        if (Value.IsInteger(ia) && Value.IsInteger(ib))
+        {
+            int c = IntegerMath.Compare(ia, ib);
+            return op switch
+            {
+                Opcode.NUM_LT => c < 0,
+                Opcode.NUM_GT => c > 0,
+                Opcode.NUM_LTE => c <= 0,
+                _ => c >= 0
+            };
+        }
+        if (ia is Complex || ib is Complex)
+            throw new SchemeError(pos, OpcodeErrorName(op) + ": complex numbers are not ordered");
+        return op switch
+        {
+            Opcode.NUM_LT => Primitive.NumLess(ia, ib),
+            Opcode.NUM_GT => Primitive.NumGreater(ia, ib),
+            Opcode.NUM_LTE => Primitive.NumLessEq(ia, ib),
+            _ => Primitive.NumGreaterEq(ia, ib)
+        };
+    }
+
+    // The arguments of (apply f a ... list) from its rest argument.
+    private static List<object> FlattenApplyArgs(Instruction instruction, object restObj)
+    {
+        List<object> args = new();
+        if (restObj == Value.NIL)
+            throw new SchemeError(instruction.pos, "apply: not enough arguments");
+        object pair = Value.AsPair(restObj);
+        while (pair != Value.NIL)
+        {
+            if (Value.AsPair(pair).cdr == Value.NIL)
+            {
+                if (!Value.IsPair(Value.AsPair(pair).car) && !Value.IsNil(Value.AsPair(pair).car))
+                    throw new SchemeError(instruction.pos, "apply: last argument must be a list");
+                pair = Value.AsPair(pair).car == Value.NIL ? Value.NIL : Value.AsPair(Value.AsPair(pair).car);
+                while (pair != Value.NIL)
+                {
+                    args.Add(Value.AsPair(pair).car);
+                    pair = Value.AsPair(pair).cdr;
+                }
+                break;
+            }
+            else
+            {
+                args.Add(Value.AsPair(pair).car);
+                pair = Value.AsPair(pair).cdr;
+            }
+        }
+        return args;
+    }
+
+    // The continuation of the current stack as a procedure (CC).
+    private static Lambda CaptureContinuation(object[] stack, int sp)
+    {
+        // Opt A: serialize array stack to Pair chain for capture
+        object capturedStack = Value.NIL;
+        for (int i = sp - 1; i >= 0; i--)
+            capturedStack = new Pair(stack[i], capturedStack);
+        List<Instruction> newcode = new();
+        newcode.Add(new Instruction(Opcode.ARGMV));
+        newcode.Add(new Instruction(Opcode.LVAR, 1, 0));
+        newcode.Add(new Instruction(Opcode.SETCC));
+        newcode.Add(new Instruction(Opcode.LVAR, 0, 0));
+        newcode.Add(new Instruction(Opcode.RETURN));
+        // Opt B: env frame must be object[]
+        object capturedEnv = new object[] { Value.NIL, capturedStack };
+        return new Lambda(capturedEnv, newcode);
+    }
+
     public object Execute(Lambda func)
     {
         VM? savedCurrent = VM.Current;
@@ -235,70 +506,39 @@ public class VM
             SchemeThread.CurrentThread = primordial;
         }
         SchemeThread? currentThread = SchemeThread.CurrentThread;
-        int savedSp = sp;
+        int savedSp = this.sp;
         object savedWinders = winders;
         object savedExceptionHandlers = exceptionHandlers;
-        Push(new ReturnAddress(func.code.Count, func, env));
-        this.fn = func;
-        this.ip = 0;
-        this.nargs = 0;
+        Push(new ReturnAddress(func.code.Count, func, this.env));
+        Lambda fn = func;
+        Instruction[] code = fn.codeArr;
+        int ip = 0;
+        object env = this.env;
+        int sp = this.sp;
+        object[] stack = EnsureStack(stackArr, sp + code.Length);
+        int nargs = 0;
         continueExecution:
         try
         {
-        while (ip < this.fn!.codeArr.Length)
+        while (ip < code.Length)
         {
-            Instruction instruction = this.fn.codeArr[ip++];
+            Instruction instruction = code[ip++];
             switch (instruction.opcode)
             {
                 case Opcode.LVAR:
-                    Push(Getenv(instruction.i1,
-                                instruction.i2));
+                    stack[sp] = Getenv(env, instruction.i1, instruction.i2); sp++;
                     break;
 
                 case Opcode.LSET:
-                    Setenv(
-                        instruction.i1,
-                        instruction.i2,
-                        PrimaryValue(Top())
-                    );
+                    Setenv(env, instruction.i1, instruction.i2, PrimaryValue(stack[sp - 1]));
                     break;
 
                 case Opcode.GVAR:
-                {
-                    var cell = instruction.cachedCell;
-                    if (cell != null && instruction.cachedCellGeneration == modules.CacheGeneration)
-                    {
-                        Push(cell.value);
-                        break;
-                    }
-                    try
-                    {
-                        var moduleName = (string)instruction.arg2!;
-                        var symbol = Value.AsSymbol(instruction.arg1!);
-                        var module = modules.GetModuleRequired(instruction.pos, moduleName);
-                        var resolved = module.ResolveCell(symbol);
-                        if (resolved == null)
-                            throw new SchemeError(instruction.pos, module.Name + ": ~a is not bound", symbol);
-                        instruction.cachedCell = resolved;
-                        instruction.cachedCellGeneration = modules.CacheGeneration;
-                        Push(resolved.value);
-                    }
-                    catch (SchemeError)
-                    {
-                        throw;
-                    }
-                    catch (Exception)
-                    {
-                        throw new SchemeError(
-                            instruction.pos,
-                            "internal error"
-                        );
-                    }
+                    stack[sp] = GlobalCell(instruction, instruction.arg1!, (string)instruction.arg2!).value; sp++;
                     break;
-                }
 
                 case Opcode.GSET: {
-                    object value = PrimaryValue(Top());
+                    object value = PrimaryValue(stack[sp - 1]);
                     var cachedCell = instruction.cachedCell;
                     if (cachedCell != null
                         && instruction.cachedCellGeneration == modules.CacheGeneration
@@ -311,62 +551,58 @@ public class VM
                         }
                         break;
                     }
-                    var module = modules.GetModuleRequired(instruction.pos, (string) instruction.arg2!);
-                    var symbol = Value.AsSymbol(instruction.arg1!);
-                    if (Scheme.StrictImports && module.Name == "user program")
-                    {
-                        if (module.Provenance.TryGetValue(symbol, out var origin) &&
-                            origin != module.Name && origin != "scm core")
-                        {
-                            throw new SchemeError(instruction.pos,
-                                "program: cannot redefine imported symbol '~a' from '~a'",
-                                symbol, origin);
-                        }
-                    }
-                    module.Bind(symbol, value);
-                    instruction.cachedCell = module.ResolveCell(symbol);
-                    instruction.cachedCellGeneration = modules.CacheGeneration;
-                    if (Value.IsLambda(value))
-                    {
-                        Value.AsLambda(value).name = instruction.arg1?.ToString() ?? "?";
-                    }
+                    GlobalSet(instruction, value);
                     break;
                 }
 
                 case Opcode.POP:
-                    Pop();
+                    stack[--sp] = null!;
                     break;
 
                 case Opcode.CONST:
-                    Push(instruction.arg1!);
+                    stack[sp++] = instruction.arg1!;
                     break;
 
                 case Opcode.JUMP:
+                    if (instruction.i1 < ip) stack = EnsureStack(stack, sp + code.Length - instruction.i1);
                     ip = instruction.i1;
                     break;
 
                 case Opcode.FJUMP:
-                    if (Pop().Equals(Value.F)) ip = instruction.i1;
+                    if (IsFalse(stack[--sp]))
+                    {
+                        if (instruction.i1 < ip) stack = EnsureStack(stack, sp + code.Length - instruction.i1);
+                        ip = instruction.i1;
+                    }
                     break;
 
                 case Opcode.TJUMP:
-                    if (!Pop().Equals(Value.F)) ip = instruction.i1;
+                    if (!IsFalse(stack[--sp]))
+                    {
+                        if (instruction.i1 < ip) stack = EnsureStack(stack, sp + code.Length - instruction.i1);
+                        ip = instruction.i1;
+                    }
                     break;
 
                 case Opcode.SAVE:
-                    Push(new ReturnAddress(instruction.i1, this.fn, env));
+                    stack[sp++] = new ReturnAddress(instruction.i1, fn, env);
                     break;
 
                 case Opcode.RETURN: {
-                    ReturnAddress address = (ReturnAddress) Second();
-                    this.fn = address.fn;
+                    ReturnAddress address = (ReturnAddress) stack[sp - 2];
+                    fn = address.fn;
+                    code = fn.codeArr;
                     env = address.env;
                     ip = address.ip;
-                    object value = Pop();
-                    Pop();
-                    Push(value);
+                    stack[sp - 2] = stack[sp - 1];
+                    stack[--sp] = null!;
+                    stack = EnsureStack(stack, sp + code.Length - ip);
                     break;
                 }
+
+                case Opcode.GCALLJ:
+                    stack[sp] = GlobalCell(instruction, instruction.arg3!, (string)instruction.arg2!).value; sp++;
+                    goto case Opcode.CALLJ;
 
                 case Opcode.CALLJ: {
                     if (currentThread?.terminated == true)
@@ -377,55 +613,29 @@ public class VM
                         argcount = flattened;
                         flattened = 0;
                     }
-                    object f = Pop();
-                    if (Value.IsLambda(f))
+                    object f = stack[--sp];
+                    if (f is Lambda lam)
                     {
                         //CountCall(Value.DisplayRep(f));
-                        this.fn = Value.AsLambda(f);
+                        fn = lam;
+                        code = fn.codeArr;
                         env = fn.env;
                         ip = 0;
                         nargs = argcount;
+                        stack = EnsureStack(stack, sp + code.Length);
                     }
                     else if (Value.IsPrimitive(f))
                     {
                         //CountCall(Value.DisplayRep(f));
-                        // Opt C: use pooled arg arrays
-                        object[] args = RentArgs(argcount);
-                        nargs = args.Length;
-                        for (int i = args.Length - 1; i >= 0; i--) args[i] = PrimaryValue(Pop());
-                        object result;
-                        try
-                        {
-                            result = Value.AsPrimitive(f).Apply(instruction.pos, args);
-                        }
-                        catch (SchemeError)
-                        {
-                            ReturnArgs(args);
-                            throw;
-                        }
-                        catch (InvalidCastException e)
-                        {
-                            ReturnArgs(args);
-                            throw WrongArgumentTypeError(instruction.pos, Value.AsPrimitive(f).Name(), e);
-                        }
-                        catch (Exception e)
-                        {
-                            ReturnArgs(args);
-                            throw new SchemeError(instruction.pos, "Failed in " + Value.AsPrimitive(f).Name() +": " + e.Message);
-                        }
-                        // If a primitive stored the args array directly in the result (e.g. `values`),
-                        // clone it before clearing so the result isn't corrupted.
-                        if (result is Values pooledVals && object.ReferenceEquals(pooledVals.values, args))
-                            pooledVals.values = (object[])args.Clone();
-                        ReturnArgs(args);
-                        Push(result);
-                        ReturnAddress address = (ReturnAddress) Second();
-                        this.fn = address.fn;
+                        sp -= argcount;
+                        object result = ApplyPrimitive(f, instruction.pos, stack, sp, argcount);
+                        ReturnAddress address = (ReturnAddress) stack[sp - 1];
+                        fn = address.fn;
+                        code = fn.codeArr;
                         env = address.env;
                         ip = address.ip;
-                        object val = Pop();
-                        Pop();
-                        Push(val);
+                        stack[sp - 1] = result;
+                        stack = EnsureStack(stack, sp + code.Length - ip);
                     }
                     else
                     {
@@ -437,53 +647,34 @@ public class VM
                     break;
                 }
 
+                case Opcode.GCALLS:
+                    stack[sp] = GlobalCell(instruction, instruction.arg3!, (string)instruction.arg2!).value; sp++;
+                    goto case Opcode.CALLS;
+
                 case Opcode.CALLS: {
                     if (currentThread?.terminated == true)
                         throw new SchemeError("thread terminated");
                     int argcount = instruction.i1;
-                    object f = Pop();
+                    object f = stack[--sp];
                     if (f is Lambda lam)
                     {
                         // the return address goes under the arguments,
                         // where SAVE would have put it
-                        if (sp == stackArr.Length) Push(null!); else sp++;
+                        sp++;
                         int b = sp - 1 - argcount;
-                        for (int i = sp - 1; i > b; i--) stackArr[i] = stackArr[i - 1];
-                        stackArr[b] = new ReturnAddress(ip, this.fn, env);
-                        this.fn = lam;
+                        for (int i = sp - 1; i > b; i--) stack[i] = stack[i - 1];
+                        stack[b] = new ReturnAddress(ip, fn, env);
+                        fn = lam;
+                        code = fn.codeArr;
                         env = lam.env;
                         ip = 0;
                         nargs = argcount;
+                        stack = EnsureStack(stack, sp + code.Length);
                     }
                     else if (Value.IsPrimitive(f))
                     {
-                        object[] args = RentArgs(argcount);
-                        nargs = args.Length;
-                        for (int i = args.Length - 1; i >= 0; i--) args[i] = PrimaryValue(Pop());
-                        object result;
-                        try
-                        {
-                            result = Value.AsPrimitive(f).Apply(instruction.pos, args);
-                        }
-                        catch (SchemeError)
-                        {
-                            ReturnArgs(args);
-                            throw;
-                        }
-                        catch (InvalidCastException e)
-                        {
-                            ReturnArgs(args);
-                            throw WrongArgumentTypeError(instruction.pos, Value.AsPrimitive(f).Name(), e);
-                        }
-                        catch (Exception e)
-                        {
-                            ReturnArgs(args);
-                            throw new SchemeError(instruction.pos, "Failed in " + Value.AsPrimitive(f).Name() +": " + e.Message);
-                        }
-                        if (result is Values pooledVals && object.ReferenceEquals(pooledVals.values, args))
-                            pooledVals.values = (object[])args.Clone();
-                        ReturnArgs(args);
-                        Push(result);
+                        sp -= argcount;
+                        stack[sp] = ApplyPrimitive(f, instruction.pos, stack, sp, argcount); sp++;
                     }
                     else
                     {
@@ -497,17 +688,9 @@ public class VM
 
                 case Opcode.ARGS: {
                     if (nargs != instruction.i1)
-                    {
-                        throw new SchemeError(
-                            instruction.pos,
-                            (fn.name != null ? fn.name + " " : "") +
-                            "Wrong number of arguments: "
-                            + instruction.arg1! + " expected, "
-                            + nargs + " supplied"
-                        );
-                    }
+                        throw ArityError(fn, instruction, nargs, "");
                     object[] frame = new object[nargs + 1];
-                    for (int i = nargs; i >= 1; i--) frame[i] = Pop();
+                    for (int i = nargs; i >= 1; i--) { frame[i] = stack[--sp]; stack[sp] = null!; }
                     frame[0] = env;
                     env = frame;
                     break;
@@ -516,7 +699,7 @@ public class VM
                 case Opcode.EXTEND: {
                     int n = instruction.i1;
                     object[] frame = new object[n + 1];
-                    for (int i = n; i >= 1; i--) frame[i] = Pop();
+                    for (int i = n; i >= 1; i--) { frame[i] = stack[--sp]; stack[sp] = null!; }
                     frame[0] = env;
                     env = frame;
                     break;
@@ -525,22 +708,17 @@ public class VM
                 case Opcode.ARGSDOT: {
                     int fixedArgs = instruction.i1;
                     if (nargs < fixedArgs)
-                    {
-                        throw new SchemeError(
-                            instruction.pos,
-                            (fn.name != null ? fn.name + " " : "") +
-                            "Wrong number of arguments: "
-                            + instruction.arg1 + " or more expected, "
-                            + nargs + " supplied"
-                        );
-                    }
+                        throw ArityError(fn, instruction, nargs, " or more");
                     // Opt B: build object[] frame; rest list remains a Pair chain (Scheme list)
                     object rest = Value.NIL;
                     for (int i = 0; i < nargs - fixedArgs; i++)
-                        rest = new Pair(Pop(), rest);
+                    {
+                        rest = new Pair(stack[--sp], rest);
+                        stack[sp] = null!;
+                    }
                     object[] frame = new object[fixedArgs + 2];
                     frame[fixedArgs + 1] = rest;
-                    for (int i = fixedArgs; i >= 1; i--) frame[i] = Pop();
+                    for (int i = fixedArgs; i >= 1; i--) { frame[i] = stack[--sp]; stack[sp] = null!; }
                     frame[0] = env;
                     env = frame;
                     break;
@@ -550,12 +728,13 @@ public class VM
                     // Opt B: build object[] frame
                     if (nargs == 1)
                     {
-                        env = new object[] { env, Pop() };
+                        env = new object[] { env, stack[--sp] };
+                        stack[sp] = null!;
                     }
                     else
                     {
                         object[] mv = new object[nargs];
-                        for (int i = nargs - 1; i >= 0; i--) mv[i] = Pop();
+                        for (int i = nargs - 1; i >= 0; i--) { mv[i] = stack[--sp]; stack[sp] = null!; }
                         env = new object[] { env, new Values { values = mv } };
                     }
                     break;
@@ -566,85 +745,53 @@ public class VM
                     var fn_instructions = (List<Instruction>) fn_pair.Sixth();
                     var new_lambda = new Lambda(env, fn_instructions);
                     if (fn_pair.Length() > 6) new_lambda.doc = fn_pair.Eight()?.ToString();
-                    Push(new_lambda);
+                    stack[sp++] = new_lambda;
                     break;
                 }
 
                 case Opcode.SETCC: {
                     // Opt A: restore array stack from captured Pair chain
-                    object savedStack = Top();
+                    object savedStack = stack[sp - 1];
+                    int n = 0;
+                    for (object p = savedStack; p != Value.NIL; p = Value.AsPair(p).cdr) n++;
+                    stack = EnsureStack(stack, n + code.Length - ip);
                     sp = 0;
                     for (object p = savedStack; p != Value.NIL; p = Value.AsPair(p).cdr)
-                        Push(Value.AsPair(p).car);
+                        stack[sp++] = Value.AsPair(p).car;
                     break;
                 }
 
-                case Opcode.CC: {
-                    // Opt A: serialize array stack to Pair chain for capture
-                    object capturedStack = Value.NIL;
-                    for (int i = sp - 1; i >= 0; i--)
-                        capturedStack = new Pair(stackArr[i], capturedStack);
-                    List<Instruction> newcode = new();
-                    newcode.Add(new Instruction(Opcode.ARGMV));
-                    newcode.Add(new Instruction(Opcode.LVAR, 1, 0));
-                    newcode.Add(new Instruction(Opcode.SETCC));
-                    newcode.Add(new Instruction(Opcode.LVAR, 0, 0));
-                    newcode.Add(new Instruction(Opcode.RETURN));
-                    // Opt B: env frame must be object[]
-                    object capturedEnv = new object[] { Value.NIL, capturedStack };
-                    Push(new Lambda(capturedEnv, newcode));
+                case Opcode.CC:
+                    stack[sp] = CaptureContinuation(stack, sp); sp++;
                     break;
-                }
 
                 case Opcode.FLATTEN_APPLY: {
-                    List<object> args = new();
-                    object restObj = Getenv(instruction.i1, instruction.i2);
-                    if (restObj == Value.NIL)
-                        throw new SchemeError(instruction.pos, "apply: not enough arguments");
-                    object pair = Value.AsPair(restObj);
-                    while (pair != Value.NIL)
-                    {
-                        if (Value.AsPair(pair).cdr == Value.NIL)
-                        {
-                            if (!Value.IsPair(Value.AsPair(pair).car) && !Value.IsNil(Value.AsPair(pair).car))
-                                throw new SchemeError(instruction.pos, "apply: last argument must be a list");
-                            pair = Value.AsPair(pair).car == Value.NIL ? Value.NIL : Value.AsPair(Value.AsPair(pair).car);
-                            while (pair != Value.NIL)
-                            {
-                                args.Add(Value.AsPair(pair).car);
-                                pair = Value.AsPair(pair).cdr;
-                            }
-                            break;
-                        }
-                        else
-                        {
-                            args.Add(Value.AsPair(pair).car);
-                            pair = Value.AsPair(pair).cdr;
-                        }
-                    }
+                    List<object> args = FlattenApplyArgs(instruction, Getenv(env, instruction.i1, instruction.i2));
                     flattened = args.Count;
+                    stack = EnsureStack(stack, sp + args.Count + code.Length - ip);
                     for (int i = 0; i < args.Count; i++)
                     {
-                        Push(args[i]);
+                        stack[sp++] = args[i];
                     }
                     break;
                 }
 
                 case Opcode.FLATTEN_MULTVALS: {
-                    object val = Pop();
+                    object val = stack[--sp];
                     if (Value.IsValues(val))
                     {
                         object[] values = Value.AsValues(val).values;
                         flattened = values.Length;
+                        stack = EnsureStack(stack, sp + values.Length + code.Length - ip);
                         for (int i = 0; i < values.Length; i++)
                         {
-                            Push(values[i]);
+                            stack[sp++] = values[i];
                         }
                     }
                     else
                     {
                         flattened = 1;
-                        Push(val);
+                        stack[sp++] = val;
                     }
                     break;
                 }
@@ -653,282 +800,287 @@ public class VM
                     throw new SchemeError(null, new ErrorObject(
                         "raise: exception handler returned", Array.Empty<object>()));
 
+                case Opcode.POPENV:
+                    env = ((object[])env)[0];
+                    break;
+
+                case Opcode.LVAR_CAR:
+                    stack[sp] = Value.AsPair(Getenv(env, instruction.i1, instruction.i2)).car; sp++;
+                    break;
+
+                case Opcode.LVAR_CDR:
+                    stack[sp] = Value.AsPair(Getenv(env, instruction.i1, instruction.i2)).cdr; sp++;
+                    break;
+
+                case Opcode.LVAR_VREF: {
+                    var vec = Value.AsVector(Getenv(env, instruction.i1, instruction.i2));
+                    int i = instruction.i3;
+                    if (i >= vec.Length)
+                        throw new SchemeError(instruction.pos, "vector-ref: index out of range: ~a", (long)i);
+                    stack[sp++] = vec[i];
+                    break;
+                }
+
+                case Opcode.LVAR_NULL_FJUMP:
+                    if (Getenv(env, instruction.i1, instruction.i2) != Value.NIL)
+                    {
+                        if (instruction.i3 < ip) stack = EnsureStack(stack, sp + code.Length - instruction.i3);
+                        ip = instruction.i3;
+                    }
+                    break;
+
+                case Opcode.LVAR_PAIR_FJUMP:
+                    if (!Value.IsPair(Getenv(env, instruction.i1, instruction.i2)))
+                    {
+                        if (instruction.i3 < ip) stack = EnsureStack(stack, sp + code.Length - instruction.i3);
+                        ip = instruction.i3;
+                    }
+                    break;
+
+                case Opcode.CONST_EQ_FJUMP:
+                    if (!PrimitiveEqP.Eq(stack[--sp], instruction.arg1!))
+                    {
+                        if (instruction.i2 < ip) stack = EnsureStack(stack, sp + code.Length - instruction.i2);
+                        ip = instruction.i2;
+                    }
+                    break;
+
                 case Opcode.CAR:
-                    Push(Value.AsPair(Pop()).car);
+                    stack[sp - 1] = Value.AsPair(stack[sp - 1]).car;
                     break;
 
                 case Opcode.CDR:
-                    Push(Value.AsPair(Pop()).cdr);
+                    stack[sp - 1] = Value.AsPair(stack[sp - 1]).cdr;
                     break;
 
                 case Opcode.CONS: {
-                    object icdr = Pop(), icar = Pop();
-                    Push(new Pair(icar, icdr));
+                    object icdr = stack[--sp];
+                    stack[sp - 1] = new Pair(stack[sp - 1], icdr);
                     break;
                 }
 
                 case Opcode.IS_NULL:
-                    Push(Pop() == Value.NIL ? Value.T : Value.F);
+                    stack[sp - 1] = stack[sp - 1] == Value.NIL ? True : False;
                     break;
 
-                case Opcode.IS_PAIR: {
-                    object ipv = Pop();
-                    Push(Value.IsPair(ipv) ? Value.T : Value.F);
+                case Opcode.IS_PAIR:
+                    stack[sp - 1] = Value.IsPair(stack[sp - 1]) ? True : False;
                     break;
-                }
 
                 case Opcode.NOT:
-                    Push(Pop().Equals(Value.F) ? Value.T : Value.F);
+                    stack[sp - 1] = IsFalse(stack[sp - 1]) ? True : False;
                     break;
 
                 case Opcode.LVAR_ADD_IMM: {
                     long packed = (long)instruction.arg1!;
-                    object val = Getenv((int)(packed >> 16), (int)(packed & 0xFFFF));
+                    object val = Getenv(env, (int)(packed >> 16), (int)(packed & 0xFFFF));
                     long imm = (long)instruction.arg2!;
-                    if (val is long lv) {
-                        try { checked { Push(lv + imm); } }
-                        catch (OverflowException) { Push((BigInteger)lv + imm); }
-                        break;
+                    if (val is long a)
+                    {
+                        long r = unchecked(a + imm);
+                        if (((a ^ r) & (imm ^ r)) >= 0) { stack[sp++] = r; break; }
                     }
-                    if (Value.IsBigInteger(val)) { Push(IntegerMath.GenericAdd(val, imm)); break; }
-                    if (val is double dv) { Push(dv + (double)imm); break; }
-                    if (val is Complex) { Push(Complex.Add(val, imm)); break; }
-                    Push(Rational.Add(val, imm)); break;
+                    stack[sp] = Add2(val, imm); sp++;
+                    break;
                 }
 
                 case Opcode.LVAR_SUB_IMM: {
                     long packed = (long)instruction.arg1!;
-                    object val = Getenv((int)(packed >> 16), (int)(packed & 0xFFFF));
+                    object val = Getenv(env, (int)(packed >> 16), (int)(packed & 0xFFFF));
                     long imm = (long)instruction.arg2!;
-                    if (val is long lv) {
-                        try { checked { Push(lv - imm); } }
-                        catch (OverflowException) { Push((BigInteger)lv - imm); }
-                        break;
+                    if (val is long a)
+                    {
+                        long r = unchecked(a - imm);
+                        if (((a ^ imm) & (a ^ r)) >= 0) { stack[sp++] = r; break; }
                     }
-                    if (Value.IsBigInteger(val)) { Push(IntegerMath.GenericSub(val, imm)); break; }
-                    if (val is double dv) { Push(dv - (double)imm); break; }
-                    if (val is Complex) { Push(Complex.Sub(val, imm)); break; }
-                    Push(Rational.Sub(val, imm)); break;
+                    stack[sp] = Sub2(val, imm); sp++;
+                    break;
                 }
 
                 case Opcode.ADD: {
                     int n = instruction.i1;
-                    if (n == 0) { Push(0L); break; }
-                    if (n == 2) {
-                        object ib = Pop(), ia = Pop();
-                        if (ia is long ial && ib is long ibl) {
-                            try { checked { Push(ial + ibl); } }
-                            catch (OverflowException) { Push((BigInteger)ial + ibl); }
-                            break;
+                    if (n == 2)
+                    {
+                        object ib = stack[--sp], ia = stack[--sp];
+                        if (ia is long a && ib is long b)
+                        {
+                            long r = unchecked(a + b);
+                            if (((a ^ r) & (b ^ r)) >= 0) { stack[sp++] = r; break; }
                         }
-                        if (Value.IsInteger(ia) && Value.IsInteger(ib)) { Push(IntegerMath.GenericAdd(ia, ib)); break; }
-                        if (ia is double || ib is double) {
-                            if (ia is Complex || ib is Complex) { Push(Complex.Add(ia, ib)); break; }
-                            Push(VmToReal(ia) + VmToReal(ib)); break;
-                        }
-                        if (ia is Complex || ib is Complex) { Push(Complex.Add(ia, ib)); break; }
-                        Push(Rational.Add(ia, ib)); break;
+                        stack[sp] = Add2(ia, ib); sp++;
+                        break;
                     }
-                    object[] iarr = RentArgs(n);
-                    for (int i = n - 1; i >= 0; i--) iarr[i] = Pop();
-                    Push(s_primitiveAdd.Apply(instruction.pos, iarr));
-                    ReturnArgs(iarr);
+                    sp -= n;
+                    stack[sp] = ApplyIntrinsic(s_primitiveAdd, instruction.pos, stack, sp, n); sp++;
                     break;
                 }
 
                 case Opcode.SUB: {
                     int n = instruction.i1;
-                    if (n == 1) {
-                        object ia = Pop();
-                        if (ia is long ial) { Push(IntegerMath.Negate(ial)); break; }
-                        if (Value.IsBigInteger(ia)) { Push(IntegerMath.GenericNegate(ia)); break; }
-                        if (ia is double iad) { Push(-iad); break; }
-                        if (ia is Complex) { Push(Complex.Negate(ia)); break; }
-                        Push(Rational.Sub(0L, ia)); break;
-                    }
-                    if (n == 2) {
-                        object ib = Pop(), ia = Pop();
-                        if (ia is long ial && ib is long ibl) {
-                            try { checked { Push(ial - ibl); } }
-                            catch (OverflowException) { Push((BigInteger)ial - ibl); }
-                            break;
+                    if (n == 2)
+                    {
+                        object ib = stack[--sp], ia = stack[--sp];
+                        if (ia is long a && ib is long b)
+                        {
+                            long r = unchecked(a - b);
+                            if (((a ^ b) & (a ^ r)) >= 0) { stack[sp++] = r; break; }
                         }
-                        if (Value.IsInteger(ia) && Value.IsInteger(ib)) { Push(IntegerMath.GenericSub(ia, ib)); break; }
-                        if (ia is double || ib is double) {
-                            if (ia is Complex || ib is Complex) { Push(Complex.Sub(ia, ib)); break; }
-                            Push(VmToReal(ia) - VmToReal(ib)); break;
-                        }
-                        if (ia is Complex || ib is Complex) { Push(Complex.Sub(ia, ib)); break; }
-                        Push(Rational.Sub(ia, ib)); break;
+                        stack[sp] = Sub2(ia, ib); sp++;
+                        break;
                     }
-                    object[] iarr = RentArgs(n);
-                    for (int i = n - 1; i >= 0; i--) iarr[i] = Pop();
-                    Push(s_primitiveSub.Apply(instruction.pos, iarr));
-                    ReturnArgs(iarr);
+                    if (n == 1)
+                    {
+                        object ia = stack[--sp];
+                        stack[sp] = Negate(ia); sp++;
+                        break;
+                    }
+                    sp -= n;
+                    stack[sp] = ApplyIntrinsic(s_primitiveSub, instruction.pos, stack, sp, n); sp++;
                     break;
                 }
 
                 case Opcode.MUL: {
                     int n = instruction.i1;
-                    if (n == 0) { Push(1L); break; }
-                    if (n == 2) {
-                        object ib = Pop(), ia = Pop();
-                        if (ia is long ial && ib is long ibl) {
-                            try { checked { Push(ial * ibl); } }
-                            catch (OverflowException) { Push((BigInteger)ial * ibl); }
-                            break;
+                    if (n == 2)
+                    {
+                        object ib = stack[--sp], ia = stack[--sp];
+                        if (ia is long a && ib is long b)
+                        {
+                            long high = Math.BigMul(a, b, out long r);
+                            if ((high == 0 && r >= 0) || (high == -1 && r < 0)) { stack[sp++] = r; break; }
                         }
-                        if (Value.IsInteger(ia) && Value.IsInteger(ib)) { Push(IntegerMath.GenericMul(ia, ib)); break; }
-                        if (ia is double || ib is double) {
-                            if (ia is Complex || ib is Complex) { Push(Complex.Mul(ia, ib)); break; }
-                            Push(VmToReal(ia) * VmToReal(ib)); break;
-                        }
-                        if (ia is Complex || ib is Complex) { Push(Complex.Mul(ia, ib)); break; }
-                        Push(Rational.Mul(ia, ib)); break;
+                        stack[sp] = Mul2(ia, ib); sp++;
+                        break;
                     }
-                    object[] iarr = RentArgs(n);
-                    for (int i = n - 1; i >= 0; i--) iarr[i] = Pop();
-                    Push(s_primitiveMul.Apply(instruction.pos, iarr));
-                    ReturnArgs(iarr);
+                    sp -= n;
+                    stack[sp] = ApplyIntrinsic(s_primitiveMul, instruction.pos, stack, sp, n); sp++;
                     break;
                 }
 
                 case Opcode.DIV: {
                     int n = instruction.i1;
-                    if (n == 2) {
-                        object ib = Pop(), ia = Pop();
-                        if (ia is long ial && ib is long ibl) {
-                            if (ibl == 0) throw new SchemeError(instruction.pos, "/: Division by zero");
-                            Push(Rational.Div(ial, ibl)); break;
-                        }
-                        if (ia is double || ib is double) {
-                            if (ia is Complex || ib is Complex) { Push(Complex.Div(ia, ib)); break; }
-                            double dib = VmToReal(ib);
-                            if (dib == 0.0) throw new SchemeError(instruction.pos, "/: Division by ~s", dib);
-                            Push(VmToReal(ia) / dib); break;
-                        }
-                        if (ia is Complex || ib is Complex) { Push(Complex.Div(ia, ib)); break; }
-                        Push(Rational.Div(ia, ib)); break;
+                    if (n == 2)
+                    {
+                        object ib = stack[--sp], ia = stack[--sp];
+                        stack[sp] = Div2(instruction.pos, ia, ib); sp++;
+                        break;
                     }
-                    object[] iarr = RentArgs(n);
-                    for (int i = n - 1; i >= 0; i--) iarr[i] = Pop();
-                    Push(s_primitiveDiv.Apply(instruction.pos, iarr));
-                    ReturnArgs(iarr);
+                    sp -= n;
+                    stack[sp] = ApplyIntrinsic(s_primitiveDiv, instruction.pos, stack, sp, n); sp++;
                     break;
                 }
 
                 case Opcode.NUM_EQ: {
                     int n = instruction.i1;
-                    if (n == 2) {
-                        object ib = Pop(), ia = Pop();
-                        if (ia is long ial && ib is long ibl) { Push(ial == ibl ? Value.T : Value.F); break; }
-                        if (Value.IsInteger(ia) && Value.IsInteger(ib)) { Push(IntegerMath.GenericEquals(ia, ib) ? Value.T : Value.F); break; }
-                        if (ia is double iad && ib is double ibd) { Push(iad == ibd ? Value.T : Value.F); break; }
-                        if (ia is Complex || ib is Complex) { Push(Complex.NumericEquals(ia, ib) ? Value.T : Value.F); break; }
-                        Push(Primitive.MixedNumericEquals(ia, ib) ? Value.T : Value.F); break;
+                    if (n == 2)
+                    {
+                        object ib = stack[--sp], ia = stack[--sp];
+                        bool r = ia is long a && ib is long b
+                            ? a == b
+                            : Compare2(Opcode.NUM_EQ, instruction.pos, ia, ib);
+                        stack[sp++] = r ? True : False;
+                        break;
                     }
-                    object[] iarr = RentArgs(n);
-                    for (int i = n - 1; i >= 0; i--) iarr[i] = Pop();
-                    Push(s_primitiveNumEq.Apply(instruction.pos, iarr));
-                    ReturnArgs(iarr);
+                    sp -= n;
+                    stack[sp] = ApplyIntrinsic(s_primitiveNumEq, instruction.pos, stack, sp, n); sp++;
                     break;
                 }
 
                 case Opcode.NUM_LT: {
                     int n = instruction.i1;
-                    if (n == 2) {
-                        object ib = Pop(), ia = Pop();
-                        if (ia is long ial && ib is long ibl) { Push(ial < ibl ? Value.T : Value.F); break; }
-                        if (Value.IsInteger(ia) && Value.IsInteger(ib)) { Push(IntegerMath.Compare(ia, ib) < 0 ? Value.T : Value.F); break; }
-                        if (ia is Complex || ib is Complex) throw new SchemeError(instruction.pos, "<: complex numbers are not ordered");
-                        Push(Primitive.NumLess(ia, ib) ? Value.T : Value.F); break;
+                    if (n == 2)
+                    {
+                        object ib = stack[--sp], ia = stack[--sp];
+                        bool r = ia is long a && ib is long b
+                            ? a < b
+                            : Compare2(Opcode.NUM_LT, instruction.pos, ia, ib);
+                        stack[sp++] = r ? True : False;
+                        break;
                     }
-                    object[] iarr = RentArgs(n);
-                    for (int i = n - 1; i >= 0; i--) iarr[i] = Pop();
-                    Push(s_primitiveNumLt.Apply(instruction.pos, iarr));
-                    ReturnArgs(iarr);
+                    sp -= n;
+                    stack[sp] = ApplyIntrinsic(s_primitiveNumLt, instruction.pos, stack, sp, n); sp++;
                     break;
                 }
 
                 case Opcode.NUM_GT: {
                     int n = instruction.i1;
-                    if (n == 2) {
-                        object ib = Pop(), ia = Pop();
-                        if (ia is long ial && ib is long ibl) { Push(ial > ibl ? Value.T : Value.F); break; }
-                        if (Value.IsInteger(ia) && Value.IsInteger(ib)) { Push(IntegerMath.Compare(ia, ib) > 0 ? Value.T : Value.F); break; }
-                        if (ia is Complex || ib is Complex) throw new SchemeError(instruction.pos, ">: complex numbers are not ordered");
-                        Push(Primitive.NumGreater(ia, ib) ? Value.T : Value.F); break;
+                    if (n == 2)
+                    {
+                        object ib = stack[--sp], ia = stack[--sp];
+                        bool r = ia is long a && ib is long b
+                            ? a > b
+                            : Compare2(Opcode.NUM_GT, instruction.pos, ia, ib);
+                        stack[sp++] = r ? True : False;
+                        break;
                     }
-                    object[] iarr = RentArgs(n);
-                    for (int i = n - 1; i >= 0; i--) iarr[i] = Pop();
-                    Push(s_primitiveNumGt.Apply(instruction.pos, iarr));
-                    ReturnArgs(iarr);
+                    sp -= n;
+                    stack[sp] = ApplyIntrinsic(s_primitiveNumGt, instruction.pos, stack, sp, n); sp++;
                     break;
                 }
 
                 case Opcode.NUM_LTE: {
                     int n = instruction.i1;
-                    if (n == 2) {
-                        object ib = Pop(), ia = Pop();
-                        if (ia is long ial && ib is long ibl) { Push(ial <= ibl ? Value.T : Value.F); break; }
-                        if (Value.IsInteger(ia) && Value.IsInteger(ib)) { Push(IntegerMath.Compare(ia, ib) <= 0 ? Value.T : Value.F); break; }
-                        if (ia is Complex || ib is Complex) throw new SchemeError(instruction.pos, "<=: complex numbers are not ordered");
-                        Push(Primitive.NumLessEq(ia, ib) ? Value.T : Value.F); break;
+                    if (n == 2)
+                    {
+                        object ib = stack[--sp], ia = stack[--sp];
+                        bool r = ia is long a && ib is long b
+                            ? a <= b
+                            : Compare2(Opcode.NUM_LTE, instruction.pos, ia, ib);
+                        stack[sp++] = r ? True : False;
+                        break;
                     }
-                    object[] iarr = RentArgs(n);
-                    for (int i = n - 1; i >= 0; i--) iarr[i] = Pop();
-                    Push(s_primitiveNumLte.Apply(instruction.pos, iarr));
-                    ReturnArgs(iarr);
+                    sp -= n;
+                    stack[sp] = ApplyIntrinsic(s_primitiveNumLte, instruction.pos, stack, sp, n); sp++;
                     break;
                 }
 
                 case Opcode.NUM_GTE: {
                     int n = instruction.i1;
-                    if (n == 2) {
-                        object ib = Pop(), ia = Pop();
-                        if (ia is long ial && ib is long ibl) { Push(ial >= ibl ? Value.T : Value.F); break; }
-                        if (Value.IsInteger(ia) && Value.IsInteger(ib)) { Push(IntegerMath.Compare(ia, ib) >= 0 ? Value.T : Value.F); break; }
-                        if (ia is Complex || ib is Complex) throw new SchemeError(instruction.pos, ">=: complex numbers are not ordered");
-                        Push(Primitive.NumGreaterEq(ia, ib) ? Value.T : Value.F); break;
+                    if (n == 2)
+                    {
+                        object ib = stack[--sp], ia = stack[--sp];
+                        bool r = ia is long a && ib is long b
+                            ? a >= b
+                            : Compare2(Opcode.NUM_GTE, instruction.pos, ia, ib);
+                        stack[sp++] = r ? True : False;
+                        break;
                     }
-                    object[] iarr = RentArgs(n);
-                    for (int i = n - 1; i >= 0; i--) iarr[i] = Pop();
-                    Push(s_primitiveNumGte.Apply(instruction.pos, iarr));
-                    ReturnArgs(iarr);
+                    sp -= n;
+                    stack[sp] = ApplyIntrinsic(s_primitiveNumGte, instruction.pos, stack, sp, n); sp++;
                     break;
                 }
 
                 case Opcode.EQ_P: {
-                    object ib = Pop(), ia = Pop();
-                    Push(PrimitiveEqP.Eq(ia, ib) ? Value.T : Value.F);
+                    object ib = stack[--sp], ia = stack[--sp];
+                    stack[sp++] = PrimitiveEqP.Eq(ia, ib) ? True : False;
                     break;
                 }
 
                 case Opcode.EQV_P: {
-                    object ib = Pop(), ia = Pop();
-                    Push(PrimitiveEqvP.Eqv(ia, ib) ? Value.T : Value.F);
+                    object ib = stack[--sp], ia = stack[--sp];
+                    stack[sp++] = PrimitiveEqvP.Eqv(ia, ib) ? True : False;
                     break;
                 }
 
                 case Opcode.VECTOR_REF: {
-                    object idx = Pop();
-                    var vec = Value.AsVector(Pop());
+                    object idx = stack[--sp];
+                    var vec = Value.AsVector(stack[--sp]);
                     int i = IntegerMath.ToInt(idx);
                     if (i < 0 || i >= vec.Length)
                         throw new SchemeError(instruction.pos, "vector-ref: index out of range: ~a", idx);
-                    Push(vec[i]);
+                    stack[sp++] = vec[i];
                     break;
                 }
 
                 case Opcode.VECTOR_SET: {
-                    object val = Pop();
-                    object idx = Pop();
-                    var vec = Value.AsVector(Pop());
+                    object val = stack[--sp];
+                    object idx = stack[--sp];
+                    var vec = Value.AsVector(stack[--sp]);
                     int i = IntegerMath.ToInt(idx);
                     if (i < 0 || i >= vec.Length)
                         throw new SchemeError(instruction.pos, "vector-set!: index out of range: ~a", idx);
                     vec[i] = val;
-                    Push(new Values());
+                    stack[sp++] = new Values();
                     break;
                 }
 
@@ -942,15 +1094,20 @@ public class VM
         } // end try
         catch (SchemeError e)
         {
+            this.fn = fn; this.ip = ip; this.env = env; this.sp = sp;
             if (e.schemeCallStack == null)
                 e.schemeCallStack = ExtractCallStack();
             if (exceptionHandlers != Value.NIL)
             {
                 object condition = (object?)e.errorObject ?? new ErrorObject(e.Message, Array.Empty<object>());
+                this.nargs = nargs;
                 SetupRaiseCall(condition);
+                fn = this.fn!; code = fn.codeArr; ip = this.ip; env = this.env;
+                sp = this.sp; nargs = this.nargs;
+                stack = EnsureStack(stackArr, sp + code.Length - ip);
                 goto continueExecution;
             }
-            sp = savedSp;
+            this.sp = savedSp;
             winders = savedWinders;
             exceptionHandlers = savedExceptionHandlers;
             throw;
@@ -959,22 +1116,31 @@ public class VM
         {
             // No opcode changes ip or fn before it can fail a cast, so the
             // failing instruction is the one fetched last.
-            Instruction? failed = fn != null && ip > 0 && ip <= fn.code.Count ? fn.code[ip - 1] : null;
+            Instruction? failed = ip > 0 && ip <= fn.code.Count ? fn.code[ip - 1] : null;
             string name = failed == null ? "VM"
                 : OpcodeErrorName(failed.opcode) ?? failed.opcode + " instruction";
             var err = WrongArgumentTypeError(failed?.pos, name, e);
+            this.fn = fn; this.ip = ip; this.env = env; this.sp = sp;
             err.schemeCallStack = ExtractCallStack();
             if (exceptionHandlers != Value.NIL)
             {
+                this.nargs = nargs;
                 SetupRaiseCall(err.errorObject!);
+                fn = this.fn!; code = fn.codeArr; ip = this.ip; env = this.env;
+                sp = this.sp; nargs = this.nargs;
+                stack = EnsureStack(stackArr, sp + code.Length - ip);
                 goto continueExecution;
             }
-            sp = savedSp;
+            this.sp = savedSp;
             winders = savedWinders;
             exceptionHandlers = savedExceptionHandlers;
             throw err;
         }
-        return Pop();
+        this.fn = fn; this.ip = ip; this.env = env;
+        object returnValue = stack[--sp];
+        stack[sp] = null!;
+        this.sp = sp;
+        return returnValue;
         }
         finally
         {

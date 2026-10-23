@@ -1,0 +1,6 @@
+Failed in vector-ref: wrong argument type (test7_callstack_let.scm 7:10)
+Scheme call stack:
+  at inner (test7_callstack_let.scm 7:10)
+  at middle (test7_callstack_let.scm 10:8)
+  at outer (test7_callstack_let.scm 13:9)
+  at <toplevel> (test7_callstack_let.scm 15:1)

@@ -10,6 +10,10 @@ import scheme.primitives.*;
 public class VM {
 
     private Modules modules;
+
+    // The VM state. While execute runs it lives in execute's locals; these
+    // fields hold it only where code outside the dispatch loop needs it
+    // (setupRaiseCall, extractCallStack) and between executes.
     private Lambda fn;
     private int ip;
     private Object env = Value.NIL;
@@ -43,8 +47,8 @@ public class VM {
     // for the error message; null for the VM's internal opcodes.
     private static String opcodeErrorName(Opcode op) {
         switch (op) {
-            case CAR: return "car";
-            case CDR: return "cdr";
+            case CAR: case LVAR_CAR: return "car";
+            case CDR: case LVAR_CDR: return "cdr";
             case CONS: return "cons";
             case IS_NULL: return "null?";
             case IS_PAIR: return "pair?";
@@ -60,7 +64,7 @@ public class VM {
             case NUM_GTE: return ">=";
             case EQ_P: return "eq?";
             case EQV_P: return "eqv?";
-            case VECTOR_REF: return "vector-ref";
+            case VECTOR_REF: case LVAR_VREF: return "vector-ref";
             case VECTOR_SET: return "vector-set!";
             case FLATTEN_APPLY: return "apply";
             default: return null;
@@ -155,36 +159,253 @@ public class VM {
 
     // An environment is a chain of frames: Object[] with the parent
     // environment in slot 0 and the frame's variables from slot 1.
-    private Object getenv(int frame, int var) {
+    private static Object getenv(Object env, int frame, int var) {
         Object[] f = (Object[]) env;
         for (int i = 0; i < frame; i++) f = (Object[]) f[0];
         return f[var + 1];
     }
 
-    private void setenv(int frame, int var, Object value) {
+    private static void setenv(Object env, int frame, int var, Object value) {
         Object[] f = (Object[]) env;
         for (int i = 0; i < frame; i++) f = (Object[]) f[0];
         f[var + 1] = value;
     }
 
-    // Opt A: array-based stack operations
+    // The dispatch loop pushes without a bounds check: an instruction
+    // pushes at most one value and jumps only forward, so the rest of the
+    // current function needs at most one slot per remaining instruction.
+    // That room is made whenever a function is entered or returned to, at
+    // backward jumps (only possible in code from set-code!) and by the
+    // instructions that push many values.
+    private Object[] ensureStack(Object[] stack, int needed) {
+        if (needed <= stack.length) return stack;
+        Object[] bigger = new Object[Math.max(stack.length * 2, needed)];
+        System.arraycopy(stack, 0, bigger, 0, stack.length);
+        stackArr = bigger;
+        return bigger;
+    }
+
+    // Opt A: array-based stack; push for the code outside the dispatch loop
     private void push(Object value) {
-        if (sp == stackArr.length) {
-            Object[] bigger = new Object[stackArr.length * 2];
-            System.arraycopy(stackArr, 0, bigger, 0, sp);
-            stackArr = bigger;
-        }
+        stackArr = ensureStack(stackArr, sp + 1);
         stackArr[sp++] = value;
     }
 
-    private Object pop() {
-        Object value = stackArr[--sp];
-        stackArr[sp] = null; // clear for GC
-        return value;
+    // The binding cell of a global variable, cached in the instruction
+    // (GVAR, GCALLS, GCALLJ).
+    private Cell globalCell(Instruction instruction, Object symbolObj, String moduleName) {
+        Cell cell = instruction.cachedCell;
+        if (cell != null && instruction.cachedCellGeneration == modules.cacheGeneration)
+            return cell;
+        try {
+            String symbol = Value.asSymbol(symbolObj);
+            Module module = modules.getModuleRequired(instruction.pos, moduleName);
+            Cell resolved = module.resolveCell(symbol);
+            if (resolved == null) {
+                throw new SchemeError(instruction.pos, module.getName() + ": ~a is not bound", symbol);
+            }
+            instruction.cachedCell = resolved;
+            instruction.cachedCellGeneration = modules.cacheGeneration;
+            return resolved;
+        } catch (SchemeError e) {
+            throw e;
+        } catch (Exception e) {
+            throw new SchemeError(instruction.pos, "internal error");
+        }
     }
 
-    private Object top() { return stackArr[sp - 1]; }
-    private Object second() { return stackArr[sp - 2]; }
+    // Cold paths of the dispatch loop, kept out of execute so that the JIT
+    // compiles the loop itself well.
+
+    private void globalSet(Instruction instruction, Object value) {
+        Module module = modules.getModuleRequired(instruction.pos, (String) instruction.arg2);
+        String symbol = Value.asSymbol(instruction.arg1);
+        if (Scheme.strictImports && "user program".equals(module.getName())) {
+            String origin = module.provenance.get(symbol);
+            if (origin != null && !origin.equals(module.getName()) && !"scm core".equals(origin)) {
+                throw new SchemeError(instruction.pos,
+                    "program: cannot redefine imported symbol '~a' from '~a'",
+                    symbol, origin);
+            }
+        }
+        module.bind(symbol, value);
+        instruction.cachedCell = module.resolveCell(symbol);
+        instruction.cachedCellGeneration = modules.cacheGeneration;
+        if (Value.isLambda(value)) {
+            Value.asLambda(value).name = instruction.arg1.toString();
+        }
+    }
+
+    private static SchemeError arityError(Lambda fn, Instruction instruction, int nargs, String expected) {
+        return new SchemeError(instruction.pos,
+                               (fn.name != null ? fn.name + " " : "")
+                               + "Wrong number of arguments: "
+                               + instruction.arg1 + expected + " expected, "
+                               + nargs + " supplied");
+    }
+
+    // Applies the primitive f to the argcount values at stack[sp..], which
+    // the caller has popped; their slots are cleared.
+    private Object applyPrimitive(Object f, SourcePos pos, Object[] stack, int sp, int argcount) {
+        Primitive prim = Value.asPrimitive(f);
+        // Opt C: use pooled arg arrays
+        Object[] args = rentArgs(argcount);
+        for (int i = 0; i < argcount; i++) {
+            args[i] = primaryValue(stack[sp + i]);
+            stack[sp + i] = null;
+        }
+        Object result;
+        try {
+            result = prim.apply(pos, args);
+        } catch (SchemeError e) {
+            returnArgs(args);
+            throw e;
+        } catch (ClassCastException e) {
+            returnArgs(args);
+            throw wrongArgumentTypeError(pos, prim.name(), e);
+        } catch (Exception e) {
+            returnArgs(args);
+            throw new SchemeError(pos, "Failed in " + prim.name() + ": " + e.getMessage());
+        }
+        // If a primitive stored the args array directly in the result (e.g. `values`),
+        // clone it before clearing so the result isn't corrupted.
+        if (result instanceof Values && ((Values) result).values == args)
+            ((Values) result).values = args.clone();
+        returnArgs(args);
+        return result;
+    }
+
+    // An arithmetic intrinsic with other than the inlined argument count:
+    // the n values at stack[sp..], popped by the caller.
+    private Object applyIntrinsic(Primitive prim, SourcePos pos, Object[] stack, int sp, int n) {
+        Object[] iarr = rentArgs(n);
+        System.arraycopy(stack, sp, iarr, 0, n);
+        Object result = prim.apply(pos, iarr);
+        returnArgs(iarr);
+        return result;
+    }
+
+    // The two-argument arithmetic beyond fixnums without overflow.
+    private static Object add2(Object ia, Object ib) {
+        if (Value.isInteger(ia) && Value.isInteger(ib)) return IntegerMath.genericAdd(ia, ib);
+        if (ia instanceof Double || ib instanceof Double) {
+            if (ia instanceof Complex || ib instanceof Complex) return Complex.add(ia, ib);
+            return vmToReal(ia) + vmToReal(ib);
+        }
+        if (ia instanceof Complex || ib instanceof Complex) return Complex.add(ia, ib);
+        return Rational.add(ia, ib);
+    }
+
+    private static Object sub2(Object ia, Object ib) {
+        if (Value.isInteger(ia) && Value.isInteger(ib)) return IntegerMath.genericSub(ia, ib);
+        if (ia instanceof Double || ib instanceof Double) {
+            if (ia instanceof Complex || ib instanceof Complex) return Complex.sub(ia, ib);
+            return vmToReal(ia) - vmToReal(ib);
+        }
+        if (ia instanceof Complex || ib instanceof Complex) return Complex.sub(ia, ib);
+        return Rational.sub(ia, ib);
+    }
+
+    private static Object mul2(Object ia, Object ib) {
+        if (Value.isInteger(ia) && Value.isInteger(ib)) return IntegerMath.genericMul(ia, ib);
+        if (ia instanceof Double || ib instanceof Double) {
+            if (ia instanceof Complex || ib instanceof Complex) return Complex.mul(ia, ib);
+            return vmToReal(ia) * vmToReal(ib);
+        }
+        if (ia instanceof Complex || ib instanceof Complex) return Complex.mul(ia, ib);
+        return Rational.mul(ia, ib);
+    }
+
+    private static Object div2(SourcePos pos, Object ia, Object ib) {
+        if (ia instanceof Long && ib instanceof Long) {
+            if ((long)(Long)ib == 0) throw new SchemeError(pos, "/: Division by zero");
+            return Rational.div(ia, ib);
+        }
+        if (ia instanceof Double || ib instanceof Double) {
+            if (ia instanceof Complex || ib instanceof Complex) return Complex.div(ia, ib);
+            double dib = vmToReal(ib);
+            if (dib == 0.0) throw new SchemeError(pos, "/: Division by ~s", dib);
+            return vmToReal(ia) / dib;
+        }
+        if (ia instanceof Complex || ib instanceof Complex) return Complex.div(ia, ib);
+        return Rational.div(ia, ib);
+    }
+
+    private static Object negate(Object ia) {
+        if (ia instanceof Long) return IntegerMath.negate((long)(Long)ia);
+        if (Value.isBigInteger(ia)) return IntegerMath.genericNegate(ia);
+        if (ia instanceof Double) return -(double)(Double)ia;
+        if (ia instanceof Complex) return Complex.negate(ia);
+        return Rational.sub(0L, ia);
+    }
+
+    // =, <, >, <=, >= on two numbers that are not both fixnums.
+    private static boolean compare2(Opcode op, SourcePos pos, Object ia, Object ib) {
+        if (op == Opcode.NUM_EQ) {
+            if (Value.isInteger(ia) && Value.isInteger(ib)) return IntegerMath.genericEquals(ia, ib);
+            if (ia instanceof Double && ib instanceof Double) return (double)(Double)ia == (double)(Double)ib;
+            if (ia instanceof Complex || ib instanceof Complex) return Complex.numericEquals(ia, ib);
+            return Primitive.mixedNumericEquals(ia, ib);
+        }
+        if (Value.isInteger(ia) && Value.isInteger(ib)) {
+            int c = IntegerMath.compare(ia, ib);
+            switch (op) {
+                case NUM_LT: return c < 0;
+                case NUM_GT: return c > 0;
+                case NUM_LTE: return c <= 0;
+                default: return c >= 0;
+            }
+        }
+        if (ia instanceof Complex || ib instanceof Complex)
+            throw new SchemeError(pos, opcodeErrorName(op) + ": complex numbers are not ordered");
+        switch (op) {
+            case NUM_LT: return Primitive.numLess(ia, ib);
+            case NUM_GT: return Primitive.numGreater(ia, ib);
+            case NUM_LTE: return Primitive.numLessEq(ia, ib);
+            default: return Primitive.numGreaterEq(ia, ib);
+        }
+    }
+
+    // The arguments of (apply f a ... list) from its rest argument.
+    private static List<Object> flattenApplyArgs(Instruction instruction, Object restObj) {
+        List<Object> args = new ArrayList<>();
+        if (restObj == Value.NIL)
+            throw new SchemeError(instruction.pos, "apply: not enough arguments");
+        Object pair = restObj;
+        while (pair != Value.NIL) {
+            if (Value.asPair(pair).cdr == Value.NIL) {
+                if (!Value.isPair(Value.asPair(pair).car) && !Value.isNil(Value.asPair(pair).car))
+                    throw new SchemeError(instruction.pos, "apply: last argument must be a list");
+                pair = Value.asPair(pair).car;
+                while (pair != Value.NIL) {
+                    args.add(Value.asPair(pair).car);
+                    pair = Value.asPair(pair).cdr;
+                }
+                break;
+            } else {
+                args.add(Value.asPair(pair).car);
+                pair = Value.asPair(pair).cdr;
+            }
+        }
+        return args;
+    }
+
+    // The continuation of the current stack as a procedure (CC).
+    private static Lambda captureContinuation(Object[] stack, int sp) {
+        // Opt A: serialize array stack to Pair chain for capture
+        Object capturedStack = Value.NIL;
+        for (int i = sp - 1; i >= 0; i--)
+            capturedStack = new Pair(stack[i], capturedStack);
+        List<Instruction> newcode = new ArrayList<>();
+        newcode.add(new Instruction(Opcode.ARGMV));
+        newcode.add(new Instruction(Opcode.LVAR, 1, 0));
+        newcode.add(new Instruction(Opcode.SETCC));
+        newcode.add(new Instruction(Opcode.LVAR, 0, 0));
+        newcode.add(new Instruction(Opcode.RETURN));
+        // Opt B: env frame must be Object[]
+        Object capturedEnv = new Object[] { Value.NIL, capturedStack };
+        return new Lambda(capturedEnv, newcode);
+    }
 
     private Object primaryValue(Object value) {
         if (Value.isValues(value)) {
@@ -227,54 +448,38 @@ public class VM {
         Object savedWinders = winders;
         Object savedExceptionHandlers = exceptionHandlers;
         push(new ReturnAddress(func.code.size(), func, env));
-        this.fn = func;
-        this.ip = 0;
-        this.nargs = 0;
+        Lambda fn = func;
+        Instruction[] code = fn.codeArr;
+        int ip = 0;
+        Object env = this.env;
+        int sp = this.sp;
+        Object[] stack = ensureStack(stackArr, sp + code.length);
+        int nargs = 0;
         boolean continueExecution;
         do {
         continueExecution = false;
         try {
-        while (ip < this.fn.codeArr.length) {
-            Instruction instruction = this.fn.codeArr[ip++];
+        while (ip < code.length) {
+            Instruction instruction = code[ip++];
             switch (instruction.opcode) {
                 case LVAR:
-                    push(getenv(instruction.i1,
-                                instruction.i2));
+                    stack[sp] = getenv(env, instruction.i1, instruction.i2); sp++;
                     break;
 
                 case LSET:
-                    setenv(instruction.i1,
+                    setenv(env, instruction.i1,
                            instruction.i2,
-                           primaryValue(top()));
+                           primaryValue(stack[sp - 1]));
                     break;
 
                 case GVAR: {
-                    Cell cell = instruction.cachedCell;
-                    if (cell != null && instruction.cachedCellGeneration == modules.cacheGeneration) {
-                        push(cell.value);
-                        break;
-                    }
-                    try {
-                        String moduleName = (String) instruction.arg2;
-                        String symbol = Value.asSymbol(instruction.arg1);
-                        Module module = modules.getModuleRequired(instruction.pos, moduleName);
-                        Cell resolved = module.resolveCell(symbol);
-                        if (resolved == null) {
-                            throw new SchemeError(instruction.pos, module.getName() + ": ~a is not bound", symbol);
-                        }
-                        instruction.cachedCell = resolved;
-                        instruction.cachedCellGeneration = modules.cacheGeneration;
-                        push(resolved.value);
-                    } catch (SchemeError e) {
-                        throw e;
-                    } catch (Exception e) {
-                        throw new SchemeError(instruction.pos, "internal error");
-                    }
+                    Cell cell = globalCell(instruction, instruction.arg1, (String) instruction.arg2);
+                    stack[sp++] = cell.value;
                     break;
                 }
 
                 case GSET: {
-                    Object value = primaryValue(top());
+                    Object value = primaryValue(stack[sp - 1]);
                     Cell cachedCell = instruction.cachedCell;
                     if (cachedCell != null
                         && instruction.cachedCellGeneration == modules.cacheGeneration
@@ -285,59 +490,58 @@ public class VM {
                         }
                         break;
                     }
-                    Module module = modules.getModuleRequired(instruction.pos, (String) instruction.arg2);
-                    String symbol = Value.asSymbol(instruction.arg1);
-                    if (Scheme.strictImports && "user program".equals(module.getName())) {
-                        String origin = module.provenance.get(symbol);
-                        if (origin != null && !origin.equals(module.getName()) && !"scm core".equals(origin)) {
-                            throw new SchemeError(instruction.pos,
-                                "program: cannot redefine imported symbol '~a' from '~a'",
-                                symbol, origin);
-                        }
-                    }
-                    module.bind(symbol, value);
-                    instruction.cachedCell = module.resolveCell(symbol);
-                    instruction.cachedCellGeneration = modules.cacheGeneration;
-                    if (Value.isLambda(value)) {
-                        Value.asLambda(value).name = instruction.arg1.toString();
-                    }
+                    globalSet(instruction, value);
                     break;
                 }
 
                 case POP:
-                    pop();
+                    stack[--sp] = null;
                     break;
 
                 case CONST:
-                    push(instruction.arg1);
+                    stack[sp++] = instruction.arg1;
                     break;
 
                 case JUMP:
+                    if (instruction.i1 < ip) stack = ensureStack(stack, sp + code.length - instruction.i1);
                     ip = instruction.i1;
                     break;
 
                 case FJUMP:
-                    if (pop() == Value.F) ip = instruction.i1;
+                    if (stack[--sp] == Value.F) {
+                        if (instruction.i1 < ip) stack = ensureStack(stack, sp + code.length - instruction.i1);
+                        ip = instruction.i1;
+                    }
                     break;
 
                 case TJUMP:
-                    if (pop() != Value.F) ip = instruction.i1;
+                    if (stack[--sp] != Value.F) {
+                        if (instruction.i1 < ip) stack = ensureStack(stack, sp + code.length - instruction.i1);
+                        ip = instruction.i1;
+                    }
                     break;
 
                 case SAVE:
-                    push(new ReturnAddress(instruction.i1, this.fn, env));
+                    stack[sp++] = new ReturnAddress(instruction.i1, fn, env);
                     break;
 
                 case RETURN: {
-                    ReturnAddress address = (ReturnAddress) second();
-                    this.fn = address.fn;
+                    ReturnAddress address = (ReturnAddress) stack[sp - 2];
+                    fn = address.fn;
+                    code = fn.codeArr;
                     env = address.env;
                     ip = address.ip;
-                    Object value = pop();
-                    pop();
-                    push(value);
+                    stack[sp - 2] = stack[sp - 1];
+                    stack[--sp] = null;
+                    stack = ensureStack(stack, sp + code.length - ip);
                     break;
                 }
+
+                case GCALLJ: {
+                    Cell cell = globalCell(instruction, instruction.arg3, (String) instruction.arg2);
+                    stack[sp++] = cell.value;
+                }
+                // fall through: call the global like CALLJ
 
                 case CALLJ: {
                     SchemeThread ct = currentThread;
@@ -348,97 +552,60 @@ public class VM {
                         argcount = flattened;
                         flattened = 0;
                     }
-                    Object f = pop();
+                    Object f = stack[--sp];
                     if (Value.isLambda(f)) {
                         // countCall(Value.DisplayRep(f));
-                        this.fn = Value.asLambda(f);
+                        fn = Value.asLambda(f);
+                        code = fn.codeArr;
                         env = fn.env;
                         ip = 0;
                         nargs = argcount;
+                        stack = ensureStack(stack, sp + code.length);
                     } else if (Value.isPrimitive(f)) {
                         // countCall(Value.DisplayRep(f));
-                        // Opt C: use pooled arg arrays
-                        Object[] args = rentArgs(argcount);
-                        nargs = args.length;
-                        for (int i = args.length - 1; i >= 0; i--) {
-                            args[i] = primaryValue(pop());
-                        }
-                        Object result;
-                        try {
-                            result = Value.asPrimitive(f).apply(instruction.pos, args);
-                        } catch (SchemeError e) {
-                            returnArgs(args);
-                            throw e;
-                        } catch (ClassCastException e) {
-                            returnArgs(args);
-                            throw wrongArgumentTypeError(instruction.pos, Value.asPrimitive(f).name(), e);
-                        } catch (Exception e) {
-                            returnArgs(args);
-                            throw new SchemeError(instruction.pos,
-                                                  "Failed in " + Value.asPrimitive(f).name()
-                                                  + ": " + e.getMessage());
-                        }
-                        // If a primitive stored the args array directly in the result (e.g. `values`),
-                        // clone it before clearing so the result isn't corrupted.
-                        if (result instanceof Values && ((Values) result).values == args)
-                            ((Values) result).values = args.clone();
-                        returnArgs(args);
-                        push(result);
-                        ReturnAddress address = (ReturnAddress) second();
-                        this.fn = address.fn;
+                        sp -= argcount;
+                        Object result = applyPrimitive(f, instruction.pos, stack, sp, argcount);
+                        ReturnAddress address = (ReturnAddress) stack[sp - 1];
+                        fn = address.fn;
+                        code = fn.codeArr;
                         env = address.env;
                         ip = address.ip;
-                        Object val = pop();
-                        pop();
-                        push(val);
+                        stack[sp - 1] = result;
+                        stack = ensureStack(stack, sp + code.length - ip);
                     } else {
                         throw new SchemeError(instruction.pos, f + " is not a function, cannot apply");
                     }
                     break;
                 }
 
+                case GCALLS: {
+                    Cell cell = globalCell(instruction, instruction.arg3, (String) instruction.arg2);
+                    stack[sp++] = cell.value;
+                }
+                // fall through: call the global like CALLS
+
                 case CALLS: {
                     SchemeThread ct = currentThread;
                     if (ct != null && ct.terminated)
                         throw new SchemeError("thread terminated");
                     int argcount = instruction.i1;
-                    Object f = pop();
+                    Object f = stack[--sp];
                     if (f instanceof Lambda) {
                         // the return address goes under the arguments,
                         // where SAVE would have put it
-                        if (sp == stackArr.length) push(null); else sp++;
+                        sp++;
                         int base = sp - 1 - argcount;
-                        for (int i = sp - 1; i > base; i--) stackArr[i] = stackArr[i - 1];
-                        stackArr[base] = new ReturnAddress(ip, this.fn, env);
-                        this.fn = (Lambda) f;
+                        for (int i = sp - 1; i > base; i--) stack[i] = stack[i - 1];
+                        stack[base] = new ReturnAddress(ip, fn, env);
+                        fn = (Lambda) f;
+                        code = fn.codeArr;
                         env = fn.env;
                         ip = 0;
                         nargs = argcount;
+                        stack = ensureStack(stack, sp + code.length);
                     } else if (Value.isPrimitive(f)) {
-                        Object[] args = rentArgs(argcount);
-                        nargs = args.length;
-                        for (int i = args.length - 1; i >= 0; i--) {
-                            args[i] = primaryValue(pop());
-                        }
-                        Object result;
-                        try {
-                            result = Value.asPrimitive(f).apply(instruction.pos, args);
-                        } catch (SchemeError e) {
-                            returnArgs(args);
-                            throw e;
-                        } catch (ClassCastException e) {
-                            returnArgs(args);
-                            throw wrongArgumentTypeError(instruction.pos, Value.asPrimitive(f).name(), e);
-                        } catch (Exception e) {
-                            returnArgs(args);
-                            throw new SchemeError(instruction.pos,
-                                                  "Failed in " + Value.asPrimitive(f).name()
-                                                  + ": " + e.getMessage());
-                        }
-                        if (result instanceof Values && ((Values) result).values == args)
-                            ((Values) result).values = args.clone();
-                        returnArgs(args);
-                        push(result);
+                        sp -= argcount;
+                        stack[sp] = applyPrimitive(f, instruction.pos, stack, sp, argcount); sp++;
                     } else {
                         throw new SchemeError(instruction.pos, f + " is not a function, cannot apply");
                     }
@@ -447,13 +614,9 @@ public class VM {
 
                 case ARGS: {
                     if (nargs != instruction.i1)
-                        throw new SchemeError(instruction.pos,
-                                              (fn.name != null ? fn.name + " " : "")
-                                              + "Wrong number of arguments: "
-                                              + instruction.arg1 + " expected, "
-                                              + nargs + " supplied");
+                        throw arityError(fn, instruction, nargs, "");
                     Object[] frame = new Object[nargs + 1];
-                    for (int i = nargs; i >= 1; i--) frame[i] = pop();
+                    for (int i = nargs; i >= 1; i--) { frame[i] = stack[--sp]; stack[sp] = null; }
                     frame[0] = env;
                     env = frame;
                     break;
@@ -462,7 +625,7 @@ public class VM {
                 case EXTEND: {
                     int n = instruction.i1;
                     Object[] frame = new Object[n + 1];
-                    for (int i = n; i >= 1; i--) frame[i] = pop();
+                    for (int i = n; i >= 1; i--) { frame[i] = stack[--sp]; stack[sp] = null; }
                     frame[0] = env;
                     env = frame;
                     break;
@@ -471,19 +634,16 @@ public class VM {
                 case ARGSDOT: {
                     int fixedArgs = instruction.i1;
                     if (nargs < fixedArgs)
-                        throw new SchemeError(instruction.pos,
-                                              (fn.name != null ? fn.name + " " : "")
-                                              + "Wrong number of arguments: "
-                                              + instruction.arg1 + " or more expected, "
-                                              + nargs + " supplied");
+                        throw arityError(fn, instruction, nargs, " or more");
                     // Opt B: build Object[] frame; rest list remains a Pair chain (Scheme list)
                     Object rest = Value.NIL;
                     for (int i = 0; i < nargs - fixedArgs; i++) {
-                        rest = new Pair(pop(), rest);
+                        rest = new Pair(stack[--sp], rest);
+                        stack[sp] = null;
                     }
                     Object[] frame = new Object[fixedArgs + 2];
                     frame[fixedArgs + 1] = rest;
-                    for (int i = fixedArgs; i >= 1; i--) frame[i] = pop();
+                    for (int i = fixedArgs; i >= 1; i--) { frame[i] = stack[--sp]; stack[sp] = null; }
                     frame[0] = env;
                     env = frame;
                     break;
@@ -492,12 +652,14 @@ public class VM {
                 case ARGMV: {
                     // Opt B: build Object[] frame
                     if (nargs == 1) {
-                        env = new Object[] { env, pop() };
+                        env = new Object[] { env, stack[--sp] };
+                        stack[sp] = null;
                     } else {
                         Values mv = new Values();
                         mv.values = new Object[nargs];
                         for (int i = nargs - 1; i >= 0; i--) {
-                            mv.values[i] = pop();
+                            mv.values[i] = stack[--sp];
+                            stack[sp] = null;
                         }
                         env = new Object[] { env, mv };
                     }
@@ -509,75 +671,48 @@ public class VM {
                     List<Instruction> fn_instructions = (List<Instruction>) fn_pair.sixth();
                     Lambda new_lambda = new Lambda(env, fn_instructions);
                     if (fn_pair.length() > 6) new_lambda.doc = fn_pair.eight().toString();
-                    push(new_lambda);
+                    stack[sp++] = new_lambda;
                     break;
                 }
 
                 case SETCC: {
                     // Opt A: restore array stack from captured Pair chain
-                    Object savedStack = top();
+                    Object savedStack = stack[sp - 1];
+                    int n = 0;
+                    for (Object p = savedStack; p != Value.NIL; p = Value.asPair(p).cdr) n++;
+                    stack = ensureStack(stack, n + code.length - ip);
                     sp = 0;
                     for (Object p = savedStack; p != Value.NIL; p = Value.asPair(p).cdr)
-                        push(Value.asPair(p).car);
+                        stack[sp++] = Value.asPair(p).car;
                     break;
                 }
 
-                case CC: {
-                    // Opt A: serialize array stack to Pair chain for capture
-                    Object capturedStack = Value.NIL;
-                    for (int i = sp - 1; i >= 0; i--)
-                        capturedStack = new Pair(stackArr[i], capturedStack);
-                    List<Instruction> newcode = new ArrayList<>();
-                    newcode.add(new Instruction(Opcode.ARGMV));
-                    newcode.add(new Instruction(Opcode.LVAR, 1, 0));
-                    newcode.add(new Instruction(Opcode.SETCC));
-                    newcode.add(new Instruction(Opcode.LVAR, 0, 0));
-                    newcode.add(new Instruction(Opcode.RETURN));
-                    // Opt B: env frame must be Object[]
-                    Object capturedEnv = new Object[] { Value.NIL, capturedStack };
-                    push(new Lambda(capturedEnv, newcode));
+                case CC:
+                    stack[sp] = captureContinuation(stack, sp); sp++;
                     break;
-                }
 
                 case FLATTEN_APPLY: {
-                    List<Object> args = new ArrayList<>();
-                    Object restObj = getenv(instruction.i1, instruction.i2);
-                    if (restObj == Value.NIL)
-                        throw new SchemeError(instruction.pos, "apply: not enough arguments");
-                    Object pair = restObj;
-                    while (pair != Value.NIL) {
-                        if (Value.asPair(pair).cdr == Value.NIL) {
-                            if (!Value.isPair(Value.asPair(pair).car) && !Value.isNil(Value.asPair(pair).car))
-                                throw new SchemeError(instruction.pos, "apply: last argument must be a list");
-                            pair = Value.asPair(pair).car;
-                            while (pair != Value.NIL) {
-                                args.add(Value.asPair(pair).car);
-                                pair = Value.asPair(pair).cdr;
-                            }
-                            break;
-                        } else {
-                            args.add(Value.asPair(pair).car);
-                            pair = Value.asPair(pair).cdr;
-                        }
-                    }
+                    List<Object> args = flattenApplyArgs(instruction, getenv(env, instruction.i1, instruction.i2));
                     flattened = args.size();
+                    stack = ensureStack(stack, sp + args.size() + code.length - ip);
                     for (int i = 0; i < args.size(); i++) {
-                        push(args.get(i));
+                        stack[sp++] = args.get(i);
                     }
                     break;
                 }
 
                 case FLATTEN_MULTVALS: {
-                    Object val = pop();
+                    Object val = stack[--sp];
                     if (Value.isValues(val)) {
                         Object[] values = Value.asValues(val).values;
                         flattened = values.length;
+                        stack = ensureStack(stack, sp + values.length + code.length - ip);
                         for (int i = 0; i < values.length; i++) {
-                            push(values[i]);
+                            stack[sp++] = values[i];
                         }
                     } else {
                         flattened = 1;
-                        push(val);
+                        stack[sp++] = val;
                     }
                     break;
                 }
@@ -586,283 +721,271 @@ public class VM {
                     throw new SchemeError((SourcePos) null, new ErrorObject(
                         "raise: exception handler returned", new Object[0]));
 
+                case POPENV:
+                    env = ((Object[]) env)[0];
+                    break;
+
+                case LVAR_CAR:
+                    stack[sp] = Value.asPair(getenv(env, instruction.i1, instruction.i2)).car; sp++;
+                    break;
+
+                case LVAR_CDR:
+                    stack[sp] = Value.asPair(getenv(env, instruction.i1, instruction.i2)).cdr; sp++;
+                    break;
+
+                case LVAR_VREF: {
+                    Object[] vec = Value.asVector(getenv(env, instruction.i1, instruction.i2));
+                    int i = instruction.i3;
+                    if (i >= vec.length)
+                        throw new SchemeError(instruction.pos, "vector-ref: index out of range: ~a", (long) i);
+                    stack[sp++] = vec[i];
+                    break;
+                }
+
+                case LVAR_NULL_FJUMP:
+                    if (getenv(env, instruction.i1, instruction.i2) != Value.NIL) {
+                        if (instruction.i3 < ip) stack = ensureStack(stack, sp + code.length - instruction.i3);
+                        ip = instruction.i3;
+                    }
+                    break;
+
+                case LVAR_PAIR_FJUMP:
+                    if (!Value.isPair(getenv(env, instruction.i1, instruction.i2))) {
+                        if (instruction.i3 < ip) stack = ensureStack(stack, sp + code.length - instruction.i3);
+                        ip = instruction.i3;
+                    }
+                    break;
+
+                case CONST_EQ_FJUMP:
+                    if (!PrimitiveEqP.eq(stack[--sp], instruction.arg1)) {
+                        if (instruction.i2 < ip) stack = ensureStack(stack, sp + code.length - instruction.i2);
+                        ip = instruction.i2;
+                    }
+                    break;
+
                 case CAR:
-                    push(Value.asPair(pop()).car);
+                    stack[sp - 1] = Value.asPair(stack[sp - 1]).car;
                     break;
 
                 case CDR:
-                    push(Value.asPair(pop()).cdr);
+                    stack[sp - 1] = Value.asPair(stack[sp - 1]).cdr;
                     break;
 
                 case CONS: {
-                    Object icdr = pop(), icar = pop();
-                    push(new Pair(icar, icdr));
+                    Object icdr = stack[--sp];
+                    stack[sp - 1] = new Pair(stack[sp - 1], icdr);
                     break;
                 }
 
                 case IS_NULL:
-                    push(pop() == Value.NIL ? Value.T : Value.F);
+                    stack[sp - 1] = stack[sp - 1] == Value.NIL ? Value.T : Value.F;
                     break;
 
                 case IS_PAIR: {
-                    Object ipv = pop();
-                    push(Value.isPair(ipv) ? Value.T : Value.F);
+                    Object ipv = stack[--sp];
+                    stack[sp++] = Value.isPair(ipv) ? Value.T : Value.F;
                     break;
                 }
 
                 case NOT:
-                    push(pop().equals(Value.F) ? Value.T : Value.F);
+                    stack[sp - 1] = stack[sp - 1].equals(Value.F) ? Value.T : Value.F;
                     break;
 
                 case LVAR_ADD_IMM: {
                     long packed = (long)(Long) instruction.arg1;
-                    Object val = getenv((int)(packed >> 16), (int)(packed & 0xFFFF));
+                    Object val = getenv(env, (int)(packed >> 16), (int)(packed & 0xFFFF));
                     long imm = (long)(Long) instruction.arg2;
                     if (val instanceof Long) {
-                        try { push(Math.addExact((long)(Long)val, imm)); }
-                        catch (ArithmeticException e) { push(IntegerMath.genericAdd(val, imm)); }
-                        break;
+                        long a = (Long) val, r = a + imm;
+                        if (((a ^ r) & (imm ^ r)) >= 0) { stack[sp++] = r; break; }
                     }
-                    if (Value.isBigInteger(val)) { push(IntegerMath.genericAdd(val, imm)); break; }
-                    if (val instanceof Double) { push((double)(Double)val + (double)imm); break; }
-                    if (val instanceof Complex) { push(Complex.add(val, imm)); break; }
-                    push(Rational.add(val, imm)); break;
+                    stack[sp] = add2(val, imm); sp++;
+                    break;
                 }
 
                 case LVAR_SUB_IMM: {
                     long packed = (long)(Long) instruction.arg1;
-                    Object val = getenv((int)(packed >> 16), (int)(packed & 0xFFFF));
+                    Object val = getenv(env, (int)(packed >> 16), (int)(packed & 0xFFFF));
                     long imm = (long)(Long) instruction.arg2;
                     if (val instanceof Long) {
-                        try { push(Math.subtractExact((long)(Long)val, imm)); }
-                        catch (ArithmeticException e) { push(IntegerMath.genericSub(val, imm)); }
-                        break;
+                        long a = (Long) val, r = a - imm;
+                        if (((a ^ imm) & (a ^ r)) >= 0) { stack[sp++] = r; break; }
                     }
-                    if (Value.isBigInteger(val)) { push(IntegerMath.genericSub(val, imm)); break; }
-                    if (val instanceof Double) { push((double)(Double)val - (double)imm); break; }
-                    if (val instanceof Complex) { push(Complex.sub(val, imm)); break; }
-                    push(Rational.sub(val, imm)); break;
+                    stack[sp] = sub2(val, imm); sp++;
+                    break;
                 }
 
                 case ADD: {
                     int n = instruction.i1;
-                    if (n == 0) { push(0L); break; }
                     if (n == 2) {
-                        Object ib = pop(), ia = pop();
+                        Object ib = stack[--sp], ia = stack[--sp];
                         if (ia instanceof Long && ib instanceof Long) {
-                            try { push(Math.addExact((long)(Long)ia, (long)(Long)ib)); }
-                            catch (ArithmeticException e) { push(IntegerMath.genericAdd(ia, ib)); }
-                            break;
+                            long a = (Long) ia, b = (Long) ib, r = a + b;
+                            if (((a ^ r) & (b ^ r)) >= 0) { stack[sp++] = r; break; }
                         }
-                        if (Value.isInteger(ia) && Value.isInteger(ib)) { push(IntegerMath.genericAdd(ia, ib)); break; }
-                        if (ia instanceof Double || ib instanceof Double) {
-                            if (ia instanceof Complex || ib instanceof Complex) { push(Complex.add(ia, ib)); break; }
-                            push(vmToReal(ia) + vmToReal(ib)); break;
-                        }
-                        if (ia instanceof Complex || ib instanceof Complex) { push(Complex.add(ia, ib)); break; }
-                        push(Rational.add(ia, ib)); break;
+                        stack[sp] = add2(ia, ib); sp++;
+                        break;
                     }
-                    Object[] iarr = rentArgs(n);
-                    for (int i = n - 1; i >= 0; i--) iarr[i] = pop();
-                    push(S_ADD.apply(instruction.pos, iarr));
-                    returnArgs(iarr);
+                    sp -= n;
+                    stack[sp] = applyIntrinsic(S_ADD, instruction.pos, stack, sp, n); sp++;
                     break;
                 }
 
                 case SUB: {
                     int n = instruction.i1;
-                    if (n == 1) {
-                        Object ia = pop();
-                        if (ia instanceof Long) { push(IntegerMath.negate((long)(Long)ia)); break; }
-                        if (Value.isBigInteger(ia)) { push(IntegerMath.genericNegate(ia)); break; }
-                        if (ia instanceof Double) { push(-(double)(Double)ia); break; }
-                        if (ia instanceof Complex) { push(Complex.negate(ia)); break; }
-                        push(Rational.sub(0L, ia)); break;
-                    }
                     if (n == 2) {
-                        Object ib = pop(), ia = pop();
+                        Object ib = stack[--sp], ia = stack[--sp];
                         if (ia instanceof Long && ib instanceof Long) {
-                            try { push(Math.subtractExact((long)(Long)ia, (long)(Long)ib)); }
-                            catch (ArithmeticException e) { push(IntegerMath.genericSub(ia, ib)); }
-                            break;
+                            long a = (Long) ia, b = (Long) ib, r = a - b;
+                            if (((a ^ b) & (a ^ r)) >= 0) { stack[sp++] = r; break; }
                         }
-                        if (Value.isInteger(ia) && Value.isInteger(ib)) { push(IntegerMath.genericSub(ia, ib)); break; }
-                        if (ia instanceof Double || ib instanceof Double) {
-                            if (ia instanceof Complex || ib instanceof Complex) { push(Complex.sub(ia, ib)); break; }
-                            push(vmToReal(ia) - vmToReal(ib)); break;
-                        }
-                        if (ia instanceof Complex || ib instanceof Complex) { push(Complex.sub(ia, ib)); break; }
-                        push(Rational.sub(ia, ib)); break;
+                        stack[sp] = sub2(ia, ib); sp++;
+                        break;
                     }
-                    Object[] iarr = rentArgs(n);
-                    for (int i = n - 1; i >= 0; i--) iarr[i] = pop();
-                    push(S_SUB.apply(instruction.pos, iarr));
-                    returnArgs(iarr);
+                    if (n == 1) {
+                        Object ia = stack[--sp];
+                        stack[sp] = negate(ia); sp++;
+                        break;
+                    }
+                    sp -= n;
+                    stack[sp] = applyIntrinsic(S_SUB, instruction.pos, stack, sp, n); sp++;
                     break;
                 }
 
                 case MUL: {
                     int n = instruction.i1;
-                    if (n == 0) { push(1L); break; }
                     if (n == 2) {
-                        Object ib = pop(), ia = pop();
+                        Object ib = stack[--sp], ia = stack[--sp];
                         if (ia instanceof Long && ib instanceof Long) {
-                            try { push(Math.multiplyExact((long)(Long)ia, (long)(Long)ib)); }
-                            catch (ArithmeticException e) { push(IntegerMath.genericMul(ia, ib)); }
-                            break;
+                            long a = (Long) ia, b = (Long) ib, r = a * b, high = Math.multiplyHigh(a, b);
+                            if ((high == 0 && r >= 0) || (high == -1 && r < 0)) { stack[sp++] = r; break; }
                         }
-                        if (Value.isInteger(ia) && Value.isInteger(ib)) { push(IntegerMath.genericMul(ia, ib)); break; }
-                        if (ia instanceof Double || ib instanceof Double) {
-                            if (ia instanceof Complex || ib instanceof Complex) { push(Complex.mul(ia, ib)); break; }
-                            push(vmToReal(ia) * vmToReal(ib)); break;
-                        }
-                        if (ia instanceof Complex || ib instanceof Complex) { push(Complex.mul(ia, ib)); break; }
-                        push(Rational.mul(ia, ib)); break;
+                        stack[sp] = mul2(ia, ib); sp++;
+                        break;
                     }
-                    Object[] iarr = rentArgs(n);
-                    for (int i = n - 1; i >= 0; i--) iarr[i] = pop();
-                    push(S_MUL.apply(instruction.pos, iarr));
-                    returnArgs(iarr);
+                    sp -= n;
+                    stack[sp] = applyIntrinsic(S_MUL, instruction.pos, stack, sp, n); sp++;
                     break;
                 }
 
                 case DIV: {
                     int n = instruction.i1;
                     if (n == 2) {
-                        Object ib = pop(), ia = pop();
-                        if (ia instanceof Long && ib instanceof Long) {
-                            long ibl = (long)(Long)ib;
-                            if (ibl == 0) throw new SchemeError(instruction.pos, "/: Division by zero");
-                            push(Rational.div(ia, ib)); break;
-                        }
-                        if (ia instanceof Double || ib instanceof Double) {
-                            if (ia instanceof Complex || ib instanceof Complex) { push(Complex.div(ia, ib)); break; }
-                            double dib = vmToReal(ib);
-                            if (dib == 0.0) throw new SchemeError(instruction.pos, "/: Division by ~s", dib);
-                            push(vmToReal(ia) / dib); break;
-                        }
-                        if (ia instanceof Complex || ib instanceof Complex) { push(Complex.div(ia, ib)); break; }
-                        push(Rational.div(ia, ib)); break;
+                        Object ib = stack[--sp], ia = stack[--sp];
+                        stack[sp] = div2(instruction.pos, ia, ib); sp++;
+                        break;
                     }
-                    Object[] iarr = rentArgs(n);
-                    for (int i = n - 1; i >= 0; i--) iarr[i] = pop();
-                    push(S_DIV.apply(instruction.pos, iarr));
-                    returnArgs(iarr);
+                    sp -= n;
+                    stack[sp] = applyIntrinsic(S_DIV, instruction.pos, stack, sp, n); sp++;
                     break;
                 }
 
                 case NUM_EQ: {
                     int n = instruction.i1;
                     if (n == 2) {
-                        Object ib = pop(), ia = pop();
-                        if (ia instanceof Long && ib instanceof Long) { push((long)(Long)ia == (long)(Long)ib ? Value.T : Value.F); break; }
-                        if (Value.isInteger(ia) && Value.isInteger(ib)) { push(IntegerMath.genericEquals(ia, ib) ? Value.T : Value.F); break; }
-                        if (ia instanceof Double && ib instanceof Double) { push((double)(Double)ia == (double)(Double)ib ? Value.T : Value.F); break; }
-                        if (ia instanceof Complex || ib instanceof Complex) { push(Complex.numericEquals(ia, ib) ? Value.T : Value.F); break; }
-                        push(Primitive.mixedNumericEquals(ia, ib) ? Value.T : Value.F); break;
+                        Object ib = stack[--sp], ia = stack[--sp];
+                        boolean r = ia instanceof Long && ib instanceof Long
+                            ? (long)(Long)ia == (long)(Long)ib
+                            : compare2(Opcode.NUM_EQ, instruction.pos, ia, ib);
+                        stack[sp] = r ? Value.T : Value.F; sp++;
+                        break;
                     }
-                    Object[] iarr = rentArgs(n);
-                    for (int i = n - 1; i >= 0; i--) iarr[i] = pop();
-                    push(S_NUM_EQ.apply(instruction.pos, iarr));
-                    returnArgs(iarr);
+                    sp -= n;
+                    stack[sp] = applyIntrinsic(S_NUM_EQ, instruction.pos, stack, sp, n); sp++;
                     break;
                 }
 
                 case NUM_LT: {
                     int n = instruction.i1;
                     if (n == 2) {
-                        Object ib = pop(), ia = pop();
-                        if (ia instanceof Long && ib instanceof Long) { push((long)(Long)ia < (long)(Long)ib ? Value.T : Value.F); break; }
-                        if (Value.isInteger(ia) && Value.isInteger(ib)) { push(IntegerMath.compare(ia, ib) < 0 ? Value.T : Value.F); break; }
-                        if (ia instanceof Complex || ib instanceof Complex) throw new SchemeError(instruction.pos, "<: complex numbers are not ordered");
-                        push(Primitive.numLess(ia, ib) ? Value.T : Value.F); break;
+                        Object ib = stack[--sp], ia = stack[--sp];
+                        boolean r = ia instanceof Long && ib instanceof Long
+                            ? (long)(Long)ia < (long)(Long)ib
+                            : compare2(Opcode.NUM_LT, instruction.pos, ia, ib);
+                        stack[sp] = r ? Value.T : Value.F; sp++;
+                        break;
                     }
-                    Object[] iarr = rentArgs(n);
-                    for (int i = n - 1; i >= 0; i--) iarr[i] = pop();
-                    push(S_NUM_LT.apply(instruction.pos, iarr));
-                    returnArgs(iarr);
+                    sp -= n;
+                    stack[sp] = applyIntrinsic(S_NUM_LT, instruction.pos, stack, sp, n); sp++;
                     break;
                 }
 
                 case NUM_GT: {
                     int n = instruction.i1;
                     if (n == 2) {
-                        Object ib = pop(), ia = pop();
-                        if (ia instanceof Long && ib instanceof Long) { push((long)(Long)ia > (long)(Long)ib ? Value.T : Value.F); break; }
-                        if (Value.isInteger(ia) && Value.isInteger(ib)) { push(IntegerMath.compare(ia, ib) > 0 ? Value.T : Value.F); break; }
-                        if (ia instanceof Complex || ib instanceof Complex) throw new SchemeError(instruction.pos, ">: complex numbers are not ordered");
-                        push(Primitive.numGreater(ia, ib) ? Value.T : Value.F); break;
+                        Object ib = stack[--sp], ia = stack[--sp];
+                        boolean r = ia instanceof Long && ib instanceof Long
+                            ? (long)(Long)ia > (long)(Long)ib
+                            : compare2(Opcode.NUM_GT, instruction.pos, ia, ib);
+                        stack[sp] = r ? Value.T : Value.F; sp++;
+                        break;
                     }
-                    Object[] iarr = rentArgs(n);
-                    for (int i = n - 1; i >= 0; i--) iarr[i] = pop();
-                    push(S_NUM_GT.apply(instruction.pos, iarr));
-                    returnArgs(iarr);
+                    sp -= n;
+                    stack[sp] = applyIntrinsic(S_NUM_GT, instruction.pos, stack, sp, n); sp++;
                     break;
                 }
 
                 case NUM_LTE: {
                     int n = instruction.i1;
                     if (n == 2) {
-                        Object ib = pop(), ia = pop();
-                        if (ia instanceof Long && ib instanceof Long) { push((long)(Long)ia <= (long)(Long)ib ? Value.T : Value.F); break; }
-                        if (Value.isInteger(ia) && Value.isInteger(ib)) { push(IntegerMath.compare(ia, ib) <= 0 ? Value.T : Value.F); break; }
-                        if (ia instanceof Complex || ib instanceof Complex) throw new SchemeError(instruction.pos, "<=: complex numbers are not ordered");
-                        push(Primitive.numLessEq(ia, ib) ? Value.T : Value.F); break;
+                        Object ib = stack[--sp], ia = stack[--sp];
+                        boolean r = ia instanceof Long && ib instanceof Long
+                            ? (long)(Long)ia <= (long)(Long)ib
+                            : compare2(Opcode.NUM_LTE, instruction.pos, ia, ib);
+                        stack[sp] = r ? Value.T : Value.F; sp++;
+                        break;
                     }
-                    Object[] iarr = rentArgs(n);
-                    for (int i = n - 1; i >= 0; i--) iarr[i] = pop();
-                    push(S_NUM_LTE.apply(instruction.pos, iarr));
-                    returnArgs(iarr);
+                    sp -= n;
+                    stack[sp] = applyIntrinsic(S_NUM_LTE, instruction.pos, stack, sp, n); sp++;
                     break;
                 }
 
                 case NUM_GTE: {
                     int n = instruction.i1;
                     if (n == 2) {
-                        Object ib = pop(), ia = pop();
-                        if (ia instanceof Long && ib instanceof Long) { push((long)(Long)ia >= (long)(Long)ib ? Value.T : Value.F); break; }
-                        if (Value.isInteger(ia) && Value.isInteger(ib)) { push(IntegerMath.compare(ia, ib) >= 0 ? Value.T : Value.F); break; }
-                        if (ia instanceof Complex || ib instanceof Complex) throw new SchemeError(instruction.pos, ">=: complex numbers are not ordered");
-                        push(Primitive.numGreaterEq(ia, ib) ? Value.T : Value.F); break;
+                        Object ib = stack[--sp], ia = stack[--sp];
+                        boolean r = ia instanceof Long && ib instanceof Long
+                            ? (long)(Long)ia >= (long)(Long)ib
+                            : compare2(Opcode.NUM_GTE, instruction.pos, ia, ib);
+                        stack[sp] = r ? Value.T : Value.F; sp++;
+                        break;
                     }
-                    Object[] iarr = rentArgs(n);
-                    for (int i = n - 1; i >= 0; i--) iarr[i] = pop();
-                    push(S_NUM_GTE.apply(instruction.pos, iarr));
-                    returnArgs(iarr);
+                    sp -= n;
+                    stack[sp] = applyIntrinsic(S_NUM_GTE, instruction.pos, stack, sp, n); sp++;
                     break;
                 }
 
                 case EQ_P: {
-                    Object ib = pop(), ia = pop();
-                    push(PrimitiveEqP.eq(ia, ib) ? Value.T : Value.F);
+                    Object ib = stack[--sp], ia = stack[--sp];
+                    stack[sp] = PrimitiveEqP.eq(ia, ib) ? Value.T : Value.F; sp++;
                     break;
                 }
 
                 case EQV_P: {
-                    Object ib = pop(), ia = pop();
-                    push(PrimitiveEqvP.eqv(ia, ib) ? Value.T : Value.F);
+                    Object ib = stack[--sp], ia = stack[--sp];
+                    stack[sp] = PrimitiveEqvP.eqv(ia, ib) ? Value.T : Value.F; sp++;
                     break;
                 }
 
                 case VECTOR_REF: {
-                    Object idx = pop();
-                    Object[] vec = Value.asVector(pop());
+                    Object idx = stack[--sp];
+                    Object[] vec = Value.asVector(stack[--sp]);
                     int i = IntegerMath.toInt(idx);
                     if (i < 0 || i >= vec.length)
                         throw new SchemeError(instruction.pos, "vector-ref: index out of range: ~a", idx);
-                    push(vec[i]);
+                    stack[sp++] = vec[i];
                     break;
                 }
 
                 case VECTOR_SET: {
-                    Object val = pop();
-                    Object idx = pop();
-                    Object[] vec = Value.asVector(pop());
+                    Object val = stack[--sp];
+                    Object idx = stack[--sp];
+                    Object[] vec = Value.asVector(stack[--sp]);
                     int i = IntegerMath.toInt(idx);
                     if (i < 0 || i >= vec.length)
                         throw new SchemeError(instruction.pos, "vector-set!: index out of range: ~a", idx);
                     vec[i] = val;
-                    push(new Values());
+                    stack[sp++] = new Values();
                     break;
                 }
 
@@ -872,15 +995,20 @@ public class VM {
             }
         }
         } catch (SchemeError e) {
+            this.fn = fn; this.ip = ip; this.env = env; this.sp = sp;
             if (e.schemeCallStack == null)
                 e.schemeCallStack = extractCallStack();
             if (exceptionHandlers != Value.NIL) {
                 Object condition = e.errorObject != null ? e.errorObject
                     : new ErrorObject(e.getMessage(), new Object[0]);
+                this.nargs = nargs;
                 setupRaiseCall(condition);
+                fn = this.fn; code = fn.codeArr; ip = this.ip; env = this.env;
+                sp = this.sp; nargs = this.nargs;
+                stack = ensureStack(stackArr, sp + code.length - ip);
                 continueExecution = true;
             } else {
-                sp = savedSp;
+                this.sp = savedSp;
                 winders = savedWinders;
                 exceptionHandlers = savedExceptionHandlers;
                 throw e;
@@ -895,19 +1023,28 @@ public class VM {
                 if (name == null) name = failed.opcode + " instruction";
             }
             SchemeError err = wrongArgumentTypeError(failed != null ? failed.pos : null, name, cce);
+            this.fn = fn; this.ip = ip; this.env = env; this.sp = sp;
             err.schemeCallStack = extractCallStack();
             if (exceptionHandlers != Value.NIL) {
+                this.nargs = nargs;
                 setupRaiseCall(err.errorObject);
+                fn = this.fn; code = fn.codeArr; ip = this.ip; env = this.env;
+                sp = this.sp; nargs = this.nargs;
+                stack = ensureStack(stackArr, sp + code.length - ip);
                 continueExecution = true;
             } else {
-                sp = savedSp;
+                this.sp = savedSp;
                 winders = savedWinders;
                 exceptionHandlers = savedExceptionHandlers;
                 throw err;
             }
         }
         } while (continueExecution);
-        return pop();
+        this.fn = fn; this.ip = ip; this.env = env;
+        Object result = stack[--sp];
+        stack[sp] = null;
+        this.sp = sp;
+        return result;
         } finally {
             VM.current.set(savedCurrent);
         }

@@ -33,4 +33,12 @@ public enum Opcode
     EXTEND,
     // non-tail call without SAVE: (args... f CALLS n)
     CALLS,
+    // drops the innermost frame at the end of a non-tail let body
+    POPENV,
+    // fused instruction sequences (Compiler.PeepholeFuse)
+    GCALLS, GCALLJ,                           // GVAR + CALLS/CALLJ
+    LVAR_CAR, LVAR_CDR,                       // LVAR + CAR/CDR
+    LVAR_VREF,                                // LVAR + CONST k + VECTOR_REF
+    LVAR_NULL_FJUMP, LVAR_PAIR_FJUMP,         // LVAR + IS_NULL/IS_PAIR + FJUMP
+    CONST_EQ_FJUMP,                           // CONST + EQ_P + FJUMP
 }

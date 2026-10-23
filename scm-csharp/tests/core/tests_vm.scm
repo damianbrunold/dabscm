@@ -1,0 +1,257 @@
+(import (scheme base) (scheme write) (scheme eval) (scheme cxr) (srfi 1)
+        (scm compile))
+
+;; The VM's state (function, instruction pointer, environment, stack)
+;; across the points where it leaves the dispatch loop or is replaced
+;; from outside it: errors and exception handlers, continuations, stack
+;; growth, apply and multiple values, nested evaluation.
+
+;; Errors raised by primitives, by VM opcodes (wrong type casts) and by
+;; raise, caught at different depths; the catching function's locals and
+;; the stack below must be intact afterwards.
+(test-group
+  (define (deep n thunk) (if (= n 0) (thunk) (+ 0 (deep (- n 1) thunk))))
+  (define (catch-msg thunk)
+    (guard (e ((error-object? e) (error-object-message e))
+              (#t (list 'raised e)))
+      (thunk)))
+  (=> (catch-msg (lambda () (car 1))) "Failed in car: wrong argument type")
+  (=> (catch-msg (lambda () (deep 50 (lambda () (vector-ref (vector 1) 5)))))
+      "vector-ref: index out of range: 5")
+  (=> (catch-msg (lambda () (deep 50 (lambda () (string-length 5)))))
+      "Failed in string-length: wrong argument type")
+  (=> (catch-msg (lambda () (deep 50 (lambda () (raise 'boom))))) '(raised boom))
+  (=> (catch-msg (lambda () (deep 50 (lambda () (error "custom" 1 2))))) "custom")
+  (=> (catch-msg (lambda () (deep 3 (lambda () (- 'x 4)))))
+      "Failed in -: wrong argument type")
+  (=> ; locals and pending arguments of the catching frame survive
+  (let ((a 1) (b 2))
+    (let ((r (list a (guard (e (#t (+ a b 100))) (+ a (car 'no))) b)))
+      (list r a b)))
+  '((1 103 2) 1 2))
+  (=> ; after a caught error, the following calls run in the right frame
+  (let loop ((i 0) (acc '()))
+    (if (= i 5)
+        (reverse acc)
+        (loop (+ i 1)
+              (cons (guard (e (#t (* i 10))) (if (odd? i) (car i) i)) acc))))
+  '(0 10 2 30 4))
+  (=> ; many errors caught in a loop do not leak stack
+  (let loop ((i 0) (n 0))
+    (if (= i 20000)
+        n
+        (loop (+ i 1) (+ n (guard (e (#t 1)) (deep 3 (lambda () (car '()))))))))
+  20000)
+  (=> ; nested guards: inner re-raises, outer catches
+  (guard (e ((symbol? e) (list 'outer e)))
+    (guard (e ((string? e) 'inner))
+      (deep 10 (lambda () (raise 'sym)))))
+  '(outer sym))
+  (=> ; error inside a guard clause goes to the outer guard
+  (guard (e2 (#t (list 'outer (error-object-message e2))))
+    (guard (e (#t (car e)))
+      (raise 5)))
+  '(outer "Failed in car: wrong argument type"))
+  (=> ; error while evaluating arguments of a primitive call
+  (guard (e (#t 'caught)) (list 1 2 (car 3) 4)) 'caught)
+  (=> ; wrong arity, fixed and rest-argument lambdas
+  (list (guard (e (#t 'a)) ((lambda (x y) x) 1))
+        (guard (e (#t 'b)) ((lambda (x y . r) x) 1))
+        ((lambda (x . r) (list x r)) 1 2 3))
+  '(a b (1 (2 3)))))
+
+;; with-exception-handler: handlers that escape, that return (raise-
+;; continuable resumes, raise reports "handler returned"), primitive
+;; handlers and handlers that raise themselves.
+(test-group
+  (=> (+ 1 (with-exception-handler
+            (lambda (e) 41)
+            (lambda () (raise-continuable 'c))))
+      42)
+  (=> ; resuming inside a deep non-tail computation
+  (let ((f (lambda (n) (* n (raise-continuable n)))))
+    (with-exception-handler
+     (lambda (n) (+ n 1))
+     (lambda () (list (f 2) (f 3) (+ 1 (f 4))))))
+  '(6 12 21))
+  (=> (call/cc
+       (lambda (k)
+         (with-exception-handler
+          (lambda (e) (k (list 'escaped (error-object-message e))))
+          (lambda () (+ 1 (car 'x))))))
+      '(escaped "Failed in car: wrong argument type"))
+  (=> ; a handler that returns from a non-continuable raise
+  (guard (e ((error-object? e) (error-object-message e)))
+    (with-exception-handler
+     (lambda (e) 'ignored)
+     (lambda () (raise 'boom))))
+  "raise: exception handler returned")
+  (=> ; the same for a primitive handler
+  (guard (e ((error-object? e) (error-object-message e)))
+    (with-exception-handler list (lambda () (raise 'boom))))
+  "raise: exception handler returned")
+  (=> ; a handler that raises goes to the outer handler
+  (guard (e (#t (list 'outer e)))
+    (with-exception-handler
+     (lambda (e) (raise (list 'from-handler e)))
+     (lambda () (+ 1 (raise 'inner)))))
+  '(outer (from-handler inner)))
+  (=> ; a VM error inside a handler goes to the outer handler
+  (guard (e ((error-object? e) (error-object-message e)))
+    (with-exception-handler
+     (lambda (e) (vector-ref e 0))
+     (lambda () (raise 'x))))
+  "Failed in vector-ref: wrong argument type"))
+
+;; Continuations: escapes from deep non-tail calls, re-entry, generators,
+;; dynamic-wind.
+(test-group
+  (define (deep n thunk) (if (= n 0) (thunk) (+ 1 (deep (- n 1) thunk))))
+  (=> (call/cc (lambda (k) (deep 1000 (lambda () (k 'out))))) 'out)
+  (=> ; re-entering a continuation captured deep in non-tail calls
+  (let ((k2 #f) (count 0))
+    (let ((r (deep 100 (lambda () (call/cc (lambda (k) (set! k2 k) 0))))))
+      (set! count (+ count 1))
+      (if (< count 4) (k2 count) (list r count))))
+  '(103 4))
+  (=> ; a generator with two continuations
+  (let ()
+    (define return #f)
+    (define resume #f)
+    (define (gen)
+      (for-each (lambda (x) (call/cc (lambda (k) (set! resume k) (return x))))
+                '(a b c))
+      (return 'done))
+    (let loop ((acc '()))
+      (let ((v (call/cc (lambda (k)
+                          (set! return k)
+                          (if resume (resume #f) (gen))))))
+        (if (eq? v 'done) (reverse acc) (loop (cons v acc))))))
+  '(a b c))
+  (=> ; dynamic-wind with escape and re-entry
+  (let ((log '()) (k2 #f) (n 0))
+    (dynamic-wind
+     (lambda () (set! log (cons 'in log)))
+     (lambda () (call/cc (lambda (k) (set! k2 k))) (set! n (+ n 1)))
+     (lambda () (set! log (cons 'out log))))
+    (if (< n 3) (k2 #f))
+    (reverse log))
+  '(in out in out in out))
+  (=> ; escaping from deep inside dynamic-wind runs the after thunk
+  (let ((log '()))
+    (let ((r (call/cc
+              (lambda (k)
+                (dynamic-wind
+                 (lambda () (set! log (cons 'in log)))
+                 (lambda () (deep 200 (lambda () (k 'escaped))))
+                 (lambda () (set! log (cons 'out log))))))))
+      (list r (reverse log))))
+  '(escaped (in out)))
+  (=> ; an error escaping through dynamic-wind runs the after thunk
+  (let ((log '()))
+    (guard (e (#t (set! log (cons 'caught log))))
+      (dynamic-wind
+       (lambda () (set! log (cons 'in log)))
+       (lambda () (+ 1 (car 'x)))
+       (lambda () (set! log (cons 'out log)))))
+    (list (length log) (and (memq 'out log) #t) (and (memq 'caught log) #t)))
+  '(3 #t #t))
+  (=> ; a continuation called with multiple values
+  (call-with-values (lambda () (call/cc (lambda (k) (k 1 2 3)))) list)
+  '(1 2 3)))
+
+;; Stack growth (the initial VM stack holds 512 entries): deep recursion
+;; with many arguments and pending values, apply with long lists, many
+;; values.
+(test-group
+  (define (wide n a b c d e f g h)
+    (if (= n 0)
+        (+ a b c d e f g h)
+        (+ 1 (wide (- n 1) a b c d e f g h))))
+  (=> (wide 20000 1 2 3 4 5 6 7 8) 20036)
+  (=> ; growth while arguments of an outer call are pending
+  (list 1 2 3 (wide 5000 0 0 0 0 0 0 0 0) 5 6)
+  '(1 2 3 5000 5 6))
+  (=> (apply + (iota 10000)) 49995000)
+  (=> (apply (lambda args (length args)) (iota 5000)) 5000)
+  (=> (apply max 1 2 (iota 3000)) 2999)
+  (=> (call-with-values (lambda () (apply values (iota 2000))) (lambda xs (length xs)))
+      2000)
+  (=> ; deep recursion through a primitive-calling, list-building body
+  (length (let loop ((n 30000)) (if (= n 0) '() (cons (string-length "ab") (loop (- n 1))))))
+  30000)
+  (=> ; a continuation captured on a big stack, used after it shrank
+  (let ((k2 #f) (n 0))
+    (let ((r (wide 2000 0 0 0 0 0 0 0 (call/cc (lambda (k) (set! k2 k) 1)))))
+      (set! n (+ n 1))
+      (if (< n 3) (k2 (* 10 n)) (list r n))))
+  '(2020 3)))
+
+;; Multiple values through primitive calls and frames.
+(test-group
+  (=> (call-with-values (lambda () (values)) list) '())
+  (=> (call-with-values (lambda () (values 1 2)) (lambda (a b) (list b a))) '(2 1))
+  (=> ; values returned through several non-tail frames
+  (let ((f (lambda () (values 'x 'y))))
+    (call-with-values (lambda () (f)) list))
+  '(x y))
+  (=> (let-values (((a b) (values 1 2)) ((c) (values 3))) (list a b c)) '(1 2 3))
+  (=> ; values stored by a primitive keep their contents after later calls
+  (let ((v (values 1 2)))
+    (string-length "abc")
+    (call-with-values (lambda () v) list))
+  '(1 2)))
+
+;; Frames: variables of outer frames read and written across calls,
+;; closures over loop variables.
+(test-group
+  (=> (let ((a 1))
+        (let ((b 2))
+          (let ((c 3))
+            (set! a (+ a 10))
+            (set! b (+ b (string-length "xyz")))
+            ((lambda () (set! c (+ a b c))))
+            (list a b c))))
+      '(11 5 19))
+  (=> (map (lambda (th) (th))
+           (let loop ((i 0) (acc '()))
+             (if (= i 3) (reverse acc) (loop (+ i 1) (cons (lambda () (* i i)) acc)))))
+      '(0 1 4))
+  (=> (let ((counter (let ((n 0)) (lambda () (set! n (+ n 1)) n))))
+        (counter) (counter)
+        (list (counter) (+ 1 (counter))))
+      '(3 5))
+  (=> ; set-code! replaces the code of a procedure that already ran
+  (let ((f (lambda () 1)))
+    (let ((before (f)))
+      (set-code! f (list-ref (compile 2) 5))
+      (list before (f))))
+  '(1 2)))
+
+;; Nested evaluation: eval runs in its own VM and returns into the
+;; caller's frame.
+(test-group
+  (=> (let ((a 5)) (+ a (eval '(+ 1 2) (environment '(scheme base))) a)) 13)
+  (=> (let ((a 5)) (list a (eval '(let loop ((i 0)) (if (= i 1000) i (loop (+ i 1))))
+                                 (environment '(scheme base)))
+                         a))
+      '(5 1000 5))
+  (=> (guard (e (#t 'caught)) (+ 1 (eval '(car 1) (environment '(scheme base))))) 'caught))
+
+;; Fixnum overflow inside the arithmetic opcodes (the result becomes a
+;; bignum) at positions where the stack below holds pending values.
+(test-group
+  (define big 9223372036854775807)
+  (define small -9223372036854775808)
+  (=> (list 1 (+ big 1) 2) '(1 9223372036854775808 2))
+  (=> (list 1 (- small 1) 2) '(1 -9223372036854775809 2))
+  (=> (list 1 (* big 2) 2) '(1 18446744073709551614 2))
+  (=> (list 1 (- small) 2) '(1 9223372036854775808 2))
+  (=> (let ((x big)) (list 'a (+ x 1) 'b (- (- x) 2) 'c))
+      '(a 9223372036854775808 b -9223372036854775809 c))
+  (=> (let loop ((i 0) (acc '()))
+        (if (= i 3) (reverse acc) (loop (+ i 1) (cons (+ big i) acc))))
+      '(9223372036854775807 9223372036854775808 9223372036854775809))
+  (=> (let ((f (lambda (n) (* n n n))))
+        (list (f 3) (f 3000000000) (f 4)))
+      '(27 27000000000000000000000000000 64)))

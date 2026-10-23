@@ -7,10 +7,13 @@ public class Instruction
     public Opcode opcode;
     public object? arg1;
     public object? arg2;
-    // arg1/arg2 as ints when they are ints (frame/var indexes, jump
+    // third operand of the fused opcodes (see HasArg3)
+    public object? arg3;
+    // arg1/arg2/arg3 as ints when they are ints (frame/var indexes, jump
     // targets, arg counts): read by the VM without unboxing
     public int i1;
     public int i2;
+    public int i3;
     public SourcePos? pos;
     // Cached binding cell for GVAR/GSET fast path. Populated on first
     // successful resolution. Once set, the cell reference is stable for
@@ -44,7 +47,15 @@ public class Instruction
     {
         if (arg1 is int a1) i1 = a1;
         if (arg2 is int a2) i2 = a2;
+        if (arg3 is int a3) i3 = a3;
     }
+
+    public static bool HasArg3(Opcode opcode) => opcode switch
+    {
+        Opcode.GCALLS or Opcode.GCALLJ or Opcode.LVAR_VREF
+            or Opcode.LVAR_NULL_FJUMP or Opcode.LVAR_PAIR_FJUMP => true,
+        _ => false
+    };
 
     public Instruction WithPos(SourcePos? pos)
     {
@@ -69,6 +80,10 @@ public class Instruction
                 {
                     result.Append(" ").Append(Value.PrintRep(arg2));
                 }
+            }
+            if (arg3 != null)
+            {
+                result.Append(" ").Append(Value.PrintRep(arg3));
             }
             if (pos != null)
             {

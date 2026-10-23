@@ -458,14 +458,11 @@ public class Compiler
                     object newEnv = new Pair(MakeTrueList(fParams), env);
                     if (more)
                     {
-                        string k = GenLabel("K");
                         return Seq(pos,
-                            Gen(pos, Opcode.SAVE, k),
                             CompList(pos, args, env),
                             Gen(pos, Opcode.EXTEND, paramCount),
-                            CompBegin(pos, body, newEnv, true, false),
-                            Pair.List(k),
-                            val ? (object)Value.NIL : Gen(pos, Opcode.POP));
+                            CompBegin(pos, body, newEnv, val, true),
+                            Gen(pos, Opcode.POPENV));
                     }
                     return Seq(pos,
                         CompList(pos, args, env),
@@ -620,14 +617,11 @@ public class Compiler
             object newEnv = new Pair(Pair.List(vars.ToArray()), env);
             if (more)
             {
-                string k = GenLabel("K");
                 return Seq(pos,
-                    Gen(pos, Opcode.SAVE, k),
                     CompList(pos, Pair.List(vals.ToArray()), env),
                     Gen(pos, Opcode.EXTEND, n),
-                    CompBegin(pos, body, newEnv, true, false),
-                    Pair.List(k),
-                    val ? (object)Value.NIL : Gen(pos, Opcode.POP));
+                    CompBegin(pos, body, newEnv, val, true),
+                    Gen(pos, Opcode.POPENV));
             }
             return Seq(pos,
                 CompList(pos, Pair.List(vals.ToArray()), env),
@@ -664,14 +658,11 @@ public class Compiler
         object newEnv = new Pair(Pair.List(var), env);
         if (more)
         {
-            string k = GenLabel("K");
             return Seq(pos,
-                Gen(pos, Opcode.SAVE, k),
                 Comp(pos, valExpr, env, true, true),
                 Gen(pos, Opcode.EXTEND, 1),
-                Comp(pos, Pair.List(innerParts.ToArray()), newEnv, true, false),
-                Pair.List(k),
-                val ? (object)Value.NIL : Gen(pos, Opcode.POP));
+                Comp(pos, Pair.List(innerParts.ToArray()), newEnv, val, true),
+                Gen(pos, Opcode.POPENV));
         }
         return Seq(pos,
             Comp(pos, valExpr, env, true, true),
@@ -724,13 +715,10 @@ public class Compiler
 
         if (more)
         {
-            string k = GenLabel("K");
             return Seq(pos,
-                Gen(pos, Opcode.SAVE, k),
                 initCode, evalCode, setCode,
-                CompBegin(pos, body, newEnv, true, false),
-                Pair.List(k),
-                val ? (object)Value.NIL : Gen(pos, Opcode.POP));
+                CompBegin(pos, body, newEnv, val, true),
+                Gen(pos, Opcode.POPENV));
         }
         return Seq(pos,
             initCode, evalCode, setCode,
@@ -774,13 +762,10 @@ public class Compiler
 
         if (more)
         {
-            string k = GenLabel("K");
             return Seq(pos,
-                Gen(pos, Opcode.SAVE, k),
                 initCode, setCode,
-                CompBegin(pos, body, newEnv, true, false),
-                Pair.List(k),
-                val ? (object)Value.NIL : Gen(pos, Opcode.POP));
+                CompBegin(pos, body, newEnv, val, true),
+                Gen(pos, Opcode.POPENV));
         }
         return Seq(pos,
             initCode, setCode,
@@ -876,6 +861,7 @@ public class Compiler
             changed |= PeepholeUnusedLabels(items);
             changed |= PeepholeLocalAddImm(items);
         }
+        PeepholeFuse(items);
         return (Pair)Pair.List(items.ToArray());
     }
 
@@ -1090,6 +1076,45 @@ public class Compiler
         return changed;
     }
 
+    // Pass J: Fuse frequent instruction sequences into one instruction.
+    // Runs once after the other passes, which do not know the fused
+    // opcodes (the jump passes would miss their targets).
+    private static void PeepholeFuse(List<object> items) {
+        for (int i = 0; i + 1 < items.Count; i++) {
+            if (!IsInstr(items[i]) || !IsInstr(items[i + 1])) continue;
+            Pair a = Value.AsPair(items[i]);
+            Pair b = Value.AsPair(items[i + 1]);
+            Pair? c = i + 2 < items.Count && IsInstr(items[i + 2]) ? Value.AsPair(items[i + 2]) : null;
+            Opcode opA = GetOp(a), opB = GetOp(b);
+            Opcode? opC = c != null ? GetOp(c) : null;
+            Pair? fused = null;
+            int length = 2;
+            if (opA == Opcode.GVAR && (opB == Opcode.CALLS || opB == Opcode.CALLJ)) {
+                // arg count, module, symbol
+                fused = Pair.List2(opB == Opcode.CALLS ? Opcode.GCALLS : Opcode.GCALLJ,
+                                   b.Second(), a.Third(), a.Second()).WithPos(b.pos);
+            } else if (opA == Opcode.LVAR && (opB == Opcode.CAR || opB == Opcode.CDR)) {
+                fused = Pair.List2(opB == Opcode.CAR ? Opcode.LVAR_CAR : Opcode.LVAR_CDR,
+                                   a.Second(), a.Third()).WithPos(b.pos);
+            } else if (opA == Opcode.LVAR && opB == Opcode.CONST && opC == Opcode.VECTOR_REF
+                       && b.Second() is long k && k >= 0 && k <= int.MaxValue) {
+                fused = Pair.List2(Opcode.LVAR_VREF, a.Second(), a.Third(), (int)k).WithPos(c!.pos);
+                length = 3;
+            } else if (opA == Opcode.LVAR && (opB == Opcode.IS_NULL || opB == Opcode.IS_PAIR)
+                       && opC == Opcode.FJUMP) {
+                fused = Pair.List2(opB == Opcode.IS_NULL ? Opcode.LVAR_NULL_FJUMP : Opcode.LVAR_PAIR_FJUMP,
+                                   a.Second(), a.Third(), c!.Second()).WithPos(c.pos);
+                length = 3;
+            } else if (opA == Opcode.CONST && opB == Opcode.EQ_P && opC == Opcode.FJUMP) {
+                fused = Pair.List2(Opcode.CONST_EQ_FJUMP, a.Second(), c!.Second()).WithPos(c.pos);
+                length = 3;
+            }
+            if (fused == null) continue;
+            items[i] = fused;
+            for (int n = 1; n < length; n++) items.RemoveAt(i + 1);
+        }
+    }
+
     private Pair Assemble(Pair fn) {
         object code = fn.Sixth();
         Dictionary<string, int> labels = new();
@@ -1107,6 +1132,7 @@ public class Compiler
                 Instruction instr = new Instruction((Opcode) current.First());
                 if (current.Length() > 1) instr.arg1 = current.Second();
                 if (current.Length() > 2) instr.arg2 = current.Third();
+                if (current.Length() > 3 && Instruction.HasArg3(instr.opcode)) instr.arg3 = current.Fourth();
                 if (current.pos != null) instr.pos = current.pos;
                 instructions.Add(instr);
                 i++;
@@ -1121,6 +1147,15 @@ public class Compiler
                 || instruction.opcode == Opcode.SAVE)
             {
                 instruction.arg1 = labels[instruction.arg1?.ToString() ?? "?"];
+            }
+            else if (instruction.opcode == Opcode.CONST_EQ_FJUMP)
+            {
+                instruction.arg2 = labels[instruction.arg2?.ToString() ?? "?"];
+            }
+            else if (instruction.opcode == Opcode.LVAR_NULL_FJUMP
+                || instruction.opcode == Opcode.LVAR_PAIR_FJUMP)
+            {
+                instruction.arg3 = labels[instruction.arg3?.ToString() ?? "?"];
             }
             instruction.DecodeInts();
         }

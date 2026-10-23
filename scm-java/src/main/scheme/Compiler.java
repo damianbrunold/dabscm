@@ -411,14 +411,11 @@ public class Compiler {
                         body = Value.asPair(body).cdr;
                     Pair newEnv = new Pair(makeTrueList(fParams), env);
                     if (more) {
-                        String k = genLabel("K");
                         return seq(pos,
-                            gen(pos, Opcode.SAVE, k),
                             compList(pos, args, env),
                             gen(pos, Opcode.EXTEND, paramCount),
-                            compBegin(pos, body, newEnv, true, false),
-                            Pair.list(k),
-                            val ? Value.NIL : gen(pos, Opcode.POP));
+                            compBegin(pos, body, newEnv, val, true),
+                            gen(pos, Opcode.POPENV));
                     }
                     return seq(pos,
                         compList(pos, args, env),
@@ -563,14 +560,11 @@ public class Compiler {
             int n = vars.size();
             Pair newEnv = new Pair(Pair.list(vars.toArray()), env);
             if (more) {
-                String k = genLabel("K");
                 return seq(pos,
-                    gen(pos, Opcode.SAVE, k),
                     compList(pos, Pair.list(vals.toArray()), env),
                     gen(pos, Opcode.EXTEND, n),
-                    compBegin(pos, body, newEnv, true, false),
-                    Pair.list(k),
-                    val ? Value.NIL : gen(pos, Opcode.POP));
+                    compBegin(pos, body, newEnv, val, true),
+                    gen(pos, Opcode.POPENV));
             }
             return seq(pos,
                 compList(pos, Pair.list(vals.toArray()), env),
@@ -608,14 +602,11 @@ public class Compiler {
         // Compile as (let ((var val)) (let* rest body))
         Pair newEnv = new Pair(Pair.list(variable), env);
         if (more) {
-            String k = genLabel("K");
             return seq(pos,
-                gen(pos, Opcode.SAVE, k),
                 comp(pos, valExpr, env, true, true),
                 gen(pos, Opcode.EXTEND, 1),
-                comp(pos, Pair.list(innerParts.toArray()), newEnv, true, false),
-                Pair.list(k),
-                val ? Value.NIL : gen(pos, Opcode.POP));
+                comp(pos, Pair.list(innerParts.toArray()), newEnv, val, true),
+                gen(pos, Opcode.POPENV));
         }
         return seq(pos,
             comp(pos, valExpr, env, true, true),
@@ -664,13 +655,10 @@ public class Compiler {
         }
 
         if (more) {
-            String k = genLabel("K");
             return seq(pos,
-                gen(pos, Opcode.SAVE, k),
                 initCode, evalCode, setCode,
-                compBegin(pos, body, newEnv, true, false),
-                Pair.list(k),
-                val ? (Object) Value.NIL : gen(pos, Opcode.POP));
+                compBegin(pos, body, newEnv, val, true),
+                gen(pos, Opcode.POPENV));
         }
         return seq(pos,
             initCode, evalCode, setCode,
@@ -712,13 +700,10 @@ public class Compiler {
         }
 
         if (more) {
-            String k = genLabel("K");
             return seq(pos,
-                gen(pos, Opcode.SAVE, k),
                 initCode, setCode,
-                compBegin(pos, body, newEnv, true, false),
-                Pair.list(k),
-                val ? (Object) Value.NIL : gen(pos, Opcode.POP));
+                compBegin(pos, body, newEnv, val, true),
+                gen(pos, Opcode.POPENV));
         }
         return seq(pos,
             initCode, setCode,
@@ -804,6 +789,7 @@ public class Compiler {
             changed |= peepholeUnusedLabels(items);
             changed |= peepholeLocalAddImm(items);
         }
+        peepholeFuse(items);
         return items.isEmpty() ? Value.NIL : Pair.list(items.toArray());
     }
 
@@ -1016,6 +1002,46 @@ public class Compiler {
         return changed;
     }
 
+    // Pass J: Fuse frequent instruction sequences into one instruction.
+    // Runs once after the other passes, which do not know the fused
+    // opcodes (the jump passes would miss their targets).
+    private static void peepholeFuse(List<Object> items) {
+        for (int i = 0; i + 1 < items.size(); i++) {
+            if (!isInstr(items.get(i)) || !isInstr(items.get(i + 1))) continue;
+            Pair a = Value.asPair(items.get(i));
+            Pair b = Value.asPair(items.get(i + 1));
+            Pair c = i + 2 < items.size() && isInstr(items.get(i + 2)) ? Value.asPair(items.get(i + 2)) : null;
+            Opcode opA = getOp(a), opB = getOp(b), opC = c != null ? getOp(c) : null;
+            Pair fused = null;
+            int length = 2;
+            if (opA == Opcode.GVAR && (opB == Opcode.CALLS || opB == Opcode.CALLJ)) {
+                // arg count, module, symbol
+                fused = Pair.list2(opB == Opcode.CALLS ? Opcode.GCALLS : Opcode.GCALLJ,
+                                   b.second(), a.third(), a.second()).withPos(b.pos);
+            } else if (opA == Opcode.LVAR && (opB == Opcode.CAR || opB == Opcode.CDR)) {
+                fused = Pair.list2(opB == Opcode.CAR ? Opcode.LVAR_CAR : Opcode.LVAR_CDR,
+                                   a.second(), a.third()).withPos(b.pos);
+            } else if (opA == Opcode.LVAR && opB == Opcode.CONST && opC == Opcode.VECTOR_REF
+                       && b.second() instanceof Long
+                       && (long) (Long) b.second() >= 0 && (long) (Long) b.second() <= Integer.MAX_VALUE) {
+                fused = Pair.list2(Opcode.LVAR_VREF, a.second(), a.third(),
+                                   (int) (long) (Long) b.second()).withPos(c.pos);
+                length = 3;
+            } else if (opA == Opcode.LVAR && (opB == Opcode.IS_NULL || opB == Opcode.IS_PAIR)
+                       && opC == Opcode.FJUMP) {
+                fused = Pair.list2(opB == Opcode.IS_NULL ? Opcode.LVAR_NULL_FJUMP : Opcode.LVAR_PAIR_FJUMP,
+                                   a.second(), a.third(), c.second()).withPos(c.pos);
+                length = 3;
+            } else if (opA == Opcode.CONST && opB == Opcode.EQ_P && opC == Opcode.FJUMP) {
+                fused = Pair.list2(Opcode.CONST_EQ_FJUMP, a.second(), c.second()).withPos(c.pos);
+                length = 3;
+            }
+            if (fused == null) continue;
+            items.set(i, fused);
+            for (int k = 1; k < length; k++) items.remove(i + 1);
+        }
+    }
+
     private Pair assemble(Pair fn) {
         Object code = fn.sixth();
         Map<String, Integer> labels = new HashMap<>();
@@ -1030,6 +1056,7 @@ public class Compiler {
                 instr.opcode = (Opcode) current.first();
                 if (current.length() > 1) instr.arg1 = current.second();
                 if (current.length() > 2) instr.arg2 = current.third();
+                if (current.length() > 3 && Instruction.hasArg3(instr.opcode)) instr.arg3 = current.fourth();
                 if (current.pos != null) instr.pos = current.pos;
                 instructions.add(instr);
                 i++;
@@ -1042,6 +1069,11 @@ public class Compiler {
                     instruction.opcode == Opcode.FJUMP ||
                     instruction.opcode == Opcode.SAVE) {
                 instruction.arg1 = labels.get(instruction.arg1);
+            } else if (instruction.opcode == Opcode.CONST_EQ_FJUMP) {
+                instruction.arg2 = labels.get(instruction.arg2);
+            } else if (instruction.opcode == Opcode.LVAR_NULL_FJUMP ||
+                    instruction.opcode == Opcode.LVAR_PAIR_FJUMP) {
+                instruction.arg3 = labels.get(instruction.arg3);
             }
             instruction.decodeInts();
         }
