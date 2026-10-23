@@ -390,12 +390,19 @@ public class VM {
         return args;
     }
 
+    // The value stack of a continuation, restored by SETCC. Sharing the
+    // ReturnAddress entries is safe: they are never modified.
+    private static final class Continuation {
+        final Object[] stack;
+
+        Continuation(Object[] stack, int sp) {
+            this.stack = Arrays.copyOf(stack, sp);
+        }
+    }
+
     // The continuation of the current stack as a procedure (CC).
     private static Lambda captureContinuation(Object[] stack, int sp) {
-        // Opt A: serialize array stack to Pair chain for capture
-        Object capturedStack = Value.NIL;
-        for (int i = sp - 1; i >= 0; i--)
-            capturedStack = new Pair(stack[i], capturedStack);
+        Continuation capturedStack = new Continuation(stack, sp);
         List<Instruction> newcode = new ArrayList<>();
         newcode.add(new Instruction(Opcode.ARGMV));
         newcode.add(new Instruction(Opcode.LVAR, 1, 0));
@@ -676,14 +683,10 @@ public class VM {
                 }
 
                 case SETCC: {
-                    // Opt A: restore array stack from captured Pair chain
-                    Object savedStack = stack[sp - 1];
-                    int n = 0;
-                    for (Object p = savedStack; p != Value.NIL; p = Value.asPair(p).cdr) n++;
-                    stack = ensureStack(stack, n + code.length - ip);
-                    sp = 0;
-                    for (Object p = savedStack; p != Value.NIL; p = Value.asPair(p).cdr)
-                        stack[sp++] = Value.asPair(p).car;
+                    Continuation k = (Continuation) stack[sp - 1];
+                    sp = k.stack.length;
+                    stack = ensureStack(stack, sp + code.length - ip);
+                    System.arraycopy(k.stack, 0, stack, 0, sp);
                     break;
                 }
 
