@@ -25,7 +25,7 @@ public class PrimitiveSetCodeB extends Primitive {
     public Object apply(SourcePos pos, Object[] arguments) {
         checkArgs(pos, arguments, 2, 2);
         Lambda fn = Value.asLambda(arguments[0]);
-        fn.code = (List<Instruction>) arguments[1];
+        fn.setCode((List<Instruction>) arguments[1]);
         return new Values();
     }
 }

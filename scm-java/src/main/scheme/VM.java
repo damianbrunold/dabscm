@@ -153,21 +153,18 @@ public class VM {
         }
     }
 
-    private Object elt(Object list, int n) {
-        for (int i = 0; i < n; i++) {
-            list = Value.asPair(list).cdr;
-        }
-        return Value.asPair(list).car;
-    }
-
-    // Opt B: frames are now Object[] instead of Pair chains — O(1) variable access
+    // An environment is a chain of frames: Object[] with the parent
+    // environment in slot 0 and the frame's variables from slot 1.
     private Object getenv(int frame, int var) {
-        if (frame == 0) return ((Object[]) Value.asPair(env).car)[var];
-        return ((Object[]) elt(env, frame))[var];
+        Object[] f = (Object[]) env;
+        for (int i = 0; i < frame; i++) f = (Object[]) f[0];
+        return f[var + 1];
     }
 
     private void setenv(int frame, int var, Object value) {
-        ((Object[]) elt(env, frame))[var] = value;
+        Object[] f = (Object[]) env;
+        for (int i = 0; i < frame; i++) f = (Object[]) f[0];
+        f[var + 1] = value;
     }
 
     // Opt A: array-based stack operations
@@ -225,6 +222,7 @@ public class VM {
             primordial.state = SchemeThread.State.STARTED;
             SchemeThread.currentThread.set(primordial);
         }
+        SchemeThread currentThread = SchemeThread.currentThread.get();
         int savedSp = sp;
         Object savedWinders = winders;
         Object savedExceptionHandlers = exceptionHandlers;
@@ -236,17 +234,17 @@ public class VM {
         do {
         continueExecution = false;
         try {
-        while (ip < this.fn.code.size()) {
-            Instruction instruction = this.fn.code.get(ip++);
+        while (ip < this.fn.codeArr.length) {
+            Instruction instruction = this.fn.codeArr[ip++];
             switch (instruction.opcode) {
                 case LVAR:
-                    push(getenv((int) instruction.arg1,
-                                (int) instruction.arg2));
+                    push(getenv(instruction.i1,
+                                instruction.i2));
                     break;
 
                 case LSET:
-                    setenv((int) instruction.arg1,
-                           (int) instruction.arg2,
+                    setenv(instruction.i1,
+                           instruction.i2,
                            primaryValue(top()));
                     break;
 
@@ -315,19 +313,19 @@ public class VM {
                     break;
 
                 case JUMP:
-                    ip = (int) instruction.arg1;
+                    ip = instruction.i1;
                     break;
 
                 case FJUMP:
-                    if (pop() == Value.F) ip = (int) instruction.arg1;
+                    if (pop() == Value.F) ip = instruction.i1;
                     break;
 
                 case TJUMP:
-                    if (pop() != Value.F) ip = (int) instruction.arg1;
+                    if (pop() != Value.F) ip = instruction.i1;
                     break;
 
                 case SAVE:
-                    push(new ReturnAddress((int) instruction.arg1, this.fn, env));
+                    push(new ReturnAddress(instruction.i1, this.fn, env));
                     break;
 
                 case RETURN: {
@@ -342,15 +340,14 @@ public class VM {
                 }
 
                 case CALLJ: {
-                    SchemeThread ct = SchemeThread.currentThread.get();
+                    SchemeThread ct = currentThread;
                     if (ct != null && ct.terminated)
                         throw new SchemeError("thread terminated");
-                    int argcount = (int) instruction.arg1;
+                    int argcount = instruction.i1;
                     if (argcount == -1) {
                         argcount = flattened;
                         flattened = 0;
                     }
-                    env = Value.asPair(env).cdr; // discard top frame
                     Object f = pop();
                     if (Value.isLambda(f)) {
                         // countCall(Value.DisplayRep(f));
@@ -400,30 +397,79 @@ public class VM {
                     break;
                 }
 
+                case CALLS: {
+                    SchemeThread ct = currentThread;
+                    if (ct != null && ct.terminated)
+                        throw new SchemeError("thread terminated");
+                    int argcount = instruction.i1;
+                    Object f = pop();
+                    if (f instanceof Lambda) {
+                        // the return address goes under the arguments,
+                        // where SAVE would have put it
+                        if (sp == stackArr.length) push(null); else sp++;
+                        int base = sp - 1 - argcount;
+                        for (int i = sp - 1; i > base; i--) stackArr[i] = stackArr[i - 1];
+                        stackArr[base] = new ReturnAddress(ip, this.fn, env);
+                        this.fn = (Lambda) f;
+                        env = fn.env;
+                        ip = 0;
+                        nargs = argcount;
+                    } else if (Value.isPrimitive(f)) {
+                        Object[] args = rentArgs(argcount);
+                        nargs = args.length;
+                        for (int i = args.length - 1; i >= 0; i--) {
+                            args[i] = primaryValue(pop());
+                        }
+                        Object result;
+                        try {
+                            result = Value.asPrimitive(f).apply(instruction.pos, args);
+                        } catch (SchemeError e) {
+                            returnArgs(args);
+                            throw e;
+                        } catch (ClassCastException e) {
+                            returnArgs(args);
+                            throw wrongArgumentTypeError(instruction.pos, Value.asPrimitive(f).name(), e);
+                        } catch (Exception e) {
+                            returnArgs(args);
+                            throw new SchemeError(instruction.pos,
+                                                  "Failed in " + Value.asPrimitive(f).name()
+                                                  + ": " + e.getMessage());
+                        }
+                        if (result instanceof Values && ((Values) result).values == args)
+                            ((Values) result).values = args.clone();
+                        returnArgs(args);
+                        push(result);
+                    } else {
+                        throw new SchemeError(instruction.pos, f + " is not a function, cannot apply");
+                    }
+                    break;
+                }
+
                 case ARGS: {
-                    if (nargs != (int) instruction.arg1)
+                    if (nargs != instruction.i1)
                         throw new SchemeError(instruction.pos,
                                               (fn.name != null ? fn.name + " " : "")
                                               + "Wrong number of arguments: "
                                               + instruction.arg1 + " expected, "
                                               + nargs + " supplied");
-                    // Opt B: build Object[] frame instead of Pair chain
-                    Object[] frame = new Object[nargs];
-                    for (int i = nargs - 1; i >= 0; i--) frame[i] = pop();
-                    env = new Pair(frame, env);
+                    Object[] frame = new Object[nargs + 1];
+                    for (int i = nargs; i >= 1; i--) frame[i] = pop();
+                    frame[0] = env;
+                    env = frame;
                     break;
                 }
 
                 case EXTEND: {
-                    int n = (int) instruction.arg1;
-                    Object[] frame = new Object[n];
-                    for (int i = n - 1; i >= 0; i--) frame[i] = pop();
-                    env = new Pair(frame, env);
+                    int n = instruction.i1;
+                    Object[] frame = new Object[n + 1];
+                    for (int i = n; i >= 1; i--) frame[i] = pop();
+                    frame[0] = env;
+                    env = frame;
                     break;
                 }
 
                 case ARGSDOT: {
-                    int fixedArgs = (int) instruction.arg1;
+                    int fixedArgs = instruction.i1;
                     if (nargs < fixedArgs)
                         throw new SchemeError(instruction.pos,
                                               (fn.name != null ? fn.name + " " : "")
@@ -435,24 +481,25 @@ public class VM {
                     for (int i = 0; i < nargs - fixedArgs; i++) {
                         rest = new Pair(pop(), rest);
                     }
-                    Object[] frame = new Object[fixedArgs + 1];
-                    frame[fixedArgs] = rest;
-                    for (int i = fixedArgs - 1; i >= 0; i--) frame[i] = pop();
-                    env = new Pair(frame, env);
+                    Object[] frame = new Object[fixedArgs + 2];
+                    frame[fixedArgs + 1] = rest;
+                    for (int i = fixedArgs; i >= 1; i--) frame[i] = pop();
+                    frame[0] = env;
+                    env = frame;
                     break;
                 }
 
                 case ARGMV: {
                     // Opt B: build Object[] frame
                     if (nargs == 1) {
-                        env = new Pair(new Object[] { pop() }, env);
+                        env = new Object[] { env, pop() };
                     } else {
                         Values mv = new Values();
                         mv.values = new Object[nargs];
                         for (int i = nargs - 1; i >= 0; i--) {
                             mv.values[i] = pop();
                         }
-                        env = new Pair(new Object[] { mv }, env);
+                        env = new Object[] { env, mv };
                     }
                     break;
                 }
@@ -487,14 +534,14 @@ public class VM {
                     newcode.add(new Instruction(Opcode.LVAR, 0, 0));
                     newcode.add(new Instruction(Opcode.RETURN));
                     // Opt B: env frame must be Object[]
-                    Object capturedEnv = new Pair(new Object[] { capturedStack }, Value.NIL);
+                    Object capturedEnv = new Object[] { Value.NIL, capturedStack };
                     push(new Lambda(capturedEnv, newcode));
                     break;
                 }
 
                 case FLATTEN_APPLY: {
                     List<Object> args = new ArrayList<>();
-                    Object restObj = getenv((int) instruction.arg1, (int) instruction.arg2);
+                    Object restObj = getenv(instruction.i1, instruction.i2);
                     if (restObj == Value.NIL)
                         throw new SchemeError(instruction.pos, "apply: not enough arguments");
                     Object pair = restObj;
@@ -598,7 +645,7 @@ public class VM {
                 }
 
                 case ADD: {
-                    int n = (int) instruction.arg1;
+                    int n = instruction.i1;
                     if (n == 0) { push(0L); break; }
                     if (n == 2) {
                         Object ib = pop(), ia = pop();
@@ -623,7 +670,7 @@ public class VM {
                 }
 
                 case SUB: {
-                    int n = (int) instruction.arg1;
+                    int n = instruction.i1;
                     if (n == 1) {
                         Object ia = pop();
                         if (ia instanceof Long) { push(IntegerMath.negate((long)(Long)ia)); break; }
@@ -655,7 +702,7 @@ public class VM {
                 }
 
                 case MUL: {
-                    int n = (int) instruction.arg1;
+                    int n = instruction.i1;
                     if (n == 0) { push(1L); break; }
                     if (n == 2) {
                         Object ib = pop(), ia = pop();
@@ -680,7 +727,7 @@ public class VM {
                 }
 
                 case DIV: {
-                    int n = (int) instruction.arg1;
+                    int n = instruction.i1;
                     if (n == 2) {
                         Object ib = pop(), ia = pop();
                         if (ia instanceof Long && ib instanceof Long) {
@@ -705,7 +752,7 @@ public class VM {
                 }
 
                 case NUM_EQ: {
-                    int n = (int) instruction.arg1;
+                    int n = instruction.i1;
                     if (n == 2) {
                         Object ib = pop(), ia = pop();
                         if (ia instanceof Long && ib instanceof Long) { push((long)(Long)ia == (long)(Long)ib ? Value.T : Value.F); break; }
@@ -722,7 +769,7 @@ public class VM {
                 }
 
                 case NUM_LT: {
-                    int n = (int) instruction.arg1;
+                    int n = instruction.i1;
                     if (n == 2) {
                         Object ib = pop(), ia = pop();
                         if (ia instanceof Long && ib instanceof Long) { push((long)(Long)ia < (long)(Long)ib ? Value.T : Value.F); break; }
@@ -738,7 +785,7 @@ public class VM {
                 }
 
                 case NUM_GT: {
-                    int n = (int) instruction.arg1;
+                    int n = instruction.i1;
                     if (n == 2) {
                         Object ib = pop(), ia = pop();
                         if (ia instanceof Long && ib instanceof Long) { push((long)(Long)ia > (long)(Long)ib ? Value.T : Value.F); break; }
@@ -754,7 +801,7 @@ public class VM {
                 }
 
                 case NUM_LTE: {
-                    int n = (int) instruction.arg1;
+                    int n = instruction.i1;
                     if (n == 2) {
                         Object ib = pop(), ia = pop();
                         if (ia instanceof Long && ib instanceof Long) { push((long)(Long)ia <= (long)(Long)ib ? Value.T : Value.F); break; }
@@ -770,7 +817,7 @@ public class VM {
                 }
 
                 case NUM_GTE: {
-                    int n = (int) instruction.arg1;
+                    int n = instruction.i1;
                     if (n == 2) {
                         Object ib = pop(), ia = pop();
                         if (ia instanceof Long && ib instanceof Long) { push((long)(Long)ia >= (long)(Long)ib ? Value.T : Value.F); break; }

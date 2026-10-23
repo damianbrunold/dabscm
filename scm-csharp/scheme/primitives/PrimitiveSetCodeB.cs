@@ -22,7 +22,7 @@ public class PrimitiveSetCodeB : Primitive
     {
         CheckArgs(pos, arguments, 2, 2);
         Lambda fn = Value.AsLambda(arguments[0]);
-        fn.code = (List<Instruction>) arguments[1];
+        fn.SetCode((List<Instruction>) arguments[1]);
         return new Values();
     }
 }

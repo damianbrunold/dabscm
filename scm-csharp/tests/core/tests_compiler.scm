@@ -108,3 +108,42 @@
   ((lambda (x) (+ x 1)) 1.5) 2.5)
   (=> ; Correctness: double value - integer immediate
   ((lambda (x) (- x 1)) 2.5) 1.5))
+
+;; Non-tail calls (CALLS): primitive and lambda callees, the callee of a
+;; global changing between them, frames, call/cc and errors inside the
+;; argument evaluation.
+(test-group
+  (define (has-opcode? fn op)
+    (let loop ((code (get-code fn)))
+      (cond ((null? code) #f)
+            ((string=? (substring (car code) 0 (min (string-length op)
+                                                      (string-length (car code))))
+                       op)
+             #t)
+            (else (loop (cdr code))))))
+  (define h car)
+  (define (use-h) (+ 1 (h '(41 0))))
+  (=> (has-opcode? use-h "CALLS") #t)
+  (=> (has-opcode? use-h "SAVE") #f)
+  (=> (use-h) 42)
+  (set! h (lambda (x) (* 2 (cadr x))))
+  (=> (use-h) 1)
+  (set! h cadr)
+  (=> (use-h) 1)
+  (define (add4 a b c d) (+ a b c d))
+  (=> (list (add4 1 2 3 4) (add4 (add4 1 1 1 1) 2 (string-length "abc") 4)) '(10 13))
+  (=> ; deep non-tail recursion through a lambda
+  (let loop ((n 100000)) (if (= n 0) 0 (+ 1 (loop (- n 1))))) 100000)
+  (=> ; outer frame variables after non-tail calls
+  (let ((a 1) (b 2))
+    (let ((c (+ a (string-length "xy"))))
+      (list a b c ((lambda (d) (+ a b c d)) 4)))) '(1 2 3 10))
+  (=> ; escaping from inside an argument
+  (+ 1 (call/cc (lambda (k) (* 10 (k 41))))) 42)
+  (=> ; re-entering a continuation captured inside an argument
+  (let ((k2 #f) (n 0))
+    (let ((v (+ 100 (call/cc (lambda (k) (set! k2 k) 1)))))
+      (set! n (+ n 1))
+      (if (< n 3) (k2 n) (list v n)))) '(102 3))
+  (=> ; wrong arity raised inside a non-tail call is catchable
+  (guard (e (#t 'caught)) (+ 1 ((lambda (x) x) 1 2))) 'caught))

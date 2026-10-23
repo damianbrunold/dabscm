@@ -31,4 +31,6 @@ public enum Opcode
     VECTOR_REF, VECTOR_SET,
     LVAR_ADD_IMM, LVAR_SUB_IMM,
     EXTEND,
+    // non-tail call without SAVE: (args... f CALLS n)
+    CALLS,
 }

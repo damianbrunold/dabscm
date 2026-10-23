@@ -7,6 +7,10 @@ public class Instruction
     public Opcode opcode;
     public object? arg1;
     public object? arg2;
+    // arg1/arg2 as ints when they are ints (frame/var indexes, jump
+    // targets, arg counts): read by the VM without unboxing
+    public int i1;
+    public int i2;
     public SourcePos? pos;
     // Cached binding cell for GVAR/GSET fast path. Populated on first
     // successful resolution. Once set, the cell reference is stable for
@@ -25,6 +29,7 @@ public class Instruction
     {
         this.opcode = opcode;
         this.arg1 = arg1;
+        DecodeInts();
     }
 
     public Instruction(Opcode opcode, object arg1, object arg2)
@@ -32,6 +37,13 @@ public class Instruction
         this.opcode = opcode;
         this.arg1 = arg1;
         this.arg2 = arg2;
+        DecodeInts();
+    }
+
+    public void DecodeInts()
+    {
+        if (arg1 is int a1) i1 = a1;
+        if (arg2 is int a2) i2 = a2;
     }
 
     public Instruction WithPos(SourcePos? pos)

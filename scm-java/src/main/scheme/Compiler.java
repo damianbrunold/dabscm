@@ -478,13 +478,12 @@ public class Compiler {
             }
         }
         if (more) {
-            String k = genLabel("K");
+            // CALLS puts the return address under the arguments itself,
+            // and only when f is a lambda (a primitive just returns)
             return seq(pos,
-                       gen(pos, Opcode.SAVE, k),
                        compList(pos, args, env),
                        comp(pos, f, env, true, true),
-                       gen(pos, Opcode.CALLJ, (args == Value.NIL ? 0 : Value.asPair(args).length())),
-                       Pair.list(k),
+                       gen(pos, Opcode.CALLS, (args == Value.NIL ? 0 : Value.asPair(args).length())),
                        val ? Value.NIL : gen(pos, Opcode.POP));
         }
         return seq(pos,
@@ -1020,7 +1019,7 @@ public class Compiler {
     private Pair assemble(Pair fn) {
         Object code = fn.sixth();
         Map<String, Integer> labels = new HashMap<>();
-        List<Instruction> instructions = new ArrayList<>();
+        List<Instruction> instructions = new CodeList();
         int i = 0;
         while (code != Value.NIL) {
             if (Value.isSymbol(Value.asPair(code).car)) {
@@ -1044,6 +1043,7 @@ public class Compiler {
                     instruction.opcode == Opcode.SAVE) {
                 instruction.arg1 = labels.get(instruction.arg1);
             }
+            instruction.decodeInts();
         }
         Value.asPair(fn.nthCdr(5)).car = instructions;
         return fn;

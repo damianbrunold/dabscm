@@ -533,14 +533,13 @@ public class Compiler
         }
         if (more)
         {
-            string k = GenLabel("K");
+            // CALLS puts the return address under the arguments itself,
+            // and only when f is a lambda (a primitive just returns)
             return Seq(
                 pos,
-                Gen(pos, Opcode.SAVE, k),
                 CompList(pos, args, env),
                 Comp(pos, f, env, true, true),
-                Gen(pos, Opcode.CALLJ, (args == Value.NIL ? 0 : Value.AsPair(args).Length())),
-                Pair.List(k),
+                Gen(pos, Opcode.CALLS, (args == Value.NIL ? 0 : Value.AsPair(args).Length())),
                 val ? (object)Value.NIL : Gen(pos, Opcode.POP)
             );
         }
@@ -1094,7 +1093,7 @@ public class Compiler
     private Pair Assemble(Pair fn) {
         object code = fn.Sixth();
         Dictionary<string, int> labels = new();
-        List<Instruction> instructions = new();
+        List<Instruction> instructions = new CodeList();
         int i = 0;
         while (code != Value.NIL)
         {
@@ -1123,6 +1122,7 @@ public class Compiler
             {
                 instruction.arg1 = labels[instruction.arg1?.ToString() ?? "?"];
             }
+            instruction.DecodeInts();
         }
         Value.AsPair(fn.NthCdr(5)).car = instructions;
         return fn;
