@@ -162,27 +162,11 @@ Example:
     ((cond)
      (if #f #f))))
 
-(define (assq x ls)
-  "Syntax: (assq key alist)
-Library: (scheme base)
-Description: Searches association list alist for a pair whose car is eq? to key. Returns the first matching pair, or #f if none is found.
-Example:
-  (assq 'b '((a 1) (b 2) (c 3))) => (b 2)
-  (assq 'd '((a 1) (b 2))) => #f"
-  (cond ((null? ls) #f)
-	((eq? x (first (first ls))) (first ls))
-	(else (assq x (cdr ls)))))
+(define assq (%primitive "assq"))
 
-(define (assv x ls)
-  "Syntax: (assv key alist)
-Library: (scheme base)
-Description: Searches association list alist for a pair whose car is eqv? to key. Returns the first matching pair, or #f if none is found. Similar to assq but uses eqv? for comparison.
-Example:
-  (assv 2 '((1 a) (2 b) (3 c))) => (2 b)
-  (assv 5 '((1 a) (2 b))) => #f"
-  (cond ((null? ls) #f)
-	((eqv? x (first (first ls))) (first ls))
-	(else (assv x (cdr ls)))))
+(define assv (%primitive "assv"))
+
+(define %assoc (%primitive "assoc"))
 
 (define (assoc x ls . rest)
   "Syntax: (assoc key alist)
@@ -191,11 +175,13 @@ Description: Searches association list alist for a pair whose car is equal? to k
 Example:
   (assoc \"b\" '((\"a\" 1) (\"b\" 2))) => (b 2)
   (assoc 2.0 '((1 a) (2 b)) =) => (2 b)"
-  (let ((compare (if (null? rest) equal? (car rest))))
-    (let loop ((ls ls))
-      (cond ((null? ls) #f)
-            ((compare x (first (first ls))) (first ls))
-            (else (loop (cdr ls)))))))
+  (if (null? rest)
+      (%assoc x ls)
+      (let ((compare (car rest)))
+        (let loop ((ls ls))
+          (cond ((null? ls) #f)
+                ((compare x (first (first ls))) (first ls))
+                (else (loop (cdr ls))))))))
 
 (define (vector->list v . args)
   "Syntax: (vector->list vector)

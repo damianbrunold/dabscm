@@ -276,6 +276,9 @@ public class Primitives
         Bind(new PrimitiveMakeThread(modules));
         Bind(new PrimitiveMakeVector());
         Bind(new PrimitiveMember());
+        Bind(new PrimitiveAssq());
+        Bind(new PrimitiveAssv());
+        Bind(new PrimitiveAssoc());
         Bind(new PrimitiveMemq());
         Bind(new PrimitiveMemv());
         Bind(new PrimitiveModuleBind(modules));

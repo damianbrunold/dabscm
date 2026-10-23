@@ -274,6 +274,7 @@
     (define append (%primitive "append"))
     (define memq (%primitive "memq"))
     (define memv (%primitive "memv"))
+    (define %member (%primitive "member"))
     (define (member obj list . rest)
       "Syntax: (member obj list)
        (member obj list compare)
@@ -287,11 +288,13 @@ Example:
   (member 2 '(1 2 3))   => (2 3)
   (member 'd '(a b c))  => #f
   (member 2.0 '(1 2 3) =) => (2 3)"
-      (let ((compare (if (null? rest) equal? (car rest))))
-        (let loop ((l list))
-          (cond ((null? l) #f)
-                ((compare obj (car l)) l)
-                (else (loop (cdr l)))))))
+      (if (null? rest)
+          (%member obj list)
+          (let ((compare (car rest)))
+            (let loop ((l list))
+              (cond ((null? l) #f)
+                    ((compare obj (car l)) l)
+                    (else (loop (cdr l))))))))
 
     (define char? (%primitive "char?"))
     (define char->integer (%primitive "char->integer"))

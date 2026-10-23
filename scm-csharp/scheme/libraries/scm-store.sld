@@ -5,6 +5,7 @@
           (scheme read)
           (srfi 69)
           (srfi 132)
+          (scm bytevector)
           (scm random access))
   (export ;; writing
           store-writer-open
@@ -60,16 +61,11 @@
     ;; --- little-endian integer codecs over bytevectors ---
 
     (define (write-u32-le! bv i v)
-      (bytevector-u8-set! bv i (modulo v 256))
-      (bytevector-u8-set! bv (+ i 1) (modulo (quotient v 256) 256))
-      (bytevector-u8-set! bv (+ i 2) (modulo (quotient v 65536) 256))
-      (bytevector-u8-set! bv (+ i 3) (modulo (quotient v 16777216) 256)))
+      (bytevector-u32-set! bv i v 'little))
 
     (define (write-u64-le! bv i v)
-      (let loop ((k 0) (v v))
-        (when (< k 8)
-          (bytevector-u8-set! bv (+ i k) (modulo v 256))
-          (loop (+ k 1) (quotient v 256)))))
+      (bytevector-u32-set! bv i (modulo v 4294967296) 'little)
+      (bytevector-u32-set! bv (+ i 4) (quotient v 4294967296) 'little))
 
     (define (read-u32-le bv i)
       (+ (bytevector-u8-ref bv i)
@@ -95,11 +91,13 @@
 
     ;; --- sorted-list set operations (ascending integer rowids) ---
 
-    (define (dedup-sorted lst)
-      (cond ((null? lst) '())
-            ((null? (cdr lst)) lst)
-            ((= (car lst) (cadr lst)) (dedup-sorted (cdr lst)))
-            (else (cons (car lst) (dedup-sorted (cdr lst))))))
+    ;; rowids are collected newest first, so a posting list is sorted
+    ;; descending; -> ascending without duplicates
+    (define (ascending-unique rows)
+      (let loop ((rows rows) (acc '()))
+        (cond ((null? rows) acc)
+              ((and (pair? acc) (= (car rows) (car acc))) (loop (cdr rows) acc))
+              (else (loop (cdr rows) (cons (car rows) acc))))))
 
     (define (merge-intersect a b)
       (let loop ((a a) (b b) (acc '()))
@@ -178,9 +176,9 @@ Example:
           (when (pair? ns)
             (let ((p (assq (car ns) fields)))
               (when (and p (cdr p))
-                (hash-table-update!/default
-                  (vector-ref (swr-field-tables w) i)
-                  (cdr p) (lambda (lst) (cons rowid lst)) '())))
+                (let ((ht (vector-ref (swr-field-tables w) i)))
+                  (hash-table-set! ht (cdr p)
+                                   (cons rowid (hash-table-ref/default ht (cdr p) '()))))))
             (loop (+ i 1) (cdr ns))))
         (let ((base (length (swr-scalar-names w))))
           (let loop ((i 0) (ns (swr-multi-names w)))
@@ -191,8 +189,8 @@ Example:
                   (for-each
                     (lambda (v)
                       (when v
-                        (hash-table-update!/default
-                          ht v (lambda (lst) (cons rowid lst)) '())))
+                        (hash-table-set! ht v
+                                         (cons rowid (hash-table-ref/default ht v '())))))
                     (cdr p))))
               (loop (+ i 1) (cdr ns)))))
         (set-swr-count! w (+ rowid 1))
@@ -203,8 +201,7 @@ Example:
       (let* ((values-sorted (list-sort string<? (hash-table-keys ht)))
              (postings-offsets
                (map (lambda (val)
-                      (let* ((rows (dedup-sorted
-                                     (list-sort < (hash-table-ref/default ht val '()))))
+                      (let* ((rows (ascending-unique (hash-table-ref/default ht val '())))
                              (n (length rows))
                              (bv (make-bytevector (+ 4 (* 4 n)) 0)))
                         (write-u32-le! bv 0 n)
