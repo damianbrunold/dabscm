@@ -62,8 +62,17 @@
 
     ;; --- Internal helpers ---
 
-    (define (check-arg pred val caller)
-      (if (pred val) val (error "Bad argument" val caller)))
+    (define-syntax check-arg
+      (syntax-rules ()
+        ((_ pred val caller)
+         (let ((v val)) (if (pred v) v (error "Bad argument" v caller))))))
+
+    ;; null-list? inline, for the internal calls (argument: a variable)
+    (define-syntax %null-list?
+      (syntax-rules ()
+        ((_ l) (cond ((pair? l) #f)
+                     ((null? l) #t)
+                     (else (error "null-list?: argument out of domain" l))))))
 
     ;; --- Selectors ---
 
@@ -271,7 +280,7 @@ Example:
       (not (pair? x)))
 
     (define (null-list? l)
-      "Syntax: (null-list? lst)
+      "Syntax: (%null-list? lst)
 Library: (srfi 1)
 Description: Returns #t if lst is the empty list, #f if it is a pair.
 Signals an error if lst is neither null nor a pair.
@@ -298,10 +307,10 @@ Example:
                   (if (eq? list-a list-b)
                       (lp1 list-b others)
                       (let lp2 ((pair-a list-a) (pair-b list-b))
-                        (if (null-list? pair-a)
-                            (and (null-list? pair-b)
+                        (if (%null-list? pair-a)
+                            (and (%null-list? pair-b)
                                  (lp1 list-b others))
-                            (and (not (null-list? pair-b))
+                            (and (not (%null-list? pair-b))
                                  (= (car pair-a) (car pair-b))
                                  (lp2 (cdr pair-a) (cdr pair-b)))))))))))
 
@@ -477,7 +486,7 @@ of second elements from each sublist.
 Example:
   (unzip2 '((1 a) (2 b) (3 c))) => (1 2 3) and (a b c)"
       (let recur ((lis lis))
-        (if (null-list? lis) (values lis lis)
+        (if (%null-list? lis) (values lis lis)
             (let ((elt (car lis)))
               (receive (a b) (recur (cdr lis))
                 (values (cons (car  elt) a)
@@ -491,7 +500,7 @@ elements from each sublist.
 Example:
   (unzip3 '((1 a x) (2 b y))) => (1 2) and (a b) and (x y)"
       (let recur ((lis lis))
-        (if (null-list? lis) (values lis lis lis)
+        (if (%null-list? lis) (values lis lis lis)
             (let ((elt (car lis)))
               (receive (a b c) (recur (cdr lis))
                 (values (cons (car   elt) a)
@@ -506,7 +515,7 @@ elements from each sublist.
 Example:
   (unzip4 '((1 a x p) (2 b y q))) => (1 2) and (a b) and (x y) and (p q)"
       (let recur ((lis lis))
-        (if (null-list? lis) (values lis lis lis lis)
+        (if (%null-list? lis) (values lis lis lis lis)
             (let ((elt (car lis)))
               (receive (a b c d) (recur (cdr lis))
                 (values (cons (car    elt) a)
@@ -522,7 +531,7 @@ elements from each sublist.
 Example:
   (unzip5 '((1 a x p i) (2 b y q j))) => (1 2) and (a b) and (x y) and (p q) and (i j)"
       (let recur ((lis lis))
-        (if (null-list? lis) (values lis lis lis lis lis)
+        (if (%null-list? lis) (values lis lis lis lis lis)
             (let ((elt (car lis)))
               (receive (a b c d e) (recur (cdr lis))
                 (values (cons (car     elt) a)
@@ -562,7 +571,7 @@ Description: Appends (reverse rev-head) to tail. More efficient than (append (re
 Example:
   (append-reverse '(3 2 1) '(4 5)) => (1 2 3 4 5)"
       (let lp ((rev-head rev-head) (tail tail))
-        (if (null-list? rev-head) tail
+        (if (%null-list? rev-head) tail
             (lp (cdr rev-head) (cons (car rev-head) tail)))))
 
     (define (append-reverse! rev-head tail)
@@ -572,7 +581,7 @@ Description: Destructive version of append-reverse. May modify rev-head.
 Example:
   (append-reverse! (list 3 2 1) '(4 5)) => (1 2 3 4 5)"
       (let lp ((rev-head rev-head) (tail tail))
-        (if (null-list? rev-head) tail
+        (if (%null-list? rev-head) tail
             (let ((next-rev (cdr rev-head)))
               (set-cdr! rev-head tail)
               (lp next-rev rev-head)))))
@@ -604,7 +613,7 @@ Example:
           (let recur ((lists lists))
             (if (pair? lists)
                 (let ((lis (car lists)))
-                  (if (null-list? lis) (abort '())
+                  (if (%null-list? lis) (abort '())
                       (cons (cdr lis) (recur (cdr lists)))))
                 '())))))
 
@@ -621,7 +630,7 @@ Example:
           (let recur ((lists lists))
             (if (pair? lists)
                 (receive (list other-lists) (car+cdr lists)
-                  (if (null-list? list) (abort '() '())
+                  (if (%null-list? list) (abort '() '())
                       (receive (a d) (car+cdr list)
                         (receive (cars cdrs) (recur other-lists)
                           (values (cons a cars) (cons d cdrs))))))
@@ -635,7 +644,7 @@ Example:
           (let recur ((lists lists))
             (if (pair? lists)
                 (receive (list other-lists) (car+cdr lists)
-                  (if (null-list? list) (abort '() '())
+                  (if (%null-list? list) (abort '() '())
                       (receive (a d) (car+cdr list)
                         (receive (cars cdrs) (recur other-lists)
                           (values (cons a cars) (cons d cdrs))))))
@@ -664,13 +673,13 @@ Example:
       (check-arg procedure? pred count)
       (if (pair? lists)
           (let lp ((list1 list1) (lists lists) (i 0))
-            (if (null-list? list1) i
+            (if (%null-list? list1) i
                 (receive (as ds) (%cars+cdrs lists)
                   (if (null? as) i
                       (lp (cdr list1) ds
                           (if (apply pred (car list1) as) (+ i 1) i))))))
           (let lp ((lis list1) (i 0))
-            (if (null-list? lis) i
+            (if (%null-list? lis) i
                 (lp (cdr lis) (if (pred (car lis)) (+ i 1) i))))))
 
     ;; --- fold/unfold ---
@@ -726,7 +735,7 @@ Example:
               (if (null? cars+ans) ans
                   (lp cdrs (apply kons cars+ans)))))
           (let lp ((lis lis1) (ans knil))
-            (if (null-list? lis) ans
+            (if (%null-list? lis) ans
                 (lp (cdr lis) (kons (car lis) ans))))))
 
     (define (fold-right kons knil lis1 . lists)
@@ -744,7 +753,7 @@ Example:
               (if (null? cdrs) knil
                   (apply kons (%cars+ lists (recur cdrs))))))
           (let recur ((lis lis1))
-            (if (null-list? lis) knil
+            (if (%null-list? lis) knil
                 (let ((head (car lis)))
                   (kons head (recur (cdr lis))))))))
 
@@ -762,7 +771,7 @@ Example:
               (if (null? cdrs) zero
                   (apply f (append! lists (list (recur cdrs)))))))
           (let recur ((lis lis1))
-            (if (null-list? lis) zero (f lis (recur (cdr lis)))))))
+            (if (%null-list? lis) zero (f lis (recur (cdr lis)))))))
 
     (define (pair-fold f zero lis1 . lists)
       "Syntax: (pair-fold f knil lst1 ...)
@@ -778,7 +787,7 @@ Example:
               (if (null? tails) ans
                   (lp tails (apply f (append! lists (list ans)))))))
           (let lp ((lis lis1) (ans zero))
-            (if (null-list? lis) ans
+            (if (%null-list? lis) ans
                 (let ((tail (cdr lis)))
                   (lp tail (f lis ans)))))))
 
@@ -794,7 +803,7 @@ Example:
   (reduce max 0 '(3 1 4 1 5)) => 5
   (reduce + 0 '()) => 0"
       (check-arg procedure? f reduce)
-      (if (null-list? lis) ridentity
+      (if (%null-list? lis) ridentity
           (fold f (car lis) (cdr lis))))
 
     (define (reduce-right f ridentity lis)
@@ -807,7 +816,7 @@ Example:
   (reduce-right cons '() '(1 2 3)) => (1 2 3)
   (reduce-right + 0 '()) => 0"
       (check-arg procedure? f reduce-right)
-      (if (null-list? lis) ridentity
+      (if (%null-list? lis) ridentity
           (let recur ((head (car lis)) (lis (cdr lis)))
             (if (pair? lis)
                 (f head (recur (car lis) (cdr lis)))
@@ -841,10 +850,10 @@ Example:
                     (receive (cars2 cdrs2) (%cars+cdrs cdrs)
                       (if (null? cars2) vals
                           (appender vals (recur cars2 cdrs2))))))))
-          (if (null-list? lis1) '()
+          (if (%null-list? lis1) '()
               (let recur ((elt (car lis1)) (rest (cdr lis1)))
                 (let ((vals (f elt)))
-                  (if (null-list? rest) vals
+                  (if (%null-list? rest) vals
                       (appender vals (recur (car rest) (cdr rest)))))))))
 
     (define (pair-for-each proc lis1 . lists)
@@ -862,7 +871,7 @@ Example:
                   (begin (apply proc lists)
                          (lp tails)))))
           (let lp ((lis lis1))
-            (if (not (null-list? lis))
+            (if (not (%null-list? lis))
                 (let ((tail (cdr lis)))
                   (proc lis)
                   (lp tail))))))
@@ -878,7 +887,7 @@ Example:
       (check-arg procedure? f map!)
       (if (pair? lists)
           (let lp ((lis1 lis1) (lists lists))
-            (if (not (null-list? lis1))
+            (if (not (%null-list? lis1))
                 (receive (heads tails) (%cars+cdrs/no-test lists)
                   (set-car! lis1 (apply f (car lis1) heads))
                   (lp (cdr lis1) tails))))
@@ -901,7 +910,7 @@ Example:
                         (else (recur cdrs)))
                   '())))
           (let recur ((lis lis1))
-            (if (null-list? lis) lis
+            (if (%null-list? lis) lis
                 (let ((tail (recur (cdr lis))))
                   (cond ((f (car lis)) => (lambda (x) (cons x tail)))
                         (else tail)))))))
@@ -922,7 +931,7 @@ Example:
                     (cons x (recur cdrs)))
                   '())))
           (let recur ((lis lis1))
-            (if (null-list? lis) lis
+            (if (%null-list? lis) lis
                 (let ((tail (cdr lis))
                       (x (f (car lis))))
                   (cons x (recur tail)))))))
@@ -938,7 +947,7 @@ Example:
   (filter odd? '(1 2 3 4 5)) => (1 3 5)"
       (check-arg procedure? pred filter)
       (let recur ((lis lis))
-        (if (null-list? lis) lis
+        (if (%null-list? lis) lis
             (let ((head (car lis))
                   (tail (cdr lis)))
               (if (pred head)
@@ -958,7 +967,7 @@ Example:
   (filter! odd? (list 1 2 3 4 5)) => (1 3 5)"
       (check-arg procedure? pred filter!)
       (let lp ((ans lis))
-        (cond ((null-list? ans)       ans)
+        (cond ((%null-list? ans)       ans)
               ((not (pred (car ans))) (lp (cdr ans)))
               (else (letrec ((scan-in (lambda (prev lis)
                                         (if (pair? lis)
@@ -986,7 +995,7 @@ Example:
   (partition odd? '(1 2 3 4 5)) => (1 3 5) and (2 4)"
       (check-arg procedure? pred partition)
       (let recur ((lis lis))
-        (if (null-list? lis) (values lis lis)
+        (if (%null-list? lis) (values lis lis)
             (let ((elt (car lis))
                   (tail (cdr lis)))
               (receive (in out) (recur tail)
@@ -1005,7 +1014,7 @@ pred and elements not satisfying pred. Returns two values.
 Example:
   (partition! odd? (list 1 2 3 4 5)) => (1 3 5) and (2 4)"
       (check-arg procedure? pred partition!)
-      (if (null-list? lis) (values lis lis)
+      (if (%null-list? lis) (values lis lis)
           (letrec ((scan-in (lambda (in-prev out-prev lis)
                               (let lp ((in-prev in-prev) (lis lis))
                                 (if (pair? lis)
@@ -1085,7 +1094,7 @@ Example:
       (let ((elt= (if (pair? maybe-=) (car maybe-=) equal?)))
         (check-arg procedure? elt= delete-duplicates)
         (let recur ((lis lis))
-          (if (null-list? lis) lis
+          (if (%null-list? lis) lis
               (let* ((x (car lis))
                      (tail (cdr lis))
                      (new-tail (recur (delete x tail elt=))))
@@ -1100,7 +1109,7 @@ Example:
       (let ((elt= (if (pair? maybe-=) (car maybe-=) equal?)))
         (check-arg procedure? elt= delete-duplicates!)
         (let recur ((lis lis))
-          (if (null-list? lis) lis
+          (if (%null-list? lis) lis
               (let* ((x (car lis))
                      (tail (cdr lis))
                      (new-tail (recur (delete! x tail elt=))))
@@ -1166,7 +1175,7 @@ Example:
   (find-tail even? '(1 3 5)) => #f"
       (check-arg procedure? pred find-tail)
       (let lp ((list list))
-        (and (not (null-list? list))
+        (and (not (%null-list? list))
              (if (pred (car list)) list
                  (lp (cdr list))))))
 
@@ -1179,7 +1188,7 @@ Example:
   (take-while even? '(1 2 3)) => ()"
       (check-arg procedure? pred take-while)
       (let recur ((lis lis))
-        (if (null-list? lis) '()
+        (if (%null-list? lis) '()
             (let ((x (car lis)))
               (if (pred x)
                   (cons x (recur (cdr lis)))
@@ -1194,7 +1203,7 @@ Example:
   (drop-while even? '(2 4 6)) => ()"
       (check-arg procedure? pred drop-while)
       (let lp ((lis lis))
-        (if (null-list? lis) '()
+        (if (%null-list? lis) '()
             (if (pred (car lis))
                 (lp (cdr lis))
                 lis))))
@@ -1206,7 +1215,7 @@ Description: Destructive version of take-while. May modify lst.
 Example:
   (take-while! even? (list 2 4 5 6)) => (2 4)"
       (check-arg procedure? pred take-while!)
-      (if (or (null-list? lis) (not (pred (car lis)))) '()
+      (if (or (%null-list? lis) (not (pred (car lis)))) '()
           (begin (let lp ((prev lis) (rest (cdr lis)))
                    (if (pair? rest)
                        (let ((x (car rest)))
@@ -1223,7 +1232,7 @@ Example:
   (span even? '(2 4 5 6)) => (2 4) and (5 6)"
       (check-arg procedure? pred span)
       (let recur ((lis lis))
-        (if (null-list? lis) (values '() '())
+        (if (%null-list? lis) (values '() '())
             (let ((x (car lis)))
               (if (pred x)
                   (receive (prefix suffix) (recur (cdr lis))
@@ -1237,9 +1246,9 @@ Description: Destructive version of span. May modify lst.
 Example:
   (span! even? (list 2 4 5 6)) => (2 4) and (5 6)"
       (check-arg procedure? pred span!)
-      (if (or (null-list? lis) (not (pred (car lis)))) (values '() lis)
+      (if (or (%null-list? lis) (not (pred (car lis)))) (values '() lis)
           (let ((suffix (let lp ((prev lis) (rest (cdr lis)))
-                          (if (null-list? rest) rest
+                          (if (%null-list? rest) rest
                               (let ((x (car rest)))
                                 (if (pred x) (lp rest (cdr rest))
                                     (begin (set-cdr! prev '())
@@ -1281,9 +1290,9 @@ Example:
                      (if (pair? next-heads)
                          (or (apply pred heads) (lp next-heads next-tails))
                          (apply pred heads))))))
-          (and (not (null-list? lis1))
+          (and (not (%null-list? lis1))
                (let lp ((head (car lis1)) (tail (cdr lis1)))
-                 (if (null-list? tail)
+                 (if (%null-list? tail)
                      (pred head)
                      (or (pred head) (lp (car tail) (cdr tail))))))))
 
@@ -1305,9 +1314,9 @@ Example:
                     (if (pair? next-heads)
                         (and (apply pred heads) (lp next-heads next-tails))
                         (apply pred heads))))))
-          (or (null-list? lis1)
+          (or (%null-list? lis1)
               (let lp ((head (car lis1)) (tail (cdr lis1)))
-                (if (null-list? tail)
+                (if (%null-list? tail)
                     (pred head)
                     (and (pred head) (lp (car tail) (cdr tail))))))))
 
@@ -1327,7 +1336,7 @@ Example:
                    (if (apply pred heads) n
                        (lp tails (+ n 1))))))
           (let lp ((lis lis1) (n 0))
-            (and (not (null-list? lis))
+            (and (not (%null-list? lis))
                  (if (pred (car lis)) n (lp (cdr lis) (+ n 1)))))))
 
     ;; --- Reverse ---
@@ -1339,7 +1348,7 @@ Description: Destructively reverses lst in place by modifying the cdr pointers. 
 Example:
   (reverse! (list 1 2 3)) => (3 2 1)"
       (let lp ((lis lis) (ans '()))
-        (if (null-list? lis) ans
+        (if (%null-list? lis) ans
             (let ((tail (cdr lis)))
               (set-cdr! lis ans)
               (lp tail lis)))))

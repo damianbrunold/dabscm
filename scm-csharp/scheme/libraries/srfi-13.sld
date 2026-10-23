@@ -203,6 +203,7 @@ Example:
     (define string-contains (%primitive "string-contains"))
     (define %%string-prefix? (%primitive "string-prefix?"))
     (define %%string-suffix? (%primitive "string-suffix?"))
+    (define %string-index-char (%primitive "%string-index-char"))
 
     ;; --- Predicates ---
 
@@ -994,13 +995,21 @@ Example:
   (string-pad \"hello\" 3) => \"llo\""
       (let* ((char (if (pair? char+start+end) (car char+start+end) #\space))
              (rest (if (pair? char+start+end) (cdr char+start+end) '())))
-        (let-string-start+end (start end) string-pad s rest
-          (let ((len (- end start)))
-            (if (<= n len)
-                (%substring/shared s (- end n) end)
-                (let ((ans (make-string n char)))
-                  (%string-copy! ans (- n len) s start end)
-                  ans))))))
+        (if (and (null? rest) (string? s))
+            (let ((len (string-length s)))
+              (if (<= n len)
+                (%substring/shared s (- len n) len)
+                (string-append (make-string (- n len) char) s)))
+            (string-pad/general s n char rest))))
+
+    (define (string-pad/general s n char rest)
+      (let-string-start+end (start end) string-pad s rest
+        (let ((len (- end start)))
+          (if (<= n len)
+              (%substring/shared s (- end n) end)
+              (let ((ans (make-string n char)))
+                (%string-copy! ans (- n len) s start end)
+                ans)))))
 
     (define (string-pad-right s n . char+start+end)
       "Syntax: (string-pad-right s k [char [start [end]]])
@@ -1011,13 +1020,21 @@ Example:
   (string-pad-right \"hello\" 3) => \"hel\""
       (let* ((char (if (pair? char+start+end) (car char+start+end) #\space))
              (rest (if (pair? char+start+end) (cdr char+start+end) '())))
-        (let-string-start+end (start end) string-pad-right s rest
-          (let ((len (- end start)))
-            (if (<= n len)
-                (%substring/shared s start (+ start n))
-                (let ((ans (make-string n char)))
-                  (%string-copy! ans 0 s start end)
-                  ans))))))
+        (if (and (null? rest) (string? s))
+            (let ((len (string-length s)))
+              (if (<= n len)
+                (%substring/shared s 0 n)
+                (string-append s (make-string (- n len) char))))
+            (string-pad-right/general s n char rest))))
+
+    (define (string-pad-right/general s n char rest)
+      (let-string-start+end (start end) string-pad-right s rest
+        (let ((len (- end start)))
+          (if (<= n len)
+              (%substring/shared s start (+ start n))
+              (let ((ans (make-string n char)))
+                (%string-copy! ans 0 s start end)
+                ans)))))
 
     ;; --- Search: string-index, string-skip ---
     ;; Dispatch on char/char-set/pred for efficiency.
@@ -1029,6 +1046,11 @@ Description: Returns the index of the first character in s[start..end) matching 
 Example:
   (string-index \"hello\" #\\l) => 2
   (string-index \"hello\" char-upper-case?) => #f"
+      (if (and (null? maybe-start+end) (char? criterion) (string? str))
+          (%string-index-char str criterion)
+          (string-index/general str criterion maybe-start+end)))
+
+    (define (string-index/general str criterion maybe-start+end)
       (let-string-start+end (start end) string-index str maybe-start+end
         (cond ((char? criterion)
                (let lp ((i start))

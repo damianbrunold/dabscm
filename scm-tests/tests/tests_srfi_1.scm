@@ -177,4 +177,22 @@
   (test-equal '("apple" "banana" "cherry") (list-sort string<? '("banana" "apple" "cherry")))
   (test-equal '() (list-sort < '())))
 
+;; null-list? and check-arg are inlined inside the library
+(test-group "inline-checks"
+  (test-equal '(2 4) (filter even? '(1 2 3 4)))
+  (test-equal '() (filter even? '()))
+  (test-equal 6 (fold + 0 '(1 2 3)))
+  (test-equal #t (any odd? '(2 3)))
+  (test-equal #f (any odd? '()))
+  (test-equal 3 (find (lambda (x) (> x 2)) '(1 2 3 4)))
+  (test-equal '((1 3) (2 4)) (call-with-values (lambda () (partition odd? '(1 2 3 4))) list))
+  (test-equal '(0 1 4) (list-tabulate 3 (lambda (i) (* i i))))
+  (test-assert (guard (e (#t #t)) (filter 5 '(1 2)) #f))
+  (test-assert (guard (e (#t #t)) (fold 'x 0 '(1)) #f))
+  (test-assert (guard (e (#t #t)) (list-tabulate -1 values) #f))
+  (test-assert (guard (e (#t #t)) (filter even? '(1 2 . 3)) #f))
+  (test-assert (guard (e (#t #t)) (null-list? 5) #f))
+  (test-equal #t (null-list? '()))
+  (test-equal '(#t #f) (map null-list? '(() (1)))))
+
 (test-end "srfi-1")

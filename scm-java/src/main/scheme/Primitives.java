@@ -435,6 +435,7 @@ public class Primitives {
         bind(new PrimitiveStringFoldcase());
         bind(new PrimitiveStringGreaterEqP());
         bind(new PrimitiveStringGreaterP());
+        bind(new PrimitiveStringIndexChar());
         bind(new PrimitiveStringJoin());
         bind(new PrimitiveStringLength());
         bind(new PrimitiveStringLessEqP());

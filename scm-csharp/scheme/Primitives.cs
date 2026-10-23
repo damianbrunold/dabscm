@@ -427,6 +427,7 @@ public class Primitives
         Bind(new PrimitiveStringFoldcase());
         Bind(new PrimitiveStringGreaterEqP());
         Bind(new PrimitiveStringGreaterP());
+        Bind(new PrimitiveStringIndexChar());
         Bind(new PrimitiveStringJoin());
         Bind(new PrimitiveStringLength());
         Bind(new PrimitiveStringLessEqP());
