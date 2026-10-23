@@ -147,15 +147,49 @@
                  (lambda () (set! log (cons 'out log))))))))
       (list r (reverse log))))
   '(escaped (in out)))
-  (=> ; an error escaping through dynamic-wind runs the after thunk
+  (=> ; guard clauses run after the after thunks of the body (R7RS)
   (let ((log '()))
     (guard (e (#t (set! log (cons 'caught log))))
       (dynamic-wind
        (lambda () (set! log (cons 'in log)))
        (lambda () (+ 1 (car 'x)))
        (lambda () (set! log (cons 'out log)))))
-    (list (length log) (and (memq 'out log) #t) (and (memq 'caught log) #t)))
-  '(3 #t #t))
+    (reverse log))
+  '(in out caught))
+  (=> ; the same for raise
+  (let ((log '()))
+    (guard (e ((symbol? e) (set! log (cons e log))))
+      (dynamic-wind
+       (lambda () (set! log (cons 'in log)))
+       (lambda () (raise 'boom))
+       (lambda () (set! log (cons 'out log)))))
+    (reverse log))
+  '(in out boom))
+  (=> ; no clause matches: the re-raise happens back inside the body's extent
+  (let ((log '()))
+    (guard (e (#t (set! log (cons (list 'outer e) log))))
+      (guard (e ((string? e) (set! log (cons 'inner log))))
+        (dynamic-wind
+         (lambda () (set! log (cons 'in log)))
+         (lambda () (raise 'sym))
+         (lambda () (set! log (cons 'out log))))))
+    (reverse log))
+  '(in out in out (outer sym)))
+  (=> ; raise-continuable through a guard without matching clause resumes
+  (with-exception-handler
+   (lambda (e) 10)
+   (lambda ()
+     (+ 1 (guard (e ((string? e) 'no))
+            (raise-continuable 'c)))))
+  11)
+  (=> ; a guard clause sees the handlers outside the guard
+  (guard (e2 (#t (list 'outer e2)))
+    (guard (e (#t (raise (list 'again e))))
+      (raise 'first)))
+  '(outer (again first)))
+  (=> ; guard returns multiple values of its body
+  (call-with-values (lambda () (guard (e (#t 0)) (values 1 2))) list)
+  '(1 2))
   (=> ; a continuation called with multiple values
   (call-with-values (lambda () (call/cc (lambda (k) (k 1 2 3)))) list)
   '(1 2 3)))
@@ -255,3 +289,25 @@
   (=> (let ((f (lambda (n) (* n n n))))
         (list (f 3) (f 3000000000) (f 4)))
       '(27 27000000000000000000000000000 64)))
+
+;; (scm core) exports the same call/cc as (scheme base): importing it last
+;; still runs the dynamic-wind thunks.
+(test-group
+  (import (scheme base) (scm core))
+  (=> (let ((log '()) (k2 #f) (n 0))
+        (dynamic-wind
+         (lambda () (set! log (cons 'in log)))
+         (lambda () (call/cc (lambda (k) (set! k2 k))) (set! n (+ n 1)))
+         (lambda () (set! log (cons 'out log))))
+        (if (< n 2) (k2 #f))
+        (reverse log))
+      '(in out in out))
+  (=> (let ((log '()))
+        (call/cc
+         (lambda (k)
+           (dynamic-wind
+            (lambda () (set! log (cons 'in log)))
+            (lambda () (k 'x))
+            (lambda () (set! log (cons 'out log))))))
+        (reverse log))
+      '(in out)))

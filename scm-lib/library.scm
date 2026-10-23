@@ -60,7 +60,6 @@
 (define bound-identifier=? (%primitive "bound-identifier=?"))
 (define generate-temporaries (%primitive "generate-temporaries"))
 
-(define call/cc call-with-current-continuation)
 
 (define (cdar pair)
   "Syntax: (cdar pair)
@@ -449,6 +448,49 @@ Description: Sets the current default error port to port. Subsequent error outpu
 Example:
   (set-current-error-port (open-output-file \"errors.txt\"))"
   (set! *error-port* port))
+
+;; call/cc that runs the dynamic-wind before/after thunks when a
+;; continuation is invoked from another dynamic extent, and restores the
+;; exception handlers of its capture. (scheme base) re-exports it, so
+;; programs importing (scm core) after (scheme base) get the same call/cc.
+;; The winders list lives in the VM (%winders-get/%winders-set!) and is
+;; extended by dynamic-wind in (scheme base).
+(define %winders-get (%primitive "%winders-get"))
+(define %winders-set! (%primitive "%winders-set!"))
+(define %exception-handlers-get (%primitive "%exception-handlers-get"))
+(define %exception-handlers-set! (%primitive "%exception-handlers-set!"))
+
+(define (%common-tail x y)
+  (let ((lx (length x)) (ly (length y)))
+    (let loop ((x (if (> lx ly) (list-tail x (- lx ly)) x))
+               (y (if (> ly lx) (list-tail y (- ly lx)) y)))
+      (if (eq? x y) x (loop (cdr x) (cdr y))))))
+
+(define (%do-wind new)
+  (let ((tail (%common-tail new (%winders-get))))
+    (let f ((l (%winders-get)))
+      (if (not (eq? l tail))
+          (begin
+            (%winders-set! (cdr l))
+            ((cdr (car l)))
+            (f (cdr l)))))
+    (let f ((l new))
+      (if (not (eq? l tail))
+          (begin
+            (f (cdr l))
+            ((car (car l)))
+            (%winders-set! l))))))
+
+(define call/cc
+  (let ((c call-with-current-continuation))
+    (lambda (f)
+      (c (lambda (k)
+           (f (let ((save-winders (%winders-get))
+                    (save-handlers (%exception-handlers-get)))
+                (lambda x
+                  (if (not (eq? save-winders (%winders-get))) (%do-wind save-winders))
+                  (%exception-handlers-set! save-handlers)
+                  (apply k x)))))))))
 
 ;; Export public API from (scm core)
 ;; Primitives declared above are NOT exported — they are internal to scm core.

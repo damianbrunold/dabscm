@@ -332,11 +332,7 @@ Example:
 
     (define values (%primitive "values"))
     (define apply (%primitive "apply"))
-    (define call-with-current-continuation
-      (%primitive "call-with-current-continuation"))
     (define call-with-values (%primitive "call-with-values"))
-
-    (define call/cc call-with-current-continuation)
 
     ;; Primitive bindings for exception handlers
     (define %exception-handlers-get (%primitive "%exception-handlers-get"))
@@ -344,42 +340,11 @@ Example:
     (define %make-error-object (%primitive "%make-error-object"))
     (define %raise-fatal (%primitive "%raise-fatal"))
 
-    ;; dynamic-wind + call/cc integration (R7RS)
-    ;; winders lives in the VM instance (per-thread) accessed via %winders-get/%winders-set!
-    ;; Helper functions are top-level defines (with % prefix) instead of being
-    ;; inside a (let () ...) block, because set! on imported globals inside a
-    ;; let body with internal defines doesn't compile correctly under the Expander.
+    ;; dynamic-wind + call/cc integration (R7RS): call/cc comes from
+    ;; (scm core) and unwinds/rewinds the winders list that dynamic-wind
+    ;; extends (it lives in the VM, per thread).
     (define %winders-get (%primitive "%winders-get"))
     (define %winders-set! (%primitive "%winders-set!"))
-    (define (%common-tail x y)
-      (let ((lx (length x)) (ly (length y)))
-        (do ((x (if (> lx ly) (list-tail x (- lx ly)) x) (cdr x))
-             (y (if (> ly lx) (list-tail y (- ly lx)) y) (cdr y)))
-            ((eq? x y) x))))
-    (define (%do-wind new)
-      (let ((tail (%common-tail new (%winders-get))))
-        (let f ((l (%winders-get)))
-          (if (not (eq? l tail))
-              (begin
-                (%winders-set! (cdr l))
-                ((cdar l))
-                (f (cdr l)))))
-        (let f ((l new))
-          (if (not (eq? l tail))
-              (begin
-                (f (cdr l))
-                ((caar l))
-                (%winders-set! l))))))
-    (define call/cc
-      (let ((c (%primitive "call-with-current-continuation")))
-        (lambda (f)
-          (c (lambda (k)
-               (f (let ((save-winders (%winders-get))
-                        (save-handlers (%exception-handlers-get)))
-                    (lambda x
-                      (if (not (eq? save-winders (%winders-get))) (%do-wind save-winders))
-                      (%exception-handlers-set! save-handlers)
-                      (apply k x)))))))))
     (define call-with-current-continuation call/cc)
     (define (dynamic-wind in body out)
       (in)
@@ -1312,24 +1277,28 @@ Example:
     (error \"oops\")) => \"oops\"
   (guard (e (#t 'caught))
     (error \"anything\")) => caught"
+      ;; R7RS reference implementation: the clauses run in the dynamic
+      ;; environment of the guard (after the dynamic-wind after thunks of
+      ;; the body), a re-raise goes back into that of the raise.
       (syntax-rules ()
         ((guard (var clause ...) e1 e2 ...)
-         (call/cc
-          (lambda (guard-k)
-            (with-exception-handler
-             (lambda (condition)
-               (let ((var condition))
-                 (call/cc
+         ((call/cc
+           (lambda (guard-k)
+             (with-exception-handler
+              (lambda (condition)
+                ((call/cc
                   (lambda (handler-k)
                     (guard-k
-                     (guard-aux
-                      (handler-k (raise-continuable condition))
-                      clause ...))))))
-             (lambda ()
-               (call-with-values
-                (lambda () e1 e2 ...)
-                (lambda args
-                  (apply guard-k args))))))))))
+                     (lambda ()
+                       (let ((var condition))
+                         (guard-aux
+                          (handler-k (lambda () (raise-continuable condition)))
+                          clause ...))))))))
+              (lambda ()
+                (call-with-values
+                 (lambda () e1 e2 ...)
+                 (lambda args
+                   (guard-k (lambda () (apply values args)))))))))))))
 
     ;; SRFI 11 reference implementation for let-values.
     ;; Uses helper clauses "bind" and "mktmp" to collect temporaries.
