@@ -1595,48 +1595,23 @@ Example:
     ;; Now we are ready to define RECORD-CONSTRUCTOR and the rest of the
     ;; procedures used by the macro expansion of DEFINE-RECORD-TYPE.
 
+    ;; The procedures themselves are primitives (%record-procedure): a call
+    ;; is one primitive call, with the same checks and error messages.
+    (define %record-procedure (%primitive "%record-procedure"))
+
     (define (record-constructor type tags)
-      (let ((size (length (record-type-field-tags type)))
-            (arg-count (length tags))
-            (indexes (map (lambda (tag)
-                            (field-index type tag))
-                          tags)))
-        (lambda args
-          (if (= (length args)
-                 arg-count)
-              (let ((new (make-record (+ size 1))))
-                (record-set! new 0 type)
-                (let loop ((as args) (is indexes))
-                  (if (not (null? as))
-                      (begin
-                        (record-set! new (car is) (car as))
-                        (loop (cdr as) (cdr is)))))
-                new)
-              (error "wrong number of arguments to constructor" type args)))))
+      (%record-procedure 'constructor type
+                         (list->vector (map (lambda (tag) (field-index type tag)) tags))
+                         (+ (length (record-type-field-tags type)) 1)))
 
     (define (record-predicate type)
-      (lambda (thing)
-        (and (record? thing)
-             (eq? (record-type thing)
-                  type))))
+      (%record-procedure 'predicate type #f #f))
 
     (define (record-accessor type tag)
-      (let ((index (field-index type tag)))
-        (lambda (thing)
-          (if (and (record? thing)
-                   (eq? (record-type thing)
-                        type))
-              (record-ref thing index)
-              (error "accessor applied to bad value" type tag thing)))))
+      (%record-procedure 'accessor type (field-index type tag) tag))
 
     (define (record-modifier type tag)
-      (let ((index (field-index type tag)))
-        (lambda (thing value)
-          (if (and (record? thing)
-                   (eq? (record-type thing)
-                        type))
-              (record-set! thing index value)
-              (error "modifier applied to bad value" type tag thing)))))
+      (%record-procedure 'modifier type (field-index type tag) tag))
     ;; ---- end define-record-type ----
 
     ))

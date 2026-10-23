@@ -378,6 +378,7 @@ public class Primitives
         Bind(new PrimitiveReadU8(modules));
         Bind(new PrimitiveRealP());
         Bind(new PrimitiveRecordP());
+        Bind(new PrimitiveRecordProcedure());
         Bind(new PrimitiveRecordRef());
         Bind(new PrimitiveRecordSetB());
         Bind(new PrimitiveRemainder());

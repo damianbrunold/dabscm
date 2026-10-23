@@ -386,6 +386,7 @@ public class Primitives {
         bind(new PrimitiveReadU8());
         bind(new PrimitiveRealP());
         bind(new PrimitiveRecordP());
+        bind(new PrimitiveRecordProcedure());
         bind(new PrimitiveRecordRef());
         bind(new PrimitiveRecordSetB());
         bind(new PrimitiveRemainder());
