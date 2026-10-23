@@ -172,7 +172,7 @@ Example:
 ```
 Syntax: (assv key alist)
 Library: (scheme base)
-Description: Searches association list alist for a pair whose car is eqv? to key. Returns the first matching pair, or #f if none is found. Similar to assq but uses eqv? for comparison.
+Description: Searches association list alist for a pair whose car is eqv? to key. Returns the first matching pair, or #f if none is found.
 Example:
   (assv 2 '((1 a) (2 b) (3 c))) => (2 b)
   (assv 5 '((1 a) (2 b))) => #f
@@ -302,10 +302,9 @@ Example:
 ```
 Syntax: (cadar pair)
 Library: (scheme cxr)
-Description: Equivalent to (car (cdr (car pair))). Accesses the car of the
-cdr of the car of a nested pair structure.
+Description: Returns the car of the cdr of the car of pair. Equivalent to (car (cdr (car pair))).
 Example:
-  (cadar '((1 2) 3)) => 2
+  (cadar '((a b) c)) => b
 ```
 
 ### `caddar`
@@ -334,11 +333,10 @@ Example:
 
 ```
 Syntax: (caddr pair)
-Library: (scheme cxr)
-Description: Equivalent to (car (cdr (cdr pair))). Returns the third element
-of a list.
+Library: (scheme base)
+Description: Returns the car of the cdr of the cdr of pair. Equivalent to (car (cdr (cdr pair))). This is the third element of a list.
 Example:
-  (caddr '(1 2 3 4)) => 3
+  (caddr '(1 2 3)) => 3
 ```
 
 ### `cadr`
@@ -917,7 +915,14 @@ Example:
 
 ### `list`
 
-*(no documentation)*
+```
+Syntax: (list obj ...)
+Library: (scheme base)
+Description: Returns a newly allocated list of its arguments.
+Example:
+  (list 'a (+ 3 4) 'c) => (a 7 c)
+  (list) => ()
+```
 
 ### `list-copy`
 
@@ -1267,7 +1272,7 @@ Example:
 ### `null-list?`
 
 ```
-Syntax: (null-list? lst)
+Syntax: (%null-list? lst)
 Library: (srfi 1)
 Description: Returns #t if lst is the empty list, #f if it is a pair.
 Signals an error if lst is neither null nor a pair.

@@ -151,10 +151,9 @@ Example:
   <div class="entry-name">cadar</div>
   <pre class="entry-doc">Syntax: (cadar pair)
 Library: (scheme cxr)
-Description: Equivalent to (car (cdr (car pair))). Accesses the car of the
-cdr of the car of a nested pair structure.
+Description: Returns the car of the cdr of the car of pair. Equivalent to (car (cdr (car pair))).
 Example:
-  (cadar '((1 2) 3)) =&gt; 2</pre>
+  (cadar '((a b) c)) =&gt; b</pre>
 </div>
 <div class="entry" id="e9" data-name="caddar">
   <div class="entry-name">caddar</div>
@@ -177,11 +176,10 @@ Example:
 <div class="entry" id="e11" data-name="caddr">
   <div class="entry-name">caddr</div>
   <pre class="entry-doc">Syntax: (caddr pair)
-Library: (scheme cxr)
-Description: Equivalent to (car (cdr (cdr pair))). Returns the third element
-of a list.
+Library: (scheme base)
+Description: Returns the car of the cdr of the cdr of pair. Equivalent to (car (cdr (cdr pair))). This is the third element of a list.
 Example:
-  (caddr '(1 2 3 4)) =&gt; 3</pre>
+  (caddr '(1 2 3)) =&gt; 3</pre>
 </div>
 <div class="entry" id="e12" data-name="cdaaar">
   <div class="entry-name">cdaaar</div>

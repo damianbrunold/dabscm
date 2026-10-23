@@ -322,7 +322,7 @@ Example:
   <div class="entry-name">assv</div>
   <pre class="entry-doc">Syntax: (assv key alist)
 Library: (scheme base)
-Description: Searches association list alist for a pair whose car is eqv? to key. Returns the first matching pair, or #f if none is found. Similar to assq but uses eqv? for comparison.
+Description: Searches association list alist for a pair whose car is eqv? to key. Returns the first matching pair, or #f if none is found.
 Example:
   (assv 2 '((1 a) (2 b) (3 c))) =&gt; (2 b)
   (assv 5 '((1 a) (2 b))) =&gt; #f</pre>
@@ -428,10 +428,9 @@ Example:
   <div class="entry-name">cadar</div>
   <pre class="entry-doc">Syntax: (cadar pair)
 Library: (scheme cxr)
-Description: Equivalent to (car (cdr (car pair))). Accesses the car of the
-cdr of the car of a nested pair structure.
+Description: Returns the car of the cdr of the car of pair. Equivalent to (car (cdr (car pair))).
 Example:
-  (cadar '((1 2) 3)) =&gt; 2</pre>
+  (cadar '((a b) c)) =&gt; b</pre>
 </div>
 <div class="entry" id="e26" data-name="caddar">
   <div class="entry-name">caddar</div>
@@ -454,11 +453,10 @@ Example:
 <div class="entry" id="e28" data-name="caddr">
   <div class="entry-name">caddr</div>
   <pre class="entry-doc">Syntax: (caddr pair)
-Library: (scheme cxr)
-Description: Equivalent to (car (cdr (cdr pair))). Returns the third element
-of a list.
+Library: (scheme base)
+Description: Returns the car of the cdr of the cdr of pair. Equivalent to (car (cdr (cdr pair))). This is the third element of a list.
 Example:
-  (caddr '(1 2 3 4)) =&gt; 3</pre>
+  (caddr '(1 2 3)) =&gt; 3</pre>
 </div>
 <div class="entry" id="e29" data-name="cadr">
   <div class="entry-name">cadr</div>
@@ -932,7 +930,12 @@ Example:
 </div>
 <div class="entry" id="e81" data-name="list">
   <div class="entry-name">list</div>
-  <div class="nodoc">(no documentation)</div>
+  <pre class="entry-doc">Syntax: (list obj ...)
+Library: (scheme base)
+Description: Returns a newly allocated list of its arguments.
+Example:
+  (list 'a (+ 3 4) 'c) =&gt; (a 7 c)
+  (list) =&gt; ()</pre>
 </div>
 <div class="entry" id="e82" data-name="list-copy">
   <div class="entry-name">list-copy</div>
@@ -1223,7 +1226,7 @@ Example:
 </div>
 <div class="entry" id="e111" data-name="null-list?">
   <div class="entry-name">null-list?</div>
-  <pre class="entry-doc">Syntax: (null-list? lst)
+  <pre class="entry-doc">Syntax: (%null-list? lst)
 Library: (srfi 1)
 Description: Returns #t if lst is the empty list, #f if it is a pair.
 Signals an error if lst is neither null nor a pair.

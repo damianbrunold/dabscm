@@ -118,10 +118,9 @@ Example:
 ```
 Syntax: (cadar pair)
 Library: (scheme cxr)
-Description: Equivalent to (car (cdr (car pair))). Accesses the car of the
-cdr of the car of a nested pair structure.
+Description: Returns the car of the cdr of the car of pair. Equivalent to (car (cdr (car pair))).
 Example:
-  (cadar '((1 2) 3)) => 2
+  (cadar '((a b) c)) => b
 ```
 
 ### `caddar`
@@ -150,11 +149,10 @@ Example:
 
 ```
 Syntax: (caddr pair)
-Library: (scheme cxr)
-Description: Equivalent to (car (cdr (cdr pair))). Returns the third element
-of a list.
+Library: (scheme base)
+Description: Returns the car of the cdr of the cdr of pair. Equivalent to (car (cdr (cdr pair))). This is the third element of a list.
 Example:
-  (caddr '(1 2 3 4)) => 3
+  (caddr '(1 2 3)) => 3
 ```
 
 ### `cdaaar`
