@@ -54,4 +54,22 @@
   ;; '*' wildcard captures the remaining path raw (still percent-encoded)
   (test-equal "a%2Fb/c" (dispatch "/files/a%2Fb/c")))
 
+(test-group "method mismatch is 405 with Allow"
+  (define r (make-router))
+  (define (send method url)
+    (router-dispatch r (make-http-request method url '() #f)))
+  (router-add! r "GET" "/items/:id" (lambda (req p) (http-ok "get")))
+  (router-add! r "DELETE" "/items/:id" (lambda (req p) (http-ok "del")))
+  (router-add! r "get" "/items/:id" (lambda (req p) (http-ok "shadowed")))
+  (router-add! r "POST" "/items" (lambda (req p) (http-ok "post")))
+  (test-equal "get" (http-response-body (send "GET" "/items/7")))
+  (test-equal "del" (http-response-body (send "delete" "/items/7")))
+  (test-equal 405 (http-response-status (send "PUT" "/items/7")))
+  ;; registration order, each method once
+  (test-equal "GET, DELETE"
+              (http-response-header (send "PUT" "/items/7") "Allow"))
+  (test-equal "POST" (http-response-header (send "GET" "/items") "Allow"))
+  ;; an unknown path stays 404
+  (test-equal 404 (http-response-status (send "PUT" "/nothing"))))
+
 (test-end "scm-http-route")

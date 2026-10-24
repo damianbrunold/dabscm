@@ -187,10 +187,15 @@ public class PrimitiveTcpHttpServe extends Primitive {
                                     Object result = vm.execute(wrapper);
                                     if (Value.isNativeValue(result) && Value.asNativeValue(result).value instanceof SchemeHttpResponse) {
                                         resp = (SchemeHttpResponse) Value.asNativeValue(result).value;
-                                    } else
-                                        resp = new SchemeHttpResponse(500, new ArrayList<>(), "Internal Server Error: handler did not return http-response");
+                                    } else {
+                                        logHandlerError(method, url, "handler did not return an http-response");
+                                        resp = new SchemeHttpResponse(500, new ArrayList<>(), "Internal Server Error");
+                                    }
                                 } catch (Exception ex) {
-                                    resp = new SchemeHttpResponse(500, new ArrayList<>(), "Internal Server Error: " + ex.getMessage());
+                                    // The error text can carry request data or
+                                    // internals: log it, never send it.
+                                    logHandlerError(method, url, "raised: " + ex.getMessage());
+                                    resp = new SchemeHttpResponse(500, new ArrayList<>(), "Internal Server Error");
                                 }
 
                                 StringBuilder sb = new StringBuilder();
@@ -253,19 +258,54 @@ public class PrimitiveTcpHttpServe extends Primitive {
         return b.toString();
     }
 
+    // One stderr line in the (scm log) format:
+    //   YYYY-MM-DD HH:MM:SS ERROR [http] <method> <url> <detail>
+    private static void logHandlerError(String method, String url, String detail) {
+        String ts = java.time.LocalDateTime.now()
+            .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        System.err.println(ts + " ERROR [http] " + method + " " + url + " " + detail);
+    }
+
     private static String statusText(int status) {
-        if (status == 200) return "OK";
-        if (status == 201) return "Created";
-        if (status == 204) return "No Content";
-        if (status == 400) return "Bad Request";
-        if (status == 401) return "Unauthorized";
-        if (status == 403) return "Forbidden";
-        if (status == 404) return "Not Found";
-        if (status == 405) return "Method Not Allowed";
-        if (status == 413) return "Payload Too Large";
-        if (status == 500) return "Internal Server Error";
-        if (status == 501) return "Not Implemented";
-        if (status == 503) return "Service Unavailable";
-        return "Unknown";
+        switch (status) {
+            case 100: return "Continue";
+            case 101: return "Switching Protocols";
+            case 200: return "OK";
+            case 201: return "Created";
+            case 202: return "Accepted";
+            case 204: return "No Content";
+            case 206: return "Partial Content";
+            case 301: return "Moved Permanently";
+            case 302: return "Found";
+            case 303: return "See Other";
+            case 304: return "Not Modified";
+            case 307: return "Temporary Redirect";
+            case 308: return "Permanent Redirect";
+            case 400: return "Bad Request";
+            case 401: return "Unauthorized";
+            case 403: return "Forbidden";
+            case 404: return "Not Found";
+            case 405: return "Method Not Allowed";
+            case 406: return "Not Acceptable";
+            case 408: return "Request Timeout";
+            case 409: return "Conflict";
+            case 410: return "Gone";
+            case 411: return "Length Required";
+            case 412: return "Precondition Failed";
+            case 413: return "Payload Too Large";
+            case 414: return "URI Too Long";
+            case 415: return "Unsupported Media Type";
+            case 416: return "Range Not Satisfiable";
+            case 422: return "Unprocessable Content";
+            case 428: return "Precondition Required";
+            case 429: return "Too Many Requests";
+            case 431: return "Request Header Fields Too Large";
+            case 500: return "Internal Server Error";
+            case 501: return "Not Implemented";
+            case 502: return "Bad Gateway";
+            case 503: return "Service Unavailable";
+            case 504: return "Gateway Timeout";
+            default:  return "Unknown";
+        }
     }
 }

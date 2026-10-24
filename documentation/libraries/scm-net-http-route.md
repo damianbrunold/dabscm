@@ -151,7 +151,9 @@ Example:
 Syntax: (router-dispatch router req)
 Library: (scm net http route)
 Description: Dispatches an http-request to the first matching route in router.
-  Returns an http-response. Returns 404 Not Found if no route matches.
+  Returns an http-response. When no route matches, returns 405 Method Not
+  Allowed (with an Allow header) if the path is registered under other
+  methods, else 404 Not Found.
 Example:
   (router-dispatch my-router req)
 ```

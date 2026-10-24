@@ -181,7 +181,22 @@
                            (http-get "http://127.0.0.1:18096/"))
                          (http-get "http://127.0.0.1:18096/"))))
              (_ (server-stop server 0)))
-        (http-response-body resp)))))
+        (http-response-body resp))))
+  ;; A raising handler yields a bare 500: the error message (which may
+  ;; quote request data or secrets) goes to the server log, not the client.
+  (test-equal '(500 "Internal Server Error")
+    (guard (exn (#t #f))
+      (let* ((server (tcp-http-serve 18085
+                                     (lambda (req) (error "secret" "hunter2"))
+                                     0
+                                     "127.0.0.1"))
+             (resp (let loop ((n 0))
+                     (if (< n 3)
+                         (guard (e (#t (loop (+ n 1))))
+                           (http-get "http://127.0.0.1:18085/"))
+                         (http-get "http://127.0.0.1:18085/"))))
+             (_ (server-stop server 0)))
+        (list (http-response-status resp) (http-response-body resp))))))
 
 (test-group "http-response-helpers"
   (test-equal 401 (http-response-status (http-unauthorized)))

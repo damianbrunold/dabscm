@@ -334,3 +334,42 @@
   (=> (procedure? point-x) #t)
   (=> (let loop ((i 0) (acc '())) (if (= i 3) (map point-x acc) (loop (+ i 1) (cons (make-point i i) acc))))
       '(2 1 0)))
+
+;; Compiler: named lets as loops (LOOP), self tail calls of letrec lambdas
+;; (LOOP), or without a temporary frame (TJUMP_KEEP); the cases below fall
+;; back to the ordinary compilation or must keep its semantics.
+(test-group
+  (define (arity thunk) (guard (e (#t 'error)) (thunk)))
+  ;; named let: per-iteration bindings, non-tail use, deep iteration
+  (=> (map (lambda (p) (p)) (let loop ((i 0) (acc '())) (if (= i 3) acc (loop (+ i 1) (cons (lambda () i) acc)))))
+      '(2 1 0))
+  (=> (+ 1 (let loop ((i 0)) (if (< i 10) (loop (+ i 1)) i))) 11)
+  (=> (let loop ((i 0)) (if (< i 1000000) (loop (+ i 1)) i)) 1000000)
+  (=> (let outer ((i 0) (acc '()))
+        (if (= i 3) (reverse acc)
+            (let inner ((j 0)) (if (< j i) (inner (+ j 1)) (outer (+ i 1) (cons j acc))))))
+      '(0 1 2))
+  (=> (let loop ((i 0)) (define (dbl x) (* 2 x)) (if (< i 3) (loop (+ i 1)) (dbl i))) 6)
+  (=> (call-with-values (lambda () (let loop ((i 0)) (if (< i 2) (loop (+ i 1)) (values i 'v)))) list) '(2 v))
+  ;; named let falling back: non-tail call, name as value, set!, shadowed,
+  ;; called from a nested lambda, wrong argument count
+  (=> (let loop ((x '(1 (2 3) 4))) (if (pair? x) (+ (loop (car x)) (loop (cdr x))) (if (null? x) 0 x))) 10)
+  (=> (let loop ((i 0)) (if (< i 3) (loop (+ i 1)) (procedure? loop))) #t)
+  (=> (let loop ((i 0)) (if (< i 2) (loop (+ i 1)) (begin (set! loop 5) loop))) 5)
+  (=> (let loop ((i 0)) (if (< i 3) (let ((loop (lambda (x) (* x 100)))) (loop (+ i 1))) i)) 100)
+  (=> (let loop ((i 0)) (if (< i 3) ((lambda () (loop (+ i 1)))) i)) 3)
+  (=> (arity (lambda () (let loop ((i 0)) (if (< i 2) (loop (+ i 1) 'extra) i)))) 'error)
+  ;; self tail calls
+  (=> (let () (define (h i acc) (if (= i 0) acc (h (- i 1) (+ acc i)))) (h 1000000 0)) 500000500000)
+  (=> (letrec ((g (lambda (n) (if (= n 0) 'g0 (g (- n 1))))))
+        (let ((r (g 3))) (set! g (lambda (n) 'new)) (list r (g 3))))
+      '(g0 new))
+  (=> (letrec ((g (lambda (n) (if (= n 0) 0 ((lambda () (+ 1 (g (- n 1))))))))) (g 5)) 5)
+  (=> (arity (lambda () (let () (define (h i) (if (= i 0) 'done (h (- i 1) 'x))) (h 3)))) 'error)
+  ;; or
+  (=> (let ((o (lambda (a b) (or a b)))) (list (o #f 1) (o 2 #f) (o #f #f) (or))) '(1 2 #f #f))
+  (=> (list (if (or #f 'a) 'yes 'no) (if (or #f #f) 'yes 'no) (let ((t 1)) (or #f t))) '(yes no 1))
+  (=> (let ((r '())) (or (begin (set! r (cons 1 r)) #f) (begin (set! r (cons 2 r)) #f)) r) '(2 1))
+  (=> (list (or (memv 3 '(1 2 3)) 'no) (or (memv 9 '(1 2)) 'no) (and (or #f 1) (or 2))) '((3) no 2))
+  (=> (let loop ((i 0) (c 0)) (if (= i 10) c (loop (+ i 1) (if (or (eq? i 3) (eq? i 5) (not (odd? i))) (+ c 1) c))))
+      7))

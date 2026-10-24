@@ -158,13 +158,29 @@ Example:
                                (list (list (string-upcase method)
                                            (split-path pattern)
                                            handler)))))
+        ;; Methods of the routes whose pattern matches segs, in
+        ;; registration order, without duplicates.
+        (define (allowed-methods segs)
+          (let loop ((rs routes) (acc '()))
+            (cond
+              ((null? rs) (reverse acc))
+              ((and (not (member (car (car rs)) acc))
+                    (match-path (cadr (car rs)) segs))
+               (loop (cdr rs) (cons (car (car rs)) acc)))
+              (else (loop (cdr rs) acc)))))
         (define (dispatch req)
           (let* ((method (string-upcase (http-request-method req)))
                  (path   (url-path (http-request-url req)))
                  (segs   (split-path path)))
             (let loop ((rs routes))
               (if (null? rs)
-                  (http-not-found)
+                  ;; The path exists under other methods: 405 + Allow.
+                  (let ((allowed (allowed-methods segs)))
+                    (if (null? allowed)
+                        (http-not-found)
+                        (make-http-response 405
+                          (list (cons "Allow" (string-join allowed ", ")))
+                          "Method Not Allowed")))
                   (let* ((r       (car rs))
                          (matched (and (string=? (car r) method)
                                        (match-path (cadr r) segs))))
@@ -196,7 +212,9 @@ Example:
       "Syntax: (router-dispatch router req)
 Library: (scm net http route)
 Description: Dispatches an http-request to the first matching route in router.
-  Returns an http-response. Returns 404 Not Found if no route matches.
+  Returns an http-response. When no route matches, returns 405 Method Not
+  Allowed (with an Allow header) if the path is registered under other
+  methods, else 404 Not Found.
 Example:
   (router-dispatch my-router req)"
       (router 'dispatch req))

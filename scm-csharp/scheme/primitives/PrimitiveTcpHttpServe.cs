@@ -199,11 +199,17 @@ public class PrimitiveTcpHttpServe : Primitive
                                     if (Value.IsNativeValue(result) && Value.AsNativeValue(result).value is SchemeHttpResponse sr)
                                         schemeResp = sr;
                                     else
-                                        schemeResp = new SchemeHttpResponse(500, new List<(string,string)>(), "Internal Server Error: handler did not return http-response");
+                                    {
+                                        LogHandlerError(method, url, "handler did not return an http-response");
+                                        schemeResp = new SchemeHttpResponse(500, new List<(string,string)>(), "Internal Server Error");
+                                    }
                                 }
                                 catch (Exception ex)
                                 {
-                                    schemeResp = new SchemeHttpResponse(500, new List<(string,string)>(), "Internal Server Error: " + ex.Message);
+                                    // The error text can carry request data or
+                                    // internals: log it, never send it.
+                                    LogHandlerError(method, url, "raised: " + ex.Message);
+                                    schemeResp = new SchemeHttpResponse(500, new List<(string,string)>(), "Internal Server Error");
                                 }
 
                                 // Write response
@@ -239,7 +245,7 @@ public class PrimitiveTcpHttpServe : Primitive
                         catch (SocketException) { /* slow/dropped client — silent */ }
                         catch (Exception ex)
                         {
-                            Console.WriteLine("tcp-http-serve handler error: " + ex.Message);
+                            Console.Error.WriteLine("tcp-http-serve handler error: " + ex.Message);
                         }
                         finally
                         {
@@ -275,20 +281,53 @@ public class PrimitiveTcpHttpServe : Primitive
         return b.ToString();
     }
 
+    // One stderr line in the (scm log) format:
+    //   YYYY-MM-DD HH:MM:SS ERROR [http] <method> <url> <detail>
+    private static void LogHandlerError(string method, string url, string detail)
+    {
+        string ts = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture);
+        Console.Error.WriteLine($"{ts} ERROR [http] {method} {url} {detail}");
+    }
+
     private static string StatusText(int status) => status switch
     {
+        100 => "Continue",
+        101 => "Switching Protocols",
         200 => "OK",
         201 => "Created",
+        202 => "Accepted",
         204 => "No Content",
+        206 => "Partial Content",
+        301 => "Moved Permanently",
+        302 => "Found",
+        303 => "See Other",
+        304 => "Not Modified",
+        307 => "Temporary Redirect",
+        308 => "Permanent Redirect",
         400 => "Bad Request",
         401 => "Unauthorized",
         403 => "Forbidden",
         404 => "Not Found",
         405 => "Method Not Allowed",
+        406 => "Not Acceptable",
+        408 => "Request Timeout",
+        409 => "Conflict",
+        410 => "Gone",
+        411 => "Length Required",
+        412 => "Precondition Failed",
         413 => "Payload Too Large",
+        414 => "URI Too Long",
+        415 => "Unsupported Media Type",
+        416 => "Range Not Satisfiable",
+        422 => "Unprocessable Content",
+        428 => "Precondition Required",
+        429 => "Too Many Requests",
+        431 => "Request Header Fields Too Large",
         500 => "Internal Server Error",
         501 => "Not Implemented",
+        502 => "Bad Gateway",
         503 => "Service Unavailable",
+        504 => "Gateway Timeout",
         _ => "Unknown"
     };
 }
