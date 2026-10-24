@@ -9,30 +9,31 @@ StartLimitBurst=5
 
 [Service]
 Type=simple
-# Adjust to the unprivileged user/paths you deploy under.
-User=www
-Group=www
+User=starter-public
+Group=starter-public
 WorkingDirectory=/opt/starter-public
-# Path to the scm interpreter binary.
-ExecStart=/usr/local/bin/scm main.scm
+# deploy/install.sh replaces the scm path with $SCM.
+ExecStart=/usr/local/bin/scm bin/server.scm /etc/starter-public/config.scm
 
 # Restart on any exit. Combined with the daily restart timer this makes
 # the service self-healing across OOMs and unexpected exceptions.
 Restart=always
 RestartSec=3s
+# The JVM exits with 128+SIGTERM on a normal stop.
+SuccessExitStatus=143
 # Give the HTTP server (10s graceful drain by default) time to finish.
 TimeoutStopSec=15s
 
+# Logs go to journald: journalctl -u starter-public -f
 StandardOutput=journal
 StandardError=journal
 
 # --- hardening ---
+# The app only reads its files: the whole file system is read-only for it.
 NoNewPrivileges=yes
 PrivateTmp=yes
-ProtectSystem=full
-ProtectHome=read-only
-# The app only reads its files; grant writes only if you add a data dir.
-ReadWritePaths=/opt/starter-public/data
+ProtectSystem=strict
+ProtectHome=yes
 
 [Install]
 WantedBy=multi-user.target

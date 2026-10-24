@@ -1,81 +1,102 @@
 # starter-login
 
-A web app **with authentication**. Everything in `starter-public` plus a login
-page, sessions, and a profile page where the signed-in user can change their
-password or log out. Users are created only with the CLI tools — there is no
-public sign-up.
+A web app **with sign-in**. Everything in `starter-public` plus a login page,
+sessions, and a profile page where the signed-in user can change their
+password or sign out. Users are managed with a CLI; there is no public
+sign-up.
 
 Use it as a starting point for a small private app: an internal dashboard, a
-single-team tool, anything behind a login but without per-user roles (for roles
-and self-service user management, see `starter-admin`).
+single-team tool, anything behind a login but without per-user roles (for
+roles and user management in the browser, see `starter-admin`).
 
 ## What it demonstrates
 
-- **PBKDF2 password hashing** with a per-user random salt, stored as
-  `pbkdf2$<iterations>$<salt>$<hash>`; verified in constant time
-  (`src/app-auth.sld`).
-- **Stateless sessions**: an HMAC-SHA256-signed cookie carrying
-  `username|expiry` — no server-side session store. Cookies are `HttpOnly`,
-  `SameSite=Strict`, and `Secure` in production.
-- A **file-backed user store** (`data/users.scm`, a plain Scheme datum) written
-  atomically and managed only by the CLI tools and the password-change handler.
-- Login / logout / profile flows, with failed logins slowed down and given a
-  generic error message.
+- **Password hashing** with `(scm crypto password)`: PBKDF2-SHA256, 600 000
+  iterations, random salt, constant-time check. Signing in with an unknown
+  username takes as long as with a wrong password, and older, weaker hashes
+  are upgraded at the next sign-in (`src/app-auth.sld`).
+- **Stateless sessions** with `(scm net http session)`: a signed cookie, no
+  server-side store. The cookie is `HttpOnly`, `SameSite=Strict`, `Secure` in
+  production, and scoped to the URL prefix.
+- **Sessions that end when they should**: every request looks the user up
+  again, and the cookie carries a stamp of the password hash, so deleting a
+  user or changing a password ends their other sessions.
+- **No CSRF tokens needed**: `SameSite=Strict` keeps the browser from sending
+  the session cookie with a form another site submits.
+- A **file-backed user store** (`users.scm` in `data-dir`, a plain Scheme
+  datum) written atomically, by the CLI and the password-change handler.
+- Failed sign-ins are slowed down and get one generic error message.
+- From `starter-public`: the middleware stack (access log, strict CSP and
+  other security headers, logged 500s), cache-busted static files,
+  `light-dark()` theming without inline JavaScript, the URL prefix, the
+  config created on the first run, and tests without a server.
 
 ## Layout
 
 ```
-bin/server.scm        bootstrap: load config, build router, serve
+bin/server.scm        load the config, serve the app
 bin/dev-server.scm    auto-reloading dev supervisor
-bin/useradd.scm       add a user           (CLI)
-bin/passwd.scm        reset a password     (CLI)
-src/app-auth.sld      hashing + signed-cookie sessions
+bin/user.scm          add / passwd / delete / list users (CLI)
+bin/init-config.scm   write a new config file (used by deploy/install.sh)
+bin/gen-secret.scm    print a new session secret (for key rotation)
+src/app-config.sld    config reading and first-run creation
+src/app-site.sld      URL prefix: url, asset, cookie-path
 src/app-users.sld     the user store
+src/app-auth.sld      sign-in, sessions, password changes
 src/app-views.sld     HTML rendering
-src/app-routes.sld    router + static + server
-config.example.scm    config (fallback when config.scm is absent)
-data/users.scm        the credential store (created by the CLI)
-data/items.json       sample data shown after login
-static/               CSS + theme toggle
-deploy/               systemd units, nginx example, install script
+src/app-web.sld       routes and middleware: make-app
+config.example.scm    the config template, with every setting
+data/items.json       sample data shown after sign-in
+static/               CSS, theme scripts, favicon
+tests/                test_pure_*.scm, run without a server
+deploy/               systemd units, health probe, nginx example, install script
 ```
 
 ## Run
 
 ```sh
-scm bin/useradd.scm alice          # prompts for a password (min 8 chars)
-scm bin/server.scm                 # http://127.0.0.1:8082
-scm bin/dev-server.scm             # same, auto-restart on file change
+scm bin/user.scm add alice       # prompts for a password (at least 8 characters)
+scm bin/server.scm               # http://127.0.0.1:8071
+scm bin/dev-server.scm           # same, restarts when src/ or the config changes
 ```
 
-Then open the site, sign in as `alice`, and try the Profile page.
+The first run of either creates `config.scm` from `config.example.scm`, with
+a fresh random `session-secret`. Then open the site, sign in as `alice`, and
+try the Profile page.
 
-For production: copy `config.example.scm` to `config.scm`, generate a fresh
-`cookie-secret`
+## Test
 
 ```sh
-scm -e '(import (scm crypto)) (display (base64-encode (random-bytes 32)))'
+for t in tests/test_*.scm; do scm "$t" || exit 1; done
 ```
-
-and set `secure-cookies?` to `#t` (requires HTTPS).
 
 ## Adapt
 
-- Add protected routes by wrapping handlers with `require-auth` in
-  `src/app-routes.sld`; the handler receives the username as a third argument.
-- Replace the sample items page with your own content.
-- The user store is deliberately simple; swap `src/app-users.sld` for a database
-  module if you outgrow a flat file (see `starter-admin`).
+- Add pages in `make-app` (`src/app-web.sld`) with `route!`, which adds the
+  URL prefix. Wrap a handler in `signed-in` to require a session; it then
+  receives the user entry as a third argument.
+- Build links and redirects with `url` and asset links with `asset`.
+- The user store is deliberately simple; swap `src/app-users.sld` for a
+  database module when you outgrow a flat file (see `starter-admin`).
+- To rotate the session secret, make `session-secret` a list with a new key
+  (`scm bin/gen-secret.scm`) first; drop the old key once its sessions have
+  expired.
 
 ## Deploy
 
-App binds loopback only; front it with the TLS proxy in
-`deploy/nginx.conf.example`, then:
+The app binds loopback only; put a TLS-terminating reverse proxy in front
+(`deploy/nginx.conf.example`). Then, on the server, from the app directory:
 
 ```sh
-sudo deploy/install.sh
+sudo deploy/install.sh               # SCM=/path/to/scm if not /usr/local/bin/scm
+sudo -u starter-login /usr/local/bin/scm /opt/starter-login/bin/user.scm \
+     --config /etc/starter-login/config.scm add alice
 ```
 
-Installs the service plus a per-minute `/healthz` probe (restarts on two
-consecutive failures) and a daily 04:00 restart. Edit `User=`,
-`WorkingDirectory=`, and the `ExecStart` scm path in the unit files first.
+This copies the app to `/opt/starter-login` and creates
+`/etc/starter-login/config.scm` on the first install, with a fresh secret,
+`secure-cookies?` on, and the user store in `/var/lib/starter-login`. It adds
+a `starter-login` system user and enables the service (`Restart=always`,
+read-only file system except its state directory), a per-minute health probe
+that restarts the app if `/healthz` fails twice, and a daily 04:00 restart.
+Rerun it to deploy a new version; the config and users are kept.

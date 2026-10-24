@@ -1,46 +1,39 @@
 ;; Usage: scm bin/server.scm [config-path]
 ;;
-;; Reads config (config.scm, or the path given as argv, falling back to
-;; config.example.scm) and starts the webapp. The config file is plain
-;; Scheme — see config.example.scm for the expected bindings.
+;; Reads the config (config-path, or else config.scm, which the first run
+;; creates from config.example.scm with a fresh secret) and serves the app.
 
 (import (scheme base)
-        (scheme write)
-        (scheme load)
         (scheme process-context)
         (scm module)
-        (scm fs))
+        (scm fs)
+        (scm log)
+        (scm net http server))
 
-;; Resolve the project root from this script's path so it runs from anywhere.
+;; Resolve the project root from this script's path so it runs from anywhere,
+;; and make src/ importable.
 (define root
   (directory-name (directory-name (absolute-path (car (command-line))))))
-
-;; Make src/ importable, then load the app modules.
 (module-search-path! (cons (string-append root "/src") (module-search-path)))
 
-(import (app auth) (app routes))
+(import (app config) (app web))
 
-(define cfg-path
-  (let ((args (cdr (command-line))))
-    (cond ((pair? args) (car args))
-          ((file-exists? (string-append root "/config.scm"))
-           (string-append root "/config.scm"))
-          (else (string-append root "/config.example.scm")))))
+(define cfg (load-config root (cdr (command-line))))
+(define host (config-ref cfg 'http-host "127.0.0.1"))
+(define port (config-ref cfg 'http-port 8071))
+(define prefix (config-ref cfg 'url-prefix ""))
+(define (path key default) (resolve-path root (config-ref cfg key default)))
 
-(load cfg-path)
+(define app
+  (make-app
+   `((url-prefix      . ,prefix)
+     (static-dir      . ,(path 'static-dir "static"))
+     (items-file      . ,(path 'items-file "data/items.json"))
+     (users-file      . ,(string-append (path 'data-dir "data") "/users.scm"))
+     (session-secret  . ,(config-secret cfg 'session-secret))
+     (session-max-age . ,(config-ref cfg 'session-max-age (* 60 60 24 7)))
+     (secure-cookies? . ,(config-ref cfg 'secure-cookies? #t)))))
 
-(define (abs-path p)
-  (if (and (> (string-length p) 0) (char=? (string-ref p 0) #\/))
-      p
-      (string-append root "/" p)))
-
-(define auth
-  (make-auth cookie-name cookie-secret session-max-age secure-cookies?))
-
-(define cfg
-  (make-app-config http-host http-port
-                   (abs-path static-dir)
-                   (abs-path data-file)
-                   (abs-path users-file)))
-
-(serve cfg auth)
+(log-info "app" (string-append "starter-login listening on http://" host ":"
+                               (number->string port) prefix "/"))
+(serve-forever port app 0 host)

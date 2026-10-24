@@ -1,149 +1,96 @@
-;; (app auth) — password hashing and stateless signed-cookie sessions.
+;; (app auth) — sign-in, sessions and password changes.
 ;;
-;; Passwords are stored as PBKDF2-HMAC-SHA256 with a per-user random salt,
-;; in the self-describing string  pbkdf2$<iterations>$<salt-b64>$<hash-b64>.
-;; Sessions are stateless: the cookie carries "username|expiry" plus an
-;; HMAC-SHA256 signature, so no server-side session store is needed. The
-;; signature is verified in constant time and the expiry is enforced.
+;; Passwords are hashed with (scm crypto password): PBKDF2-SHA256 with a
+;; random salt, verified in constant time. A sign-in with an unknown username
+;; does the same hashing work as one with a wrong password, so response
+;; times do not reveal which usernames exist. Hashes made with fewer
+;; iterations than the current default are upgraded at the next sign-in.
+;;
+;; Sessions are signed cookies from (scm net http session): no server-side
+;; store. The cookie carries the username and a stamp derived from the
+;; password hash, and every request looks the user up again: deleting a
+;; user or changing a password ends that user's other sessions.
 
 (define-library (app auth)
   (import (scheme base)
-          (scheme time)
           (scm crypto)
-          (scm net http request)
-          (scm net http response)
-          (scm net http cookies)
-          (srfi 13))
-  (export hash-password
-          verify-password
-          make-auth
-          current-user
-          login-redirect
-          logout-redirect)
+          (scm crypto password)
+          (scm net http session)
+          (app users))
+  (export make-auth
+          sign-in
+          session-user
+          start-session
+          end-session
+          change-password!
+          min-password-length)
   (begin
 
-    (define pbkdf2-iterations 200000)
-    (define salt-bytes 16)
-    (define key-bytes 32)
-
-    ;; --- password hashing ---------------------------------------------
-
-    (define (hash-password plain)
-      "Syntax: (hash-password plain)
-Library: (app auth)
-Description: Returns a PBKDF2 hash string for the plaintext password,
-  with a fresh random salt. Store this verbatim; verify with verify-password."
-      (let* ((salt (random-bytes salt-bytes))
-             (dk (pbkdf2-sha256 (string->utf8 plain) salt
-                                pbkdf2-iterations key-bytes)))
-        (string-append "pbkdf2$" (number->string pbkdf2-iterations) "$"
-                       (base64-encode salt) "$" (base64-encode dk))))
-
-    (define (split-fields s)
-      (let loop ((i 0) (start 0) (acc '()))
-        (cond
-          ((= i (string-length s))
-           (reverse (cons (substring s start i) acc)))
-          ((char=? (string-ref s i) #\$)
-           (loop (+ i 1) (+ i 1) (cons (substring s start i) acc)))
-          (else (loop (+ i 1) start acc)))))
-
-    (define (verify-password plain stored)
-      "Syntax: (verify-password plain stored)
-Library: (app auth)
-Description: Checks plaintext against a stored pbkdf2$... string (as
-  produced by hash-password). Constant-time comparison. Returns a boolean."
-      (let ((parts (split-fields stored)))
-        (and (= (length parts) 4)
-             (string=? (car parts) "pbkdf2")
-             (let* ((iter (string->number (list-ref parts 1)))
-                    (salt (base64-decode (list-ref parts 2)))
-                    (want (base64-decode (list-ref parts 3))))
-               (and iter
-                    (constant-time-bytevector=?
-                     (pbkdf2-sha256 (string->utf8 plain) salt iter
-                                    (bytevector-length want))
-                     want))))))
-
-    ;; --- session record -----------------------------------------------
+    (define min-password-length 8)
 
     (define-record-type auth
-      (auth* cookie-name secret max-age secure?)
+      (%make-auth session users-file)
       auth?
-      (cookie-name auth-cookie-name)
-      (secret auth-secret)        ; bytevector
-      (max-age auth-max-age)
-      (secure? auth-secure?))
+      (session auth-session)
+      (users-file auth-users-file))
 
-    (define (make-auth cookie-name secret-b64 max-age secure?)
-      "Syntax: (make-auth cookie-name secret-b64 max-age secure?)
+    (define (make-auth session-config users-file)
+      "Syntax: (make-auth session-config users-file)
 Library: (app auth)
-Description: Builds the session config. secret-b64 is the base64 of the
-  HMAC signing key (generate with random-bytes). max-age is in seconds;
-  secure? adds the Secure cookie attribute (disable for local HTTP)."
-      (auth* cookie-name (base64-decode secret-b64) max-age secure?))
+Description: Ties a (scm net http session) config to the user store."
+      (%make-auth session-config users-file))
 
-    (define (now) (exact (round (current-second))))
+    ;; Changes whenever the password (and so the hash) changes.
+    (define (password-stamp hash)
+      (base64-encode (bytevector-copy (sha256-hash (string->utf8 hash)) 0 12)))
 
-    ;; --- token sign / verify ------------------------------------------
-
-    (define (sign auth username)
-      (let* ((payload (string-append username "|"
-                                     (number->string (+ (now) (auth-max-age auth)))))
-             (pb (string->utf8 payload)))
-        (string-append (base64-encode pb) "."
-                       (bytevector->hex (hmac-sha256 (auth-secret auth) pb)))))
-
-    (define (verify auth token)
-      (and (string? token)
-           (let ((dot (string-index token #\.)))
-             (and dot
-                  (guard (e (#t #f))
-                    (let* ((pb (base64-decode (substring token 0 dot)))
-                           (got (hex->bytevector
-                                 (substring token (+ dot 1) (string-length token))))
-                           (calc (hmac-sha256 (auth-secret auth) pb)))
-                      (and (constant-time-bytevector=? calc got)
-                           (let* ((payload (utf8->string pb))
-                                  (bar (string-index payload #\|))
-                                  (user (substring payload 0 bar))
-                                  (exp (string->number
-                                        (substring payload (+ bar 1)
-                                                   (string-length payload)))))
-                             (and exp (> exp (now)) user)))))))))
-
-    ;; --- request helpers ----------------------------------------------
-
-    (define (current-user auth req)
-      "Syntax: (current-user auth req)
+    (define (sign-in auth username password)
+      "Syntax: (sign-in auth username password)
 Library: (app auth)
-Description: Returns the authenticated username from the request's session
-  cookie, or #f if absent/invalid/expired."
-      (let ((tok (cookie-ref
-                  (parse-cookie-header (http-request-header req "Cookie"))
-                  (auth-cookie-name auth))))
-        (and tok (verify auth tok))))
+Description: The user entry if password is right for username, else #f.
+  Upgrades an outdated password hash on success."
+      (let* ((path (auth-users-file auth))
+             (user (find-user path username)))
+        (cond
+          ((not (password-verify password (and user (user-hash user)))) #f)
+          ((password-needs-rehash? (user-hash user))
+           (save-user! path username (password-hash password))
+           (find-user path username))
+          (else user))))
 
-    (define (set-cookie auth value max-age)
-      (apply format-set-cookie (auth-cookie-name auth) value max-age "/"
-             (if (auth-secure? auth) '() '(no-secure))))
-
-    (define (login-redirect auth username location)
-      "Syntax: (login-redirect auth username location)
+    (define (session-user auth req)
+      "Syntax: (session-user auth req)
 Library: (app auth)
-Description: 303 redirect to location that also sets a fresh session cookie
-  for username. Use after a successful login."
-      (make-http-response 303
-        (list (cons "Location" location)
-              (cons "Set-Cookie" (set-cookie auth (sign auth username)
-                                             (auth-max-age auth))))
-        ""))
+Description: The signed-in user's entry, or #f if there is no valid session
+  or the user was deleted or changed the password since."
+      (let ((s (session-ref (auth-session auth) req)))
+        (and (pair? s)
+             (let* ((name (assq 'user s))
+                    (stamp (assq 'stamp s))
+                    (user (and name (string? (cdr name))
+                               (find-user (auth-users-file auth) (cdr name)))))
+               (and user stamp
+                    (equal? (cdr stamp) (password-stamp (user-hash user)))
+                    user)))))
 
-    (define (logout-redirect auth location)
-      "Syntax: (logout-redirect auth location)
+    (define (start-session auth user)
+      "Syntax: (start-session auth user)
 Library: (app auth)
-Description: 303 redirect to location that clears the session cookie."
-      (make-http-response 303
-        (list (cons "Location" location)
-              (cons "Set-Cookie" (set-cookie auth "" 0)))
-        ""))))
+Description: The Set-Cookie header pair that signs user in."
+      (session-set-cookie (auth-session auth)
+                          `((user . ,(user-name user))
+                            (stamp . ,(password-stamp (user-hash user))))))
+
+    (define (end-session auth)
+      "Syntax: (end-session auth)
+Library: (app auth)
+Description: The Set-Cookie header pair that signs out."
+      (session-clear-cookie (auth-session auth)))
+
+    (define (change-password! auth user new-password)
+      "Syntax: (change-password! auth user new-password)
+Library: (app auth)
+Description: Stores a new hash for user and returns the updated entry.
+  Other sessions of the user end; start a new one for this browser."
+      (save-user! (auth-users-file auth) (user-name user) (password-hash new-password))
+      (find-user (auth-users-file auth) (user-name user)))))

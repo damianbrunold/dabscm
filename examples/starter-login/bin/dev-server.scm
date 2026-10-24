@@ -15,8 +15,7 @@
 (define (watched)
   (append (files-with-suffix (string-append root "/src") ".sld")
           (list (string-append root "/bin/server.scm")
-                (string-append root "/config.scm")
-                (string-append root "/config.example.scm"))))
+                (string-append root "/config.scm"))))
 
 (supervise (list "scm" (string-append root "/bin/server.scm"))
            watched

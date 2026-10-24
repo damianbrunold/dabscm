@@ -1,81 +1,101 @@
 ;; (app users) — the user store, a plain Scheme data file.
 ;;
-;; data/users.scm holds one datum: a list of (username hash created) entries.
-;; It is written only by the CLI tools (bin/useradd.scm, bin/passwd.scm) and
-;; the profile password-change handler — never edited by hand. Writes go
-;; through a temp file + rename so a reader never sees a half-written file.
+;; users.scm holds one datum: a list of (username hash created) entries. It
+;; is written by the CLI (bin/user.scm) and by the app (password changes,
+;; hash upgrades), never by hand. Writes go through a temp file + rename so
+;; a reader never sees a half-written file, and a mutex serializes the
+;; app's own writes. (The CLI is a separate process; the last write wins.)
 ;;
-;; This module is storage only; password hashing lives in (app auth) so the
-;; two concerns stay independent.
+;; This module is storage only; passwords and sessions live in (app auth).
 
 (define-library (app users)
   (import (scheme base)
-          (scheme read)
           (scheme char)
           (scheme file)
+          (scheme read)
+          (scheme time)
           (scheme write)
           (scm fs)
-          (srfi 13))
+          (srfi 18))
   (export load-users
-          save-users!
           find-user
           user-name
           user-hash
-          upsert-user
+          user-created
+          save-user!
+          delete-user!
           valid-username?)
   (begin
+
+    (define (user-name u) (car u))
+    (define (user-hash u) (cadr u))
+    (define (user-created u) (caddr u))
 
     (define (load-users path)
       "Syntax: (load-users path)
 Library: (app users)
-Description: Reads the user list from path, or '() if the file is absent
-  or empty."
+Description: The list of (username hash created) entries in path, or '()
+  if the file does not exist yet."
       (if (file-exists? path)
           (let ((datum (call-with-input-file path read)))
             (if (eof-object? datum) '() datum))
           '()))
 
-    (define (save-users! path users)
-      "Syntax: (save-users! path users)
+    (define (find-user path name)
+      "Syntax: (find-user path name)
 Library: (app users)
-Description: Atomically writes the user list to path (temp file + rename)."
-      (let ((tmp (string-append path ".tmp")))
-        (call-with-output-file tmp
-          (lambda (p) (write users p) (newline p)))
-        (move-file tmp path)))
+Description: The (username hash created) entry for name, or #f."
+      (assoc name (load-users path)))
 
-    (define (make-user name hash created) (list name hash created))
-    (define (user-name u) (car u))
-    (define (user-hash u) (cadr u))
+    (define write-lock (make-mutex))
 
-    (define (find-user users name)
-      "Syntax: (find-user users name)
+    (define (update-users! path proc)
+      (dynamic-wind
+        (lambda () (mutex-lock! write-lock))
+        (lambda ()
+          (let ((dir (directory-name path))
+                (tmp (string-append path ".tmp")))
+            (unless (directory-exists? dir) (make-directory dir))
+            (call-with-output-file tmp
+              (lambda (p) (write (proc (load-users path)) p) (newline p)))
+            (move-file tmp path)))
+        (lambda () (mutex-unlock! write-lock))))
+
+    (define (save-user! path name hash)
+      "Syntax: (save-user! path name hash)
 Library: (app users)
-Description: Returns the (name hash created) entry for name, or #f."
-      (cond ((null? users) #f)
-            ((string=? (user-name (car users)) name) (car users))
-            (else (find-user (cdr users) name))))
+Description: Stores hash for name: replaces the entry (keeping its created
+  time) or appends a new one."
+      (update-users! path
+        (lambda (users)
+          (let loop ((us users))
+            (cond
+              ((null? us)
+               (list (list name hash (exact (floor (current-second))))))
+              ((string=? (user-name (car us)) name)
+               (cons (list name hash (user-created (car us))) (cdr us)))
+              (else (cons (car us) (loop (cdr us)))))))))
 
-    (define (upsert-user users name hash created)
-      "Syntax: (upsert-user users name hash created)
+    (define (delete-user! path name)
+      "Syntax: (delete-user! path name)
 Library: (app users)
-Description: Returns users with name's entry replaced (preserving its
-  original created stamp) or appended if new."
-      (cond
-        ((null? users) (list (make-user name hash created)))
-        ((string=? (user-name (car users)) name)
-         (cons (make-user name hash (list-ref (car users) 2)) (cdr users)))
-        (else (cons (car users) (upsert-user (cdr users) name hash created)))))
+Description: Removes name's entry, if there is one."
+      (update-users! path
+        (lambda (users)
+          (let loop ((us users))
+            (cond ((null? us) '())
+                  ((string=? (user-name (car us)) name) (cdr us))
+                  (else (cons (car us) (loop (cdr us)))))))))
 
     (define (valid-username? s)
       "Syntax: (valid-username? s)
 Library: (app users)
-Description: True if s is 1-64 chars of [A-Za-z0-9._-]. Restricting the
-  charset keeps usernames safe to embed in signed tokens and file data."
+Description: True if s is 1-64 characters of letters, digits and . _ -"
       (and (string? s)
            (<= 1 (string-length s) 64)
-           (string-every
-            (lambda (c)
-              (or (char-alphabetic? c) (char-numeric? c)
-                  (memv c '(#\. #\_ #\-))))
-            s)))))
+           (let loop ((i 0))
+             (or (= i (string-length s))
+                 (let ((c (string-ref s i)))
+                   (and (or (char-alphabetic? c) (char-numeric? c)
+                            (memv c '(#\. #\_ #\-)))
+                        (loop (+ i 1))))))))))

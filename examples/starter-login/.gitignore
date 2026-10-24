@@ -1,4 +1,4 @@
-# Local config (secrets) and the generated credential store.
+# Local config (holds the session secret) and the user store.
 config.scm
 data/users.scm
 data/users.scm.tmp

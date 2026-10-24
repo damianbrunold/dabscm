@@ -1,20 +1,28 @@
-;; Copy to config.scm and edit for real use. If config.scm is absent the
-;; app falls back to this file so it runs out of the box for local testing.
-;;
-;; IMPORTANT for production: generate your own cookie-secret and set
-;; secure-cookies? to #t (requires HTTPS). Generate a secret with:
-;;   scm -e '(import (scm crypto)) (display (base64-encode (random-bytes 32)))'
+;; starter-login configuration: a list of (define name value) forms, read
+;; as data by src/app-config.sld. bin/server.scm reads config.scm; the first
+;; run creates it from this file, with a fresh session-secret.
 
-;; Bind loopback only; a reverse proxy fronts the public interface.
+;; Bind loopback only; a reverse proxy (deploy/nginx.conf.example) fronts
+;; the public interface and terminates TLS.
 (define http-host "127.0.0.1")
-(define http-port 8082)
+(define http-port 8071)
 
-(define static-dir "static")
-(define data-file  "data/items.json")
-(define users-file "data/users.scm")
+;; Path the app is mounted under, e.g. "/team"; "" for the host root. The
+;; reverse proxy must pass paths through unchanged.
+(define url-prefix "")
 
-;; HMAC key that signs session cookies (base64 of 32 random bytes).
-(define cookie-secret "ylWhB8zT2lIrdW7KfWOQofO28V3CIlbonggj2LrO384=")
-(define cookie-name   "starter_session")
+;; Signs the session cookies (base64 of 32 random bytes). To rotate it,
+;; list the new key first: ("new" "old"); sessions signed with the old key
+;; stay valid until you remove it. bin/gen-secret.scm prints a new key.
+(define session-secret "REPLACE_WITH_BASE64_SECRET")
 (define session-max-age (* 60 60 24 7))   ; 7 days
-(define secure-cookies? #f)               ; set #t behind HTTPS
+
+;; Cookies are sent over HTTPS only when #t. Keep #f for http://127.0.0.1
+;; during development; deploy/install.sh sets #t.
+(define secure-cookies? #f)
+
+;; Relative paths are relative to the app directory. data-dir holds the
+;; user store (users.scm) and must be writable.
+(define static-dir "static")
+(define items-file "data/items.json")
+(define data-dir "data")
