@@ -62,6 +62,172 @@ public class Compiler
         this.bindingTable = modules.BindingTable;
     }
 
+    // A lambda bound by letrec/letrec* to a variable that is never set!:
+    // inside its body the variable is the running closure, so a tail call
+    // of it with the right argument count becomes LOOP (new frame + jump).
+    private sealed class SelfCall
+    {
+        public readonly object frame; public readonly int index; public readonly int nparams; public readonly string label;
+        public SelfCall(object frame, int index, int nparams, string label)
+        {
+            this.frame = frame; this.index = index; this.nparams = nparams; this.label = label;
+        }
+    }
+    // set before compiling a letrec init that is a lambda; CompLambda takes it
+    private SelfCall? pendingSelf;
+    // the self call of the function whose body is being compiled, or null
+    private SelfCall? currentSelf;
+    // counts the CompLambda nesting, so that a loop jumps only within its function
+    private int fnLevel;
+
+    // A named let compiled as a loop (CompLoop): the frame of its name.
+    private sealed class LoopInfo
+    {
+        public readonly int nparams; public readonly string label; public readonly int owner;
+        public LoopInfo(int nparams, string label, int owner)
+        {
+            this.nparams = nparams; this.label = label; this.owner = owner;
+        }
+    }
+    private readonly Dictionary<object, LoopInfo> loops = new(ReferenceEqualityComparer.Instance);
+
+    // A loop's name is used other than the prescan allowed: compile the
+    // named let the ordinary way instead.
+    private sealed class LoopBailout : Exception
+    {
+        public readonly object frame;
+        public LoopBailout(object frame) { this.frame = frame; }
+    }
+
+    private static object FrameAt(object env, int depth)
+    {
+        for (int i = 0; i < depth; i++) env = Value.AsPair(env).cdr;
+        return Value.AsPair(env).car;
+    }
+
+    /// <summary>The name of the core form x is, or null (function calls, non-pairs).</summary>
+    private string? CoreFormName(object x)
+    {
+        if (!Value.IsPair(x)) return null;
+        object head = Value.AsPair(x).car;
+        if (head is SyntaxObject stx && stx.IsIdentifier)
+        {
+            var b = SyntaxObject.Resolve(stx, bindingTable);
+            if (b != null && b.BindingKind == ResolvedBinding.Kind.CoreForm) return b.SymbolName;
+        }
+        return null;
+    }
+
+    private static bool IsIdentifier(object x)
+    {
+        return (x is SyntaxObject stx && stx.IsIdentifier) || Value.IsSymbol(x);
+    }
+
+    /// <summary>Whether an identifier called name occurs in code x (quoted data aside).</summary>
+    private bool Mentions(object x, string name)
+    {
+        while (true)
+        {
+            if (IsIdentifier(x)) return name == GetIdName(x);
+            if (!Value.IsPair(x)) return false;
+            if (CoreFormName(x) == "quote") return false;
+            if (Mentions(Value.AsPair(x).car, name)) return true;
+            x = Value.AsPair(x).cdr;
+        }
+    }
+
+    /// <summary>Whether a set! of an identifier called name occurs in code x.</summary>
+    private bool SetsName(object x, string name)
+    {
+        while (true)
+        {
+            if (!Value.IsPair(x)) return false;
+            string? core = CoreFormName(x);
+            if (core == "quote") return false;
+            if (core == "set!" && Value.IsPair(Value.AsPair(x).cdr)
+                && name == GetIdName(Value.AsPair(x).Second()))
+                return true;
+            if (SetsName(Value.AsPair(x).car, name)) return true;
+            x = Value.AsPair(x).cdr;
+        }
+    }
+
+    /// <summary>
+    /// Whether the named-let name occurs in x only as the operator of calls
+    /// with n arguments in tail position of the loop body (tail: x's value is
+    /// the body's). Decided by name, so shadowing and macro-renamed
+    /// identifiers make it fail rather than slip through.
+    /// </summary>
+    private bool OnlyLoopCalls(object x, string name, int n, bool tail)
+    {
+        if (!tail) return !Mentions(x, name);
+        if (IsIdentifier(x)) return name != GetIdName(x);
+        if (!Value.IsPair(x)) return true;
+        Pair p = Value.AsPair(x);
+        string? core = CoreFormName(x);
+        if (core == null)
+        {
+            object f = p.car;
+            if (IsIdentifier(f) && name == GetIdName(f))
+            {
+                int argc = 0;
+                for (object a = p.cdr; a != Value.NIL; a = Value.AsPair(a).cdr)
+                {
+                    if (!Value.IsPair(a)) return false;
+                    argc++;
+                }
+                return argc == n && !Mentions(p.cdr, name);
+            }
+            return !Mentions(x, name);
+        }
+        switch (core)
+        {
+            case "quote":
+                return true;
+            case "begin":
+                return BodyOnlyLoopCalls(p.cdr, name, n);
+            case "if":
+            {
+                object rest = p.cdr;
+                if (!Value.IsPair(rest) || Mentions(Value.AsPair(rest).car, name)) return false;
+                rest = Value.AsPair(rest).cdr;
+                while (rest != Value.NIL)
+                {
+                    if (!Value.IsPair(rest) || !OnlyLoopCalls(Value.AsPair(rest).car, name, n, true)) return false;
+                    rest = Value.AsPair(rest).cdr;
+                }
+                return true;
+            }
+            case "let": case "let*": case "letrec": case "letrec*":
+            {
+                if (!Value.IsPair(p.cdr)) return false;
+                object bindings = p.Second();
+                if (!Value.IsPair(bindings) && bindings != Value.NIL) return false; // named let
+                for (object b = bindings; b != Value.NIL; b = Value.AsPair(b).cdr)
+                {
+                    if (!Value.IsPair(b) || !Value.IsPair(Value.AsPair(b).car)) return false;
+                    Pair binding = Value.AsPair(Value.AsPair(b).car);
+                    if (name == GetIdName(binding.car) || Mentions(binding.cdr, name)) return false;
+                }
+                return BodyOnlyLoopCalls(p.NthCdr(2), name, n);
+            }
+            default:
+                return !Mentions(x, name);
+        }
+    }
+
+    private bool BodyOnlyLoopCalls(object body, string name, int n)
+    {
+        while (body != Value.NIL)
+        {
+            if (!Value.IsPair(body)) return false;
+            Pair p = Value.AsPair(body);
+            if (!OnlyLoopCalls(p.car, name, n, p.cdr == Value.NIL)) return false;
+            body = p.cdr;
+        }
+        return true;
+    }
+
     /// <summary>
     /// Create a SyntaxObject for a core form keyword with the current module scope,
     /// so it resolves through the binding table (mirrors Expander.CoreFormId).
@@ -143,26 +309,45 @@ public class Compiler
         return prefix + labelNum++;
     }
 
+    /// <summary>
+    /// The (frame var) of a local identifier, directly or through the binding
+    /// table (cross-scope references), or #f.
+    /// </summary>
+    private object ResolveLocal(object identifier, object env)
+    {
+        object p = InEnvP(identifier, env);
+        if (!p.Equals(Value.F)) return p;
+        if (identifier is SyntaxObject idStx)
+        {
+            var binding = SyntaxObject.Resolve(idStx, bindingTable);
+            if (binding != null && binding.BindingKind == ResolvedBinding.Kind.Local && binding.Value is SyntaxObject bindingVar)
+                return InEnvP(bindingVar, env);
+        }
+        return Value.F;
+    }
+
+    // A reference to a loop's name other than a loop call
+    private void CheckNotLoop(object p, object env)
+    {
+        if (loops.Count == 0) return;
+        object frame = FrameAt(env, (int) Value.AsPair(p).First());
+        if (loops.ContainsKey(frame)) throw new LoopBailout(frame);
+    }
+
     /// <summary>Generate variable access for any identifier (SyntaxObject or plain symbol).</summary>
     private object GenVar(SourcePos? pos, object identifier, object env)
     {
         string name = GetIdName(identifier);
-        object p = InEnvP(identifier, env);
+        object p = ResolveLocal(identifier, env);
         if (!p.Equals(Value.F))
         {
+            CheckNotLoop(p, env);
             return Gen(pos, Opcode.LVAR, Value.AsPair(p).First(), Value.AsPair(p).Second(), ";", name);
         }
         // Not local → resolve through binding table or fall back to current module
         if (identifier is SyntaxObject idStx)
         {
             var binding = SyntaxObject.Resolve(idStx, bindingTable);
-            if (binding != null && binding.BindingKind == ResolvedBinding.Kind.Local && binding.Value is SyntaxObject bindingVar)
-            {
-                object p2 = InEnvP(bindingVar, env);
-                if (!p2.Equals(Value.F))
-                    return Gen(pos, Opcode.LVAR, Value.AsPair(p2).First(), Value.AsPair(p2).Second(), ";", name);
-            }
-
             if (binding != null && binding.ModuleName != null)
                 return Gen(pos, Opcode.GVAR, binding.SymbolName, binding.ModuleName);
         }
@@ -173,21 +358,15 @@ public class Compiler
     private object GenSet(SourcePos? pos, object identifier, object env)
     {
         string name = GetIdName(identifier);
-        object p = InEnvP(identifier, env);
+        object p = ResolveLocal(identifier, env);
         if (!p.Equals(Value.F))
         {
+            CheckNotLoop(p, env);
             return Gen(pos, Opcode.LSET, Value.AsPair(p).First(), Value.AsPair(p).Second(), ";", name);
         }
         if (identifier is SyntaxObject idStx)
         {
             var binding = SyntaxObject.Resolve(idStx, bindingTable);
-            if (binding != null && binding.BindingKind == ResolvedBinding.Kind.Local && binding.Value is SyntaxObject bindingVar)
-            {
-                object p2 = InEnvP(bindingVar, env);
-                if (!p2.Equals(Value.F))
-                    return Gen(pos, Opcode.LSET, Value.AsPair(p2).First(), Value.AsPair(p2).Second(), ";", name);
-            }
-
             if (binding != null && binding.ModuleName != null)
                 return Gen(pos, Opcode.GSET, binding.SymbolName, binding.ModuleName);
         }
@@ -498,6 +677,31 @@ public class Compiler
                 }
             }
         }
+        // A loop call of a named let compiled by CompLoop, or a self tail call
+        if (fName != null && (loops.Count > 0 || (!more && currentSelf != null)))
+        {
+            object p = ResolveLocal(f, env);
+            if (!p.Equals(Value.F))
+            {
+                int depth = (int) Value.AsPair(p).First(), index = (int) Value.AsPair(p).Second();
+                int argc = (args == Value.NIL ? 0 : Value.AsPair(args).Length());
+                object frame = FrameAt(env, depth);
+                string? label = null;
+                if (loops.TryGetValue(frame, out var loop))
+                {
+                    if (index != 0 || loop.owner != fnLevel || argc != loop.nparams)
+                        throw new LoopBailout(frame);
+                    label = loop.label;
+                }
+                else if (!more && currentSelf != null && currentSelf.frame == frame
+                         && currentSelf.index == index && currentSelf.nparams == argc)
+                {
+                    label = currentSelf.label;
+                }
+                if (label != null)
+                    return Seq(pos, CompList(pos, args, env), Gen(pos, Opcode.LOOP, argc, depth, label));
+            }
+        }
         // Intrinsic: identifier not shadowed locally and still bound to the original primitive
         if (fName != null)
         {
@@ -591,13 +795,28 @@ public class Compiler
             body = Value.AsPair(body).cdr;
         }
 
-        object code = Optimize(
-            Seq(
-                pos,
-                GenArgs(pos, args, 0),
-                CompBegin(pos, body, new Pair(MakeTrueList(args), env), true, false)
-            )
-        );
+        SelfCall? self = pendingSelf;
+        pendingSelf = null;
+        SelfCall? outerSelf = currentSelf;
+        currentSelf = self;
+        fnLevel++;
+        object code;
+        try
+        {
+            code = Optimize(
+                Seq(
+                    pos,
+                    GenArgs(pos, args, 0),
+                    self != null ? Pair.List(self.label) : Value.NIL,
+                    CompBegin(pos, body, new Pair(MakeTrueList(args), env), true, false)
+                )
+            );
+        }
+        finally
+        {
+            currentSelf = outerSelf;
+            fnLevel--;
+        }
 
         object[] elements = docstring != null
             ? new object[] { Value.Intern("env:"), env, Value.Intern("args:"), args, Value.Intern("code:"), code, Value.Intern("doc:"), docstring }
@@ -621,6 +840,17 @@ public class Compiler
             var vals = new List<object>();
             ExtractBindings(bindings, vars, vals);
             object varList = Pair.List(vars.ToArray());
+            if (IsSimpleParamList(varList) && BodyOnlyLoopCalls(body, nameStr, vars.Count))
+            {
+                object nameFrame = Pair.List(second);
+                try
+                {
+                    return CompLoop(pos, nameFrame, varList, vals, body, env, val, more);
+                }
+                catch (LoopBailout b) when (b.frame == nameFrame)
+                {
+                }
+            }
             // Build (lambda (vars...) body...)
             var lambdaParts = new List<object> { CoreFormId("lambda"), varList };
             object cur = body;
@@ -645,6 +875,11 @@ public class Compiler
             // Inline optimization: use EXTEND instead of creating a closure
             int n = vars.Count;
             object newEnv = new Pair(Pair.List(vars.ToArray()), env);
+            if (n == 1 && (val || more))
+            {
+                object? orCode = CompOrTemp(pos, vals[0], body, newEnv, env, val, more);
+                if (orCode != null) return orCode;
+            }
             if (more)
             {
                 return Seq(pos,
@@ -658,6 +893,97 @@ public class Compiler
                 Gen(pos, Opcode.EXTEND, n),
                 CompBegin(pos, body, newEnv, true, false));
         }
+    }
+
+    /// <summary>
+    /// A named let whose name is only called in tail position of its body
+    /// (BodyOnlyLoopCalls) as a loop: no closure and no call, each loop call
+    /// binds a new frame of the variables and jumps back. The frame of the
+    /// name stays (holding #f) so that the body's variable indexes are those
+    /// of the ordinary letrec rewrite.
+    /// </summary>
+    private object CompLoop(SourcePos? pos, object nameFrame, object varList, List<object> vals,
+                            object body, object env, bool val, bool more)
+    {
+        int n = vals.Count;
+        object bodyEnv = new Pair(varList, new Pair(nameFrame, env));
+        string top = GenLabel();
+        loops[nameFrame] = new LoopInfo(n, top, fnLevel);
+        try
+        {
+            object start = Seq(pos,
+                CompList(pos, Pair.List(vals.ToArray()), env),
+                Gen(pos, Opcode.CONST, Value.F),
+                Gen(pos, Opcode.EXTEND, 1),
+                Gen(pos, Opcode.EXTEND, n),
+                Pair.List(top));
+            if (more)
+            {
+                return Seq(pos, start,
+                    CompBegin(pos, body, bodyEnv, val, true),
+                    Gen(pos, Opcode.POPENV),
+                    Gen(pos, Opcode.POPENV));
+            }
+            return Seq(pos, start, CompBegin(pos, body, bodyEnv, true, false));
+        }
+        finally
+        {
+            loops.Remove(nameFrame);
+        }
+    }
+
+    /// <summary>
+    /// (let ((t e1)) (if t t e2)) with t not in e2 -- what or expands to --
+    /// without the frame: e1 TJUMP_KEEP L e2 L. Null if body is not that.
+    /// </summary>
+    private object? CompOrTemp(SourcePos? pos, object e1, object body, object newEnv, object env,
+                               bool val, bool more)
+    {
+        if (!Value.IsPair(body) || Value.AsPair(body).cdr != Value.NIL) return null;
+        object form = Value.AsPair(body).car;
+        if (CoreFormName(form) != "if" || Value.AsPair(form).Length() != 4) return null;
+        Pair ifForm = Value.AsPair(form);
+        string tName = GetIdName(Value.AsPair(Value.AsPair(newEnv).car).car);
+        object test = ifForm.Second(), then = ifForm.Third(), e2 = ifForm.Fourth();
+        if (tName == null || !IsIdentifier(test) || !IsIdentifier(then) || Mentions(e2, tName)) return null;
+        if (!IsFirstLocal(ResolveLocal(test, newEnv)) || !IsFirstLocal(ResolveLocal(then, newEnv))) return null;
+        string l = GenLabel();
+        if (!val)
+        {
+            return Seq(pos,
+                Comp(pos, e1, env, true, true),
+                Gen(pos, Opcode.TJUMP, l),
+                Comp(pos, e2, env, false, true),
+                Pair.List(l));
+        }
+        return Seq(pos,
+            Comp(pos, e1, env, true, true),
+            Gen(pos, Opcode.TJUMP_KEEP, l),
+            Comp(pos, e2, env, true, more),
+            Pair.List(l),
+            more ? (object)Value.NIL : Gen(pos, Opcode.RETURN));
+    }
+
+    private static bool IsFirstLocal(object p)
+    {
+        return !p.Equals(Value.F) && (int) Value.AsPair(p).First() == 0 && (int) Value.AsPair(p).Second() == 0;
+    }
+
+    /// <summary>
+    /// The self call of letrec variable index of frame bound to init, when init
+    /// is a lambda with a plain parameter list and the letrec form x never
+    /// set!s the variable; else null.
+    /// </summary>
+    private SelfCall? SelfCallFor(object x, object frame, int index, object var, object init)
+    {
+        if (CoreFormName(init) != "lambda") return null;
+        Pair lambda = Value.AsPair(init);
+        if (!Value.IsPair(lambda.cdr)) return null;
+        object parameters = lambda.Second();
+        string name = GetIdName(var);
+        if (name == null || !IsSimpleParamList(parameters) || SetsName(x, name)) return null;
+        int n = parameters == Value.NIL ? 0 : Value.AsPair(parameters).Length();
+        return new SelfCall(frame, index, n, GenLabel());
     }
 
     /// <summary>Compile (let* ((var val) ...) body ...) as nested lets.</summary>
@@ -728,10 +1054,19 @@ public class Compiler
 
         // Evaluate ALL init expressions onto the stack
         object evalCode = Value.NIL;
+        object frame = Value.AsPair(newEnv).car;
         for (int i = 0; i < n; i++)
         {
-            evalCode = Seq(pos, evalCode,
-                Comp(pos, valExprs[i], newEnv, true, true));
+            pendingSelf = SelfCallFor(x, frame, i, vars[i], valExprs[i]);
+            try
+            {
+                evalCode = Seq(pos, evalCode,
+                    Comp(pos, valExprs[i], newEnv, true, true));
+            }
+            finally
+            {
+                pendingSelf = null;
+            }
         }
 
         // Assign all at once in reverse order (last value is on top of stack)
@@ -782,10 +1117,21 @@ public class Compiler
 
         // Evaluate and assign each binding sequentially
         object setCode = Value.NIL;
+        object frame = Value.AsPair(newEnv).car;
         for (int i = 0; i < n; i++)
         {
+            pendingSelf = SelfCallFor(x, frame, i, vars[i], valExprs[i]);
+            object valCode;
+            try
+            {
+                valCode = Comp(pos, valExprs[i], newEnv, true, true);
+            }
+            finally
+            {
+                pendingSelf = null;
+            }
             setCode = Seq(pos, setCode,
-                Comp(pos, valExprs[i], newEnv, true, true),
+                valCode,
                 Gen(pos, Opcode.LSET, 0, i, ";", GetIdName(vars[i]) ?? "?"),
                 Gen(pos, Opcode.POP));
         }
@@ -890,6 +1236,7 @@ public class Compiler
             changed |= PeepholeJumpThread(items);
             changed |= PeepholeUnusedLabels(items);
             changed |= PeepholeLocalAddImm(items);
+            changed |= PeepholeKeepBranch(items);
         }
         PeepholeFuse(items);
         return (Pair)Pair.List(items.ToArray());
@@ -905,7 +1252,8 @@ public class Compiler
         bool changed = false;
         int i = 0;
         while (i < items.Count) {
-            if (IsInstr(items[i]) && (GetOp(items[i]) == Opcode.RETURN || GetOp(items[i]) == Opcode.JUMP)) {
+            if (IsInstr(items[i]) && (GetOp(items[i]) == Opcode.RETURN || GetOp(items[i]) == Opcode.JUMP
+                                      || GetOp(items[i]) == Opcode.LOOP)) {
                 int j = i + 1;
                 while (j < items.Count && IsInstr(items[j])) {
                     items.RemoveAt(j);
@@ -1035,7 +1383,7 @@ public class Compiler
         for (int i = 0; i < items.Count; i++) {
             if (!IsInstr(items[i])) continue;
             Opcode op = GetOp(items[i]);
-            if (op != Opcode.JUMP && op != Opcode.FJUMP && op != Opcode.TJUMP) continue;
+            if (op != Opcode.JUMP && op != Opcode.FJUMP && op != Opcode.TJUMP && op != Opcode.TJUMP_KEEP) continue;
             string target = GetTarget(items[i]);
             // Follow the chain up to 5 hops
             HashSet<string> visited = new() { target };
@@ -1068,14 +1416,51 @@ public class Compiler
         foreach (object item in items) {
             if (!IsInstr(item)) continue;
             Opcode op = GetOp(item);
-            if (op == Opcode.JUMP || op == Opcode.FJUMP || op == Opcode.TJUMP || op == Opcode.SAVE) {
+            if (op == Opcode.JUMP || op == Opcode.FJUMP || op == Opcode.TJUMP || op == Opcode.SAVE
+                || op == Opcode.TJUMP_KEEP) {
                 referenced.Add(GetTarget(item));
+            } else if (op == Opcode.LOOP) {
+                referenced.Add((string) Value.AsPair(item).Fourth());
             }
         }
         bool changed = false;
         for (int i = items.Count - 1; i >= 0; i--) {
             if (IsLabel(items[i]) && !referenced.Contains((string) items[i])) {
                 items.RemoveAt(i);
+                changed = true;
+            }
+        }
+        return changed;
+    }
+
+    // Pass K: a TJUMP_KEEP to a branch on the kept value branches itself:
+    // to L: FJUMP M or L: POP -> TJUMP past it; to L: TJUMP/TJUMP_KEEP M -> that
+    private bool PeepholeKeepBranch(List<object> items) {
+        bool changed = false;
+        for (int i = 0; i < items.Count; i++) {
+            if (!IsInstr(items[i]) || GetOp(items[i]) != Opcode.TJUMP_KEEP) continue;
+            string target = GetTarget(items[i]);
+            int labelIdx = -1;
+            for (int j = 0; j < items.Count; j++) {
+                if (IsLabel(items[j]) && (string) items[j] == target) { labelIdx = j; break; }
+            }
+            if (labelIdx < 0) continue;
+            int k = labelIdx + 1;
+            while (k < items.Count && IsLabel(items[k])) k++;
+            if (k >= items.Count || !IsInstr(items[k])) continue;
+            Opcode next = GetOp(items[k]);
+            if (next == Opcode.TJUMP || next == Opcode.TJUMP_KEEP) {
+                items[i] = Pair.List((object) next, GetTarget(items[k]));
+                changed = true;
+            } else if ((next == Opcode.FJUMP || next == Opcode.POP) && k > i) {
+                string after;
+                if (k + 1 < items.Count && IsLabel(items[k + 1])) {
+                    after = (string) items[k + 1];
+                } else {
+                    after = GenLabel();
+                    items.Insert(k + 1, after);
+                }
+                items[i] = Pair.List((object) Opcode.TJUMP, after);
                 changed = true;
             }
         }
@@ -1173,6 +1558,7 @@ public class Compiler
         {
             if (instruction.opcode == Opcode.JUMP
                 || instruction.opcode == Opcode.TJUMP
+                || instruction.opcode == Opcode.TJUMP_KEEP
                 || instruction.opcode == Opcode.FJUMP
                 || instruction.opcode == Opcode.SAVE)
             {
@@ -1183,7 +1569,8 @@ public class Compiler
                 instruction.arg2 = labels[instruction.arg2?.ToString() ?? "?"];
             }
             else if (instruction.opcode == Opcode.LVAR_NULL_FJUMP
-                || instruction.opcode == Opcode.LVAR_PAIR_FJUMP)
+                || instruction.opcode == Opcode.LVAR_PAIR_FJUMP
+                || instruction.opcode == Opcode.LOOP)
             {
                 instruction.arg3 = labels[instruction.arg3?.ToString() ?? "?"];
             }

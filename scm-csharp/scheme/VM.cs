@@ -809,6 +809,33 @@ public class VM
                     env = ((object[])env)[0];
                     break;
 
+                case Opcode.TJUMP_KEEP:
+                    if (!IsFalse(stack[sp - 1]))
+                    {
+                        if (instruction.i1 < ip) stack = EnsureStack(stack, sp + code.Length - instruction.i1);
+                        ip = instruction.i1;
+                    }
+                    else
+                    {
+                        stack[--sp] = null!;
+                    }
+                    break;
+
+                case Opcode.LOOP: {
+                    if (currentThread?.terminated == true)
+                        throw new SchemeError("thread terminated");
+                    object[] parent = (object[])env;
+                    for (int i = instruction.i2; i > 0; i--) parent = (object[])parent[0];
+                    int n = instruction.i1;
+                    object[] frame = new object[n + 1];
+                    for (int i = n; i >= 1; i--) { frame[i] = stack[--sp]; stack[sp] = null!; }
+                    frame[0] = parent;
+                    env = frame;
+                    ip = instruction.i3;
+                    stack = EnsureStack(stack, sp + code.Length - ip);
+                    break;
+                }
+
                 case Opcode.LVAR_CAR:
                     stack[sp] = Value.AsPair(Getenv(env, instruction.i1, instruction.i2)).car; sp++;
                     break;

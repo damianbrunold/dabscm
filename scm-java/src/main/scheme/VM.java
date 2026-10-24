@@ -159,6 +159,17 @@ public class VM {
 
     // An environment is a chain of frames: Object[] with the parent
     // environment in slot 0 and the frame's variables from slot 1.
+    // LOOP: the n arguments on top of the stack as a new frame whose parent
+    // is the frame depth levels up (kept out of execute, see its size note)
+    private static Object[] loopFrame(Object env, int depth, Object[] stack, int sp, int n) {
+        Object[] parent = (Object[]) env;
+        for (int i = depth; i > 0; i--) parent = (Object[]) parent[0];
+        Object[] frame = new Object[n + 1];
+        for (int i = n; i >= 1; i--) { frame[i] = stack[--sp]; stack[sp] = null; }
+        frame[0] = parent;
+        return frame;
+    }
+
     private static Object getenv(Object env, int frame, int var) {
         Object[] f = (Object[]) env;
         for (int i = 0; i < frame; i++) f = (Object[]) f[0];
@@ -727,6 +738,26 @@ public class VM {
                 case POPENV:
                     env = ((Object[]) env)[0];
                     break;
+
+                case TJUMP_KEEP:
+                    if (stack[sp - 1] != Value.F) {
+                        if (instruction.i1 < ip) stack = ensureStack(stack, sp + code.length - instruction.i1);
+                        ip = instruction.i1;
+                    } else {
+                        stack[--sp] = null;
+                    }
+                    break;
+
+                case LOOP: {
+                    SchemeThread ct = currentThread;
+                    if (ct != null && ct.terminated)
+                        throw new SchemeError("thread terminated");
+                    env = loopFrame(env, instruction.i2, stack, sp, instruction.i1);
+                    sp -= instruction.i1;
+                    ip = instruction.i3;
+                    stack = ensureStack(stack, sp + code.length - ip);
+                    break;
+                }
 
                 case LVAR_CAR:
                     stack[sp] = Value.asPair(getenv(env, instruction.i1, instruction.i2)).car; sp++;

@@ -43,4 +43,9 @@ public enum Opcode
     CONST_EQ_FJUMP,                           // CONST + EQ_P + FJUMP
     // (c[ad]+r x): path bits + name (Compiler.cxrPath); (list a ...): n
     CXR, LIST,
+    // (or a b): jump keeping the value when it is true, else drop it
+    TJUMP_KEEP,
+    // self tail call / named-let loop: n args into a new frame whose parent
+    // is the frame d levels up, then jump (Compiler.compLoop, SelfCall)
+    LOOP,
 }

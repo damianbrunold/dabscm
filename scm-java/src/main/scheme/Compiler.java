@@ -3,6 +3,7 @@ package scheme;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -62,6 +63,148 @@ public class Compiler {
     public Compiler(Modules modules) {
         this.modules = modules;
         this.bindingTable = modules.getBindingTable();
+    }
+
+    // A lambda bound by letrec/letrec* to a variable that is never set!:
+    // inside its body the variable is the running closure, so a tail call
+    // of it with the right argument count becomes LOOP (new frame + jump).
+    private static final class SelfCall {
+        final Object frame; final int index; final int nparams; final String label;
+        SelfCall(Object frame, int index, int nparams, String label) {
+            this.frame = frame; this.index = index; this.nparams = nparams; this.label = label;
+        }
+    }
+    // set before compiling a letrec init that is a lambda; compLambda takes it
+    private SelfCall pendingSelf;
+    // the self call of the function whose body is being compiled, or null
+    private SelfCall currentSelf;
+    // counts the compLambda nesting, so that a loop jumps only within its function
+    private int fnLevel;
+
+    // A named let compiled as a loop (compLoop): the frame of its name.
+    private static final class LoopInfo {
+        final int nparams; final String label; final int owner;
+        LoopInfo(int nparams, String label, int owner) {
+            this.nparams = nparams; this.label = label; this.owner = owner;
+        }
+    }
+    private final Map<Object, LoopInfo> loops = new IdentityHashMap<>();
+
+    // A loop's name is used other than the prescan allowed: compile the
+    // named let the ordinary way instead.
+    private static final class LoopBailout extends RuntimeException {
+        final Object frame;
+        LoopBailout(Object frame) { super(null, null, false, false); this.frame = frame; }
+    }
+
+    private static Object frameAt(Object env, int depth) {
+        for (int i = 0; i < depth; i++) env = Value.asPair(env).cdr;
+        return Value.asPair(env).car;
+    }
+
+    /** The name of the core form x is, or null (function calls, non-pairs). */
+    private String coreFormName(Object x) {
+        if (!Value.isPair(x)) return null;
+        Object head = Value.asPair(x).car;
+        if (head instanceof SyntaxObject && ((SyntaxObject) head).isIdentifier()) {
+            ResolvedBinding b = SyntaxObject.resolve((SyntaxObject) head, bindingTable);
+            if (b != null && b.bindingKind == ResolvedBinding.Kind.CORE_FORM) return b.symbolName;
+        }
+        return null;
+    }
+
+    private static boolean isIdentifier(Object x) {
+        return (x instanceof SyntaxObject && ((SyntaxObject) x).isIdentifier()) || Value.isSymbol(x);
+    }
+
+    /** Whether an identifier called name occurs in code x (quoted data aside). */
+    private boolean mentions(Object x, String name) {
+        while (true) {
+            if (isIdentifier(x)) return name.equals(getIdName(x));
+            if (!Value.isPair(x)) return false;
+            if ("quote".equals(coreFormName(x))) return false;
+            if (mentions(Value.asPair(x).car, name)) return true;
+            x = Value.asPair(x).cdr;
+        }
+    }
+
+    /** Whether a set! of an identifier called name occurs in code x. */
+    private boolean setsName(Object x, String name) {
+        while (true) {
+            if (!Value.isPair(x)) return false;
+            String core = coreFormName(x);
+            if ("quote".equals(core)) return false;
+            if ("set!".equals(core) && Value.isPair(Value.asPair(x).cdr)
+                && name.equals(getIdName(Value.asPair(x).second())))
+                return true;
+            if (setsName(Value.asPair(x).car, name)) return true;
+            x = Value.asPair(x).cdr;
+        }
+    }
+
+    /**
+     * Whether the named-let name occurs in x only as the operator of calls
+     * with n arguments in tail position of the loop body (tail: x's value is
+     * the body's). Decided by name, so shadowing and macro-renamed
+     * identifiers make it fail rather than slip through.
+     */
+    private boolean onlyLoopCalls(Object x, String name, int n, boolean tail) {
+        if (!tail) return !mentions(x, name);
+        if (isIdentifier(x)) return !name.equals(getIdName(x));
+        if (!Value.isPair(x)) return true;
+        Pair p = Value.asPair(x);
+        String core = coreFormName(x);
+        if (core == null) {
+            Object f = p.car;
+            if (isIdentifier(f) && name.equals(getIdName(f))) {
+                int argc = 0;
+                for (Object a = p.cdr; a != Value.NIL; a = Value.asPair(a).cdr) {
+                    if (!Value.isPair(a)) return false;
+                    argc++;
+                }
+                return argc == n && !mentions(p.cdr, name);
+            }
+            return !mentions(x, name);
+        }
+        switch (core) {
+            case "quote":
+                return true;
+            case "begin":
+                return bodyOnlyLoopCalls(p.cdr, name, n);
+            case "if": {
+                Object rest = p.cdr;
+                if (!Value.isPair(rest) || mentions(Value.asPair(rest).car, name)) return false;
+                rest = Value.asPair(rest).cdr;
+                while (rest != Value.NIL) {
+                    if (!Value.isPair(rest) || !onlyLoopCalls(Value.asPair(rest).car, name, n, true)) return false;
+                    rest = Value.asPair(rest).cdr;
+                }
+                return true;
+            }
+            case "let": case "let*": case "letrec": case "letrec*": {
+                if (!Value.isPair(p.cdr)) return false;
+                Object bindings = p.second();
+                if (!Value.isPair(bindings) && bindings != Value.NIL) return false; // named let
+                for (Object b = bindings; b != Value.NIL; b = Value.asPair(b).cdr) {
+                    if (!Value.isPair(b) || !Value.isPair(Value.asPair(b).car)) return false;
+                    Pair binding = Value.asPair(Value.asPair(b).car);
+                    if (name.equals(getIdName(binding.car)) || mentions(binding.cdr, name)) return false;
+                }
+                return bodyOnlyLoopCalls(p.nthCdr(2), name, n);
+            }
+            default:
+                return !mentions(x, name);
+        }
+    }
+
+    private boolean bodyOnlyLoopCalls(Object body, String name, int n) {
+        while (body != Value.NIL) {
+            if (!Value.isPair(body)) return false;
+            Pair p = Value.asPair(body);
+            if (!onlyLoopCalls(p.car, name, n, p.cdr == Value.NIL)) return false;
+            body = p.cdr;
+        }
+        return true;
     }
 
     /**
@@ -142,11 +285,34 @@ public class Compiler {
         return prefix + labelNum++;
     }
 
+    /**
+     * The (frame var) of a local identifier, directly or through the binding
+     * table (cross-scope references), or #f.
+     */
+    private Object resolveLocal(Object identifier, Object env) {
+        Object p = inEnvP(identifier, env);
+        if (!p.equals(Value.F)) return p;
+        if (identifier instanceof SyntaxObject) {
+            var binding = SyntaxObject.resolve((SyntaxObject) identifier, bindingTable);
+            if (binding != null && binding.bindingKind == ResolvedBinding.Kind.LOCAL && binding.value instanceof SyntaxObject)
+                return inEnvP(binding.value, env);
+        }
+        return Value.F;
+    }
+
+    // A reference to a loop's name other than a loop call
+    private void checkNotLoop(Object p, Object env) {
+        if (loops.isEmpty()) return;
+        Object frame = frameAt(env, (int) Value.asPair(p).first());
+        if (loops.containsKey(frame)) throw new LoopBailout(frame);
+    }
+
     /** Generate variable access for any identifier (SyntaxObject or plain symbol). */
     private Object genVar(SourcePos pos, Object identifier, Object env) {
         String name = getIdName(identifier);
-        Object p = inEnvP(identifier, env);
+        Object p = resolveLocal(identifier, env);
         if (!p.equals(Value.F)) {
+            checkNotLoop(p, env);
             return gen(pos, Opcode.LVAR, Value.asPair(p).first(), Value.asPair(p).second(), ";", name);
         }
         // Not local → resolve through binding table or fall back to current module
@@ -154,13 +320,6 @@ public class Compiler {
             SyntaxObject idStx = (SyntaxObject) identifier;
 
             var binding = SyntaxObject.resolve(idStx, bindingTable);
-            if (binding != null && binding.bindingKind == ResolvedBinding.Kind.LOCAL && binding.value instanceof SyntaxObject) {
-                SyntaxObject bindingVar = (SyntaxObject) binding.value;
-                Object p2 = inEnvP(bindingVar, env);
-                if (!p2.equals(Value.F))
-                    return gen(pos, Opcode.LVAR, Value.asPair(p2).first(), Value.asPair(p2).second(), ";", name);
-            }
-
             if (binding != null && binding.moduleName != null)
                 return gen(pos, Opcode.GVAR, binding.symbolName, binding.moduleName);
         }
@@ -170,21 +329,15 @@ public class Compiler {
     /** Generate variable set for any identifier. */
     private Object genSet(SourcePos pos, Object identifier, Object env) {
         String name = getIdName(identifier);
-        Object p = inEnvP(identifier, env);
+        Object p = resolveLocal(identifier, env);
         if (!p.equals(Value.F)) {
+            checkNotLoop(p, env);
             return gen(pos, Opcode.LSET, Value.asPair(p).first(), Value.asPair(p).second(), ";", name);
         }
         if (identifier instanceof SyntaxObject) {
             SyntaxObject idStx = (SyntaxObject) identifier;
 
             var binding = SyntaxObject.resolve(idStx, bindingTable);
-            if (binding != null && binding.bindingKind == ResolvedBinding.Kind.LOCAL && binding.value instanceof SyntaxObject) {
-                SyntaxObject bindingVar = (SyntaxObject) binding.value;
-                Object p2 = inEnvP(bindingVar, env);
-                if (!p2.equals(Value.F))
-                    return gen(pos, Opcode.LSET, Value.asPair(p2).first(), Value.asPair(p2).second(), ";", name);
-            }
-
             if (binding != null && binding.moduleName != null)
                 return gen(pos, Opcode.GSET, binding.symbolName, binding.moduleName);
         }
@@ -445,6 +598,27 @@ public class Compiler {
                 }
             }
         }
+        // A loop call of a named let compiled by compLoop, or a self tail call
+        if (fName != null && (!loops.isEmpty() || (!more && currentSelf != null))) {
+            Object p = resolveLocal(f, env);
+            if (!p.equals(Value.F)) {
+                int depth = (int) Value.asPair(p).first(), index = (int) Value.asPair(p).second();
+                int argc = (args == Value.NIL ? 0 : Value.asPair(args).length());
+                Object frame = frameAt(env, depth);
+                LoopInfo loop = loops.get(frame);
+                String label = null;
+                if (loop != null) {
+                    if (index != 0 || loop.owner != fnLevel || argc != loop.nparams)
+                        throw new LoopBailout(frame);
+                    label = loop.label;
+                } else if (!more && currentSelf != null && currentSelf.frame == frame
+                           && currentSelf.index == index && currentSelf.nparams == argc) {
+                    label = currentSelf.label;
+                }
+                if (label != null)
+                    return seq(pos, compList(pos, args, env), gen(pos, Opcode.LOOP, argc, depth, label));
+            }
+        }
         // Intrinsic: identifier not shadowed locally and still bound to the original primitive
         if (fName != null) {
             // For SyntaxObjects, resolve through wraps to find the original binding
@@ -524,13 +698,25 @@ public class Compiler {
             body = Value.asPair(body).cdr;
         }
 
-        Object code = optimize(seq(pos,
-                                 genArgs(pos, args, 0),
-                                 compBegin(pos,
-                                           body,
-                                           new Pair(makeTrueList(args), env),
-                                           true,
-                                           false)));
+        SelfCall self = pendingSelf;
+        pendingSelf = null;
+        SelfCall outerSelf = currentSelf;
+        currentSelf = self;
+        fnLevel++;
+        Object code;
+        try {
+            code = optimize(seq(pos,
+                                genArgs(pos, args, 0),
+                                self != null ? Pair.list(self.label) : Value.NIL,
+                                compBegin(pos,
+                                          body,
+                                          new Pair(makeTrueList(args), env),
+                                          true,
+                                          false)));
+        } finally {
+            currentSelf = outerSelf;
+            fnLevel--;
+        }
 
         Pair fn;
         if (docstring != null) {
@@ -559,6 +745,14 @@ public class Compiler {
             ArrayList<Object> vals = new ArrayList<>();
             extractBindings(bindings, vars, vals);
             Object varList = Pair.list(vars.toArray());
+            if (isSimpleParamList(varList) && bodyOnlyLoopCalls(body, nameStr, vars.size())) {
+                Object nameFrame = Pair.list(second);
+                try {
+                    return compLoop(pos, nameFrame, varList, vals, body, env, val, more);
+                } catch (LoopBailout b) {
+                    if (b.frame != nameFrame) throw b;
+                }
+            }
             // Build (lambda (vars...) body...)
             ArrayList<Object> lambdaParts = new ArrayList<>();
             lambdaParts.add(coreFormId("lambda"));
@@ -583,6 +777,10 @@ public class Compiler {
             // Inline optimization: use EXTEND instead of creating a closure
             int n = vars.size();
             Pair newEnv = new Pair(Pair.list(vars.toArray()), env);
+            if (n == 1 && (val || more)) {
+                Object orCode = compOrTemp(pos, vals.get(0), body, newEnv, env, val, more);
+                if (orCode != null) return orCode;
+            }
             if (more) {
                 return seq(pos,
                     compList(pos, Pair.list(vals.toArray()), env),
@@ -595,6 +793,88 @@ public class Compiler {
                 gen(pos, Opcode.EXTEND, n),
                 compBegin(pos, body, newEnv, true, false));
         }
+    }
+
+    /**
+     * A named let whose name is only called in tail position of its body
+     * (bodyOnlyLoopCalls) as a loop: no closure and no call, each loop call
+     * binds a new frame of the variables and jumps back. The frame of the
+     * name stays (holding #f) so that the body's variable indexes are those
+     * of the ordinary letrec rewrite.
+     */
+    private Object compLoop(SourcePos pos, Object nameFrame, Object varList, List<Object> vals,
+                            Object body, Object env, boolean val, boolean more) {
+        int n = vals.size();
+        Object bodyEnv = new Pair(varList, new Pair(nameFrame, env));
+        String top = genLabel();
+        loops.put(nameFrame, new LoopInfo(n, top, fnLevel));
+        try {
+            Object start = seq(pos,
+                compList(pos, Pair.list(vals.toArray()), env),
+                gen(pos, Opcode.CONST, Value.F),
+                gen(pos, Opcode.EXTEND, 1),
+                gen(pos, Opcode.EXTEND, n),
+                Pair.list(top));
+            if (more) {
+                return seq(pos, start,
+                    compBegin(pos, body, bodyEnv, val, true),
+                    gen(pos, Opcode.POPENV),
+                    gen(pos, Opcode.POPENV));
+            }
+            return seq(pos, start, compBegin(pos, body, bodyEnv, true, false));
+        } finally {
+            loops.remove(nameFrame);
+        }
+    }
+
+    /**
+     * (let ((t e1)) (if t t e2)) with t not in e2 -- what or expands to --
+     * without the frame: e1 TJUMP_KEEP L e2 L. Null if body is not that.
+     */
+    private Object compOrTemp(SourcePos pos, Object e1, Object body, Object newEnv, Object env,
+                              boolean val, boolean more) {
+        if (!Value.isPair(body) || Value.asPair(body).cdr != Value.NIL) return null;
+        Object form = Value.asPair(body).car;
+        if (!"if".equals(coreFormName(form)) || Value.asPair(form).length() != 4) return null;
+        Pair ifForm = Value.asPair(form);
+        String tName = getIdName(Value.asPair(Value.asPair(newEnv).car).car);
+        Object test = ifForm.second(), then = ifForm.third(), e2 = ifForm.fourth();
+        if (tName == null || !isIdentifier(test) || !isIdentifier(then) || mentions(e2, tName)) return null;
+        if (!isFirstLocal(resolveLocal(test, newEnv)) || !isFirstLocal(resolveLocal(then, newEnv))) return null;
+        String l = genLabel();
+        if (!val) {
+            return seq(pos,
+                comp(pos, e1, env, true, true),
+                gen(pos, Opcode.TJUMP, l),
+                comp(pos, e2, env, false, true),
+                Pair.list(l));
+        }
+        return seq(pos,
+            comp(pos, e1, env, true, true),
+            gen(pos, Opcode.TJUMP_KEEP, l),
+            comp(pos, e2, env, true, more),
+            Pair.list(l),
+            more ? Value.NIL : gen(pos, Opcode.RETURN));
+    }
+
+    private static boolean isFirstLocal(Object p) {
+        return !p.equals(Value.F) && (int) Value.asPair(p).first() == 0 && (int) Value.asPair(p).second() == 0;
+    }
+
+    /**
+     * The self call of letrec variable index of frame bound to init, when init
+     * is a lambda with a plain parameter list and the letrec form x never
+     * set!s the variable; else null.
+     */
+    private SelfCall selfCallFor(Object x, Object frame, int index, Object var, Object init) {
+        if (!"lambda".equals(coreFormName(init))) return null;
+        Pair lambda = Value.asPair(init);
+        if (!Value.isPair(lambda.cdr)) return null;
+        Object params = lambda.second();
+        String name = getIdName(var);
+        if (name == null || !isSimpleParamList(params) || setsName(x, name)) return null;
+        int n = params == Value.NIL ? 0 : Value.asPair(params).length();
+        return new SelfCall(frame, index, n, genLabel());
     }
 
     /** Compile (let* ((var val) ...) body ...) as nested lets. */
@@ -664,9 +944,15 @@ public class Compiler {
 
         // Evaluate ALL init expressions onto the stack
         Object evalCode = Value.NIL;
+        Object frame = Value.asPair(newEnv).car;
         for (int i = 0; i < n; i++) {
-            evalCode = seq(pos, evalCode,
-                comp(pos, valExprs.get(i), newEnv, true, true));
+            pendingSelf = selfCallFor(x, frame, i, vars.get(i), valExprs.get(i));
+            try {
+                evalCode = seq(pos, evalCode,
+                    comp(pos, valExprs.get(i), newEnv, true, true));
+            } finally {
+                pendingSelf = null;
+            }
         }
 
         // Assign all at once in reverse order (last value is on top of stack)
@@ -715,10 +1001,18 @@ public class Compiler {
 
         // Evaluate and assign each binding sequentially
         Object setCode = Value.NIL;
+        Object frame = Value.asPair(newEnv).car;
         for (int i = 0; i < n; i++) {
             String varName = getIdName(vars.get(i));
+            pendingSelf = selfCallFor(x, frame, i, vars.get(i), valExprs.get(i));
+            Object valCode;
+            try {
+                valCode = comp(pos, valExprs.get(i), newEnv, true, true);
+            } finally {
+                pendingSelf = null;
+            }
             setCode = seq(pos, setCode,
-                comp(pos, valExprs.get(i), newEnv, true, true),
+                valCode,
                 gen(pos, Opcode.LSET, 0, i, ";", varName != null ? varName : "?"),
                 gen(pos, Opcode.POP));
         }
@@ -812,6 +1106,7 @@ public class Compiler {
             changed |= peepholeJumpThread(items);
             changed |= peepholeUnusedLabels(items);
             changed |= peepholeLocalAddImm(items);
+            changed |= peepholeKeepBranch(items);
         }
         peepholeFuse(items);
         return items.isEmpty() ? Value.NIL : Pair.list(items.toArray());
@@ -827,7 +1122,8 @@ public class Compiler {
         boolean changed = false;
         int i = 0;
         while (i < items.size()) {
-            if (isInstr(items.get(i)) && (getOp(items.get(i)) == Opcode.RETURN || getOp(items.get(i)) == Opcode.JUMP)) {
+            if (isInstr(items.get(i)) && (getOp(items.get(i)) == Opcode.RETURN || getOp(items.get(i)) == Opcode.JUMP
+                                          || getOp(items.get(i)) == Opcode.LOOP)) {
                 int j = i + 1;
                 while (j < items.size() && isInstr(items.get(j))) {
                     items.remove(j);
@@ -953,7 +1249,7 @@ public class Compiler {
         for (int i = 0; i < items.size(); i++) {
             if (!isInstr(items.get(i))) continue;
             Opcode op = getOp(items.get(i));
-            if (op != Opcode.JUMP && op != Opcode.FJUMP && op != Opcode.TJUMP) continue;
+            if (op != Opcode.JUMP && op != Opcode.FJUMP && op != Opcode.TJUMP && op != Opcode.TJUMP_KEEP) continue;
             String target = getTarget(items.get(i));
             // Follow the chain up to 5 hops
             Set<String> visited = new HashSet<>();
@@ -987,14 +1283,51 @@ public class Compiler {
         for (Object item : items) {
             if (!isInstr(item)) continue;
             Opcode op = getOp(item);
-            if (op == Opcode.JUMP || op == Opcode.FJUMP || op == Opcode.TJUMP || op == Opcode.SAVE) {
+            if (op == Opcode.JUMP || op == Opcode.FJUMP || op == Opcode.TJUMP || op == Opcode.SAVE
+                || op == Opcode.TJUMP_KEEP) {
                 referenced.add(getTarget(item));
+            } else if (op == Opcode.LOOP) {
+                referenced.add((String) Value.asPair(item).fourth());
             }
         }
         boolean changed = false;
         for (int i = items.size() - 1; i >= 0; i--) {
             if (isLabel(items.get(i)) && !referenced.contains((String) items.get(i))) {
                 items.remove(i);
+                changed = true;
+            }
+        }
+        return changed;
+    }
+
+    // Pass K: a TJUMP_KEEP to a branch on the kept value branches itself:
+    // to L: FJUMP M or L: POP -> TJUMP past it; to L: TJUMP/TJUMP_KEEP M -> that
+    private boolean peepholeKeepBranch(List<Object> items) {
+        boolean changed = false;
+        for (int i = 0; i < items.size(); i++) {
+            if (!isInstr(items.get(i)) || getOp(items.get(i)) != Opcode.TJUMP_KEEP) continue;
+            String target = getTarget(items.get(i));
+            int labelIdx = -1;
+            for (int j = 0; j < items.size(); j++) {
+                if (isLabel(items.get(j)) && items.get(j).equals(target)) { labelIdx = j; break; }
+            }
+            if (labelIdx < 0) continue;
+            int k = labelIdx + 1;
+            while (k < items.size() && isLabel(items.get(k))) k++;
+            if (k >= items.size() || !isInstr(items.get(k))) continue;
+            Opcode next = getOp(items.get(k));
+            if (next == Opcode.TJUMP || next == Opcode.TJUMP_KEEP) {
+                items.set(i, Pair.list((Object) next, getTarget(items.get(k))));
+                changed = true;
+            } else if ((next == Opcode.FJUMP || next == Opcode.POP) && k > i) {
+                String after;
+                if (k + 1 < items.size() && isLabel(items.get(k + 1))) {
+                    after = (String) items.get(k + 1);
+                } else {
+                    after = genLabel();
+                    items.add(k + 1, after);
+                }
+                items.set(i, Pair.list((Object) Opcode.TJUMP, after));
                 changed = true;
             }
         }
@@ -1090,13 +1423,15 @@ public class Compiler {
         for (Instruction instruction : instructions) {
             if (instruction.opcode == Opcode.JUMP ||
                     instruction.opcode == Opcode.TJUMP ||
+                    instruction.opcode == Opcode.TJUMP_KEEP ||
                     instruction.opcode == Opcode.FJUMP ||
                     instruction.opcode == Opcode.SAVE) {
                 instruction.arg1 = labels.get(instruction.arg1);
             } else if (instruction.opcode == Opcode.CONST_EQ_FJUMP) {
                 instruction.arg2 = labels.get(instruction.arg2);
             } else if (instruction.opcode == Opcode.LVAR_NULL_FJUMP ||
-                    instruction.opcode == Opcode.LVAR_PAIR_FJUMP) {
+                    instruction.opcode == Opcode.LVAR_PAIR_FJUMP ||
+                    instruction.opcode == Opcode.LOOP) {
                 instruction.arg3 = labels.get(instruction.arg3);
             }
             instruction.decodeInts();

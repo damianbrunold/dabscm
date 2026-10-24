@@ -53,7 +53,7 @@ public class Instruction
     public static bool HasArg3(Opcode opcode) => opcode switch
     {
         Opcode.GCALLS or Opcode.GCALLJ or Opcode.LVAR_VREF
-            or Opcode.LVAR_NULL_FJUMP or Opcode.LVAR_PAIR_FJUMP => true,
+            or Opcode.LVAR_NULL_FJUMP or Opcode.LVAR_PAIR_FJUMP or Opcode.LOOP => true,
         _ => false
     };
 

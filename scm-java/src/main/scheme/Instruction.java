@@ -53,7 +53,7 @@ public class Instruction {
     public static boolean hasArg3(Opcode opcode) {
         switch (opcode) {
             case GCALLS: case GCALLJ: case LVAR_VREF:
-            case LVAR_NULL_FJUMP: case LVAR_PAIR_FJUMP:
+            case LVAR_NULL_FJUMP: case LVAR_PAIR_FJUMP: case LOOP:
                 return true;
             default:
                 return false;
