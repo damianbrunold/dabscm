@@ -302,3 +302,21 @@ Example:
     (lambda (conn cursor) (pg-cursor-for-each cursor display)))
 ```
 
+### `with-pg-transaction`
+
+```
+Syntax: (with-pg-transaction conn proc)
+Library: (scm database postgres)
+Description: Runs (proc conn) inside a transaction on conn: BEGIN, then
+  COMMIT when proc returns (its value is returned), or ROLLBACK and
+  re-raise when it raises. Statements proc runs on conn all succeed or
+  none take effect.
+Example:
+  (with-pg-pool-connection pool
+    (lambda (conn)
+      (with-pg-transaction conn
+        (lambda (c)
+          (pg-exec c "UPDATE accounts SET n = n - 1 WHERE id = 1")
+          (pg-exec c "UPDATE accounts SET n = n + 1 WHERE id = 2")))))
+```
+

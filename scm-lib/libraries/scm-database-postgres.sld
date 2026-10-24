@@ -14,6 +14,7 @@
           pg-cursor-for-each
           with-pg-connection
           with-pg-query
+          with-pg-transaction
           pg-quote-literal
           pg-quote-int
           pg-format-sql
@@ -669,6 +670,27 @@ Example:
           (let ((result (proc conn)))
             (pg-close conn)
             result))))
+
+    (define (with-pg-transaction conn proc)
+      "Syntax: (with-pg-transaction conn proc)
+Library: (scm database postgres)
+Description: Runs (proc conn) inside a transaction on conn: BEGIN, then
+  COMMIT when proc returns (its value is returned), or ROLLBACK and
+  re-raise when it raises. Statements proc runs on conn all succeed or
+  none take effect.
+Example:
+  (with-pg-pool-connection pool
+    (lambda (conn)
+      (with-pg-transaction conn
+        (lambda (c)
+          (pg-exec c \"UPDATE accounts SET n = n - 1 WHERE id = 1\")
+          (pg-exec c \"UPDATE accounts SET n = n + 1 WHERE id = 2\")))))"
+      (pg-exec conn "BEGIN")
+      (guard (exn (#t (guard (e2 (#t #f)) (pg-exec conn "ROLLBACK"))
+                      (raise exn)))
+        (let ((result (proc conn)))
+          (pg-exec conn "COMMIT")
+          result)))
 
     (define (with-pg-query host port user password database sql proc)
       "Syntax: (with-pg-query host port user password database sql proc)

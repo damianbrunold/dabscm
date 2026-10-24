@@ -128,6 +128,17 @@ Example:
   (route! "PATCH" "/items/:id" (lambda (req p) (http-ok "patched")))
 ```
 
+### `router->handler`
+
+```
+Syntax: (router->handler router)
+Library: (scm net http route)
+Description: Returns a server handler (lambda (req) ...) that dispatches to
+  router, for serve-forever and the (scm net http middleware) wrappers.
+Example:
+  (serve-forever 8080 (with-error-handler (router->handler r)) 0 "127.0.0.1")
+```
+
 ### `router-add!`
 
 ```

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm net http session) — Dabscm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="toc">
+  <h2>Bindings</h2>
+  <a href="#e0" data-name="make-session-config">make-session-config</a>
+  <a href="#e1" data-name="session-clear-cookie">session-clear-cookie</a>
+  <a href="#e2" data-name="session-config-max-age">session-config-max-age</a>
+  <a href="#e3" data-name="session-config?">session-config?</a>
+  <a href="#e4" data-name="session-ref">session-ref</a>
+  <a href="#e5" data-name="session-set-cookie">session-set-cookie</a>
+</nav>
+
+<main>
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="index.html">All libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="index.html#sec-scm">Scm Extensions</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm net http session)</span>
+</nav>
+
+<div class="lib-title scm">(scm net http session)</div>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><a class="xref" href="scm-net-http-session.html"><code>(scm net http session)</code></a> keeps a login session in a signed cookie, with no server-side session store. The cookie holds a <a class="xref" href="scm-crypto-token.html"><code>(scm crypto token)</code></a> token and is always <code>HttpOnly</code> and <code>SameSite=Strict</code>, and <code>Secure</code> unless configured off for local HTTP. <code>SameSite=Strict</code> also stops other sites from posting forms with the user's session, so no separate CSRF token is needed.</p>
+<p>The session only proves who signed in and when. Whether that user still exists or may still log in is for the app to check on each request.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scm net http session) (scm net http response))
+
+(define sessions (make-session-config "app_session" secret (* 60 60 12)))
+
+;; after a successful login
+(make-http-response 303
+  (list (cons "Location" "/") (session-set-cookie sessions '((uid . 42))))
+  "")
+
+;; in a handler
+(let ((s (session-ref sessions req)))     ; #f when not signed in
+  (if s (show-home (cdr (assq 'uid s))) (http-see-other "/login")))
+
+;; logout
+(make-http-response 303
+  (list (cons "Location" "/login") (session-clear-cookie sessions)) "")</code></pre>
+<p>An app mounted under a URL prefix passes <code>'((path . "/prefix/"))</code> so the cookie is only sent to it.</p>
+</div>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">6 bindings</p>
+
+<div class="entry" id="e0" data-name="make-session-config">
+  <div class="entry-name">make-session-config</div>
+  <pre class="entry-doc">Syntax: (make-session-config cookie-name secret max-age [opts])
+Library: (scm net http session)
+Description: Builds the configuration for signed-cookie sessions.
+  secret is a bytevector, a base64 string, or a list of them (newest
+  first) as for token-secrets; an invalid or short secret raises here, at
+  startup. max-age is the session lifetime in seconds. opts is an alist:
+  (path . "/") scopes the cookie (use "/prefix/" when the app is
+  mounted under a URL prefix), (secure? . #t) sets the Secure attribute
+  (set #f only for local HTTP), (purpose . "session") is the token
+  purpose.
+Example:
+  (make-session-config "app_session" secret (* 60 60 12)
+                       '((path . "/app/") (secure? . #f)))</pre>
+</div>
+<div class="entry" id="e1" data-name="session-clear-cookie">
+  <div class="entry-name">session-clear-cookie</div>
+  <pre class="entry-doc">Syntax: (session-clear-cookie cfg)
+Library: (scm net http session)
+Description: Returns a ("Set-Cookie" . value) header pair that removes
+  the session cookie (logout).
+Example:
+  (make-http-response 303
+    (list (cons "Location" "/login") (session-clear-cookie cfg)) "")</pre>
+</div>
+<div class="entry" id="e2" data-name="session-config-max-age">
+  <div class="entry-name">session-config-max-age</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e3" data-name="session-config?">
+  <div class="entry-name">session-config?</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e4" data-name="session-ref">
+  <div class="entry-name">session-ref</div>
+  <pre class="entry-doc">Syntax: (session-ref cfg req)
+Library: (scm net http session)
+Description: Returns the datum stored in req's session cookie, or #f if
+  there is no cookie or it is invalid or expired.
+Example:
+  (session-ref cfg req) =&gt; ((uid . 42) (name . "alice"))</pre>
+</div>
+<div class="entry" id="e5" data-name="session-set-cookie">
+  <div class="entry-name">session-set-cookie</div>
+  <pre class="entry-doc">Syntax: (session-set-cookie cfg datum)
+Library: (scm net http session)
+Description: Returns a ("Set-Cookie" . value) header pair that starts a
+  session carrying datum (see token-sign for what datum may be). Add it to
+  the response, typically the redirect after a successful login.
+Example:
+  (make-http-response 303
+    (list (cons "Location" "/") (session-set-cookie cfg '((uid . 42))))
+    "")</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

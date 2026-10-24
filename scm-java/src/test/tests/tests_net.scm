@@ -45,6 +45,18 @@
       (make-http-request "GET" "/" '(("Host" . "example.com")) #f)
       "Missing")))
 
+(test-group "http-request-bearer-token"
+  (define (bearer value)
+    (http-request-bearer-token
+      (make-http-request "GET" "/" (if value (list (cons "Authorization" value)) '()) #f)))
+  (test-equal "abc.def" (bearer "Bearer abc.def"))
+  (test-equal "abc" (bearer "  bearer   abc  "))
+  (test-equal "abc" (bearer "BEARER abc"))
+  (test-equal #f (bearer #f))
+  (test-equal #f (bearer "Bearer "))
+  (test-equal #f (bearer "Bearerabc"))
+  (test-equal #f (bearer "Basic dXNlcjpwYXNz")))
+
 ;;; ---- HTTP response accessor tests (no I/O) ----
 (test-group "http-response-accessors"
   (test-equal 404 (http-response-status (make-http-response 404 '() "Not Found")))

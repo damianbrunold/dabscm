@@ -1,8 +1,9 @@
 (define-library (scm net http forms)
-  (import (scm core) (scheme base) (scm uri) (scm string))
+  (import (scm core) (scheme base) (scm uri) (scm string) (scm net http request))
   (export parse-www-form
           form-ref
-          form-refs-by-prefix)
+          form-refs-by-prefix
+          http-request-form)
   (begin
 
     (define (parse-www-form body)
@@ -70,4 +71,15 @@ Example:
                        (string=? (substring k 0 plen) prefix))
                   (loop (cdr ps) (cons p acc)))
                  (else (loop (cdr ps) acc)))))))))
+
+    (define (http-request-form req)
+      "Syntax: (http-request-form req)
+Library: (scm net http forms)
+Description: Parses the application/x-www-form-urlencoded body of req (a
+  submitted HTML form) into an alist as parse-www-form does; '() when the
+  request has no body.
+Example:
+  (form-ref (http-request-form req) \"username\" \"\") => \"alice\""
+      (let ((body (http-request-body req)))
+        (if (string? body) (parse-www-form body) '())))
 ))

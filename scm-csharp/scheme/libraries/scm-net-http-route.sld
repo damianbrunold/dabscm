@@ -11,6 +11,7 @@
   (export make-router
           router-add!
           router-dispatch
+          router->handler
           route!
           get!
           post!
@@ -218,6 +219,15 @@ Description: Dispatches an http-request to the first matching route in router.
 Example:
   (router-dispatch my-router req)"
       (router 'dispatch req))
+
+    (define (router->handler router)
+      "Syntax: (router->handler router)
+Library: (scm net http route)
+Description: Returns a server handler (lambda (req) ...) that dispatches to
+  router, for serve-forever and the (scm net http middleware) wrappers.
+Example:
+  (serve-forever 8080 (with-error-handler (router->handler r)) 0 \"127.0.0.1\")"
+      (lambda (req) (router-dispatch router req)))
 
     (define (params-ref params key)
       "Syntax: (params-ref params key)

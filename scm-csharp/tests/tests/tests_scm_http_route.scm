@@ -72,4 +72,11 @@
   ;; an unknown path stays 404
   (test-equal 404 (http-response-status (send "PUT" "/nothing"))))
 
+(test-group "router->handler"
+  (define r (make-router))
+  (define h (router->handler r))
+  (router-add! r "GET" "/hi/:n" (lambda (req p) (http-ok (params-ref p "n"))))
+  (test-equal "bob" (http-response-body (h (make-http-request "GET" "/hi/bob" '() #f))))
+  (test-equal 404 (http-response-status (h (make-http-request "GET" "/x" '() #f)))))
+
 (test-end "scm-http-route")

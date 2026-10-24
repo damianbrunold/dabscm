@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm crypto token) — Dabscm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="toc">
+  <h2>Bindings</h2>
+  <a href="#e0" data-name="token-secrets">token-secrets</a>
+  <a href="#e1" data-name="token-sign">token-sign</a>
+  <a href="#e2" data-name="token-verify">token-verify</a>
+</nav>
+
+<main>
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="index.html">All libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="index.html#sec-scm">Scm Extensions</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm crypto token)</span>
+</nav>
+
+<div class="lib-title scm">(scm crypto token)</div>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><a class="xref" href="scm-crypto-token.html"><code>(scm crypto token)</code></a> makes signed, expiring, URL-safe tokens that carry a small Scheme datum (an alist, a list, a string, …): for session cookies, API bearer tokens, password-reset or download links. Tokens are signed with HMAC-SHA256, not encrypted: the holder can read the datum but not change it.</p>
+<p>A <code>purpose</code> option binds a token to one use, so a session token signed with the same key is rejected as a reset token. A list of secrets enables key rotation: the first signs, all of them verify.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scm crypto) (scm crypto token))
+
+(define secret (base64-encode (random-bytes 32)))   ; keep in config
+
+(define tok (token-sign secret '((uid . 42)) 3600 '((purpose . "api"))))
+(token-verify secret tok '((purpose . "api")))      ;; =&gt; ((uid . 42))
+(token-verify secret tok '((purpose . "reset")))    ;; =&gt; #f</code></pre>
+<p>Validate a configured secret at startup with <a class="xref" href="#e0"><code>token-secrets</code></a>, which raises for invalid base64 or a key shorter than 16 bytes. For browser sessions use <a class="xref" href="scm-net-http-session.html"><code>(scm net http session)</code></a>, which wraps these tokens in cookies.</p>
+</div>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">3 bindings</p>
+
+<div class="entry" id="e0" data-name="token-secrets">
+  <div class="entry-name">token-secrets</div>
+  <pre class="entry-doc">Syntax: (token-secrets secret)
+Library: (scm crypto token)
+Description: Normalises secret to a non-empty list of key bytevectors.
+  secret is a bytevector, a base64 string, or a list of those (newest
+  first, for key rotation). Raises an error for an empty list, invalid
+  base64 or a key shorter than 16 bytes, so a bad configuration fails at
+  startup rather than on the first request. token-sign and token-verify
+  call it themselves; call it once at startup to validate a config value.
+Example:
+  (token-secrets (base64-encode (random-bytes 32))) =&gt; (#u8(...))</pre>
+</div>
+<div class="entry" id="e1" data-name="token-sign">
+  <div class="entry-name">token-sign</div>
+  <pre class="entry-doc">Syntax: (token-sign secret datum max-age [opts])
+Library: (scm crypto token)
+Description: Returns a signed, URL-safe token carrying datum, which must
+  survive write/read (strings, numbers, symbols, booleans and lists of
+  them; e.g. an alist) and must not be #f, which token-verify returns for
+  a rejected token. max-age is the lifetime in seconds, or #f for no
+  expiry. secret is as for token-secrets; the first key signs. opts is an
+  alist: (purpose . string) binds the token to one use (default ""), so
+  token-verify with another purpose rejects it. The datum is signed, not
+  encrypted: anyone holding the token can read it.
+Example:
+  (token-sign key '((uid . 42)) 3600 '((purpose . "session")))
+  =&gt; "KDE3NjE..."</pre>
+</div>
+<div class="entry" id="e2" data-name="token-verify">
+  <div class="entry-name">token-verify</div>
+  <pre class="entry-doc">Syntax: (token-verify secret token [opts])
+Library: (scm crypto token)
+Description: Returns the datum of token if it was made by token-sign with
+  one of the keys in secret and the same purpose, and has not expired;
+  otherwise #f. Never raises for a bad token (tampered, truncated, expired,
+  wrong purpose, or not a token at all). opts as for token-sign.
+Example:
+  (token-verify key tok '((purpose . "session"))) =&gt; ((uid . 42))
+  (token-verify key "garbage") =&gt; #f</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

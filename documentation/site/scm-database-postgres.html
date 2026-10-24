@@ -45,6 +45,7 @@
   <a href="#e20" data-name="with-pg-connection">with-pg-connection</a>
   <a href="#e21" data-name="with-pg-pool-connection">with-pg-pool-connection</a>
   <a href="#e22" data-name="with-pg-query">with-pg-query</a>
+  <a href="#e23" data-name="with-pg-transaction">with-pg-transaction</a>
 </nav>
 
 <main>
@@ -73,7 +74,7 @@
 <p><a class="xref" href="#e8"><code>pg-exec</code></a> runs statements that don't return rows; <a class="xref" href="#e18"><code>pg-result-columns</code></a> / <a class="xref" href="#e19"><code>pg-result-rows</code></a> access a result directly; and <a class="xref" href="#e7"><code>pg-cursor-open</code></a> / <a class="xref" href="#e5"><code>pg-cursor-fetch</code></a> / <a class="xref" href="#e6"><code>pg-cursor-for-each</code></a> iterate large result sets without loading them all at once. See <a class="xref" href="scm-database-migrations.html"><code>(scm database migrations)</code></a> to apply schema migrations.</p>
 </div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
-<p class="export-count">23 bindings</p>
+<p class="export-count">24 bindings</p>
 
 <div class="entry" id="e0" data-name="make-pg-pool">
   <div class="entry-name">make-pg-pool</div>
@@ -303,6 +304,22 @@ Description: Opens a connection and cursor, calls (proc conn cursor), and closes
 Example:
   (with-pg-query "localhost" 5432 "user" "pass" "db" "SELECT * FROM t"
     (lambda (conn cursor) (pg-cursor-for-each cursor display)))</pre>
+</div>
+<div class="entry" id="e23" data-name="with-pg-transaction">
+  <div class="entry-name">with-pg-transaction</div>
+  <pre class="entry-doc">Syntax: (with-pg-transaction conn proc)
+Library: (scm database postgres)
+Description: Runs (proc conn) inside a transaction on conn: BEGIN, then
+  COMMIT when proc returns (its value is returned), or ROLLBACK and
+  re-raise when it raises. Statements proc runs on conn all succeed or
+  none take effect.
+Example:
+  (with-pg-pool-connection pool
+    (lambda (conn)
+      (with-pg-transaction conn
+        (lambda (c)
+          (pg-exec c "UPDATE accounts SET n = n - 1 WHERE id = 1")
+          (pg-exec c "UPDATE accounts SET n = n + 1 WHERE id = 2")))))</pre>
 </div>
 
 </main>

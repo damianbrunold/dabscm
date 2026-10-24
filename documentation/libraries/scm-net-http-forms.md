@@ -55,6 +55,18 @@ Example:
   => (("opt-a" . "1") ("opt-b" . "2"))
 ```
 
+### `http-request-form`
+
+```
+Syntax: (http-request-form req)
+Library: (scm net http forms)
+Description: Parses the application/x-www-form-urlencoded body of req (a
+  submitted HTML form) into an alist as parse-www-form does; '() when the
+  request has no body.
+Example:
+  (form-ref (http-request-form req) "username" "") => "alice"
+```
+
 ### `parse-www-form`
 
 ```

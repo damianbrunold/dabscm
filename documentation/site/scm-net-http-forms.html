@@ -24,7 +24,8 @@
   <h2>Bindings</h2>
   <a href="#e0" data-name="form-ref">form-ref</a>
   <a href="#e1" data-name="form-refs-by-prefix">form-refs-by-prefix</a>
-  <a href="#e2" data-name="parse-www-form">parse-www-form</a>
+  <a href="#e2" data-name="http-request-form">http-request-form</a>
+  <a href="#e3" data-name="parse-www-form">parse-www-form</a>
 </nav>
 
 <main>
@@ -55,7 +56,7 @@
 ;; =&gt; the opt-* entries</code></pre>
 </div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
-<p class="export-count">3 bindings</p>
+<p class="export-count">4 bindings</p>
 
 <div class="entry" id="e0" data-name="form-ref">
   <div class="entry-name">form-ref</div>
@@ -77,7 +78,17 @@ Example:
   (form-refs-by-prefix '(("opt-a" . "1") ("name" . "x") ("opt-b" . "2")) "opt-")
   =&gt; (("opt-a" . "1") ("opt-b" . "2"))</pre>
 </div>
-<div class="entry" id="e2" data-name="parse-www-form">
+<div class="entry" id="e2" data-name="http-request-form">
+  <div class="entry-name">http-request-form</div>
+  <pre class="entry-doc">Syntax: (http-request-form req)
+Library: (scm net http forms)
+Description: Parses the application/x-www-form-urlencoded body of req (a
+  submitted HTML form) into an alist as parse-www-form does; '() when the
+  request has no body.
+Example:
+  (form-ref (http-request-form req) "username" "") =&gt; "alice"</pre>
+</div>
+<div class="entry" id="e3" data-name="parse-www-form">
   <div class="entry-name">parse-www-form</div>
   <pre class="entry-doc">Syntax: (parse-www-form body)
 Library: (scm net http forms)

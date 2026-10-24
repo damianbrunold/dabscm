@@ -30,15 +30,16 @@
   <a href="#e5" data-name="post!">post!</a>
   <a href="#e6" data-name="put!">put!</a>
   <a href="#e7" data-name="route!">route!</a>
-  <a href="#e8" data-name="router-add!">router-add!</a>
-  <a href="#e9" data-name="router-dispatch">router-dispatch</a>
-  <a href="#e10" data-name="run-app">run-app</a>
-  <a href="#e11" data-name="run-app-with-router">run-app-with-router</a>
-  <a href="#e12" data-name="start-app">start-app</a>
-  <a href="#e13" data-name="start-app-with-router">start-app-with-router</a>
-  <a href="#e14" data-name="url-path">url-path</a>
-  <a href="#e15" data-name="url-query-params">url-query-params</a>
-  <a href="#e16" data-name="url-query-string">url-query-string</a>
+  <a href="#e8" data-name="router-&gt;handler">router-&gt;handler</a>
+  <a href="#e9" data-name="router-add!">router-add!</a>
+  <a href="#e10" data-name="router-dispatch">router-dispatch</a>
+  <a href="#e11" data-name="run-app">run-app</a>
+  <a href="#e12" data-name="run-app-with-router">run-app-with-router</a>
+  <a href="#e13" data-name="start-app">start-app</a>
+  <a href="#e14" data-name="start-app-with-router">start-app-with-router</a>
+  <a href="#e15" data-name="url-path">url-path</a>
+  <a href="#e16" data-name="url-query-params">url-query-params</a>
+  <a href="#e17" data-name="url-query-string">url-query-string</a>
 </nav>
 
 <main>
@@ -75,10 +76,10 @@
 <p>Helpers for working with URLs:</p>
 <pre><code class="language-scheme">(url-path "/users/42?limit=10")          ;; =&gt; "/users/42"
 (parse-query-string "limit=10&amp;page=2")   ;; =&gt; (("limit" . "10") ("page" . "2"))</code></pre>
-<p>For a lower-level explicit router use <a class="xref" href="#e2"><code>make-router</code></a>, <a class="xref" href="#e8"><code>router-add!</code></a>, and <a class="xref" href="#e9"><code>router-dispatch</code></a>.</p>
+<p>For a lower-level explicit router use <a class="xref" href="#e2"><code>make-router</code></a>, <a class="xref" href="#e9"><code>router-add!</code></a>, and <a class="xref" href="#e10"><code>router-dispatch</code></a>.</p>
 </div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
-<p class="export-count">17 bindings</p>
+<p class="export-count">18 bindings</p>
 
 <div class="entry" id="e0" data-name="delete!">
   <div class="entry-name">delete!</div>
@@ -153,7 +154,16 @@ Description: Registers a route on the module-level default router. method is e.g
 Example:
   (route! "PATCH" "/items/:id" (lambda (req p) (http-ok "patched")))</pre>
 </div>
-<div class="entry" id="e8" data-name="router-add!">
+<div class="entry" id="e8" data-name="router-&gt;handler">
+  <div class="entry-name">router-&gt;handler</div>
+  <pre class="entry-doc">Syntax: (router-&gt;handler router)
+Library: (scm net http route)
+Description: Returns a server handler (lambda (req) ...) that dispatches to
+  router, for serve-forever and the (scm net http middleware) wrappers.
+Example:
+  (serve-forever 8080 (with-error-handler (router-&gt;handler r)) 0 "127.0.0.1")</pre>
+</div>
+<div class="entry" id="e9" data-name="router-add!">
   <div class="entry-name">router-add!</div>
   <pre class="entry-doc">Syntax: (router-add! router method pattern handler)
 Library: (scm net http route)
@@ -168,7 +178,7 @@ Example:
     (lambda (req params)
       (http-ok (params-ref params "id"))))</pre>
 </div>
-<div class="entry" id="e9" data-name="router-dispatch">
+<div class="entry" id="e10" data-name="router-dispatch">
   <div class="entry-name">router-dispatch</div>
   <pre class="entry-doc">Syntax: (router-dispatch router req)
 Library: (scm net http route)
@@ -179,7 +189,7 @@ Description: Dispatches an http-request to the first matching route in router.
 Example:
   (router-dispatch my-router req)</pre>
 </div>
-<div class="entry" id="e10" data-name="run-app">
+<div class="entry" id="e11" data-name="run-app">
   <div class="entry-name">run-app</div>
   <pre class="entry-doc">Syntax: (run-app port [max-threads [host [read-timeout-ms [max-body-bytes [graceful-stop-ms]]]]])
 Library: (scm net http route)
@@ -192,7 +202,7 @@ Example:
   (run-app 8080)
   (run-app 8080 16 "127.0.0.1")</pre>
 </div>
-<div class="entry" id="e11" data-name="run-app-with-router">
+<div class="entry" id="e12" data-name="run-app-with-router">
   <div class="entry-name">run-app-with-router</div>
   <pre class="entry-doc">Syntax: (run-app-with-router router port [max-threads [host [read-timeout-ms [max-body-bytes [graceful-stop-ms]]]]])
 Library: (scm net http route)
@@ -204,7 +214,7 @@ Example:
   (router-add! r "GET" "/" (lambda (req p) (http-ok "hi")))
   (run-app-with-router r 8080)</pre>
 </div>
-<div class="entry" id="e12" data-name="start-app">
+<div class="entry" id="e13" data-name="start-app">
   <div class="entry-name">start-app</div>
   <pre class="entry-doc">Syntax: (start-app port [max-threads [host [read-timeout-ms [max-body-bytes [graceful-stop-ms]]]]])
 Library: (scm net http route)
@@ -217,7 +227,7 @@ Example:
   (server-install-shutdown-hook s)
   (server-wait s)</pre>
 </div>
-<div class="entry" id="e13" data-name="start-app-with-router">
+<div class="entry" id="e14" data-name="start-app-with-router">
   <div class="entry-name">start-app-with-router</div>
   <pre class="entry-doc">Syntax: (start-app-with-router router port [max-threads [host [read-timeout-ms [max-body-bytes [graceful-stop-ms]]]]])
 Library: (scm net http route)
@@ -228,7 +238,7 @@ Example:
   (server-install-shutdown-hook s)
   (server-wait s)</pre>
 </div>
-<div class="entry" id="e14" data-name="url-path">
+<div class="entry" id="e15" data-name="url-path">
   <div class="entry-name">url-path</div>
   <pre class="entry-doc">Syntax: (url-path url)
 Library: (scm net http route)
@@ -239,7 +249,7 @@ Example:
   (url-path "/users/42?limit=10") =&gt; "/users/42"
   (url-path "http://example.com/users/42") =&gt; "/users/42"</pre>
 </div>
-<div class="entry" id="e15" data-name="url-query-params">
+<div class="entry" id="e16" data-name="url-query-params">
   <div class="entry-name">url-query-params</div>
   <pre class="entry-doc">Syntax: (url-query-params url)
 Library: (scm net http route)
@@ -248,7 +258,7 @@ Description: Parses and returns the query parameters of url as an alist of
 Example:
   (url-query-params "/search?q=hello&amp;n=5") =&gt; (("q" . "hello") ("n" . "5"))</pre>
 </div>
-<div class="entry" id="e16" data-name="url-query-string">
+<div class="entry" id="e17" data-name="url-query-string">
   <div class="entry-name">url-query-string</div>
   <pre class="entry-doc">Syntax: (url-query-string url)
 Library: (scm net http route)

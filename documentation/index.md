@@ -64,6 +64,8 @@
 | [`(scm bytevector)`](libraries/scm-bytevector.md) | Multi-byte integers and IEEE floats in bytevectors, either byte order |
 | [`(scm compile)`](libraries/scm-compile.md) | Compiler introspection, bytecode access, and type predicates |
 | [`(scm compression)`](libraries/scm-compression.md) | Data compression and decompression |
+| [`(scm crypto password)`](libraries/scm-crypto-password.md) |  |
+| [`(scm crypto token)`](libraries/scm-crypto-token.md) |  |
 | [`(scm crypto)`](libraries/scm-crypto.md) | Cryptographic hashing and encoding utilities |
 | [`(scm csv)`](libraries/scm-csv.md) | CSV parsing |
 | [`(scm database migrations)`](libraries/scm-database-migrations.md) | Forward-only SQL migration runner |
@@ -98,11 +100,14 @@
 | [`(scm net http client)`](libraries/scm-net-http-client.md) | HTTP client — GET, POST, and other request methods |
 | [`(scm net http cookies)`](libraries/scm-net-http-cookies.md) | HTTP cookie header parsing and Set-Cookie formatting |
 | [`(scm net http forms)`](libraries/scm-net-http-forms.md) | application/x-www-form-urlencoded form and query parsing |
+| [`(scm net http middleware)`](libraries/scm-net-http-middleware.md) |  |
 | [`(scm net http multipart)`](libraries/scm-net-http-multipart.md) | multipart/form-data parsing (RFC 7578) |
 | [`(scm net http request)`](libraries/scm-net-http-request.md) | HTTP request construction and accessors |
 | [`(scm net http response)`](libraries/scm-net-http-response.md) | HTTP response construction and accessors |
 | [`(scm net http route)`](libraries/scm-net-http-route.md) | HTTP request routing for servers |
 | [`(scm net http server)`](libraries/scm-net-http-server.md) | HTTP server — listen, accept, and serve requests |
+| [`(scm net http session)`](libraries/scm-net-http-session.md) |  |
+| [`(scm net http static)`](libraries/scm-net-http-static.md) |  |
 | [`(scm net-remote)`](libraries/scm-net-remote.md) | Remote operations — curl, wget, ssh, scp, rsync |
 | [`(scm net smtp)`](libraries/scm-net-smtp.md) |  |
 | [`(scm net sockets)`](libraries/scm-net-sockets.md) | TCP socket operations — listen, accept, connect |

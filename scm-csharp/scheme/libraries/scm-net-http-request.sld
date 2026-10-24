@@ -7,7 +7,8 @@
           http-request-body
           http-request-body-bytes
           http-request?
-          http-request-header)
+          http-request-header
+          http-request-bearer-token)
   (begin
     (define make-http-request   (%primitive "make-http-request"))
     (define http-request-method  (%primitive "http-request-method"))
@@ -30,4 +31,33 @@ Example:
           ((string=? (string-downcase (car (car headers)))
                      (string-downcase name))
            (cdr (car headers)))
-          (else (loop (cdr headers))))))))
+          (else (loop (cdr headers))))))
+
+    (define (http-request-bearer-token req)
+      "Syntax: (http-request-bearer-token req)
+Library: (scm net http request)
+Description: Returns the token of an 'Authorization: Bearer <token>' header
+  in req (scheme name case-insensitive, surrounding whitespace removed), or
+  #f if there is none or it is empty.
+Example:
+  (http-request-bearer-token req) => \"eyJhbGciOi...\""
+      (let ((h (http-request-header req "Authorization")))
+        (and (string? h)
+             (let* ((n (string-length h))
+                    (start (let loop ((i 0))
+                             (if (and (< i n) (char-whitespace? (string-ref h i)))
+                                 (loop (+ i 1))
+                                 i))))
+               (and (>= (- n start) 7)
+                    (string-ci=? (substring h start (+ start 6)) "Bearer")
+                    (char-whitespace? (string-ref h (+ start 6)))
+                    (let* ((a (let loop ((i (+ start 7)))
+                                (if (and (< i n) (char-whitespace? (string-ref h i)))
+                                    (loop (+ i 1))
+                                    i)))
+                           (b (let loop ((j n))
+                                (if (and (> j a) (char-whitespace? (string-ref h (- j 1))))
+                                    (loop (- j 1))
+                                    j))))
+                      (and (> b a) (substring h a b))))))))
+))

@@ -1,4 +1,4 @@
-(import (scheme base) (scm net http forms) (scm test))
+(import (scheme base) (scm net http forms) (scm net http request) (scm test))
 
 (test-runner-factory scm-test-runner)
 
@@ -34,5 +34,11 @@
   (test-equal '() (form-refs-by-prefix f "zzz-"))
   ;; empty prefix returns all
   (test-equal f (form-refs-by-prefix f "")))
+
+(test-group "http-request-form"
+  (test-equal '(("user" . "Ada L") ("pw" . "x=y"))
+              (http-request-form
+                (make-http-request "POST" "/login" '() "user=Ada+L&pw=x%3Dy")))
+  (test-equal '() (http-request-form (make-http-request "POST" "/" '() #f))))
 
 (test-end "scm-http-forms")

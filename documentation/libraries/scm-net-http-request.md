@@ -27,6 +27,18 @@ the raw bytevector (binary uploads).
 
 ## Exports
 
+### `http-request-bearer-token`
+
+```
+Syntax: (http-request-bearer-token req)
+Library: (scm net http request)
+Description: Returns the token of an 'Authorization: Bearer <token>' header
+  in req (scheme name case-insensitive, surrounding whitespace removed), or
+  #f if there is none or it is empty.
+Example:
+  (http-request-bearer-token req) => "eyJhbGciOi..."
+```
+
 ### `http-request-body`
 
 ```

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm net http static) — Dabscm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="toc">
+  <h2>Bindings</h2>
+  <a href="#e0" data-name="file-response">file-response</a>
+  <a href="#e1" data-name="make-static-handler">make-static-handler</a>
+  <a href="#e2" data-name="make-static-url">make-static-url</a>
+  <a href="#e3" data-name="mime-type">mime-type</a>
+</nav>
+
+<main>
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="index.html">All libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="index.html#sec-scm">Scm Extensions</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm net http static)</span>
+</nav>
+
+<div class="lib-title scm">(scm net http static)</div>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><a class="xref" href="scm-net-http-static.html"><code>(scm net http static)</code></a> serves files: a directory of assets (CSS, JS, images) behind a router wildcard, or single files for download routes. It sets the content type, an ETag (answering <code>If-None-Match</code> with 304) and <code>X-Content-Type-Options: nosniff</code>, and refuses paths that could leave the directory or reach hidden files.</p>
+<p><a class="xref" href="#e2"><code>make-static-url</code></a> builds asset URLs with <code>?v=&lt;modification time&gt;</code>. Such requests are cached by browsers for a year, and because the version changes whenever the file does, a page never runs a stale copy.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scm net http route) (scm net http static))
+
+(define static-url (make-static-url "static" "/static"))
+
+(router-add! router "GET" "/static/*" (make-static-handler "static"))
+
+;; in a page:  (link (@ (rel "stylesheet") (href ,(static-url "site.css"))))
+
+;; a download route
+(router-add! router "GET" "/reports/:id"
+  (lambda (req params)
+    (file-response (report-path (params-ref params "id"))
+                   `((request . ,req) (filename . "report.pdf")))))</code></pre>
+</div>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">4 bindings</p>
+
+<div class="entry" id="e0" data-name="file-response">
+  <div class="entry-name">file-response</div>
+  <pre class="entry-doc">Syntax: (file-response path [opts])
+Library: (scm net http static)
+Description: Returns a 200 response with the bytes of the file at path,
+  or 404 if it does not exist or is a directory. The response carries the
+  file's Content-Type (mime-type), a weak ETag from its modification time
+  and size, and X-Content-Type-Options: nosniff. opts is an alist:
+  (request . req) answers 304 Not Modified when req's If-None-Match
+  matches; (cache-control . string) sets Cache-Control (default
+  "no-cache": cache, but revalidate); (content-type . string) overrides
+  the type; (filename . string) makes it a download with that name.
+  path must not come from the client unchecked; make-static-handler does
+  the checking for a directory of assets.
+Example:
+  (file-response "/var/lib/app/reports/r1.pdf"
+                 `((request . ,req) (filename . "Report 2026.pdf")))</pre>
+</div>
+<div class="entry" id="e1" data-name="make-static-handler">
+  <div class="entry-name">make-static-handler</div>
+  <pre class="entry-doc">Syntax: (make-static-handler dir [opts])
+Library: (scm net http static)
+Description: Returns a router handler that serves the files under dir for
+  a route ending in the * wildcard, e.g.
+  (router-add! r "GET" "/static/*" (make-static-handler "static")).
+  Paths are percent-decoded per segment; empty segments, ".", "..",
+  dot-files and segments containing / \ or NUL get 404, as do missing
+  files and directories. A request with a v= query parameter (see
+  make-static-url) is cached for a year as immutable; others get the
+  (cache-control . string) option, default "public, max-age=300". ETag
+  and If-None-Match (304) work as in file-response.
+Example:
+  (router-add! router "GET" "/static/*"
+    (make-static-handler "/opt/app/static" '((cache-control . "no-cache"))))</pre>
+</div>
+<div class="entry" id="e2" data-name="make-static-url">
+  <div class="entry-name">make-static-url</div>
+  <pre class="entry-doc">Syntax: (make-static-url dir base-url)
+Library: (scm net http static)
+Description: Returns a procedure (lambda (rel) ...) that builds the URL of
+  the asset rel under dir, as served at base-url, with ?v=&lt;modification
+  time&gt; appended. The version changes whenever the file does, so pages can
+  let browsers cache assets for good (make-static-handler does) and still
+  never run a stale copy. The file is checked on every call, so edits need
+  no restart; a missing file gets no version.
+Example:
+  (define static-url (make-static-url "static" "/app/static"))
+  (static-url "site.css") =&gt; "/app/static/site.css?v=1761290000000"</pre>
+</div>
+<div class="entry" id="e3" data-name="mime-type">
+  <div class="entry-name">mime-type</div>
+  <pre class="entry-doc">Syntax: (mime-type path)
+Library: (scm net http static)
+Description: Returns the Content-Type for path from its extension (case
+  insensitive). Text types carry charset=utf-8; an unknown extension gives
+  application/octet-stream.
+Example:
+  (mime-type "static/app.css") =&gt; "text/css; charset=utf-8"
+  (mime-type "logo.PNG") =&gt; "image/png"</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>
