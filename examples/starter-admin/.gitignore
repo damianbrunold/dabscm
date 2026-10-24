@@ -1,2 +1,5 @@
-# Local config holds DB credentials and the cookie secret.
+# Local config (database password, session secret).
 config.scm
+
+# Config for tests/test_live_web.scm.
+tests/test-config.scm

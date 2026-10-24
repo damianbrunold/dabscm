@@ -1,39 +1,48 @@
 ;; Usage: scm bin/server.scm [config-path]
 ;;
-;; Loads config, applies any pending migrations, then starts the webapp.
+;; Reads the config (config-path, or else config.scm, which the first run
+;; creates from config.example.scm with a fresh secret), applies pending
+;; migrations, then serves the app.
 
 (import (scheme base)
-        (scheme write)
-        (scheme load)
         (scheme process-context)
         (scm module)
-        (scm fs))
+        (scm fs)
+        (scm log)
+        (scm net http server))
 
+;; Resolve the project root from this script's path so it runs from anywhere,
+;; and make src/ importable.
 (define root
   (directory-name (directory-name (absolute-path (car (command-line))))))
 (module-search-path! (cons (string-append root "/src") (module-search-path)))
 
-(import (app db) (app auth) (app routes))
+(import (app config) (app db) (app web))
 
-(define cfg-path
-  (let ((args (cdr (command-line))))
-    (cond ((pair? args) (car args))
-          ((file-exists? (string-append root "/config.scm"))
-           (string-append root "/config.scm"))
-          (else (string-append root "/config.example.scm")))))
-
-(load cfg-path)
-
-(define (abs-path p)
-  (if (and (> (string-length p) 0) (char=? (string-ref p 0) #\/))
-      p (string-append root "/" p)))
+(define cfg (load-config root (cdr (command-line))))
+(define host (config-ref cfg 'http-host "127.0.0.1"))
+(define port (config-ref cfg 'http-port 8072))
+(define prefix (config-ref cfg 'url-prefix ""))
 
 (define db
-  (make-db db-host db-port db-user db-password db-name db-pool-capacity))
+  (make-db (config-ref cfg 'db-host "127.0.0.1")
+           (config-ref cfg 'db-port 5432)
+           (config-ref cfg 'db-user "starter_admin")
+           (config-ref cfg 'db-password "")
+           (config-ref cfg 'db-name "starter_admin")
+           (config-ref cfg 'db-pool-size 8)))
 
-(migrate! db (abs-path migrations-dir))
+(migrate! db (resolve-path root "migrations"))
 
-(define auth
-  (make-auth cookie-name cookie-secret session-max-age secure-cookies?))
+(define app
+  (make-app
+   `((url-prefix      . ,prefix)
+     (static-dir      . ,(resolve-path root (config-ref cfg 'static-dir "static")))
+     (db              . ,db)
+     (session-secret  . ,(config-secret cfg 'session-secret))
+     (session-max-age . ,(config-ref cfg 'session-max-age (* 60 60 24 7)))
+     (secure-cookies? . ,(config-ref cfg 'secure-cookies? #t)))))
 
-(serve (make-app-config http-host http-port (abs-path static-dir) db auth))
+(log-info "app" (string-append "starter-admin listening on http://" host ":"
+                               (number->string port) prefix "/"))
+(serve-forever port app 0 host)

@@ -1,6 +1,7 @@
 ;; Development supervisor: restarts bin/server.scm whenever a watched file
-;; changes (all .sld under src/, bin/server.scm, the config, and migrations),
-;; and auto-retries on a backoff if it exits on its own.
+;; changes (src/*.sld, migrations/*.sql, bin/server.scm, config.scm), and
+;; auto-retries on a backoff if it exits on its own. Static files need no
+;; restart.
 ;;
 ;; Usage: scm bin/dev-server.scm
 
@@ -16,8 +17,7 @@
   (append (files-with-suffix (string-append root "/src") ".sld")
           (files-with-suffix (string-append root "/migrations") ".sql")
           (list (string-append root "/bin/server.scm")
-                (string-append root "/config.scm")
-                (string-append root "/config.example.scm"))))
+                (string-append root "/config.scm"))))
 
 (supervise (list "scm" (string-append root "/bin/server.scm"))
            watched

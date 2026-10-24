@@ -1,24 +1,61 @@
 #!/bin/sh
-# Install and enable the systemd units for starter-admin.
-# Run as root (or with sudo) on the target host. Idempotent.
+# Installs starter-admin as a systemd service. Run as root on the target
+# host from the app directory: sudo deploy/install.sh. Idempotent: rerun it
+# to deploy a new version (the config in /etc is kept).
 #
-# Before running: edit the unit files for your User=, WorkingDirectory=,
-# and the path to the scm binary in ExecStart. Make sure PostgreSQL is
-# reachable and config.scm is in place; the service runs migrations on start.
+#   /opt/starter-admin               the app (replaced on each install)
+#   /etc/starter-admin/config.scm    the config (created once, then yours)
+#
+# The service runs as the system user starter-admin. Set SCM to the scm
+# launcher if it is not /usr/local/bin/scm.
 set -eu
 
-UNIT_DIR=/etc/systemd/system
-SRC_DIR="$(cd "$(dirname "$0")/systemd" && pwd)"
+APP=starter-admin
+SCM=${SCM:-/usr/local/bin/scm}
+SRC="$(cd "$(dirname "$0")/.." && pwd)"
 
-for unit in starter-admin.service \
-            starter-admin-health.service starter-admin-health.timer \
-            starter-admin-restart.service starter-admin-restart.timer; do
-  cp "$SRC_DIR/$unit" "$UNIT_DIR/$unit"
+id -u "$APP" >/dev/null 2>&1 ||
+  useradd --system --home-dir /nonexistent --no-create-home \
+          --shell /usr/sbin/nologin "$APP"
+
+# The app: code, static files and data, owned by root, readable by all.
+rm -rf "/opt/$APP.new"
+mkdir -p "/opt/$APP.new"
+cp -r "$SRC/bin" "$SRC/src" "$SRC/static" "$SRC/migrations" "$SRC/deploy" \
+      "$SRC/config.example.scm" "/opt/$APP.new/"
+rm -rf "/opt/$APP"
+mv "/opt/$APP.new" "/opt/$APP"
+
+# The config: created from config.example.scm on the first install only,
+# with a fresh session secret and HTTPS-only cookies. Set db-password in it.
+mkdir -p "/etc/$APP"
+if [ ! -f "/etc/$APP/config.scm" ]; then
+  "$SCM" "/opt/$APP/bin/init-config.scm" "/etc/$APP/config.scm"
+  sed -i 's|^(define secure-cookies? #f)|(define secure-cookies? #t)|' \
+         "/etc/$APP/config.scm"
+  NEW_CONFIG=1
+fi
+chown root:"$APP" "/etc/$APP/config.scm"
+chmod 640 "/etc/$APP/config.scm"
+
+for unit in "$APP.service" \
+            "$APP-health.service" "$APP-health.timer" \
+            "$APP-restart.service" "$APP-restart.timer"; do
+  sed "s|/usr/local/bin/scm|$SCM|" "$SRC/deploy/systemd/$unit" \
+    > "/etc/systemd/system/$unit"
 done
 
 systemctl daemon-reload
-systemctl enable --now starter-admin.service
-systemctl enable --now starter-admin-health.timer
-systemctl enable --now starter-admin-restart.timer
+systemctl enable "$APP.service" "$APP-health.timer" "$APP-restart.timer"
 
-echo "Installed. Follow logs with: journalctl -u starter-admin -f"
+if [ -n "${NEW_CONFIG:-}" ]; then
+  echo "Set the database settings in /etc/$APP/config.scm, then:"
+  echo "  sudo -u $APP $SCM /opt/$APP/bin/seed-admin.scm --config /etc/$APP/config.scm <name>"
+  echo "  sudo systemctl start $APP.service $APP-health.timer $APP-restart.timer"
+  exit 0
+fi
+
+systemctl restart "$APP.service"
+systemctl start "$APP-health.timer" "$APP-restart.timer"
+
+echo "Installed. Config: /etc/$APP/config.scm. Logs: journalctl -u $APP -f"

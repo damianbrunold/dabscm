@@ -5,13 +5,5 @@ After=starter-admin.service
 [Service]
 Type=oneshot
 ExecCondition=/usr/bin/systemctl is-active --quiet starter-admin.service
-# Two-strike: probe with a 5s budget; on failure wait 5s and retry. Only
-# then restart, so a single slow request cannot bounce the daemon.
-ExecStart=/bin/sh -c '\
-  if ! curl -fsS --max-time 5 http://127.0.0.1:8083/healthz >/dev/null; then \
-    sleep 5; \
-    if ! curl -fsS --max-time 5 http://127.0.0.1:8083/healthz >/dev/null; then \
-      echo "starter-admin healthz failed twice; restarting"; \
-      /bin/systemctl restart starter-admin.service; \
-    fi; \
-  fi'
+# Host/port come from the config; two strikes before a restart.
+ExecStart=/opt/starter-admin/deploy/healthcheck.sh /etc/starter-admin/config.scm starter-admin.service

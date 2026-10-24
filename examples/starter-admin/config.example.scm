@@ -1,33 +1,35 @@
-;; Copy to config.scm and edit. If config.scm is absent the app falls back
-;; to this file, but the placeholder DB password below will not connect —
-;; create config.scm for any real use.
-;;
-;; Generate a fresh cookie-secret with:
-;;   scm -e '(import (scm crypto)) (display (base64-encode (random-bytes 32)))'
+;; starter-admin configuration: a list of (define name value) forms, read
+;; as data by src/app-config.sld. bin/server.scm reads config.scm; the first
+;; run creates it from this file, with a fresh session-secret. Set the
+;; database password before you start the server.
 
-;; Bind loopback only; a reverse proxy fronts the public interface.
+;; Bind loopback only; a reverse proxy (deploy/nginx.conf.example) fronts
+;; the public interface and terminates TLS.
 (define http-host "127.0.0.1")
-(define http-port 8083)
+(define http-port 8072)
 
-(define static-dir     "static")
-(define migrations-dir "migrations")
+;; Path the app is mounted under, e.g. "/team"; "" for the host root. The
+;; reverse proxy must pass paths through unchanged.
+(define url-prefix "")
 
-;; PostgreSQL connection (TCP). The role needs CREATE privileges on the
-;; database the first time, so migrations can build the schema.
+;; PostgreSQL over TCP. The role needs CREATE on the database the first
+;; time, so the migrations can build the schema.
 (define db-host "127.0.0.1")
 (define db-port 5432)
 (define db-user "starter_admin")
 (define db-password "change-me")
 (define db-name "starter_admin")
-(define db-pool-capacity 8)
+(define db-pool-size 8)
 
-;; HMAC key that signs session cookies (base64 of 32 random bytes).
-(define cookie-secret "WHwCLOJTvTKGg6nLEFM4zDdJAz9amy5GVS/vEL7PrEU=")
-(define cookie-name   "starter_session")
-(define session-max-age (* 60 60 24 7))    ; 7 days
-(define secure-cookies? #f)                ; set #t behind HTTPS
+;; Signs the session cookies (base64 of 32 random bytes). To rotate it,
+;; list the new key first: ("new" "old"); sessions signed with the old key
+;; stay valid until you remove it. bin/gen-secret.scm prints a new key.
+(define session-secret "REPLACE_WITH_BASE64_SECRET")
+(define session-max-age (* 60 60 24 7))   ; 7 days
 
-;; Seeded by bin/seed-admin.scm (idempotent). Change the password after the
-;; first login, or set a strong one here before seeding.
-(define admin-username "admin")
-(define admin-password "change-me-now")
+;; Cookies are sent over HTTPS only when #t. Keep #f for http://127.0.0.1
+;; during development; deploy/install.sh sets #t.
+(define secure-cookies? #f)
+
+;; Relative to the app directory.
+(define static-dir "static")
