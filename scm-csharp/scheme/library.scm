@@ -371,29 +371,41 @@ Example:
 (define *modules* '())
 (define (modules) *modules*)
 
-(define (current-input-port)
+(define (current-input-port . new)
   "Syntax: (current-input-port)
 Library: (scheme base)
-Description: Returns the current default input port. Read operations that do not specify a port use this port. Initially bound to the standard input.
+Description: Returns the current default input port. Read operations that do not specify a port use this port. Initially bound to the standard input. Like a parameter object, it can be rebound with
+  parameterize; called with a port, it sets the port (as set-current-input-port).
 Example:
-  (current-input-port) => #<input-port>"
-  *input-port*)
+  (current-input-port) => #<input-port>
+  (parameterize ((current-input-port p)) ...)"
+  (if (pair? new)
+      (set! *input-port* (car new))
+      *input-port*))
 
-(define (current-output-port)
+(define (current-output-port . new)
   "Syntax: (current-output-port)
 Library: (scheme base)
-Description: Returns the current default output port. Write and display operations that do not specify a port use this port. Initially bound to the standard output.
+Description: Returns the current default output port. Write and display operations that do not specify a port use this port. Initially bound to the standard output. Like a parameter object, it can be rebound with
+  parameterize; called with a port, it sets the port (as set-current-output-port).
 Example:
-  (current-output-port) => #<output-port>"
-  *output-port*)
+  (current-output-port) => #<output-port>
+  (parameterize ((current-output-port p)) ...)"
+  (if (pair? new)
+      (set! *output-port* (car new))
+      *output-port*))
 
-(define (current-error-port)
+(define (current-error-port . new)
   "Syntax: (current-error-port)
 Library: (scheme base)
-Description: Returns the current default error output port. Error messages are written to this port. Initially bound to the standard error.
+Description: Returns the current default error output port. Error messages are written to this port. Initially bound to the standard error. Like a parameter object, it can be rebound with
+  parameterize; called with a port, it sets the port (as set-current-error-port).
 Example:
-  (current-error-port) => #<output-port>"
-  *error-port*)
+  (current-error-port) => #<output-port>
+  (parameterize ((current-error-port p)) ...)"
+  (if (pair? new)
+      (set! *error-port* (car new))
+      *error-port*))
 
 (define (set-current-input-port port)
   "Syntax: (set-current-input-port port)

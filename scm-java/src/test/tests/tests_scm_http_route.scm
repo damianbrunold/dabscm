@@ -66,11 +66,27 @@
   (test-equal "del" (http-response-body (send "delete" "/items/7")))
   (test-equal 405 (http-response-status (send "PUT" "/items/7")))
   ;; registration order, each method once
-  (test-equal "GET, DELETE"
+  (test-equal "GET, HEAD, DELETE"
               (http-response-header (send "PUT" "/items/7") "Allow"))
   (test-equal "POST" (http-response-header (send "GET" "/items") "Allow"))
   ;; an unknown path stays 404
   (test-equal 404 (http-response-status (send "PUT" "/nothing"))))
+
+(test-group "HEAD runs the GET route unless it has its own"
+  (define r (make-router))
+  (define (send method url)
+    (router-dispatch r (make-http-request method url '() #f)))
+  (router-add! r "GET" "/page" (lambda (req p) (http-ok "page")))
+  (router-add! r "GET" "/own" (lambda (req p) (http-ok "get")))
+  (router-add! r "HEAD" "/own" (lambda (req p) (http-ok "head")))
+  (router-add! r "POST" "/form" (lambda (req p) (http-ok "post")))
+  (test-equal "page" (http-response-body (send "HEAD" "/page")))
+  (test-equal "head" (http-response-body (send "HEAD" "/own")))
+  (test-equal "GET, HEAD" (http-response-header (send "POST" "/page") "Allow"))
+  (test-equal "GET, HEAD" (http-response-header (send "PUT" "/own") "Allow"))
+  ;; no GET route: HEAD is not allowed either
+  (test-equal 405 (http-response-status (send "HEAD" "/form")))
+  (test-equal "POST" (http-response-header (send "HEAD" "/form") "Allow")))
 
 (test-group "router->handler"
   (define r (make-router))

@@ -1025,17 +1025,21 @@ Example:
   <div class="entry-name">current-input-port</div>
   <pre class="entry-doc">Syntax: (current-input-port)
 Library: (scheme base)
-Description: Returns the current default input port. Read operations that do not specify a port use this port. Initially bound to the standard input.
+Description: Returns the current default input port. Read operations that do not specify a port use this port. Initially bound to the standard input. Like a parameter object, it can be rebound with
+  parameterize; called with a port, it sets the port (as set-current-input-port).
 Example:
-  (current-input-port) =&gt; #&lt;input-port&gt;</pre>
+  (current-input-port) =&gt; #&lt;input-port&gt;
+  (parameterize ((current-input-port p)) ...)</pre>
 </div>
 <div class="entry" id="e84" data-name="current-output-port">
   <div class="entry-name">current-output-port</div>
   <pre class="entry-doc">Syntax: (current-output-port)
 Library: (scheme base)
-Description: Returns the current default output port. Write and display operations that do not specify a port use this port. Initially bound to the standard output.
+Description: Returns the current default output port. Write and display operations that do not specify a port use this port. Initially bound to the standard output. Like a parameter object, it can be rebound with
+  parameterize; called with a port, it sets the port (as set-current-output-port).
 Example:
-  (current-output-port) =&gt; #&lt;output-port&gt;</pre>
+  (current-output-port) =&gt; #&lt;output-port&gt;
+  (parameterize ((current-output-port p)) ...)</pre>
 </div>
 <div class="entry" id="e85" data-name="delay">
   <div class="entry-name">delay</div>

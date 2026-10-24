@@ -160,34 +160,52 @@ Example:
                                            (split-path pattern)
                                            handler)))))
         ;; Methods of the routes whose pattern matches segs, in
-        ;; registration order, without duplicates.
+        ;; registration order, without duplicates. A GET route also
+        ;; answers HEAD, so HEAD follows GET unless it has its own route.
         (define (allowed-methods segs)
           (let loop ((rs routes) (acc '()))
             (cond
-              ((null? rs) (reverse acc))
+              ((null? rs)
+               (let ((ms (reverse acc)))
+                 (if (and (member "GET" ms) (not (member "HEAD" ms)))
+                     (let ins ((xs ms))
+                       (if (string=? (car xs) "GET")
+                           (cons "GET" (cons "HEAD" (cdr xs)))
+                           (cons (car xs) (ins (cdr xs)))))
+                     ms)))
               ((and (not (member (car (car rs)) acc))
                     (match-path (cadr (car rs)) segs))
                (loop (cdr rs) (cons (car (car rs)) acc)))
               (else (loop (cdr rs) acc)))))
+        ;; The first route for method whose pattern matches segs, as
+        ;; (handler . params), or #f.
+        (define (find-route method segs)
+          (let loop ((rs routes))
+            (and (pair? rs)
+                 (let* ((r       (car rs))
+                        (matched (and (string=? (car r) method)
+                                      (match-path (cadr r) segs))))
+                   (if matched
+                       (cons (caddr r) matched)
+                       (loop (cdr rs)))))))
         (define (dispatch req)
           (let* ((method (string-upcase (http-request-method req)))
                  (path   (url-path (http-request-url req)))
-                 (segs   (split-path path)))
-            (let loop ((rs routes))
-              (if (null? rs)
-                  ;; The path exists under other methods: 405 + Allow.
-                  (let ((allowed (allowed-methods segs)))
-                    (if (null? allowed)
-                        (http-not-found)
-                        (make-http-response 405
-                          (list (cons "Allow" (string-join allowed ", ")))
-                          "Method Not Allowed")))
-                  (let* ((r       (car rs))
-                         (matched (and (string=? (car r) method)
-                                       (match-path (cadr r) segs))))
-                    (if matched
-                        ((caddr r) req matched)
-                        (loop (cdr rs))))))))
+                 (segs   (split-path path))
+                 ;; HEAD without its own route runs the GET handler; the
+                 ;; server then sends the headers only.
+                 (found  (or (find-route method segs)
+                             (and (string=? method "HEAD")
+                                  (find-route "GET" segs)))))
+            (if found
+                ((car found) req (cdr found))
+                ;; The path exists under other methods: 405 + Allow.
+                (let ((allowed (allowed-methods segs)))
+                  (if (null? allowed)
+                      (http-not-found)
+                      (make-http-response 405
+                        (list (cons "Allow" (string-join allowed ", ")))
+                        "Method Not Allowed"))))))
         (lambda (msg . args)
           (cond
             ((eq? msg 'add!)     (apply add! args))
@@ -213,9 +231,11 @@ Example:
       "Syntax: (router-dispatch router req)
 Library: (scm net http route)
 Description: Dispatches an http-request to the first matching route in router.
-  Returns an http-response. When no route matches, returns 405 Method Not
-  Allowed (with an Allow header) if the path is registered under other
-  methods, else 404 Not Found.
+  Returns an http-response. A HEAD request without a HEAD route runs the
+  matching GET route (the server sends only its headers). When no route
+  matches, returns 405 Method Not Allowed (with an Allow header, listing
+  HEAD after GET) if the path is registered under other methods, else 404
+  Not Found.
 Example:
   (router-dispatch my-router req)"
       (router 'dispatch req))

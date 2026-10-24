@@ -183,9 +183,11 @@ Example:
   <pre class="entry-doc">Syntax: (router-dispatch router req)
 Library: (scm net http route)
 Description: Dispatches an http-request to the first matching route in router.
-  Returns an http-response. When no route matches, returns 405 Method Not
-  Allowed (with an Allow header) if the path is registered under other
-  methods, else 404 Not Found.
+  Returns an http-response. A HEAD request without a HEAD route runs the
+  matching GET route (the server sends only its headers). When no route
+  matches, returns 405 Method Not Allowed (with an Allow header, listing
+  HEAD after GET) if the path is registered under other methods, else 404
+  Not Found.
 Example:
   (router-dispatch my-router req)</pre>
 </div>

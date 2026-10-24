@@ -1,4 +1,6 @@
 (import (scheme base)
+        (scheme read)
+        (scheme write)
         (scm test)
         (srfi 18)
         (srfi 39))
@@ -78,5 +80,19 @@
                                           (else (cons (car ys) (drop (cdr ys)))))))))))))
   ;; Primordial thread's view of the parameter is unaffected.
   (test-equal 100 (tp)))
+
+(test-group "the current ports are parameters (R7RS 6.13.1)"
+  (let ((out (open-output-string))
+        (err (open-output-string))
+        (before (current-output-port)))
+    (parameterize ((current-output-port out)
+                   (current-error-port err))
+      (display "to out")
+      (write-string "to err" (current-error-port)))
+    (test-equal "to out" (get-output-string out))
+    (test-equal "to err" (get-output-string err))
+    (test-assert "restored" (eq? before (current-output-port))))
+  (let ((in (open-input-string "(a b)")))
+    (test-equal '(a b) (parameterize ((current-input-port in)) (read)))))
 
 (test-end "srfi-39")

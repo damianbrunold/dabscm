@@ -1,8 +1,6 @@
 package scheme.primitives;
 
 import scheme.*;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 
 public class PrimitiveConsoleReadPassword extends Primitive {
     @Override
@@ -47,10 +45,18 @@ public class PrimitiveConsoleReadPassword extends Primitive {
             System.out.print(prompt);
             System.out.flush();
         }
+        // Read byte by byte up to the newline: a buffered reader would
+        // swallow the following lines (a second prompt would then see EOF).
         try {
-            BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-            String line = br.readLine();
-            if (line == null) return Value.EOF;
+            java.io.ByteArrayOutputStream buf = new java.io.ByteArrayOutputStream();
+            int b = System.in.read();
+            if (b == -1) return Value.EOF;
+            while (b != -1 && b != '\n') {
+                buf.write(b);
+                b = System.in.read();
+            }
+            String line = buf.toString(java.nio.charset.StandardCharsets.UTF_8);
+            if (line.endsWith("\r")) line = line.substring(0, line.length() - 1);
             return line.toCharArray();
         } catch (Exception e) {
             throw new SchemeError(pos, "console-read-password: io failure: ~s", e.getMessage());

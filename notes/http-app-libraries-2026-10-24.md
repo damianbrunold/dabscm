@@ -9,6 +9,13 @@ rework (server error leak, status texts, router 405) shipped as 1.15.2
 (c5bf9be). Deviation: the router drops empty path segments before the
 static handler sees them, so `/static/a//b.css` serves `a/b.css`.
 
+Step 2 done (673b68b, aea85cc, cab5d14): the four starters run on the
+libraries, on ports 8070–8073 (8090 is taken by the splg website preview).
+Found on the way and fixed in 1.16.1: HEAD requests (the router falls back
+to the GET route and lists HEAD in Allow; the servers send no body),
+parameterize on current-input/output/error-port, and Java read-password
+losing piped input after the first line.
+
 ## Why
 
 The same plumbing exists in seven copies: the four `examples/starter-*`
@@ -244,7 +251,7 @@ hosts with no network:
 2. Rework the starters on top of them: public → login → admin → api,
    each with `tests/` and the other review items (secret placeholder and
    first-run config, light-dark CSS, no inline JS, url-prefix, logging,
-   ports 8090–8093, deploy units).
+   ports 8070–8073, deploy units).
 3. Optional, separate decision: move platform, licenses and portal onto
    the libraries. The static, middleware and password parts are drop-in;
    the token format change logs users out once.

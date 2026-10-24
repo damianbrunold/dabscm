@@ -962,9 +962,11 @@ Example:
 ```
 Syntax: (current-input-port)
 Library: (scheme base)
-Description: Returns the current default input port. Read operations that do not specify a port use this port. Initially bound to the standard input.
+Description: Returns the current default input port. Read operations that do not specify a port use this port. Initially bound to the standard input. Like a parameter object, it can be rebound with
+  parameterize; called with a port, it sets the port (as set-current-input-port).
 Example:
   (current-input-port) => #<input-port>
+  (parameterize ((current-input-port p)) ...)
 ```
 
 ### `current-output-port`
@@ -972,9 +974,11 @@ Example:
 ```
 Syntax: (current-output-port)
 Library: (scheme base)
-Description: Returns the current default output port. Write and display operations that do not specify a port use this port. Initially bound to the standard output.
+Description: Returns the current default output port. Write and display operations that do not specify a port use this port. Initially bound to the standard output. Like a parameter object, it can be rebound with
+  parameterize; called with a port, it sets the port (as set-current-output-port).
 Example:
   (current-output-port) => #<output-port>
+  (parameterize ((current-output-port p)) ...)
 ```
 
 ### `delay`

@@ -119,7 +119,7 @@
   (let ((r (send app "PUT" "/api/items" token "{}")))
     (test-equal 405 (status r))
     (test-equal "method_not_allowed" (error-code r))
-    (test-equal "GET, POST" (http-response-header r "Allow")))
+    (test-equal "GET, HEAD, POST" (http-response-header r "Allow")))
   (test-assert (string-contains-from
                 (http-response-header (send app "GET" "/api/me" token) "Content-Security-Policy")
                 "default-src 'none'" 0)))

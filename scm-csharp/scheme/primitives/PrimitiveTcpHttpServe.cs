@@ -237,7 +237,10 @@ public class PrimitiveTcpHttpServe : Primitive
                                 sb.Append("Connection: close\r\n\r\n");
                                 byte[] headerBytes = Encoding.UTF8.GetBytes(sb.ToString());
                                 stream.Write(headerBytes, 0, headerBytes.Length);
-                                stream.Write(respBytes, 0, respBytes.Length);
+                                // HEAD: the headers of the GET response
+                                // (Content-Length included), no body.
+                                if (!string.Equals(method, "HEAD", StringComparison.OrdinalIgnoreCase))
+                                    stream.Write(respBytes, 0, respBytes.Length);
                                 stream.Flush();
                             }
                         }

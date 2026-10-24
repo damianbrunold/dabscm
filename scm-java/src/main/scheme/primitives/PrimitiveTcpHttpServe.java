@@ -218,7 +218,9 @@ public class PrimitiveTcpHttpServe extends Primitive {
                                 if (!hasContentType) sb.append("Content-Type: text/plain; charset=utf-8\r\n");
                                 sb.append("Connection: close\r\n\r\n");
                                 out.write(sb.toString().getBytes(StandardCharsets.UTF_8));
-                                out.write(respBytes);
+                                // HEAD: the headers of the GET response
+                                // (Content-Length included), no body.
+                                if (!method.equalsIgnoreCase("HEAD")) out.write(respBytes);
                                 out.flush();
                             } catch (java.net.SocketTimeoutException ex) {
                                 // slow client — silent

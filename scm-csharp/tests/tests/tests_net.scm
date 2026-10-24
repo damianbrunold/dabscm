@@ -2,6 +2,7 @@
         (scheme write)
         (scm test)
         (scm io)
+        (scm string)
         (srfi 18)
         (scm net sockets)
         (scm net http request)
@@ -208,7 +209,33 @@
                            (http-get "http://127.0.0.1:18085/"))
                          (http-get "http://127.0.0.1:18085/"))))
              (_ (server-stop server 0)))
-        (list (http-response-status resp) (http-response-body resp))))))
+        (list (http-response-status resp) (http-response-body resp)))))
+  ;; HEAD: the full headers (Content-Length of the body) but no body.
+  (test-equal '(#t #t)
+    (guard (exn (#t #f))
+      (let* ((server (tcp-http-serve 18088
+                                     (lambda (req) (http-ok "hello body"))
+                                     0
+                                     "127.0.0.1"))
+             (raw (let loop ((n 0))
+                    (guard (e (#t (if (< n 3) (begin (thread-sleep! 0.2) (loop (+ n 1))) (raise e))))
+                      (with-tcp-connection "127.0.0.1" 18088
+                        (lambda (sock)
+                          (let ((out (socket-output-port sock)))
+                            (write-string "HEAD / HTTP/1.1\r\nHost: x\r\n\r\n" out)
+                            (flush-output-port out))
+                          (let ((in (socket-input-port sock)))
+                            (let read-all ((acc '()))
+                              (let ((c (read-char in)))
+                                (if (eof-object? c)
+                                    (list->string (reverse acc))
+                                    (read-all (cons c acc)))))))))))
+             (_ (server-stop server 0))
+             (n (string-length raw))
+             (end "\r\n\r\n"))
+        (list (and (string-contains-from raw "Content-Length: 10" 0) #t)
+              ;; the response ends right after the blank line
+              (and (>= n 4) (string=? (substring raw (- n 4) n) end)))))))
 
 (test-group "http-response-helpers"
   (test-equal 401 (http-response-status (http-unauthorized)))
