@@ -16,6 +16,16 @@ to the GET route and lists HEAD in Allow; the servers send no body),
 parameterize on current-input/output/error-port, and Java read-password
 losing piped input after the first line.
 
+Step 3 done in splg (362d3dd4 licenses, f51420b6 + ae962cee portal,
+bfac47fd + 1367b541 platform): password, token, session, static and
+middleware libraries in use. Tokens: purpose "web" for the session
+cookie, "api" for CLI bearer tokens, plus a passphrase stamp so a
+passphrase change ends other sessions; everyone logs in once more after
+the deploy. Licenses and platform have no inline scripts or on* handlers
+left and send script-src 'self' (platform keeps 'unsafe-inline' for its
+style attributes); portal keeps its own error wrapper (logs only the
+condition kind, since messages may quote case input).
+
 ## Why
 
 The same plumbing exists in seven copies: the four `examples/starter-*`
