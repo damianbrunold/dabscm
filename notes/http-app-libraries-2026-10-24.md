@@ -2,9 +2,12 @@
 
 ## Status
 
-Draft for review (2026-10-24). Nothing implemented yet. Step 1 of the
-starter rework (server error leak, status texts, router 405) shipped as
-1.15.2 (c5bf9be).
+Implemented in 1.16.0 (2d310f6) as designed; all open questions below
+were answered with the recommended option. The splg apps may adopt the new
+token format (a forced re-login is acceptable). Step 1 of the starter
+rework (server error leak, status texts, router 405) shipped as 1.15.2
+(c5bf9be). Deviation: the router drops empty path segments before the
+static handler sees them, so `/static/a//b.css` serves `a/b.css`.
 
 ## Why
 
