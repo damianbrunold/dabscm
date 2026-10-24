@@ -55,7 +55,7 @@ public class PrimitiveHttpGetBytevector extends Primitive {
             });
             return new NativeValue(new SchemeHttpResponse(resp.statusCode(), headers, resp.body()));
         } catch (Exception e) {
-            throw new SchemeError(pos, "http-get-bytevector: " + e.getMessage());
+            throw new SchemeError(pos, "http-get-bytevector: " + TlsTrust.errorText(e));
         }
     }
 }

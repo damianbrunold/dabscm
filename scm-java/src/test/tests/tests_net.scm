@@ -157,7 +157,48 @@
                          (guard (e (#t (loop (+ n 1)))) (get))
                          (get))))
              (_ (server-stop server)))
-        (http-response-body resp)))))
+        (http-response-body resp))))
+  ;; Redirects are followed, by every client call (the C# client always
+  ;; did; Java needs Redirect.NORMAL).
+  (test-equal '((200 . "moved") (200 . #u8(109 111 118 101 100)) (200 . "moved"))
+    (guard (exn (#t #f))
+      (let* ((server (tcp-http-serve 18093
+                       (lambda (req)
+                         (if (string=? (http-request-url req) "/old")
+                             (http-redirect "/new")
+                             (http-ok "moved")))))
+             (retry (lambda (thunk)
+                      (let loop ((n 0))
+                        (if (< n 3)
+                            (guard (e (#t (loop (+ n 1)))) (thunk))
+                            (thunk)))))
+             (rs (map (lambda (thunk)
+                        (let ((r (retry thunk)))
+                          (cons (http-response-status r) (http-response-body r))))
+                      (list
+                       (lambda () (http-get "http://localhost:18093/old"))
+                       (lambda () (http-get-bytevector "http://localhost:18093/old"))
+                       (lambda ()
+                         (http-send (make-http-request
+                                     "GET" "http://localhost:18093/old" '() #f)))))))
+        (server-stop server)
+        rs)))
+  ;; A refused connection names its cause instead of "null" (nothing
+  ;; listens on 18092).
+  (test-equal '(#t #t #t #t)
+    (map (lambda (thunk)
+           (guard (e ((error-object? e)
+                      (let ((m (error-object-message e)))
+                        (not (string=? (substring m (- (string-length m) 4)
+                                                  (string-length m))
+                                       "null")))))
+             (thunk)
+             'no-error))
+         (list
+          (lambda () (http-get "http://localhost:18092/"))
+          (lambda () (http-get-bytevector "http://localhost:18092/"))
+          (lambda () (http-post "http://localhost:18092/" "x"))
+          (lambda () (http-send (make-http-request "GET" "http://localhost:18092/" '() #f)))))))
 
 ;;; ---- Hardening tests (max-body, 503 saturation, host bind) ----
 (test-group "hardening"

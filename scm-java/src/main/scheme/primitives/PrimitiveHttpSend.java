@@ -42,9 +42,7 @@ public class PrimitiveHttpSend extends Primitive {
             HttpResponse<String> resp = client.send(builder.build(), HttpResponse.BodyHandlers.ofString());
             return PrimitiveHttpGet.buildResponse(resp);
         } catch (Exception e) {
-            // a refused connection carries no message, only its type
-            String msg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
-            throw new SchemeError(pos, "http-send: " + msg);
+            throw new SchemeError(pos, "http-send: " + TlsTrust.errorText(e));
         }
     }
 }

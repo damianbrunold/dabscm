@@ -50,7 +50,7 @@ public class PrimitiveHttpGet extends Primitive {
             HttpResponse<String> resp = client.send(builder.build(), HttpResponse.BodyHandlers.ofString());
             return buildResponse(resp);
         } catch (Exception e) {
-            throw new SchemeError(pos, "http-get: " + e.getMessage());
+            throw new SchemeError(pos, "http-get: " + TlsTrust.errorText(e));
         }
     }
 

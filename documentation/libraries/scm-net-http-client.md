@@ -28,6 +28,13 @@ Responses are the records described in `(scm net http response)` — read their
 status, headers, and body with that library's accessors (and parse a JSON body
 yourself with `(scm json simple)`).
 
+## Redirects
+
+Every call follows redirects (301, 302, 303, 307, 308) and returns the final
+response, except a redirect from HTTPS to plain HTTP, whose 3xx response is
+returned as is. A failed request (refused connection, timeout, bad host)
+raises an error naming the procedure and the cause.
+
 ## HTTPS certificate verification
 
 HTTPS server certificates are verified against the platform's trusted root

@@ -57,6 +57,12 @@ public final class TlsTrust {
         if (debug()) System.err.println("scm-tls: " + msg);
     }
 
+    // Text for a failed request: a refused connection carries no message,
+    // only its type.
+    public static String errorText(Exception e) {
+        return e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+    }
+
     // The shared HttpClient used by http-get / http-post / http-send.
     public static HttpClient httpClient() throws Exception {
         HttpClient c = httpClient;
@@ -72,7 +78,12 @@ public final class TlsTrust {
                     } else {
                         ctx = verifyingContext();
                     }
-                    c = HttpClient.newBuilder().sslContext(ctx).build();
+                    // Follow redirects like the C# client does, except
+                    // HTTPS -> HTTP downgrades (Redirect.NORMAL).
+                    c = HttpClient.newBuilder()
+                        .sslContext(ctx)
+                        .followRedirects(HttpClient.Redirect.NORMAL)
+                        .build();
                     httpClient = c;
                 }
             }

@@ -51,7 +51,7 @@ public class PrimitiveHttpPost extends Primitive {
             HttpResponse<String> resp = client.send(builder.build(), HttpResponse.BodyHandlers.ofString());
             return PrimitiveHttpGet.buildResponse(resp);
         } catch (Exception e) {
-            throw new SchemeError(pos, "http-post: " + e.getMessage());
+            throw new SchemeError(pos, "http-post: " + TlsTrust.errorText(e));
         }
     }
 }
