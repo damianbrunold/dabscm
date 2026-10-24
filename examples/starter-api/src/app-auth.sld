@@ -1,114 +1,86 @@
-;; (app auth) — password hashing and stateless bearer tokens for a JSON API.
+;; (app auth) — sign-in and bearer tokens for the JSON API.
 ;;
-;; Passwords: PBKDF2-HMAC-SHA256 with a per-user random salt, stored as
-;; pbkdf2$<iter>$<salt-b64>$<hash-b64>. Tokens: a base64 payload
-;; ("subject|expiry") plus an HMAC-SHA256 signature, sent by the client in
-;; the Authorization: Bearer header. No server-side token store.
+;; Passwords: (scm crypto password), as in starter-login, with a dummy
+;; check for unknown usernames and hash upgrades at sign-in.
+;;
+;; Tokens: (scm crypto token), signed and expiring, with the purpose "api"
+;; so that no other token made with the same key passes as one. No server-
+;; side store. A token carries the username and a stamp of the password
+;; hash, and every request looks the user up again: deleting a user or
+;; changing a password revokes their tokens.
 
 (define-library (app auth)
   (import (scheme base)
-          (scheme time)
-          (scheme char)
           (scm crypto)
-          (scm net http request)
-          (srfi 13))
-  (export hash-password
-          verify-password
-          make-auth auth-max-age
-          issue-token token-subject
-          bearer-token)
+          (scm crypto password)
+          (scm crypto token)
+          (app users))
+  (export make-auth
+          auth-max-age
+          sign-in
+          issue-token
+          token-user
+          min-password-length)
   (begin
 
-    (define pbkdf2-iterations 200000)
+    (define min-password-length 8)
 
-    (define (hash-password plain)
-      "Syntax: (hash-password plain)
-Library: (app auth)
-Description: Returns pbkdf2$<iter>$<salt-b64>$<hash-b64> for the password."
-      (let* ((salt (random-bytes 16))
-             (dk (pbkdf2-sha256 (string->utf8 plain) salt pbkdf2-iterations 32)))
-        (string-append "pbkdf2$" (number->string pbkdf2-iterations) "$"
-                       (base64-encode salt) "$" (base64-encode dk))))
-
-    (define (split-fields s)
-      (let loop ((i 0) (start 0) (acc '()))
-        (cond
-          ((= i (string-length s))
-           (reverse (cons (substring s start i) acc)))
-          ((char=? (string-ref s i) #\$)
-           (loop (+ i 1) (+ i 1) (cons (substring s start i) acc)))
-          (else (loop (+ i 1) start acc)))))
-
-    (define (verify-password plain stored)
-      "Syntax: (verify-password plain stored)
-Library: (app auth)
-Description: Constant-time check of plaintext against a pbkdf2$... string."
-      (let ((parts (split-fields stored)))
-        (and (= (length parts) 4)
-             (string=? (car parts) "pbkdf2")
-             (let* ((iter (string->number (list-ref parts 1)))
-                    (salt (base64-decode (list-ref parts 2)))
-                    (want (base64-decode (list-ref parts 3))))
-               (and iter
-                    (constant-time-bytevector=?
-                     (pbkdf2-sha256 (string->utf8 plain) salt iter
-                                    (bytevector-length want))
-                     want))))))
+    (define token-options '((purpose . "api")))
 
     (define-record-type auth
-      (auth* secret max-age)
+      (%make-auth keys max-age users-file)
       auth?
-      (secret auth-secret)
-      (max-age auth-max-age))
+      (keys auth-keys)
+      (max-age auth-max-age)
+      (users-file auth-users-file))
 
-    (define (make-auth secret-b64 max-age)
-      "Syntax: (make-auth secret-b64 max-age)
+    (define (make-auth secret max-age users-file)
+      "Syntax: (make-auth secret max-age users-file)
 Library: (app auth)
-Description: Token config. secret-b64 is base64 of the HMAC signing key;
-  max-age is the token lifetime in seconds."
-      (auth* (base64-decode secret-b64) max-age))
+Description: Token settings: secret (base64, or a list for key rotation),
+  token lifetime in seconds, and the user store. A bad secret raises here,
+  at startup."
+      (%make-auth (token-secrets secret) max-age users-file))
 
-    (define (now) (exact (round (current-second))))
+    ;; Changes whenever the password (and so the hash) changes.
+    (define (password-stamp hash)
+      (base64-encode (bytevector-copy (sha256-hash (string->utf8 hash)) 0 12)))
 
-    (define (issue-token auth subject)
-      "Syntax: (issue-token auth subject)
+    (define (sign-in auth username password)
+      "Syntax: (sign-in auth username password)
 Library: (app auth)
-Description: Returns a signed bearer token for subject, valid for max-age."
-      (let* ((payload (string-append subject "|"
-                                     (number->string (+ (now) (auth-max-age auth)))))
-             (pb (string->utf8 payload)))
-        (string-append (base64-encode pb) "."
-                       (bytevector->hex (hmac-sha256 (auth-secret auth) pb)))))
+Description: The user entry if password is right for username, else #f.
+  Upgrades an outdated password hash on success."
+      (let* ((path (auth-users-file auth))
+             (user (find-user path username)))
+        (cond
+          ((not (password-verify password (and user (user-hash user)))) #f)
+          ((password-needs-rehash? (user-hash user))
+           (save-user! path username (password-hash password))
+           (find-user path username))
+          (else user))))
 
-    (define (token-subject auth token)
-      "Syntax: (token-subject auth token)
+    (define (issue-token auth user)
+      "Syntax: (issue-token auth user)
 Library: (app auth)
-Description: Returns the subject of a valid, unexpired token, or #f."
-      (and (string? token)
-           (let ((dot (string-index token #\.)))
-             (and dot
-                  (guard (e (#t #f))
-                    (let* ((pb (base64-decode (substring token 0 dot)))
-                           (got (hex->bytevector
-                                 (substring token (+ dot 1) (string-length token))))
-                           (calc (hmac-sha256 (auth-secret auth) pb)))
-                      (and (constant-time-bytevector=? calc got)
-                           (let* ((payload (utf8->string pb))
-                                  (bar (string-index payload #\|))
-                                  (sub (substring payload 0 bar))
-                                  (exp (string->number
-                                        (substring payload (+ bar 1)
-                                                   (string-length payload)))))
-                             (and exp (> exp (now)) sub)))))))))
+Description: A bearer token for user, valid for the configured lifetime."
+      (token-sign (auth-keys auth)
+                  `((sub . ,(user-name user))
+                    (stamp . ,(password-stamp (user-hash user))))
+                  (auth-max-age auth)
+                  token-options))
 
-    (define (bearer-token req)
-      "Syntax: (bearer-token req)
+    (define (token-user auth token)
+      "Syntax: (token-user auth token)
 Library: (app auth)
-Description: Returns the token from an 'Authorization: Bearer <token>'
-  header, or #f if absent/malformed."
-      (let ((h (http-request-header req "Authorization")))
-        (and h
-             (let ((h* (string-trim h)))
-               (and (>= (string-length h*) 7)
-                    (string-ci=? (substring h* 0 7) "Bearer ")
-                    (string-trim (substring h* 7 (string-length h*))))))))))
+Description: The user entry for a valid, unexpired token, or #f (also when
+  the user was deleted or changed the password since)."
+      (let ((t (and token (token-verify (auth-keys auth) token token-options))))
+        (and (pair? t)
+             (let* ((sub (assq 'sub t))
+                    (stamp (assq 'stamp t))
+                    (user (and sub (string? (cdr sub))
+                               (find-user (auth-users-file auth) (cdr sub)))))
+               (and user stamp
+                    (equal? (cdr stamp) (password-stamp (user-hash user)))
+                    user)))))))

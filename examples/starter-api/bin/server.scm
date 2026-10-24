@@ -1,36 +1,37 @@
 ;; Usage: scm bin/server.scm [config-path]
 ;;
-;; Reads config (config.scm, or the path given as argv, falling back to
-;; config.example.scm) and starts the JSON API.
+;; Reads the config (config-path, or else config.scm, which the first run
+;; creates from config.example.scm with a fresh secret) and serves the API.
 
 (import (scheme base)
-        (scheme write)
-        (scheme load)
         (scheme process-context)
         (scm module)
-        (scm fs))
+        (scm fs)
+        (scm log)
+        (scm net http server))
 
+;; Resolve the project root from this script's path so it runs from anywhere,
+;; and make src/ importable.
 (define root
   (directory-name (directory-name (absolute-path (car (command-line))))))
 (module-search-path! (cons (string-append root "/src") (module-search-path)))
 
-(import (app auth) (app api))
+(import (app config) (app api))
 
-(define cfg-path
-  (let ((args (cdr (command-line))))
-    (cond ((pair? args) (car args))
-          ((file-exists? (string-append root "/config.scm"))
-           (string-append root "/config.scm"))
-          (else (string-append root "/config.example.scm")))))
+(define cfg (load-config root (cdr (command-line))))
+(define host (config-ref cfg 'http-host "127.0.0.1"))
+(define port (config-ref cfg 'http-port 8073))
+(define prefix (config-ref cfg 'url-prefix ""))
+(define data-dir (resolve-path root (config-ref cfg 'data-dir "data")))
 
-(load cfg-path)
+(define app
+  (make-app
+   `((url-prefix    . ,prefix)
+     (users-file    . ,(string-append data-dir "/users.scm"))
+     (items-file    . ,(string-append data-dir "/items.scm"))
+     (token-secret  . ,(config-secret cfg 'token-secret))
+     (token-max-age . ,(config-ref cfg 'token-max-age (* 60 60 12))))))
 
-(define (abs-path p)
-  (if (and (> (string-length p) 0) (char=? (string-ref p 0) #\/))
-      p (string-append root "/" p)))
-
-(define auth (make-auth token-secret token-max-age))
-
-(serve (make-api-config http-host http-port auth
-                        (abs-path users-file)
-                        (abs-path items-file)))
+(log-info "app" (string-append "starter-api listening on http://" host ":"
+                               (number->string port) prefix "/api/"))
+(serve-forever port app 0 host)

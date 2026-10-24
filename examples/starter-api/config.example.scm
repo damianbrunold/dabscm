@@ -1,16 +1,22 @@
-;; Copy to config.scm and edit for real use. If config.scm is absent the
-;; app falls back to this file so it runs out of the box for local testing.
-;;
-;; Generate a fresh token-secret with:
-;;   scm -e '(import (scm crypto)) (display (base64-encode (random-bytes 32)))'
+;; starter-api configuration: a list of (define name value) forms, read as
+;; data by src/app-config.sld. bin/server.scm reads config.scm; the first
+;; run creates it from this file, with a fresh token-secret.
 
-;; Bind loopback only; a reverse proxy fronts the public interface.
+;; Bind loopback only; a reverse proxy (deploy/nginx.conf.example) fronts
+;; the public interface and terminates TLS.
 (define http-host "127.0.0.1")
-(define http-port 8084)
+(define http-port 8073)
 
-(define users-file "data/users.scm")
-(define items-file "data/items.scm")
+;; Path the API is mounted under, e.g. "/inventory" for /inventory/api/...;
+;; "" for the host root. The reverse proxy must pass paths through unchanged.
+(define url-prefix "")
 
-;; HMAC key that signs bearer tokens (base64 of 32 random bytes).
-(define token-secret "bdC1oL1nkZBWqRAzObeM/dEJyFol5jbSDSyKWmJYZI8=")
+;; Signs the bearer tokens (base64 of 32 random bytes). To rotate it, list
+;; the new key first: ("new" "old"); tokens signed with the old key stay
+;; valid until you remove it. bin/gen-secret.scm prints a new key.
+(define token-secret "REPLACE_WITH_BASE64_SECRET")
 (define token-max-age (* 60 60 12))   ; 12 hours
+
+;; Holds users.scm and items.scm and must be writable. Relative paths are
+;; relative to the app directory.
+(define data-dir "data")

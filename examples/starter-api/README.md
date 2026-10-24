@@ -1,22 +1,33 @@
 # starter-api
 
-A **headless JSON/REST API** with bearer-token authentication — no HTML, no
-sessions. Clients log in to get a signed token and send it as
-`Authorization: Bearer <token>` on every request. Includes a small CRUD
-resource (`items`) persisted to a Scheme data file.
+A **headless JSON/REST API** with bearer-token authentication: no HTML, no
+cookies. Clients sign in to get a signed token and send it as
+`Authorization: Bearer <token>` with every request. Includes a small CRUD
+resource (`items`) stored in a Scheme data file.
 
 Use it as a starting point for a backend behind a single-page app, a mobile
 client, or service-to-service calls.
 
 ## What it demonstrates
 
-- **Bearer tokens**: HMAC-SHA256-signed, stateless, with an expiry — verified in
-  constant time (`src/app-auth.sld`).
-- **PBKDF2 password hashing** for the user store.
-- A clean **JSON request/response** style with a single error envelope and
-  correct status codes (`src/app-api.sld`).
-- A **file-backed store** with atomic, mutex-guarded writes
-  (`src/app-store.sld`) — swap it for a database when you outgrow it.
+- **Bearer tokens** with `(scm crypto token)`: signed, expiring, URL-safe,
+  bound to the purpose `"api"`, no server-side store. Every request looks the
+  user up again, and the token carries a stamp of the password hash, so
+  deleting a user or changing a password revokes their tokens
+  (`src/app-auth.sld`). `http-request-bearer-token` reads the header.
+- **Password hashing** with `(scm crypto password)`, as in `starter-login`:
+  a dummy check for unknown usernames and hash upgrades at sign-in.
+- A **JSON request/response** style with one error envelope for everything,
+  including unknown routes (404), wrong methods (405, with `Allow`) and
+  internal errors (500, logged in full but answered generically)
+  (`src/app-api.sld`).
+- The middleware stack for an API: access log, `Cache-Control: no-store`,
+  and security headers with `default-src 'none'`.
+- **File-backed stores** with atomic, mutex-guarded writes
+  (`src/app-users.sld`, `src/app-items.sld`); swap them for a database when
+  you outgrow them.
+- From `starter-public`: the URL prefix, the config created on the first
+  run, and tests that call the app without a server.
 
 ## Endpoints
 
@@ -35,63 +46,78 @@ Errors are always `{ "error": { "code": "...", "message": "..." } }`.
 ## Layout
 
 ```
-bin/server.scm        bootstrap: load config, serve
+bin/server.scm        load the config, serve the API
 bin/dev-server.scm    auto-reloading dev supervisor
-bin/useradd.scm       add/update an API user (CLI)
-src/app-auth.sld      hashing + bearer tokens
-src/app-store.sld     user + item data files (atomic writes)
-src/app-api.sld       routes, JSON, error envelope, server
-config.example.scm    config (fallback when config.scm is absent)
-data/users.scm        credential store (created by the CLI)
-data/items.scm        the sample resource
-deploy/               systemd units, nginx example, install script
+bin/user.scm          add / passwd / delete / list API users (CLI)
+bin/init-config.scm   write a new config file (used by deploy/install.sh)
+bin/gen-secret.scm    print a new token secret (for key rotation)
+src/app-config.sld    config reading and first-run creation
+src/app-users.sld     the user store
+src/app-items.sld     the items store
+src/app-auth.sld      sign-in and bearer tokens
+src/app-api.sld       routes, JSON, error envelope, middleware: make-app
+config.example.scm    the config template, with every setting
+data/items.scm        sample items
+tests/                test_pure_*.scm, run without a server
+deploy/               systemd units, health probe, nginx example, install script
 ```
 
 ## Run
 
 ```sh
-scm bin/useradd.scm alice          # prompts for a password (min 8 chars)
-scm bin/server.scm                 # http://127.0.0.1:8084
-scm bin/dev-server.scm             # same, auto-restart on file change
+scm bin/user.scm add alice       # prompts for a password (at least 8 characters)
+scm bin/server.scm               # http://127.0.0.1:8073
+scm bin/dev-server.scm           # same, restarts when src/ or the config changes
 ```
 
-Try it:
+The first run of either creates `config.scm` from `config.example.scm`, with
+a fresh random `token-secret`. Try it:
 
 ```sh
 TOKEN=$(curl -s -d '{"username":"alice","password":"<pw>"}' \
-        http://127.0.0.1:8084/api/login | sed 's/.*"token":"\([^"]*\)".*/\1/')
+        http://127.0.0.1:8073/api/login | sed 's/.*"token":"\([^"]*\)".*/\1/')
 
-curl -s -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8084/api/items
+curl -s -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8073/api/items
 curl -s -H "Authorization: Bearer $TOKEN" -d '{"name":"Cogs","count":7}' \
-     http://127.0.0.1:8084/api/items
+     http://127.0.0.1:8073/api/items
 ```
 
-For production: copy `config.example.scm` to `config.scm`, generate a fresh
-`token-secret`
+## Test
 
 ```sh
-scm -e '(import (scm crypto)) (display (base64-encode (random-bytes 32)))'
+for t in tests/test_*.scm; do scm "$t" || exit 1; done
 ```
-
-and serve over HTTPS (clients send credentials and tokens in the clear otherwise).
 
 ## Adapt
 
-- Add resources by adding routes in `src/app-api.sld` and storage functions in
-  `src/app-store.sld`.
-- Protect a route by wrapping its handler with `with-auth`; the handler receives
-  the authenticated subject (username) as a third argument.
-- Swap `src/app-store.sld` for a database module (see `starter-admin`) when a
+- Add resources with `route!` in `make-app` (`src/app-api.sld`) and storage
+  functions in a new `src/app-*.sld` module. Wrap a handler in `with-token`
+  to require a token; it then receives the user entry as a third argument.
+- Swap the file stores for a database module (see `starter-admin`) when a
   flat file no longer fits.
+- The API sends no CORS headers: a browser app should be served from the
+  same origin (e.g. behind the same reverse proxy). Add an
+  `Access-Control-Allow-Origin` wrapper only for origins you trust.
+- To rotate the token secret, make `token-secret` a list with a new key
+  (`scm bin/gen-secret.scm`) first; drop the old key once its tokens have
+  expired.
 
 ## Deploy
 
-App binds loopback only; front it with `deploy/nginx.conf.example`, then:
+The API binds loopback only; put a TLS-terminating reverse proxy in front
+(`deploy/nginx.conf.example`): clients send passwords and tokens, which must
+not travel in the clear. Then, on the server, from the app directory:
 
 ```sh
-sudo deploy/install.sh
+sudo deploy/install.sh               # SCM=/path/to/scm if not /usr/local/bin/scm
+sudo -u starter-api /usr/local/bin/scm /opt/starter-api/bin/user.scm \
+     --config /etc/starter-api/config.scm add alice
 ```
 
-Installs the service plus a per-minute `/healthz` probe (restart after two
-failures) and a daily 04:00 restart. Edit `User=`, `WorkingDirectory=`, and the
-`ExecStart` scm path in the unit files first.
+This copies the app to `/opt/starter-api` and creates
+`/etc/starter-api/config.scm` on the first install, with a fresh secret and
+the data in `/var/lib/starter-api`. It adds a `starter-api` system user and
+enables the service (`Restart=always`, read-only file system except its
+state directory), a per-minute health probe that restarts the API if
+`/healthz` fails twice, and a daily 04:00 restart. Rerun it to deploy a new
+version; the config and data are kept.
