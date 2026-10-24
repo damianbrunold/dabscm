@@ -17,7 +17,7 @@
   --ok:     light-dark(#15803d, #4ade80);
   --chip:    light-dark(#eef2ff, #232a3d);
   --chip-fg: light-dark(#3730a3, #c7d2fe);
-  --on-accent: #ffffff;
+  --on-accent: light-dark(#ffffff, #0f172a);
 }
 :root[data-theme="light"] { color-scheme: light; }
 :root[data-theme="dark"]  { color-scheme: dark; }
@@ -77,6 +77,7 @@ a { color: var(--accent); }
 
 main { max-width: 860px; margin: 2rem auto; padding: 0 1.25rem; }
 h2 { margin-top: 2rem; }
+.card h2 { margin-top: 0; }
 .muted { color: var(--muted); }
 .inline { display: inline; margin: 0; }
 

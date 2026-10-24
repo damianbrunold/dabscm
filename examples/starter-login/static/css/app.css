@@ -15,7 +15,7 @@
   --card:   light-dark(#fbfbfb, #1b1e24);
   --danger: light-dark(#b91c1c, #f87171);
   --ok:     light-dark(#15803d, #4ade80);
-  --on-accent: #ffffff;
+  --on-accent: light-dark(#ffffff, #0f172a);
 }
 :root[data-theme="light"] { color-scheme: light; }
 :root[data-theme="dark"]  { color-scheme: dark; }
