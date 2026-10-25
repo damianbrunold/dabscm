@@ -393,9 +393,8 @@ public final class Jit {
             else c.aload(oLocal(frames - lvl));
         }
 
-        // after ARGS/ARGSDOT: F(0) and the closure's frames from ENV
+        // after ARGS/ARGSDOT: the closure's frames
         void enterFrames() {
-            c.aload(ENV); c.astore(fLocal(0));
             for (int k = 1; k <= maxOuter; k++) {
                 if (k == 1) { c.aload(SELF); c.field(GETFIELD, LAM, "env", OBJD); }
                 else { c.aload(oLocal(k - 1)); c.iconst(0); c.op(AALOAD); }
@@ -479,9 +478,21 @@ public final class Jit {
 
         void emitCall() {
             c.maxStack = 16;
-            for (int k = 0; k < slots; k++) { c.op(ACONST_NULL); c.astore(slot(k)); }
-            for (int k = 0; k <= maxLevel; k++) { c.op(ACONST_NULL); c.astore(fLocal(k)); }
-            c.op(ACONST_NULL); c.astore(ENV);
+            // every local has one type throughout (see ClassWriter), so
+            // all are initialized here
+            String[] types = new String[oLocal(maxOuter) + 1];
+            types[0] = cls; types[VM_] = VMC; types[SELF] = LAM; types[FRAME] = OBJA; types[DEPTH] = "I";
+            types[ENV] = OBJ;
+            for (int k = 0; k < slots; k++) types[slot(k)] = OBJ;
+            types[tF] = OBJ; types[tLam] = LAM; types[tJit] = JITC; types[tFrame] = OBJA; types[tX] = OBJ;
+            types[tIp] = "I"; types[tExc] = "java/lang/Throwable";
+            for (int k = 0; k <= maxLevel; k++) types[fLocal(k)] = OBJA;
+            for (int k = 1; k <= maxOuter; k++) types[oLocal(k)] = OBJA;
+            c.locals = types;
+            for (int k = ENV; k < types.length; k++) {
+                if (types[k].equals("I")) { c.iconst(0); c.istore(k); }
+                else { c.op(ACONST_NULL); c.astore(k); }
+            }
             int start = c.newLabel();
             c.mark(start);
             List<int[]> ranges = new ArrayList<>();
@@ -504,8 +515,10 @@ public final class Jit {
             }
             // handler stubs: the instruction index, then the common handler
             int common = c.newLabel();
+            c.stackAt(common, "java/lang/RuntimeException", "I");
             for (int[] r : ranges) {
                 int stub = c.newLabel();
+                c.stackAt(stub, "java/lang/RuntimeException");
                 c.mark(stub);
                 c.iconst(r[2]);
                 c.jump(GOTO, common);
@@ -583,14 +596,14 @@ public final class Jit {
                     c.op(ATHROW);
                     c.mark(ok);
                     c.aload(FRAME); c.iconst(0); c.aload(SELF); c.field(GETFIELD, LAM, "env", OBJD); c.op(AASTORE);
-                    c.aload(FRAME); c.astore(ENV);
+                    c.aload(FRAME); c.op(DUP); c.astore(ENV); c.astore(fLocal(0));
                     enterFrames();
                     return false;
                 }
                 case ARGSDOT:
                     c.aload(SELF); ins(ins); c.aload(FRAME);
                     rt("argsDot", "(Lscheme/Lambda;Lscheme/Instruction;" + OBJA + ")" + OBJA);
-                    c.astore(ENV);
+                    c.op(DUP); c.astore(ENV); c.astore(fLocal(0));
                     enterFrames();
                     return false;
                 case LVAR:
@@ -823,6 +836,8 @@ public final class Jit {
             c.astore(tF);
             int prim = c.newLabel(), interp = c.newLabel(), got = c.newLabel(), done = c.newLabel(),
                 tc = c.newLabel();
+            c.stackAt(got, OBJ);
+            c.stackAt(done, OBJ);
             if (tail) {
                 // a self tail call: a loop
                 int other = c.newLabel();

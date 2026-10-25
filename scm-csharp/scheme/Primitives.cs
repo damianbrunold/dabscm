@@ -17,12 +17,15 @@ public class Primitives
         Bind("PI", Math.PI);
         Bind("apply", GetApply());
         Bind("call-with-current-continuation", GetCallCC());
+        // the C# VM has no JIT: an escape continuation is a full one
+        Bind("%call-with-escape-continuation", GetCallCC());
         Bind("call-with-values", GetCallWithValues());
         Bind("field-sep", new char[] { Path.PathSeparator });
         Bind("line-sep", Environment.NewLine.ToCharArray());
         Bind("nil", Value.NIL);
         Bind("path-sep", new char[] { Path.DirectorySeparatorChar });
         Bind(new PrimitiveAbandonedMutexExceptionP());
+        Bind(new PrimitiveEscapeOnlyReceiverP());
         Bind(new PrimitiveAbsolutePath());
         Bind(new PrimitiveAcos());
         Bind(new PrimitiveAdd());

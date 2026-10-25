@@ -464,9 +464,12 @@ Example:
             (%winders-set! l))))))
 
 (define call/cc
-  (let ((c call-with-current-continuation))
+  (let ((c call-with-current-continuation)
+        (ec (%primitive "%call-with-escape-continuation"))
+        (escape-only? (%primitive "%escape-only-receiver?")))
     (lambda (f)
-      (c (lambda (k)
+      ((if (escape-only? f) ec c)
+       (lambda (k)
            (f (let ((save-winders (%winders-get))
                     (save-handlers (%exception-handlers-get)))
                 (lambda x

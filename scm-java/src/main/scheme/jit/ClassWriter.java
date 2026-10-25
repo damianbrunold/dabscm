@@ -8,8 +8,10 @@ import java.util.HashMap;
 import java.util.List;
 
 // A minimal class file writer for the JIT: one class with static fields,
-// a static initializer and methods. It writes class file version 49, which
-// the JVM verifies by type inference, so no StackMapTable is needed.
+// a static initializer and methods, as class file version 55 (Java 11).
+// The StackMapTable gives each branch target and exception handler a full
+// frame: the method's locals have one type throughout (Code.locals), the
+// stack is empty unless set for the label (Code.stackAt).
 final class ClassWriter {
 
     static final int ACC_PUBLIC = 0x0001, ACC_PRIVATE = 0x0002, ACC_STATIC = 0x0008,
@@ -107,7 +109,9 @@ final class ClassWriter {
             out.writeShort(1);
             out.writeShort(utf8("Code"));
             int handlers = code.handlers.size();
-            out.writeInt(2 + 2 + 4 + bytes.length + 2 + handlers * 8 + 2);
+            byte[] frames = code.stackMapTable();
+            int attrs = frames == null ? 0 : 6 + frames.length;
+            out.writeInt(2 + 2 + 4 + bytes.length + 2 + handlers * 8 + 2 + attrs);
             out.writeShort(code.maxStack);
             out.writeShort(code.maxLocals);
             out.writeInt(bytes.length);
@@ -119,7 +123,14 @@ final class ClassWriter {
                 out.writeShort(code.labelPos(h[2]));
                 out.writeShort(h[3]);
             }
-            out.writeShort(0);
+            if (frames == null) {
+                out.writeShort(0);
+            } else {
+                out.writeShort(1);
+                out.writeShort(utf8("StackMapTable"));
+                out.writeInt(frames.length);
+                out.write(frames);
+            }
         } catch (IOException e) { throw new IllegalStateException(e); }
         methods.add(b.toByteArray());
     }
@@ -131,7 +142,7 @@ final class ClassWriter {
         try {
             out.writeInt(0xCAFEBABE);
             out.writeShort(0);
-            out.writeShort(49);
+            out.writeShort(55);
             pool.flush();
             out.writeShort(poolCount);
             out.write(poolBytes.toByteArray());
@@ -171,6 +182,13 @@ final class ClassWriter {
         final ArrayList<int[]> handlers = new ArrayList<>();       // {startLabel, endLabel, handlerLabel, catchType}
         int maxStack = 8;
         int maxLocals;
+        // the verification type of each local: "I" or an internal class name
+        String[] locals;
+        private final HashMap<Integer, String[]> stacks = new HashMap<>();
+        private final java.util.TreeSet<Integer> frameLabels = new java.util.TreeSet<>();
+
+        // the stack types at label (when not empty)
+        void stackAt(int label, String... types) { stacks.put(label, types); }
 
         int size() { return len; }
 
@@ -219,6 +237,7 @@ final class ClassWriter {
             int at = len;
             u1(opcode);
             fixups.add(new int[] { at, len, label });
+            frameLabels.add(label);
             u2(0);
         }
 
@@ -230,6 +249,39 @@ final class ClassWriter {
 
         void handler(int start, int end, int handler, String catchType) {
             handlers.add(new int[] { start, end, handler, catchType == null ? 0 : classRef(catchType) });
+            frameLabels.add(handler);
+        }
+
+        private void typeInfo(DataOutputStream out, String t) throws IOException {
+            if (t.equals("I")) out.writeByte(1);
+            else { out.writeByte(7); out.writeShort(classRef(t)); }
+        }
+
+        byte[] stackMapTable() {
+            if (frameLabels.isEmpty()) return null;
+            java.util.TreeMap<Integer, String[]> byPos = new java.util.TreeMap<>();
+            for (int label : frameLabels) {
+                String[] stack = stacks.getOrDefault(label, new String[0]);
+                String[] old = byPos.put(labelPos(label), stack);
+                if (old != null && !java.util.Arrays.equals(old, stack))
+                    throw new IllegalStateException("conflicting frames");
+            }
+            ByteArrayOutputStream b = new ByteArrayOutputStream();
+            DataOutputStream out = new DataOutputStream(b);
+            try {
+                out.writeShort(byPos.size());
+                int prev = -1;
+                for (java.util.Map.Entry<Integer, String[]> e : byPos.entrySet()) {
+                    out.writeByte(255);
+                    out.writeShort(e.getKey() - prev - 1);
+                    prev = e.getKey();
+                    out.writeShort(locals.length);
+                    for (String t : locals) typeInfo(out, t);
+                    out.writeShort(e.getValue().length);
+                    for (String t : e.getValue()) typeInfo(out, t);
+                }
+            } catch (IOException e) { throw new IllegalStateException(e); }
+            return b.toByteArray();
         }
 
         byte[] bytes() {
