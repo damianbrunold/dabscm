@@ -9,8 +9,9 @@ namespace scheme;
 public class Value
 {
     public static Nil NIL = new();
-    public static bool T = true;
-    public static bool F = false;
+    // boxed once: every use shares the instance (eq? compares booleans by value)
+    public static readonly object T = true;
+    public static readonly object F = false;
     public static byte EOF = 1;
 
     private static System.Collections.Concurrent.ConcurrentDictionary<string, string> symbols = new();

@@ -22,6 +22,12 @@ public class CodeList extends ArrayList<Instruction> {
     public byte escapeOnly;
     // operand stack depth before each instruction (Jit.analyze)
     public int[] depths;
+    // the frames compiled code keeps in locals (Jit.Translator.analyzeLevels):
+    // levels from firstUnboxed; per instruction the variable count of each
+    // level; per level the index of its first variable in Rt.frames' vars
+    public int firstUnboxed = Integer.MAX_VALUE;
+    public int[][] shapes;
+    public int[] varBase;
 
     public Instruction[] array() {
         Instruction[] a = array;

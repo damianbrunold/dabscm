@@ -19,6 +19,12 @@ public class CodeList : List<Instruction>
     public byte escapeOnly;
     // operand stack depth before each instruction (Jit.Analyze)
     public int[]? depths;
+    // the frames compiled code keeps in locals (Jit.Translator.AnalyzeLevels):
+    // levels from firstUnboxed; per instruction the variable count of each
+    // level; per level the index of its first variable in Rt.Frames' vars
+    public int firstUnboxed = int.MaxValue;
+    public int[]?[]? shapes;
+    public int[]? varBase;
 
     public Instruction[] Array()
     {

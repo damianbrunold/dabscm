@@ -373,3 +373,47 @@
   (=> (list (or (memv 3 '(1 2 3)) 'no) (or (memv 9 '(1 2)) 'no) (and (or #f 1) (or 2))) '((3) no 2))
   (=> (let loop ((i 0) (c 0)) (if (= i 10) c (loop (+ i 1) (if (or (eq? i 3) (eq? i 5) (not (odd? i))) (+ c 1) c))))
       7))
+
+;; Compiled code (the JIT compiles a procedure after 100 calls): each
+;; procedure is called often enough first. Errors and continuations
+;; unwinding compiled frames, whose let and loop frames are locals
+;; (none of these procedures creates a closure), deep recursion past the
+;; JIT's stack depth limit, and tail calls past its trampoline depth.
+(test-group
+  (define (same-n n thunk)
+    (let ((first (thunk)))
+      (let loop ((i 1))
+        (cond ((= i n) first)
+              ((equal? (thunk) first) (loop (+ i 1)))
+              (else (list 'differs first))))))
+  (define (sum-until lst limit)
+    (let loop ((l lst) (acc 0))
+      (if (null? l) acc
+          (let ((x (car l)))
+            (if (> (+ acc x) limit) (car 'over) (loop (cdr l) (+ acc x)))))))
+  (=> (same-n 200 (lambda () (guard (e (#t (error-object-message e))) (sum-until '(1 2 3 4) 5))))
+      "Failed in car: wrong argument type")
+  (=> (same-n 200 (lambda () (sum-until '(1 2 3) 10))) 6)
+  (define (find-over lst k)
+    (call/cc (lambda (return)
+      (let loop ((l lst))
+        (cond ((null? l) #f)
+              ((> (car l) k) (return (car l)))
+              (else (loop (cdr l))))))))
+  (=> (same-n 200 (lambda () (list (find-over '(1 5 9) 4) (find-over '(1 2) 4)))) '(5 #f))
+  (define saved-k #f)
+  (define (grab) (call/cc (lambda (c) (set! saved-k c) 0)))
+  (define (reentry)
+    (let ((seen '()))
+      (let ((x (grab)))
+        (set! seen (cons x seen))
+        (if (< x 2) (saved-k (+ x 1)) (reverse seen)))))
+  (=> (same-n 150 reentry) '(0 1 2))
+  (define (count-down n) (if (= n 0) 0 (+ 1 (count-down (- n 1)))))
+  (=> (begin (same-n 150 (lambda () (count-down 10))) (count-down 100000)) 100000)
+  (define (ev? n) (if (= n 0) #t (od? (- n 1))))
+  (define (od? n) (if (= n 0) #f (ev? (- n 1))))
+  (=> (begin (same-n 150 (lambda () (ev? 10))) (list (ev? 100001) (od? 100001))) '(#f #t))
+  (define (args-and-values . xs)
+    (call-with-values (lambda () (apply values xs)) (lambda all (length all))))
+  (=> (same-n 150 (lambda () (args-and-values 1 2 3))) 3))

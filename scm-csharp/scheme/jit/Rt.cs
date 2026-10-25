@@ -356,10 +356,11 @@ public static class Rt
     // self at instruction ip (handled by Unwind). A capture from a callee
     // gets this frame's part of the stack added (none for a tail call) and
     // passes on, as does a continuation jump.
-    public static bool Filter(Exception e, Lambda self, int ip, object env, object[] slots)
+    public static bool Filter(Exception e, Lambda self, int ip, object env, object[] slots, object[]? vars)
     {
         if (e is FrameCapture fc)
         {
+            env = Frames(self, ip, env, vars);
             Instruction ins = self.codeArr[ip];
             if (ins.opcode == Opcode.CALLS || ins.opcode == Opcode.GCALLS)
             {
@@ -378,8 +379,10 @@ public static class Rt
     // An error raised in compiled self at instruction ip: calls the
     // innermost exception handler in place or, with none, returns the
     // FrameCapture that unwinds to the root.
-    public static Exception Unwind(Exception e, VM vm, Lambda self, int ip, object env, object[] slots, int depth)
+    public static Exception Unwind(Exception e, VM vm, Lambda self, int ip, object env, object[] slots,
+                                   object[]? vars, int depth)
     {
+        env = Frames(self, ip, env, vars);
         SchemeError err = e is InvalidCastException ice ? VM.CastError(self, ip + 1, ice) : (SchemeError)e;
         int d = self.cl.depths![ip];
         var stack = slots[..d];
@@ -388,6 +391,25 @@ public static class Rt
         var fc = new FrameCapture(err, self, ip + 1, env, 0);
         fc.Add(stack, null);
         return fc;
+    }
+
+    // The environment of compiled self at instruction ip: env, the
+    // innermost frame it has as an array, and the frames above it, which
+    // it keeps in locals (vars), built as arrays.
+    private static object Frames(Lambda self, int ip, object env, object[]? vars)
+    {
+        CodeList cl = self.cl;
+        int[]? shape = cl.shapes?[ip];
+        if (shape == null || vars == null) return env;
+        for (int k = cl.firstUnboxed; k < shape.Length; k++)
+        {
+            int n = shape[k];
+            var f = new object[n + 1];
+            f[0] = env;
+            Array.Copy(vars, cl.varBase![k], f, 1, n);
+            env = f;
+        }
+        return env;
     }
 
     // VM.SetupRaiseCall for compiled code: the handlers are called on top

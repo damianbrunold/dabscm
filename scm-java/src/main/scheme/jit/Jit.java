@@ -30,6 +30,8 @@ public final class Jit {
     public static final int tailDepth = Integer.getInteger("scm.jit.tailDepth", 200);
     static final boolean debug = Boolean.getBoolean("scm.jit.debug");
     static final boolean forceCompact = Boolean.getBoolean("scm.jit.compact");
+    // keeps all frames as arrays (no variables in locals), for comparison
+    static final boolean noUnbox = Boolean.getBoolean("scm.jit.nounbox");
     // scm.jit.stats=true prints counters at exit (approximate: not synchronized)
     public static final boolean stats = Boolean.getBoolean("scm.jit.stats");
     public static long statCompiled, statRejected, statNested, statCaptures, statErrors, statJumps,
@@ -354,6 +356,16 @@ public final class Jit {
         // the frame k levels above F(0)'s parent, ... (the closure's).
         int[] levels;
         int maxLevel, maxOuter, f0, o1, lvl;
+        // Frames above all closures (FN captures the frames of its level
+        // and below) are kept in locals, a variable each: V(k, j) is
+        // variable j of level k >= firstUnboxed. Rt.frames builds them as
+        // frames should the frame be unwound.
+        int[][] shapes;
+        int firstUnboxed, v0, totalVars;
+        int[] varBase;
+
+        boolean unboxed(int level) { return level >= firstUnboxed; }
+        int vLocal(int level, int var) { return v0 + varBase[level] + var; }
 
         int fLocal(int k) { return f0 + k; }
         int oLocal(int k) { return o1 + k - 1; }
@@ -367,23 +379,42 @@ public final class Jit {
             int[] work = new int[n];
             int top = 0;
             work[top++] = 0;
+            // the variable count of each level (shapes), the deepest FN
+            shapes = new int[n][];
+            shapes[0] = new int[0];
+            boolean shapesOk = true;
+            int maxFn = 0;
             while (top > 0) {
                 int i = work[--top];
                 int l = levels[i];
+                int[] shape = shapes[i];
                 Instruction ins = code[i];
                 int next = l, target = -1, targetLevel = l, ref = -1;
+                int[] nextShape = shape, targetShape = shape;
                 boolean falls = true;
                 switch (ins.opcode) {
-                    case ARGS: case ARGSDOT: next = 0; break;
-                    case EXTEND: next = l + 1; break;
-                    case POPENV: next = l - 1; break;
+                    case ARGS: next = 0; nextShape = new int[] { ins.i1 }; break;
+                    case ARGSDOT: next = 0; nextShape = new int[] { ins.i1 + 1 }; break;
+                    case EXTEND:
+                        next = l + 1;
+                        nextShape = java.util.Arrays.copyOf(shape, l + 2);
+                        nextShape[l + 1] = ins.i1;
+                        break;
+                    case POPENV: next = l - 1; nextShape = java.util.Arrays.copyOf(shape, Math.max(l, 0)); break;
+                    case FN: maxFn = Math.max(maxFn, l); break;
                     case LVAR: case LSET: case LVAR_CAR: case LVAR_CDR: case LVAR_VREF: ref = ins.i1; break;
                     case LVAR_NULL_FJUMP: case LVAR_PAIR_FJUMP: ref = ins.i1; target = ins.i3; break;
                     case LVAR_ADD_IMM: case LVAR_SUB_IMM: ref = (int) ((Long) ins.arg1 >> 16); break;
                     case JUMP: falls = false; target = ins.i1; break;
                     case FJUMP: case TJUMP: case TJUMP_KEEP: target = ins.i1; break;
                     case CONST_EQ_FJUMP: target = ins.i2; break;
-                    case LOOP: falls = false; target = ins.i3; targetLevel = l - ins.i2 + 1; ref = ins.i2; break;
+                    case LOOP:
+                        falls = false; target = ins.i3; targetLevel = l - ins.i2 + 1; ref = ins.i2;
+                        if (targetLevel >= 0 && targetLevel <= shape.length) {
+                            targetShape = java.util.Arrays.copyOf(shape, targetLevel + 1);
+                            targetShape[targetLevel] = ins.i1;
+                        }
+                        break;
                     case RETURN: case CALLJ: case GCALLJ: falls = false; break;
                     default: break;
                 }
@@ -391,14 +422,28 @@ public final class Jit {
                 if (next < 0 || (target >= 0 && targetLevel < 0)) return false;
                 if (next > maxLevel) maxLevel = next;
                 if (falls && i + 1 < n) {
-                    if (levels[i + 1] == -2) { levels[i + 1] = next; work[top++] = i + 1; }
+                    if (levels[i + 1] == -2) { levels[i + 1] = next; shapes[i + 1] = nextShape; work[top++] = i + 1; }
                     else if (levels[i + 1] != next) return false;
+                    else if (!java.util.Arrays.equals(shapes[i + 1], nextShape)) shapesOk = false;
                 }
                 if (target >= 0) {
-                    if (levels[target] == -2) { levels[target] = targetLevel; work[top++] = target; }
+                    if (levels[target] == -2) { levels[target] = targetLevel; shapes[target] = targetShape; work[top++] = target; }
                     else if (levels[target] != targetLevel) return false;
+                    else if (!java.util.Arrays.equals(shapes[target], targetShape)) shapesOk = false;
                 }
             }
+            // the unboxed levels and their variables
+            firstUnboxed = shapesOk && !noUnbox ? maxFn + 1 : Integer.MAX_VALUE;
+            varBase = new int[maxLevel + 2];
+            int base = 0;
+            for (int k = 0; k <= maxLevel; k++) {
+                varBase[k] = base;
+                if (!unboxed(k)) continue;
+                int max = 0;
+                for (int[] s : shapes) if (s != null && s.length > k) max = Math.max(max, s[k]);
+                base += max;
+            }
+            totalVars = base;
             return true;
         }
 
@@ -430,6 +475,7 @@ public final class Jit {
             if (!analyzeLevels()) return null;
             f0 = tExc + 1;
             o1 = f0 + maxLevel + 1;
+            v0 = o1 + maxOuter;
             target = new boolean[code.length];
             for (Instruction ins : code) {
                 switch (ins.opcode) {
@@ -443,6 +489,9 @@ public final class Jit {
             label = new int[code.length];
             for (int i = 0; i < code.length; i++) label[i] = c.newLabel();
             emitCall();
+            cl.shapes = shapes;
+            cl.varBase = varBase;
+            cl.firstUnboxed = firstUnboxed;
             if (c.size() > MAX_CODE) {
                 if (debug) {
                     java.util.TreeMap<String, Integer> h = new java.util.TreeMap<>();
@@ -495,7 +544,7 @@ public final class Jit {
             c.maxStack = 16;
             // every local has one type throughout (see ClassWriter), so
             // all are initialized here
-            String[] types = new String[oLocal(maxOuter) + 1];
+            String[] types = new String[v0 + totalVars];
             types[0] = cls; types[VM_] = VMC; types[SELF] = LAM; types[FRAME] = OBJA; types[DEPTH] = "I";
             types[ENV] = OBJ;
             for (int k = 0; k < slots; k++) types[slot(k)] = OBJ;
@@ -503,6 +552,7 @@ public final class Jit {
             types[tIp] = "I"; types[tExc] = "java/lang/Throwable";
             for (int k = 0; k <= maxLevel; k++) types[fLocal(k)] = OBJA;
             for (int k = 1; k <= maxOuter; k++) types[oLocal(k)] = OBJA;
+            for (int k = 0; k < totalVars; k++) types[v0 + k] = OBJ;
             c.locals = types;
             int initStart = c.size();
             for (int k = ENV; k < types.length; k++) {
@@ -558,9 +608,18 @@ public final class Jit {
             for (int k = 0; k < slots; k++) {
                 c.op(DUP); c.iconst(k); c.aload(slot(k)); c.op(AASTORE);
             }
+            if (totalVars == 0) {
+                c.op(ACONST_NULL);
+            } else {
+                c.iconst(totalVars);
+                c.type(ANEWARRAY, OBJ);
+                for (int k = 0; k < totalVars; k++) {
+                    c.op(DUP); c.iconst(k); c.aload(v0 + k); c.op(AASTORE);
+                }
+            }
             c.iload(DEPTH);
             c.invoke(INVOKESTATIC, RT, "unwind",
-                     "(Ljava/lang/Throwable;Lscheme/VM;Lscheme/Lambda;IL" + OBJ + ";" + OBJA + "I)Ljava/lang/Throwable;");
+                     "(Ljava/lang/Throwable;Lscheme/VM;Lscheme/Lambda;IL" + OBJ + ";" + OBJA + OBJA + "I)Ljava/lang/Throwable;");
             c.op(ATHROW);
             if (stats) countBytes("stubs+handler", c.size() - stubsStart);
         }
@@ -584,6 +643,8 @@ public final class Jit {
         }
 
         void getenv(int frame, int var) {
+            int level = lvl - frame;
+            if (level >= 0 && unboxed(level)) { c.aload(vLocal(level, var)); return; }
             envFrame(frame);
             c.iconst(var + 1);
             c.op(AALOAD);
@@ -632,6 +693,10 @@ public final class Jit {
                     getenv(ins.i1, ins.i2); store(d);
                     return false;
                 case LSET:
+                    if (lvl - ins.i1 >= 0 && unboxed(lvl - ins.i1)) {
+                        load(d - 1); rt("pv", "(" + OBJD + ")" + OBJD); c.astore(vLocal(lvl - ins.i1, ins.i2));
+                        return false;
+                    }
                     envFrame(ins.i1); c.iconst(ins.i2 + 1); load(d - 1);
                     rt("pv", "(" + OBJD + ")" + OBJD);
                     c.op(AASTORE);
@@ -677,6 +742,10 @@ public final class Jit {
                 }
                 case EXTEND: {
                     int n = ins.i1;
+                    if (unboxed(lvl + 1)) {
+                        for (int k = 0; k < n; k++) { load(d - n + k); c.astore(vLocal(lvl + 1, k)); }
+                        return false;
+                    }
                     c.iconst(n + 1); c.type(ANEWARRAY, OBJ);
                     c.op(DUP); c.iconst(0); c.aload(ENV); c.op(AASTORE);
                     for (int k = 1; k <= n; k++) { c.op(DUP); c.iconst(k); load(d - n + k - 1); c.op(AASTORE); }
@@ -685,11 +754,17 @@ public final class Jit {
                     return false;
                 }
                 case POPENV:
-                    c.aload(fLocal(lvl - 1)); c.astore(ENV);
+                    if (!unboxed(lvl - 1)) { c.aload(fLocal(lvl - 1)); c.astore(ENV); }
                     return false;
                 case LOOP: {
                     int n = ins.i1;
                     c.aload(VM_); rt("checkTerm", "(Lscheme/VM;)V");
+                    int newLevel = lvl - ins.i2 + 1;
+                    if (unboxed(newLevel)) {
+                        for (int k = 0; k < n; k++) { load(d - n + k); c.astore(vLocal(newLevel, k)); }
+                        c.jump(GOTO, label[ins.i3]);
+                        return false;
+                    }
                     c.iconst(n + 1); c.type(ANEWARRAY, OBJ);
                     c.op(DUP); c.iconst(0);
                     frameAt(ins.i2);

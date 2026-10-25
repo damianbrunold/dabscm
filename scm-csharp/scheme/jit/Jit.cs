@@ -30,6 +30,8 @@ public static class Jit
     public static readonly int TailDepth = EnvInt("SCM_JIT_TAILDEPTH", 200);
     internal static readonly bool Debug = Env("SCM_JIT_DEBUG") == "true";
     internal static readonly bool ForceCompact = Env("SCM_JIT_COMPACT") == "true";
+    // keeps all frames as arrays (no variables in locals), for comparison
+    internal static readonly bool NoUnbox = Env("SCM_JIT_NOUNBOX") == "true";
     // counters (approximate: not synchronized)
     public static readonly bool Stats = Env("SCM_JIT_STATS") == "true";
     public static long statCompiled, statRejected, statNested, statCaptures, statErrors, statJumps,
@@ -316,6 +318,18 @@ public static class Jit
         int[] depths = null!;
         int[] levels = null!;
         int maxLevel, maxOuter, lvl;
+        // Frames above all closures (FN captures the frames of its level
+        // and below) are kept in locals, a variable each: V(k, j) is
+        // variable j of level k >= firstUnboxed. Rt.Frames builds them as
+        // frames should the frame be unwound.
+        int[]?[] shapes = null!;
+        int firstUnboxed, totalVars;
+        int[] varBase = null!;
+        LocalBuilder[] vLocals = null!;
+        LocalBuilder tVars = null!;
+
+        bool Unboxed(int level) => level >= firstUnboxed;
+        LocalBuilder V(int level, int var) => vLocals[varBase[level] + var];
         bool[] target = null!;
         TypeBuilder tb = null!;
         ILGenerator il = null!;
@@ -394,6 +408,9 @@ public static class Jit
                 for (int k = 0; k <= maxLevel; k++) fLocals[k] = il.DeclareLocal(typeof(object[]));
                 oLocals = new LocalBuilder[maxOuter + 1];
                 for (int k = 1; k <= maxOuter; k++) oLocals[k] = il.DeclareLocal(typeof(object[]));
+                vLocals = new LocalBuilder[totalVars];
+                for (int k = 0; k < totalVars; k++) vLocals[k] = il.DeclareLocal(typeof(object));
+                tVars = il.DeclareLocal(typeof(object[]));
                 tF = il.DeclareLocal(typeof(object));
                 tLam = il.DeclareLocal(typeof(Lambda));
                 tJit = il.DeclareLocal(typeof(JitCode));
@@ -404,6 +421,9 @@ public static class Jit
                 tSlots = il.DeclareLocal(typeof(object[]));
                 tExc = il.DeclareLocal(typeof(Exception));
                 EmitBody();
+                cl.shapes = shapes;
+                cl.varBase = varBase;
+                cl.firstUnboxed = firstUnboxed;
                 if (il.ILOffset > MaxIL && !compact)
                 {
                     tooLarge = true;
@@ -450,18 +470,32 @@ public static class Jit
             var work = new int[n];
             int top = 0;
             work[top++] = 0;
+            // the variable count of each level (shapes), the deepest FN
+            shapes = new int[]?[n];
+            shapes[0] = System.Array.Empty<int>();
+            bool shapesOk = true;
+            int maxFn = 0;
             while (top > 0)
             {
                 int i = work[--top];
                 int l = levels[i];
+                int[] shape = shapes[i]!;
                 Instruction ins = code[i];
                 int next = l, tgt = -1, targetLevel = l, refd = -1;
+                int[] nextShape = shape, targetShape = shape;
                 bool falls = true;
                 switch (ins.opcode)
                 {
-                    case Opcode.ARGS: case Opcode.ARGSDOT: next = 0; break;
-                    case Opcode.EXTEND: next = l + 1; break;
-                    case Opcode.POPENV: next = l - 1; break;
+                    case Opcode.ARGS: next = 0; nextShape = new[] { ins.i1 }; break;
+                    case Opcode.ARGSDOT: next = 0; nextShape = new[] { ins.i1 + 1 }; break;
+                    case Opcode.EXTEND:
+                        next = l + 1;
+                        nextShape = new int[l + 2];
+                        System.Array.Copy(shape, nextShape, Math.Min(shape.Length, l + 1));
+                        nextShape[l + 1] = ins.i1;
+                        break;
+                    case Opcode.POPENV: next = l - 1; nextShape = shape[..Math.Max(l, 0)]; break;
+                    case Opcode.FN: maxFn = Math.Max(maxFn, l); break;
                     case Opcode.LVAR: case Opcode.LSET: case Opcode.LVAR_CAR: case Opcode.LVAR_CDR:
                     case Opcode.LVAR_VREF: refd = ins.i1; break;
                     case Opcode.LVAR_NULL_FJUMP: case Opcode.LVAR_PAIR_FJUMP: refd = ins.i1; tgt = ins.i3; break;
@@ -469,7 +503,15 @@ public static class Jit
                     case Opcode.JUMP: falls = false; tgt = ins.i1; break;
                     case Opcode.FJUMP: case Opcode.TJUMP: case Opcode.TJUMP_KEEP: tgt = ins.i1; break;
                     case Opcode.CONST_EQ_FJUMP: tgt = ins.i2; break;
-                    case Opcode.LOOP: falls = false; tgt = ins.i3; targetLevel = l - ins.i2 + 1; refd = ins.i2; break;
+                    case Opcode.LOOP:
+                        falls = false; tgt = ins.i3; targetLevel = l - ins.i2 + 1; refd = ins.i2;
+                        if (targetLevel >= 0 && targetLevel <= shape.Length)
+                        {
+                            targetShape = new int[targetLevel + 1];
+                            System.Array.Copy(shape, targetShape, targetLevel);
+                            targetShape[targetLevel] = ins.i1;
+                        }
+                        break;
                     case Opcode.RETURN: case Opcode.CALLJ: case Opcode.GCALLJ: falls = false; break;
                 }
                 if (refd > l) maxOuter = Math.Max(maxOuter, refd - l);
@@ -477,15 +519,30 @@ public static class Jit
                 if (next > maxLevel) maxLevel = next;
                 if (falls && i + 1 < n)
                 {
-                    if (levels[i + 1] == -2) { levels[i + 1] = next; work[top++] = i + 1; }
+                    if (levels[i + 1] == -2) { levels[i + 1] = next; shapes[i + 1] = nextShape; work[top++] = i + 1; }
                     else if (levels[i + 1] != next) return false;
+                    else if (!shapes[i + 1]!.AsSpan().SequenceEqual(nextShape)) shapesOk = false;
                 }
                 if (tgt >= 0)
                 {
-                    if (levels[tgt] == -2) { levels[tgt] = targetLevel; work[top++] = tgt; }
+                    if (levels[tgt] == -2) { levels[tgt] = targetLevel; shapes[tgt] = targetShape; work[top++] = tgt; }
                     else if (levels[tgt] != targetLevel) return false;
+                    else if (!shapes[tgt]!.AsSpan().SequenceEqual(targetShape)) shapesOk = false;
                 }
             }
+            // the unboxed levels and their variables
+            firstUnboxed = shapesOk && !NoUnbox ? maxFn + 1 : int.MaxValue;
+            varBase = new int[maxLevel + 2];
+            int b = 0;
+            for (int k = 0; k <= maxLevel; k++)
+            {
+                varBase[k] = b;
+                if (!Unboxed(k)) continue;
+                int max = 0;
+                foreach (var s in shapes) if (s != null && s.Length > k) max = Math.Max(max, s[k]);
+                b += max;
+            }
+            totalVars = b;
             return true;
         }
 
@@ -498,6 +555,8 @@ public static class Jit
 
         void Getenv(int frame, int var)
         {
+            int level = lvl - frame;
+            if (level >= 0 && Unboxed(level)) { il.Emit(OpCodes.Ldloc, V(level, var)); return; }
             FrameAt(frame);
             Ldc(var + 1);
             il.Emit(OpCodes.Ldelem_Ref);
@@ -565,11 +624,25 @@ public static class Jit
             il.Emit(OpCodes.Stloc, tExc);
             NewArray(0, slots.Length, false);
             il.Emit(OpCodes.Stloc, tSlots);
+            if (totalVars == 0)
+            {
+                il.Emit(OpCodes.Ldnull);
+            }
+            else
+            {
+                Ldc(totalVars); il.Emit(OpCodes.Newarr, typeof(object));
+                for (int k = 0; k < totalVars; k++)
+                {
+                    il.Emit(OpCodes.Dup); Ldc(k); il.Emit(OpCodes.Ldloc, vLocals[k]); il.Emit(OpCodes.Stelem_Ref);
+                }
+            }
+            il.Emit(OpCodes.Stloc, tVars);
             il.Emit(OpCodes.Ldloc, tExc);
             il.Emit(OpCodes.Ldarg_2);
             il.Emit(OpCodes.Ldloc, ipL);
             il.Emit(OpCodes.Ldloc, env);
             il.Emit(OpCodes.Ldloc, tSlots);
+            il.Emit(OpCodes.Ldloc, tVars);
             Rt("Filter");
             il.BeginCatchBlock(null);
             il.Emit(OpCodes.Pop);
@@ -579,6 +652,7 @@ public static class Jit
             il.Emit(OpCodes.Ldloc, ipL);
             il.Emit(OpCodes.Ldloc, env);
             il.Emit(OpCodes.Ldloc, tSlots);
+            il.Emit(OpCodes.Ldloc, tVars);
             il.Emit(OpCodes.Ldarg, 4);
             Rt("Unwind");
             il.Emit(OpCodes.Throw);
@@ -624,6 +698,11 @@ public static class Jit
                     Getenv(ins.i1, ins.i2); Store(d);
                     return false;
                 case Opcode.LSET:
+                    if (lvl - ins.i1 >= 0 && Unboxed(lvl - ins.i1))
+                    {
+                        Load(d - 1); Rt("Pv"); il.Emit(OpCodes.Stloc, V(lvl - ins.i1, ins.i2));
+                        return false;
+                    }
                     FrameAt(ins.i1); Ldc(ins.i2 + 1); Load(d - 1); Rt("Pv"); il.Emit(OpCodes.Stelem_Ref);
                     return false;
                 case Opcode.GVAR:
@@ -669,6 +748,11 @@ public static class Jit
                 case Opcode.EXTEND:
                 {
                     int n = ins.i1;
+                    if (Unboxed(lvl + 1))
+                    {
+                        for (int k = 0; k < n; k++) { Load(d - n + k); il.Emit(OpCodes.Stloc, V(lvl + 1, k)); }
+                        return false;
+                    }
                     Ldc(n + 1); il.Emit(OpCodes.Newarr, typeof(object));
                     il.Emit(OpCodes.Dup); Ldc(0); il.Emit(OpCodes.Ldloc, env); il.Emit(OpCodes.Stelem_Ref);
                     for (int k = 1; k <= n; k++) { il.Emit(OpCodes.Dup); Ldc(k); Load(d - n + k - 1); il.Emit(OpCodes.Stelem_Ref); }
@@ -677,12 +761,19 @@ public static class Jit
                     return false;
                 }
                 case Opcode.POPENV:
-                    il.Emit(OpCodes.Ldloc, fLocals[lvl - 1]); il.Emit(OpCodes.Stloc, env);
+                    if (!Unboxed(lvl - 1)) { il.Emit(OpCodes.Ldloc, fLocals[lvl - 1]); il.Emit(OpCodes.Stloc, env); }
                     return false;
                 case Opcode.LOOP:
                 {
                     int n = ins.i1;
                     il.Emit(OpCodes.Ldarg_1); Rt("CheckTerm");
+                    int newLevel = lvl - ins.i2 + 1;
+                    if (Unboxed(newLevel))
+                    {
+                        for (int k = 0; k < n; k++) { Load(d - n + k); il.Emit(OpCodes.Stloc, V(newLevel, k)); }
+                        il.Emit(OpCodes.Br, label[ins.i3]);
+                        return false;
+                    }
                     Ldc(n + 1); il.Emit(OpCodes.Newarr, typeof(object));
                     il.Emit(OpCodes.Dup); Ldc(0); FrameAt(ins.i2); il.Emit(OpCodes.Stelem_Ref);
                     for (int k = 1; k <= n; k++) { il.Emit(OpCodes.Dup); Ldc(k); Load(d - n + k - 1); il.Emit(OpCodes.Stelem_Ref); }

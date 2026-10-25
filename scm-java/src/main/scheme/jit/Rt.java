@@ -353,8 +353,10 @@ public final class Rt {
     // from a callee gets this frame's part of the stack added (none for a
     // tail call); an error raised here calls the innermost exception
     // handler in place or, with none, unwinds to the root.
-    public static Throwable unwind(Throwable t, VM vm, Lambda self, int ip, Object env, Object[] slots, int depth) {
+    public static Throwable unwind(Throwable t, VM vm, Lambda self, int ip, Object env, Object[] slots,
+                                   Object[] vars, int depth) {
         if (t instanceof ContinuationJump) return t;
+        env = frames(self, ip, env, vars);
         Instruction ins = self.codeArr[ip];
         int d = self.cl.depths[ip];
         if (t instanceof FrameCapture) {
@@ -377,6 +379,23 @@ public final class Rt {
         FrameCapture fc = new FrameCapture(err, self, ip + 1, env, 0);
         fc.add(stack, null);
         return fc;
+    }
+
+    // The environment of compiled self at instruction ip: env, the
+    // innermost frame it has as an array, and the frames above it, which
+    // it keeps in locals (vars), built as arrays.
+    static Object frames(Lambda self, int ip, Object env, Object[] vars) {
+        CodeList cl = self.cl;
+        int[] shape = cl.shapes == null ? null : cl.shapes[ip];
+        if (shape == null || vars == null) return env;
+        for (int k = cl.firstUnboxed; k < shape.length; k++) {
+            int n = shape[k];
+            Object[] f = new Object[n + 1];
+            f[0] = env;
+            System.arraycopy(vars, cl.varBase[k], f, 1, n);
+            env = f;
+        }
+        return env;
     }
 
     // VM.setupRaiseCall for compiled code: the handlers are called on top
