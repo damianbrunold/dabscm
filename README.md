@@ -73,7 +73,7 @@ scm                 # start a REPL (in `user main`, REPL auto-imports)
 ### Java JIT
 
 The Java implementation compiles a procedure to JVM bytecode once the
-interpreter has called it 1000 times; HotSpot then compiles that bytecode
+interpreter has called it 100 times; HotSpot then compiles that bytecode
 like any Java code. Long-running programs (servers, large batch runs)
 gain the most, short runs hardly at all. System properties control it:
 
