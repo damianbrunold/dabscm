@@ -6,10 +6,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Arrays;
 import scheme.primitives.*;
+import scheme.jit.Activation;
+import scheme.jit.ContinuationJump;
+import scheme.jit.FrameCapture;
+import scheme.jit.Jit;
+import scheme.jit.Rt;
+import scheme.jit.TailCall;
 
 public class VM {
 
-    private Modules modules;
+    public final Modules modules;
 
     // The VM state. While execute runs it lives in execute's locals; these
     // fields hold it only where code outside the dispatch loop needs it
@@ -30,22 +36,22 @@ public class VM {
     public Object exceptionHandlers = Value.NIL;
     public static ThreadLocal<VM> current = new ThreadLocal<>();
 
-    private final Lambda raiseReturnedLambda;
+    public final Lambda raiseReturnedLambda;
 
     // Static primitive instances for intrinsic fallbacks (variable-arity / edge-case paths)
-    private static final PrimitiveAdd S_ADD = new PrimitiveAdd();
-    private static final PrimitiveSub S_SUB = new PrimitiveSub();
-    private static final PrimitiveMul S_MUL = new PrimitiveMul();
-    private static final PrimitiveDiv S_DIV = new PrimitiveDiv();
-    private static final PrimitiveNumequal S_NUM_EQ = new PrimitiveNumequal();
-    private static final PrimitiveNumless S_NUM_LT = new PrimitiveNumless();
-    private static final PrimitiveNumgreater S_NUM_GT = new PrimitiveNumgreater();
-    private static final PrimitiveNumlessequal S_NUM_LTE = new PrimitiveNumlessequal();
-    private static final PrimitiveNumgreaterequal S_NUM_GTE = new PrimitiveNumgreaterequal();
+    public static final PrimitiveAdd S_ADD = new PrimitiveAdd();
+    public static final PrimitiveSub S_SUB = new PrimitiveSub();
+    public static final PrimitiveMul S_MUL = new PrimitiveMul();
+    public static final PrimitiveDiv S_DIV = new PrimitiveDiv();
+    public static final PrimitiveNumequal S_NUM_EQ = new PrimitiveNumequal();
+    public static final PrimitiveNumless S_NUM_LT = new PrimitiveNumless();
+    public static final PrimitiveNumgreater S_NUM_GT = new PrimitiveNumgreater();
+    public static final PrimitiveNumlessequal S_NUM_LTE = new PrimitiveNumlessequal();
+    public static final PrimitiveNumgreaterequal S_NUM_GTE = new PrimitiveNumgreaterequal();
 
     // The Scheme name of an opcode that can fail with a wrong argument type,
     // for the error message; null for the VM's internal opcodes.
-    private static String opcodeErrorName(Opcode op) {
+    public static String opcodeErrorName(Opcode op) {
         switch (op) {
             case CAR: case LVAR_CAR: return "car";
             case CDR: case LVAR_CDR: return "cdr";
@@ -73,7 +79,7 @@ public class VM {
 
     // "Failed in <name>: wrong argument type", with the offending value as
     // irritant when the cast site reported it (WrongTypeException).
-    private static SchemeError wrongArgumentTypeError(SourcePos pos, String name, ClassCastException e) {
+    public static SchemeError wrongArgumentTypeError(SourcePos pos, String name, ClassCastException e) {
         String message = "Failed in " + name + ": wrong argument type";
         if (!(e instanceof WrongTypeException))
             return new SchemeError(pos, new ErrorObject(message, new Object[0]));
@@ -204,7 +210,7 @@ public class VM {
 
     // The binding cell of a global variable, cached in the instruction
     // (GVAR, GCALLS, GCALLJ).
-    private Cell globalCell(Instruction instruction, Object symbolObj, String moduleName) {
+    public Cell globalCell(Instruction instruction, Object symbolObj, String moduleName) {
         Cell cell = instruction.cachedCell;
         if (cell != null && instruction.cachedCellGeneration == modules.cacheGeneration)
             return cell;
@@ -228,7 +234,7 @@ public class VM {
     // Cold paths of the dispatch loop, kept out of execute so that the JIT
     // compiles the loop itself well.
 
-    private void globalSet(Instruction instruction, Object value) {
+    public void globalSet(Instruction instruction, Object value) {
         Module module = modules.getModuleRequired(instruction.pos, (String) instruction.arg2);
         String symbol = Value.asSymbol(instruction.arg1);
         if (Scheme.strictImports && "user program".equals(module.getName())) {
@@ -247,7 +253,7 @@ public class VM {
         }
     }
 
-    private static SchemeError arityError(Lambda fn, Instruction instruction, int nargs, String expected) {
+    public static SchemeError arityError(Lambda fn, Instruction instruction, int nargs, String expected) {
         return new SchemeError(instruction.pos,
                                (fn.name != null ? fn.name + " " : "")
                                + "Wrong number of arguments: "
@@ -297,7 +303,7 @@ public class VM {
     }
 
     // The two-argument arithmetic beyond fixnums without overflow.
-    private static Object add2(Object ia, Object ib) {
+    public static Object add2(Object ia, Object ib) {
         if (Value.isInteger(ia) && Value.isInteger(ib)) return IntegerMath.genericAdd(ia, ib);
         if (ia instanceof Double || ib instanceof Double) {
             if (ia instanceof Complex || ib instanceof Complex) return Complex.add(ia, ib);
@@ -307,7 +313,7 @@ public class VM {
         return Rational.add(ia, ib);
     }
 
-    private static Object sub2(Object ia, Object ib) {
+    public static Object sub2(Object ia, Object ib) {
         if (Value.isInteger(ia) && Value.isInteger(ib)) return IntegerMath.genericSub(ia, ib);
         if (ia instanceof Double || ib instanceof Double) {
             if (ia instanceof Complex || ib instanceof Complex) return Complex.sub(ia, ib);
@@ -317,7 +323,7 @@ public class VM {
         return Rational.sub(ia, ib);
     }
 
-    private static Object mul2(Object ia, Object ib) {
+    public static Object mul2(Object ia, Object ib) {
         if (Value.isInteger(ia) && Value.isInteger(ib)) return IntegerMath.genericMul(ia, ib);
         if (ia instanceof Double || ib instanceof Double) {
             if (ia instanceof Complex || ib instanceof Complex) return Complex.mul(ia, ib);
@@ -327,7 +333,7 @@ public class VM {
         return Rational.mul(ia, ib);
     }
 
-    private static Object div2(SourcePos pos, Object ia, Object ib) {
+    public static Object div2(SourcePos pos, Object ia, Object ib) {
         if (ia instanceof Long && ib instanceof Long) {
             if ((long)(Long)ib == 0) throw new SchemeError(pos, "/: Division by zero");
             return Rational.div(ia, ib);
@@ -342,7 +348,7 @@ public class VM {
         return Rational.div(ia, ib);
     }
 
-    private static Object negate(Object ia) {
+    public static Object negate(Object ia) {
         if (ia instanceof Long) return IntegerMath.negate((long)(Long)ia);
         if (Value.isBigInteger(ia)) return IntegerMath.genericNegate(ia);
         if (ia instanceof Double) return -(double)(Double)ia;
@@ -351,7 +357,7 @@ public class VM {
     }
 
     // =, <, >, <=, >= on two numbers that are not both fixnums.
-    private static boolean compare2(Opcode op, SourcePos pos, Object ia, Object ib) {
+    public static boolean compare2(Opcode op, SourcePos pos, Object ia, Object ib) {
         if (op == Opcode.NUM_EQ) {
             if (Value.isInteger(ia) && Value.isInteger(ib)) return IntegerMath.genericEquals(ia, ib);
             if (ia instanceof Double && ib instanceof Double) return (double)(Double)ia == (double)(Double)ib;
@@ -378,7 +384,7 @@ public class VM {
     }
 
     // The arguments of (apply f a ... list) from its rest argument.
-    private static List<Object> flattenApplyArgs(Instruction instruction, Object restObj) {
+    static List<Object> flattenApplyArgs(Instruction instruction, Object restObj) {
         List<Object> args = new ArrayList<>();
         if (restObj == Value.NIL)
             throw new SchemeError(instruction.pos, "apply: not enough arguments");
@@ -402,30 +408,108 @@ public class VM {
     }
 
     // The value stack of a continuation, restored by SETCC. Sharing the
-    // ReturnAddress entries is safe: they are never modified.
-    private static final class Continuation {
-        final Object[] stack;
+    // ReturnAddress entries is safe: they are never modified. A full
+    // continuation (act null) holds the whole stack. An escape continuation
+    // holds the stack segment of the nested activation act it was captured
+    // in and can be invoked while act is alive (scheme.jit.Activation).
+    // The code of a continuation procedure: its frame's parent holds the
+    // Continuation.
+    static final CodeList CONTINUATION_CODE = new CodeList();
+    static {
+        CONTINUATION_CODE.add(new Instruction(Opcode.ARGMV));
+        CONTINUATION_CODE.add(new Instruction(Opcode.LVAR, 1, 0));
+        CONTINUATION_CODE.add(new Instruction(Opcode.SETCC));
+        CONTINUATION_CODE.add(new Instruction(Opcode.LVAR, 0, 0));
+        CONTINUATION_CODE.add(new Instruction(Opcode.RETURN));
+        JitBuiltins.attach(CONTINUATION_CODE, new JitBuiltins.ContinuationCode());
+    }
 
-        Continuation(Object[] stack, int sp) {
-            this.stack = Arrays.copyOf(stack, sp);
-        }
+    static Lambda continuationProcedure(Continuation k) {
+        // Opt B: env frame must be Object[]
+        return new Lambda(new Object[] { Value.NIL, k }, CONTINUATION_CODE);
     }
 
     // The continuation of the current stack as a procedure (CC).
     private static Lambda captureContinuation(Object[] stack, int sp) {
-        Continuation capturedStack = new Continuation(stack, sp);
-        List<Instruction> newcode = new ArrayList<>();
-        newcode.add(new Instruction(Opcode.ARGMV));
-        newcode.add(new Instruction(Opcode.LVAR, 1, 0));
-        newcode.add(new Instruction(Opcode.SETCC));
-        newcode.add(new Instruction(Opcode.LVAR, 0, 0));
-        newcode.add(new Instruction(Opcode.RETURN));
-        // Opt B: env frame must be Object[]
-        Object capturedEnv = new Object[] { Value.NIL, capturedStack };
-        return new Lambda(capturedEnv, newcode);
+        return continuationProcedure(new Continuation(stack, sp));
     }
 
-    private Object primaryValue(Object value) {
+    // An escape continuation of the nested activation a (CC/ECC). The
+    // activation keeps it (weakly) to turn it into a full continuation if
+    // the activation is unwound into the root (rebuild).
+    private static Lambda captureEscape(Activation a, Object[] stack, int sp) {
+        return continuationProcedure(escape(a, new Continuation(stack, a.base + 1, sp, a)));
+    }
+
+    static Continuation escape(Activation a, Continuation k) {
+        if (Jit.stats) Jit.statEscapes++;
+        ArrayList<Object> escapes = a.escapes;
+        if (escapes == null) a.escapes = escapes = new ArrayList<>();
+        if (escapes.size() >= 64 && Integer.bitCount(escapes.size()) == 1)
+            escapes.removeIf(r -> ((java.lang.ref.WeakReference<?>) r).get() == null);
+        escapes.add(new java.lang.ref.WeakReference<>(k));
+        return k;
+    }
+
+    // SETCC of a continuation that belongs to another activation than a.
+    static RuntimeException continuationJump(Continuation k, Activation a, Lambda fn, int ip, Object env) {
+        if (Jit.stats) Jit.statJumps++;
+        if (k.act == null) return new ContinuationJump(k, a.nearestRoot(), fn, ip, env);
+        if (!k.act.alive)
+            return new SchemeError((SourcePos) null,
+                "continuation invoked outside of its extent: it was captured as an escape "
+                + "continuation across compiled code (scm.jit=off disables the JIT)");
+        return new ContinuationJump(k, k.act, fn, ip, env);
+    }
+
+    // CC in a nested activation: unwinds to the root activation, which
+    // rebuilds the stack and executes the CC at ip again.
+    private static FrameCapture captureRequest(Activation a, Lambda fn, int ip, Object env, int nargs,
+                                               Object[] stack, int sp) {
+        if (Jit.stats) Jit.statCaptures++;
+        FrameCapture fc = new FrameCapture(FrameCapture.CAPTURE, fn, ip, env, nargs);
+        fc.add(Arrays.copyOfRange(stack, a.base + 1, sp), a);
+        return fc;
+    }
+
+    // The escape continuations of the unwound activation a become full
+    // continuations: the stack below a's segment (stack[0..sp]) is what it
+    // was when they were captured, the callers being suspended since.
+    private static void promoteEscapes(Activation a, Object[] stack, int sp) {
+        if (a.escapes == null) return;
+        for (Object r : a.escapes) {
+            Continuation k = (Continuation) ((java.lang.ref.WeakReference<?>) r).get();
+            if (k == null || k.act != a) continue;
+            Object[] full = new Object[sp + k.stack.length];
+            System.arraycopy(stack, 0, full, 0, sp);
+            System.arraycopy(k.stack, 0, full, sp, k.stack.length);
+            k.stack = full;
+            k.act = null;
+        }
+        a.escapes = null;
+    }
+
+    // A compiled lambda called from the interpreter with the argcount
+    // values at stack[sp..] (popped by the caller). retIp >= 0 for a
+    // non-tail call: its return address, should the callee be unwound.
+    private Object callJit(Lambda lam, Object[] stack, int sp, int argcount, int depth,
+                           int retIp, Lambda fn, Object env) {
+        Object[] frame = new Object[argcount + 1];
+        for (int i = 0; i < argcount; i++) {
+            frame[i + 1] = stack[sp + i];
+            stack[sp + i] = null;
+        }
+        this.sp = sp;
+        try {
+            Object r = lam.cl.jit.call(this, lam, frame, depth + 1);
+            return r instanceof TailCall ? Rt.trampoline(this, r, depth) : r;
+        } catch (FrameCapture fc) {
+            if (retIp >= 0) fc.add(new Object[] { new ReturnAddress(retIp, fn, env) }, null);
+            throw fc;
+        }
+    }
+
+    public static Object primaryValue(Object value) {
         if (Value.isValues(value)) {
             Object[] vals = Value.asValues(value).values;
             if (vals.length == 0) return value; // empty values = unspecified, pass through
@@ -436,46 +520,105 @@ public class VM {
 
     private List<SchemeCallFrame> extractCallStack() {
         List<SchemeCallFrame> frames = new ArrayList<>();
-        SourcePos currentPos = (fn != null && ip > 0 && ip - 1 < fn.code.size())
-            ? fn.code.get(ip - 1).pos : null;
+        SourcePos currentPos = (fn != null && ip > 0 && ip - 1 < fn.codeArr.length)
+            ? fn.codeArr[ip - 1].pos : null;
         frames.add(new SchemeCallFrame(fn != null ? fn.name : null, currentPos));
         for (int i = sp - 1; i >= 0; i--) {
             if (stackArr[i] instanceof ReturnAddress) {
                 ReturnAddress addr = (ReturnAddress) stackArr[i];
-                SourcePos callPos = (addr.ip > 0 && addr.ip - 1 < addr.fn.code.size())
-                    ? addr.fn.code.get(addr.ip - 1).pos : null;
+                SourcePos callPos = (addr.ip > 0 && addr.ip - 1 < addr.fn.codeArr.length)
+                    ? addr.fn.codeArr[addr.ip - 1].pos : null;
                 frames.add(new SchemeCallFrame(addr.fn.name, callPos));
             }
         }
         return frames;
     }
 
-    @SuppressWarnings("unchecked")
+    // "wrong argument type" for a ClassCastException in fn's instruction
+    // before ip (no opcode changes ip or fn before it can fail a cast).
+    public static SchemeError castError(Lambda fn, int ip, ClassCastException cce) {
+        Instruction failed = fn != null && ip > 0 && ip <= fn.codeArr.length ? fn.codeArr[ip - 1] : null;
+        String name = "VM";
+        if (failed != null) {
+            name = failed.opcode == Opcode.CXR ? (String) failed.arg2
+                 : opcodeErrorName(failed.opcode);
+            if (name == null) name = failed.opcode + " instruction";
+        }
+        return wrongArgumentTypeError(failed != null ? failed.pos : null, name, cce);
+    }
+
+    // The current activation of the interpreter loop (or of a JitBuiltins
+    // escape) and the thread it runs for.
+    Activation act;
+    public SchemeThread thread;
+
+    int sp() { return sp; }
+
     public Object execute(Lambda func) {
         VM savedCurrent = VM.current.get();
         VM.current.set(this);
+        Activation savedAct = act;
         try {
-        if (SchemeThread.currentThread.get() == null) {
-            SchemeThread primordial = new SchemeThread(null, modules);
-            primordial.name = Value.intern("primordial");
-            primordial.state = SchemeThread.State.STARTED;
-            SchemeThread.currentThread.set(primordial);
+            if (SchemeThread.currentThread.get() == null) {
+                SchemeThread primordial = new SchemeThread(null, modules);
+                primordial.name = Value.intern("primordial");
+                primordial.state = SchemeThread.State.STARTED;
+                SchemeThread.currentThread.set(primordial);
+            }
+            thread = SchemeThread.currentThread.get();
+            int savedSp = sp;
+            Object savedWinders = winders;
+            Object savedExceptionHandlers = exceptionHandlers;
+            Activation a = new Activation(savedAct, sp, 0, true);
+            act = a;
+            push(new ReturnAddress(func.code.size(), func, env));
+            try {
+                return run(a, func, this.env, 0, sp, savedWinders, savedExceptionHandlers);
+            } finally {
+                a.alive = false;
+            }
+        } finally {
+            act = savedAct;
+            VM.current.set(savedCurrent);
         }
-        SchemeThread currentThread = SchemeThread.currentThread.get();
-        int savedSp = sp;
-        Object savedWinders = winders;
-        Object savedExceptionHandlers = exceptionHandlers;
-        push(new ReturnAddress(func.code.size(), func, env));
-        Lambda fn = func;
+    }
+
+    // A lambda called from compiled code (or Rt), run by a nested
+    // activation of the interpreter loop above the current stack.
+    public Object executeNested(Lambda lam, Object[] frame, int depth) {
+        CodeList cl = lam.cl;
+        if (Jit.stats) { Jit.statNested++; Jit.countNested(cl); }
+        if (cl.calls++ == Jit.threshold) Jit.compile(cl);
+        Activation parent = act;
+        Activation a = new Activation(parent, sp, depth, false);
+        act = a;
+        int n = frame.length - 1;
+        Instruction[] code = lam.codeArr;
+        int sp = this.sp;
+        Object[] stack = ensureStack(stackArr, sp + n + 1 + code.length);
+        stack[sp++] = new ReturnAddress(code.length, lam, lam.env);
+        System.arraycopy(frame, 1, stack, sp, n);
+        sp += n;
+        try {
+            return run(a, lam, lam.env, n, sp, null, null);
+        } finally {
+            a.alive = false;
+            act = parent;
+        }
+    }
+
+    // The interpreter loop of activation a, starting fn at instruction 0
+    // with the stack up to sp. savedWinders and savedExceptionHandlers are
+    // the root's, restored when an error leaves it.
+    @SuppressWarnings("unchecked")
+    private Object run(Activation act, Lambda fn, Object env, int nargs, int sp,
+                       Object savedWinders, Object savedExceptionHandlers) {
+        final int depth = act.depth;
         Instruction[] code = fn.codeArr;
         int ip = 0;
-        Object env = this.env;
-        int sp = this.sp;
         Object[] stack = ensureStack(stackArr, sp + code.length);
-        int nargs = 0;
-        boolean continueExecution;
-        do {
-        continueExecution = false;
+        for (;;) {
+        RuntimeException pending;
         try {
         while (ip < code.length) {
             Instruction instruction = code[ip++];
@@ -562,7 +705,7 @@ public class VM {
                 // fall through: call the global like CALLJ
 
                 case CALLJ: {
-                    SchemeThread ct = currentThread;
+                    SchemeThread ct = thread;
                     if (ct != null && ct.terminated)
                         throw new SchemeError("thread terminated");
                     int argcount = instruction.i1;
@@ -572,15 +715,29 @@ public class VM {
                     }
                     Object f = stack[--sp];
                     if (Value.isLambda(f)) {
-                        // countCall(Value.DisplayRep(f));
-                        fn = Value.asLambda(f);
+                        Lambda lam = (Lambda) f;
+                        CodeList cl = lam.cl;
+                        if (cl.jit != null && !cl.builtin && depth < Jit.maxDepth) {
+                            sp -= argcount;
+                            Object result = callJit(lam, stack, sp, argcount, depth, -1, null, null);
+                            stack = stackArr;
+                            ReturnAddress address = (ReturnAddress) stack[sp - 1];
+                            fn = address.fn;
+                            code = fn.codeArr;
+                            env = address.env;
+                            ip = address.ip;
+                            stack[sp - 1] = result;
+                            stack = ensureStack(stack, sp + code.length - ip);
+                            break;
+                        }
+                        if (cl.calls++ == Jit.threshold) Jit.compile(cl);
+                        fn = lam;
                         code = fn.codeArr;
                         env = fn.env;
                         ip = 0;
                         nargs = argcount;
                         stack = ensureStack(stack, sp + code.length);
                     } else if (Value.isPrimitive(f)) {
-                        // countCall(Value.DisplayRep(f));
                         sp -= argcount;
                         Object result = applyPrimitive(f, instruction.pos, stack, sp, argcount);
                         ReturnAddress address = (ReturnAddress) stack[sp - 1];
@@ -603,19 +760,29 @@ public class VM {
                 // fall through: call the global like CALLS
 
                 case CALLS: {
-                    SchemeThread ct = currentThread;
+                    SchemeThread ct = thread;
                     if (ct != null && ct.terminated)
                         throw new SchemeError("thread terminated");
                     int argcount = instruction.i1;
                     Object f = stack[--sp];
                     if (f instanceof Lambda) {
+                        Lambda lam = (Lambda) f;
+                        CodeList cl = lam.cl;
+                        if (cl.jit != null && !cl.builtin && depth < Jit.maxDepth) {
+                            sp -= argcount;
+                            Object result = callJit(lam, stack, sp, argcount, depth, ip, fn, env);
+                            stack = stackArr;
+                            stack[sp++] = result;
+                            break;
+                        }
+                        if (cl.calls++ == Jit.threshold) Jit.compile(cl);
                         // the return address goes under the arguments,
                         // where SAVE would have put it
                         sp++;
                         int base = sp - 1 - argcount;
                         for (int i = sp - 1; i > base; i--) stack[i] = stack[i - 1];
                         stack[base] = new ReturnAddress(ip, fn, env);
-                        fn = (Lambda) f;
+                        fn = lam;
                         code = fn.codeArr;
                         env = fn.env;
                         ip = 0;
@@ -695,14 +862,23 @@ public class VM {
 
                 case SETCC: {
                     Continuation k = (Continuation) stack[sp - 1];
-                    sp = k.stack.length;
+                    if (k.act == null ? !act.root : k.act != act)
+                        throw continuationJump(k, act, fn, ip, env);
+                    int base = k.act == null ? 0 : act.base + 1;
+                    sp = base + k.stack.length;
                     stack = ensureStack(stack, sp + code.length - ip);
-                    System.arraycopy(k.stack, 0, stack, 0, sp);
+                    System.arraycopy(k.stack, 0, stack, base, k.stack.length);
                     break;
                 }
 
                 case CC:
+                    if (!act.root) throw captureRequest(act, fn, ip - 1, env, nargs, stack, sp);
                     stack[sp] = captureContinuation(stack, sp); sp++;
+                    break;
+
+                case ECC:
+                    stack[sp] = act.root ? captureContinuation(stack, sp) : captureEscape(act, stack, sp);
+                    sp++;
                     break;
 
                 case FLATTEN_APPLY: {
@@ -749,7 +925,7 @@ public class VM {
                     break;
 
                 case LOOP: {
-                    SchemeThread ct = currentThread;
+                    SchemeThread ct = thread;
                     if (ct != null && ct.terminated)
                         throw new SchemeError("thread terminated");
                     env = loopFrame(env, instruction.i2, stack, sp, instruction.i1);
@@ -1046,61 +1222,90 @@ public class VM {
                                           "Unknown opcode " + instruction.opcode);
             }
         }
+        break;
         } catch (SchemeError e) {
-            this.fn = fn; this.ip = ip; this.env = env; this.sp = sp;
+            pending = e;
+        } catch (ClassCastException cce) {
+            pending = castError(fn, ip, cce);
+        } catch (FrameCapture fc) {
+            if (!act.root) {
+                if (fc.last != act) fc.add(Arrays.copyOfRange(stackArr, act.base + 1, sp), act);
+                leave(act, sp);
+                throw fc;
+            }
+            // rebuild the unwound frames on the root's stack
+            stack = stackArr;
+            for (int s = fc.segments.size() - 1; s >= 0; s--) {
+                Object[] seg = fc.segments.get(s);
+                Activation owner = fc.owners.get(s);
+                if (owner != null) promoteEscapes(owner, stack, sp);
+                stack = ensureStack(stack, sp + seg.length);
+                System.arraycopy(seg, 0, stack, sp, seg.length);
+                sp += seg.length;
+            }
+            fn = fc.fn; code = fn.codeArr; ip = fc.ip; env = fc.env; nargs = fc.nargs;
+            stack = ensureStack(stack, sp + code.length - ip);
+            if (fc.cause == FrameCapture.CAPTURE) continue;
+            pending = fc.cause instanceof ClassCastException
+                ? castError(fn, ip, (ClassCastException) fc.cause)
+                : (RuntimeException) fc.cause;
+        } catch (ContinuationJump j) {
+            if (j.target != act) {
+                leave(act, sp);
+                throw j;
+            }
+            Continuation k = (Continuation) j.continuation;
+            int base = k.act == null ? 0 : act.base + 1;
+            sp = base + k.stack.length;
+            stack = ensureStack(stackArr, sp);
+            System.arraycopy(k.stack, 0, stack, base, k.stack.length);
+            fn = j.fn; code = fn.codeArr; ip = j.ip; env = j.env;
+            stack = ensureStack(stack, sp + code.length - ip);
+            continue;
+        }
+        // an error at fn/ip: the innermost exception handler is called on
+        // top of the stack; with none, it leaves the root (with every
+        // frame in its call stack: a nested activation unwinds to the root)
+        SchemeError e = pending instanceof SchemeError ? (SchemeError) pending
+            : new SchemeError((SourcePos) null, "internal error: " + pending);
+        this.fn = fn; this.ip = ip; this.env = env; this.sp = sp;
+        if (exceptionHandlers != Value.NIL) {
             if (e.schemeCallStack == null)
                 e.schemeCallStack = extractCallStack();
-            if (exceptionHandlers != Value.NIL) {
-                Object condition = e.errorObject != null ? e.errorObject
-                    : new ErrorObject(e.getMessage(), new Object[0]);
-                this.nargs = nargs;
-                setupRaiseCall(condition);
-                fn = this.fn; code = fn.codeArr; ip = this.ip; env = this.env;
-                sp = this.sp; nargs = this.nargs;
-                stack = ensureStack(stackArr, sp + code.length - ip);
-                continueExecution = true;
-            } else {
-                this.sp = savedSp;
-                winders = savedWinders;
-                exceptionHandlers = savedExceptionHandlers;
-                throw e;
-            }
-        } catch (ClassCastException cce) {
-            // No opcode changes ip or fn before it can fail a cast, so the
-            // failing instruction is the one fetched last.
-            Instruction failed = fn != null && ip > 0 && ip <= fn.code.size() ? fn.code.get(ip - 1) : null;
-            String name = "VM";
-            if (failed != null) {
-                name = failed.opcode == Opcode.CXR ? (String) failed.arg2
-                     : opcodeErrorName(failed.opcode);
-                if (name == null) name = failed.opcode + " instruction";
-            }
-            SchemeError err = wrongArgumentTypeError(failed != null ? failed.pos : null, name, cce);
-            this.fn = fn; this.ip = ip; this.env = env; this.sp = sp;
-            err.schemeCallStack = extractCallStack();
-            if (exceptionHandlers != Value.NIL) {
-                this.nargs = nargs;
-                setupRaiseCall(err.errorObject);
-                fn = this.fn; code = fn.codeArr; ip = this.ip; env = this.env;
-                sp = this.sp; nargs = this.nargs;
-                stack = ensureStack(stackArr, sp + code.length - ip);
-                continueExecution = true;
-            } else {
-                this.sp = savedSp;
-                winders = savedWinders;
-                exceptionHandlers = savedExceptionHandlers;
-                throw err;
-            }
+            Object condition = e.errorObject != null ? e.errorObject
+                : new ErrorObject(e.getMessage(), new Object[0]);
+            this.nargs = nargs;
+            setupRaiseCall(condition);
+            fn = this.fn; code = fn.codeArr; ip = this.ip; env = this.env;
+            sp = this.sp; nargs = this.nargs;
+            stack = ensureStack(stackArr, sp + code.length - ip);
+            continue;
         }
-        } while (continueExecution);
-        this.fn = fn; this.ip = ip; this.env = env;
+        if (!act.root) {
+            if (Jit.stats) Jit.statErrors++;
+            FrameCapture fc = new FrameCapture(e, fn, ip, env, nargs);
+            fc.add(Arrays.copyOfRange(stackArr, act.base + 1, sp), act);
+            leave(act, sp);
+            throw fc;
+        }
+        if (e.schemeCallStack == null)
+            e.schemeCallStack = extractCallStack();
+        this.sp = act.base;
+        winders = savedWinders;
+        exceptionHandlers = savedExceptionHandlers;
+        throw e;
+        }
+        if (act.root) { this.fn = fn; this.ip = ip; this.env = env; }
         Object result = stack[--sp];
         stack[sp] = null;
         this.sp = sp;
         return result;
-        } finally {
-            VM.current.set(savedCurrent);
-        }
+    }
+
+    // Clears the stack of activation a, left by an exception.
+    private void leave(Activation a, int sp) {
+        if (sp > a.base) Arrays.fill(stackArr, a.base, Math.min(sp, stackArr.length), null);
+        this.sp = a.base;
     }
 
     @SuppressWarnings("unused")

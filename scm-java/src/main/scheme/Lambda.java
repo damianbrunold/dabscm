@@ -7,6 +7,8 @@ public class Lambda {
     public String doc;
     public Object env;
     public List<Instruction> code;
+    // code as a CodeList (code itself, or a copy of another list)
+    public CodeList cl;
     // code as an array, for the VM's dispatch loop
     public Instruction[] codeArr;
 
@@ -17,8 +19,13 @@ public class Lambda {
 
     public void setCode(List<Instruction> code) {
         this.code = code;
-        this.codeArr = code instanceof CodeList ? ((CodeList) code).array()
-                                                : code.toArray(new Instruction[0]);
+        if (code instanceof CodeList) {
+            cl = (CodeList) code;
+        } else {
+            cl = new CodeList();
+            cl.addAll(code);
+        }
+        this.codeArr = cl.array();
     }
 
     @Override

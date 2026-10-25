@@ -48,4 +48,7 @@ public enum Opcode
     // self tail call / named-let loop: n args into a new frame whose parent
     // is the frame d levels up, then jump (Compiler.compLoop, SelfCall)
     LOOP,
+    // like CC, but an escape continuation when not in the root activation
+    // (%call-with-escape-continuation, see scheme.jit.Activation)
+    ECC,
 }

@@ -24,6 +24,8 @@ public class Primitives {
         bind("PI", Math.PI);
         bind("apply", getApply());
         bind("call-with-current-continuation", getCallCC());
+        bind("%call-with-escape-continuation", getCallEC());
+        bind(new PrimitiveEscapeOnlyReceiverP());
         bind("call-with-values", getCallWithValues());
         bind("field-sep", System.getProperty("path.separator").toCharArray());
         bind("line-sep", System.getProperty("line.separator").toCharArray());
@@ -591,6 +593,21 @@ public class Primitives {
         return callcc;
     }
 
+    // call/cc whose continuation is invoked only within the dynamic
+    // extent of the call (call/cc uses it for such receivers): cheap when
+    // compiled code is on the stack (ECC).
+    private Object getCallEC() {
+        List<Instruction> instructions = new ArrayList<>();
+        instructions.add(new Instruction(Opcode.ARGS, 1));
+        instructions.add(new Instruction(Opcode.ECC));
+        instructions.add(new Instruction(Opcode.LVAR, 0, 0));
+        instructions.add(new Instruction(Opcode.CALLJ, 1));
+        Lambda callec = new Lambda(Value.NIL, instructions);
+        callec.name = "call-with-current-continuation";
+        JitBuiltins.attach(callec.cl, new JitBuiltins.EscapeCode());
+        return callec;
+    }
+
     private Object getApply() {
         List<Instruction> instructions = new ArrayList<>();
         instructions.add(new Instruction(Opcode.ARGSDOT, 1));
@@ -599,6 +616,7 @@ public class Primitives {
         instructions.add(new Instruction(Opcode.CALLJ, -1));
         Lambda apply = new Lambda(Value.NIL, instructions);
         apply.name = "apply";
+        JitBuiltins.attach(apply.cl, new JitBuiltins.ApplyCode());
         apply.doc = "Syntax: (apply proc arg1 ... args)\nLibrary: (scheme base)\nDescription: Calls proc with the given arguments. The last argument must\n  be a list, whose elements are appended to the preceding arguments.\nExample:\n  (apply + 1 2 '(3 4)) => 10";
         return apply;
     }
@@ -614,6 +632,7 @@ public class Primitives {
         instructions.add(new Instruction(Opcode.CALLJ, -1));
         Lambda apply = new Lambda(Value.NIL, instructions);
         apply.name = "call-with-values";
+        JitBuiltins.attach(apply.cl, new JitBuiltins.CallWithValuesCode());
         apply.doc = "Syntax: (call-with-values producer consumer)\nLibrary: (scheme base)\nDescription: Calls producer with no arguments. The producer must return\n  zero or more values. The consumer is then called with those values as\n  arguments. Returns the result of consumer.\nExample:\n  (call-with-values (lambda () (values 1 2)) +) => 3";
         return apply;
     }
