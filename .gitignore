@@ -2,6 +2,7 @@
 /scm-known-good.jar
 /scm.jar
 /documentation/reference.pdf
+/dist/
 
 # Java build output
 scm-java/build/

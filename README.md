@@ -58,6 +58,22 @@ Requirements:
 - .NET 10 SDK (`dotnet`)
 - JDK 11 or later (`java`, `javac`, `jar`)
 
+### Debian package
+
+```bash
+./builder.sh build-and-test-scm-java.scm
+./builder.sh package-deb-java.scm         # -> dist/dabscm_<VERSION>_all.deb
+sudo apt install ./dist/dabscm_<VERSION>_all.deb
+```
+
+The package installs `/usr/bin/scm` (JVM options via `SCM_JAVA_OPTS`),
+`/usr/share/dabscm/scm.jar` and the HTML documentation under
+`/usr/share/doc/dabscm/html`, and pulls in a headless Java runtime. It
+conflicts with Debian's unrelated `scm` package (same command name). The
+builder (`build-deb.sld`) is pure Scheme and needs no `dpkg-deb`. A tree with
+uncommitted changes is refused unless `--allow-dirty` is given (version gets
+`+dirty`); `--out <dir>` changes the output directory.
+
 ## Running
 
 After building, the C# executable is `scm` and the Java jar is `scm.jar`.
