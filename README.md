@@ -8,6 +8,7 @@ set of `.sld` library files, kept in sync from a single source of truth.
 
 - R7RS-small core
 - Bytecode VM (tokenizer → compiler → VM) mirrored in C# and Java
+- Java: a JIT that compiles hot procedures to JVM bytecode
 - Module system with `scheme` (R7RS) and `scm` (extensions) libraries
 - 22 SRFI implementations (1, 2, 8, 9, 13, 14, 18, 19, 26, 28, 39, 64, 69,
   95, 98, 111, 125, 128, 132, 133, 151, 158)
@@ -68,6 +69,24 @@ scm -f 'CODE'       # eval CODE with full REPL imports
 scm script.scm      # run a script (in `user program`, no auto-imports)
 scm                 # start a REPL (in `user main`, REPL auto-imports)
 ```
+
+### Java JIT
+
+The Java implementation compiles a procedure to JVM bytecode once the
+interpreter has called it 1000 times; HotSpot then compiles that bytecode
+like any Java code. Long-running programs (servers, large batch runs)
+gain the most, short runs hardly at all. System properties control it:
+
+```bash
+java -Dscm.jit=off -jar scm.jar script.scm            # interpreter only
+java -Dscm.jit.threshold=0 -jar scm.jar script.scm    # compile on the first call
+java -Dscm.jit.stats=true -jar scm.jar script.scm     # print counters at exit
+java -Dscm.jit.debug=true -jar scm.jar script.scm     # report compiled/rejected code
+```
+
+The generated classes are verified Java 11 class files loaded by an
+ordinary class loader. No native code is involved and no JVM flags are
+needed.
 
 ## License
 
