@@ -1,6 +1,6 @@
 namespace scheme;
 
-public class ReturnAddress
+public sealed class ReturnAddress
 {
     public int ip;
     public Lambda fn;

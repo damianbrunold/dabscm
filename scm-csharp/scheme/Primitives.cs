@@ -17,8 +17,7 @@ public class Primitives
         Bind("PI", Math.PI);
         Bind("apply", GetApply());
         Bind("call-with-current-continuation", GetCallCC());
-        // the C# VM has no JIT: an escape continuation is a full one
-        Bind("%call-with-escape-continuation", GetCallCC());
+        Bind("%call-with-escape-continuation", GetCallEC());
         Bind("call-with-values", GetCallWithValues());
         Bind("field-sep", new char[] { Path.PathSeparator });
         Bind("line-sep", Environment.NewLine.ToCharArray());
@@ -583,6 +582,21 @@ public class Primitives
         return callcc;
     }
 
+    // call/cc whose continuation is invoked only within the dynamic
+    // extent of the call (call/cc uses it for such receivers): cheap when
+    // compiled code is on the stack (ECC).
+    private object GetCallEC()
+    {
+        List<Instruction> instructions = new();
+        instructions.Add(new Instruction(Opcode.ARGS, 1));
+        instructions.Add(new Instruction(Opcode.ECC));
+        instructions.Add(new Instruction(Opcode.LVAR, 0, 0));
+        instructions.Add(new Instruction(Opcode.CALLJ, 1));
+        Lambda callec = new(Value.NIL, instructions) { name = "call-with-current-continuation" };
+        JitBuiltins.Attach(callec.cl, new JitBuiltins.EscapeCode());
+        return callec;
+    }
+
     private object GetApply()
     {
         List<Instruction> instructions = new();
@@ -595,6 +609,7 @@ public class Primitives
             name = "apply",
             doc = "Syntax: (apply proc arg1 ... args)\nLibrary: (scheme base)\nDescription: Calls proc with the given arguments. The last argument must\n  be a list, whose elements are appended to the preceding arguments.\nExample:\n  (apply + 1 2 '(3 4)) => 10"
         };
+        JitBuiltins.Attach(apply.cl, new JitBuiltins.ApplyCode());
         return apply;
     }
 
@@ -613,6 +628,7 @@ public class Primitives
             name = "call-with-values",
             doc = "Syntax: (call-with-values producer consumer)\nLibrary: (scheme base)\nDescription: Calls producer with no arguments. The producer must return\n  zero or more values. The consumer is then called with those values as\n  arguments. Returns the result of consumer.\nExample:\n  (call-with-values (lambda () (values 1 2)) +) => 3"
         };
+        JitBuiltins.Attach(apply.cl, new JitBuiltins.CallWithValuesCode());
         return apply;
     }
 

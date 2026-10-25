@@ -1,6 +1,6 @@
 ﻿namespace scheme;
 
-public class Pair
+public sealed class Pair
 {
     public object car;
     public object cdr;

@@ -11,6 +11,9 @@ public class Modules
     // resolved Cell together with the generation at the time of
     // caching; on a mismatch the cache is dropped and resolved again.
     public int CacheGeneration;
+    // Bumped with every CacheGeneration of any Modules: the compiled code's
+    // cache of global cells (Instruction.jitCell) checks it with one load.
+    public static int Generation;
     // currentModule and loadingModules are per-thread so that, once the
     // bindings dict is shared across threads (step 3), threads can have
     // independent (module ...)/import state without racing. See
@@ -192,6 +195,7 @@ public class Modules
         var toRemove = modules.Keys.Where(k => !k.StartsWith("scheme") && !k.StartsWith("scm") && !k.StartsWith("srfi")).ToList();
         foreach (var k in toRemove) modules.Remove(k);
         CacheGeneration++;
+        Generation++;
     }
 
     public void TakeSnapshot()
@@ -205,6 +209,7 @@ public class Modules
     {
         if (snapshot == null) return;
         CacheGeneration++;
+        Generation++;
         modules.Clear();
         var cellMap = new Dictionary<Cell, Cell>(ReferenceEqualityComparer.Instance);
         foreach (var kv in snapshot.modules)

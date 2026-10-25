@@ -1,11 +1,13 @@
 namespace scheme;
 
-public class Lambda
+public sealed class Lambda
 {
     public string? name;
     public string? doc;
     public object env;
     public List<Instruction> code;
+    // code as a CodeList (code itself, or a copy of another list)
+    public CodeList cl;
     // code as an array, for the VM's dispatch loop
     public Instruction[] codeArr;
 
@@ -15,11 +17,20 @@ public class Lambda
         SetCode(code);
     }
 
-    [System.Diagnostics.CodeAnalysis.MemberNotNull(nameof(code), nameof(codeArr))]
+    [System.Diagnostics.CodeAnalysis.MemberNotNull(nameof(code), nameof(cl), nameof(codeArr))]
     public void SetCode(List<Instruction> code)
     {
         this.code = code;
-        this.codeArr = code is CodeList cl ? cl.Array() : code.ToArray();
+        if (code is CodeList list)
+        {
+            cl = list;
+        }
+        else
+        {
+            cl = new CodeList();
+            cl.AddRange(code);
+        }
+        this.codeArr = cl.Array();
     }
 
     public override string ToString()

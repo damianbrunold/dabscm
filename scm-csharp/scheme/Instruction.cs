@@ -2,7 +2,7 @@ using System.Text;
 
 namespace scheme;
 
-public class Instruction
+public sealed class Instruction
 {
     public Opcode opcode;
     public object? arg1;
@@ -22,6 +22,9 @@ public class Instruction
     // / ResetModules invalidate the cache via Modules.CacheGeneration.
     public Cell? cachedCell;
     public int cachedCellGeneration;
+    // the same for compiled code, against Modules.Generation (Rt)
+    public Cell? jitCell;
+    public int jitCellGeneration;
 
     public Instruction(Opcode opcode)
     {

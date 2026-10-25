@@ -1,6 +1,6 @@
 namespace scheme;
 
-public class Values
+public sealed class Values
 {
     public object[] values = new object[0];
 }

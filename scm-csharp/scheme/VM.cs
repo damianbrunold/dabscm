@@ -4,7 +4,7 @@ namespace scheme;
 
 public class VM
 {
-    private Modules modules;
+    internal readonly Modules modules;
 
     // The VM state. While Execute runs it lives in Execute's locals; these
     // fields hold it only where code outside the dispatch loop needs it
@@ -27,22 +27,22 @@ public class VM
     [ThreadStatic]
     public static VM? Current;
 
-    private readonly Lambda raiseReturnedLambda;
+    internal readonly Lambda raiseReturnedLambda;
 
     // Static primitive instances for intrinsic fallbacks (variable-arity / edge-case paths)
-    private static readonly PrimitiveAdd s_primitiveAdd = new();
-    private static readonly PrimitiveSub s_primitiveSub = new();
-    private static readonly PrimitiveMul s_primitiveMul = new();
-    private static readonly PrimitiveDiv s_primitiveDiv = new();
-    private static readonly PrimitiveNumequal s_primitiveNumEq = new();
-    private static readonly PrimitiveNumless s_primitiveNumLt = new();
-    private static readonly PrimitiveNumgreater s_primitiveNumGt = new();
-    private static readonly PrimitiveNumlessequal s_primitiveNumLte = new();
-    private static readonly PrimitiveNumgreaterequal s_primitiveNumGte = new();
+    internal static readonly PrimitiveAdd s_primitiveAdd = new();
+    internal static readonly PrimitiveSub s_primitiveSub = new();
+    internal static readonly PrimitiveMul s_primitiveMul = new();
+    internal static readonly PrimitiveDiv s_primitiveDiv = new();
+    internal static readonly PrimitiveNumequal s_primitiveNumEq = new();
+    internal static readonly PrimitiveNumless s_primitiveNumLt = new();
+    internal static readonly PrimitiveNumgreater s_primitiveNumGt = new();
+    internal static readonly PrimitiveNumlessequal s_primitiveNumLte = new();
+    internal static readonly PrimitiveNumgreaterequal s_primitiveNumGte = new();
 
     // The Scheme name of an opcode that can fail with a wrong argument type,
     // for the error message; null for the VM's internal opcodes.
-    private static string? OpcodeErrorName(Opcode op) => op switch
+    internal static string? OpcodeErrorName(Opcode op) => op switch
     {
         Opcode.CAR or Opcode.LVAR_CAR => "car",
         Opcode.CDR or Opcode.LVAR_CDR => "cdr",
@@ -69,7 +69,7 @@ public class VM
 
     // "Failed in <name>: wrong argument type", with the offending value as
     // irritant when the cast site reported it (WrongTypeException).
-    private static SchemeError WrongArgumentTypeError(SourcePos? pos, string name, InvalidCastException e)
+    internal static SchemeError WrongArgumentTypeError(SourcePos? pos, string name, InvalidCastException e)
     {
         string message = "Failed in " + name + ": wrong argument type";
         if (e is not WrongTypeException wt)
@@ -200,12 +200,12 @@ public class VM
 
     // Booleans boxed once: the VM pushes these instead of boxing Value.T
     // and Value.F at every test (eq? compares booleans by value).
-    private static readonly object True = Value.T;
-    private static readonly object False = Value.F;
+    internal static readonly object True = Value.T;
+    internal static readonly object False = Value.F;
 
-    private static bool IsFalse(object value) => value is bool b && !b;
+    internal static bool IsFalse(object value) => value is bool b && !b;
 
-    private static object PrimaryValue(object value)
+    internal static object PrimaryValue(object value)
     {
         if (Value.IsValues(value))
         {
@@ -219,14 +219,14 @@ public class VM
     private List<SchemeCallFrame> ExtractCallStack()
     {
         var frames = new List<SchemeCallFrame>();
-        SourcePos? currentPos = (fn != null && ip > 0 && ip - 1 < fn.code.Count)
-            ? fn.code[ip - 1].pos : null;
+        SourcePos? currentPos = (fn != null && ip > 0 && ip - 1 < fn.codeArr.Length)
+            ? fn.codeArr[ip - 1].pos : null;
         frames.Add(new SchemeCallFrame(fn?.name, currentPos));
         for (int i = sp - 1; i >= 0; i--)
             if (stackArr[i] is ReturnAddress addr)
             {
-                SourcePos? callPos = (addr.ip > 0 && addr.ip - 1 < addr.fn.code.Count)
-                    ? addr.fn.code[addr.ip - 1].pos : null;
+                SourcePos? callPos = (addr.ip > 0 && addr.ip - 1 < addr.fn.codeArr.Length)
+                    ? addr.fn.codeArr[addr.ip - 1].pos : null;
                 frames.Add(new SchemeCallFrame(addr.fn.name, callPos));
             }
         return frames;
@@ -237,7 +237,7 @@ public class VM
 
     // The binding cell of a global variable, cached in the instruction
     // (GVAR, GCALLS, GCALLJ).
-    private Cell GlobalCell(Instruction instruction, object symbolObj, string moduleName)
+    internal Cell GlobalCell(Instruction instruction, object symbolObj, string moduleName)
     {
         var cell = instruction.cachedCell;
         if (cell != null && instruction.cachedCellGeneration == modules.CacheGeneration)
@@ -263,7 +263,7 @@ public class VM
         }
     }
 
-    private void GlobalSet(Instruction instruction, object value)
+    internal void GlobalSet(Instruction instruction, object value)
     {
         var module = modules.GetModuleRequired(instruction.pos, (string) instruction.arg2!);
         var symbol = Value.AsSymbol(instruction.arg1!);
@@ -286,7 +286,7 @@ public class VM
         }
     }
 
-    private static SchemeError ArityError(Lambda fn, Instruction instruction, int nargs, string expected)
+    internal static SchemeError ArityError(Lambda fn, Instruction instruction, int nargs, string expected)
     {
         return new SchemeError(
             instruction.pos,
@@ -349,7 +349,7 @@ public class VM
     }
 
     // The two-argument arithmetic beyond fixnums without overflow.
-    private static object Add2(object ia, object ib)
+    internal static object Add2(object ia, object ib)
     {
         if (Value.IsInteger(ia) && Value.IsInteger(ib)) return IntegerMath.GenericAdd(ia, ib);
         if (ia is double || ib is double)
@@ -361,7 +361,7 @@ public class VM
         return Rational.Add(ia, ib);
     }
 
-    private static object Sub2(object ia, object ib)
+    internal static object Sub2(object ia, object ib)
     {
         if (Value.IsInteger(ia) && Value.IsInteger(ib)) return IntegerMath.GenericSub(ia, ib);
         if (ia is double || ib is double)
@@ -373,7 +373,7 @@ public class VM
         return Rational.Sub(ia, ib);
     }
 
-    private static object Mul2(object ia, object ib)
+    internal static object Mul2(object ia, object ib)
     {
         if (Value.IsInteger(ia) && Value.IsInteger(ib)) return IntegerMath.GenericMul(ia, ib);
         if (ia is double || ib is double)
@@ -385,7 +385,7 @@ public class VM
         return Rational.Mul(ia, ib);
     }
 
-    private static object Div2(SourcePos? pos, object ia, object ib)
+    internal static object Div2(SourcePos? pos, object ia, object ib)
     {
         if (ia is long ial && ib is long ibl)
         {
@@ -403,7 +403,7 @@ public class VM
         return Rational.Div(ia, ib);
     }
 
-    private static object Negate(object ia)
+    internal static object Negate(object ia)
     {
         if (ia is long ial) return IntegerMath.Negate(ial);
         if (Value.IsBigInteger(ia)) return IntegerMath.GenericNegate(ia);
@@ -413,7 +413,7 @@ public class VM
     }
 
     // =, <, >, <=, >= on two numbers that are not both fixnums.
-    private static bool Compare2(Opcode op, SourcePos? pos, object ia, object ib)
+    internal static bool Compare2(Opcode op, SourcePos? pos, object ia, object ib)
     {
         if (op == Opcode.NUM_EQ)
         {
@@ -445,7 +445,7 @@ public class VM
     }
 
     // The arguments of (apply f a ... list) from its rest argument.
-    private static List<object> FlattenApplyArgs(Instruction instruction, object restObj)
+    internal static List<object> FlattenApplyArgs(Instruction instruction, object restObj)
     {
         List<object> args = new();
         if (restObj == Value.NIL)
@@ -474,59 +474,220 @@ public class VM
         return args;
     }
 
-    // The value stack of a continuation, restored by SETCC. Sharing the
-    // ReturnAddress entries is safe: they are never modified.
-    private sealed class Continuation
-    {
-        public readonly object[] stack;
+    // The code of a continuation procedure: its frame's parent holds the
+    // Continuation.
+    internal static readonly CodeList CONTINUATION_CODE = MakeContinuationCode();
 
-        public Continuation(object[] stack, int sp)
+    private static CodeList MakeContinuationCode()
+    {
+        var code = new CodeList
         {
-            this.stack = stack[..sp];
-        }
+            new Instruction(Opcode.ARGMV),
+            new Instruction(Opcode.LVAR, 1, 0),
+            new Instruction(Opcode.SETCC),
+            new Instruction(Opcode.LVAR, 0, 0),
+            new Instruction(Opcode.RETURN)
+        };
+        JitBuiltins.Attach(code, new JitBuiltins.ContinuationCode());
+        return code;
+    }
+
+    internal static Lambda ContinuationProcedure(Continuation k)
+    {
+        // Opt B: env frame must be object[]
+        return new Lambda(new object[] { Value.NIL, k }, CONTINUATION_CODE);
     }
 
     // The continuation of the current stack as a procedure (CC).
     private static Lambda CaptureContinuation(object[] stack, int sp)
     {
-        var capturedStack = new Continuation(stack, sp);
-        List<Instruction> newcode = new();
-        newcode.Add(new Instruction(Opcode.ARGMV));
-        newcode.Add(new Instruction(Opcode.LVAR, 1, 0));
-        newcode.Add(new Instruction(Opcode.SETCC));
-        newcode.Add(new Instruction(Opcode.LVAR, 0, 0));
-        newcode.Add(new Instruction(Opcode.RETURN));
-        // Opt B: env frame must be object[]
-        object capturedEnv = new object[] { Value.NIL, capturedStack };
-        return new Lambda(capturedEnv, newcode);
+        return ContinuationProcedure(new Continuation(stack, sp));
     }
+
+    // An escape continuation of the nested activation a (CC/ECC). The
+    // activation keeps it (weakly) to turn it into a full continuation if
+    // the activation is unwound into the root (rebuild).
+    private static Lambda CaptureEscape(Activation a, object[] stack, int sp)
+    {
+        return ContinuationProcedure(Escape(a, new Continuation(stack, a.Base + 1, sp, a)));
+    }
+
+    internal static Continuation Escape(Activation a, Continuation k)
+    {
+        if (Jit.Stats) Jit.statEscapes++;
+        var escapes = a.escapes ??= new List<WeakReference<Continuation>>();
+        if (escapes.Count >= 64 && System.Numerics.BitOperations.PopCount((uint)escapes.Count) == 1)
+            escapes.RemoveAll(r => !r.TryGetTarget(out _));
+        escapes.Add(new WeakReference<Continuation>(k));
+        return k;
+    }
+
+    // SETCC of a continuation that belongs to another activation than a.
+    internal static Exception ContinuationJumpFor(Continuation k, Activation a, Lambda fn, int ip, object env)
+    {
+        if (Jit.Stats) Jit.statJumps++;
+        if (k.act == null) return new ContinuationJump(k, a.NearestRoot(), fn, ip, env);
+        if (!k.act.alive)
+            return new SchemeError((SourcePos?)null,
+                "continuation invoked outside of its extent: it was captured as an escape "
+                + "continuation across compiled code (SCM_JIT=off disables the JIT)");
+        return new ContinuationJump(k, k.act, fn, ip, env);
+    }
+
+    // CC in a nested activation: unwinds to the root activation, which
+    // rebuilds the stack and executes the CC at ip again.
+    private static FrameCapture CaptureRequest(Activation a, Lambda fn, int ip, object env, int nargs,
+                                               object[] stack, int sp)
+    {
+        if (Jit.Stats) Jit.statCaptures++;
+        var fc = new FrameCapture(FrameCapture.CAPTURE, fn, ip, env, nargs);
+        fc.Add(stack[(a.Base + 1)..sp], a);
+        return fc;
+    }
+
+    // The escape continuations of the unwound activation a become full
+    // continuations: the stack below a's segment (stack[0..sp]) is what it
+    // was when they were captured, the callers being suspended since.
+    private static void PromoteEscapes(Activation a, object[] stack, int sp)
+    {
+        if (a.escapes == null) return;
+        foreach (var r in a.escapes)
+        {
+            if (!r.TryGetTarget(out var k) || k.act != a) continue;
+            var full = new object[sp + k.stack.Length];
+            Array.Copy(stack, 0, full, 0, sp);
+            Array.Copy(k.stack, 0, full, sp, k.stack.Length);
+            k.stack = full;
+            k.act = null;
+        }
+        a.escapes = null;
+    }
+
+    // A compiled lambda called from the interpreter with the argcount
+    // values at stack[sp..] (popped by the caller). retIp >= 0 for a
+    // non-tail call: its return address, should the callee be unwound.
+    private object CallJit(Lambda lam, object[] stack, int sp, int argcount, int depth,
+                           int retIp, Lambda? fn, object? env)
+    {
+        var frame = new object[argcount + 1];
+        for (int i = 0; i < argcount; i++)
+        {
+            frame[i + 1] = stack[sp + i];
+            stack[sp + i] = null!;
+        }
+        this.sp = sp;
+        try
+        {
+            object r = lam.cl.jit!.Call(this, lam, frame, depth + 1);
+            if (r is Signal)
+            {
+                r = Rt.Signal(this, r, depth);
+                if (r is EscapeSignal e) throw e.ToJump();
+            }
+            return r;
+        }
+        catch (FrameCapture fc)
+        {
+            if (retIp >= 0) fc.Add(new object[] { new ReturnAddress(retIp, fn!, env!) }, null);
+            throw;
+        }
+    }
+
+    // "wrong argument type" for an InvalidCastException in fn's instruction
+    // before ip (no opcode changes ip or fn before it can fail a cast).
+    internal static SchemeError CastError(Lambda? fn, int ip, InvalidCastException e)
+    {
+        Instruction? failed = fn != null && ip > 0 && ip <= fn.codeArr.Length ? fn.codeArr[ip - 1] : null;
+        string name = failed == null ? "VM"
+            : failed.opcode == Opcode.CXR ? (string)failed.arg2!
+            : OpcodeErrorName(failed.opcode) ?? failed.opcode + " instruction";
+        return WrongArgumentTypeError(failed?.pos, name, e);
+    }
+
+    // The current activation of the interpreter loop (or of a JitBuiltins
+    // escape) and the thread it runs for.
+    internal Activation? act;
+    public SchemeThread? thread;
+
+    internal int Sp => sp;
 
     public object Execute(Lambda func)
     {
         VM? savedCurrent = VM.Current;
         VM.Current = this;
+        Activation? savedAct = act;
         try
         {
-        if (SchemeThread.CurrentThread == null)
-        {
-            var primordial = new SchemeThread(null, modules);
-            primordial.name = Value.Intern("primordial");
-            primordial.state = SchemeThreadState.STARTED;
-            SchemeThread.CurrentThread = primordial;
+            if (SchemeThread.CurrentThread == null)
+            {
+                var primordial = new SchemeThread(null, modules);
+                primordial.name = Value.Intern("primordial");
+                primordial.state = SchemeThreadState.STARTED;
+                SchemeThread.CurrentThread = primordial;
+            }
+            thread = SchemeThread.CurrentThread;
+            object savedWinders = winders;
+            object savedExceptionHandlers = exceptionHandlers;
+            var a = new Activation(savedAct, sp, 0, true);
+            act = a;
+            Push(new ReturnAddress(func.code.Count, func, this.env));
+            try
+            {
+                return Run(a, func, this.env, 0, sp, savedWinders, savedExceptionHandlers);
+            }
+            finally
+            {
+                a.alive = false;
+            }
         }
-        SchemeThread? currentThread = SchemeThread.CurrentThread;
-        int savedSp = this.sp;
-        object savedWinders = winders;
-        object savedExceptionHandlers = exceptionHandlers;
-        Push(new ReturnAddress(func.code.Count, func, this.env));
-        Lambda fn = func;
+        finally
+        {
+            act = savedAct;
+            VM.Current = savedCurrent;
+        }
+    }
+
+    // A lambda called from compiled code (or Rt), run by a nested
+    // activation of the interpreter loop above the current stack.
+    public object ExecuteNested(Lambda lam, object[] frame, int depth)
+    {
+        CodeList cl = lam.cl;
+        if (Jit.Stats) { Jit.statNested++; Jit.CountNested(cl); }
+        if (cl.calls++ == Jit.Threshold) Jit.Compile(cl);
+        Activation? parent = act;
+        var a = new Activation(parent, this.sp, depth, false);
+        act = a;
+        int n = frame.Length - 1;
+        Instruction[] code = lam.codeArr;
+        int sp = this.sp;
+        object[] stack = EnsureStack(stackArr, sp + n + 1 + code.Length);
+        stack[sp++] = new ReturnAddress(code.Length, lam, lam.env);
+        Array.Copy(frame, 1, stack, sp, n);
+        sp += n;
+        try
+        {
+            return Run(a, lam, lam.env, n, sp, null, null);
+        }
+        finally
+        {
+            a.alive = false;
+            act = parent;
+        }
+    }
+
+    // The interpreter loop of activation act, starting fn at instruction 0
+    // with the stack up to sp. savedWinders and savedExceptionHandlers are
+    // the root's, restored when an error leaves it.
+    private object Run(Activation act, Lambda fn, object env, int nargs, int sp,
+                       object? savedWinders, object? savedExceptionHandlers)
+    {
+        int depth = act.depth;
         Instruction[] code = fn.codeArr;
         int ip = 0;
-        object env = this.env;
-        int sp = this.sp;
         object[] stack = EnsureStack(stackArr, sp + code.Length);
-        int nargs = 0;
-        continueExecution:
+        for (;;)
+        {
+        Exception pending;
         try
         {
         while (ip < code.Length)
@@ -614,7 +775,7 @@ public class VM
                     goto case Opcode.CALLJ;
 
                 case Opcode.CALLJ: {
-                    if (currentThread?.terminated == true)
+                    if (thread?.terminated == true)
                         throw new SchemeError("thread terminated");
                     int argcount = instruction.i1;
                     if (argcount == -1)
@@ -625,7 +786,22 @@ public class VM
                     object f = stack[--sp];
                     if (f is Lambda lam)
                     {
-                        //CountCall(Value.DisplayRep(f));
+                        CodeList cl = lam.cl;
+                        if (cl.jit != null && !cl.builtin && depth < Jit.MaxDepth)
+                        {
+                            sp -= argcount;
+                            object result = CallJit(lam, stack, sp, argcount, depth, -1, null, null);
+                            stack = stackArr;
+                            ReturnAddress address = (ReturnAddress) stack[sp - 1];
+                            fn = address.fn;
+                            code = fn.codeArr;
+                            env = address.env;
+                            ip = address.ip;
+                            stack[sp - 1] = result;
+                            stack = EnsureStack(stack, sp + code.Length - ip);
+                            break;
+                        }
+                        if (cl.calls++ == Jit.Threshold) Jit.Compile(cl);
                         fn = lam;
                         code = fn.codeArr;
                         env = fn.env;
@@ -635,7 +811,6 @@ public class VM
                     }
                     else if (Value.IsPrimitive(f))
                     {
-                        //CountCall(Value.DisplayRep(f));
                         sp -= argcount;
                         object result = ApplyPrimitive(f, instruction.pos, stack, sp, argcount);
                         ReturnAddress address = (ReturnAddress) stack[sp - 1];
@@ -661,12 +836,22 @@ public class VM
                     goto case Opcode.CALLS;
 
                 case Opcode.CALLS: {
-                    if (currentThread?.terminated == true)
+                    if (thread?.terminated == true)
                         throw new SchemeError("thread terminated");
                     int argcount = instruction.i1;
                     object f = stack[--sp];
                     if (f is Lambda lam)
                     {
+                        CodeList cl = lam.cl;
+                        if (cl.jit != null && !cl.builtin && depth < Jit.MaxDepth)
+                        {
+                            sp -= argcount;
+                            object result = CallJit(lam, stack, sp, argcount, depth, ip, fn, env);
+                            stack = stackArr;
+                            stack[sp++] = result;
+                            break;
+                        }
+                        if (cl.calls++ == Jit.Threshold) Jit.Compile(cl);
                         // the return address goes under the arguments,
                         // where SAVE would have put it
                         sp++;
@@ -760,14 +945,23 @@ public class VM
 
                 case Opcode.SETCC: {
                     var k = (Continuation) stack[sp - 1];
-                    sp = k.stack.Length;
+                    if (k.act == null ? !act.root : k.act != act)
+                        throw ContinuationJumpFor(k, act, fn, ip, env);
+                    int b = k.act == null ? 0 : act.Base + 1;
+                    sp = b + k.stack.Length;
                     stack = EnsureStack(stack, sp + code.Length - ip);
-                    Array.Copy(k.stack, stack, sp);
+                    Array.Copy(k.stack, 0, stack, b, k.stack.Length);
                     break;
                 }
 
                 case Opcode.CC:
+                    if (!act.root) throw CaptureRequest(act, fn, ip - 1, env, nargs, stack, sp);
                     stack[sp] = CaptureContinuation(stack, sp); sp++;
+                    break;
+
+                case Opcode.ECC:
+                    stack[sp] = act.root ? CaptureContinuation(stack, sp) : CaptureEscape(act, stack, sp);
+                    sp++;
                     break;
 
                 case Opcode.FLATTEN_APPLY: {
@@ -822,7 +1016,7 @@ public class VM
                     break;
 
                 case Opcode.LOOP: {
-                    if (currentThread?.terminated == true)
+                    if (thread?.terminated == true)
                         throw new SchemeError("thread terminated");
                     object[] parent = (object[])env;
                     for (int i = instruction.i2; i > 0; i--) parent = (object[])parent[0];
@@ -1142,62 +1336,102 @@ public class VM
                     );
             }
         }
+        break;
         } // end try
         catch (SchemeError e)
         {
-            this.fn = fn; this.ip = ip; this.env = env; this.sp = sp;
-            if (e.schemeCallStack == null)
-                e.schemeCallStack = ExtractCallStack();
-            if (exceptionHandlers != Value.NIL)
-            {
-                object condition = (object?)e.errorObject ?? new ErrorObject(e.Message, Array.Empty<object>());
-                this.nargs = nargs;
-                SetupRaiseCall(condition);
-                fn = this.fn!; code = fn.codeArr; ip = this.ip; env = this.env;
-                sp = this.sp; nargs = this.nargs;
-                stack = EnsureStack(stackArr, sp + code.Length - ip);
-                goto continueExecution;
-            }
-            this.sp = savedSp;
-            winders = savedWinders;
-            exceptionHandlers = savedExceptionHandlers;
-            throw;
+            pending = e;
         }
         catch (InvalidCastException e)
         {
-            // No opcode changes ip or fn before it can fail a cast, so the
-            // failing instruction is the one fetched last.
-            Instruction? failed = ip > 0 && ip <= fn.code.Count ? fn.code[ip - 1] : null;
-            string name = failed == null ? "VM"
-                : failed.opcode == Opcode.CXR ? (string)failed.arg2!
-                : OpcodeErrorName(failed.opcode) ?? failed.opcode + " instruction";
-            var err = WrongArgumentTypeError(failed?.pos, name, e);
-            this.fn = fn; this.ip = ip; this.env = env; this.sp = sp;
-            err.schemeCallStack = ExtractCallStack();
-            if (exceptionHandlers != Value.NIL)
-            {
-                this.nargs = nargs;
-                SetupRaiseCall(err.errorObject!);
-                fn = this.fn!; code = fn.codeArr; ip = this.ip; env = this.env;
-                sp = this.sp; nargs = this.nargs;
-                stack = EnsureStack(stackArr, sp + code.Length - ip);
-                goto continueExecution;
-            }
-            this.sp = savedSp;
-            winders = savedWinders;
-            exceptionHandlers = savedExceptionHandlers;
-            throw err;
+            pending = CastError(fn, ip, e);
         }
-        this.fn = fn; this.ip = ip; this.env = env;
+        catch (FrameCapture fc)
+        {
+            if (!act.root)
+            {
+                if (fc.last != act) fc.Add(stackArr[(act.Base + 1)..sp], act);
+                Leave(act, sp);
+                throw;
+            }
+            // rebuild the unwound frames on the root's stack
+            stack = stackArr;
+            for (int s = fc.segments.Count - 1; s >= 0; s--)
+            {
+                object[] seg = fc.segments[s];
+                Activation? owner = fc.owners[s];
+                if (owner != null) PromoteEscapes(owner, stack, sp);
+                stack = EnsureStack(stack, sp + seg.Length);
+                Array.Copy(seg, 0, stack, sp, seg.Length);
+                sp += seg.Length;
+            }
+            fn = fc.fn; code = fn.codeArr; ip = fc.ip; env = fc.env; nargs = fc.nargs;
+            stack = EnsureStack(stack, sp + code.Length - ip);
+            if (fc.cause == FrameCapture.CAPTURE) continue;
+            pending = fc.cause is InvalidCastException ice ? CastError(fn, ip, ice) : (Exception)fc.cause;
+        }
+        catch (ContinuationJump j)
+        {
+            if (j.target != act)
+            {
+                Leave(act, sp);
+                throw;
+            }
+            Continuation k = j.continuation;
+            int b = k.act == null ? 0 : act.Base + 1;
+            sp = b + k.stack.Length;
+            stack = EnsureStack(stackArr, sp);
+            Array.Copy(k.stack, 0, stack, b, k.stack.Length);
+            fn = j.fn; code = fn.codeArr; ip = j.ip; env = j.env;
+            stack = EnsureStack(stack, sp + code.Length - ip);
+            continue;
+        }
+        // an error at fn/ip: the innermost exception handler is called on
+        // top of the stack; with none, it leaves the root (with every
+        // frame in its call stack: a nested activation unwinds to the root)
+        SchemeError e2 = pending as SchemeError
+            ?? new SchemeError((SourcePos?)null, "internal error: " + pending);
+        this.fn = fn; this.ip = ip; this.env = env; this.sp = sp;
+        if (exceptionHandlers != Value.NIL)
+        {
+            if (e2.schemeCallStack == null)
+                e2.schemeCallStack = ExtractCallStack();
+            object condition = (object?)e2.errorObject ?? new ErrorObject(e2.Message, Array.Empty<object>());
+            this.nargs = nargs;
+            SetupRaiseCall(condition);
+            fn = this.fn!; code = fn.codeArr; ip = this.ip; env = this.env;
+            sp = this.sp; nargs = this.nargs;
+            stack = EnsureStack(stackArr, sp + code.Length - ip);
+            continue;
+        }
+        if (!act.root)
+        {
+            if (Jit.Stats) Jit.statErrors++;
+            var fc = new FrameCapture(e2, fn, ip, env, nargs);
+            fc.Add(stackArr[(act.Base + 1)..sp], act);
+            Leave(act, sp);
+            throw fc;
+        }
+        if (e2.schemeCallStack == null)
+            e2.schemeCallStack = ExtractCallStack();
+        this.sp = act.Base;
+        winders = savedWinders!;
+        exceptionHandlers = savedExceptionHandlers!;
+        if (e2 == pending) System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(e2).Throw();
+        throw e2;
+        }
+        if (act.root) { this.fn = fn; this.ip = ip; this.env = env; }
         object returnValue = stack[--sp];
         stack[sp] = null!;
         this.sp = sp;
         return returnValue;
-        }
-        finally
-        {
-            VM.Current = savedCurrent;
-        }
+    }
+
+    // Clears the stack of activation a, left by an exception.
+    private void Leave(Activation a, int sp)
+    {
+        if (sp > a.Base) Array.Clear(stackArr, a.Base, Math.Min(sp, stackArr.Length) - a.Base);
+        this.sp = a.Base;
     }
 
     private void CountCall(string s)
