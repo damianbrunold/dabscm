@@ -41,6 +41,7 @@ public final class TlsTrust {
 
     private static volatile SSLContext verifyingContext;
     private static volatile HttpClient httpClient;
+    private static volatile HttpClient httpClientNoRedirects;
 
     private static boolean envFlag(String name) {
         String v = System.getenv(name);
@@ -70,18 +71,10 @@ public final class TlsTrust {
             synchronized (TlsTrust.class) {
                 c = httpClient;
                 if (c == null) {
-                    SSLContext ctx;
-                    if (insecureRequested()) {
-                        System.err.println("warning: SCM_TLS_INSECURE is set, "
-                            + "HTTPS certificate verification is disabled");
-                        ctx = insecureContext();
-                    } else {
-                        ctx = verifyingContext();
-                    }
                     // Follow redirects like the C# client does, except
                     // HTTPS -> HTTP downgrades (Redirect.NORMAL).
                     c = HttpClient.newBuilder()
-                        .sslContext(ctx)
+                        .sslContext(clientContext())
                         .followRedirects(HttpClient.Redirect.NORMAL)
                         .build();
                     httpClient = c;
@@ -89,6 +82,37 @@ public final class TlsTrust {
             }
         }
         return c;
+    }
+
+    // Shared HttpClient for requests made with follow-redirects? #f.
+    public static HttpClient httpClientNoRedirects() throws Exception {
+        HttpClient c = httpClientNoRedirects;
+        if (c == null) {
+            synchronized (TlsTrust.class) {
+                c = httpClientNoRedirects;
+                if (c == null) {
+                    c = HttpClient.newBuilder()
+                        .sslContext(clientContext())
+                        .followRedirects(HttpClient.Redirect.NEVER)
+                        .build();
+                    httpClientNoRedirects = c;
+                }
+            }
+        }
+        return c;
+    }
+
+    private static boolean warnedInsecure;
+
+    // Called under the TlsTrust lock.
+    private static SSLContext clientContext() throws Exception {
+        if (!insecureRequested()) return verifyingContext();
+        if (!warnedInsecure) {
+            warnedInsecure = true;
+            System.err.println("warning: SCM_TLS_INSECURE is set, "
+                + "HTTPS certificate verification is disabled");
+        }
+        return insecureContext();
     }
 
     // SSLContext trusting the JDK default store plus, on Windows, the Windows root stores.

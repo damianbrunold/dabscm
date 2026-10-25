@@ -32,8 +32,14 @@ yourself with `(scm json simple)`).
 
 Every call follows redirects (301, 302, 303, 307, 308) and returns the final
 response, except a redirect from HTTPS to plain HTTP, whose 3xx response is
-returned as is. A failed request (refused connection, timeout, bad host)
-raises an error naming the procedure and the cause.
+returned as is. To see a redirect itself (its status, `Location` and
+`Set-Cookie`), build the request with `follow-redirects?` `#f` and send it
+with `http-send`:
+
+    (http-send (make-http-request "POST" url headers body 600 #f))
+
+A failed request (refused connection, timeout, bad host) raises an error
+naming the procedure and the cause.
 
 ## HTTPS certificate verification
 

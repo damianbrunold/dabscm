@@ -183,6 +183,28 @@
                                      "GET" "http://localhost:18093/old" '() #f)))))))
         (server-stop server)
         rs)))
+  ;; follow-redirects? #f (6th make-http-request argument): http-send
+  ;; returns the 3xx with its headers.
+  (test-equal '(303 "/new" "a=1")
+    (guard (exn (#t #f))
+      (let* ((server (tcp-http-serve 18094
+                       (lambda (req)
+                         (if (string=? (http-request-url req) "/old")
+                             (make-http-response 303 '(("Location" . "/new")
+                                                       ("Set-Cookie" . "a=1"))
+                                                 "")
+                             (http-ok "moved")))))
+             (send (lambda ()
+                     (http-send (make-http-request
+                                 "POST" "http://localhost:18094/old" '() "x" 600 #f))))
+             (r (let loop ((n 0))
+                  (if (< n 3)
+                      (guard (e (#t (loop (+ n 1)))) (send))
+                      (send)))))
+        (server-stop server)
+        (list (http-response-status r)
+              (http-response-header r "Location")
+              (http-response-header r "Set-Cookie")))))
   ;; A refused connection names its cause instead of "null" (nothing
   ;; listens on 18092).
   (test-equal '(#t #t #t #t)

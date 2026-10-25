@@ -19,7 +19,7 @@ public class PrimitiveHttpSend : Primitive
     {
         CheckArgs(pos, arguments, 1, 1);
         SchemeHttpRequest req = (SchemeHttpRequest) Value.AsNativeValue(arguments[0]).value;
-        using var client = TlsTrust.CreateHttpClient();
+        using var client = TlsTrust.CreateHttpClient(req.FollowRedirects);
         client.Timeout = req.TimeoutSeconds > 0
             ? System.TimeSpan.FromSeconds(req.TimeoutSeconds)
             : System.Threading.Timeout.InfiniteTimeSpan;

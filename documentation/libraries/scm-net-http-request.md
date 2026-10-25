@@ -114,10 +114,12 @@ Example:
 
 ```
 Syntax: (make-http-request method url headers body) (make-http-request method url headers body timeout-seconds)
+  (make-http-request method url headers body timeout-seconds follow-redirects?)
 Library: (scm net http request)
 Description: Creates an HTTP request object. headers is an alist of (name . value) pairs. body is a string, a bytevector, or #f.
   A string body is sent UTF-8 encoded; a bytevector body is sent byte for byte.
   Optional timeout-seconds overrides the default request timeout (600s); <= 0 means no timeout.
+  Optional follow-redirects? (default #t): #f makes http-send return a 3xx response as is.
 Example:
   (make-http-request "GET" "/" '() #f)
 ```

@@ -21,19 +21,20 @@ public static class TlsTrust
         return v == "1" || v == "true" || v == "yes";
     }
 
-    public static HttpClient CreateHttpClient()
+    // followRedirects false: the 3xx response is returned as is.
+    public static HttpClient CreateHttpClient(bool followRedirects = true)
     {
-        if (!InsecureRequested()) return new HttpClient();
-        if (!warned)
+        var handler = new HttpClientHandler { AllowAutoRedirect = followRedirects };
+        if (InsecureRequested())
         {
-            warned = true;
-            Console.Error.WriteLine(
-                "warning: SCM_TLS_INSECURE is set, HTTPS certificate verification is disabled");
+            if (!warned)
+            {
+                warned = true;
+                Console.Error.WriteLine(
+                    "warning: SCM_TLS_INSECURE is set, HTTPS certificate verification is disabled");
+            }
+            handler.ServerCertificateCustomValidationCallback = (msg, cert, chain, errors) => true;
         }
-        var handler = new HttpClientHandler
-        {
-            ServerCertificateCustomValidationCallback = (msg, cert, chain, errors) => true
-        };
         return new HttpClient(handler, disposeHandler: true);
     }
 }

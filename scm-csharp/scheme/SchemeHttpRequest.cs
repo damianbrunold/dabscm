@@ -13,6 +13,7 @@ public class SchemeHttpRequest
     public string? Body;        // UTF-8 view of BodyBytes (for back-compat).
     public byte[]? BodyBytes;   // null if no body — the raw, byte-correct body.
     public int TimeoutSeconds = DefaultTimeoutSeconds; // <= 0 means no timeout
+    public bool FollowRedirects = true; // false: http-send returns the 3xx itself
 
     public SchemeHttpRequest(string method, string url, List<(string, string)> headers, string? body)
         : this(method, url, headers, body, null)

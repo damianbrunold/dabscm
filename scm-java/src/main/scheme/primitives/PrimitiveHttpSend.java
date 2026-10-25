@@ -38,7 +38,8 @@ public class PrimitiveHttpSend extends Primitive {
             for (String[] h : req.headers) {
                 builder.header(h[0], h[1]);
             }
-            HttpClient client = TlsTrust.httpClient();
+            HttpClient client = req.followRedirects
+                ? TlsTrust.httpClient() : TlsTrust.httpClientNoRedirects();
             HttpResponse<String> resp = client.send(builder.build(), HttpResponse.BodyHandlers.ofString());
             return PrimitiveHttpGet.buildResponse(resp);
         } catch (Exception e) {

@@ -12,6 +12,7 @@ public class SchemeHttpRequest {
     public String body; // null if no body — UTF-8 view of bodyBytes (for back-compat).
     public byte[] bodyBytes; // null if no body — the raw, byte-correct body.
     public int timeoutSeconds = DEFAULT_TIMEOUT_SECONDS; // <= 0 means no timeout
+    public boolean followRedirects = true; // false: http-send returns the 3xx itself
 
     public SchemeHttpRequest(String method, String url, List<String[]> headers, String body) {
         this(method, url, headers, body, null);
