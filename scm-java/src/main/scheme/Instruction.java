@@ -24,6 +24,9 @@ public class Instruction {
     // / resetModules invalidate the cache via Modules.cacheGeneration.
     public Cell cachedCell;
     public int cachedCellGeneration;
+    // the same for compiled code, against Modules.generation (scheme.jit.Rt)
+    public Cell jitCell;
+    public int jitCellGeneration;
 
     public Instruction() {}
 

@@ -38,6 +38,9 @@ public class Modules {
     // resolved Cell together with the generation at the time of
     // caching; on a mismatch the cache is dropped and resolved again.
     public int cacheGeneration;
+    // Bumped with every cacheGeneration of any Modules: the compiled code's
+    // cache of global cells (Instruction.jitCell) checks it with one load.
+    public static int generation;
 
     private BindingTable bindingTable;
     private HashMap<String, Integer> moduleScopes;
@@ -194,6 +197,7 @@ public class Modules {
         modules.clear();
         modules = newModules;
         cacheGeneration++;
+        generation++;
     }
 
     public void takeSnapshot() {
@@ -207,6 +211,7 @@ public class Modules {
     public void restoreFromSnapshot() {
         if (snapshot == null) return;
         cacheGeneration++;
+        generation++;
         modules.clear();
         var cellMap = new java.util.IdentityHashMap<Cell, Cell>();
         for (var kv : snapshot.modules.entrySet())

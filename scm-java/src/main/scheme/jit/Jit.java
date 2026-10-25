@@ -506,6 +506,7 @@ public final class Jit {
                     c.invoke(INVOKESTATIC, RT, "checkTerm", "(Lscheme/VM;)V");
                 }
                 lvl = levels[i];
+                c.line(i);
                 boolean fused = emit(i, start);
                 int to = c.newLabel();
                 c.mark(to);
@@ -826,8 +827,6 @@ public final class Jit {
             if (compact) { emitCompactInvoke(ins, d, tail, global, start); return; }
             int n = ins.i1;
             int argBase = global ? d - n : d - n - 1;
-            array(argBase, n, true);
-            c.astore(tFrame);
             if (global) {
                 c.aload(VM_); ins(ins); rt("gvarCall", "(Lscheme/VM;Lscheme/Instruction;)" + OBJD);
             } else {
@@ -835,14 +834,14 @@ public final class Jit {
             }
             c.astore(tF);
             int prim = c.newLabel(), interp = c.newLabel(), got = c.newLabel(), done = c.newLabel(),
-                tc = c.newLabel();
+                tc = c.newLabel(), notFn = c.newLabel();
             c.stackAt(got, OBJ);
             c.stackAt(done, OBJ);
             if (tail) {
                 // a self tail call: a loop
                 int other = c.newLabel();
                 c.aload(tF); c.aload(SELF); c.jump(IF_ACMPNE, other);
-                c.aload(tFrame); c.astore(FRAME);
+                array(argBase, n, true); c.astore(FRAME);
                 c.jump(GOTO, start);
                 c.mark(other);
             }
@@ -851,6 +850,8 @@ public final class Jit {
             c.aload(tLam); c.field(GETFIELD, LAM, "cl", "Lscheme/CodeList;");
             c.field(GETFIELD, "scheme/CodeList", "jit", "Lscheme/jit/JitCode;");
             c.astore(tJit);
+            array(argBase, n, true);
+            c.astore(tFrame);
             if (tail) { c.iload(DEPTH); c.iconst(tailDepth); c.jump(IF_ICMPGE, tc); }
             c.aload(tJit); c.jump(IFNULL, interp);
             if (!tail) { c.iload(DEPTH); c.iconst(maxDepth); c.jump(IF_ICMPGE, interp); }
@@ -859,15 +860,37 @@ public final class Jit {
             if (tail) c.op(ARETURN); else c.jump(GOTO, got);
             c.mark(interp);
             c.aload(VM_); c.aload(tLam); c.aload(tFrame); c.iload(DEPTH);
-            rt("interp", CALL_DESC.replace("(Lscheme/VM;Lscheme/Lambda;", "(Lscheme/VM;Lscheme/Lambda;"));
+            rt("interp", CALL_DESC);
             if (tail) c.op(ARETURN); else c.jump(GOTO, done);
             if (tail) {
                 c.mark(tc);
                 c.aload(tLam); c.aload(tFrame); rt("tailCall", "(Lscheme/Lambda;" + OBJA + ")" + OBJD);
                 c.op(ARETURN);
             }
+            // a primitive, called here so that HotSpot profiles (and
+            // inlines) it per call site; its exceptions as Rt.prim
             c.mark(prim);
-            c.aload(VM_); c.aload(tF); c.aload(tFrame); ins(ins);
+            c.aload(tF); c.type(INSTANCEOF, "scheme/Primitive"); c.jump(IFEQ, notFn);
+            c.aload(tF); c.type(CHECKCAST, "scheme/Primitive");
+            if (ins.pos == null) c.op(ACONST_NULL); else getConst(ins.pos, "Lscheme/SourcePos;");
+            c.iconst(n); c.type(ANEWARRAY, OBJ);
+            for (int k = 0; k < n; k++) {
+                c.op(DUP); c.iconst(k); load(argBase + k); rt("pv", "(" + OBJD + ")" + OBJD); c.op(AASTORE);
+            }
+            int pFrom = c.newLabel(), pTo = c.newLabel(), pHandler = c.newLabel();
+            c.mark(pFrom);
+            c.invoke(INVOKEVIRTUAL, "scheme/Primitive", "apply", "(Lscheme/SourcePos;" + OBJA + ")" + OBJD);
+            c.mark(pTo);
+            if (tail) c.op(ARETURN); else c.jump(GOTO, done);
+            c.stackAt(pHandler, "java/lang/RuntimeException");
+            c.mark(pHandler);
+            c.aload(tF); ins(ins);
+            rt("primError", "(Ljava/lang/RuntimeException;" + OBJD + INSD + ")Ljava/lang/RuntimeException;");
+            c.op(ATHROW);
+            c.handler(pFrom, pTo, pHandler, "java/lang/RuntimeException");
+            // not a procedure: Rt.prim raises the error
+            c.mark(notFn);
+            c.aload(VM_); c.aload(tF); array(argBase, n, true); ins(ins);
             rt("prim", "(Lscheme/VM;" + OBJD + OBJA + INSD + ")" + OBJD);
             if (tail) { c.op(ARETURN); return; }
             c.jump(GOTO, done);

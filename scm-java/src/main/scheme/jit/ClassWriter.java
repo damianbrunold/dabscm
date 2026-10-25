@@ -110,7 +110,8 @@ final class ClassWriter {
             out.writeShort(utf8("Code"));
             int handlers = code.handlers.size();
             byte[] frames = code.stackMapTable();
-            int attrs = frames == null ? 0 : 6 + frames.length;
+            int attrs = (frames == null ? 0 : 6 + frames.length)
+                      + (code.lines.isEmpty() ? 0 : 6 + 2 + code.lines.size() * 2);
             out.writeInt(2 + 2 + 4 + bytes.length + 2 + handlers * 8 + 2 + attrs);
             out.writeShort(code.maxStack);
             out.writeShort(code.maxLocals);
@@ -123,13 +124,17 @@ final class ClassWriter {
                 out.writeShort(code.labelPos(h[2]));
                 out.writeShort(h[3]);
             }
-            if (frames == null) {
-                out.writeShort(0);
-            } else {
-                out.writeShort(1);
+            out.writeShort((frames == null ? 0 : 1) + (code.lines.isEmpty() ? 0 : 1));
+            if (frames != null) {
                 out.writeShort(utf8("StackMapTable"));
                 out.writeInt(frames.length);
                 out.write(frames);
+            }
+            if (!code.lines.isEmpty()) {
+                out.writeShort(utf8("LineNumberTable"));
+                out.writeInt(2 + code.lines.size() * 2);
+                out.writeShort(code.lines.size() / 2);
+                for (int v : code.lines) out.writeShort(v);
             }
         } catch (IOException e) { throw new IllegalStateException(e); }
         methods.add(b.toByteArray());
@@ -186,6 +191,11 @@ final class ClassWriter {
         String[] locals;
         private final HashMap<Integer, String[]> stacks = new HashMap<>();
         private final java.util.TreeSet<Integer> frameLabels = new java.util.TreeSet<>();
+
+        // pc, line pairs (the line of generated code: the instruction index)
+        final ArrayList<Integer> lines = new ArrayList<>();
+
+        void line(int line) { lines.add(len); lines.add(line); }
 
         // the stack types at label (when not empty)
         void stackAt(int label, String... types) { stacks.put(label, types); }

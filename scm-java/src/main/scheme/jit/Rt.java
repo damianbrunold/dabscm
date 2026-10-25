@@ -130,6 +130,14 @@ public final class Rt {
         return call(vm, depth, gvarCall(vm, ins), frame, ins);
     }
 
+    // An exception of primitive f called by compiled code at ins (Rt.prim).
+    public static RuntimeException primError(RuntimeException e, Object f, Instruction ins) {
+        if (e instanceof SchemeError || e instanceof FrameCapture || e instanceof ContinuationJump) return e;
+        Primitive prim = (Primitive) f;
+        if (e instanceof ClassCastException) return VM.wrongArgumentTypeError(ins.pos, prim.name(), (ClassCastException) e);
+        return new SchemeError(ins.pos, "Failed in " + prim.name() + ": " + e.getMessage());
+    }
+
     public static SchemeError arity(Lambda self, Instruction ins, int nargs) {
         return VM.arityError(self, ins, nargs, "");
     }
@@ -165,16 +173,24 @@ public final class Rt {
     }
 
     public static Object gvar(VM vm, Instruction ins) {
-        Cell cell = ins.cachedCell;
-        if (cell != null && ins.cachedCellGeneration == vm.modules.cacheGeneration) return cell.value;
-        return vm.globalCell(ins, ins.arg1, (String) ins.arg2).value;
+        Cell cell = ins.jitCell;
+        if (cell != null && ins.jitCellGeneration == Modules.generation) return cell.value;
+        return resolve(vm, ins, ins.arg1).value;
     }
 
     // the global called by GCALLS/GCALLJ
     public static Object gvarCall(VM vm, Instruction ins) {
-        Cell cell = ins.cachedCell;
-        if (cell != null && ins.cachedCellGeneration == vm.modules.cacheGeneration) return cell.value;
-        return vm.globalCell(ins, ins.arg3, (String) ins.arg2).value;
+        Cell cell = ins.jitCell;
+        if (cell != null && ins.jitCellGeneration == Modules.generation) return cell.value;
+        return resolve(vm, ins, ins.arg3).value;
+    }
+
+    private static Cell resolve(VM vm, Instruction ins, Object symbol) {
+        int generation = Modules.generation;
+        Cell cell = vm.globalCell(ins, symbol, (String) ins.arg2);
+        ins.jitCell = cell;
+        ins.jitCellGeneration = generation;
+        return cell;
     }
 
     public static void gset(VM vm, Instruction ins, Object v) {
