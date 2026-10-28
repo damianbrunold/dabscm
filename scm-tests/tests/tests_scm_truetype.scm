@@ -197,6 +197,10 @@
   (test-assert (pair? (cdr (font-glyph dejavu-sans (integer->char #xE4)))))   ; ä
   (test-assert (font-glyph dejavu-sans-bold (integer->char #x2019)))          ; ’
   (test-assert (< (font-kerning dejavu-sans #\A #\V) 0))
+  ;; NO₂, m³
+  (test-assert (pair? (cdr (font-glyph dejavu-sans (integer->char #x2082)))))
+  (test-assert (pair? (cdr (font-glyph inter-black (integer->char #x2082)))))
+  (test-assert (pair? (cdr (font-glyph inter-regular (integer->char #xB3)))))
   (test-assert (> (font-text-width dejavu-sans-bold 12 "Intern")
                   (font-text-width dejavu-sans 12 "Intern")))
   ;; it draws

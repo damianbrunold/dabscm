@@ -27,8 +27,9 @@ with Chibi-Scheme.
 - **Source:** DejaVu Sans and DejaVu Sans Bold, <https://dejavu-fonts.github.io/>
 - **License:** Bitstream Vera license (DejaVu changes are in the Public Domain)
 
-The glyph outlines, advances and kerning pairs of about 240 characters
-(ASCII, Latin-1, Windows-1252 and some typographic characters) are
+The glyph outlines, advances and kerning pairs of about 260 characters
+(ASCII, Latin-1, Windows-1252, some typographic characters, and
+superscript and subscript digits) are
 extracted from the fonts by `notes/gen-font.scm dejavu`, so that
 `(scm svg raster)` can draw text without a font file. The licence, which
 allows such subsets as long as the fonts are not called "Bitstream" or
