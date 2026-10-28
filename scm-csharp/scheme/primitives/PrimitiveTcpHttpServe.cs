@@ -327,10 +327,37 @@ public class PrimitiveTcpHttpServe : Primitive
         }
     }
 
+    // A write-only stream that remembers whether writing to the client failed.
+    private sealed class TrackingStream : Stream
+    {
+        private readonly Stream inner;
+        public bool Failed;
+        public TrackingStream(Stream inner) => this.inner = inner;
+        public override bool CanRead => false;
+        public override bool CanSeek => false;
+        public override bool CanWrite => true;
+        public override long Length => throw new NotSupportedException();
+        public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
+        public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count)
+        {
+            try { inner.Write(buffer, offset, count); }
+            catch (Exception) { Failed = true; throw; }
+        }
+        public override void Flush()
+        {
+            try { inner.Flush(); }
+            catch (Exception) { Failed = true; throw; }
+        }
+    }
+
     // Calls (writer port) with a binary port to the client.
     private void WriteStream(Stream stream, Lambda writer, string method, string url)
     {
-        var port = new BinaryOutputStream(stream);
+        var tracked = new TrackingStream(stream);
+        var port = new BinaryOutputStream(tracked);
         try
         {
             VM vm = new VM(modules);
@@ -343,10 +370,11 @@ public class PrimitiveTcpHttpServe : Primitive
         }
         catch (Exception ex)
         {
-            // Mostly a client that went away; the body just ends.
-            LogHandlerError(method, url, "stream writer raised: " + ex.Message);
+            // A client that went away ends the body normally; anything
+            // else is the writer's error.
+            if (!tracked.Failed) LogHandlerError(method, url, "stream writer raised: " + ex.Message);
         }
-        port.Flush();
+        if (!tracked.Failed) port.Flush();
     }
 
     private static string SanitizeHeader(string s)

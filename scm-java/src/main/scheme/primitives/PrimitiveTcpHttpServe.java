@@ -298,9 +298,25 @@ public class PrimitiveTcpHttpServe extends Primitive {
         }
     }
 
+    // An output stream that remembers whether writing to the client failed.
+    private static final class TrackingOutputStream extends FilterOutputStream {
+        boolean failed;
+        TrackingOutputStream(OutputStream out) { super(out); }
+        @Override public void write(int b) throws IOException {
+            try { out.write(b); } catch (IOException e) { failed = true; throw e; }
+        }
+        @Override public void write(byte[] b, int off, int len) throws IOException {
+            try { out.write(b, off, len); } catch (IOException e) { failed = true; throw e; }
+        }
+        @Override public void flush() throws IOException {
+            try { out.flush(); } catch (IOException e) { failed = true; throw e; }
+        }
+    }
+
     // Calls (writer port) with a binary port to the client.
     private void writeStream(OutputStream out, Lambda writer, String method, String url) throws IOException {
-        BinaryOutputStream port = new BinaryOutputStream(out, false);
+        TrackingOutputStream tracked = new TrackingOutputStream(out);
+        BinaryOutputStream port = new BinaryOutputStream(tracked, false);
         try {
             VM vm = new VM(modules);
             Lambda wrapper = new Lambda(Value.NIL, Instruction.seq(
@@ -310,10 +326,11 @@ public class PrimitiveTcpHttpServe extends Primitive {
                 new Instruction(Opcode.CALLJ, 1)));
             vm.execute(wrapper);
         } catch (Exception ex) {
-            // Mostly a client that went away; the body just ends.
-            logHandlerError(method, url, "stream writer raised: " + ex.getMessage());
+            // A client that went away ends the body normally; anything
+            // else is the writer's error.
+            if (!tracked.failed) logHandlerError(method, url, "stream writer raised: " + ex.getMessage());
         }
-        port.flush();
+        if (!tracked.failed) port.flush();
     }
 
     private static String sanitizeHeader(String s) {
