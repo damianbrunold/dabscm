@@ -1,7 +1,7 @@
 ;; (scm ooxml presentation) — writing PowerPoint files (.pptx).
 ;;
 ;; A presentation is a list of slides; a slide holds shapes (preset
-;; geometries, optionally with text), lines, pictures and videos, all
+;; geometries, optionally with text), lines, tables, pictures and videos, all
 ;; absolutely positioned, plus a background colour, a transition, build
 ;; animations and notes. The package has one master and one blank layout:
 ;; everything a slide shows is on the slide itself, which is what an
@@ -37,6 +37,7 @@
           slide-set-notes!
           slide-add-shape!
           slide-add-line!
+          slide-add-table!
           slide-add-picture!
           slide-add-video!
           presentation-save
@@ -363,6 +364,72 @@ Description: Adds a straight line from the top-left to the bottom-right
                "<a:prstGeom prst=\"line\"><a:avLst/></a:prstGeom>"
                "<a:ln" (attr "w" (n (opt opts 'width 12700))) " cap=\"rnd\">"
                (color-fill (opt opts 'color "000000") #f) "</a:ln></p:spPr></p:cxnSp>"))
+        (note-build! slide opts id #f)
+        id))
+
+    ;; --- tables -----------------------------------------------------------
+
+    (define (slide-add-table! slide x y w h rows . opts)
+      "Syntax: (slide-add-table! slide x y w h rows [options])
+Library: (scm ooxml presentation)
+Description: Adds a table. rows is a list of rows, a row a list of cells
+  (every row as long as the first), a cell an alist: (text . paragraphs),
+  (fill . color), (anchor . top | middle | bottom). Columns share the
+  width equally unless options has (column-widths . (emu ...)); rows are
+  h / rows high (PowerPoint makes a row higher when its text needs it)
+  unless (row-heights . (emu ...)). Other options: (margins . (left top
+  right bottom)) in EMU (default 91440 45720 91440 45720), (header . #t)
+  (the first row is a header row), (name . string), (build . (order
+  effect)). Cells have no borders.
+Example:
+  (slide-add-table! s 914400 914400 7315200 1828800
+    (list (list '((text . (((runs . (((text . \"Name\") (bold . #t))))))) (fill . \"0070B4\"))
+                '((text . (((runs . (((text . \"Wert\") (bold . #t))))))) (fill . \"0070B4\")))
+          (list '((text . (((runs . (((text . \"a\")))))))) '((text . (((runs . (((text . \"1\"))))))))))
+    '((header . #t)))"
+      (let* ((opts (if (pair? opts) (car opts) '()))
+             (id (next-shape-id! slide))
+             (ncols (if (pair? rows) (length (car rows)) 1))
+             (nrows (max 1 (length rows)))
+             (widths (opt opts 'column-widths
+                          (let loop ((i 0) (acc '()) (used 0))
+                            ;; equal widths that add up to w exactly
+                            (if (= i ncols)
+                                (reverse acc)
+                                (let ((cw (- (exact (round (* w (/ (+ i 1) ncols)))) used)))
+                                  (loop (+ i 1) (cons cw acc) (+ used cw)))))))
+             (heights (opt opts 'row-heights (map (lambda (r) (/ h nrows)) rows)))
+             (margins (opt opts 'margins '(91440 45720 91440 45720)))
+             (no-line (lambda (tag) (cat "<a:" tag " w=\"0\"><a:noFill/></a:" tag ">")))
+             (cell-xml
+              (lambda (cell)
+                (let ((paras (opt cell 'text '())))
+                  (cat "<a:tc><a:txBody><a:bodyPr/><a:lstStyle/>"
+                       (if (null? paras)
+                           "<a:p><a:endParaRPr lang=\"de-CH\" dirty=\"0\"/></a:p>"
+                           (strings (map (lambda (p) (paragraph-xml slide p)) paras)))
+                       "</a:txBody><a:tcPr"
+                       (attr "marL" (n (list-ref margins 0))) (attr "marR" (n (list-ref margins 2)))
+                       (attr "marT" (n (list-ref margins 1))) (attr "marB" (n (list-ref margins 3)))
+                       (attr "anchor" (case (opt cell 'anchor 'top) ((middle) "ctr") ((bottom) "b") (else "t")))
+                       ">" (no-line "lnL") (no-line "lnR") (no-line "lnT") (no-line "lnB")
+                       (color-fill (opt cell 'fill #f) #f)
+                       "</a:tcPr></a:tc>")))))
+        (add-item! slide
+          (cat "<p:graphicFrame><p:nvGraphicFramePr><p:cNvPr" (attr "id" (number->string id))
+               (attr "name" (esc (opt opts 'name (cat "Tabelle " (number->string id))))) "/>"
+               "<p:cNvGraphicFramePr><a:graphicFrameLocks noGrp=\"1\"/></p:cNvGraphicFramePr><p:nvPr/>"
+               "</p:nvGraphicFramePr>"
+               "<p:xfrm><a:off" (attr "x" (n x)) (attr "y" (n y)) "/>"
+               "<a:ext" (attr "cx" (n (max 0 w))) (attr "cy" (n (max 0 h))) "/></p:xfrm>"
+               "<a:graphic><a:graphicData uri=\"http://schemas.openxmlformats.org/drawingml/2006/table\">"
+               "<a:tbl><a:tblPr" (if (opt opts 'header #f) (attr "firstRow" "1") "") "/><a:tblGrid>"
+               (strings (map (lambda (cw) (cat "<a:gridCol" (attr "w" (n cw)) "/>")) widths))
+               "</a:tblGrid>"
+               (strings (map (lambda (row rh)
+                               (cat "<a:tr" (attr "h" (n rh)) ">" (strings (map cell-xml row)) "</a:tr>"))
+                             rows heights))
+               "</a:tbl></a:graphicData></a:graphic></p:graphicFrame>"))
         (note-build! slide opts id #f)
         id))
 

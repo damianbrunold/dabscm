@@ -2,7 +2,7 @@
 
 `(scm ooxml presentation)` writes PowerPoint files (.pptx). Slides hold
 absolutely positioned shapes (preset geometries, optionally with formatted
-text), lines, pictures and MP4 videos, and carry a background colour, a
+text), lines, tables, pictures and MP4 videos, and carry a background colour, a
 transition, build animations (appear, fade, fly in) and speaker notes. The
 package has one master and one blank layout, so everything a slide shows is
 on the slide itself: what an export from another program needs. Images and
@@ -26,6 +26,11 @@ Positions and sizes are in EMU (914400 per inch; `points->emu`,
     (anchor . bottom)))
 (slide-add-shape! s 'rounded (inches->emu 1) (inches->emu 3) (inches->emu 3) (inches->emu 2)
   '((fill . "0070B4") (build . (1 fade))))
+(define (cell str) `((text . (((runs . (((text . ,str) (size . 18))))))) (anchor . middle)))
+(slide-add-table! s (inches->emu 5) (inches->emu 3) (inches->emu 6) (inches->emu 2)
+  (list (list (cell "Jahr") (cell "Besuche"))
+        (list (cell "2025") (cell "12 400")))
+  '((header . #t)))
 (slide-add-picture! s "chart.png" "image/png" (inches->emu 5) (inches->emu 3)
                     (inches->emu 4) (inches->emu 3) '((description . "Besuche pro Jahr")))
 (slide-set-notes! s '(((runs . (((text . "Zahlen aus dem Bericht")))))))

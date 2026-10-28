@@ -32,10 +32,11 @@
   <a href="#e7" data-name="slide-add-line!">slide-add-line!</a>
   <a href="#e8" data-name="slide-add-picture!">slide-add-picture!</a>
   <a href="#e9" data-name="slide-add-shape!">slide-add-shape!</a>
-  <a href="#e10" data-name="slide-add-video!">slide-add-video!</a>
-  <a href="#e11" data-name="slide-set-background!">slide-set-background!</a>
-  <a href="#e12" data-name="slide-set-notes!">slide-set-notes!</a>
-  <a href="#e13" data-name="slide-set-transition!">slide-set-transition!</a>
+  <a href="#e10" data-name="slide-add-table!">slide-add-table!</a>
+  <a href="#e11" data-name="slide-add-video!">slide-add-video!</a>
+  <a href="#e12" data-name="slide-set-background!">slide-set-background!</a>
+  <a href="#e13" data-name="slide-set-notes!">slide-set-notes!</a>
+  <a href="#e14" data-name="slide-set-transition!">slide-set-transition!</a>
 </nav>
 
 <main>
@@ -51,7 +52,7 @@
 <div class="lib-title scm">(scm ooxml presentation)</div>
 <div class="lib-preamble">
 <h2>Overview</h2>
-<p><a class="xref" href="scm-ooxml-presentation.html"><code>(scm ooxml presentation)</code></a> writes PowerPoint files (.pptx). Slides hold absolutely positioned shapes (preset geometries, optionally with formatted text), lines, pictures and MP4 videos, and carry a background colour, a transition, build animations (appear, fade, fly in) and speaker notes. The package has one master and one blank layout, so everything a slide shows is on the slide itself: what an export from another program needs. Images and videos can be file paths; they are copied into the package in pieces.</p>
+<p><a class="xref" href="scm-ooxml-presentation.html"><code>(scm ooxml presentation)</code></a> writes PowerPoint files (.pptx). Slides hold absolutely positioned shapes (preset geometries, optionally with formatted text), lines, tables, pictures and MP4 videos, and carry a background colour, a transition, build animations (appear, fade, fly in) and speaker notes. The package has one master and one blank layout, so everything a slide shows is on the slide itself: what an export from another program needs. Images and videos can be file paths; they are copied into the package in pieces.</p>
 <p>Positions and sizes are in EMU (914400 per inch; <a class="xref" href="#e2"><code>points-&gt;emu</code></a>, <a class="xref" href="#e0"><code>inches-&gt;emu</code></a>), font sizes in points, angles in degrees, colours "RRGGBB".</p>
 <h2>Common uses</h2>
 <pre><code class="language-scheme">(import (scm ooxml presentation))
@@ -66,13 +67,18 @@
     (anchor . bottom)))
 (slide-add-shape! s 'rounded (inches-&gt;emu 1) (inches-&gt;emu 3) (inches-&gt;emu 3) (inches-&gt;emu 2)
   '((fill . "0070B4") (build . (1 fade))))
+(define (cell str) `((text . (((runs . (((text . ,str) (size . 18))))))) (anchor . middle)))
+(slide-add-table! s (inches-&gt;emu 5) (inches-&gt;emu 3) (inches-&gt;emu 6) (inches-&gt;emu 2)
+  (list (list (cell "Jahr") (cell "Besuche"))
+        (list (cell "2025") (cell "12 400")))
+  '((header . #t)))
 (slide-add-picture! s "chart.png" "image/png" (inches-&gt;emu 5) (inches-&gt;emu 3)
                     (inches-&gt;emu 4) (inches-&gt;emu 3) '((description . "Besuche pro Jahr")))
 (slide-set-notes! s '(((runs . (((text . "Zahlen aus dem Bericht")))))))
 (presentation-save p "bericht.pptx")</code></pre>
 </div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
-<p class="export-count">14 bindings</p>
+<p class="export-count">15 bindings</p>
 
 <div class="entry" id="e0" data-name="inches-&gt;emu">
   <div class="entry-name">inches-&gt;emu</div>
@@ -80,7 +86,12 @@
 </div>
 <div class="entry" id="e1" data-name="make-presentation">
   <div class="entry-name">make-presentation</div>
-  <div class="nodoc">(no documentation)</div>
+  <pre class="entry-doc">Syntax: (make-presentation [width-emu height-emu])
+Library: (scm ooxml presentation)
+Description: A new, empty presentation; slides are 16:9 (12192000 x
+  6858000 EMU, 13.33 x 7.5 inches) unless a size is given.
+Example:
+  (define p (make-presentation))</pre>
 </div>
 <div class="entry" id="e2" data-name="points-&gt;emu">
   <div class="entry-name">points-&gt;emu</div>
@@ -88,47 +99,98 @@
 </div>
 <div class="entry" id="e3" data-name="presentation-&gt;bytevector">
   <div class="entry-name">presentation-&gt;bytevector</div>
-  <div class="nodoc">(no documentation)</div>
+  <pre class="entry-doc">Syntax: (presentation-&gt;bytevector pres)
+Library: (scm ooxml presentation)
+Description: pres as the bytes of a .pptx file.</pre>
 </div>
 <div class="entry" id="e4" data-name="presentation-add-slide!">
   <div class="entry-name">presentation-add-slide!</div>
-  <div class="nodoc">(no documentation)</div>
+  <pre class="entry-doc">Syntax: (presentation-add-slide! pres)
+Library: (scm ooxml presentation)
+Description: Appends a blank slide and returns it.</pre>
 </div>
 <div class="entry" id="e5" data-name="presentation-save">
   <div class="entry-name">presentation-save</div>
-  <div class="nodoc">(no documentation)</div>
+  <pre class="entry-doc">Syntax: (presentation-save pres path)
+Library: (scm ooxml presentation)
+Description: Writes pres as a .pptx file at path.</pre>
 </div>
 <div class="entry" id="e6" data-name="presentation-set-title!">
   <div class="entry-name">presentation-set-title!</div>
-  <div class="nodoc">(no documentation)</div>
+  <pre class="entry-doc">Syntax: (presentation-set-title! pres title)
+Library: (scm ooxml presentation)
+Description: Sets the document title (file properties).</pre>
 </div>
 <div class="entry" id="e7" data-name="slide-add-line!">
   <div class="entry-name">slide-add-line!</div>
-  <div class="nodoc">(no documentation)</div>
+  <pre class="entry-doc">Syntax: (slide-add-line! slide x y w h [options])
+Library: (scm ooxml presentation)
+Description: Adds a straight line from the top-left to the bottom-right
+  corner of the box (or, with (flip . #t), from the bottom-left to the
+  top-right). options: (color . color), (width . emu), (name . string),
+  (build . (order effect)).</pre>
 </div>
 <div class="entry" id="e8" data-name="slide-add-picture!">
   <div class="entry-name">slide-add-picture!</div>
-  <div class="nodoc">(no documentation)</div>
+  <pre class="entry-doc">Syntax: (slide-add-picture! slide source mime x y w h [options])
+Library: (scm ooxml presentation)
+Description: Adds a picture: source is a bytevector or the path of a
+  file, mime image/png, image/jpeg or image/gif. options: (crop . (left
+  top right bottom)) the fractions of the image cut off at each side,
+  (alpha . 0..1), (rotation . degrees), (description . alt-text),
+  (key . string) to store the same image once (default: the path, or
+  the bytevector itself), (name . string), (build . (order effect)).</pre>
 </div>
 <div class="entry" id="e9" data-name="slide-add-shape!">
   <div class="entry-name">slide-add-shape!</div>
+  <pre class="entry-doc">Syntax: (slide-add-shape! slide kind x y w h [options])
+Library: (scm ooxml presentation)
+Description: Adds a shape: kind is rect, rounded, ellipse, triangle,
+  arrow (pointing right), chevron, or text (a rectangle without fill or
+  outline, for text boxes). options is an alist: (fill . color),
+  (fill-alpha . 0..1), (line . color), (line-width . emu), (rotation .
+  degrees), (text . paragraphs), (anchor . top | middle | bottom),
+  (name . string), (build . (order effect)) with effect appear, fade,
+  fly-left, fly-right, fly-up (from below), fly-down (from above).
+Example:
+  (slide-add-shape! s 'rounded 914400 914400 3657600 1828800
+    '((fill . "0070B4")
+      (text . (((align . center) (runs . (((text . "Hallo") (size . 28) (color . "FFFFFF")))))))
+      (anchor . middle)))</pre>
+</div>
+<div class="entry" id="e10" data-name="slide-add-table!">
+  <div class="entry-name">slide-add-table!</div>
   <div class="nodoc">(no documentation)</div>
 </div>
-<div class="entry" id="e10" data-name="slide-add-video!">
+<div class="entry" id="e11" data-name="slide-add-video!">
   <div class="entry-name">slide-add-video!</div>
-  <div class="nodoc">(no documentation)</div>
+  <pre class="entry-doc">Syntax: (slide-add-video! slide source poster poster-mime x y w h [options])
+Library: (scm ooxml presentation)
+Description: Adds an MP4 video (source: bytevector or file path) shown
+  as poster (an image, as for slide-add-picture!) until it plays; in
+  PowerPoint a click on it plays it. options as for slide-add-picture!
+  (crop and alpha apply to the poster), (poster-key . string) to store the
+  poster once.</pre>
 </div>
-<div class="entry" id="e11" data-name="slide-set-background!">
+<div class="entry" id="e12" data-name="slide-set-background!">
   <div class="entry-name">slide-set-background!</div>
-  <div class="nodoc">(no documentation)</div>
+  <pre class="entry-doc">Syntax: (slide-set-background! slide color)
+Library: (scm ooxml presentation)
+Description: Fills the slide's background with color ("RRGGBB").</pre>
 </div>
-<div class="entry" id="e12" data-name="slide-set-notes!">
+<div class="entry" id="e13" data-name="slide-set-notes!">
   <div class="entry-name">slide-set-notes!</div>
-  <div class="nodoc">(no documentation)</div>
+  <pre class="entry-doc">Syntax: (slide-set-notes! slide paragraphs)
+Library: (scm ooxml presentation)
+Description: The speaker notes of the slide (paragraphs as for text).</pre>
 </div>
-<div class="entry" id="e13" data-name="slide-set-transition!">
+<div class="entry" id="e14" data-name="slide-set-transition!">
   <div class="entry-name">slide-set-transition!</div>
-  <div class="nodoc">(no documentation)</div>
+  <pre class="entry-doc">Syntax: (slide-set-transition! slide type [milliseconds])
+Library: (scm ooxml presentation)
+Description: The transition into the slide: fade, push-left, push-up,
+  wipe-left, zoom or none; the speed is chosen from milliseconds (fast
+  below 400, slow from 800, else medium).</pre>
 </div>
 
 </main>

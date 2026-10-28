@@ -46,6 +46,12 @@
 (slide-add-picture! s2 png "image/png" 0 0 1000000 1000000 '((key . "blue") (crop . (0.1 0 0.1 0)) (alpha . 0.4)))
 (slide-add-picture! s2 png-file "image/png" 0 0 1000000 1000000)
 (slide-add-video! s2 png-file png "image/png" 0 0 1000000 1000000 '((poster-key . "blue")))
+(define (cell str . props) `((text . (((runs . (((text . ,str))))))) ,@props))
+(define table-id
+  (slide-add-table! s2 0 1000000 3000001 1000000
+    (list (list (cell "Name" '(fill . "0070B4")) (cell "Wert" '(fill . "0070B4")))
+          (list (cell "a & b" '(anchor . middle)) (cell "1")))
+    '((header . #t) (build . (1 appear)))))
 
 (presentation-save p file)
 
@@ -110,6 +116,13 @@
           (test-assert (has? s2 "<a:srcRect l=\"10000\""))
           (test-assert (has? s2 "<a:alphaModFix amt=\"40000\"/>"))
           (test-assert "video" (has? s2 "<a:videoFile"))
+          (test-assert "table" (has? s2 "<a:tbl><a:tblPr firstRow=\"1\"/>"))
+          ;; equal columns that add up to the width
+          (test-assert (has? s2 "<a:gridCol w=\"1500000\"/><a:gridCol w=\"1500001\"/>"))
+          (test-assert (has? s2 "<a:tr h=\"500000\">"))
+          (test-assert (has? s2 "a &amp; b"))
+          (test-assert (has? s2 "<a:solidFill><a:srgbClr val=\"0070B4\">"))
+          (test-assert "table build" (has? s2 (string-append "<p:spTgt spid=\"" (number->string table-id) "\"")))
           (test-assert (has? (part z "ppt/notesSlides/notesSlide1.xml") "Eine Notiz"))
           (test-assert (has? (part z "docProps/core.xml") "Probe &amp; Test"))
           (test-assert (has? (part z "ppt/presentation.xml") "<p:sldId id=\"257\""))
