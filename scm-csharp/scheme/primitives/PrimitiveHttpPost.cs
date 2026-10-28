@@ -13,6 +13,7 @@ public class PrimitiveHttpPost : Primitive
         "Library: (scm net http client)\n" +
         "Description: Performs an HTTP POST request with the given body string and returns an http-response object.\n" +
         "  Optional timeout-seconds overrides the default request timeout (600s); <= 0 means no timeout.\n" +
+        "  The body of the response is a string or a bytevector, as with http-get.\n" +
         "Example:\n" +
         "  (http-post \"http://example.com/api\" \"{\\\"x\\\":1}\")";
 

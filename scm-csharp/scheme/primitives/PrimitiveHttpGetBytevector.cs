@@ -42,10 +42,7 @@ public class PrimitiveHttpGetBytevector : Primitive
             }
         }
         var response = client.GetAsync(url).GetAwaiter().GetResult();
-        List<(string, string)> headers = new();
-        foreach (var h in response.Headers)
-            foreach (var v in h.Value)
-                headers.Add((h.Key, v));
+        var headers = PrimitiveHttpGet.ResponseHeaders(response);
         byte[] body = response.Content.ReadAsByteArrayAsync().GetAwaiter().GetResult();
         return new NativeValue(new SchemeHttpResponse((int)response.StatusCode, headers, body));
     }

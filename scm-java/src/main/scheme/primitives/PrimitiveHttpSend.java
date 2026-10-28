@@ -15,6 +15,7 @@ public class PrimitiveHttpSend extends Primitive {
         return "Syntax: (http-send request)\n" +
                "Library: (scm net http client)\n" +
                "Description: Sends an HTTP request object and returns an http-response object.\n" +
+               "  The body of the response is a string or a bytevector, as with http-get.\n" +
                "Example:\n" +
                "  (http-send (make-http-request \"DELETE\" \"http://example.com/x\" '() #f))";
     }
@@ -40,7 +41,7 @@ public class PrimitiveHttpSend extends Primitive {
             }
             HttpClient client = req.followRedirects
                 ? TlsTrust.httpClient() : TlsTrust.httpClientNoRedirects();
-            HttpResponse<String> resp = client.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+            HttpResponse<byte[]> resp = client.send(builder.build(), HttpResponse.BodyHandlers.ofByteArray());
             return PrimitiveHttpGet.buildResponse(resp);
         } catch (Exception e) {
             throw new SchemeError(pos, "http-send: " + TlsTrust.errorText(e));

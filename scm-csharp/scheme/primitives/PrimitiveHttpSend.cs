@@ -12,6 +12,7 @@ public class PrimitiveHttpSend : Primitive
         "Syntax: (http-send request)\n" +
         "Library: (scm net http client)\n" +
         "Description: Sends an HTTP request object and returns an http-response object.\n" +
+        "  The body of the response is a string or a bytevector, as with http-get.\n" +
         "Example:\n" +
         "  (http-send (make-http-request \"DELETE\" \"http://example.com/x\" '() #f))";
 

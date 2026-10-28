@@ -7,7 +7,8 @@ public class PrimitiveHttpResponseBody : Primitive
     public override string Info() =>
         "Syntax: (http-response-body response)\n" +
         "Library: (scm net http response)\n" +
-        "Description: Returns the body of the HTTP response. If the response was created with a bytevector body, returns a bytevector; otherwise returns a string.\n" +
+        "Description: Returns the body of the HTTP response: a bytevector if the response was created with one, or received\n" +
+        "  with a body that is not text (see http-get); otherwise a string.\n" +
         "Example:\n" +
         "  (http-response-body resp) => \"Hello, world!\"";
 

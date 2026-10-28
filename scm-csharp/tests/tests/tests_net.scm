@@ -222,6 +222,49 @@
           (lambda () (http-post "http://localhost:18092/" "x"))
           (lambda () (http-send (make-http-request "GET" "http://localhost:18092/" '() #f)))))))
 
+;;; ---- Response bodies: text decoded, anything else kept as bytes ----
+(test-group "response-bodies"
+  ;; A PNG signature is not valid UTF-8: decoded as text it came back
+  ;; corrupted. Whatever the call, a body that is not text arrives as the
+  ;; bytes that were sent; text is decoded by its charset, UTF-8 or not,
+  ;; and Content-Type is among the headers on both implementations.
+  (let* ((png (bytevector 137 80 78 71 13 10 26 10 0 255))
+         (server (tcp-http-serve 18089
+                   (lambda (req)
+                     (let ((url (http-request-url req)))
+                       (cond
+                        ((string=? url "/latin1")
+                         (make-http-response 200 '(("Content-Type" . "text/plain; charset=iso-8859-1"))
+                                             (bytevector 90 252 114 105 99 104)))
+                        ((string=? url "/json")
+                         (make-http-response 200 '(("Content-Type" . "application/json"))
+                                             "{\"a\":\"\x00e4;\"}"))
+                        (else
+                         (make-http-response 200 '(("Content-Type" . "image/png")) png)))))))
+         (retry (lambda (thunk)
+                  (let loop ((n 0))
+                    (if (< n 3)
+                        (guard (e (#t (loop (+ n 1)))) (thunk))
+                        (thunk)))))
+         (body (lambda (thunk) (guard (e (#t (list 'error e))) (http-response-body (retry thunk)))))
+         (results
+          (list
+           (body (lambda () (http-get "http://localhost:18089/a.png")))
+           (body (lambda () (http-post "http://localhost:18089/a.png" "x")))
+           (body (lambda () (http-send (make-http-request "GET" "http://localhost:18089/a.png" '() #f))))
+           (body (lambda () (http-get "http://localhost:18089/latin1")))
+           (body (lambda () (http-get "http://localhost:18089/json")))
+           (guard (e (#t #f))
+             (http-response-header (retry (lambda () (http-get "http://localhost:18089/a.png")))
+                                   "Content-Type")))))
+    (server-stop server)
+    (test-equal png (list-ref results 0))
+    (test-equal png (list-ref results 1))
+    (test-equal png (list-ref results 2))
+    (test-equal "Z\x00fc;rich" (list-ref results 3))
+    (test-equal "{\"a\":\"\x00e4;\"}" (list-ref results 4))
+    (test-equal "image/png" (list-ref results 5))))
+
 ;;; ---- Hardening tests (max-body, 503 saturation, host bind) ----
 (test-group "hardening"
   ;; 413 Payload Too Large: max-body-bytes=8 rejects a 100-byte body.

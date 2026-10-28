@@ -232,6 +232,12 @@ Example:
                              ((bytevector? body) (utf8->string body))
                              (else ""))))
         (cond
+          ;; a body that is not text arrives as a bytevector and is
+          ;; written as it is, so an image or an archive stays intact
+          ((and output (bytevector? body))
+           (call-with-port (open-binary-output-file output)
+             (lambda (p) (write-bytevector body p)))
+           (and (>= status 200) (< status 400)))
           (output
            (call-with-port (open-output-file output)
              (lambda (p) (write-string body-str p)))

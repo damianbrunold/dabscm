@@ -121,7 +121,8 @@ Example:
 ```
 Syntax: (http-response-body response)
 Library: (scm net http response)
-Description: Returns the body of the HTTP response. If the response was created with a bytevector body, returns a bytevector; otherwise returns a string.
+Description: Returns the body of the HTTP response: a bytevector if the response was created with one, or received
+  with a body that is not text (see http-get); otherwise a string.
 Example:
   (http-response-body resp) => "Hello, world!"
 ```

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text;
 
 namespace scheme;
 
@@ -15,6 +16,9 @@ public class PrimitiveHttpGet : Primitive
         "Description: Performs an HTTP GET request and returns an http-response object. " +
         "Optional headers is an alist of (name . value) pairs. " +
         "Optional timeout-seconds overrides the default request timeout (600s); <= 0 means no timeout.\n" +
+        "  The body is a string when the response is text (Content-Type text/*, JSON, XML,\n" +
+        "  JavaScript, form data, or none), decoded by its charset (UTF-8 by default), and a\n" +
+        "  bytevector otherwise (images, archives, ...), as it arrived.\n" +
         "Example:\n" +
         "  (define resp (http-get \"http://example.com/\"))\n" +
         "  (http-response-status resp) => 200";
@@ -47,14 +51,55 @@ public class PrimitiveHttpGet : Primitive
         return BuildResponse(response);
     }
 
+    // The body as http-get, http-post and http-send return it: decoded to a
+    // string when the Content-Type says it is text (or says nothing), the
+    // bytes as they arrived otherwise. Decoding an image or an archive as
+    // text would corrupt it beyond repair.
     internal static NativeValue BuildResponse(HttpResponseMessage response)
     {
         int status = (int) response.StatusCode;
+        var headers = ResponseHeaders(response);
+        var contentType = response.Content.Headers.ContentType;
+        byte[] bytes = response.Content.ReadAsByteArrayAsync().GetAwaiter().GetResult();
+        if (!IsText(contentType?.MediaType))
+            return new NativeValue(new SchemeHttpResponse(status, headers, bytes));
+        return new NativeValue(new SchemeHttpResponse(status, headers, Decode(bytes, contentType?.CharSet)));
+    }
+
+    // Content-Type, Content-Length and the other entity headers are kept on
+    // the content in .NET; they are response headers all the same, as they
+    // are in the Java implementation.
+    internal static List<(string, string)> ResponseHeaders(HttpResponseMessage response)
+    {
         List<(string, string)> headers = new();
         foreach (var h in response.Headers)
             foreach (var v in h.Value)
                 headers.Add((h.Key, v));
-        string body = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
-        return new NativeValue(new SchemeHttpResponse(status, headers, body));
+        foreach (var h in response.Content.Headers)
+            foreach (var v in h.Value)
+                headers.Add((h.Key, v));
+        return headers;
+    }
+
+    internal static bool IsText(string? mediaType)
+    {
+        if (string.IsNullOrWhiteSpace(mediaType)) return true;
+        var t = mediaType.Trim().ToLowerInvariant();
+        if (t.StartsWith("text/")) return true;
+        if (t.EndsWith("+json") || t.EndsWith("+xml")) return true;
+        return t is "application/json" or "application/xml" or "application/javascript"
+            or "application/ecmascript" or "application/x-www-form-urlencoded"
+            or "application/x-ndjson";
+    }
+
+    static string Decode(byte[] bytes, string? charset)
+    {
+        Encoding encoding = Encoding.UTF8;
+        if (!string.IsNullOrWhiteSpace(charset))
+        {
+            try { encoding = Encoding.GetEncoding(charset.Trim().Trim('"')); }
+            catch (Exception) { encoding = Encoding.UTF8; }
+        }
+        return encoding.GetString(bytes);
     }
 }

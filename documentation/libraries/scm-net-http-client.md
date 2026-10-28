@@ -80,6 +80,9 @@ Syntax: (http-get url) (http-get url headers) (http-get url headers timeout-seco
 Library: (scm net http client)
 Description: Performs an HTTP GET request and returns an http-response object.
   Optional timeout-seconds overrides the default request timeout (600s); <= 0 means no timeout.
+  The body is a string when the response is text (Content-Type text/*, JSON, XML,
+  JavaScript, form data, or none), decoded by its charset (UTF-8 by default), and a
+  bytevector otherwise (images, archives, ...), as it arrived.
 Example:
   (http-response-status (http-get "http://example.com/")) => 200
 ```
@@ -114,6 +117,7 @@ Syntax: (http-post url body) (http-post url body headers) (http-post url body he
 Library: (scm net http client)
 Description: Performs an HTTP POST request with the given body string and returns an http-response object.
   Optional timeout-seconds overrides the default request timeout (600s); <= 0 means no timeout.
+  The body of the response is a string or a bytevector, as with http-get.
 Example:
   (http-post "http://example.com/api" "{}")
 ```
@@ -145,6 +149,7 @@ Example:
 Syntax: (http-send request)
 Library: (scm net http client)
 Description: Sends an HTTP request object and returns an http-response object.
+  The body of the response is a string or a bytevector, as with http-get.
 Example:
   (http-send (make-http-request "DELETE" "http://example.com/x" '() #f))
 ```
