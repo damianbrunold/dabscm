@@ -56,11 +56,30 @@ including CSS line heights, so a PDF can match what a web page showed.
 
 ### `layout-height`
 
-*(no documentation)*
+```
+Syntax: (layout-height lines)
+Library: (scm text layout)
+Description: The total height of lines from layout-paragraph.
+```
 
 ### `layout-paragraph`
 
-*(no documentation)*
+```
+Syntax: (layout-paragraph runs width [options])
+Library: (scm text layout)
+Description: Breaks the runs (see make-text-run) into lines no wider
+  than width and returns the lines, each with its items (pieces of text
+  with their x offset from the line start, width and run), natural
+  width, height, baseline (distance from the line's top) and whether it
+  ended with "\n". options is an alist: (align . left | center | right
+  | justify), (line-height . factor) (default 1.2, times each run's
+  size), (strut . run) a run for the paragraph's own font, which sets
+  the minimum line height (as in CSS). Justified lines (all but the
+  last and those ending with "\n") stretch their spaces; their items
+  are single words. An empty paragraph gives one empty line.
+Example:
+  (for-each (lambda (line) ...) (layout-paragraph runs 400 '((align . justify))))
+```
 
 ### `line-baseline`
 
@@ -84,7 +103,17 @@ including CSS line heights, so a PDF can match what a web page showed.
 
 ### `make-text-run`
 
-*(no documentation)*
+```
+Syntax: (make-text-run text measure size ascent descent [data])
+Library: (scm text layout)
+Description: A run of text in one style. (measure string) returns the
+  width of string in this style; size is the font size, ascent and
+  descent the font's extent above and below the baseline (positive), all
+  in the same unit as the widths. data is anything the caller wants back
+  with the run's pieces (its colour, font, link ...).
+Example:
+  (make-text-run "Hallo" (lambda (s) (pdf-text-width f 12 s)) 12 11.6 2.9 'black)
+```
 
 ### `text-run-data`
 

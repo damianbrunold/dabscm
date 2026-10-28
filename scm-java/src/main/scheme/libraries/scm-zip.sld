@@ -13,9 +13,12 @@
           open-output-zip-bytevector
           open-output-zip-file
           zip-add-binary-entry
+          zip-add-file-entry
           zip-add-stored-entry
           zip-add-text-entry
           zip-entry-names
+          zip-entry-size
+          zip-extract-entry
           zip-files-equal?
           zip-read-entry-bytevector)
   (begin
@@ -29,6 +32,9 @@
     (define open-input-zip-file (%primitive "open-input-zip-file"))
     (define zip-entry-names (%primitive "zip-entry-names"))
     (define zip-read-entry-bytevector (%primitive "zip-read-entry-bytevector"))
+    (define zip-entry-size (%primitive "zip-entry-size"))
+    (define zip-extract-entry (%primitive "zip-extract-entry"))
+    (define zip-add-file-entry (%primitive "zip-add-file-entry"))
     (define close-input-zip (%primitive "close-input-zip"))
 
     (define (call-with-input-zip filename proc)

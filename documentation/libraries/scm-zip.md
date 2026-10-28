@@ -175,6 +175,10 @@ Example:
   (let ((port (zip-add-binary-entry zip "data.bin"))) (write-bytevector bv port))
 ```
 
+### `zip-add-file-entry`
+
+*(no documentation)*
+
 ### `zip-add-stored-entry`
 
 ```
@@ -210,6 +214,14 @@ Description: Returns a list of entry name strings in the ZIP archive zip.
 Example:
   (zip-entry-names z) => ("file1.txt" "dir/file2.txt")
 ```
+
+### `zip-entry-size`
+
+*(no documentation)*
+
+### `zip-extract-entry`
+
+*(no documentation)*
 
 ### `zip-files-equal?`
 

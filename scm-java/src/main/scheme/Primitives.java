@@ -547,6 +547,9 @@ public class Primitives {
         bind(new PrimitiveZipAddTextEntry());
         bind(new PrimitiveZipEntryNames());
         bind(new PrimitiveZipReadEntryBytevector());
+        bind(new PrimitiveZipEntrySize());
+        bind(new PrimitiveZipExtractEntry());
+        bind(new PrimitiveZipAddFileEntry());
         bind(new PrimitiveZlibCompress());
         bind(new PrimitiveZlibDecompress());
     }

@@ -539,6 +539,9 @@ public class Primitives
         Bind(new PrimitiveZipAddTextEntry());
         Bind(new PrimitiveZipEntryNames());
         Bind(new PrimitiveZipReadEntryBytevector());
+        Bind(new PrimitiveZipEntrySize());
+        Bind(new PrimitiveZipExtractEntry());
+        Bind(new PrimitiveZipAddFileEntry());
         Bind(new PrimitiveZlibCompress());
         Bind(new PrimitiveZlibDecompress());
     }

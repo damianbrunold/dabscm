@@ -6,7 +6,19 @@ TrueType font reading — glyph outlines, advances, kerning, OpenType features, 
 
 ### `font->truetype`
 
-*(no documentation)*
+```
+Syntax: (font->truetype font family [style])
+Library: (scm truetype)
+Description: Returns a TrueType file (bytevector) with the glyphs of
+  font, which must list its characters (fonts made with
+  make-outline-font, such as those of (scm fonts inter) and
+  (scm fonts dejavu)). family names it; style is "Regular" (default),
+  "Bold", "Black" and so on, which also sets the weight. The file
+  has no hinting and no kerning table: a PDF positions the glyphs
+  itself.
+Example:
+  (pdf-embed-truetype-font doc (font->truetype inter-regular "Inter") "Inter")
+```
 
 ### `font-ascent`
 
@@ -14,7 +26,14 @@ TrueType font reading — glyph outlines, advances, kerning, OpenType features, 
 
 ### `font-chars`
 
-*(no documentation)*
+```
+Syntax: (font-chars font)
+Library: (scm truetype)
+Description: The characters font has glyphs for, ascending, or #f when
+  the font does not list them (fonts read with read-truetype).
+Example:
+  (length (font-chars inter-regular)) => 312
+```
 
 ### `font-descent`
 

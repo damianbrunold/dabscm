@@ -190,16 +190,21 @@ Example:
 ### `pdf-draw-text`
 
 ```
-Syntax: (pdf-draw-text page font size x y string)
+Syntax: (pdf-draw-text page font size x y string [option value] ...)
 Library: (scm pdf)
 Description: Draws string on page at user-space coordinates (x, y) — the
   baseline origin — in font at size points. Emits a self-contained
   q ... BT ... ET ... Q block so any current graphics state is
   preserved. To rotate or scale text, wrap the call in pdf-with-state
-  and concat your own CTM.
+  and concat your own CTM. Options: 'kerning proc, where (proc left
+  right) gives the adjustment between two characters in thousandths of
+  an em (negative: closer), e.g. from (scm truetype)'s font-kerning;
+  'skew degrees slants the glyphs (a synthetic italic: about 10).
 Example:
   (define helv (pdf-use-font doc 'helvetica))
   (pdf-draw-text page helv 12 100 700 "Hello, world!")
+  (pdf-draw-text page inter 12 100 680 "AVATAR"
+                 'kerning (lambda (a b) (* 1000/2048 (font-kerning tt a b))))
 ```
 
 ### `pdf-embed-jpeg`
@@ -690,7 +695,20 @@ Example: (pdf-set-miter-limit page 10)
 
 ### `pdf-set-opacity`
 
-*(no documentation)*
+```
+Syntax: (pdf-set-opacity page fill-alpha [stroke-alpha])
+Library: (scm pdf)
+Description: Sets the opacity of what is filled (text, shapes, images)
+  and stroked from here on, each from 0 (invisible) to 1 (opaque);
+  stroke-alpha defaults to fill-alpha. Part of the graphics state: use
+  pdf-with-state to limit it. Registers an ExtGState resource.
+Example:
+  (pdf-with-state page
+    (lambda ()
+      (pdf-set-opacity page 0.5)
+      (pdf-rect page 50 50 100 100)
+      (pdf-fill page)))
+```
 
 ### `pdf-set-stroke-cmyk`
 
@@ -737,10 +755,12 @@ Example: (pdf-stroke page)
 ### `pdf-text-width`
 
 ```
-Syntax: (pdf-text-width font size string)
+Syntax: (pdf-text-width font size string [kerning])
 Library: (scm pdf)
 Description: Returns the rendered width of string in user-space units
-  (points) when set in font at size, using the AFM/TTF glyph widths.
+  (points) when set in font at size, using the AFM/TTF glyph widths, and
+  the pair adjustments of kerning if given (a procedure as for
+  pdf-draw-text's kerning option).
   For core14 fonts, unmappable codepoints are treated as the '?' glyph;
   for embedded TrueType fonts, codepoints without a glyph use GID 0
   (which is .notdef, typically zero width or a blank box).

@@ -53,7 +53,17 @@
 
 <div class="entry" id="e0" data-name="font-&gt;truetype">
   <div class="entry-name">font-&gt;truetype</div>
-  <div class="nodoc">(no documentation)</div>
+  <pre class="entry-doc">Syntax: (font-&gt;truetype font family [style])
+Library: (scm truetype)
+Description: Returns a TrueType file (bytevector) with the glyphs of
+  font, which must list its characters (fonts made with
+  make-outline-font, such as those of (scm fonts inter) and
+  (scm fonts dejavu)). family names it; style is "Regular" (default),
+  "Bold", "Black" and so on, which also sets the weight. The file
+  has no hinting and no kerning table: a PDF positions the glyphs
+  itself.
+Example:
+  (pdf-embed-truetype-font doc (font-&gt;truetype inter-regular "Inter") "Inter")</pre>
 </div>
 <div class="entry" id="e1" data-name="font-ascent">
   <div class="entry-name">font-ascent</div>
@@ -61,7 +71,12 @@
 </div>
 <div class="entry" id="e2" data-name="font-chars">
   <div class="entry-name">font-chars</div>
-  <div class="nodoc">(no documentation)</div>
+  <pre class="entry-doc">Syntax: (font-chars font)
+Library: (scm truetype)
+Description: The characters font has glyphs for, ascending, or #f when
+  the font does not list them (fonts read with read-truetype).
+Example:
+  (length (font-chars inter-regular)) =&gt; 312</pre>
 </div>
 <div class="entry" id="e3" data-name="font-descent">
   <div class="entry-name">font-descent</div>

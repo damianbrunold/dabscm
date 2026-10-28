@@ -33,11 +33,14 @@
   <a href="#e8" data-name="open-output-zip-bytevector">open-output-zip-bytevector</a>
   <a href="#e9" data-name="open-output-zip-file">open-output-zip-file</a>
   <a href="#e10" data-name="zip-add-binary-entry">zip-add-binary-entry</a>
-  <a href="#e11" data-name="zip-add-stored-entry">zip-add-stored-entry</a>
-  <a href="#e12" data-name="zip-add-text-entry">zip-add-text-entry</a>
-  <a href="#e13" data-name="zip-entry-names">zip-entry-names</a>
-  <a href="#e14" data-name="zip-files-equal?">zip-files-equal?</a>
-  <a href="#e15" data-name="zip-read-entry-bytevector">zip-read-entry-bytevector</a>
+  <a href="#e11" data-name="zip-add-file-entry">zip-add-file-entry</a>
+  <a href="#e12" data-name="zip-add-stored-entry">zip-add-stored-entry</a>
+  <a href="#e13" data-name="zip-add-text-entry">zip-add-text-entry</a>
+  <a href="#e14" data-name="zip-entry-names">zip-entry-names</a>
+  <a href="#e15" data-name="zip-entry-size">zip-entry-size</a>
+  <a href="#e16" data-name="zip-extract-entry">zip-extract-entry</a>
+  <a href="#e17" data-name="zip-files-equal?">zip-files-equal?</a>
+  <a href="#e18" data-name="zip-read-entry-bytevector">zip-read-entry-bytevector</a>
 </nav>
 
 <main>
@@ -56,7 +59,7 @@
 <h2>Overview</h2>
 <p><a class="xref" href="scm-zip.html"><code>(scm zip)</code></a> reads and writes ZIP archives. Entries are written through output ports (text or binary) and read back by name; the <code>call-with-…</code> forms open and reliably close the archive for you.</p>
 <h2>Writing</h2>
-<p><a class="xref" href="#e12"><code>zip-add-text-entry</code></a> / <a class="xref" href="#e10"><code>zip-add-binary-entry</code></a> return a port you write the entry's contents to:</p>
+<p><a class="xref" href="#e13"><code>zip-add-text-entry</code></a> / <a class="xref" href="#e10"><code>zip-add-binary-entry</code></a> return a port you write the entry's contents to:</p>
 <pre><code class="language-scheme">(import (scm zip))
 
 (call-with-output-zip "out.zip"
@@ -70,10 +73,10 @@
 (call-with-input-zip "out.zip"
   (lambda (z) (utf8-&gt;string (zip-read-entry-bytevector z "hello.txt"))))
 ;; =&gt; "hi there"</code></pre>
-<p><a class="xref" href="#e11"><code>zip-add-stored-entry</code></a> writes an uncompressed entry, and <a class="xref" href="#e14"><code>zip-files-equal?</code></a> compares two archives by content (handy in tests).</p>
+<p><a class="xref" href="#e12"><code>zip-add-stored-entry</code></a> writes an uncompressed entry, and <a class="xref" href="#e17"><code>zip-files-equal?</code></a> compares two archives by content (handy in tests).</p>
 </div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
-<p class="export-count">16 bindings</p>
+<p class="export-count">19 bindings</p>
 
 <div class="entry" id="e0" data-name="call-with-input-zip">
   <div class="entry-name">call-with-input-zip</div>
@@ -189,7 +192,11 @@ Description: Creates a new binary entry named name in the ZIP archive zip and
 Example:
   (let ((port (zip-add-binary-entry zip "data.bin"))) (write-bytevector bv port))</pre>
 </div>
-<div class="entry" id="e11" data-name="zip-add-stored-entry">
+<div class="entry" id="e11" data-name="zip-add-file-entry">
+  <div class="entry-name">zip-add-file-entry</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e12" data-name="zip-add-stored-entry">
   <div class="entry-name">zip-add-stored-entry</div>
   <pre class="entry-doc">Syntax: (zip-add-stored-entry zip name bytevector [timestamp])
 Library: (scm zip)
@@ -201,7 +208,7 @@ Description: Creates a new uncompressed (STORED) entry named name in the
 Example:
   (zip-add-stored-entry zip "mimetype" (string-&gt;utf8 "application/xml") 0)</pre>
 </div>
-<div class="entry" id="e12" data-name="zip-add-text-entry">
+<div class="entry" id="e13" data-name="zip-add-text-entry">
   <div class="entry-name">zip-add-text-entry</div>
   <pre class="entry-doc">Syntax: (zip-add-text-entry zip name [timestamp])
 Library: (scm zip)
@@ -211,7 +218,7 @@ Description: Creates a new text entry named name in the ZIP archive zip and
 Example:
   (let ((port (zip-add-text-entry zip "readme.txt"))) (display "Hello" port))</pre>
 </div>
-<div class="entry" id="e13" data-name="zip-entry-names">
+<div class="entry" id="e14" data-name="zip-entry-names">
   <div class="entry-name">zip-entry-names</div>
   <pre class="entry-doc">Syntax: (zip-entry-names zip)
 Library: (scm zip)
@@ -219,7 +226,15 @@ Description: Returns a list of entry name strings in the ZIP archive zip.
 Example:
   (zip-entry-names z) =&gt; ("file1.txt" "dir/file2.txt")</pre>
 </div>
-<div class="entry" id="e14" data-name="zip-files-equal?">
+<div class="entry" id="e15" data-name="zip-entry-size">
+  <div class="entry-name">zip-entry-size</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e16" data-name="zip-extract-entry">
+  <div class="entry-name">zip-extract-entry</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e17" data-name="zip-files-equal?">
   <div class="entry-name">zip-files-equal?</div>
   <pre class="entry-doc">Syntax: (zip-files-equal? file1 file2)
 Library: (scm zip)
@@ -229,7 +244,7 @@ Description: Returns #t if the two ZIP files have the same entry names and ident
 Example:
   (zip-files-equal? "a.xlsx" "b.xlsx") =&gt; #t</pre>
 </div>
-<div class="entry" id="e15" data-name="zip-read-entry-bytevector">
+<div class="entry" id="e18" data-name="zip-read-entry-bytevector">
   <div class="entry-name">zip-read-entry-bytevector</div>
   <pre class="entry-doc">Syntax: (zip-read-entry-bytevector zip name)
 Library: (scm zip)
