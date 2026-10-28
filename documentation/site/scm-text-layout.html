@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm text layout) — Dabscm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="toc">
+  <h2>Bindings</h2>
+  <a href="#e0" data-name="item-run">item-run</a>
+  <a href="#e1" data-name="item-text">item-text</a>
+  <a href="#e2" data-name="item-width">item-width</a>
+  <a href="#e3" data-name="item-x">item-x</a>
+  <a href="#e4" data-name="layout-height">layout-height</a>
+  <a href="#e5" data-name="layout-paragraph">layout-paragraph</a>
+  <a href="#e6" data-name="line-baseline">line-baseline</a>
+  <a href="#e7" data-name="line-hard-break?">line-hard-break?</a>
+  <a href="#e8" data-name="line-height">line-height</a>
+  <a href="#e9" data-name="line-items">line-items</a>
+  <a href="#e10" data-name="line-width">line-width</a>
+  <a href="#e11" data-name="make-text-run">make-text-run</a>
+  <a href="#e12" data-name="text-run-data">text-run-data</a>
+  <a href="#e13" data-name="text-run-size">text-run-size</a>
+  <a href="#e14" data-name="text-run-text">text-run-text</a>
+  <a href="#e15" data-name="text-run?">text-run?</a>
+</nav>
+
+<main>
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="index.html">All libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="index.html#sec-scm">Scm Extensions</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm text layout)</span>
+</nav>
+
+<div class="lib-title scm">(scm text layout)</div>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><a class="xref" href="scm-text-layout.html"><code>(scm text layout)</code></a> breaks paragraphs of styled text into lines: the part of text rendering between measuring glyphs and drawing them. A paragraph is a list of runs (text in one style, with a procedure that measures it and the font's size, ascent and descent); <a class="xref" href="#e5"><code>layout-paragraph</code></a> returns lines with positioned pieces, the way a browser lays out <code>white-space: pre-wrap</code> text, including CSS line heights, so a PDF can match what a web page showed.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scm pdf) (scm truetype) (scm fonts inter) (scm text layout))
+
+(define doc (make-pdf))
+(define page (pdf-add-page! doc))
+(define inter (pdf-embed-truetype-font doc (font-&gt;truetype inter-regular "Inter") "Inter"))
+
+(define (run text size)
+  (make-text-run text (lambda (s) (pdf-text-width inter size s)) size
+                 (* size 0.97) (* size 0.24)))
+
+(let loop ((lines (layout-paragraph (list (run "Ein langer Absatz ..." 12)) 300
+                                    '((align . justify))))
+           (top 780))
+  (unless (null? lines)
+    (for-each (lambda (item)
+                (pdf-draw-text page inter (text-run-size (item-run item))
+                               (+ 72 (item-x item))
+                               (- top (line-baseline (car lines)))
+                               (item-text item)))
+              (line-items (car lines)))
+    (loop (cdr lines) (- top (line-height (car lines))))))</code></pre>
+</div>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">16 bindings</p>
+
+<div class="entry" id="e0" data-name="item-run">
+  <div class="entry-name">item-run</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e1" data-name="item-text">
+  <div class="entry-name">item-text</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e2" data-name="item-width">
+  <div class="entry-name">item-width</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e3" data-name="item-x">
+  <div class="entry-name">item-x</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e4" data-name="layout-height">
+  <div class="entry-name">layout-height</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e5" data-name="layout-paragraph">
+  <div class="entry-name">layout-paragraph</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e6" data-name="line-baseline">
+  <div class="entry-name">line-baseline</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e7" data-name="line-hard-break?">
+  <div class="entry-name">line-hard-break?</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e8" data-name="line-height">
+  <div class="entry-name">line-height</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e9" data-name="line-items">
+  <div class="entry-name">line-items</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e10" data-name="line-width">
+  <div class="entry-name">line-width</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e11" data-name="make-text-run">
+  <div class="entry-name">make-text-run</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e12" data-name="text-run-data">
+  <div class="entry-name">text-run-data</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e13" data-name="text-run-size">
+  <div class="entry-name">text-run-size</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e14" data-name="text-run-text">
+  <div class="entry-name">text-run-text</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e15" data-name="text-run?">
+  <div class="entry-name">text-run?</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

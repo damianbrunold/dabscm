@@ -4,7 +4,15 @@ TrueType font reading — glyph outlines, advances, kerning, OpenType features, 
 
 ## Exports
 
+### `font->truetype`
+
+*(no documentation)*
+
 ### `font-ascent`
+
+*(no documentation)*
+
+### `font-chars`
 
 *(no documentation)*
 

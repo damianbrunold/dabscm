@@ -22,16 +22,18 @@
 
 <nav class="toc">
   <h2>Bindings</h2>
-  <a href="#e0" data-name="font-ascent">font-ascent</a>
-  <a href="#e1" data-name="font-descent">font-descent</a>
-  <a href="#e2" data-name="font-glyph">font-glyph</a>
-  <a href="#e3" data-name="font-kerning">font-kerning</a>
-  <a href="#e4" data-name="font-text-path">font-text-path</a>
-  <a href="#e5" data-name="font-text-width">font-text-width</a>
-  <a href="#e6" data-name="font-units-per-em">font-units-per-em</a>
-  <a href="#e7" data-name="font?">font?</a>
-  <a href="#e8" data-name="make-outline-font">make-outline-font</a>
-  <a href="#e9" data-name="read-truetype">read-truetype</a>
+  <a href="#e0" data-name="font-&gt;truetype">font-&gt;truetype</a>
+  <a href="#e1" data-name="font-ascent">font-ascent</a>
+  <a href="#e2" data-name="font-chars">font-chars</a>
+  <a href="#e3" data-name="font-descent">font-descent</a>
+  <a href="#e4" data-name="font-glyph">font-glyph</a>
+  <a href="#e5" data-name="font-kerning">font-kerning</a>
+  <a href="#e6" data-name="font-text-path">font-text-path</a>
+  <a href="#e7" data-name="font-text-width">font-text-width</a>
+  <a href="#e8" data-name="font-units-per-em">font-units-per-em</a>
+  <a href="#e9" data-name="font?">font?</a>
+  <a href="#e10" data-name="make-outline-font">make-outline-font</a>
+  <a href="#e11" data-name="read-truetype">read-truetype</a>
 </nav>
 
 <main>
@@ -47,17 +49,25 @@
 <div class="lib-title scm">(scm truetype)</div>
 <p class="lib-sub">TrueType font reading — glyph outlines, advances, kerning, OpenType features, text as paths</p>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
-<p class="export-count">10 bindings</p>
+<p class="export-count">12 bindings</p>
 
-<div class="entry" id="e0" data-name="font-ascent">
+<div class="entry" id="e0" data-name="font-&gt;truetype">
+  <div class="entry-name">font-&gt;truetype</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e1" data-name="font-ascent">
   <div class="entry-name">font-ascent</div>
   <div class="nodoc">(no documentation)</div>
 </div>
-<div class="entry" id="e1" data-name="font-descent">
+<div class="entry" id="e2" data-name="font-chars">
+  <div class="entry-name">font-chars</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e3" data-name="font-descent">
   <div class="entry-name">font-descent</div>
   <div class="nodoc">(no documentation)</div>
 </div>
-<div class="entry" id="e2" data-name="font-glyph">
+<div class="entry" id="e4" data-name="font-glyph">
   <div class="entry-name">font-glyph</div>
   <pre class="entry-doc">Syntax: (font-glyph font char)
 Library: (scm truetype)
@@ -68,7 +78,7 @@ Description: Returns the glyph for char as (advance . contours), or #f
 Example:
   (car (font-glyph font #\A)) =&gt; 1401   ; DejaVu Sans</pre>
 </div>
-<div class="entry" id="e3" data-name="font-kerning">
+<div class="entry" id="e5" data-name="font-kerning">
   <div class="entry-name">font-kerning</div>
   <pre class="entry-doc">Syntax: (font-kerning font left right)
 Library: (scm truetype)
@@ -77,7 +87,7 @@ Description: Returns the kerning adjustment between the characters left
 Example:
   (font-kerning font #\A #\V) =&gt; -77   ; DejaVu Sans</pre>
 </div>
-<div class="entry" id="e4" data-name="font-text-path">
+<div class="entry" id="e6" data-name="font-text-path">
   <div class="entry-name">font-text-path</div>
   <pre class="entry-doc">Syntax: (font-text-path font size x y string)
 Library: (scm truetype)
@@ -88,7 +98,7 @@ Example:
   (canvas-fill-path! canvas (font-text-path font 11 10 20 "Intern")
                      (rgba 0 0 0))</pre>
 </div>
-<div class="entry" id="e5" data-name="font-text-width">
+<div class="entry" id="e7" data-name="font-text-width">
   <div class="entry-name">font-text-width</div>
   <pre class="entry-doc">Syntax: (font-text-width font size string)
 Library: (scm truetype)
@@ -97,15 +107,15 @@ Description: Returns the advance width of string set in font at size
 Example:
   (font-text-width font 11 "Intern") =&gt; 33.4...</pre>
 </div>
-<div class="entry" id="e6" data-name="font-units-per-em">
+<div class="entry" id="e8" data-name="font-units-per-em">
   <div class="entry-name">font-units-per-em</div>
   <div class="nodoc">(no documentation)</div>
 </div>
-<div class="entry" id="e7" data-name="font?">
+<div class="entry" id="e9" data-name="font?">
   <div class="entry-name">font?</div>
   <div class="nodoc">(no documentation)</div>
 </div>
-<div class="entry" id="e8" data-name="make-outline-font">
+<div class="entry" id="e10" data-name="make-outline-font">
   <div class="entry-name">make-outline-font</div>
   <pre class="entry-doc">Syntax: (make-outline-font units-per-em ascent descent glyphs [kerning])
 Library: (scm truetype)
@@ -117,7 +127,7 @@ Example:
   (make-outline-font 1000 800 -200
     (list (list #\- 400 '((50 250 #t) (350 250 #t) (350 300 #t) (50 300 #t)))))</pre>
 </div>
-<div class="entry" id="e9" data-name="read-truetype">
+<div class="entry" id="e11" data-name="read-truetype">
   <div class="entry-name">read-truetype</div>
   <pre class="entry-doc">Syntax: (read-truetype bytevector [options])
 Library: (scm truetype)

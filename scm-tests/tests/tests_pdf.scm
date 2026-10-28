@@ -789,4 +789,33 @@
     (let ((out (pdf->bytevector doc)))
       (test-assert (not (bv-contains-ascii? out "/Outlines"))))))
 
+(test-group "opacity"
+  (let* ((doc (make-pdf))
+         (page (pdf-add-page! doc)))
+    (pdf-set-opacity page 0.5)
+    (pdf-set-opacity page 0.25 1)
+    (pdf-set-opacity page 0.5)              ; reuses GS1
+    (let* ((bv (pdf->bytevector doc))
+           (s (bv->string bv))
+           (cs (extract-content-stream bv)))
+      (test-assert (string-contains? cs "/GS1 gs"))
+      (test-assert (string-contains? cs "/GS2 gs"))
+      (test-assert (not (string-contains? s "/GS3")))
+      (test-assert (string-contains? s "/ExtGState"))
+      (test-assert (string-contains? s "/ca 0.25")))))
+
+(test-group "kerning and skew"
+  (let* ((doc (make-pdf))
+         (page (pdf-add-page! doc))
+         (helv (pdf-use-font doc 'helvetica))
+         (kern (lambda (a b) (if (and (char=? a #\A) (char=? b #\V)) -80 0))))
+    (test-equal (- (pdf-text-width helv 10 "AVA") 0.8)
+                (pdf-text-width helv 10 "AVA" kern))
+    (test-equal (pdf-text-width helv 10 "AVA") (pdf-text-width helv 10 "AVA" #f))
+    (pdf-draw-text page helv 10 0 0 "AVA" 'kerning kern)
+    (pdf-draw-text page helv 10 0 20 "Schief" 'skew 12)
+    (let ((cs (extract-content-stream (pdf->bytevector doc))))
+      (test-assert (string-contains? cs "[(A) 80 (VA)] TJ"))
+      (test-assert (string-contains? cs " Tm")))))
+
 (test-end "pdf")

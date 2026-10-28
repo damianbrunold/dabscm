@@ -161,7 +161,16 @@ Example:
 
 ### `http-response-with-headers`
 
-*(no documentation)*
+```
+Syntax: (http-response-with-headers response status headers)
+Library: (scm net http response)
+Description: Returns a copy of response with the given status and headers alist and the same body,
+  whatever its kind: in memory, a file part (make-http-file-response) or streamed
+  (make-http-stream-response). Middleware uses it to add headers without reading the body.
+Example:
+  (http-response-with-headers resp (http-response-status resp)
+    (cons '("X-Frame-Options" . "DENY") (http-response-headers resp)))
+```
 
 ### `http-response?`
 

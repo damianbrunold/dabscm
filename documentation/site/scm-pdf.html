@@ -95,22 +95,23 @@
   <a href="#e70" data-name="pdf-set-line-width">pdf-set-line-width</a>
   <a href="#e71" data-name="pdf-set-metadata!">pdf-set-metadata!</a>
   <a href="#e72" data-name="pdf-set-miter-limit">pdf-set-miter-limit</a>
-  <a href="#e73" data-name="pdf-set-stroke-cmyk">pdf-set-stroke-cmyk</a>
-  <a href="#e74" data-name="pdf-set-stroke-gray">pdf-set-stroke-gray</a>
-  <a href="#e75" data-name="pdf-set-stroke-rgb">pdf-set-stroke-rgb</a>
-  <a href="#e76" data-name="pdf-stream?">pdf-stream?</a>
-  <a href="#e77" data-name="pdf-stroke">pdf-stroke</a>
-  <a href="#e78" data-name="pdf-text-width">pdf-text-width</a>
-  <a href="#e79" data-name="pdf-transform">pdf-transform</a>
-  <a href="#e80" data-name="pdf-translate">pdf-translate</a>
-  <a href="#e81" data-name="pdf-use-font">pdf-use-font</a>
-  <a href="#e82" data-name="pdf-with-state">pdf-with-state</a>
-  <a href="#e83" data-name="pdf/array">pdf/array</a>
-  <a href="#e84" data-name="pdf/dict">pdf/dict</a>
-  <a href="#e85" data-name="pdf/literal">pdf/literal</a>
-  <a href="#e86" data-name="pdf/name">pdf/name</a>
-  <a href="#e87" data-name="pdf/ref">pdf/ref</a>
-  <a href="#e88" data-name="pdf/stream">pdf/stream</a>
+  <a href="#e73" data-name="pdf-set-opacity">pdf-set-opacity</a>
+  <a href="#e74" data-name="pdf-set-stroke-cmyk">pdf-set-stroke-cmyk</a>
+  <a href="#e75" data-name="pdf-set-stroke-gray">pdf-set-stroke-gray</a>
+  <a href="#e76" data-name="pdf-set-stroke-rgb">pdf-set-stroke-rgb</a>
+  <a href="#e77" data-name="pdf-stream?">pdf-stream?</a>
+  <a href="#e78" data-name="pdf-stroke">pdf-stroke</a>
+  <a href="#e79" data-name="pdf-text-width">pdf-text-width</a>
+  <a href="#e80" data-name="pdf-transform">pdf-transform</a>
+  <a href="#e81" data-name="pdf-translate">pdf-translate</a>
+  <a href="#e82" data-name="pdf-use-font">pdf-use-font</a>
+  <a href="#e83" data-name="pdf-with-state">pdf-with-state</a>
+  <a href="#e84" data-name="pdf/array">pdf/array</a>
+  <a href="#e85" data-name="pdf/dict">pdf/dict</a>
+  <a href="#e86" data-name="pdf/literal">pdf/literal</a>
+  <a href="#e87" data-name="pdf/name">pdf/name</a>
+  <a href="#e88" data-name="pdf/ref">pdf/ref</a>
+  <a href="#e89" data-name="pdf/stream">pdf/stream</a>
 </nav>
 
 <main>
@@ -141,10 +142,10 @@
 (define helv (pdf-use-font doc 'helvetica))
 (pdf-draw-text page helv 12 100 700 "Hello, world!")   ;; baseline at (100,700)
 (pdf-save doc "hello.pdf")</code></pre>
-<p>Coordinates are in points with the origin at the bottom-left. There is a full path/painting API (<a class="xref" href="#e45"><code>pdf-move-to</code></a>, <a class="xref" href="#e44"><code>pdf-line-to</code></a>, <a class="xref" href="#e57"><code>pdf-rect</code></a>, <a class="xref" href="#e77"><code>pdf-stroke</code></a>, <a class="xref" href="#e18"><code>pdf-fill</code></a>, …), <a class="xref" href="#e22"><code>pdf-flow-text</code></a> for wrapped paragraphs, plus image, link, and outline support. Use <a class="xref" href="#e1"><code>pdf-&gt;bytevector</code></a> to get the document as bytes instead of writing a file.</p>
+<p>Coordinates are in points with the origin at the bottom-left. There is a full path/painting API (<a class="xref" href="#e45"><code>pdf-move-to</code></a>, <a class="xref" href="#e44"><code>pdf-line-to</code></a>, <a class="xref" href="#e57"><code>pdf-rect</code></a>, <a class="xref" href="#e78"><code>pdf-stroke</code></a>, <a class="xref" href="#e18"><code>pdf-fill</code></a>, …), <a class="xref" href="#e22"><code>pdf-flow-text</code></a> for wrapped paragraphs, plus image, link, and outline support. Use <a class="xref" href="#e1"><code>pdf-&gt;bytevector</code></a> to get the document as bytes instead of writing a file.</p>
 </div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
-<p class="export-count">89 bindings</p>
+<p class="export-count">90 bindings</p>
 
 <div class="entry" id="e0" data-name="make-pdf">
   <div class="entry-name">make-pdf</div>
@@ -704,7 +705,11 @@ Library: (scm pdf)
 Description: Sets the miter limit. Emits 'M'.
 Example: (pdf-set-miter-limit page 10)</pre>
 </div>
-<div class="entry" id="e73" data-name="pdf-set-stroke-cmyk">
+<div class="entry" id="e73" data-name="pdf-set-opacity">
+  <div class="entry-name">pdf-set-opacity</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e74" data-name="pdf-set-stroke-cmyk">
   <div class="entry-name">pdf-set-stroke-cmyk</div>
   <pre class="entry-doc">Syntax: (pdf-set-stroke-cmyk page c m y k)
 Library: (scm pdf)
@@ -712,14 +717,14 @@ Description: Sets the stroking color to CMYK (each in [0, 1]).
   Emits 'K'.
 Example: (pdf-set-stroke-cmyk page 0 1 1 0)   ; pure red</pre>
 </div>
-<div class="entry" id="e74" data-name="pdf-set-stroke-gray">
+<div class="entry" id="e75" data-name="pdf-set-stroke-gray">
   <div class="entry-name">pdf-set-stroke-gray</div>
   <pre class="entry-doc">Syntax: (pdf-set-stroke-gray page g)
 Library: (scm pdf)
 Description: Sets the stroking color to gray (g in [0, 1]). Emits 'G'.
 Example: (pdf-set-stroke-gray page 0.5)</pre>
 </div>
-<div class="entry" id="e75" data-name="pdf-set-stroke-rgb">
+<div class="entry" id="e76" data-name="pdf-set-stroke-rgb">
   <div class="entry-name">pdf-set-stroke-rgb</div>
   <pre class="entry-doc">Syntax: (pdf-set-stroke-rgb page r g b)
 Library: (scm pdf)
@@ -727,18 +732,18 @@ Description: Sets the stroking color to RGB (each in [0, 1]).
   Emits 'RG'.
 Example: (pdf-set-stroke-rgb page 1 0 0)   ; red</pre>
 </div>
-<div class="entry" id="e76" data-name="pdf-stream?">
+<div class="entry" id="e77" data-name="pdf-stream?">
   <div class="entry-name">pdf-stream?</div>
   <div class="nodoc">(no documentation)</div>
 </div>
-<div class="entry" id="e77" data-name="pdf-stroke">
+<div class="entry" id="e78" data-name="pdf-stroke">
   <div class="entry-name">pdf-stroke</div>
   <pre class="entry-doc">Syntax: (pdf-stroke page)
 Library: (scm pdf)
 Description: Strokes the current path. Emits the PDF 'S' operator.
 Example: (pdf-stroke page)</pre>
 </div>
-<div class="entry" id="e78" data-name="pdf-text-width">
+<div class="entry" id="e79" data-name="pdf-text-width">
   <div class="entry-name">pdf-text-width</div>
   <pre class="entry-doc">Syntax: (pdf-text-width font size string)
 Library: (scm pdf)
@@ -751,7 +756,7 @@ Example:
   (define helv (pdf-use-font doc 'helvetica))
   (pdf-text-width helv 12 "Hello")</pre>
 </div>
-<div class="entry" id="e79" data-name="pdf-transform">
+<div class="entry" id="e80" data-name="pdf-transform">
   <div class="entry-name">pdf-transform</div>
   <pre class="entry-doc">Syntax: (pdf-transform page a b c d e f)
 Library: (scm pdf)
@@ -760,14 +765,14 @@ Description: Concatenates the matrix [a b c d e f] onto the current
   free entries are passed in column-major order. Emits 'cm'.
 Example: (pdf-transform page 1 0 0 1 100 200)   ; translate (100,200)</pre>
 </div>
-<div class="entry" id="e80" data-name="pdf-translate">
+<div class="entry" id="e81" data-name="pdf-translate">
   <div class="entry-name">pdf-translate</div>
   <pre class="entry-doc">Syntax: (pdf-translate page tx ty)
 Library: (scm pdf)
 Description: Concatenates a translation by (tx, ty) onto the CTM.
 Example: (pdf-translate page 100 200)</pre>
 </div>
-<div class="entry" id="e81" data-name="pdf-use-font">
+<div class="entry" id="e82" data-name="pdf-use-font">
   <div class="entry-name">pdf-use-font</div>
   <pre class="entry-doc">Syntax: (pdf-use-font doc font-symbol)
 Library: (scm pdf)
@@ -783,7 +788,7 @@ Description: Registers one of the 14 standard PDF base fonts on doc
 Example:
   (define helv (pdf-use-font doc 'helvetica))</pre>
 </div>
-<div class="entry" id="e82" data-name="pdf-with-state">
+<div class="entry" id="e83" data-name="pdf-with-state">
   <div class="entry-name">pdf-with-state</div>
   <pre class="entry-doc">Syntax: (pdf-with-state page thunk)
 Library: (scm pdf)
@@ -797,14 +802,14 @@ Example:
       (pdf-rect page 0 0 50 50)
       (pdf-fill page)))</pre>
 </div>
-<div class="entry" id="e83" data-name="pdf/array">
+<div class="entry" id="e84" data-name="pdf/array">
   <div class="entry-name">pdf/array</div>
   <pre class="entry-doc">Syntax: (pdf/array list-of-values)
 Library: (scm pdf)
 Description: Constructs a PDF array from a Scheme list of PDF values.
 Example: (pdf/array (list 0 0 595 842))</pre>
 </div>
-<div class="entry" id="e84" data-name="pdf/dict">
+<div class="entry" id="e85" data-name="pdf/dict">
   <div class="entry-name">pdf/dict</div>
   <pre class="entry-doc">Syntax: (pdf/dict key1 value1 key2 value2 ...)
 Library: (scm pdf)
@@ -816,7 +821,7 @@ Example:
   (pdf/dict "Type" (pdf/name "Catalog")
             "Pages" (pdf/ref 2))</pre>
 </div>
-<div class="entry" id="e85" data-name="pdf/literal">
+<div class="entry" id="e86" data-name="pdf/literal">
   <div class="entry-name">pdf/literal</div>
   <pre class="entry-doc">Syntax: (pdf/literal bytevector)
 Library: (scm pdf)
@@ -825,7 +830,7 @@ Description: Wraps a bytevector so the PDF serializer splices it
   fragments — most users should not need this.
 Example: (pdf/literal (string-&gt;utf8 "&lt;&lt; /Foo /Bar &gt;&gt;"))</pre>
 </div>
-<div class="entry" id="e86" data-name="pdf/name">
+<div class="entry" id="e87" data-name="pdf/name">
   <div class="entry-name">pdf/name</div>
   <pre class="entry-doc">Syntax: (pdf/name string)
 Library: (scm pdf)
@@ -833,7 +838,7 @@ Description: Constructs a PDF name object (serialized as /string). Used
   for dictionary keys' values, font names, type tags, etc.
 Example: (pdf/name "Catalog")</pre>
 </div>
-<div class="entry" id="e87" data-name="pdf/ref">
+<div class="entry" id="e88" data-name="pdf/ref">
   <div class="entry-name">pdf/ref</div>
   <pre class="entry-doc">Syntax: (pdf/ref object-id)
 Library: (scm pdf)
@@ -841,7 +846,7 @@ Description: Constructs an indirect-object reference (serialized as
   "N 0 R"). object-id is the integer id assigned by the writer.
 Example: (pdf/ref 3)</pre>
 </div>
-<div class="entry" id="e88" data-name="pdf/stream">
+<div class="entry" id="e89" data-name="pdf/stream">
   <div class="entry-name">pdf/stream</div>
   <pre class="entry-doc">Syntax: (pdf/stream dict bytevector)
 Library: (scm pdf)

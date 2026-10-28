@@ -221,4 +221,20 @@
   (test-assert (> (font-text-width inter-black 12 "Intern")
                   (font-text-width inter-regular 12 "Intern"))))
 
+(test-group "font->truetype"
+  (test-equal 257 (length (font-chars inter-regular)))
+  (test-assert (char<? (car (font-chars inter-regular)) (cadr (font-chars inter-regular))))
+  (test-equal #f (font-chars (read-truetype (font->truetype dejavu-sans "DejaVu Sans"))))
+  ;; A file with the same glyphs: read back, every glyph is the same.
+  (let* ((ttf (font->truetype inter-black "Inter" "Black"))
+         (back (read-truetype ttf)))
+    (test-equal (bytevector #x00 #x01 #x00 #x00) (bytevector-copy ttf 0 4))
+    (test-assert "all glyphs survive"
+      (every (lambda (c) (equal? (font-glyph back c) (font-glyph inter-black c)))
+             (font-chars inter-black)))
+    (test-equal (font-units-per-em inter-black) (font-units-per-em back))
+    (test-equal (font-ascent inter-black) (font-ascent back))
+    (test-equal #f (font-glyph back #\x4E00)))
+  (test-error (font->truetype (read-truetype (font->truetype inter-regular "Inter")) "X")))
+
 (test-end "scm truetype")

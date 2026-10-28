@@ -688,6 +688,10 @@ Description: Sets the miter limit. Emits 'M'.
 Example: (pdf-set-miter-limit page 10)
 ```
 
+### `pdf-set-opacity`
+
+*(no documentation)*
+
 ### `pdf-set-stroke-cmyk`
 
 ```

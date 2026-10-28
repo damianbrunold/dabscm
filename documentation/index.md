@@ -137,6 +137,7 @@
 | [`(scm templating)`](libraries/scm-templating.md) | Text templating with variable substitution |
 | [`(scm terminal)`](libraries/scm-terminal.md) | Terminal control — colors, cursor, raw mode |
 | [`(scm test)`](libraries/scm-test.md) | Test framework — SRFI-64 runner with summary reporting |
+| [`(scm text layout)`](libraries/scm-text-layout.md) |  |
 | [`(scm text)`](libraries/scm-text.md) | Text processing utilities — awk, sed, grep, cut, sort, diff, and more |
 | [`(scm toml)`](libraries/scm-toml.md) | TOML reading and writing |
 | [`(scm truetype)`](libraries/scm-truetype.md) | TrueType font reading — glyph outlines, advances, kerning, OpenType features, text as paths |

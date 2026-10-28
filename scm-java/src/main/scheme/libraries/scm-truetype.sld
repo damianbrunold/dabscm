@@ -26,7 +26,9 @@
           font-glyph
           font-kerning
           font-text-width
-          font-text-path)
+          font-text-path
+          font-chars
+          font->truetype)
   (import (scheme base)
           (scheme char)
           (scheme inexact)
@@ -35,15 +37,27 @@
           (scm bytevector))
   (begin
 
-    ;; lookup: char -> glyph or #f; kern: (char char) -> font units
+    ;; lookup: char -> glyph or #f; kern: (char char) -> font units;
+    ;; chars: the characters with glyphs, ascending, when known (fonts
+    ;; made from glyph data), else #f.
     (define-record-type font
-      (%make-font units-per-em ascent descent lookup kern)
+      (%make-font units-per-em ascent descent lookup kern chars)
       font?
       (units-per-em font-units-per-em)
       (ascent font-ascent)
       (descent font-descent)
       (lookup font-lookup)
-      (kern font-kern))
+      (kern font-kern)
+      (chars %font-chars))
+
+    (define (font-chars font)
+      "Syntax: (font-chars font)
+Library: (scm truetype)
+Description: The characters font has glyphs for, ascending, or #f when
+  the font does not list them (fonts read with read-truetype).
+Example:
+  (length (font-chars inter-regular)) => 312"
+      (%font-chars font))
 
     (define (font-glyph font char)
       "Syntax: (font-glyph font char)
@@ -525,7 +539,8 @@ Example:
            (let ((l (gid-of (char->integer left))) (r (gid-of (char->integer right))))
              (if gpos
                  (gpos l r)
-                 (hash-table-ref/default pairs (cons l r) 0)))))))
+                 (hash-table-ref/default pairs (cons l r) 0))))
+         #f)))
 
     (define (make-outline-font units-per-em ascent descent glyphs . kerning)
       "Syntax: (make-outline-font units-per-em ascent descent glyphs [kerning])
@@ -545,7 +560,20 @@ Example:
         (%make-font units-per-em ascent descent
                     (lambda (char) (hash-table-ref/default h char #f))
                     (lambda (left right)
-                      (hash-table-ref/default k (cons left right) 0)))))
+                      (hash-table-ref/default k (cons left right) 0))
+                    (list-sort-chars (map car glyphs)))))
+
+    (define (list-sort-chars cs)
+      ;; Insertion into a sorted list; fonts have a few hundred glyphs.
+      (let loop ((cs cs) (out '()))
+        (if (null? cs)
+            out
+            (loop (cdr cs)
+                  (let ins ((xs out))
+                    (cond ((null? xs) (list (car cs)))
+                          ((char<? (car cs) (car xs)) (cons (car cs) xs))
+                          ((char=? (car cs) (car xs)) xs)
+                          (else (cons (car xs) (ins (cdr xs))))))))))
 
     ;; --- text -----------------------------------------------------------
 
@@ -629,5 +657,294 @@ Example:
 
     (define (list-head l k)
       (if (= k 0) '() (cons (car l) (list-head (cdr l) (- k 1)))))
+
+
+    ;; --- writing TrueType files ---------------------------------------
+    ;; font->truetype turns a font made from glyph data back into a .ttf
+    ;; file: what a PDF embeds, so that a document shows exactly the
+    ;; glyphs (OpenType features applied) of a library font such as
+    ;; (scm fonts inter). Glyph 0 is an empty .notdef, then one simple
+    ;; glyph per character in code point order, coordinates uncompressed.
+
+    (define (bv-out) (open-output-bytevector))
+    (define (w8 p v) (write-u8 (modulo v 256) p))
+    (define (w16 p v)
+      (let ((v (if (< v 0) (+ v 65536) v)))
+        (w8 p (quotient v 256)) (w8 p (remainder v 256))))
+    (define (w32 p v)
+      (let ((v (if (< v 0) (+ v 4294967296) v)))
+        (w16 p (quotient v 65536)) (w16 p (remainder v 65536))))
+    (define (w-tag p s) (for-each (lambda (c) (w8 p (char->integer c))) (string->list s)))
+
+    (define (glyph-points contours) (apply append contours))
+
+    (define (ipart x) (exact (round x)))
+
+    (define (glyph-bbox contours)
+      (let ((pts (glyph-points contours)))
+        (if (null? pts)
+            '(0 0 0 0)
+            (let loop ((ps pts) (x0 #f) (y0 #f) (x1 #f) (y1 #f))
+              (if (null? ps)
+                  (list x0 y0 x1 y1)
+                  (let ((x (ipart (car (car ps)))) (y (ipart (cadr (car ps)))))
+                    (loop (cdr ps)
+                          (if x0 (min x0 x) x) (if y0 (min y0 y) y)
+                          (if x1 (max x1 x) x) (if y1 (max y1 y) y))))))))
+
+    ;; The glyf entry of a simple glyph, padded to 4 bytes; empty for a
+    ;; glyph without contours.
+    (define (encode-glyph contours)
+      (let ((contours (filter-nonempty contours)))
+        (if (null? contours)
+            (bytevector)
+            (let ((p (bv-out))
+                  (bbox (glyph-bbox contours))
+                  (pts (glyph-points contours)))
+              (w16 p (length contours))
+              (for-each (lambda (v) (w16 p v)) bbox)
+              (let loop ((cs contours) (end -1))
+                (unless (null? cs)
+                  (let ((e (+ end (length (car cs)))))
+                    (w16 p e)
+                    (loop (cdr cs) e))))
+              (w16 p 0)                       ; no instructions
+              (for-each (lambda (pt) (w8 p (if (caddr pt) 1 0))) pts)
+              (let loop ((ps pts) (prev 0))
+                (unless (null? ps)
+                  (let ((x (ipart (car (car ps)))))
+                    (w16 p (- x prev))
+                    (loop (cdr ps) x))))
+              (let loop ((ps pts) (prev 0))
+                (unless (null? ps)
+                  (let ((y (ipart (cadr (car ps)))))
+                    (w16 p (- y prev))
+                    (loop (cdr ps) y))))
+              (let loop ()
+                (when (not (= 0 (remainder (bytevector-length (get-output-bytevector p)) 4)))
+                  (w8 p 0)
+                  (loop)))
+              (get-output-bytevector p)))))
+
+    (define (filter-nonempty xs)
+      (cond ((null? xs) '())
+            ((null? (car xs)) (filter-nonempty (cdr xs)))
+            (else (cons (car xs) (filter-nonempty (cdr xs))))))
+
+    ;; cmap segments: runs of consecutive code points (whose glyph ids are
+    ;; then consecutive too) as (start end gid-of-start).
+    (define (cmap-segments cps)
+      (let loop ((cps cps) (gid 1) (acc '()))
+        (if (null? cps)
+            (reverse acc)
+            (let run ((end (car cps)) (rest (cdr cps)) (n 1))
+              (if (and (pair? rest) (= (car rest) (+ end 1)))
+                  (run (car rest) (cdr rest) (+ n 1))
+                  (loop rest (+ gid n) (cons (list (car cps) end gid) acc)))))))
+
+    (define (log2-floor n) (let loop ((k 0)) (if (> (expt 2 (+ k 1)) n) k (loop (+ k 1)))))
+
+    (define (cmap-table cps)
+      (let* ((segs (cmap-segments cps))
+             (bmp (let loop ((ss segs))
+                    (cond ((null? ss) '())
+                          ((> (cadr (car ss)) #xFFFF) '())
+                          (else (cons (car ss) (loop (cdr ss)))))))
+             (segs4 (append bmp (list (list #xFFFF #xFFFF 0))))
+             (n (length segs4))
+             (f4 (let ((p (bv-out)))
+                   (w16 p 4) (w16 p (+ 16 (* 8 n))) (w16 p 0)
+                   (w16 p (* 2 n))
+                   (let ((sr (* 2 (expt 2 (log2-floor n)))))
+                     (w16 p sr) (w16 p (log2-floor n)) (w16 p (- (* 2 n) sr)))
+                   (for-each (lambda (s) (w16 p (cadr s))) segs4)
+                   (w16 p 0)
+                   (for-each (lambda (s) (w16 p (car s))) segs4)
+                   (for-each (lambda (s)
+                               (w16 p (if (= (car s) #xFFFF) 1
+                                          (modulo (- (caddr s) (car s)) 65536))))
+                             segs4)
+                   (for-each (lambda (s) (w16 p 0)) segs4)
+                   (get-output-bytevector p)))
+             (f12 (let ((p (bv-out)))
+                    (w16 p 12) (w16 p 0) (w32 p (+ 16 (* 12 (length segs))))
+                    (w32 p 0) (w32 p (length segs))
+                    (for-each (lambda (s) (w32 p (car s)) (w32 p (cadr s)) (w32 p (caddr s))) segs)
+                    (get-output-bytevector p)))
+             (p (bv-out)))
+        (w16 p 0) (w16 p 2)
+        (w16 p 3) (w16 p 1) (w32 p 20)
+        (w16 p 3) (w16 p 10) (w32 p (+ 20 (bytevector-length f4)))
+        (write-bytevector f4 p)
+        (write-bytevector f12 p)
+        (get-output-bytevector p)))
+
+    (define (name-table family style)
+      (let* ((full (if (string=? style "Regular") family (string-append family " " style)))
+             (ps (string-append (string-remove-spaces family) "-" style))
+             (records (list (cons 1 family) (cons 2 style) (cons 3 ps) (cons 4 full) (cons 6 ps)))
+             (enc (map (lambda (r) (cons (car r) (utf16be (cdr r)))) records))
+             (p (bv-out)))
+        (w16 p 0) (w16 p (length enc)) (w16 p (+ 6 (* 12 (length enc))))
+        (let loop ((rs enc) (off 0))
+          (unless (null? rs)
+            (w16 p 3) (w16 p 1) (w16 p #x409) (w16 p (car (car rs)))
+            (w16 p (bytevector-length (cdr (car rs)))) (w16 p off)
+            (loop (cdr rs) (+ off (bytevector-length (cdr (car rs)))))))
+        (for-each (lambda (r) (write-bytevector (cdr r) p)) enc)
+        (get-output-bytevector p)))
+
+    (define (string-remove-spaces s)
+      (list->string (let loop ((cs (string->list s)))
+                      (cond ((null? cs) '())
+                            ((char=? (car cs) #\space) (loop (cdr cs)))
+                            (else (cons (car cs) (loop (cdr cs))))))))
+
+    (define (utf16be s)
+      (let ((p (bv-out)))
+        (for-each (lambda (c)
+                    (let ((cp (char->integer c)))
+                      (if (< cp #x10000)
+                          (w16 p cp)
+                          (let ((v (- cp #x10000)))
+                            (w16 p (+ #xD800 (quotient v 1024)))
+                            (w16 p (+ #xDC00 (remainder v 1024)))))))
+                  (string->list s))
+        (get-output-bytevector p)))
+
+    (define (table-checksum bv)
+      (let ((n (bytevector-length bv)))
+        (let loop ((i 0) (sum 0))
+          (if (>= i n)
+              sum
+              (let ((b (lambda (k) (if (< (+ i k) n) (bytevector-u8-ref bv (+ i k)) 0))))
+                (loop (+ i 4)
+                      (modulo (+ sum (* (b 0) 16777216) (* (b 1) 65536) (* (b 2) 256) (b 3))
+                              4294967296)))))))
+
+    (define (pad4 bv)
+      (let ((r (remainder (bytevector-length bv) 4)))
+        (if (= r 0) bv (bytevector-append bv (make-bytevector (- 4 r) 0)))))
+
+    (define (font->truetype font family . style)
+      "Syntax: (font->truetype font family [style])
+Library: (scm truetype)
+Description: Returns a TrueType file (bytevector) with the glyphs of
+  font, which must list its characters (fonts made with
+  make-outline-font, such as those of (scm fonts inter) and
+  (scm fonts dejavu)). family names it; style is \"Regular\" (default),
+  \"Bold\", \"Black\" and so on, which also sets the weight. The file
+  has no hinting and no kerning table: a PDF positions the glyphs
+  itself.
+Example:
+  (pdf-embed-truetype-font doc (font->truetype inter-regular \"Inter\") \"Inter\")"
+      (let* ((style (if (pair? style) (car style) "Regular"))
+             (chars (or (font-chars font)
+                        (error "font->truetype: the font does not list its characters")))
+             (upem (font-units-per-em font))
+             (glyphs (cons (cons (quotient upem 2) '())    ; .notdef
+                           (map (lambda (c) (font-glyph font c)) chars)))
+             (encoded (map (lambda (g) (encode-glyph (cdr g))) glyphs))
+             (bboxes (map (lambda (g) (glyph-bbox (filter-nonempty (cdr g)))) glyphs))
+             (num (length glyphs))
+             (glyf (apply bytevector-append encoded))
+             (loca (let ((p (bv-out)))
+                     (let loop ((es encoded) (off 0))
+                       (w32 p off)
+                       (unless (null? es)
+                         (loop (cdr es) (+ off (bytevector-length (car es))))))
+                     (get-output-bytevector p)))
+             (advances (map car glyphs))
+             (inked (let loop ((gs glyphs) (bs bboxes) (acc '()))
+                      (cond ((null? gs) acc)
+                            ((null? (filter-nonempty (cdr (car gs)))) (loop (cdr gs) (cdr bs) acc))
+                            (else (loop (cdr gs) (cdr bs) (cons (car bs) acc))))))
+             (x-min (apply min 0 (map car inked)))
+             (y-min (apply min 0 (map cadr inked)))
+             (x-max (apply max 0 (map caddr inked)))
+             (y-max (apply max 0 (map cadddr inked)))
+             (hmtx (let ((p (bv-out)))
+                     (for-each (lambda (a b) (w16 p (ipart a)) (w16 p (car b))) advances bboxes)
+                     (get-output-bytevector p)))
+             (max-points (apply max 0 (map (lambda (g) (length (glyph-points (cdr g)))) glyphs)))
+             (max-contours (apply max 0 (map (lambda (g) (length (filter-nonempty (cdr g)))) glyphs)))
+             (weight (cond ((member style '("Black" "Heavy")) 900)
+                           ((member style '("Bold")) 700)
+                           ((member style '("Light")) 300)
+                           (else 400)))
+             (bold? (>= weight 700))
+             (ascent (font-ascent font))
+             (descent (font-descent font))
+             (yof (lambda (c) (let ((g (font-glyph font c)))
+                                (if g (cadddr (glyph-bbox (filter-nonempty (cdr g)))) 0))))
+             (head (let ((p (bv-out)))
+                     (w32 p #x00010000) (w32 p #x00010000) (w32 p 0) (w32 p #x5F0F3CF5)
+                     (w16 p #x000B) (w16 p upem)
+                     (w32 p 0) (w32 p 0) (w32 p 0) (w32 p 0)
+                     (w16 p x-min) (w16 p y-min) (w16 p x-max) (w16 p y-max)
+                     (w16 p (if bold? 1 0)) (w16 p 8) (w16 p 2) (w16 p 1) (w16 p 0)
+                     (get-output-bytevector p)))
+             (hhea (let ((p (bv-out)))
+                     (w32 p #x00010000) (w16 p ascent) (w16 p descent) (w16 p 0)
+                     (w16 p (ipart (apply max advances))) (w16 p x-min) (w16 p 0) (w16 p x-max)
+                     (w16 p 1) (w16 p 0) (w16 p 0)
+                     (w16 p 0) (w16 p 0) (w16 p 0) (w16 p 0) (w16 p 0) (w16 p num)
+                     (get-output-bytevector p)))
+             (maxp (let ((p (bv-out)))
+                     (w32 p #x00010000) (w16 p num) (w16 p max-points) (w16 p max-contours)
+                     (w16 p 0) (w16 p 0) (w16 p 2)
+                     (do ((i 0 (+ i 1))) ((= i 8)) (w16 p 0))
+                     (get-output-bytevector p)))
+             (os2 (let ((p (bv-out))
+                        (cps (map char->integer chars)))
+                    (w16 p 4)
+                    (w16 p (ipart (/ (apply + advances) num)))
+                    (w16 p weight) (w16 p 5) (w16 p 0)
+                    (w16 p (quotient upem 2)) (w16 p (quotient upem 2)) (w16 p 0) (w16 p (quotient upem 10))
+                    (w16 p (quotient upem 2)) (w16 p (quotient upem 2)) (w16 p 0) (w16 p (quotient upem 3))
+                    (w16 p (quotient upem 20)) (w16 p (quotient upem 4))
+                    (w16 p 0)
+                    (do ((i 0 (+ i 1))) ((= i 10)) (w8 p 0))
+                    (w32 p 3) (w32 p 0) (w32 p 0) (w32 p 0)
+                    (w-tag p "NONE")
+                    (w16 p (if bold? #x20 #x40))
+                    (w16 p (min #xFFFF (apply min cps))) (w16 p (min #xFFFF (apply max cps)))
+                    (w16 p ascent) (w16 p descent) (w16 p 0)
+                    (w16 p ascent) (w16 p (- descent))
+                    (w32 p 1) (w32 p 0)
+                    (w16 p (yof #\x)) (w16 p (yof #\H))
+                    (w16 p 0) (w16 p 32) (w16 p 0)
+                    (get-output-bytevector p)))
+             (post (let ((p (bv-out)))
+                     (w32 p #x00030000) (w32 p 0) (w16 p (- (quotient upem 10))) (w16 p (quotient upem 20))
+                     (do ((i 0 (+ i 1))) ((= i 5)) (w32 p 0))
+                     (get-output-bytevector p)))
+             (tables (list (cons "OS/2" os2) (cons "cmap" (cmap-table (map char->integer chars)))
+                           (cons "glyf" glyf) (cons "head" head) (cons "hhea" hhea)
+                           (cons "hmtx" hmtx) (cons "loca" loca) (cons "maxp" maxp)
+                           (cons "name" (name-table family style)) (cons "post" post)))
+             (n (length tables))
+             (dir-len (+ 12 (* 16 n)))
+             (out (bv-out)))
+        (w32 out #x00010000) (w16 out n)
+        (let ((sr (* 16 (expt 2 (log2-floor n)))))
+          (w16 out sr) (w16 out (log2-floor n)) (w16 out (- (* 16 n) sr)))
+        (let loop ((ts tables) (off dir-len))
+          (unless (null? ts)
+            (let ((data (cdr (car ts))))
+              (w-tag out (car (car ts)))
+              (w32 out (table-checksum data))
+              (w32 out off)
+              (w32 out (bytevector-length data))
+              (loop (cdr ts) (+ off (bytevector-length (pad4 data)))))))
+        (for-each (lambda (t) (write-bytevector (pad4 (cdr t)) out)) tables)
+        (let* ((bv (get-output-bytevector out))
+               (head-off (let loop ((ts tables) (off dir-len))
+                           (if (string=? (car (car ts)) "head")
+                               off
+                               (loop (cdr ts) (+ off (bytevector-length (pad4 (cdr (car ts))))))))))
+          (bytevector-u32-set! bv (+ head-off 8)
+                               (modulo (- #xB1B0AFBA (table-checksum bv)) 4294967296) 'big)
+          bv)))
 
 ))

@@ -52,6 +52,7 @@
     pdf-set-fill-gray
     pdf-set-fill-rgb
     pdf-set-fill-cmyk
+    pdf-set-opacity
     ;; Transforms
     pdf-translate
     pdf-scale
@@ -232,7 +233,7 @@ Example: (pdf/literal (string->utf8 \"<< /Foo /Bar >>\"))"
     ;; ── Document and page records ─────────────────────────────────────────
 
     (define-record-type pdf-document
-      (%make-pdf-document pages fonts images metadata outlines)
+      (%make-pdf-document pages fonts images metadata outlines gstates)
       pdf-document?
       (pages    pdf-document-pages    set-pdf-document-pages!)
       ;; Alist of font-symbol → pdf-font. Order is preserved so font
@@ -246,10 +247,13 @@ Example: (pdf/literal (string->utf8 \"<< /Foo /Bar >>\"))"
       (metadata pdf-document-metadata set-pdf-document-metadata!)
       ;; List of pdf-outline (in tree order; first-level items live at
       ;; the document root, children hang off their parents).
-      (outlines pdf-document-outlines set-pdf-document-outlines!))
+      (outlines pdf-document-outlines set-pdf-document-outlines!)
+      ;; Alist of (fill-alpha . stroke-alpha) → ExtGState resource name
+      ;; (GS1, GS2, …), registered by pdf-set-opacity.
+      (gstates  pdf-document-gstates  set-pdf-document-gstates!))
 
     (define-record-type pdf-page
-      (%make-pdf-page width height content annotations object-id)
+      (%make-pdf-page width height content annotations object-id doc)
       pdf-page?
       (width       pdf-page-width)
       (height      pdf-page-height)
@@ -261,7 +265,10 @@ Example: (pdf/literal (string->utf8 \"<< /Foo /Bar >>\"))"
       (annotations pdf-page-annotations set-pdf-page-annotations!)
       ;; Indirect-object id assigned by pdf->bytevector; #f until then.
       ;; Used by outline /Dest entries to refer to the page.
-      (object-id   pdf-page-object-id   set-pdf-page-object-id!))
+      (object-id   pdf-page-object-id   set-pdf-page-object-id!)
+      ;; The document the page belongs to (for resources that a drawing
+      ;; operator registers, such as opacity).
+      (doc         pdf-page-doc))
 
     (define (%pdf-page-add-chunk! page bv)
       (set-pdf-page-content! page (cons bv (pdf-page-content page))))
@@ -283,7 +290,7 @@ Example:
   (define doc (make-pdf))
   (pdf-add-page! doc)
   (pdf-save doc \"blank.pdf\")"
-      (%make-pdf-document '() '() '() '() '()))
+      (%make-pdf-document '() '() '() '() '() '()))
 
     (define (pdf-page-count doc)
       "Syntax: (pdf-page-count doc)
@@ -316,7 +323,7 @@ Example:
            (set! h (cadr opts)))
           (else
            (error "pdf-add-page!: expected (), (size-pair), or (w h)" opts)))
-        (let ((page (%make-pdf-page w h '() '() #f)))
+        (let ((page (%make-pdf-page w h '() '() #f doc)))
           (set-pdf-document-pages! doc
             (append (pdf-document-pages doc) (list page)))
           page)))
@@ -638,13 +645,22 @@ Example:
                              (cons (pdf-image-resource-name i)
                                    (pdf/ref (pdf-image-object-id i))))
                            images))))
+               (gstate-subdict
+                (if (null? (pdf-document-gstates doc))
+                    #f
+                    (%make-pdf-dict
+                      (map (lambda (g)
+                             (cons (cdr g)
+                                   (pdf/dict "Type" (pdf/name "ExtGState")
+                                             "ca" (car (car g))
+                                             "CA" (cdr (car g)))))
+                           (pdf-document-gstates doc)))))
                (page-resources
-                (cond
-                  ((and font-subdict xobject-subdict)
-                   (pdf/dict "Font" font-subdict "XObject" xobject-subdict))
-                  (font-subdict     (pdf/dict "Font"    font-subdict))
-                  (xobject-subdict  (pdf/dict "XObject" xobject-subdict))
-                  (else             (pdf/dict)))))
+                (%make-pdf-dict
+                  (append
+                    (if font-subdict (list (cons "Font" font-subdict)) '())
+                    (if xobject-subdict (list (cons "XObject" xobject-subdict)) '())
+                    (if gstate-subdict (list (cons "ExtGState" gstate-subdict)) '())))))
           ;; Catalog (with optional /Outlines).
           (pdf-writer-define-object! w catalog-id
             (let ((entries
@@ -1034,6 +1050,32 @@ Example: (pdf-set-fill-cmyk page 1 0 0 0)   ; cyan"
     ;; matrix (CTM). Order matters: transforms apply to subsequently
     ;; drawn content, in the order they were emitted. Use pdf-with-state
     ;; to scope them.
+
+    (define (pdf-set-opacity page fill . stroke)
+      "Syntax: (pdf-set-opacity page fill-alpha [stroke-alpha])
+Library: (scm pdf)
+Description: Sets the opacity of what is filled (text, shapes, images)
+  and stroked from here on, each from 0 (invisible) to 1 (opaque);
+  stroke-alpha defaults to fill-alpha. Part of the graphics state: use
+  pdf-with-state to limit it. Registers an ExtGState resource.
+Example:
+  (pdf-with-state page
+    (lambda ()
+      (pdf-set-opacity page 0.5)
+      (pdf-rect page 50 50 100 100)
+      (pdf-fill page)))"
+      (let* ((doc (pdf-page-doc page))
+             (clamp (lambda (a) (max 0 (min 1 a))))
+             (key (cons (clamp fill) (clamp (if (pair? stroke) (car stroke) fill))))
+             (known (assoc key (pdf-document-gstates doc)))
+             (name (if known
+                       (cdr known)
+                       (let ((n (string-append "GS" (number->string
+                                                     (+ 1 (length (pdf-document-gstates doc)))))))
+                         (set-pdf-document-gstates! doc
+                           (append (pdf-document-gstates doc) (list (cons key n))))
+                         n))))
+        (emit-op! page (string-append "/" name) "gs")))
 
     (define (pdf-transform page a b c d e f)
       "Syntax: (pdf-transform page a b c d e f)
@@ -1685,20 +1727,62 @@ Example:
                            (+ acc (vector-ref widths b)))))))))
         (* total (/ size 1000.0))))
 
-    (define (pdf-text-width font size string)
-      "Syntax: (pdf-text-width font size string)
+    (define (pdf-text-width font size string . kerning)
+      "Syntax: (pdf-text-width font size string [kerning])
 Library: (scm pdf)
 Description: Returns the rendered width of string in user-space units
-  (points) when set in font at size, using the AFM/TTF glyph widths.
+  (points) when set in font at size, using the AFM/TTF glyph widths, and
+  the pair adjustments of kerning if given (a procedure as for
+  pdf-draw-text's kerning option).
   For core14 fonts, unmappable codepoints are treated as the '?' glyph;
   for embedded TrueType fonts, codepoints without a glyph use GID 0
   (which is .notdef, typically zero width or a blank box).
 Example:
   (define helv (pdf-use-font doc 'helvetica))
   (pdf-text-width helv 12 \"Hello\")"
-      (case (pdf-font-kind font)
-        ((truetype) (%ttf-text-width font size string))
-        (else       (%core14-text-width font size string))))
+      (+ (case (pdf-font-kind font)
+           ((truetype) (%ttf-text-width font size string))
+           (else       (%core14-text-width font size string)))
+         (if (and (pair? kerning) (car kerning))
+             (* (/ size 1000.0) (%kerning-total (car kerning) string))
+             0)))
+
+    ;; The sum of the pair adjustments of string, in thousandths of an em.
+    (define (%kerning-total kerning string)
+      (let loop ((cs (string->list string)) (sum 0))
+        (if (or (null? cs) (null? (cdr cs)))
+            sum
+            (loop (cdr cs) (+ sum (kerning (car cs) (cadr cs)))))))
+
+    ;; Emits a TJ array for string: pieces between kerned pairs, each
+    ;; followed by the adjustment (TJ numbers move left, so negated).
+    (define (%emit-kerned-show! page font string kerning)
+      (when (eq? (pdf-font-kind font) 'truetype)
+        (%ttf-record-used! font string))
+      (let ((piece (lambda (s)
+                     (case (pdf-font-kind font)
+                       ((truetype)
+                        (string->utf8 (string-append "<" (%ttf-string-to-hex font s) ">")))
+                       (else
+                        (bytevector-append (string->utf8 "(")
+                                           (%escape-literal-bytes (%encode-string-bytes font s))
+                                           (string->utf8 ")")))))))
+        (%pdf-page-add-chunk! page (string->utf8 "["))
+        (let loop ((cs (string->list string)) (cur '()))
+          (cond
+            ((null? cs)
+             (unless (null? cur)
+               (%pdf-page-add-chunk! page (piece (list->string (reverse cur))))))
+            (else
+             (let* ((c (car cs))
+                    (k (if (pair? (cdr cs)) (kerning c (cadr cs)) 0)))
+               (if (= k 0)
+                   (loop (cdr cs) (cons c cur))
+                   (begin
+                     (%pdf-page-add-chunk! page (piece (list->string (reverse (cons c cur)))))
+                     (%pdf-page-add-chunk! page (string->utf8 (string-append " " (n->s (- k)) " ")))
+                     (loop (cdr cs) '())))))))
+        (%pdf-page-add-chunk! page (string->utf8 "] TJ\n"))))
 
     (define (%emit-text-show! page font string)
       ;; Emits the inner part of a Tj operator — either "(escaped) Tj\n"
@@ -1719,23 +1803,35 @@ Example:
            (%pdf-page-add-chunk! page escaped)
            (%pdf-page-add-chunk! page (string->utf8 ") Tj\n"))))))
 
-    (define (pdf-draw-text page font size x y string)
-      "Syntax: (pdf-draw-text page font size x y string)
+    (define (pdf-draw-text page font size x y string . opts)
+      "Syntax: (pdf-draw-text page font size x y string [option value] ...)
 Library: (scm pdf)
 Description: Draws string on page at user-space coordinates (x, y) — the
   baseline origin — in font at size points. Emits a self-contained
   q ... BT ... ET ... Q block so any current graphics state is
   preserved. To rotate or scale text, wrap the call in pdf-with-state
-  and concat your own CTM.
+  and concat your own CTM. Options: 'kerning proc, where (proc left
+  right) gives the adjustment between two characters in thousandths of
+  an em (negative: closer), e.g. from (scm truetype)'s font-kerning;
+  'skew degrees slants the glyphs (a synthetic italic: about 10).
 Example:
   (define helv (pdf-use-font doc 'helvetica))
-  (pdf-draw-text page helv 12 100 700 \"Hello, world!\")"
-      (let ((rname (pdf-font-resource-name font)))
+  (pdf-draw-text page helv 12 100 700 \"Hello, world!\")
+  (pdf-draw-text page inter 12 100 680 \"AVATAR\"
+                 'kerning (lambda (a b) (* 1000/2048 (font-kerning tt a b))))"
+      (let ((rname (pdf-font-resource-name font))
+            (kerning (%plist-ref opts 'kerning #f))
+            (skew (%plist-ref opts 'skew 0)))
         (emit-op! page "q")
         (emit-op! page "BT")
         (emit-op! page (string-append "/" rname) (n->s size) "Tf")
-        (emit-op! page (n->s x) (n->s y) "Td")
-        (%emit-text-show! page font string)
+        (if (= skew 0)
+            (emit-op! page (n->s x) (n->s y) "Td")
+            (emit-op! page "1" "0" (n->s (tan (* skew (/ 3.141592653589793 180)))) "1"
+                      (n->s x) (n->s y) "Tm"))
+        (if kerning
+            (%emit-kerned-show! page font string kerning)
+            (%emit-text-show! page font string))
         (emit-op! page "ET")
         (emit-op! page "Q")))
 
