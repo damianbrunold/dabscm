@@ -397,6 +397,7 @@ public class Primitives
         Bind(new PrimitiveRunProgramCapture());
         Bind(new PrimitiveSHA1Hash());
         Bind(new PrimitiveSHA256Hash());
+        Bind(new PrimitiveSHA256File());
         Bind(new PrimitiveSecond());
         Bind(new PrimitiveSecureRandomPortP());
         Bind(new PrimitiveServerInstallShutdownHook());

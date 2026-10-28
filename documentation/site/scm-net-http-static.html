@@ -65,12 +65,16 @@
   <div class="entry-name">file-response</div>
   <pre class="entry-doc">Syntax: (file-response path [opts])
 Library: (scm net http static)
-Description: Returns a 200 response with the bytes of the file at path,
-  or 404 if it does not exist or is a directory. The response carries the
-  file's Content-Type (mime-type), a weak ETag from its modification time
-  and size, and X-Content-Type-Options: nosniff. opts is an alist:
-  (request . req) answers 304 Not Modified when req's If-None-Match
-  matches; (cache-control . string) sets Cache-Control (default
+Description: Returns a 200 response with the file at path, or 404 if it
+  does not exist or is a directory. The body is sent from the file (see
+  make-http-file-response), so files of any size work. The response
+  carries the file's Content-Type (mime-type), a weak ETag from its
+  modification time and size, Accept-Ranges: bytes and
+  X-Content-Type-Options: nosniff. opts is an alist: (request . req)
+  answers 304 Not Modified when req's If-None-Match matches, and a single
+  Range (bytes=a-b, a-, -n) with 206 Partial Content and Content-Range, or
+  416 when it lies outside the file (If-Range is honoured), so audio and
+  video can seek and downloads resume; (cache-control . string) sets Cache-Control (default
   "no-cache": cache, but revalidate); (content-type . string) overrides
   the type; (filename . string) makes it a download with that name.
   path must not come from the client unchecked; make-static-handler does

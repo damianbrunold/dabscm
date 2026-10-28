@@ -122,7 +122,8 @@ Example:
 Syntax: (http-response-body response)
 Library: (scm net http response)
 Description: Returns the body of the HTTP response: a bytevector if the response was created with one, or received
-  with a body that is not text (see http-get); otherwise a string.
+  with a body that is not text (see http-get), or is a file response (its part of the file); otherwise a
+  string. A streamed response (make-http-stream-response) has no body to return: an error.
 Example:
   (http-response-body resp) => "Hello, world!"
 ```
@@ -202,7 +203,17 @@ Example:
 
 ### `make-http-file-response`
 
-*(no documentation)*
+```
+Syntax: (make-http-file-response status headers path [offset [length]])
+Library: (scm net http response)
+Description: Creates an HTTP response whose body is a part of the file at path: length bytes from
+  offset (default: from 0 to the end of the file). tcp-http-serve sends it straight from the file,
+  so large files need not fit in memory. The file must exist and the part must lie within it.
+  Content-Length is set from the length unless headers give one.
+Example:
+  (make-http-file-response 200 '(("Content-Type" . "video/mp4")) "/srv/v.mp4")
+  (make-http-file-response 206 headers "/srv/v.mp4" 1000 500)
+```
 
 ### `make-http-response`
 
@@ -216,7 +227,20 @@ Example:
 
 ### `make-http-stream-response`
 
-*(no documentation)*
+```
+Syntax: (make-http-stream-response status headers writer)
+Library: (scm net http response)
+Description: Creates an HTTP response whose body tcp-http-serve produces by calling (writer port)
+  with a binary output port to the client, after sending the status and headers. The body ends
+  when writer returns (the connection then closes), so there is no Content-Length; call
+  flush-output-port to send what was written so far (server-sent events, progress). Writing
+  raises an error once the client has gone.
+Example:
+  (make-http-stream-response 200 '(("Content-Type" . "text/event-stream"))
+    (lambda (port)
+      (write-bytevector (string->utf8 "data: hello\n\n") port)
+      (flush-output-port port)))
+```
 
 ### `text-response`
 

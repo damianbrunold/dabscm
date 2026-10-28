@@ -1,6 +1,7 @@
 (define-library (scm crypto)
   (import (scm core) (scheme base) (srfi 151))
   (export sha1-hash
+          sha256-file
           md5-hash
           sha256-hash
           hmac-sha256
@@ -29,6 +30,7 @@
     (define sha1-hash              (%primitive "sha1-hash"))
     (define md5-hash               (%primitive "md5-hash"))
     (define sha256-hash            (%primitive "sha256-hash"))
+    (define sha256-file            (%primitive "sha256-file"))
     (define hmac-sha256            (%primitive "hmac-sha256"))
     (define pbkdf2-sha256          (%primitive "pbkdf2-sha256"))
     (define scrypt                 (%primitive "scrypt"))

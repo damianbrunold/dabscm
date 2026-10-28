@@ -405,6 +405,7 @@ public class Primitives {
         bind(new PrimitiveRunProgramCapture());
         bind(new PrimitiveSHA1Hash());
         bind(new PrimitiveSHA256Hash());
+        bind(new PrimitiveSHA256File());
         bind(new PrimitiveSecond());
         bind(new PrimitiveSecureRandomPortP());
         bind(new PrimitiveServerInstallShutdownHook());

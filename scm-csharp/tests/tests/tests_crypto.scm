@@ -1,4 +1,4 @@
-(import (scheme base) (scm crypto) (scm test))
+(import (scheme base) (scheme file) (scm crypto) (scm fs) (scm test))
 
 (test-runner-factory scm-test-runner)
 
@@ -140,5 +140,18 @@
   (test-equal "99897f8444a2c1077f6f1d7d149ea7d107f9841bf90ecb1d4c946b0286ea994db262bd896fd2ecbbb5ce39a33eedb94bf25dd92c25e8db7507fc597dfa341ffa"
     (bytevector->hex (scrypt "p\xe4;sswort" (string->utf8 "salt") 32768 8 1 64)))
   (test-error (scrypt "pw" #u8() 1000 8 1 64)))
+
+(test-group "sha256-file"
+  (let* ((path (mktemp '(prefix . "sha256-file")))
+         (data (make-bytevector 200000 7)))
+    (let ((p (open-binary-output-file path)))
+      (write-bytevector data p)
+      (close-port p))
+    (test-equal (sha256-hash data) (sha256-file path))
+    (call-with-output-file path (lambda (p) #t))   ; now empty
+    (test-equal "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                (bytevector->hex (sha256-file path)))
+    (delete-file path)
+    (test-error (sha256-file path))))
 
 (test-end "crypto")

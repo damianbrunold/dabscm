@@ -61,7 +61,17 @@ Example:
 
 ### `http-request-body-file`
 
-*(no documentation)*
+```
+Syntax: (http-request-body-file request)
+Library: (scm net http request)
+Description: Returns the path of the temporary file holding the request's body, or #f. tcp-http-serve
+  writes a body larger than its spool threshold to such a file instead of keeping it in memory, and
+  deletes the file once the response is sent: move it (move-file) to keep it. http-request-body and
+  http-request-body-bytes still work, reading the file into memory.
+Example:
+  (let ((f (http-request-body-file req)))
+    (if f (move-file f dest) (write-bytes-to dest (http-request-body-bytes req))))
+```
 
 ### `http-request-header`
 

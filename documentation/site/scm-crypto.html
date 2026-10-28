@@ -45,8 +45,9 @@
   <a href="#e20" data-name="rsa-generate-keypair">rsa-generate-keypair</a>
   <a href="#e21" data-name="scrypt">scrypt</a>
   <a href="#e22" data-name="sha1-hash">sha1-hash</a>
-  <a href="#e23" data-name="sha256-hash">sha256-hash</a>
-  <a href="#e24" data-name="xor-key">xor-key</a>
+  <a href="#e23" data-name="sha256-file">sha256-file</a>
+  <a href="#e24" data-name="sha256-hash">sha256-hash</a>
+  <a href="#e25" data-name="xor-key">xor-key</a>
 </nav>
 
 <main>
@@ -79,7 +80,7 @@
 <p>Password hashing and constant-time comparison are available via <a class="xref" href="#e15"><code>pbkdf2-sha256</code></a> and <a class="xref" href="#e11"><code>constant-time-bytevector=?</code></a>; <a class="xref" href="#e16"><code>random-bytes</code></a> provides cryptographically secure randomness.</p>
 </div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
-<p class="export-count">25 bindings</p>
+<p class="export-count">26 bindings</p>
 
 <div class="entry" id="e0" data-name="aes-cbc-decrypt">
   <div class="entry-name">aes-cbc-decrypt</div>
@@ -279,7 +280,11 @@ Description: Returns the SHA-1 hash of obj as a lowercase hex string. Accepts st
 Example:
   (sha1-hash "hello") =&gt; "aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d"</pre>
 </div>
-<div class="entry" id="e23" data-name="sha256-hash">
+<div class="entry" id="e23" data-name="sha256-file">
+  <div class="entry-name">sha256-file</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e24" data-name="sha256-hash">
   <div class="entry-name">sha256-hash</div>
   <pre class="entry-doc">Syntax: (sha256-hash obj)
 Library: (scm crypto)
@@ -287,7 +292,7 @@ Description: Returns the SHA-256 hash of obj as a bytevector. Accepts strings, s
 Example:
   (sha256-hash "hello") =&gt; #u8(...)</pre>
 </div>
-<div class="entry" id="e24" data-name="xor-key">
+<div class="entry" id="e25" data-name="xor-key">
   <div class="entry-name">xor-key</div>
   <pre class="entry-doc">Syntax: (xor-key bv key)
 Library: (scm crypto)

@@ -281,6 +281,10 @@ Example:
   (sha1-hash "hello") => "aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d"
 ```
 
+### `sha256-file`
+
+*(no documentation)*
+
 ### `sha256-hash`
 
 ```
