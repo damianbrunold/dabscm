@@ -177,7 +177,15 @@ Example:
 
 ### `zip-add-file-entry`
 
-*(no documentation)*
+```
+Syntax: (zip-add-file-entry zip name path [compress?])
+Library: (scm zip)
+Description: Adds the file at path to the ZIP archive zip as the entry named name, reading it in
+  pieces, so the file may be larger than memory. The entry is stored uncompressed unless
+  compress? is true: images, videos and other compressed formats gain nothing from deflating.
+Example:
+  (zip-add-file-entry zip "assets/video.mp4" "/var/lib/app/video.mp4")
+```
 
 ### `zip-add-stored-entry`
 
@@ -217,11 +225,28 @@ Example:
 
 ### `zip-entry-size`
 
-*(no documentation)*
+```
+Syntax: (zip-entry-size zip name)
+Library: (scm zip)
+Description: Returns the uncompressed size in bytes the archive declares for the entry named
+  name, or #f if it declares none. Check it before reading an entry of an archive you did not
+  make (a small archive can unpack to gigabytes); zip-extract-entry also enforces a limit.
+Example:
+  (zip-entry-size z "hello.txt") => 5
+```
 
 ### `zip-extract-entry`
 
-*(no documentation)*
+```
+Syntax: (zip-extract-entry zip name path [max-bytes])
+Library: (scm zip)
+Description: Writes the contents of the entry named name to the file at path, in pieces, so the
+  entry may be larger than memory, and returns the number of bytes written. With max-bytes, an
+  entry that unpacks to more raises an error (whatever size the archive declares) and the
+  partial file is deleted.
+Example:
+  (zip-extract-entry z "video.mp4" "/tmp/video.mp4" (* 1024 1024 1024)) => 52428800
+```
 
 ### `zip-files-equal?`
 

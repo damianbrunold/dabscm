@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm ooxml presentation) — Dabscm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="toc">
+  <h2>Bindings</h2>
+  <a href="#e0" data-name="inches-&gt;emu">inches-&gt;emu</a>
+  <a href="#e1" data-name="make-presentation">make-presentation</a>
+  <a href="#e2" data-name="points-&gt;emu">points-&gt;emu</a>
+  <a href="#e3" data-name="presentation-&gt;bytevector">presentation-&gt;bytevector</a>
+  <a href="#e4" data-name="presentation-add-slide!">presentation-add-slide!</a>
+  <a href="#e5" data-name="presentation-save">presentation-save</a>
+  <a href="#e6" data-name="presentation-set-title!">presentation-set-title!</a>
+  <a href="#e7" data-name="slide-add-line!">slide-add-line!</a>
+  <a href="#e8" data-name="slide-add-picture!">slide-add-picture!</a>
+  <a href="#e9" data-name="slide-add-shape!">slide-add-shape!</a>
+  <a href="#e10" data-name="slide-add-video!">slide-add-video!</a>
+  <a href="#e11" data-name="slide-set-background!">slide-set-background!</a>
+  <a href="#e12" data-name="slide-set-notes!">slide-set-notes!</a>
+  <a href="#e13" data-name="slide-set-transition!">slide-set-transition!</a>
+</nav>
+
+<main>
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="index.html">All libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="index.html#sec-scm">Scm Extensions</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm ooxml presentation)</span>
+</nav>
+
+<div class="lib-title scm">(scm ooxml presentation)</div>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><a class="xref" href="scm-ooxml-presentation.html"><code>(scm ooxml presentation)</code></a> writes PowerPoint files (.pptx). Slides hold absolutely positioned shapes (preset geometries, optionally with formatted text), lines, pictures and MP4 videos, and carry a background colour, a transition, build animations (appear, fade, fly in) and speaker notes. The package has one master and one blank layout, so everything a slide shows is on the slide itself: what an export from another program needs. Images and videos can be file paths; they are copied into the package in pieces.</p>
+<p>Positions and sizes are in EMU (914400 per inch; <a class="xref" href="#e2"><code>points-&gt;emu</code></a>, <a class="xref" href="#e0"><code>inches-&gt;emu</code></a>), font sizes in points, angles in degrees, colours "RRGGBB".</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scm ooxml presentation))
+
+(define p (make-presentation))                      ; 16:9
+(define s (presentation-add-slide! p))
+(slide-set-background! s "FFFFFF")
+(slide-add-shape! s 'text (inches-&gt;emu 1) (inches-&gt;emu 0.5) (inches-&gt;emu 11) (inches-&gt;emu 1.2)
+  '((text . (((runs . (((text . "Jahresbericht") (size . 40) (bold . #t)))))
+             ((bullet . "•") (margin-left . 342900) (indent . -342900)
+              (runs . (((text . "Mehr Besuche") (size . 24)))))))
+    (anchor . bottom)))
+(slide-add-shape! s 'rounded (inches-&gt;emu 1) (inches-&gt;emu 3) (inches-&gt;emu 3) (inches-&gt;emu 2)
+  '((fill . "0070B4") (build . (1 fade))))
+(slide-add-picture! s "chart.png" "image/png" (inches-&gt;emu 5) (inches-&gt;emu 3)
+                    (inches-&gt;emu 4) (inches-&gt;emu 3) '((description . "Besuche pro Jahr")))
+(slide-set-notes! s '(((runs . (((text . "Zahlen aus dem Bericht")))))))
+(presentation-save p "bericht.pptx")</code></pre>
+</div>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">14 bindings</p>
+
+<div class="entry" id="e0" data-name="inches-&gt;emu">
+  <div class="entry-name">inches-&gt;emu</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e1" data-name="make-presentation">
+  <div class="entry-name">make-presentation</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e2" data-name="points-&gt;emu">
+  <div class="entry-name">points-&gt;emu</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e3" data-name="presentation-&gt;bytevector">
+  <div class="entry-name">presentation-&gt;bytevector</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e4" data-name="presentation-add-slide!">
+  <div class="entry-name">presentation-add-slide!</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e5" data-name="presentation-save">
+  <div class="entry-name">presentation-save</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e6" data-name="presentation-set-title!">
+  <div class="entry-name">presentation-set-title!</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e7" data-name="slide-add-line!">
+  <div class="entry-name">slide-add-line!</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e8" data-name="slide-add-picture!">
+  <div class="entry-name">slide-add-picture!</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e9" data-name="slide-add-shape!">
+  <div class="entry-name">slide-add-shape!</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e10" data-name="slide-add-video!">
+  <div class="entry-name">slide-add-video!</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e11" data-name="slide-set-background!">
+  <div class="entry-name">slide-set-background!</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e12" data-name="slide-set-notes!">
+  <div class="entry-name">slide-set-notes!</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e13" data-name="slide-set-transition!">
+  <div class="entry-name">slide-set-transition!</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

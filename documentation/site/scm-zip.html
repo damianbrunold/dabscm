@@ -194,7 +194,13 @@ Example:
 </div>
 <div class="entry" id="e11" data-name="zip-add-file-entry">
   <div class="entry-name">zip-add-file-entry</div>
-  <div class="nodoc">(no documentation)</div>
+  <pre class="entry-doc">Syntax: (zip-add-file-entry zip name path [compress?])
+Library: (scm zip)
+Description: Adds the file at path to the ZIP archive zip as the entry named name, reading it in
+  pieces, so the file may be larger than memory. The entry is stored uncompressed unless
+  compress? is true: images, videos and other compressed formats gain nothing from deflating.
+Example:
+  (zip-add-file-entry zip "assets/video.mp4" "/var/lib/app/video.mp4")</pre>
 </div>
 <div class="entry" id="e12" data-name="zip-add-stored-entry">
   <div class="entry-name">zip-add-stored-entry</div>
@@ -228,11 +234,24 @@ Example:
 </div>
 <div class="entry" id="e15" data-name="zip-entry-size">
   <div class="entry-name">zip-entry-size</div>
-  <div class="nodoc">(no documentation)</div>
+  <pre class="entry-doc">Syntax: (zip-entry-size zip name)
+Library: (scm zip)
+Description: Returns the uncompressed size in bytes the archive declares for the entry named
+  name, or #f if it declares none. Check it before reading an entry of an archive you did not
+  make (a small archive can unpack to gigabytes); zip-extract-entry also enforces a limit.
+Example:
+  (zip-entry-size z "hello.txt") =&gt; 5</pre>
 </div>
 <div class="entry" id="e16" data-name="zip-extract-entry">
   <div class="entry-name">zip-extract-entry</div>
-  <div class="nodoc">(no documentation)</div>
+  <pre class="entry-doc">Syntax: (zip-extract-entry zip name path [max-bytes])
+Library: (scm zip)
+Description: Writes the contents of the entry named name to the file at path, in pieces, so the
+  entry may be larger than memory, and returns the number of bytes written. With max-bytes, an
+  entry that unpacks to more raises an error (whatever size the archive declares) and the
+  partial file is deleted.
+Example:
+  (zip-extract-entry z "video.mp4" "/tmp/video.mp4" (* 1024 1024 1024)) =&gt; 52428800</pre>
 </div>
 <div class="entry" id="e17" data-name="zip-files-equal?">
   <div class="entry-name">zip-files-equal?</div>
