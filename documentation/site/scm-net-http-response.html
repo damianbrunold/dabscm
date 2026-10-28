@@ -34,14 +34,15 @@
   <a href="#e9" data-name="http-response-header">http-response-header</a>
   <a href="#e10" data-name="http-response-headers">http-response-headers</a>
   <a href="#e11" data-name="http-response-status">http-response-status</a>
-  <a href="#e12" data-name="http-response?">http-response?</a>
-  <a href="#e13" data-name="http-see-other">http-see-other</a>
-  <a href="#e14" data-name="http-unauthorized">http-unauthorized</a>
-  <a href="#e15" data-name="json-response">json-response</a>
-  <a href="#e16" data-name="make-http-file-response">make-http-file-response</a>
-  <a href="#e17" data-name="make-http-response">make-http-response</a>
-  <a href="#e18" data-name="make-http-stream-response">make-http-stream-response</a>
-  <a href="#e19" data-name="text-response">text-response</a>
+  <a href="#e12" data-name="http-response-with-headers">http-response-with-headers</a>
+  <a href="#e13" data-name="http-response?">http-response?</a>
+  <a href="#e14" data-name="http-see-other">http-see-other</a>
+  <a href="#e15" data-name="http-unauthorized">http-unauthorized</a>
+  <a href="#e16" data-name="json-response">json-response</a>
+  <a href="#e17" data-name="make-http-file-response">make-http-file-response</a>
+  <a href="#e18" data-name="make-http-response">make-http-response</a>
+  <a href="#e19" data-name="make-http-stream-response">make-http-stream-response</a>
+  <a href="#e20" data-name="text-response">text-response</a>
 </nav>
 
 <main>
@@ -58,7 +59,7 @@
 <p class="lib-sub">HTTP response construction and accessors</p>
 <div class="lib-preamble">
 <h2>Overview</h2>
-<p><a class="xref" href="scm-net-http-response.html"><code>(scm net http response)</code></a> is the HTTP response value type plus a set of constructors for common status codes. Server handlers return one of these; the client returns one to you. There are ready-made helpers for typical responses (<a class="xref" href="#e5"><code>http-ok</code></a>, <a class="xref" href="#e4"><code>http-not-found</code></a>, …) and content shortcuts (<a class="xref" href="#e0"><code>html-response</code></a>, <a class="xref" href="#e15"><code>json-response</code></a>).</p>
+<p><a class="xref" href="scm-net-http-response.html"><code>(scm net http response)</code></a> is the HTTP response value type plus a set of constructors for common status codes. Server handlers return one of these; the client returns one to you. There are ready-made helpers for typical responses (<a class="xref" href="#e5"><code>http-ok</code></a>, <a class="xref" href="#e4"><code>http-not-found</code></a>, …) and content shortcuts (<a class="xref" href="#e0"><code>html-response</code></a>, <a class="xref" href="#e16"><code>json-response</code></a>).</p>
 <h2>Common uses</h2>
 <p>Build responses in a handler:</p>
 <pre><code class="language-scheme">(import (scm net http response))
@@ -73,7 +74,7 @@
 (http-response-body resp)</code></pre>
 </div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
-<p class="export-count">20 bindings</p>
+<p class="export-count">21 bindings</p>
 
 <div class="entry" id="e0" data-name="html-response">
   <div class="entry-name">html-response</div>
@@ -176,7 +177,11 @@ Description: Returns the HTTP status code of the response as an integer.
 Example:
   (http-response-status resp) =&gt; 200</pre>
 </div>
-<div class="entry" id="e12" data-name="http-response?">
+<div class="entry" id="e12" data-name="http-response-with-headers">
+  <div class="entry-name">http-response-with-headers</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e13" data-name="http-response?">
   <div class="entry-name">http-response?</div>
   <pre class="entry-doc">Syntax: (http-response? x)
 Library: (scm net http response)
@@ -184,7 +189,7 @@ Description: Returns #t if x is an HTTP response object.
 Example:
   (http-response? (make-http-response 200 '() "ok")) =&gt; #t</pre>
 </div>
-<div class="entry" id="e13" data-name="http-see-other">
+<div class="entry" id="e14" data-name="http-see-other">
   <div class="entry-name">http-see-other</div>
   <pre class="entry-doc">Syntax: (http-see-other location)
 Library: (scm net http response)
@@ -193,7 +198,7 @@ Description: Creates a 303 See Other HTTP response with the given Location heade
 Example:
   (http-see-other "/items/42")</pre>
 </div>
-<div class="entry" id="e14" data-name="http-unauthorized">
+<div class="entry" id="e15" data-name="http-unauthorized">
   <div class="entry-name">http-unauthorized</div>
   <pre class="entry-doc">Syntax: (http-unauthorized [msg])
 Library: (scm net http response)
@@ -201,7 +206,7 @@ Description: Creates a 401 Unauthorized HTTP response. msg defaults to "Unauthor
 Example:
   (http-unauthorized)</pre>
 </div>
-<div class="entry" id="e15" data-name="json-response">
+<div class="entry" id="e16" data-name="json-response">
   <div class="entry-name">json-response</div>
   <pre class="entry-doc">Syntax: (json-response body)
 Library: (scm net http response)
@@ -210,7 +215,7 @@ Description: Creates a 200 OK response with Content-Type application/json; chars
 Example:
   (json-response "{\"ok\":true}")</pre>
 </div>
-<div class="entry" id="e16" data-name="make-http-file-response">
+<div class="entry" id="e17" data-name="make-http-file-response">
   <div class="entry-name">make-http-file-response</div>
   <pre class="entry-doc">Syntax: (make-http-file-response status headers path [offset [length]])
 Library: (scm net http response)
@@ -222,7 +227,7 @@ Example:
   (make-http-file-response 200 '(("Content-Type" . "video/mp4")) "/srv/v.mp4")
   (make-http-file-response 206 headers "/srv/v.mp4" 1000 500)</pre>
 </div>
-<div class="entry" id="e17" data-name="make-http-response">
+<div class="entry" id="e18" data-name="make-http-response">
   <div class="entry-name">make-http-response</div>
   <pre class="entry-doc">Syntax: (make-http-response status headers body)
 Library: (scm net http response)
@@ -230,7 +235,7 @@ Description: Creates an HTTP response object. status is an integer, headers is a
 Example:
   (make-http-response 200 '() "OK")</pre>
 </div>
-<div class="entry" id="e18" data-name="make-http-stream-response">
+<div class="entry" id="e19" data-name="make-http-stream-response">
   <div class="entry-name">make-http-stream-response</div>
   <pre class="entry-doc">Syntax: (make-http-stream-response status headers writer)
 Library: (scm net http response)
@@ -245,7 +250,7 @@ Example:
       (write-bytevector (string-&gt;utf8 "data: hello\n\n") port)
       (flush-output-port port)))</pre>
 </div>
-<div class="entry" id="e19" data-name="text-response">
+<div class="entry" id="e20" data-name="text-response">
   <div class="entry-name">text-response</div>
   <pre class="entry-doc">Syntax: (text-response body)
 Library: (scm net http response)

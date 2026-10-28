@@ -282,7 +282,12 @@ Example:
 </div>
 <div class="entry" id="e23" data-name="sha256-file">
   <div class="entry-name">sha256-file</div>
-  <div class="nodoc">(no documentation)</div>
+  <pre class="entry-doc">Syntax: (sha256-file path)
+Library: (scm crypto)
+Description: Returns the SHA-256 hash of the contents of the file at path as a bytevector. The file
+  is read in pieces, so it may be larger than memory.
+Example:
+  (bytevector-&gt;hex (sha256-file "upload.bin")) =&gt; "9f86d0..."</pre>
 </div>
 <div class="entry" id="e24" data-name="sha256-hash">
   <div class="entry-name">sha256-hash</div>

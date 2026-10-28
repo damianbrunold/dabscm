@@ -283,7 +283,14 @@ Example:
 
 ### `sha256-file`
 
-*(no documentation)*
+```
+Syntax: (sha256-file path)
+Library: (scm crypto)
+Description: Returns the SHA-256 hash of the contents of the file at path as a bytevector. The file
+  is read in pieces, so it may be larger than memory.
+Example:
+  (bytevector->hex (sha256-file "upload.bin")) => "9f86d0..."
+```
 
 ### `sha256-hash`
 

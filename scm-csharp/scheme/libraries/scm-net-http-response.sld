@@ -3,6 +3,7 @@
   (export make-http-response
           make-http-file-response
           make-http-stream-response
+          http-response-with-headers
           http-response-status
           http-response-headers
           http-response-body
@@ -24,6 +25,7 @@
     (define make-http-response   (%primitive "make-http-response"))
     (define make-http-file-response (%primitive "make-http-file-response"))
     (define make-http-stream-response (%primitive "make-http-stream-response"))
+    (define http-response-with-headers (%primitive "http-response-with-headers"))
     (define http-response-status  (%primitive "http-response-status"))
     (define http-response-headers (%primitive "http-response-headers"))
     (define http-response-body    (%primitive "http-response-body"))

@@ -159,6 +159,10 @@ Example:
   (http-response-status resp) => 200
 ```
 
+### `http-response-with-headers`
+
+*(no documentation)*
+
 ### `http-response?`
 
 ```

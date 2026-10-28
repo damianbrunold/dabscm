@@ -68,7 +68,7 @@
         (let ((p (open-binary-output-file dest)))
           (write-bytevector (http-request-body-bytes req) p)
           (close-port p)))))</code></pre>
-<p>Responses need not be in memory either: <a class="xref" href="scm-net-http-response.html#e16"><code>make-http-file-response</code></a> sends (a part of) a file from disk, and <a class="xref" href="scm-net-http-static.html#e0"><code>file-response</code></a> in <a class="xref" href="scm-net-http-static.html"><code>(scm net http static)</code></a> answers byte-range requests with it, so audio and video can seek. <a class="xref" href="scm-net-http-response.html#e18"><code>make-http-stream-response</code></a> calls a procedure with a port to the client, for server-sent events or large generated downloads:</p>
+<p>Responses need not be in memory either: <a class="xref" href="scm-net-http-response.html#e17"><code>make-http-file-response</code></a> sends (a part of) a file from disk, and <a class="xref" href="scm-net-http-static.html#e0"><code>file-response</code></a> in <a class="xref" href="scm-net-http-static.html"><code>(scm net http static)</code></a> answers byte-range requests with it, so audio and video can seek. <a class="xref" href="scm-net-http-response.html#e19"><code>make-http-stream-response</code></a> calls a procedure with a port to the client, for server-sent events or large generated downloads:</p>
 <pre><code class="language-scheme">(make-http-stream-response 200 '(("Content-Type" . "text/event-stream"))
   (lambda (port)
     (let loop ((i 0))

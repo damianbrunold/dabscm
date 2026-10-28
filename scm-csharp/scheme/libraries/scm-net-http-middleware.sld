@@ -61,8 +61,7 @@ Example:
                             (internal-error)))
                 (let ((resp (render req)))
                   (if (http-response? resp)
-                      (make-http-response 500 (http-response-headers resp)
-                                          (http-response-body resp))
+                      (http-response-with-headers resp 500 (http-response-headers resp))
                       (internal-error))))
               (internal-error)))
         (lambda (req)
@@ -132,9 +131,8 @@ Example:
                                 (else (loop (cdr hs) (cons (car hs) acc)))))))
                 (if (null? extra)
                     resp
-                    (make-http-response (http-response-status resp)
-                                        (append own extra)
-                                        (http-response-body resp))))))))
+                    (http-response-with-headers resp (http-response-status resp)
+                                                (append own extra))))))))
 
     (define security-headers
       '(("Content-Security-Policy"

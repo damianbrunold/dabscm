@@ -279,6 +279,7 @@ public class Primitives {
         bind(new PrimitiveMakeHttpResponse());
         bind(new PrimitiveMakeHttpFileResponse());
         bind(new PrimitiveMakeHttpStreamResponse());
+        bind(new PrimitiveHttpResponseWithHeaders());
         bind(new PrimitiveMakeInstruction());
         bind(new PrimitiveMakeMutex());
         bind(new PrimitiveMakeParameterCore());

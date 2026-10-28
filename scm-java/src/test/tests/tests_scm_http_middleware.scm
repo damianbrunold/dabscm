@@ -1,4 +1,6 @@
 (import (scheme base)
+        (scheme file)
+        (scm fs)
         (scm string)
         (scm log)
         (scm net http request)
@@ -95,5 +97,24 @@
   (test-equal "no-store"
     (http-response-header ((with-response-headers ok '(("Cache-Control" . "no-store"))) (req "/"))
                           "Cache-Control")))
+
+(test-group "headers are added without touching the body"
+  (let* ((path (mktemp '(prefix . "mw-file")))
+         (_ (call-with-output-file path (lambda (p) (write-string "abcdef" p))))
+         (file-handler (lambda (r) (make-http-file-response 200 '() path 1 3)))
+         (stream-handler (lambda (r) (make-http-stream-response 200 '() (lambda (port) #t))))
+         (f ((with-security-headers file-handler) (req "/")))
+         (s ((with-security-headers stream-handler) (req "/"))))
+    ;; the file part is still there (read here only by the test)
+    (test-equal "bcd" (utf8->string (http-response-body f)))
+    (test-assert (http-response-header f "X-Frame-Options"))
+    ;; a streamed body cannot be read, so it must not have been
+    (test-assert (http-response-header s "X-Frame-Options"))
+    (test-error (http-response-body s))
+    (let ((c (http-response-with-headers f 206 '(("X" . "1")))))
+      (test-equal 206 (http-response-status c))
+      (test-equal '(("X" . "1")) (http-response-headers c))
+      (test-equal "bcd" (utf8->string (http-response-body c))))
+    (delete-file path)))
 
 (test-end "scm-http-middleware")
