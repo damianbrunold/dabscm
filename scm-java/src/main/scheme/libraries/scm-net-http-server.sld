@@ -20,7 +20,7 @@
     (define server-install-shutdown-hook (%primitive "server-install-shutdown-hook"))
 
     (define (serve-forever port handler . rest)
-      "Syntax: (serve-forever port handler [max-threads [host [read-timeout-ms [max-body-bytes [graceful-stop-ms]]]]])
+      "Syntax: (serve-forever port handler [max-threads [host [read-timeout-ms [max-body-bytes [graceful-stop-ms [spool-threshold-bytes]]]]]])
 Library: (scm net http server)
 Description: Starts an HTTP server on port with the given handler and blocks
   indefinitely. handler receives each http-request and must return an http-response.
@@ -28,7 +28,9 @@ Description: Starts an HTTP server on port with the given handler and blocks
   concurrent worker threads (default 32; excess connections rejected with 503),
   bind host (default \"0.0.0.0\"), per-connection read timeout in ms (default 30000),
   maximum request body size in bytes (default 4194304; oversize rejected with 413),
-  and graceful-stop drain period in ms (default 10000). 0 or omitted means default.
+  graceful-stop drain period in ms (default 10000), and the body size above which
+  a request body is spooled to a temporary file (default 1048576; see
+  http-request-body-file). 0 or omitted means default.
   Returns only if the server is stopped from another thread via server-stop.
 Example:
   (serve-forever 8080 (lambda (req) (http-ok \"hello\")))

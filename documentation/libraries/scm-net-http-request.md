@@ -59,6 +59,10 @@ Example:
   (http-request-body-bytes req) => #u8(72 101 108 108 111)
 ```
 
+### `http-request-body-file`
+
+*(no documentation)*
+
 ### `http-request-header`
 
 ```

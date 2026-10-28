@@ -230,6 +230,7 @@ public class Primitives {
         bind(new PrimitiveHttpPost());
         bind(new PrimitiveHttpRequestBody());
         bind(new PrimitiveHttpRequestBodyBytes());
+        bind(new PrimitiveHttpRequestBodyFile());
         bind(new PrimitiveHttpRequestHeaders());
         bind(new PrimitiveHttpRequestMethod());
         bind(new PrimitiveHttpRequestP());
@@ -276,6 +277,8 @@ public class Primitives {
         bind(new PrimitiveMakeHashTable());
         bind(new PrimitiveMakeHttpRequest());
         bind(new PrimitiveMakeHttpResponse());
+        bind(new PrimitiveMakeHttpFileResponse());
+        bind(new PrimitiveMakeHttpStreamResponse());
         bind(new PrimitiveMakeInstruction());
         bind(new PrimitiveMakeMutex());
         bind(new PrimitiveMakeParameterCore());

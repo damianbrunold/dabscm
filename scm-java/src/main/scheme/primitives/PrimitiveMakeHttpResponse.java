@@ -20,8 +20,18 @@ public class PrimitiveMakeHttpResponse extends Primitive {
     public Object apply(SourcePos pos, Object[] arguments) {
         checkArgs(pos, arguments, 3, 3);
         int status = IntegerMath.toInt(arguments[0]);
+        List<String[]> headers = parseHeaders(arguments[1]);
+        if (Value.isBytevector(arguments[2])) {
+            byte[] bytes = Value.asBytevector(arguments[2]);
+            return new NativeValue(new SchemeHttpResponse(status, headers, bytes));
+        }
+        String body = new String(Value.asString(arguments[2]));
+        return new NativeValue(new SchemeHttpResponse(status, headers, body));
+    }
+
+    // A headers alist ((name . value) ...) as [name, value] pairs.
+    public static List<String[]> parseHeaders(Object hlist) {
         List<String[]> headers = new ArrayList<>();
-        Object hlist = arguments[1];
         while (hlist != Value.NIL) {
             Pair hp = (Pair) hlist;
             Pair kv = (Pair) hp.car;
@@ -30,11 +40,6 @@ public class PrimitiveMakeHttpResponse extends Primitive {
             headers.add(new String[]{key, val});
             hlist = hp.cdr;
         }
-        if (Value.isBytevector(arguments[2])) {
-            byte[] bytes = Value.asBytevector(arguments[2]);
-            return new NativeValue(new SchemeHttpResponse(status, headers, bytes));
-        }
-        String body = new String(Value.asString(arguments[2]));
-        return new NativeValue(new SchemeHttpResponse(status, headers, body));
+        return headers;
     }
 }

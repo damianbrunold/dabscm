@@ -14,7 +14,8 @@ public class PrimitiveTcpHttpServe : Primitive
     private const int DefaultMaxThreads = 32;
     private const string DefaultHost = "0.0.0.0";
     private const int DefaultReadTimeoutMs = 30_000;
-    private const int DefaultMaxBodyBytes = 4 * 1024 * 1024;
+    private const long DefaultMaxBodyBytes = 4 * 1024 * 1024;
+    private const long DefaultSpoolThreshold = 1024 * 1024;
     private const int DefaultGracefulStopMs = 10_000;
 
     private Modules modules;
@@ -24,22 +25,25 @@ public class PrimitiveTcpHttpServe : Primitive
     public override string Name() => "tcp-http-serve";
 
     public override string Info() =>
-        "Syntax: (tcp-http-serve port handler [max-threads [host [read-timeout-ms [max-body-bytes [graceful-stop-ms]]]]])\n" +
+        "Syntax: (tcp-http-serve port handler [max-threads [host [read-timeout-ms [max-body-bytes [graceful-stop-ms [spool-threshold-bytes]]]]]])\n" +
         "Library: (scm net http server)\n" +
         "Description: Starts an HTTP server on the given port. handler is called with each " +
         "incoming http-request and must return an http-response. Returns a server object. " +
-        "Use server-stop to shut it down. Notes: Transfer-Encoding: chunked is not supported (501); " +
-        "requests larger than max-body-bytes are rejected with 413; per-connection read-timeout-ms " +
-        "guards against slow clients; max-threads bounds concurrency (excess connections are rejected " +
-        "with 503). 0 or omitted parameters use defaults: max-threads=32, host=\"0.0.0.0\", " +
-        "read-timeout-ms=30000, max-body-bytes=4194304, graceful-stop-ms=10000.\n" +
+        "Use server-stop to shut it down. Notes: request bodies come with Content-Length or " +
+        "Transfer-Encoding: chunked; bodies larger than max-body-bytes are rejected with 413, and bodies " +
+        "larger than spool-threshold-bytes are written to a temporary file (http-request-body-file) " +
+        "that is deleted after the response; per-connection read-timeout-ms guards against slow " +
+        "clients; max-threads bounds concurrency (excess connections are rejected with 503). Responses " +
+        "may be file responses (sent from the file) or streamed (make-http-stream-response). 0 or " +
+        "omitted parameters use defaults: max-threads=32, host=\"0.0.0.0\", read-timeout-ms=30000, " +
+        "max-body-bytes=4194304, graceful-stop-ms=10000, spool-threshold-bytes=1048576.\n" +
         "Example:\n" +
         "  (define s (tcp-http-serve 8080 (lambda (req) (http-ok \"Hello\"))))\n" +
         "  (define s (tcp-http-serve 8080 handler 16 \"127.0.0.1\"))";
 
     public override object Apply(SourcePos? pos, object[] arguments)
     {
-        CheckArgs(pos, arguments, 2, 7);
+        CheckArgs(pos, arguments, 2, 8);
         int port = IntegerMath.ToInt(arguments[0]);
         Lambda handler = Value.AsLambda(arguments[1]);
         int maxThreads = arguments.Length > 2 ? IntegerMath.ToInt(arguments[2]) : 0;
@@ -48,10 +52,12 @@ public class PrimitiveTcpHttpServe : Primitive
         if (string.IsNullOrEmpty(host)) host = DefaultHost;
         int readTimeoutMs = arguments.Length > 4 ? IntegerMath.ToInt(arguments[4]) : 0;
         if (readTimeoutMs <= 0) readTimeoutMs = DefaultReadTimeoutMs;
-        int maxBodyBytes = arguments.Length > 5 ? IntegerMath.ToInt(arguments[5]) : 0;
+        long maxBodyBytes = arguments.Length > 5 ? IntegerMath.ToLong(arguments[5]) : 0;
         if (maxBodyBytes <= 0) maxBodyBytes = DefaultMaxBodyBytes;
         int gracefulStopMs = arguments.Length > 6 ? IntegerMath.ToInt(arguments[6]) : 0;
         if (gracefulStopMs <= 0) gracefulStopMs = DefaultGracefulStopMs;
+        long spoolThreshold = arguments.Length > 7 ? IntegerMath.ToLong(arguments[7]) : 0;
+        if (spoolThreshold <= 0) spoolThreshold = DefaultSpoolThreshold;
 
         var sem = new SemaphoreSlim(maxThreads, maxThreads);
 
@@ -97,6 +103,7 @@ public class PrimitiveTcpHttpServe : Primitive
                     Task.Factory.StartNew((obj) =>
                     {
                         var tcpClient = (TcpClient)obj!;
+                        HttpBody? spooled = null;
                         try
                         {
                             tcpClient.ReceiveTimeout = readTimeoutMs;
@@ -130,7 +137,8 @@ public class PrimitiveTcpHttpServe : Primitive
                                 string method = parts[0];
                                 string url = parts[1];
                                 List<(string, string)> headers = new();
-                                int contentLength = 0;
+                                long contentLength = 0;
+                                bool badLength = false;
                                 bool chunked = false;
                                 for (int i = 1; i < lines.Length; i++)
                                 {
@@ -143,46 +151,37 @@ public class PrimitiveTcpHttpServe : Primitive
                                         string hval = line.Substring(colon + 1).Trim();
                                         headers.Add((hname, hval));
                                         if (hname.Equals("Content-Length", StringComparison.OrdinalIgnoreCase))
-                                            int.TryParse(hval, out contentLength);
+                                            badLength = !long.TryParse(hval, out contentLength);
                                         if (hname.Equals("Transfer-Encoding", StringComparison.OrdinalIgnoreCase)
                                             && hval.Equals("chunked", StringComparison.OrdinalIgnoreCase))
                                             chunked = true;
                                     }
                                 }
-                                if (chunked)
+                                if (badLength || contentLength < 0)
                                 {
-                                    string resp501 = "HTTP/1.1 501 Not Implemented\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
-                                    var bytes501 = Encoding.UTF8.GetBytes(resp501);
-                                    stream.Write(bytes501, 0, bytes501.Length);
+                                    WriteStatusOnly(stream, 400);
                                     return;
                                 }
-                                if (contentLength < 0 || contentLength > maxBodyBytes)
+                                if (!chunked && contentLength > maxBodyBytes)
                                 {
-                                    string resp413 = "HTTP/1.1 413 Payload Too Large\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
-                                    var bytes413 = Encoding.UTF8.GetBytes(resp413);
-                                    stream.Write(bytes413, 0, bytes413.Length);
+                                    WriteStatusOnly(stream, 413);
+                                    LingerClose(tcpClient, stream);
                                     return;
                                 }
-                                // Read body as raw bytes.
                                 byte[]? bodyBytes = null;
-                                string? body = null;
-                                if (contentLength > 0)
+                                string? bodyFile = null;
+                                if (chunked || contentLength > 0)
                                 {
-                                    bodyBytes = new byte[contentLength];
-                                    int read = 0;
-                                    while (read < contentLength)
-                                    {
-                                        int r = stream.Read(bodyBytes, read, contentLength - read);
-                                        if (r <= 0) break;
-                                        read += r;
-                                    }
-                                    if (read < contentLength)
-                                    {
-                                        Array.Resize(ref bodyBytes, read);
-                                    }
-                                    body = Encoding.UTF8.GetString(bodyBytes);
+                                    spooled = HttpBody.Read(stream, chunked ? -1 : contentLength, maxBodyBytes, spoolThreshold);
+                                    if (spooled.TooLarge) { WriteStatusOnly(stream, 413); LingerClose(tcpClient, stream); return; }
+                                    if (spooled.Malformed) { WriteStatusOnly(stream, 400); LingerClose(tcpClient, stream); return; }
+                                    bodyBytes = spooled.Bytes;
+                                    bodyFile = spooled.File;
                                 }
-                                var schemeReq = new SchemeHttpRequest(method, url, headers, body, bodyBytes);
+                                // The UTF-8 string view (http-request-body) is
+                                // decoded on demand.
+                                var schemeReq = new SchemeHttpRequest(method, url, headers, null, bodyBytes);
+                                schemeReq.BodyFile = bodyFile;
                                 var reqNV = new NativeValue(schemeReq);
 
                                 // Call Scheme handler
@@ -229,9 +228,13 @@ public class PrimitiveTcpHttpServe : Primitive
                                     if (hn.Equals("Content-Type", StringComparison.OrdinalIgnoreCase)) hasContentType = true;
                                     if (hn.Equals("Content-Length", StringComparison.OrdinalIgnoreCase)) hasContentLength = true;
                                 }
-                                byte[] respBytes = schemeResp.GetBodyBytes();
-                                if (!hasContentLength)
-                                    sb.Append($"Content-Length: {respBytes.Length}\r\n");
+                                byte[]? respBytes = schemeResp.FilePath == null && schemeResp.Writer == null
+                                    ? schemeResp.GetBodyBytes() : null;
+                                long length = respBytes != null ? respBytes.Length : schemeResp.BodyLength();
+                                // A streamed body has no length: it ends when
+                                // the connection closes.
+                                if (!hasContentLength && length >= 0)
+                                    sb.Append($"Content-Length: {length}\r\n");
                                 if (!hasContentType)
                                     sb.Append("Content-Type: text/plain; charset=utf-8\r\n");
                                 sb.Append("Connection: close\r\n\r\n");
@@ -240,7 +243,11 @@ public class PrimitiveTcpHttpServe : Primitive
                                 // HEAD: the headers of the GET response
                                 // (Content-Length included), no body.
                                 if (!string.Equals(method, "HEAD", StringComparison.OrdinalIgnoreCase))
-                                    stream.Write(respBytes, 0, respBytes.Length);
+                                {
+                                    if (respBytes != null) stream.Write(respBytes, 0, respBytes.Length);
+                                    else if (schemeResp.FilePath != null) SendFilePart(stream, schemeResp);
+                                    else WriteStream(stream, schemeResp.Writer!, method, url);
+                                }
                                 stream.Flush();
                             }
                         }
@@ -252,6 +259,7 @@ public class PrimitiveTcpHttpServe : Primitive
                         }
                         finally
                         {
+                            spooled?.Discard();
                             sem.Release();
                         }
                     }, client);
@@ -270,6 +278,75 @@ public class PrimitiveTcpHttpServe : Primitive
         server.maxThreads = maxThreads;
         server.gracefulStopMs = gracefulStopMs;
         return new NativeValue(server);
+    }
+
+    private static void WriteStatusOnly(Stream stream, int status)
+    {
+        string r = $"HTTP/1.1 {status} {StatusText(status)}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+        var bytes = Encoding.UTF8.GetBytes(r);
+        stream.Write(bytes, 0, bytes.Length);
+    }
+
+    // After an early error response: stop sending, and read what the
+    // client still sends (up to 16 MB or 2 s) before closing, so that a
+    // client busy uploading gets to read the response instead of a reset.
+    private static void LingerClose(TcpClient client, Stream stream)
+    {
+        try
+        {
+            stream.Flush();
+            client.Client.Shutdown(SocketShutdown.Send);
+            client.ReceiveTimeout = 2000;
+            var buf = new byte[65536];
+            long left = 16L * 1024 * 1024;
+            var deadline = DateTime.UtcNow.AddSeconds(2);
+            while (left > 0 && DateTime.UtcNow < deadline)
+            {
+                int r = stream.Read(buf, 0, buf.Length);
+                if (r <= 0) break;
+                left -= r;
+            }
+        }
+        catch (Exception e) when (e is IOException || e is SocketException || e is ObjectDisposedException)
+        {
+        }
+    }
+
+    private static void SendFilePart(Stream stream, SchemeHttpResponse resp)
+    {
+        using var f = new FileStream(resp.FilePath!, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+        f.Seek(resp.FileOffset, SeekOrigin.Begin);
+        var buf = new byte[65536];
+        long left = resp.FileLength;
+        while (left > 0)
+        {
+            int r = f.Read(buf, 0, (int)Math.Min(buf.Length, left));
+            if (r <= 0) break; // the file shrank: the client sees a short body
+            stream.Write(buf, 0, r);
+            left -= r;
+        }
+    }
+
+    // Calls (writer port) with a binary port to the client.
+    private void WriteStream(Stream stream, Lambda writer, string method, string url)
+    {
+        var port = new BinaryOutputStream(stream);
+        try
+        {
+            VM vm = new VM(modules);
+            Lambda wrapper = new Lambda(Value.NIL, Instruction.Seq(
+                new Instruction(Opcode.ARGS, 0),
+                new Instruction(Opcode.CONST, port),
+                new Instruction(Opcode.CONST, writer),
+                new Instruction(Opcode.CALLJ, 1)));
+            vm.Execute(wrapper);
+        }
+        catch (Exception ex)
+        {
+            // Mostly a client that went away; the body just ends.
+            LogHandlerError(method, url, "stream writer raised: " + ex.Message);
+        }
+        port.Flush();
     }
 
     private static string SanitizeHeader(string s)

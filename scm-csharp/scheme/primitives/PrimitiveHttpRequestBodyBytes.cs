@@ -17,6 +17,7 @@ public class PrimitiveHttpRequestBodyBytes : Primitive
     {
         CheckArgs(pos, arguments, 1, 1);
         SchemeHttpRequest req = (SchemeHttpRequest) Value.AsNativeValue(arguments[0]).value;
-        return req.BodyBytes == null ? Value.F : (object) req.BodyBytes;
+        byte[]? bytes = req.GetBodyBytes();
+        return bytes == null ? Value.F : (object) bytes;
     }
 }

@@ -200,6 +200,10 @@ Example:
   (json-response "{\"ok\":true}")
 ```
 
+### `make-http-file-response`
+
+*(no documentation)*
+
 ### `make-http-response`
 
 ```
@@ -209,6 +213,10 @@ Description: Creates an HTTP response object. status is an integer, headers is a
 Example:
   (make-http-response 200 '() "OK")
 ```
+
+### `make-http-stream-response`
+
+*(no documentation)*
 
 ### `text-response`
 

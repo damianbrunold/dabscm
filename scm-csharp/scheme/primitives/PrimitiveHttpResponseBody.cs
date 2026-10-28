@@ -8,7 +8,8 @@ public class PrimitiveHttpResponseBody : Primitive
         "Syntax: (http-response-body response)\n" +
         "Library: (scm net http response)\n" +
         "Description: Returns the body of the HTTP response: a bytevector if the response was created with one, or received\n" +
-        "  with a body that is not text (see http-get); otherwise a string.\n" +
+        "  with a body that is not text (see http-get), or is a file response (its part of the file); otherwise a\n" +
+        "  string. A streamed response (make-http-stream-response) has no body to return: an error.\n" +
         "Example:\n" +
         "  (http-response-body resp) => \"Hello, world!\"";
 
@@ -16,6 +17,7 @@ public class PrimitiveHttpResponseBody : Primitive
     {
         CheckArgs(pos, arguments, 1, 1);
         SchemeHttpResponse resp = (SchemeHttpResponse) Value.AsNativeValue(arguments[0]).value;
+        if (resp.FilePath != null || resp.Writer != null) return resp.GetBodyBytes();
         if (resp.BodyBytes != null) return resp.BodyBytes;
         return resp.Body.ToCharArray();
     }

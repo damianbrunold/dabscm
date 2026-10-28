@@ -16,7 +16,8 @@ public class PrimitiveTcpHttpServe extends Primitive {
     private static final int DEFAULT_MAX_THREADS = 32;
     private static final String DEFAULT_HOST = "0.0.0.0";
     private static final int DEFAULT_READ_TIMEOUT_MS = 30_000;
-    private static final int DEFAULT_MAX_BODY_BYTES = 4 * 1024 * 1024;
+    private static final long DEFAULT_MAX_BODY_BYTES = 4 * 1024 * 1024;
+    private static final long DEFAULT_SPOOL_THRESHOLD = 1024 * 1024;
     private static final int DEFAULT_GRACEFUL_STOP_MS = 10_000;
 
     private Modules modules;
@@ -28,15 +29,18 @@ public class PrimitiveTcpHttpServe extends Primitive {
 
     @Override
     public String info() {
-        return "Syntax: (tcp-http-serve port handler [max-threads [host [read-timeout-ms [max-body-bytes [graceful-stop-ms]]]]])\n" +
+        return "Syntax: (tcp-http-serve port handler [max-threads [host [read-timeout-ms [max-body-bytes [graceful-stop-ms [spool-threshold-bytes]]]]]])\n" +
                "Library: (scm net http server)\n" +
                "Description: Starts an HTTP server on the given port. handler is called with each " +
                "incoming http-request and must return an http-response. Returns a server object. " +
-               "Use server-stop to shut it down. Notes: Transfer-Encoding: chunked is not supported (501); " +
-               "requests larger than max-body-bytes are rejected with 413; per-connection read-timeout-ms " +
-               "guards against slow clients; max-threads bounds concurrency (excess connections are rejected " +
-               "with 503). 0 or omitted parameters use defaults: max-threads=32, host=\"0.0.0.0\", " +
-               "read-timeout-ms=30000, max-body-bytes=4194304, graceful-stop-ms=10000.\n" +
+               "Use server-stop to shut it down. Notes: request bodies come with Content-Length or " +
+               "Transfer-Encoding: chunked; bodies larger than max-body-bytes are rejected with 413, and bodies " +
+               "larger than spool-threshold-bytes are written to a temporary file (http-request-body-file) " +
+               "that is deleted after the response; per-connection read-timeout-ms guards against slow " +
+               "clients; max-threads bounds concurrency (excess connections are rejected with 503). Responses " +
+               "may be file responses (sent from the file) or streamed (make-http-stream-response). 0 or " +
+               "omitted parameters use defaults: max-threads=32, host=\"0.0.0.0\", read-timeout-ms=30000, " +
+               "max-body-bytes=4194304, graceful-stop-ms=10000, spool-threshold-bytes=1048576.\n" +
                "Example:\n" +
                "  (define s (tcp-http-serve 8080 (lambda (req) (http-ok \"Hello\"))))\n" +
                "  (define s (tcp-http-serve 8080 handler 16 \"127.0.0.1\"))";
@@ -44,7 +48,7 @@ public class PrimitiveTcpHttpServe extends Primitive {
 
     @Override
     public Object apply(SourcePos pos, Object[] arguments) {
-        checkArgs(pos, arguments, 2, 7);
+        checkArgs(pos, arguments, 2, 8);
         int port = IntegerMath.toInt(arguments[0]);
         Lambda handler = Value.asLambda(arguments[1]);
         int maxThreads = arguments.length > 2 ? IntegerMath.toInt(arguments[2]) : 0;
@@ -53,14 +57,17 @@ public class PrimitiveTcpHttpServe extends Primitive {
         if (host.isEmpty()) host = DEFAULT_HOST;
         int readTimeoutMs = arguments.length > 4 ? IntegerMath.toInt(arguments[4]) : 0;
         if (readTimeoutMs <= 0) readTimeoutMs = DEFAULT_READ_TIMEOUT_MS;
-        int maxBodyBytes = arguments.length > 5 ? IntegerMath.toInt(arguments[5]) : 0;
+        long maxBodyBytes = arguments.length > 5 ? IntegerMath.toLong(arguments[5]) : 0;
         if (maxBodyBytes <= 0) maxBodyBytes = DEFAULT_MAX_BODY_BYTES;
         int gracefulStopMs = arguments.length > 6 ? IntegerMath.toInt(arguments[6]) : 0;
         if (gracefulStopMs <= 0) gracefulStopMs = DEFAULT_GRACEFUL_STOP_MS;
+        long spoolThreshold = arguments.length > 7 ? IntegerMath.toLong(arguments[7]) : 0;
+        if (spoolThreshold <= 0) spoolThreshold = DEFAULT_SPOOL_THRESHOLD;
 
         final int maxThreadsF = maxThreads;
         final int readTimeoutF = readTimeoutMs;
-        final int maxBodyF = maxBodyBytes;
+        final long maxBodyF = maxBodyBytes;
+        final long spoolF = spoolThreshold;
 
         SchemeServer server;
         try {
@@ -94,6 +101,7 @@ public class PrimitiveTcpHttpServe extends Primitive {
                         }
 
                         executor.submit(() -> {
+                            HttpBody spooled = null;
                             try (Socket c = client) {
                                 c.setSoTimeout(readTimeoutF);
                                 InputStream raw = c.getInputStream();
@@ -124,7 +132,8 @@ public class PrimitiveTcpHttpServe extends Primitive {
                                 String method = parts[0];
                                 String url = parts[1];
                                 List<String[]> headers = new ArrayList<>();
-                                int contentLength = 0;
+                                long contentLength = 0;
+                                boolean badLength = false;
                                 boolean chunked = false;
                                 for (int i = 1; i < lines.length; i++) {
                                     String line = lines[i];
@@ -135,45 +144,36 @@ public class PrimitiveTcpHttpServe extends Primitive {
                                         String hval = line.substring(colon + 1).trim();
                                         headers.add(new String[]{hname, hval});
                                         if (hname.equalsIgnoreCase("Content-Length")) {
-                                            try { contentLength = Integer.parseInt(hval); } catch (Exception ignored) {}
+                                            try { contentLength = Long.parseLong(hval); }
+                                            catch (Exception e) { badLength = true; }
                                         }
                                         if (hname.equalsIgnoreCase("Transfer-Encoding") && hval.equalsIgnoreCase("chunked"))
                                             chunked = true;
                                     }
                                 }
                                 OutputStream out = c.getOutputStream();
-                                if (chunked) {
-                                    String r501 = "HTTP/1.1 501 Not Implemented\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
-                                    out.write(r501.getBytes(StandardCharsets.UTF_8));
+                                if (badLength || contentLength < 0) {
+                                    writeStatusOnly(out, 400);
                                     return;
                                 }
-                                if (contentLength < 0 || contentLength > maxBodyF) {
-                                    String r413 = "HTTP/1.1 413 Payload Too Large\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
-                                    out.write(r413.getBytes(StandardCharsets.UTF_8));
+                                if (!chunked && contentLength > maxBodyF) {
+                                    writeStatusOnly(out, 413);
+                                    lingerClose(c, raw);
                                     return;
                                 }
                                 byte[] bodyBytes = null;
-                                String body = null;
-                                if (contentLength > 0) {
-                                    bodyBytes = new byte[contentLength];
-                                    int read = 0;
-                                    while (read < contentLength) {
-                                        int r = raw.read(bodyBytes, read, contentLength - read);
-                                        if (r <= 0) break;
-                                        read += r;
-                                    }
-                                    if (read < contentLength) {
-                                        byte[] trimmed = new byte[read];
-                                        System.arraycopy(bodyBytes, 0, trimmed, 0, read);
-                                        bodyBytes = trimmed;
-                                    }
-                                    // Keep the legacy String view for handlers that
-                                    // still call http-request-body. It is a UTF-8
-                                    // decode of the bytes; binary clients must use
-                                    // http-request-body-bytes instead.
-                                    body = new String(bodyBytes, StandardCharsets.UTF_8);
+                                java.nio.file.Path bodyFile = null;
+                                if (chunked || contentLength > 0) {
+                                    spooled = HttpBody.read(raw, chunked ? -1 : contentLength, maxBodyF, spoolF);
+                                    if (spooled.tooLarge) { writeStatusOnly(out, 413); lingerClose(c, raw); return; }
+                                    if (spooled.malformed) { writeStatusOnly(out, 400); lingerClose(c, raw); return; }
+                                    bodyBytes = spooled.bytes;
+                                    bodyFile = spooled.file;
                                 }
-                                SchemeHttpRequest req = new SchemeHttpRequest(method, url, headers, body, bodyBytes);
+                                // The UTF-8 string view (http-request-body) is
+                                // decoded on demand.
+                                SchemeHttpRequest req = new SchemeHttpRequest(method, url, headers, null, bodyBytes);
+                                req.bodyFile = bodyFile;
                                 NativeValue reqNV = new NativeValue(req);
 
                                 SchemeHttpResponse resp;
@@ -213,14 +213,22 @@ public class PrimitiveTcpHttpServe extends Primitive {
                                     if (hn.equalsIgnoreCase("Content-Length")) hasContentLength = true;
                                     if (hn.equalsIgnoreCase("Content-Type")) hasContentType = true;
                                 }
-                                byte[] respBytes = resp.getBodyBytes();
-                                if (!hasContentLength) sb.append("Content-Length: ").append(respBytes.length).append("\r\n");
+                                byte[] respBytes = resp.filePath == null && resp.writer == null
+                                    ? resp.getBodyBytes() : null;
+                                long length = respBytes != null ? respBytes.length : resp.bodyLength();
+                                // A streamed body has no length: it ends when
+                                // the connection closes.
+                                if (!hasContentLength && length >= 0) sb.append("Content-Length: ").append(length).append("\r\n");
                                 if (!hasContentType) sb.append("Content-Type: text/plain; charset=utf-8\r\n");
                                 sb.append("Connection: close\r\n\r\n");
                                 out.write(sb.toString().getBytes(StandardCharsets.UTF_8));
                                 // HEAD: the headers of the GET response
                                 // (Content-Length included), no body.
-                                if (!method.equalsIgnoreCase("HEAD")) out.write(respBytes);
+                                if (!method.equalsIgnoreCase("HEAD")) {
+                                    if (respBytes != null) out.write(respBytes);
+                                    else if (resp.filePath != null) sendFilePart(out, resp);
+                                    else writeStream(out, resp.writer, method, url);
+                                }
                                 out.flush();
                             } catch (java.net.SocketTimeoutException ex) {
                                 // slow client — silent
@@ -229,6 +237,7 @@ public class PrimitiveTcpHttpServe extends Primitive {
                             } catch (Exception ex) {
                                 System.err.println("tcp-http-serve handler error: " + ex.getMessage());
                             } finally {
+                                if (spooled != null) spooled.discard();
                                 sem.release();
                             }
                         });
@@ -247,6 +256,64 @@ public class PrimitiveTcpHttpServe extends Primitive {
         }
 
         return new NativeValue(server);
+    }
+
+    private static void writeStatusOnly(OutputStream out, int status) throws IOException {
+        String r = "HTTP/1.1 " + status + " " + statusText(status)
+            + "\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+        out.write(r.getBytes(StandardCharsets.UTF_8));
+    }
+
+    // After an early error response: stop sending, and read what the
+    // client still sends (up to 16 MB or 2 s) before closing, so that a
+    // client busy uploading gets to read the response instead of a reset.
+    private static void lingerClose(Socket c, InputStream in) {
+        try {
+            c.getOutputStream().flush();
+            c.shutdownOutput();
+            c.setSoTimeout(2000);
+            byte[] buf = new byte[65536];
+            long left = 16L * 1024 * 1024;
+            long deadline = System.currentTimeMillis() + 2000;
+            while (left > 0 && System.currentTimeMillis() < deadline) {
+                int r = in.read(buf);
+                if (r < 0) break;
+                left -= r;
+            }
+        } catch (IOException ignored) {
+        }
+    }
+
+    private static void sendFilePart(OutputStream out, SchemeHttpResponse resp) throws IOException {
+        try (RandomAccessFile f = new RandomAccessFile(resp.filePath, "r")) {
+            f.seek(resp.fileOffset);
+            byte[] buf = new byte[65536];
+            long left = resp.fileLength;
+            while (left > 0) {
+                int r = f.read(buf, 0, (int) Math.min(buf.length, left));
+                if (r <= 0) break; // the file shrank: the client sees a short body
+                out.write(buf, 0, r);
+                left -= r;
+            }
+        }
+    }
+
+    // Calls (writer port) with a binary port to the client.
+    private void writeStream(OutputStream out, Lambda writer, String method, String url) throws IOException {
+        BinaryOutputStream port = new BinaryOutputStream(out, false);
+        try {
+            VM vm = new VM(modules);
+            Lambda wrapper = new Lambda(Value.NIL, Instruction.seq(
+                new Instruction(Opcode.ARGS, 0),
+                new Instruction(Opcode.CONST, port),
+                new Instruction(Opcode.CONST, writer),
+                new Instruction(Opcode.CALLJ, 1)));
+            vm.execute(wrapper);
+        } catch (Exception ex) {
+            // Mostly a client that went away; the body just ends.
+            logHandlerError(method, url, "stream writer raised: " + ex.getMessage());
+        }
+        port.flush();
     }
 
     private static String sanitizeHeader(String s) {

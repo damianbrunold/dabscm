@@ -56,6 +56,26 @@
 <p>Serve static files from a directory:</p>
 <pre><code class="language-scheme">(serve-directory ".")</code></pre>
 <p><a class="xref" href="#e3"><code>server-stop</code></a>, <a class="xref" href="#e4"><code>server-wait</code></a>, and <a class="xref" href="#e2"><code>server-install-shutdown-hook</code></a> manage a running server's lifecycle.</p>
+<h2>Large bodies</h2>
+<p>Request bodies arrive with <code>Content-Length</code> or <code>Transfer-Encoding: chunked</code>. <code>max-body-bytes</code> (default 4 MB) caps them (413 above it); a body larger than <code>spool-threshold-bytes</code> (default 1 MB) is written to a temporary file instead of being kept in memory. <a class="xref" href="scm-net-http-request.html#e3"><code>http-request-body-file</code></a> gives its path; move the file to keep it, as it is deleted after the response:</p>
+<pre><code class="language-scheme">;; uploads up to 2 GB, spooled to disk above 1 MB
+(tcp-http-serve 8080 handler 0 "127.0.0.1" 0 (* 2 1024 1024 1024))
+
+(define (save-upload req dest)
+  (let ((f (http-request-body-file req)))
+    (if f
+        (move-file f dest)
+        (let ((p (open-binary-output-file dest)))
+          (write-bytevector (http-request-body-bytes req) p)
+          (close-port p)))))</code></pre>
+<p>Responses need not be in memory either: <a class="xref" href="scm-net-http-response.html#e16"><code>make-http-file-response</code></a> sends (a part of) a file from disk, and <a class="xref" href="scm-net-http-static.html#e0"><code>file-response</code></a> in <a class="xref" href="scm-net-http-static.html"><code>(scm net http static)</code></a> answers byte-range requests with it, so audio and video can seek. <a class="xref" href="scm-net-http-response.html#e18"><code>make-http-stream-response</code></a> calls a procedure with a port to the client, for server-sent events or large generated downloads:</p>
+<pre><code class="language-scheme">(make-http-stream-response 200 '(("Content-Type" . "text/event-stream"))
+  (lambda (port)
+    (let loop ((i 0))
+      (write-bytevector (string-&gt;utf8 (string-append "data: " (number-&gt;string i) "\n\n")) port)
+      (flush-output-port port)
+      (thread-sleep! 1)
+      (loop (+ i 1)))))   ; ends with an error once the client is gone</code></pre>
 </div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">6 bindings</p>

@@ -38,6 +38,19 @@
         ("ico"   . "image/x-icon")
         ("pdf"   . "application/pdf")
         ("zip"   . "application/zip")
+        ("mp4"   . "video/mp4")
+        ("m4v"   . "video/mp4")
+        ("webm"  . "video/webm")
+        ("ogv"   . "video/ogg")
+        ("mov"   . "video/quicktime")
+        ("mp3"   . "audio/mpeg")
+        ("m4a"   . "audio/mp4")
+        ("oga"   . "audio/ogg")
+        ("ogg"   . "audio/ogg")
+        ("wav"   . "audio/wav")
+        ("pptx"  . "application/vnd.openxmlformats-officedocument.presentationml.presentation")
+        ("docx"  . "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+        ("xlsx"  . "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
         ("woff"  . "font/woff")
         ("woff2" . "font/woff2")
         ("wasm"  . "application/wasm")))
@@ -69,12 +82,6 @@ Example:
       (let ((p (assq key opts)))
         (if p (cdr p) default)))
 
-    (define (read-file-bytes path)
-      (let* ((port (open-binary-input-file path))
-             (bv (read-bytevector (file-size path) port)))
-        (close-port port)
-        (if (eof-object? bv) (bytevector) bv)))
-
     (define (etag-for path)
       (string-append "W/\"" (number->string (file-modification-timestamp path))
                      "-" (number->string (file-size path)) "\""))
@@ -103,6 +110,55 @@ Example:
                           (string=? (strip-weak t) want)
                           (loop (cdr tags)))))))))
 
+    ;; --- byte ranges (RFC 9110 section 14) ------------------------------
+    ;; One range per request: "bytes=a-b", "bytes=a-" or "bytes=-n".
+    ;; Returns (start . end) with end inclusive, 'unsatisfiable, or #f when
+    ;; the header is absent, malformed or asks for several ranges (then
+    ;; the whole file is sent, as the RFC allows).
+
+    (define (digits? s)
+      (and (> (string-length s) 0)
+           (let loop ((i 0))
+             (or (= i (string-length s))
+                 (and (char-numeric? (string-ref s i)) (loop (+ i 1)))))))
+
+    (define (parse-range header size)
+      (and header
+           (let ((h (trim header)))
+             (and (>= (string-length h) 6)
+                  (string=? (string-downcase (substring h 0 6)) "bytes=")
+                  (let* ((spec (trim (substring h 6 (string-length h))))
+                         (dash (let loop ((i 0))
+                                 (cond ((= i (string-length spec)) #f)
+                                       ((char=? (string-ref spec i) #\-) i)
+                                       (else (loop (+ i 1)))))))
+                    (and dash
+                         (not (memv #\, (string->list spec)))
+                         (let ((a (trim (substring spec 0 dash)))
+                               (b (trim (substring spec (+ dash 1) (string-length spec)))))
+                           (cond
+                             ;; "-n": the last n bytes
+                             ((and (string=? a "") (digits? b))
+                              (let ((n (string->number b)))
+                                (if (or (= n 0) (= size 0))
+                                    'unsatisfiable
+                                    (cons (max 0 (- size n)) (- size 1)))))
+                             ((and (digits? a) (or (string=? b "") (digits? b)))
+                              (let ((start (string->number a))
+                                    (end (if (string=? b "") (- size 1)
+                                             (min (string->number b) (- size 1)))))
+                                (cond ((>= start size) 'unsatisfiable)
+                                      ((< end start) #f)
+                                      (else (cons start end)))))
+                             (else #f)))))))))
+
+    ;; A Range applies unless If-Range names another version (a date
+    ;; If-Range never matches: no Last-Modified is sent).
+    (define (range-applies? req etag)
+      (let ((if-range (http-request-header req "If-Range")))
+        (or (not if-range)
+            (string=? (trim if-range) etag))))
+
     ;; attachment; filename="<ascii fallback>"; filename*=UTF-8''<encoded>
     (define (content-disposition name)
       (string-append
@@ -117,12 +173,16 @@ Example:
     (define (file-response path . opts)
       "Syntax: (file-response path [opts])
 Library: (scm net http static)
-Description: Returns a 200 response with the bytes of the file at path,
-  or 404 if it does not exist or is a directory. The response carries the
-  file's Content-Type (mime-type), a weak ETag from its modification time
-  and size, and X-Content-Type-Options: nosniff. opts is an alist:
-  (request . req) answers 304 Not Modified when req's If-None-Match
-  matches; (cache-control . string) sets Cache-Control (default
+Description: Returns a 200 response with the file at path, or 404 if it
+  does not exist or is a directory. The body is sent from the file (see
+  make-http-file-response), so files of any size work. The response
+  carries the file's Content-Type (mime-type), a weak ETag from its
+  modification time and size, Accept-Ranges: bytes and
+  X-Content-Type-Options: nosniff. opts is an alist: (request . req)
+  answers 304 Not Modified when req's If-None-Match matches, and a single
+  Range (bytes=a-b, a-, -n) with 206 Partial Content and Content-Range, or
+  416 when it lies outside the file (If-Range is honoured), so audio and
+  video can seek and downloads resume; (cache-control . string) sets Cache-Control (default
   \"no-cache\": cache, but revalidate); (content-type . string) overrides
   the type; (filename . string) makes it a download with that name.
   path must not come from the client unchecked; make-static-handler does
@@ -146,12 +206,35 @@ Example:
                          '()))))
               (if (and req (etag-matches? (http-request-header req "If-None-Match") etag))
                   (make-http-response 304 headers "")
-                  (make-http-response
-                   200
-                   (cons (cons "Content-Type"
-                               (opt-ref opts 'content-type (mime-type path)))
-                         headers)
-                   (read-file-bytes path)))))))
+                  (let* ((size (file-size path))
+                         (headers (append
+                                   (list (cons "Content-Type"
+                                               (opt-ref opts 'content-type (mime-type path)))
+                                         (cons "Accept-Ranges" "bytes"))
+                                   headers))
+                         (range (and req
+                                     (member (http-request-method req) '("GET" "HEAD"))
+                                     (range-applies? req etag)
+                                     (parse-range (http-request-header req "Range") size))))
+                    (cond
+                      ((not range) (make-http-file-response 200 headers path))
+                      ((eq? range 'unsatisfiable)
+                       (make-http-response
+                        416
+                        (cons (cons "Content-Range"
+                                    (string-append "bytes */" (number->string size)))
+                              headers)
+                        ""))
+                      (else
+                       (let ((start (car range)) (end (cdr range)))
+                         (make-http-file-response
+                          206
+                          (cons (cons "Content-Range"
+                                      (string-append "bytes " (number->string start) "-"
+                                                     (number->string end) "/"
+                                                     (number->string size)))
+                                headers)
+                          path start (+ (- end start) 1)))))))))))
 
     ;; --- a directory of assets --------------------------------------------
 

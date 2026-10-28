@@ -6,6 +6,7 @@
           http-request-headers
           http-request-body
           http-request-body-bytes
+          http-request-body-file
           http-request?
           http-request-header
           http-request-bearer-token)
@@ -16,6 +17,7 @@
     (define http-request-headers (%primitive "http-request-headers"))
     (define http-request-body    (%primitive "http-request-body"))
     (define http-request-body-bytes (%primitive "http-request-body-bytes"))
+    (define http-request-body-file (%primitive "http-request-body-file"))
     (define http-request?        (%primitive "http-request?"))
 
     (define (http-request-header req name)

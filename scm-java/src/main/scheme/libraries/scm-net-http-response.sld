@@ -1,6 +1,8 @@
 (define-library (scm net http response)
   (import (scm core) (scheme base) (scheme char))
   (export make-http-response
+          make-http-file-response
+          make-http-stream-response
           http-response-status
           http-response-headers
           http-response-body
@@ -20,6 +22,8 @@
           text-response)
   (begin
     (define make-http-response   (%primitive "make-http-response"))
+    (define make-http-file-response (%primitive "make-http-file-response"))
+    (define make-http-stream-response (%primitive "make-http-stream-response"))
     (define http-response-status  (%primitive "http-response-status"))
     (define http-response-headers (%primitive "http-response-headers"))
     (define http-response-body    (%primitive "http-response-body"))

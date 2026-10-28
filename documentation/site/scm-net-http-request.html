@@ -25,12 +25,13 @@
   <a href="#e0" data-name="http-request-bearer-token">http-request-bearer-token</a>
   <a href="#e1" data-name="http-request-body">http-request-body</a>
   <a href="#e2" data-name="http-request-body-bytes">http-request-body-bytes</a>
-  <a href="#e3" data-name="http-request-header">http-request-header</a>
-  <a href="#e4" data-name="http-request-headers">http-request-headers</a>
-  <a href="#e5" data-name="http-request-method">http-request-method</a>
-  <a href="#e6" data-name="http-request-url">http-request-url</a>
-  <a href="#e7" data-name="http-request?">http-request?</a>
-  <a href="#e8" data-name="make-http-request">make-http-request</a>
+  <a href="#e3" data-name="http-request-body-file">http-request-body-file</a>
+  <a href="#e4" data-name="http-request-header">http-request-header</a>
+  <a href="#e5" data-name="http-request-headers">http-request-headers</a>
+  <a href="#e6" data-name="http-request-method">http-request-method</a>
+  <a href="#e7" data-name="http-request-url">http-request-url</a>
+  <a href="#e8" data-name="http-request?">http-request?</a>
+  <a href="#e9" data-name="make-http-request">make-http-request</a>
 </nav>
 
 <main>
@@ -59,7 +60,7 @@
 <p>Use <a class="xref" href="#e1"><code>http-request-body</code></a> for the body as text and <a class="xref" href="#e2"><code>http-request-body-bytes</code></a> for the raw bytevector (binary uploads).</p>
 </div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
-<p class="export-count">9 bindings</p>
+<p class="export-count">10 bindings</p>
 
 <div class="entry" id="e0" data-name="http-request-bearer-token">
   <div class="entry-name">http-request-bearer-token</div>
@@ -87,7 +88,11 @@ Description: Returns the body of the HTTP request as a bytevector, or #f if ther
 Example:
   (http-request-body-bytes req) =&gt; #u8(72 101 108 108 111)</pre>
 </div>
-<div class="entry" id="e3" data-name="http-request-header">
+<div class="entry" id="e3" data-name="http-request-body-file">
+  <div class="entry-name">http-request-body-file</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e4" data-name="http-request-header">
   <div class="entry-name">http-request-header</div>
   <pre class="entry-doc">Syntax: (http-request-header req name)
 Library: (scm net http request)
@@ -96,7 +101,7 @@ Description: Returns the value of the named header in req, or #f if not present.
 Example:
   (http-request-header req "Host") =&gt; "example.com"</pre>
 </div>
-<div class="entry" id="e4" data-name="http-request-headers">
+<div class="entry" id="e5" data-name="http-request-headers">
   <div class="entry-name">http-request-headers</div>
   <pre class="entry-doc">Syntax: (http-request-headers request)
 Library: (scm net http request)
@@ -104,7 +109,7 @@ Description: Returns the headers of the HTTP request as an alist of (name . valu
 Example:
   (http-request-headers req) =&gt; (("Host" . "example.com"))</pre>
 </div>
-<div class="entry" id="e5" data-name="http-request-method">
+<div class="entry" id="e6" data-name="http-request-method">
   <div class="entry-name">http-request-method</div>
   <pre class="entry-doc">Syntax: (http-request-method request)
 Library: (scm net http request)
@@ -112,7 +117,7 @@ Description: Returns the HTTP method of the request as a string.
 Example:
   (http-request-method req) =&gt; "GET"</pre>
 </div>
-<div class="entry" id="e6" data-name="http-request-url">
+<div class="entry" id="e7" data-name="http-request-url">
   <div class="entry-name">http-request-url</div>
   <pre class="entry-doc">Syntax: (http-request-url request)
 Library: (scm net http request)
@@ -120,7 +125,7 @@ Description: Returns the URL of the HTTP request as a string.
 Example:
   (http-request-url req) =&gt; "/api/users"</pre>
 </div>
-<div class="entry" id="e7" data-name="http-request?">
+<div class="entry" id="e8" data-name="http-request?">
   <div class="entry-name">http-request?</div>
   <pre class="entry-doc">Syntax: (http-request? x)
 Library: (scm net http request)
@@ -128,7 +133,7 @@ Description: Returns #t if x is an HTTP request object.
 Example:
   (http-request? (make-http-request "GET" "/" '() #f)) =&gt; #t</pre>
 </div>
-<div class="entry" id="e8" data-name="make-http-request">
+<div class="entry" id="e9" data-name="make-http-request">
   <div class="entry-name">make-http-request</div>
   <pre class="entry-doc">Syntax: (make-http-request method url headers body) (make-http-request method url headers body timeout-seconds)
   (make-http-request method url headers body timeout-seconds follow-redirects?)

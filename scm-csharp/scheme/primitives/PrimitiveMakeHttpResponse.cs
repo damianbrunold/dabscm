@@ -17,8 +17,20 @@ public class PrimitiveMakeHttpResponse : Primitive
     {
         CheckArgs(pos, arguments, 3, 3);
         int status = IntegerMath.ToInt(arguments[0]);
+        List<(string, string)> headers = ParseHeaders(arguments[1]);
+        if (Value.IsBytevector(arguments[2]))
+        {
+            byte[] bytes = Value.AsBytevector(arguments[2]);
+            return new NativeValue(new SchemeHttpResponse(status, headers, bytes));
+        }
+        string body = new String(Value.AsString(arguments[2]));
+        return new NativeValue(new SchemeHttpResponse(status, headers, body));
+    }
+
+    // A headers alist ((name . value) ...) as (name, value) pairs.
+    public static List<(string, string)> ParseHeaders(object hlist)
+    {
         List<(string, string)> headers = new();
-        object hlist = arguments[1];
         while (hlist != Value.NIL)
         {
             Pair hp = Value.AsPair(hlist);
@@ -28,12 +40,6 @@ public class PrimitiveMakeHttpResponse : Primitive
             headers.Add((key, val));
             hlist = hp.cdr;
         }
-        if (Value.IsBytevector(arguments[2]))
-        {
-            byte[] bytes = Value.AsBytevector(arguments[2]);
-            return new NativeValue(new SchemeHttpResponse(status, headers, bytes));
-        }
-        string body = new String(Value.AsString(arguments[2]));
-        return new NativeValue(new SchemeHttpResponse(status, headers, body));
+        return headers;
     }
 }

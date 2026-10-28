@@ -91,6 +91,30 @@
   (test-equal 404 (http-response-status (file-response (string-append dir "/nope"))))
   (test-equal 404 (http-response-status (file-response dir))))
 
+(test-group "byte ranges"
+  (let ((range (lambda (h . more)
+                 (get "/static/css/app.css" (cons (cons "Range" h) (if (pair? more) (car more) '()))))))
+    ;; "body{}" is 6 bytes
+    (let ((r (range "bytes=1-3")))
+      (test-equal 206 (http-response-status r))
+      (test-equal "bytes 1-3/6" (http-response-header r "Content-Range"))
+      (test-equal "ody" (body-text r)))
+    (test-equal "{}" (body-text (range "bytes=4-")))
+    (test-equal "{}" (body-text (range "bytes=-2")))
+    (test-equal "bytes 0-5/6" (http-response-header (range "bytes=0-99") "Content-Range"))
+    (test-equal 416 (http-response-status (range "bytes=6-")))
+    (test-equal "bytes */6" (http-response-header (range "bytes=6-") "Content-Range"))
+    ;; Malformed or several ranges: the whole file.
+    (test-equal 200 (http-response-status (range "bytes=0-1,3-4")))
+    (test-equal 200 (http-response-status (range "items=0-1")))
+    (test-equal 200 (http-response-status (range "bytes=3-1")))
+    ;; If-Range: only for the current version.
+    (let ((etag (http-response-header (get "/static/css/app.css") "ETag")))
+      (test-equal 206 (http-response-status (range "bytes=1-3" `(("If-Range" . ,etag)))))
+      (test-equal 200 (http-response-status (range "bytes=1-3" '(("If-Range" . "\"old\""))))))
+    (test-equal "bytes" (http-response-header (get "/static/css/app.css") "Accept-Ranges"))
+    (test-equal "video/mp4" (mime-type "clip.MP4"))))
+
 (test-group "make-static-url"
   (let ((u (make-static-url dir "/app/static/")))
     (test-assert (string-contains-from (u "css/app.css") "/app/static/css/app.css?v=" 0))

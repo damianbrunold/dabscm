@@ -15,6 +15,7 @@ public class PrimitiveHttpRequestBody : Primitive
     {
         CheckArgs(pos, arguments, 1, 1);
         SchemeHttpRequest req = (SchemeHttpRequest) Value.AsNativeValue(arguments[0]).value;
-        return req.Body == null ? Value.F : (object) req.Body.ToCharArray();
+        string? body = req.GetBody();
+        return body == null ? Value.F : (object) body.ToCharArray();
     }
 }

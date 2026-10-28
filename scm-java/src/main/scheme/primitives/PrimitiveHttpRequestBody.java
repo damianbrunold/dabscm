@@ -18,6 +18,7 @@ public class PrimitiveHttpRequestBody extends Primitive {
     public Object apply(SourcePos pos, Object[] arguments) {
         checkArgs(pos, arguments, 1, 1);
         SchemeHttpRequest req = (SchemeHttpRequest) Value.asNativeValue(arguments[0]).value;
-        return req.body == null ? Value.F : req.body.toCharArray();
+        String body = req.getBody();
+        return body == null ? Value.F : body.toCharArray();
     }
 }

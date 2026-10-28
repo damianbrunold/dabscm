@@ -20,6 +20,7 @@ public class PrimitiveHttpRequestBodyBytes extends Primitive {
     public Object apply(SourcePos pos, Object[] arguments) {
         checkArgs(pos, arguments, 1, 1);
         SchemeHttpRequest req = (SchemeHttpRequest) Value.asNativeValue(arguments[0]).value;
-        return req.bodyBytes == null ? Value.F : req.bodyBytes;
+        byte[] bytes = req.getBodyBytes();
+        return bytes == null ? Value.F : bytes;
     }
 }

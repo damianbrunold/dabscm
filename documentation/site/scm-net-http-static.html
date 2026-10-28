@@ -41,7 +41,7 @@
 <div class="lib-title scm">(scm net http static)</div>
 <div class="lib-preamble">
 <h2>Overview</h2>
-<p><a class="xref" href="scm-net-http-static.html"><code>(scm net http static)</code></a> serves files: a directory of assets (CSS, JS, images) behind a router wildcard, or single files for download routes. It sets the content type, an ETag (answering <code>If-None-Match</code> with 304) and <code>X-Content-Type-Options: nosniff</code>, and refuses paths that could leave the directory or reach hidden files.</p>
+<p><a class="xref" href="scm-net-http-static.html"><code>(scm net http static)</code></a> serves files: a directory of assets (CSS, JS, images) behind a router wildcard, or single files for download routes. It sets the content type, an ETag (answering <code>If-None-Match</code> with 304) and <code>X-Content-Type-Options: nosniff</code>, and refuses paths that could leave the directory or reach hidden files. Files are sent from disk, whatever their size, and a <code>Range</code> request gets 206 Partial Content (or 416), so videos can seek and downloads resume.</p>
 <p><a class="xref" href="#e2"><code>make-static-url</code></a> builds asset URLs with <code>?v=&lt;modification time&gt;</code>. Such requests are cached by browsers for a year, and because the version changes whenever the file does, a page never runs a stale copy.</p>
 <h2>Common uses</h2>
 <pre><code class="language-scheme">(import (scm net http route) (scm net http static))

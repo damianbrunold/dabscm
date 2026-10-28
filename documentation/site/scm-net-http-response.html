@@ -38,8 +38,10 @@
   <a href="#e13" data-name="http-see-other">http-see-other</a>
   <a href="#e14" data-name="http-unauthorized">http-unauthorized</a>
   <a href="#e15" data-name="json-response">json-response</a>
-  <a href="#e16" data-name="make-http-response">make-http-response</a>
-  <a href="#e17" data-name="text-response">text-response</a>
+  <a href="#e16" data-name="make-http-file-response">make-http-file-response</a>
+  <a href="#e17" data-name="make-http-response">make-http-response</a>
+  <a href="#e18" data-name="make-http-stream-response">make-http-stream-response</a>
+  <a href="#e19" data-name="text-response">text-response</a>
 </nav>
 
 <main>
@@ -71,7 +73,7 @@
 (http-response-body resp)</code></pre>
 </div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
-<p class="export-count">18 bindings</p>
+<p class="export-count">20 bindings</p>
 
 <div class="entry" id="e0" data-name="html-response">
   <div class="entry-name">html-response</div>
@@ -207,7 +209,11 @@ Description: Creates a 200 OK response with Content-Type application/json; chars
 Example:
   (json-response "{\"ok\":true}")</pre>
 </div>
-<div class="entry" id="e16" data-name="make-http-response">
+<div class="entry" id="e16" data-name="make-http-file-response">
+  <div class="entry-name">make-http-file-response</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e17" data-name="make-http-response">
   <div class="entry-name">make-http-response</div>
   <pre class="entry-doc">Syntax: (make-http-response status headers body)
 Library: (scm net http response)
@@ -215,7 +221,11 @@ Description: Creates an HTTP response object. status is an integer, headers is a
 Example:
   (make-http-response 200 '() "OK")</pre>
 </div>
-<div class="entry" id="e17" data-name="text-response">
+<div class="entry" id="e18" data-name="make-http-stream-response">
+  <div class="entry-name">make-http-stream-response</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e19" data-name="text-response">
   <div class="entry-name">text-response</div>
   <pre class="entry-doc">Syntax: (text-response body)
 Library: (scm net http response)
