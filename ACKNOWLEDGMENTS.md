@@ -29,10 +29,24 @@ with Chibi-Scheme.
 
 The glyph outlines, advances and kerning pairs of about 240 characters
 (ASCII, Latin-1, Windows-1252 and some typographic characters) are
-extracted from the fonts by `notes/gen-font-dejavu.scm`, so that
+extracted from the fonts by `notes/gen-font.scm dejavu`, so that
 `(scm svg raster)` can draw text without a font file. The licence, which
 allows such subsets as long as the fonts are not called "Bitstream" or
 "Vera", is reproduced in full at the top of the file.
+
+### Inter
+
+- **File:** `scm-lib/libraries/scm-fonts-inter.sld`
+- **Source:** Inter 4.1, Regular and Black, <https://github.com/rsms/inter>
+- **Author:** The Inter Project Authors
+- **License:** SIL Open Font License 1.1 (no Reserved Font Name)
+
+The glyph outlines, advances and GPOS kerning of the same characters as
+the DejaVu subset, with the OpenType features `ss07 ss08 cv03 cv04 cv10
+tnum` applied, extracted by `notes/gen-font.scm inter`. These are the
+features the canton of Zurich's web design system prescribes for Inter,
+plus tabular figures. The licence is reproduced in full at the top of the
+file; as Inter declares no Reserved Font Name, the subset keeps the name.
 
 ### Rasterization algorithm
 

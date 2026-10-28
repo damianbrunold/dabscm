@@ -77,6 +77,7 @@
 | [`(scm duration)`](libraries/scm-duration.md) | Duration string parsing and formatting (seconds, minutes, hours, days) |
 | [`(scm feed)`](libraries/scm-feed.md) | Atom and RSS 2.0 feed parsing |
 | [`(scm fonts dejavu)`](libraries/scm-fonts-dejavu.md) | DejaVu Sans and Sans Bold glyph outlines, built in for text rendering |
+| [`(scm fonts inter)`](libraries/scm-fonts-inter.md) | Inter Regular and Black glyph outlines with ZH design features, built in for text rendering |
 | [`(scm fs-find)`](libraries/scm-fs-find.md) | Filesystem traversal and reporting — find-file, tree, du, df, xargs |
 | [`(scm fs)`](libraries/scm-fs.md) | Filesystem operations — paths, directories, files |
 | [`(scm geiser)`](libraries/scm-geiser.md) |  |
@@ -138,7 +139,7 @@
 | [`(scm test)`](libraries/scm-test.md) | Test framework — SRFI-64 runner with summary reporting |
 | [`(scm text)`](libraries/scm-text.md) | Text processing utilities — awk, sed, grep, cut, sort, diff, and more |
 | [`(scm toml)`](libraries/scm-toml.md) | TOML reading and writing |
-| [`(scm truetype)`](libraries/scm-truetype.md) | TrueType font reading — glyph outlines, advances, kerning, text as paths |
+| [`(scm truetype)`](libraries/scm-truetype.md) | TrueType font reading — glyph outlines, advances, kerning, OpenType features, text as paths |
 | [`(scm uri)`](libraries/scm-uri.md) | URI percent-encoding and decoding |
 | [`(scm xml)`](libraries/scm-xml.md) | XML file reading and navigation |
 | [`(scm zip)`](libraries/scm-zip.md) | ZIP archive creation and entry writing |

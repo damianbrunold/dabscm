@@ -3,7 +3,8 @@
         (scm test)
         (scm raster)
         (scm truetype)
-        (scm fonts dejavu))
+        (scm fonts dejavu)
+        (scm fonts inter))
 
 (test-runner-factory scm-test-runner)
 
@@ -106,6 +107,58 @@
   (test-equal -50 (font-kerning font #\A #\B))
   (test-equal 0 (font-kerning font #\B #\A)))
 
+;; GSUB: feature ss01 replaces glyph 1 (A) by glyph 2 (B), a format 1
+;; single substitution (delta +1).
+(define gsub
+  (append (u16 1) (u16 0) (u16 10) (u16 12) (u16 26)
+          (u16 0)                                       ; no scripts
+          (u16 1) (map char->integer (string->list "ss01")) (u16 8)
+          (u16 0) (u16 1) (u16 0)                       ; feature: lookup 0
+          (u16 1) (u16 4)                               ; lookup list
+          (u16 1) (u16 0) (u16 1) (u16 8)               ; type 1, one subtable
+          (u16 1) (u16 6) (u16 1)                       ; format 1, delta +1
+          (u16 1) (u16 1) (u16 1)))                     ; coverage: glyph 1
+
+;; GPOS kern: A B -30 in a format 1 subtable; B A -40 in a format 2
+;; (class) subtable after it.
+(define gpos
+  (append (u16 1) (u16 0) (u16 10) (u16 12) (u16 26)
+          (u16 0)
+          (u16 1) (map char->integer (string->list "kern")) (u16 8)
+          (u16 0) (u16 1) (u16 0)
+          (u16 1) (u16 4)
+          (u16 2) (u16 0) (u16 2) (u16 10) (u16 34)     ; type 2, two subtables
+          ;; format 1: first glyphs {1}, pair set {2: -30}
+          (u16 1) (u16 18) (u16 4) (u16 0) (u16 1) (u16 12)
+          (u16 1) (u16 2) (u16 -30)
+          (u16 1) (u16 1) (u16 1)
+          ;; format 2: first glyphs {2}, class 1 of the first is glyph 2,
+          ;; class 1 of the second glyph 1
+          (u16 2) (u16 24) (u16 4) (u16 0) (u16 30) (u16 38) (u16 2) (u16 2)
+          (u16 0) (u16 0) (u16 0) (u16 -40)
+          (u16 1) (u16 1) (u16 2)
+          (u16 1) (u16 2) (u16 1) (u16 1)
+          (u16 2) (u16 1) (u16 1) (u16 1) (u16 1)))
+
+(define (font-with . extra)
+  (sfnt (append (list (cons "head" head) (cons "hhea" hhea) (cons "hmtx" hmtx)
+                      (cons "cmap" cmap) (cons "loca" loca) (cons "glyf" glyf))
+                extra)))
+
+(test-group "OpenType features"
+  (let ((bv (font-with (cons "GSUB" gsub))))
+    (test-equal 600 (car (font-glyph (read-truetype bv) #\A)))
+    ;; with ss01, A is drawn with glyph 2
+    (test-equal 700 (car (font-glyph (read-truetype bv '((features "ss01"))) #\A)))
+    (test-equal 600 (car (font-glyph (read-truetype bv '((features "ss02"))) #\A)))))
+
+(test-group "GPOS kerning"
+  (let ((f (read-truetype (font-with (cons "GPOS" gpos)))))
+    (test-equal -30 (font-kerning f #\A #\B))
+    (test-equal -40 (font-kerning f #\B #\A))
+    (test-equal 0 (font-kerning f #\A #\A))
+    (test-equal 0 (font-kerning f #\B #\B))))
+
 (test-group "text"
   ;; at 1000 px per em, one unit is one pixel
   (test-approximate 1250.0 (font-text-width font 1000 "AB") 1e-9)
@@ -154,5 +207,14 @@
                          ((= x 60) (loop 0 (+ y 1)))
                          ((< (car (canvas-ref c x y)) 50) #t)
                          (else (loop (+ x 1) y)))))))
+
+(test-group "inter"
+  (test-equal 2048 (font-units-per-em inter-regular))
+  ;; tabular figures: every digit as wide as every other
+  (test-approximate (font-text-width inter-regular 12 "8888")
+                    (font-text-width inter-regular 12 "1111") 1e-9)
+  (test-assert (< (font-kerning inter-regular #\T #\o) 0))
+  (test-assert (> (font-text-width inter-black 12 "Intern")
+                  (font-text-width inter-regular 12 "Intern"))))
 
 (test-end "scm truetype")

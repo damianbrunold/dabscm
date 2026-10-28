@@ -3,7 +3,11 @@
 ;;
 ;; read-truetype parses a .ttf held in a bytevector: the cmap (formats 4
 ;; and 12), hmtx, loca and glyf (simple and composite glyphs), and the
-;; format 0 kern table when there is one. Glyphs are decoded on first use.
+;; kerning: the format 0 kern table when there is one, else the pair
+;; adjustments of the GPOS kern feature (lookup type 2, both formats). Glyphs are decoded on first use.
+;; OpenType features that substitute one glyph for another (GSUB lookup
+;; type 1, also behind an extension lookup) can be switched on: stylistic
+;; sets, character variants, tabular figures.
 ;; make-outline-font builds the same kind of font from glyph data already
 ;; extracted, which is how (scm fonts dejavu) ships its fonts without a
 ;; .ttf file.
@@ -278,19 +282,214 @@ Example:
                       (loop (+ i 1) (+ st len))))))))
         h))
 
+    ;; --- GSUB -----------------------------------------------------------
+
+    ;; -> hash table gid -> gid: the single substitutions (lookup type 1,
+    ;; directly or through an extension, type 7) of the features named in
+    ;; tags, in every script and language system that has them. Lookups of
+    ;; other types are not applied.
+    (define (gsub-singles bv tables tags)
+      (let ((h (make-hash-table eqv?))
+            (g (assoc "GSUB" tables)))
+        (when (and g (pair? tags))
+          (let* ((o (cadr g))
+                 (fl (+ o (u16 bv (+ o 6))))
+                 (ll (+ o (u16 bv (+ o 8))))
+                 (lookups
+                  (let loop ((i 0) (acc '()))
+                    (if (= i (u16 bv fl))
+                        acc
+                        (let* ((r (+ fl 2 (* 6 i)))
+                               (ft (+ fl (u16 bv (+ r 4)))))
+                          (loop (+ i 1)
+                                (if (member (tag bv r) tags)
+                                    (append acc
+                                            (map (lambda (k) (u16 bv (+ ft 4 (* 2 k))))
+                                                 (iota-list (u16 bv (+ ft 2)))))
+                                    acc)))))))
+            (for-each
+             (lambda (li)
+               (let* ((lk (+ ll (u16 bv (+ ll 2 (* 2 li)))))
+                      (type (u16 bv lk)))
+                 (for-each
+                  (lambda (k)
+                    (let* ((st (+ lk (u16 bv (+ lk 6 (* 2 k))))))
+                      (cond
+                       ((= type 1) (single-subst! h bv st))
+                       ((and (= type 7) (= 1 (u16 bv (+ st 2))))
+                        (single-subst! h bv (+ st (u32 bv (+ st 4))))))))
+                  (iota-list (u16 bv (+ lk 4))))))
+             lookups)))
+        h))
+
+    (define (iota-list n) (let loop ((i (- n 1)) (acc '())) (if (< i 0) acc (loop (- i 1) (cons i acc)))))
+
+    (define (single-subst! h bv st)
+      (let ((format (u16 bv st))
+            (covered (coverage bv (+ st (u16 bv (+ st 2))))))
+        (for-each
+         (lambda (pair)                ; (gid . coverage index)
+           (hash-table-set!
+            h (car pair)
+            (if (= format 1)
+                (modulo (+ (car pair) (s16 bv (+ st 4))) 65536)
+                (u16 bv (+ st 6 (* 2 (cdr pair)))))))
+         covered)))
+
+    ;; -> list of (gid . coverage index)
+    (define (coverage bv o)
+      (if (= 1 (u16 bv o))
+          (map (lambda (i) (cons (u16 bv (+ o 4 (* 2 i))) i)) (iota-list (u16 bv (+ o 2))))
+          (apply append
+                 (map (lambda (i)
+                        (let* ((r (+ o 4 (* 6 i)))
+                               (start (u16 bv r)) (end (u16 bv (+ r 2))) (ci (u16 bv (+ r 4))))
+                          (map (lambda (k) (cons (+ start k) (+ ci k)))
+                               (iota-list (+ 1 (- end start))))))
+                      (iota-list (u16 bv (+ o 2)))))))
+
+    ;; --- GPOS kerning ---------------------------------------------------
+
+    ;; -> procedure (left-gid right-gid) -> x advance adjustment, from the
+    ;; pair adjustment lookups (type 2, or 9 wrapping 2) of the kern
+    ;; feature; #f when there are none. As OpenType applies them: the
+    ;; first subtable that covers the left glyph and has the pair decides.
+    (define (gpos-kerning bv tables)
+      (let ((g (assoc "GPOS" tables)))
+        (and g
+             (let* ((o (cadr g))
+                    (fl (+ o (u16 bv (+ o 6))))
+                    (ll (+ o (u16 bv (+ o 8))))
+                    (indices
+                     (delete-dups
+                      (let loop ((i 0) (acc '()))
+                        (if (= i (u16 bv fl))
+                            acc
+                            (let* ((r (+ fl 2 (* 6 i)))
+                                   (ft (+ fl (u16 bv (+ r 4)))))
+                              (loop (+ i 1)
+                                    (if (string=? (tag bv r) "kern")
+                                        (append acc (map (lambda (k) (u16 bv (+ ft 4 (* 2 k))))
+                                                         (iota-list (u16 bv (+ ft 2)))))
+                                        acc)))))))
+                    (subtables
+                     (apply append
+                            (map (lambda (li)
+                                   (let* ((lk (+ ll (u16 bv (+ ll 2 (* 2 li)))))
+                                          (type (u16 bv lk)))
+                                     (filter-map-list
+                                      (lambda (k)
+                                        (let ((st (+ lk (u16 bv (+ lk 6 (* 2 k))))))
+                                          (cond ((= type 2) (pair-subtable bv st))
+                                                ((and (= type 9) (= 2 (u16 bv (+ st 2))))
+                                                 (pair-subtable bv (+ st (u32 bv (+ st 4)))))
+                                                (else #f))))
+                                      (iota-list (u16 bv (+ lk 4))))))
+                                 indices))))
+               (and (pair? subtables)
+                    (lambda (l r)
+                      (let loop ((ss subtables))
+                        (if (null? ss)
+                            0
+                            (let ((v ((car ss) l r)))
+                              (if v v (loop (cdr ss))))))))))))
+
+    (define (delete-dups l)
+      (let loop ((l l) (acc '()))
+        (cond ((null? l) (reverse acc))
+              ((memv (car l) acc) (loop (cdr l) acc))
+              (else (loop (cdr l) (cons (car l) acc))))))
+
+    (define (filter-map-list f l)
+      (let loop ((l l) (acc '()))
+        (if (null? l) (reverse acc)
+            (let ((v (f (car l)))) (loop (cdr l) (if v (cons v acc) acc))))))
+
+    ;; size in bytes of a ValueRecord, and where its x advance is
+    (define (value-size fmt)
+      (let loop ((b 0) (n 0))
+        (if (= b 8) (* 2 n) (loop (+ b 1) (if (odd? (quotient fmt (expt 2 b))) (+ n 1) n)))))
+    (define (x-advance bv rec fmt)
+      (if (odd? (quotient fmt 4))
+          (s16 bv (+ rec (value-size (modulo fmt 4))))
+          0))
+
+    ;; -> procedure (l r) -> adjustment, or #f when this subtable does not
+    ;; have the pair
+    (define (pair-subtable bv st)
+      (let* ((format (u16 bv st))
+             (cov (let ((h (make-hash-table eqv?)))
+                    (for-each (lambda (p) (hash-table-set! h (car p) (cdr p)))
+                              (coverage bv (+ st (u16 bv (+ st 2)))))
+                    h))
+             (vf1 (u16 bv (+ st 4)))
+             (vf2 (u16 bv (+ st 6)))
+             (rec-size (+ (value-size vf1) (value-size vf2))))
+        (case format
+          ((1)
+           (lambda (l r)
+             (let ((ci (hash-table-ref/default cov l #f)))
+               (and ci
+                    (let* ((ps (+ st (u16 bv (+ st 10 (* 2 ci)))))
+                           (n (u16 bv ps)))
+                      ;; pair value records are sorted by the second glyph
+                      (let search ((lo 0) (hi (- n 1)))
+                        (and (<= lo hi)
+                             (let* ((mid (quotient (+ lo hi) 2))
+                                    (rec (+ ps 2 (* mid (+ 2 rec-size))))
+                                    (g (u16 bv rec)))
+                               (cond ((< g r) (search (+ mid 1) hi))
+                                     ((> g r) (search lo (- mid 1)))
+                                     (else (x-advance bv (+ rec 2) vf1)))))))))))
+          ((2)
+           (let ((cd1 (class-def bv (+ st (u16 bv (+ st 8)))))
+                 (cd2 (class-def bv (+ st (u16 bv (+ st 10)))))
+                 (c2n (u16 bv (+ st 14))))
+             (lambda (l r)
+               (and (hash-table-ref/default cov l #f)
+                    (let ((c1 (cd1 l)) (c2 (cd2 r)))
+                      (x-advance bv (+ st 16 (* rec-size (+ (* c1 c2n) c2))) vf1))))))
+          (else (lambda (l r) #f)))))
+
+    ;; -> procedure gid -> class (0 when not listed)
+    (define (class-def bv o)
+      (if (= 1 (u16 bv o))
+          (let ((start (u16 bv (+ o 2))) (n (u16 bv (+ o 4))))
+            (lambda (g)
+              (if (and (>= g start) (< g (+ start n)))
+                  (u16 bv (+ o 6 (* 2 (- g start))))
+                  0)))
+          (let ((n (u16 bv (+ o 2))))
+            (lambda (g)
+              ;; class range records are sorted by start glyph
+              (let search ((lo 0) (hi (- n 1)))
+                (if (> lo hi)
+                    0
+                    (let* ((mid (quotient (+ lo hi) 2))
+                           (r (+ o 4 (* 6 mid))))
+                      (cond ((< g (u16 bv r)) (search lo (- mid 1)))
+                            ((> g (u16 bv (+ r 2))) (search (+ mid 1) hi))
+                            (else (u16 bv (+ r 4)))))))))))
+
     ;; --- fonts ----------------------------------------------------------
 
-    (define (read-truetype bv)
-      "Syntax: (read-truetype bytevector)
+    (define (read-truetype bv . options)
+      "Syntax: (read-truetype bytevector [options])
 Library: (scm truetype)
 Description: Parses a TrueType font (.ttf) and returns a font. Glyph
   outlines are decoded when first asked for. OpenType fonts with CFF
-  outlines (.otf) are not supported.
+  outlines (.otf) are not supported. options is an alist; (features
+  \"ss07\" \"tnum\" ...) switches on OpenType features, of which the
+  single substitutions are applied (stylistic sets, character variants,
+  figure styles); kerning stays that of the kern table.
 Example:
   (define font (read-truetype (call-with-port
                  (open-binary-input-file \"DejaVuSans.ttf\")
-                 (lambda (p) (read-bytevector 1000000 p)))))"
-      (let* ((tables (table-directory bv))
+                 (lambda (p) (read-bytevector 1000000 p)))))
+  (read-truetype bv '((features \"tnum\")))"
+      (let* ((options (if (pair? options) (car options) '()))
+             (features (let ((p (assq 'features options))) (if p (cdr p) '())))
+             (tables (table-directory bv))
              (head (table tables "head"))
              (hhea (table tables "hhea"))
              (hmtx (table tables "hmtx"))
@@ -298,11 +497,18 @@ Example:
              (glyf (table tables "glyf"))
              (loca (table tables "loca"))
              (long-loca? (= 1 (s16 bv (+ head 50))))
-             (gid-of (cmap-lookup bv (table tables "cmap")))
+             (subst (gsub-singles bv tables features))
+             (gid-of (let ((cmap (cmap-lookup bv (table tables "cmap"))))
+                       (if (= 0 (hash-table-size subst))
+                           cmap
+                           (lambda (c)
+                             (let ((g (cmap c)))
+                               (hash-table-ref/default subst g g))))))
              (advance (lambda (gid)
                         (u16 bv (+ hmtx (* 4 (min gid (- nmetrics 1)))))))
              (cache (make-hash-table eqv?))
-             (pairs (kern-pairs bv tables)))
+             (pairs (kern-pairs bv tables))
+             (gpos (and (= 0 (hash-table-size pairs)) (gpos-kerning bv tables))))
         (%make-font
          (u16 bv (+ head 18))
          (s16 bv (+ hhea 4))
@@ -316,8 +522,10 @@ Example:
                         (hash-table-set! cache gid g)
                         g)))))
          (lambda (left right)
-           (hash-table-ref/default
-            pairs (cons (gid-of (char->integer left)) (gid-of (char->integer right))) 0)))))
+           (let ((l (gid-of (char->integer left))) (r (gid-of (char->integer right))))
+             (if gpos
+                 (gpos l r)
+                 (hash-table-ref/default pairs (cons l r) 0)))))))
 
     (define (make-outline-font units-per-em ascent descent glyphs . kerning)
       "Syntax: (make-outline-font units-per-em ascent descent glyphs [kerning])

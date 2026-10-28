@@ -1,6 +1,6 @@
 # `(scm truetype)`
 
-TrueType font reading — glyph outlines, advances, kerning, text as paths
+TrueType font reading — glyph outlines, advances, kerning, OpenType features, text as paths
 
 ## Exports
 
@@ -85,14 +85,18 @@ Example:
 ### `read-truetype`
 
 ```
-Syntax: (read-truetype bytevector)
+Syntax: (read-truetype bytevector [options])
 Library: (scm truetype)
 Description: Parses a TrueType font (.ttf) and returns a font. Glyph
   outlines are decoded when first asked for. OpenType fonts with CFF
-  outlines (.otf) are not supported.
+  outlines (.otf) are not supported. options is an alist; (features
+  "ss07" "tnum" ...) switches on OpenType features, of which the
+  single substitutions are applied (stylistic sets, character variants,
+  figure styles); kerning stays that of the kern table.
 Example:
   (define font (read-truetype (call-with-port
                  (open-binary-input-file "DejaVuSans.ttf")
                  (lambda (p) (read-bytevector 1000000 p)))))
+  (read-truetype bv '((features "tnum")))
 ```
 

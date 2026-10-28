@@ -45,7 +45,7 @@
 </nav>
 
 <div class="lib-title scm">(scm truetype)</div>
-<p class="lib-sub">TrueType font reading — glyph outlines, advances, kerning, text as paths</p>
+<p class="lib-sub">TrueType font reading — glyph outlines, advances, kerning, OpenType features, text as paths</p>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">10 bindings</p>
 
@@ -119,15 +119,19 @@ Example:
 </div>
 <div class="entry" id="e9" data-name="read-truetype">
   <div class="entry-name">read-truetype</div>
-  <pre class="entry-doc">Syntax: (read-truetype bytevector)
+  <pre class="entry-doc">Syntax: (read-truetype bytevector [options])
 Library: (scm truetype)
 Description: Parses a TrueType font (.ttf) and returns a font. Glyph
   outlines are decoded when first asked for. OpenType fonts with CFF
-  outlines (.otf) are not supported.
+  outlines (.otf) are not supported. options is an alist; (features
+  "ss07" "tnum" ...) switches on OpenType features, of which the
+  single substitutions are applied (stylistic sets, character variants,
+  figure styles); kerning stays that of the kern table.
 Example:
   (define font (read-truetype (call-with-port
                  (open-binary-input-file "DejaVuSans.ttf")
-                 (lambda (p) (read-bytevector 1000000 p)))))</pre>
+                 (lambda (p) (read-bytevector 1000000 p)))))
+  (read-truetype bv '((features "tnum")))</pre>
 </div>
 
 </main>
