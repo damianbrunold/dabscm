@@ -76,6 +76,7 @@
 | [`(scm doc)`](libraries/scm-doc.md) | Documentation access |
 | [`(scm duration)`](libraries/scm-duration.md) | Duration string parsing and formatting (seconds, minutes, hours, days) |
 | [`(scm feed)`](libraries/scm-feed.md) | Atom and RSS 2.0 feed parsing |
+| [`(scm fonts dejavu)`](libraries/scm-fonts-dejavu.md) | DejaVu Sans and Sans Bold glyph outlines, built in for text rendering |
 | [`(scm fs-find)`](libraries/scm-fs-find.md) | Filesystem traversal and reporting — find-file, tree, du, df, xargs |
 | [`(scm fs)`](libraries/scm-fs.md) | Filesystem operations — paths, directories, files |
 | [`(scm geiser)`](libraries/scm-geiser.md) |  |
@@ -124,10 +125,12 @@
 | [`(scm profiling)`](libraries/scm-profiling.md) | Execution profiling and performance measurement |
 | [`(scm qr)`](libraries/scm-qr.md) | QR code encoding — PNG, SVG, and ASCII output |
 | [`(scm random access)`](libraries/scm-random-access.md) | Random-access file I/O — seek, read, write, truncate |
+| [`(scm raster)`](libraries/scm-raster.md) | Anti-aliased 2D rasterization — paths, fills, strokes, dashes, PNG output |
 | [`(scm reloader)`](libraries/scm-reloader.md) |  |
 | [`(scm repl)`](libraries/scm-repl.md) | REPL support — completions, syntax info, core form names |
 | [`(scm store)`](libraries/scm-store.md) | Immutable on-disk indexed record store |
 | [`(scm string)`](libraries/scm-string.md) | Extended string operations — search, split, trim, convert |
+| [`(scm svg raster)`](libraries/scm-svg-raster.md) | SVG rendering to a raster canvas or PNG — shapes, paths, CSS, text, patterns |
 | [`(scm sysadmin)`](libraries/scm-sysadmin.md) | System administration toolkit aggregating fs, archive, remote, logging, and more |
 | [`(scm system)`](libraries/scm-system.md) | System info, environment variables, process execution |
 | [`(scm templating)`](libraries/scm-templating.md) | Text templating with variable substitution |
@@ -135,6 +138,7 @@
 | [`(scm test)`](libraries/scm-test.md) | Test framework — SRFI-64 runner with summary reporting |
 | [`(scm text)`](libraries/scm-text.md) | Text processing utilities — awk, sed, grep, cut, sort, diff, and more |
 | [`(scm toml)`](libraries/scm-toml.md) | TOML reading and writing |
+| [`(scm truetype)`](libraries/scm-truetype.md) | TrueType font reading — glyph outlines, advances, kerning, text as paths |
 | [`(scm uri)`](libraries/scm-uri.md) | URI percent-encoding and decoding |
 | [`(scm xml)`](libraries/scm-xml.md) | XML file reading and navigation |
 | [`(scm zip)`](libraries/scm-zip.md) | ZIP archive creation and entry writing |

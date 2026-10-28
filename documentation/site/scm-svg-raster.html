@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm svg raster) — Dabscm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="toc">
+  <h2>Bindings</h2>
+  <a href="#e0" data-name="svg-&gt;canvas">svg-&gt;canvas</a>
+  <a href="#e1" data-name="svg-&gt;png">svg-&gt;png</a>
+  <a href="#e2" data-name="svg-text-&gt;sxml">svg-text-&gt;sxml</a>
+</nav>
+
+<main>
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="index.html">All libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="index.html#sec-scm">Scm Extensions</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm svg raster)</span>
+</nav>
+
+<div class="lib-title scm">(scm svg raster)</div>
+<p class="lib-sub">SVG rendering to a raster canvas or PNG — shapes, paths, CSS, text, patterns</p>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">3 bindings</p>
+
+<div class="entry" id="e0" data-name="svg-&gt;canvas">
+  <div class="entry-name">svg-&gt;canvas</div>
+  <pre class="entry-doc">Syntax: (svg-&gt;canvas svg [options])
+Library: (scm svg raster)
+Description: Renders svg, SVG text or an SXML tree (as (scm html builder)
+  takes it), to a new canvas of (scm raster) and returns it. The canvas
+  is the root's width and height (or its viewBox's size) times the scale.
+  options is an alist: (scale . s), default 1; (background . colour), a
+  colour from rgba, transparent by default; (fonts . ((normal . font)
+  (bold . font))), fonts of (scm truetype), DejaVu Sans by default.
+Example:
+  (svg-&gt;canvas "&lt;svg width='20' height='20'&gt;&lt;circle cx='10' cy='10' r='8'/&gt;&lt;/svg&gt;"
+               '((scale . 2)))</pre>
+</div>
+<div class="entry" id="e1" data-name="svg-&gt;png">
+  <div class="entry-name">svg-&gt;png</div>
+  <pre class="entry-doc">Syntax: (svg-&gt;png svg [options])
+Library: (scm svg raster)
+Description: Renders svg like svg-&gt;canvas and returns it encoded as a PNG
+  bytevector.
+Example:
+  (svg-&gt;png chart-sxml '((scale . 2) (background . #(255 255 255 1.0))))</pre>
+</div>
+<div class="entry" id="e2" data-name="svg-text-&gt;sxml">
+  <div class="entry-name">svg-text-&gt;sxml</div>
+  <pre class="entry-doc">Syntax: (svg-text-&gt;sxml text)
+Library: (scm svg raster)
+Description: Parses SVG (or other simple XML) text into SXML, the tree
+  shape svg-&gt;canvas accepts: (tag (@ (name "value") ...) child ...).
+  Comments, the prolog, the doctype and processing instructions are
+  dropped; entities are decoded.
+Example:
+  (svg-text-&gt;sxml "&lt;svg width='10'&gt;&lt;rect/&gt;&lt;/svg&gt;")
+  =&gt; (svg (@ (width "10")) (rect (@)))</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm truetype) — Dabscm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="toc">
+  <h2>Bindings</h2>
+  <a href="#e0" data-name="font-ascent">font-ascent</a>
+  <a href="#e1" data-name="font-descent">font-descent</a>
+  <a href="#e2" data-name="font-glyph">font-glyph</a>
+  <a href="#e3" data-name="font-kerning">font-kerning</a>
+  <a href="#e4" data-name="font-text-path">font-text-path</a>
+  <a href="#e5" data-name="font-text-width">font-text-width</a>
+  <a href="#e6" data-name="font-units-per-em">font-units-per-em</a>
+  <a href="#e7" data-name="font?">font?</a>
+  <a href="#e8" data-name="make-outline-font">make-outline-font</a>
+  <a href="#e9" data-name="read-truetype">read-truetype</a>
+</nav>
+
+<main>
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="index.html">All libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="index.html#sec-scm">Scm Extensions</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm truetype)</span>
+</nav>
+
+<div class="lib-title scm">(scm truetype)</div>
+<p class="lib-sub">TrueType font reading — glyph outlines, advances, kerning, text as paths</p>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">10 bindings</p>
+
+<div class="entry" id="e0" data-name="font-ascent">
+  <div class="entry-name">font-ascent</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e1" data-name="font-descent">
+  <div class="entry-name">font-descent</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e2" data-name="font-glyph">
+  <div class="entry-name">font-glyph</div>
+  <pre class="entry-doc">Syntax: (font-glyph font char)
+Library: (scm truetype)
+Description: Returns the glyph for char as (advance . contours), or #f
+  when the font has none. advance is in font units; contours is a list of
+  contours, each a list of points (x y on-curve?) in font units with y
+  pointing up, as TrueType stores them.
+Example:
+  (car (font-glyph font #\A)) =&gt; 1401   ; DejaVu Sans</pre>
+</div>
+<div class="entry" id="e3" data-name="font-kerning">
+  <div class="entry-name">font-kerning</div>
+  <pre class="entry-doc">Syntax: (font-kerning font left right)
+Library: (scm truetype)
+Description: Returns the kerning adjustment between the characters left
+  and right, in font units (usually negative), or 0.
+Example:
+  (font-kerning font #\A #\V) =&gt; -77   ; DejaVu Sans</pre>
+</div>
+<div class="entry" id="e4" data-name="font-text-path">
+  <div class="entry-name">font-text-path</div>
+  <pre class="entry-doc">Syntax: (font-text-path font size x y string)
+Library: (scm truetype)
+Description: Returns string set in font at size (pixels per em) as a path
+  for (scm raster), starting at x on the baseline y, in canvas coordinates
+  (y pointing down). Fill it with the non-zero rule.
+Example:
+  (canvas-fill-path! canvas (font-text-path font 11 10 20 "Intern")
+                     (rgba 0 0 0))</pre>
+</div>
+<div class="entry" id="e5" data-name="font-text-width">
+  <div class="entry-name">font-text-width</div>
+  <pre class="entry-doc">Syntax: (font-text-width font size string)
+Library: (scm truetype)
+Description: Returns the advance width of string set in font at size
+  (in pixels per em), kerning included.
+Example:
+  (font-text-width font 11 "Intern") =&gt; 33.4...</pre>
+</div>
+<div class="entry" id="e6" data-name="font-units-per-em">
+  <div class="entry-name">font-units-per-em</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e7" data-name="font?">
+  <div class="entry-name">font?</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e8" data-name="make-outline-font">
+  <div class="entry-name">make-outline-font</div>
+  <pre class="entry-doc">Syntax: (make-outline-font units-per-em ascent descent glyphs [kerning])
+Library: (scm truetype)
+Description: Returns a font made from glyph data: glyphs is an alist of
+  (char advance . contours), as font-glyph returns them; kerning an alist
+  of ((left . right) . value). For fonts compiled into a library, such as
+  (scm fonts dejavu).
+Example:
+  (make-outline-font 1000 800 -200
+    (list (list #\- 400 '((50 250 #t) (350 250 #t) (350 300 #t) (50 300 #t)))))</pre>
+</div>
+<div class="entry" id="e9" data-name="read-truetype">
+  <div class="entry-name">read-truetype</div>
+  <pre class="entry-doc">Syntax: (read-truetype bytevector)
+Library: (scm truetype)
+Description: Parses a TrueType font (.ttf) and returns a font. Glyph
+  outlines are decoded when first asked for. OpenType fonts with CFF
+  outlines (.otf) are not supported.
+Example:
+  (define font (read-truetype (call-with-port
+                 (open-binary-input-file "DejaVuSans.ttf")
+                 (lambda (p) (read-bytevector 1000000 p)))))</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

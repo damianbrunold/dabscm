@@ -21,6 +21,26 @@ root).
 This is the well-known `match.scm` pattern matching library, also distributed
 with Chibi-Scheme.
 
+### DejaVu Fonts
+
+- **File:** `scm-lib/libraries/scm-fonts-dejavu.sld`
+- **Source:** DejaVu Sans and DejaVu Sans Bold, <https://dejavu-fonts.github.io/>
+- **License:** Bitstream Vera license (DejaVu changes are in the Public Domain)
+
+The glyph outlines, advances and kerning pairs of about 240 characters
+(ASCII, Latin-1, Windows-1252 and some typographic characters) are
+extracted from the fonts by `notes/gen-font-dejavu.scm`, so that
+`(scm svg raster)` can draw text without a font file. The licence, which
+allows such subsets as long as the fonts are not called "Bitstream" or
+"Vera", is reproduced in full at the top of the file.
+
+### Rasterization algorithm
+
+- **File:** `scm-lib/libraries/scm-raster.sld`
+
+The coverage accumulation (exact signed area per pixel, summed along each
+row) follows the approach of Raph Levien's font-rs renderer.
+
 ### SRFI-26 (`cut` / `cute`)
 
 - **File:** `scm-lib/libraries/srfi-26.sld`
