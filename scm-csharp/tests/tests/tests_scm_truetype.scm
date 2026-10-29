@@ -4,7 +4,8 @@
         (scm raster)
         (scm truetype)
         (scm fonts dejavu)
-        (scm fonts inter))
+        (scm fonts inter)
+        (scm fonts roboto-slab))
 
 (test-runner-factory scm-test-runner)
 
@@ -220,6 +221,18 @@
   (test-assert (< (font-kerning inter-regular #\T #\o) 0))
   (test-assert (> (font-text-width inter-black 12 "Intern")
                   (font-text-width inter-regular 12 "Intern"))))
+
+(test-group "roboto slab"
+  (test-equal 2048 (font-units-per-em roboto-slab-regular))
+  (test-equal 2146 (font-ascent roboto-slab-bold))
+  (test-equal -555 (font-descent roboto-slab-bold))
+  (test-assert (< (font-kerning roboto-slab-regular #\T #\o) 0))
+  (test-assert (pair? (cdr (font-glyph roboto-slab-bold #\xFC))))
+  (test-assert (> (font-text-width roboto-slab-bold 12 "Intern")
+                  (font-text-width roboto-slab-regular 12 "Intern")))
+  ;; embeddable, as the PDF writer needs it
+  (let ((back (read-truetype (font->truetype roboto-slab-bold "Roboto Slab" "Bold"))))
+    (test-equal (font-glyph roboto-slab-bold #\g) (font-glyph back #\g))))
 
 (test-group "font->truetype"
   (test-equal 257 (length (font-chars inter-regular)))

@@ -94,6 +94,7 @@
     ((scm feed)               . "Atom and RSS 2.0 feed parsing")
     ((scm fonts dejavu)       . "DejaVu Sans and Sans Bold glyph outlines, built in for text rendering")
     ((scm fonts inter)        . "Inter Regular and Black glyph outlines with ZH design features, built in for text rendering")
+    ((scm fonts roboto-slab)  . "Roboto Slab Regular and Bold glyph outlines, built in for text rendering")
     ((scm fs)                 . "Filesystem operations — paths, directories, files")
     ((scm fs-find)            . "Filesystem traversal and reporting — find-file, tree, du, df, xargs")
     ((scm geo)                . "Planar geometry of features — rings, areas, simplification, label points, GeoJSON")

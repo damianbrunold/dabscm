@@ -49,6 +49,18 @@ features the canton of Zurich's web design system prescribes for Inter,
 plus tabular figures. The licence is reproduced in full at the top of the
 file; as Inter declares no Reserved Font Name, the subset keeps the name.
 
+### Roboto Slab
+
+- **File:** `scm-lib/libraries/scm-fonts-roboto-slab.sld`
+- **Source:** Roboto Slab 2.002, Regular and Bold, <https://github.com/googlefonts/robotoslab>
+- **Author:** The Roboto Slab Project Authors (Christian Robertson)
+- **License:** Apache License 2.0; Roboto Slab is a trademark of Google
+
+The glyph outlines, advances and GPOS kerning of those of the DejaVu
+subset's characters the fonts have (Roboto Slab has no arrows and only
+some superscript digits), extracted by `notes/gen-font.scm roboto-slab`.
+The licence is reproduced in full at the top of the file.
+
 ### Rasterization algorithm
 
 - **File:** `scm-lib/libraries/scm-raster.sld`
