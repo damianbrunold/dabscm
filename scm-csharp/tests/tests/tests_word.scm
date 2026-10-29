@@ -5,7 +5,8 @@
         (scm fs)
         (scm zip)
         (scm ooxml word)
-        (scm ooxml word-reader))
+        (scm ooxml word-reader)
+        (srfi 13))
 
 (test-runner-factory scm-test-runner)
 
@@ -373,5 +374,35 @@
     (test-equal #f (paragraph-heading-level (list-ref paras 2)))
     (test-equal '("Kapitel" "Abschnitt")
                 (map paragraph-text (document-headings rdoc)))))
+
+;; ── Document properties (docProps) ──────────────────────────────────────
+
+(test-group "docprops-document"
+  (let* ((path (join-path (special-folder-temp) "test-scm-word-dp.docx"))
+         (doc  (make-document))
+         (p    (document-add-paragraph! doc)))
+    (paragraph-add-run! p "hello")
+    (document-set-properties! doc '((category . "Intern")
+                                    (custom ("Klassifizierung" . "Intern"))))
+    (document-save doc path)
+    (call-with-input-zip path
+      (lambda (z)
+        (let ((core (utf8->string (zip-read-entry-bytevector z "docProps/core.xml")))
+              (cust (utf8->string (zip-read-entry-bytevector z "docProps/custom.xml")))
+              (rels (utf8->string (zip-read-entry-bytevector z "_rels/.rels")))
+              (ct   (utf8->string (zip-read-entry-bytevector z "[Content_Types].xml"))))
+          (test-assert (string-contains core "<cp:category>Intern</cp:category>"))
+          (test-assert (string-contains cust "Klassifizierung"))
+          (test-assert (string-contains rels "docProps/core.xml"))
+          (test-assert (string-contains ct "custom-properties+xml")))))))
+
+(test-group "docprops-document-none"
+  (let ((path (join-path (special-folder-temp) "test-scm-word-dp0.docx"))
+        (doc  (make-document)))
+    (document-add-paragraph! doc)
+    (document-save doc path)
+    (call-with-input-zip path
+      (lambda (z)
+        (test-equal #f (member "docProps/core.xml" (zip-entry-names z)))))))
 
 (test-end "word")

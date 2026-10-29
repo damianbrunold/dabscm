@@ -119,6 +119,7 @@
 | [`(scm net websocket)`](libraries/scm-net-websocket.md) | WebSocket client and server — also in HTTP servers via http-websocket-upgrade |
 | [`(scm odf spreadsheet)`](libraries/scm-odf-spreadsheet.md) | ODF spreadsheet creation (ODS format) |
 | [`(scm odf writer)`](libraries/scm-odf-writer.md) | ODF text document creation (ODT format) |
+| [`(scm ooxml docprops)`](libraries/scm-ooxml-docprops.md) | Document properties (docProps) for XLSX/DOCX |
 | [`(scm ooxml excel-reader)`](libraries/scm-ooxml-excel-reader.md) | Excel workbook reading (OOXML/XLSX format) |
 | [`(scm ooxml excel template)`](libraries/scm-ooxml-excel-template.md) |  |
 | [`(scm ooxml excel)`](libraries/scm-ooxml-excel.md) | Excel workbook and worksheet creation (OOXML/XLSX format) |

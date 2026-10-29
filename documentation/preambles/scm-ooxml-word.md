@@ -23,3 +23,6 @@ tables/images/headings, and save. To read existing documents, see
 the flags `bold`, `italic`, `underline`. Headings come from
 `document-add-heading!`, reusable styles from `document-define-style!`, and
 `document-save-to-bytevector` returns the file as bytes.
+
+Document properties (title, category, keywords, custom properties such as a
+classification) go into `docProps/` via `document-set-properties!`.

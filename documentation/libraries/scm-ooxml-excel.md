@@ -27,6 +27,11 @@ argument is a style index (`#f` for none). Create styles with `make-style` /
 `workbook-add-style`, set column widths and row heights, and add autofilters.
 `workbook-save-to-bytevector` returns the file as bytes.
 
+Document properties (title, category, keywords, custom properties such as a
+classification) go into `docProps/` via `workbook-set-properties!`; the streaming
+writers take them as an optional argument (`open-streaming-table`,
+`open-streaming-workbook`) or through the wb-proxy.
+
 
 ## Exports
 
@@ -118,11 +123,12 @@ Example:
 ### `open-streaming-table`
 
 ```
-Syntax: (open-streaming-table filename sheet-name num-cols)
+Syntax: (open-streaming-table filename sheet-name num-cols [props])
 Library: (scm ooxml excel)
 Description: Opens a new single-sheet streaming table workbook. num-cols is
 the number of columns per row. Returns a pair (st . close-proc) where st is
 a streaming table and close-proc must be called exactly once to finalize.
+The optional props are document properties as for workbook-set-properties!.
 Example:
   (let* ((handle (open-streaming-table "/tmp/out.xlsx" "Sheet1" 3))
          (st     (car handle))
@@ -134,9 +140,10 @@ Example:
 ### `open-streaming-workbook`
 
 ```
-Syntax: (open-streaming-workbook filename sheet-name)
+Syntax: (open-streaming-workbook filename sheet-name [props])
 Library: (scm ooxml excel)
 Description: Opens a new single-sheet streaming workbook writing to filename.
+The optional props are document properties as for workbook-set-properties!.
 Returns a pair (sws . close-proc) where sws is a streaming worksheet and
 close-proc is a zero-argument procedure that finalizes and closes the XLSX file.
 close-proc must be called exactly once when all data has been written. Cells
@@ -303,6 +310,23 @@ Example:
          (ws (workbook-add-worksheet! wb "Data")))
     (worksheet-set-cell! ws "A1" "hello" 'string #f)
     (workbook-save-to-bytevector wb))
+```
+
+### `workbook-set-properties!`
+
+```
+Syntax: (workbook-set-properties! wb props)
+Library: (scm ooxml excel)
+Description: Sets the document properties written to docProps/core.xml and
+docProps/custom.xml. props is an alist: title, subject, creator, keywords,
+description and category map to strings; custom maps to an alist of
+(name . value) strings (custom properties, e.g. a classification). Works for
+workbooks and for the wb-proxy of call-with-streaming-table /
+call-with-streaming-workbook. Without properties no docProps parts are written.
+Example:
+  (workbook-set-properties! wb
+    '((category . "Intern")
+      (custom ("Klassifizierung" . "Intern"))))
 ```
 
 ### `workbook-styles`

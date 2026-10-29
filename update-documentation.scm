@@ -131,6 +131,7 @@
     ((scm ooxml excel)        . "Excel workbook and worksheet creation (OOXML/XLSX format)")
     ((scm ooxml excel-reader) . "Excel workbook reading (OOXML/XLSX format)")
     ((scm ooxml word)          . "Word document creation (OOXML/DOCX format)")
+    ((scm ooxml docprops)      . "Document properties (docProps) for XLSX/DOCX")
     ((scm ooxml word-reader)  . "Word document text reading (OOXML/DOCX format)")
     ((scm pdf)                . "PDF document creation — pages, drawing, fonts, text flow, TTF embedding, images, links, outlines")
     ((scm image)              . "Image decoding (PNG, JPEG), resizing, cropping, EXIF orientation, PNG and JPEG encoding")

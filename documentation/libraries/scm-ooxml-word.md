@@ -28,6 +28,9 @@ the flags `bold`, `italic`, `underline`. Headings come from
 `document-add-heading!`, reusable styles from `document-define-style!`, and
 `document-save-to-bytevector` returns the file as bytes.
 
+Document properties (title, category, keywords, custom properties such as a
+classification) go into `docProps/` via `document-set-properties!`.
+
 
 ## Exports
 
@@ -189,6 +192,22 @@ Description: Sets the page size for the document. size may be a symbol
 Example:
   (document-set-page-size! doc 'a5)
   (document-set-page-size! doc '(8391 . 11906))
+```
+
+### `document-set-properties!`
+
+```
+Syntax: (document-set-properties! doc props)
+Library: (scm ooxml word)
+Description: Sets the document properties written to docProps/core.xml and
+docProps/custom.xml. props is an alist: title, subject, creator, keywords,
+description and category map to strings; custom maps to an alist of
+(name . value) strings (custom properties, e.g. a classification). Without
+properties no docProps parts are written.
+Example:
+  (document-set-properties! doc
+    '((category . "Intern")
+      (custom ("Klassifizierung" . "Intern"))))
 ```
 
 ### `make-document`

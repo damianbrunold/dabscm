@@ -44,16 +44,17 @@
   <a href="#e19" data-name="workbook-add-worksheet!">workbook-add-worksheet!</a>
   <a href="#e20" data-name="workbook-save">workbook-save</a>
   <a href="#e21" data-name="workbook-save-to-bytevector">workbook-save-to-bytevector</a>
-  <a href="#e22" data-name="workbook-styles">workbook-styles</a>
-  <a href="#e23" data-name="worksheet-add-image!">worksheet-add-image!</a>
-  <a href="#e24" data-name="worksheet-freeze-panes!">worksheet-freeze-panes!</a>
-  <a href="#e25" data-name="worksheet-merge-cells!">worksheet-merge-cells!</a>
-  <a href="#e26" data-name="worksheet-set-autofilter!">worksheet-set-autofilter!</a>
-  <a href="#e27" data-name="worksheet-set-autofilter-column!">worksheet-set-autofilter-column!</a>
-  <a href="#e28" data-name="worksheet-set-cell!">worksheet-set-cell!</a>
-  <a href="#e29" data-name="worksheet-set-col-width!">worksheet-set-col-width!</a>
-  <a href="#e30" data-name="worksheet-set-row-height!">worksheet-set-row-height!</a>
-  <a href="#e31" data-name="worksheet-set-row-hidden!">worksheet-set-row-hidden!</a>
+  <a href="#e22" data-name="workbook-set-properties!">workbook-set-properties!</a>
+  <a href="#e23" data-name="workbook-styles">workbook-styles</a>
+  <a href="#e24" data-name="worksheet-add-image!">worksheet-add-image!</a>
+  <a href="#e25" data-name="worksheet-freeze-panes!">worksheet-freeze-panes!</a>
+  <a href="#e26" data-name="worksheet-merge-cells!">worksheet-merge-cells!</a>
+  <a href="#e27" data-name="worksheet-set-autofilter!">worksheet-set-autofilter!</a>
+  <a href="#e28" data-name="worksheet-set-autofilter-column!">worksheet-set-autofilter-column!</a>
+  <a href="#e29" data-name="worksheet-set-cell!">worksheet-set-cell!</a>
+  <a href="#e30" data-name="worksheet-set-col-width!">worksheet-set-col-width!</a>
+  <a href="#e31" data-name="worksheet-set-row-height!">worksheet-set-row-height!</a>
+  <a href="#e32" data-name="worksheet-set-row-hidden!">worksheet-set-row-hidden!</a>
 </nav>
 
 <main>
@@ -82,9 +83,10 @@
 
 (workbook-save wb "report.xlsx")</code></pre>
 <p>Cells are addressed in A1 notation; the type is <code>'string</code> or <code>'num</code>, and the last argument is a style index (<code>#f</code> for none). Create styles with <a class="xref" href="#e4"><code>make-style</code></a> / <a class="xref" href="#e18"><code>workbook-add-style</code></a>, set column widths and row heights, and add autofilters. <a class="xref" href="#e21"><code>workbook-save-to-bytevector</code></a> returns the file as bytes.</p>
+<p>Document properties (title, category, keywords, custom properties such as a classification) go into <code>docProps/</code> via <a class="xref" href="#e22"><code>workbook-set-properties!</code></a>; the streaming writers take them as an optional argument (<a class="xref" href="#e6"><code>open-streaming-table</code></a>, <a class="xref" href="#e7"><code>open-streaming-workbook</code></a>) or through the wb-proxy.</p>
 </div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
-<p class="export-count">32 bindings</p>
+<p class="export-count">33 bindings</p>
 
 <div class="entry" id="e0" data-name="call-with-streaming-table">
   <div class="entry-name">call-with-streaming-table</div>
@@ -161,11 +163,12 @@ Example:
 </div>
 <div class="entry" id="e6" data-name="open-streaming-table">
   <div class="entry-name">open-streaming-table</div>
-  <pre class="entry-doc">Syntax: (open-streaming-table filename sheet-name num-cols)
+  <pre class="entry-doc">Syntax: (open-streaming-table filename sheet-name num-cols [props])
 Library: (scm ooxml excel)
 Description: Opens a new single-sheet streaming table workbook. num-cols is
 the number of columns per row. Returns a pair (st . close-proc) where st is
 a streaming table and close-proc must be called exactly once to finalize.
+The optional props are document properties as for workbook-set-properties!.
 Example:
   (let* ((handle (open-streaming-table "/tmp/out.xlsx" "Sheet1" 3))
          (st     (car handle))
@@ -175,9 +178,10 @@ Example:
 </div>
 <div class="entry" id="e7" data-name="open-streaming-workbook">
   <div class="entry-name">open-streaming-workbook</div>
-  <pre class="entry-doc">Syntax: (open-streaming-workbook filename sheet-name)
+  <pre class="entry-doc">Syntax: (open-streaming-workbook filename sheet-name [props])
 Library: (scm ooxml excel)
 Description: Opens a new single-sheet streaming workbook writing to filename.
+The optional props are document properties as for workbook-set-properties!.
 Returns a pair (sws . close-proc) where sws is a streaming worksheet and
 close-proc is a zero-argument procedure that finalizes and closes the XLSX file.
 close-proc must be called exactly once when all data has been written. Cells
@@ -317,7 +321,22 @@ Example:
     (worksheet-set-cell! ws "A1" "hello" 'string #f)
     (workbook-save-to-bytevector wb))</pre>
 </div>
-<div class="entry" id="e22" data-name="workbook-styles">
+<div class="entry" id="e22" data-name="workbook-set-properties!">
+  <div class="entry-name">workbook-set-properties!</div>
+  <pre class="entry-doc">Syntax: (workbook-set-properties! wb props)
+Library: (scm ooxml excel)
+Description: Sets the document properties written to docProps/core.xml and
+docProps/custom.xml. props is an alist: title, subject, creator, keywords,
+description and category map to strings; custom maps to an alist of
+(name . value) strings (custom properties, e.g. a classification). Works for
+workbooks and for the wb-proxy of call-with-streaming-table /
+call-with-streaming-workbook. Without properties no docProps parts are written.
+Example:
+  (workbook-set-properties! wb
+    '((category . "Intern")
+      (custom ("Klassifizierung" . "Intern"))))</pre>
+</div>
+<div class="entry" id="e23" data-name="workbook-styles">
   <div class="entry-name">workbook-styles</div>
   <pre class="entry-doc">Syntax: (workbook-styles wb)
 Library: (scm ooxml excel)
@@ -327,7 +346,7 @@ workbook-add-style.
 Example:
   ((workbook-styles wb) 'styles-count) =&gt; 0</pre>
 </div>
-<div class="entry" id="e23" data-name="worksheet-add-image!">
+<div class="entry" id="e24" data-name="worksheet-add-image!">
   <div class="entry-name">worksheet-add-image!</div>
   <pre class="entry-doc">Syntax: (worksheet-add-image! ws cell bytes ext width-px height-px)
 Library: (scm ooxml excel)
@@ -338,7 +357,7 @@ display size in pixels. Only supported on regular (non-streaming) worksheets.
 Example:
   (worksheet-add-image! ws "A1" png-bytes "png" 120 60)</pre>
 </div>
-<div class="entry" id="e24" data-name="worksheet-freeze-panes!">
+<div class="entry" id="e25" data-name="worksheet-freeze-panes!">
   <div class="entry-name">worksheet-freeze-panes!</div>
   <pre class="entry-doc">Syntax: (worksheet-freeze-panes! ws cell)
 Library: (scm ooxml excel)
@@ -349,7 +368,7 @@ A1-notation cell string: "A4" freezes the top 3 rows; "B1" freezes column A;
 Example:
   (worksheet-freeze-panes! ws "A4")</pre>
 </div>
-<div class="entry" id="e25" data-name="worksheet-merge-cells!">
+<div class="entry" id="e26" data-name="worksheet-merge-cells!">
   <div class="entry-name">worksheet-merge-cells!</div>
   <pre class="entry-doc">Syntax: (worksheet-merge-cells! ws ref)
 Library: (scm ooxml excel)
@@ -359,7 +378,7 @@ across the merged area. Works for both regular and streaming worksheets.
 Example:
   (worksheet-merge-cells! ws "A2:G2")</pre>
 </div>
-<div class="entry" id="e26" data-name="worksheet-set-autofilter!">
+<div class="entry" id="e27" data-name="worksheet-set-autofilter!">
   <div class="entry-name">worksheet-set-autofilter!</div>
   <pre class="entry-doc">Syntax: (worksheet-set-autofilter! ws ref)
 Library: (scm ooxml excel)
@@ -368,7 +387,7 @@ an A1-notation range string. Works for both regular and streaming worksheets.
 Example:
   (worksheet-set-autofilter! ws "A1:E1")</pre>
 </div>
-<div class="entry" id="e27" data-name="worksheet-set-autofilter-column!">
+<div class="entry" id="e28" data-name="worksheet-set-autofilter-column!">
   <div class="entry-name">worksheet-set-autofilter-column!</div>
   <pre class="entry-doc">Syntax: (worksheet-set-autofilter-column! ws col-idx values)
 Library: (scm ooxml excel)
@@ -380,7 +399,7 @@ Example:
   (worksheet-set-autofilter! ws "A3:J100")
   (worksheet-set-autofilter-column! ws 0 '("++" "--"))</pre>
 </div>
-<div class="entry" id="e28" data-name="worksheet-set-cell!">
+<div class="entry" id="e29" data-name="worksheet-set-cell!">
   <div class="entry-name">worksheet-set-cell!</div>
   <pre class="entry-doc">Syntax: (worksheet-set-cell! ws id value type style)
 Library: (scm ooxml excel)
@@ -394,7 +413,7 @@ Example:
   (worksheet-set-cell! ws "B2" 42 'num #f)
   (worksheet-set-cell! ws "C3" "hi" 'string my-style)</pre>
 </div>
-<div class="entry" id="e29" data-name="worksheet-set-col-width!">
+<div class="entry" id="e30" data-name="worksheet-set-col-width!">
   <div class="entry-name">worksheet-set-col-width!</div>
   <pre class="entry-doc">Syntax: (worksheet-set-col-width! ws col width)
 Library: (scm ooxml excel)
@@ -404,7 +423,7 @@ Example:
   (worksheet-set-col-width! ws "A" 20)
   (worksheet-set-col-width! ws "B" 12.5)</pre>
 </div>
-<div class="entry" id="e30" data-name="worksheet-set-row-height!">
+<div class="entry" id="e31" data-name="worksheet-set-row-height!">
   <div class="entry-name">worksheet-set-row-height!</div>
   <pre class="entry-doc">Syntax: (worksheet-set-row-height! ws row height)
 Library: (scm ooxml excel)
@@ -413,7 +432,7 @@ ws. Works for both regular and streaming worksheets.
 Example:
   (worksheet-set-row-height! ws 1 30)</pre>
 </div>
-<div class="entry" id="e31" data-name="worksheet-set-row-hidden!">
+<div class="entry" id="e32" data-name="worksheet-set-row-hidden!">
   <div class="entry-name">worksheet-set-row-hidden!</div>
   <pre class="entry-doc">Syntax: (worksheet-set-row-hidden! ws row hidden?)
 Library: (scm ooxml excel)

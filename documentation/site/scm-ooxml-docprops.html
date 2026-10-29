@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm ooxml docprops) — Dabscm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="toc">
+  <h2>Bindings</h2>
+  <a href="#e0" data-name="docprops-content-types">docprops-content-types</a>
+  <a href="#e1" data-name="docprops-parts">docprops-parts</a>
+  <a href="#e2" data-name="docprops-present?">docprops-present?</a>
+  <a href="#e3" data-name="docprops-relationships">docprops-relationships</a>
+  <a href="#e4" data-name="docprops-valid?">docprops-valid?</a>
+</nav>
+
+<main>
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="index.html">All libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="index.html#sec-scm">Scm Extensions</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm ooxml docprops)</span>
+</nav>
+
+<div class="lib-title scm">(scm ooxml docprops)</div>
+<p class="lib-sub">Document properties (docProps) for XLSX/DOCX</p>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">5 bindings</p>
+
+<div class="entry" id="e0" data-name="docprops-content-types">
+  <div class="entry-name">docprops-content-types</div>
+  <pre class="entry-doc">Syntax: (docprops-content-types props)
+Library: (scm ooxml docprops)
+Description: Returns the [Content_Types].xml &lt;Override&gt; elements for the
+docProps parts (empty string when nothing is set).
+Example:
+  (docprops-content-types '()) =&gt; ""</pre>
+</div>
+<div class="entry" id="e1" data-name="docprops-parts">
+  <div class="entry-name">docprops-parts</div>
+  <pre class="entry-doc">Syntax: (docprops-parts props)
+Library: (scm ooxml docprops)
+Description: Returns a list of (part-name . xml-string) for the docProps parts
+to add to the package; '() when nothing is set.
+Example:
+  (map car (docprops-parts '((category . "Intern"))))
+    =&gt; ("docProps/core.xml" "docProps/app.xml")</pre>
+</div>
+<div class="entry" id="e2" data-name="docprops-present?">
+  <div class="entry-name">docprops-present?</div>
+  <pre class="entry-doc">Syntax: (docprops-present? props)
+Library: (scm ooxml docprops)
+Description: Returns #t when props (an alist, or #f) carries at least one
+core or custom property, i.e. when docProps parts are written.
+Example:
+  (docprops-present? '()) =&gt; #f</pre>
+</div>
+<div class="entry" id="e3" data-name="docprops-relationships">
+  <div class="entry-name">docprops-relationships</div>
+  <pre class="entry-doc">Syntax: (docprops-relationships props)
+Library: (scm ooxml docprops)
+Description: Returns the &lt;Relationship&gt; elements for the package _rels/.rels
+pointing at the docProps parts (empty string when nothing is set).
+Example:
+  (docprops-relationships '()) =&gt; ""</pre>
+</div>
+<div class="entry" id="e4" data-name="docprops-valid?">
+  <div class="entry-name">docprops-valid?</div>
+  <pre class="entry-doc">Syntax: (docprops-valid? props)
+Library: (scm ooxml docprops)
+Description: Returns #t when props is a properties alist accepted by
+workbook-set-properties! / document-set-properties!: keys title, subject,
+creator, keywords, description, category map to strings; custom maps to an
+alist of (name . value) strings.
+Example:
+  (docprops-valid? '((category . "Intern"))) =&gt; #t</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

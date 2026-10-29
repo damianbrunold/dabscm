@@ -415,4 +415,68 @@
           (test-equal #t (and (string-contains sheet
                                 "<drawing r:id=\"rId1\"/>") #t)))))))
 
+;; ── Document properties (docProps) ──────────────────────────────────────
+
+(define (zip-text path name)
+  (call-with-input-zip path
+    (lambda (z) (utf8->string (zip-read-entry-bytevector z name)))))
+
+(define (zip-names path)
+  (call-with-input-zip path (lambda (z) (zip-entry-names z))))
+
+(define dp-props
+  '((title . "T & co") (category . "Öffentlich")
+    (custom ("Klassifizierung" . "Öffentlich"))))
+
+;; no properties: package is unchanged (no docProps parts)
+(test-group "docprops-none"
+  (let* ((path (join-path (special-folder-temp) "test-scm-excel-dp0.xlsx"))
+         (wb   (make-workbook))
+         (ws   (workbook-add-worksheet! wb "Data")))
+    (worksheet-set-cell! ws "A1" "x" 'string #f)
+    (workbook-save wb path)
+    (test-equal #f (member "docProps/core.xml" (zip-names path)))
+    (test-equal #f (string-contains (zip-text path "_rels/.rels") "docProps"))))
+
+;; workbook-set-properties!: core + app + custom parts, rels and overrides
+(test-group "docprops-workbook"
+  (let* ((path (join-path (special-folder-temp) "test-scm-excel-dp.xlsx"))
+         (wb   (make-workbook))
+         (ws   (workbook-add-worksheet! wb "Data")))
+    (worksheet-set-cell! ws "A1" "x" 'string #f)
+    (workbook-set-properties! wb dp-props)
+    (workbook-save wb path)
+    (let ((names (zip-names path))
+          (core  (zip-text path "docProps/core.xml"))
+          (cust  (zip-text path "docProps/custom.xml"))
+          (rels  (zip-text path "_rels/.rels"))
+          (ct    (zip-text path "[Content_Types].xml")))
+      (test-assert (member "docProps/app.xml" names))
+      (test-assert (string-contains core "<dc:title>T &amp; co</dc:title>"))
+      (test-assert (string-contains core "<cp:category>Öffentlich</cp:category>"))
+      (test-assert (string-contains cust "name=\"Klassifizierung\"><vt:lpwstr>Öffentlich</vt:lpwstr>"))
+      (test-assert (string-contains rels "docProps/custom.xml"))
+      (test-assert (string-contains ct "/docProps/core.xml")))
+    ;; still readable
+    (test-equal "x" (sheet-ref (workbook-sheet (read-workbook path) 0) 1 1))))
+
+;; streaming writers: proxy setter and optional open-* argument
+(test-group "docprops-streaming"
+  (let ((p1 (join-path (special-folder-temp) "test-scm-excel-dp-st1.xlsx"))
+        (p2 (join-path (special-folder-temp) "test-scm-excel-dp-st2.xlsx")))
+    (call-with-streaming-table p1 "Data" 1
+      (lambda (wb st)
+        (workbook-set-properties! wb dp-props)
+        (streaming-table-write-row! st '("x"))))
+    (test-assert (string-contains (zip-text p1 "docProps/custom.xml") "Klassifizierung"))
+    (let ((h (open-streaming-table p2 "Data" 1 dp-props)))
+      (streaming-table-write-row! (car h) '("y"))
+      ((cdr h)))
+    (test-assert (string-contains (zip-text p2 "docProps/core.xml") "Öffentlich"))
+    (test-equal "y" (sheet-ref (workbook-sheet (read-workbook p2) 0) 1 1))))
+
+;; invalid properties are rejected
+(test-group "docprops-invalid"
+  (test-error (workbook-set-properties! (make-workbook) '((bogus . "x")))))
+
 (test-end "excel")

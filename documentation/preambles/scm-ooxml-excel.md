@@ -22,3 +22,8 @@ Cells are addressed in A1 notation; the type is `'string` or `'num`, and the las
 argument is a style index (`#f` for none). Create styles with `make-style` /
 `workbook-add-style`, set column widths and row heights, and add autofilters.
 `workbook-save-to-bytevector` returns the file as bytes.
+
+Document properties (title, category, keywords, custom properties such as a
+classification) go into `docProps/` via `workbook-set-properties!`; the streaming
+writers take them as an optional argument (`open-streaming-table`,
+`open-streaming-workbook`) or through the wb-proxy.

@@ -1,5 +1,6 @@
 (define-library (scm ooxml excel)
   (export make-workbook
+          workbook-set-properties!
           workbook-add-worksheet!
           workbook-styles
           worksheet-set-cell!
@@ -41,6 +42,7 @@
           (srfi 132)
           (scm list)
           (scm macro)
+          (scm ooxml docprops)
           (scm zip))
 
   (begin
@@ -257,7 +259,30 @@ Example:
       (vector 'wb
               (make-shared-strings)
               (make-styles)
-              '())) ;; worksheets
+              '()    ;; worksheets
+              '()))  ;; document properties
+
+    (define (workbook-properties wb)
+      (if (> (vector-length wb) 4) (vector-ref wb 4) '()))
+
+    (define (workbook-set-properties! wb props)
+      "Syntax: (workbook-set-properties! wb props)
+Library: (scm ooxml excel)
+Description: Sets the document properties written to docProps/core.xml and
+docProps/custom.xml. props is an alist: title, subject, creator, keywords,
+description and category map to strings; custom maps to an alist of
+(name . value) strings (custom properties, e.g. a classification). Works for
+workbooks and for the wb-proxy of call-with-streaming-table /
+call-with-streaming-workbook. Without properties no docProps parts are written.
+Example:
+  (workbook-set-properties! wb
+    '((category . \"Intern\")
+      (custom (\"Klassifizierung\" . \"Intern\"))))"
+      (unless (docprops-valid? props)
+        (error "workbook-set-properties!: invalid properties" props))
+      (if (procedure? wb)
+          (wb 'set-properties! props)
+          (vector-set! wb 4 props)))
 
     (define (workbook-shared-strings wb) (vector-ref wb 1))
     (define (workbook-styles wb)
@@ -361,9 +386,11 @@ Example:
           (flush-output-port p)))
       (let ((plan (collect-image-plan wb)))
         (add-zip-entry "_rels/.rels"
-                       (render-rels))
+                       (render-rels (workbook-properties wb)))
         (add-zip-entry "[Content_Types].xml"
-                       (render-content-types wb plan))
+                       (render-content-types wb plan (workbook-properties wb)))
+        (for-each (lambda (e) (add-zip-entry (car e) (cdr e)))
+                  (docprops-parts (workbook-properties wb)))
         (add-zip-entry "xl/_rels/workbook.xml.rels"
                        (render-wb-rels wb))
         (add-zip-entry "xl/workbook.xml"
@@ -1041,7 +1068,7 @@ Example:
                        (xml-escape v))))
            (display "</sst>" port)))))
 
-    (define (render-rels)
+    (define (render-rels . opt-props)
       (call-with-output-string
        (lambda (port)
          (display xml-preamble port)
@@ -1049,6 +1076,8 @@ Example:
          (format port "<Relationship Id=\"rId1\" Type=\"~a\" Target=\"~a\"/>"
                  (rel-type 'office-doc)
                  "xl/workbook.xml")
+         (when (pair? opt-props)
+           (display (docprops-relationships (car opt-props)) port))
          (display "</Relationships>" port))))
 
     (define (image-ext-content-type ext)
@@ -1058,7 +1087,7 @@ Example:
             ((string=? ext "gif")  "image/gif")
             (else "application/octet-stream")))
 
-    (define (render-content-types wb plan)
+    (define (render-content-types wb plan . opt-props)
       (let ((sheets (workbook-worksheets wb))
             (img-exts '()))
         ;; collect distinct image extensions across the plan
@@ -1102,6 +1131,8 @@ Example:
            (format port "<Override PartName=\"~a\" ContentType=\"~a\"/>"
                    "/xl/sharedStrings.xml"
                    (content-type 'shared-strings))
+           (when (pair? opt-props)
+             (display (docprops-content-types (car opt-props)) port))
            (display "</Types>" port)))))
 
     (define (render-wb-rels wb)
@@ -1390,9 +1421,11 @@ Example:
       (streaming-table-write-row! st '(\"Alice\" 30 \"Bern\"))))"
       (let* ((ss      (make-shared-strings))
              (styles  (make-styles))
+             (props   '())
              (wb-proxy (lambda (action . args)
                          (case action
-                           ((styles) styles)))))
+                           ((styles) styles)
+                           ((set-properties!) (set! props (car args)))))))
         (call-with-output-zip filename
           (lambda (zp)
             (define (add-zip-entry zname contents)
@@ -1409,8 +1442,10 @@ Example:
               0)
             (let* ((fake-ws (vector 'ws name 1 #f #f #f #f #f))
                    (fake-wb (vector 'wb ss styles (list fake-ws))))
-              (add-zip-entry "_rels/.rels"                (render-rels))
-              (add-zip-entry "[Content_Types].xml"        (render-content-types fake-wb (quote ())))
+              (add-zip-entry "_rels/.rels"                (render-rels props))
+              (add-zip-entry "[Content_Types].xml"        (render-content-types fake-wb (quote ()) props))
+              (for-each (lambda (e) (add-zip-entry (car e) (cdr e)))
+                        (docprops-parts props))
               (add-zip-entry "xl/_rels/workbook.xml.rels" (render-wb-rels fake-wb))
               (add-zip-entry "xl/workbook.xml"            (render-workbook fake-wb))
               (add-zip-entry "xl/sharedStrings.xml"       (shared-strings-render ss))
@@ -1418,12 +1453,13 @@ Example:
                 (add-zip-entry "xl/styles.xml"            (styles 'render))))))
         'ok))
 
-    (define (open-streaming-table filename sheet-name num-cols)
-      "Syntax: (open-streaming-table filename sheet-name num-cols)
+    (define (open-streaming-table filename sheet-name num-cols . opt-props)
+      "Syntax: (open-streaming-table filename sheet-name num-cols [props])
 Library: (scm ooxml excel)
 Description: Opens a new single-sheet streaming table workbook. num-cols is
 the number of columns per row. Returns a pair (st . close-proc) where st is
 a streaming table and close-proc must be called exactly once to finalize.
+The optional props are document properties as for workbook-set-properties!.
 Example:
   (let* ((handle (open-streaming-table \"/tmp/out.xlsx\" \"Sheet1\" 3))
          (st     (car handle))
@@ -1432,6 +1468,9 @@ Example:
     (done!))"
       (let* ((ss         (make-shared-strings))
              (styles     (make-styles))
+             (props      (if (pair? opt-props) (car opt-props) '()))
+             (_          (unless (docprops-valid? props)
+                           (error "invalid document properties" props)))
              (zp         (open-output-zip-file filename))
              (sheet-port (zip-add-text-entry zp "xl/worksheets/sheet1.xml" 0)))
         (display xml-preamble sheet-port)
@@ -1447,11 +1486,13 @@ Example:
                                 (let ((p (zip-add-text-entry zp (car pair) 0)))
                                   (display (cdr pair) p)
                                   (flush-output-port p)))
-                              (list (cons "_rels/.rels"                (render-rels))
-                                    (cons "[Content_Types].xml"        (render-content-types fake-wb (quote ())))
-                                    (cons "xl/_rels/workbook.xml.rels" (render-wb-rels fake-wb))
-                                    (cons "xl/workbook.xml"            (render-workbook fake-wb))
-                                    (cons "xl/sharedStrings.xml"       (shared-strings-render ss))))
+                              (append
+                               (list (cons "_rels/.rels"                (render-rels props))
+                                     (cons "[Content_Types].xml"        (render-content-types fake-wb (quote ()) props))
+                                     (cons "xl/_rels/workbook.xml.rels" (render-wb-rels fake-wb))
+                                     (cons "xl/workbook.xml"            (render-workbook fake-wb))
+                                     (cons "xl/sharedStrings.xml"       (shared-strings-render ss)))
+                               (docprops-parts props)))
                     (when (> (styles 'styles-count) 0)
                       (let ((p (zip-add-text-entry zp "xl/styles.xml" 0)))
                         (display (styles 'render) p)
@@ -1488,9 +1529,11 @@ Example:
         (worksheet-set-cell! sws \"A2\" \"Alice\" 'string #f))))"
       (let* ((ss      (make-shared-strings))
              (styles  (make-styles))
+             (props   '())
              (wb-proxy (lambda (action . args)
                          (case action
-                           ((styles) styles)))))
+                           ((styles) styles)
+                           ((set-properties!) (set! props (car args)))))))
         (call-with-output-zip filename
           (lambda (zp)
             (define (add-zip-entry zname contents)
@@ -1507,8 +1550,10 @@ Example:
               0)
             (let* ((fake-ws (vector 'ws name 1 #f #f #f #f #f))
                    (fake-wb (vector 'wb ss styles (list fake-ws))))
-              (add-zip-entry "_rels/.rels"                (render-rels))
-              (add-zip-entry "[Content_Types].xml"        (render-content-types fake-wb (quote ())))
+              (add-zip-entry "_rels/.rels"                (render-rels props))
+              (add-zip-entry "[Content_Types].xml"        (render-content-types fake-wb (quote ()) props))
+              (for-each (lambda (e) (add-zip-entry (car e) (cdr e)))
+                        (docprops-parts props))
               (add-zip-entry "xl/_rels/workbook.xml.rels" (render-wb-rels fake-wb))
               (add-zip-entry "xl/workbook.xml"            (render-workbook fake-wb))
               (add-zip-entry "xl/sharedStrings.xml"       (shared-strings-render ss))
@@ -1516,10 +1561,11 @@ Example:
                 (add-zip-entry "xl/styles.xml"            (styles 'render))))))
         'ok))
 
-    (define (open-streaming-workbook filename sheet-name)
-      "Syntax: (open-streaming-workbook filename sheet-name)
+    (define (open-streaming-workbook filename sheet-name . opt-props)
+      "Syntax: (open-streaming-workbook filename sheet-name [props])
 Library: (scm ooxml excel)
 Description: Opens a new single-sheet streaming workbook writing to filename.
+The optional props are document properties as for workbook-set-properties!.
 Returns a pair (sws . close-proc) where sws is a streaming worksheet and
 close-proc is a zero-argument procedure that finalizes and closes the XLSX file.
 close-proc must be called exactly once when all data has been written. Cells
@@ -1532,6 +1578,9 @@ Example:
     (done!))"
       (let* ((ss         (make-shared-strings))
              (styles     (make-styles))
+             (props      (if (pair? opt-props) (car opt-props) '()))
+             (_          (unless (docprops-valid? props)
+                           (error "invalid document properties" props)))
              (zp         (open-output-zip-file filename))
              (sheet-port (zip-add-text-entry zp "xl/worksheets/sheet1.xml" 0)))
         (display xml-preamble sheet-port)
@@ -1547,11 +1596,13 @@ Example:
                                 (let ((p (zip-add-text-entry zp (car pair) 0)))
                                   (display (cdr pair) p)
                                   (flush-output-port p)))
-                              (list (cons "_rels/.rels"                (render-rels))
-                                    (cons "[Content_Types].xml"        (render-content-types fake-wb (quote ())))
-                                    (cons "xl/_rels/workbook.xml.rels" (render-wb-rels fake-wb))
-                                    (cons "xl/workbook.xml"            (render-workbook fake-wb))
-                                    (cons "xl/sharedStrings.xml"       (shared-strings-render ss))))
+                              (append
+                               (list (cons "_rels/.rels"                (render-rels props))
+                                     (cons "[Content_Types].xml"        (render-content-types fake-wb (quote ()) props))
+                                     (cons "xl/_rels/workbook.xml.rels" (render-wb-rels fake-wb))
+                                     (cons "xl/workbook.xml"            (render-workbook fake-wb))
+                                     (cons "xl/sharedStrings.xml"       (shared-strings-render ss)))
+                               (docprops-parts props)))
                     (when (> (styles 'styles-count) 0)
                       (let ((p (zip-add-text-entry zp "xl/styles.xml" 0)))
                         (display (styles 'render) p)

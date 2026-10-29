@@ -28,6 +28,7 @@
           document-set-page-size!
           document-set-header!
           document-set-footer!
+          document-set-properties!
           paragraph-add-page-number!)
   (import (scheme base)
           (scheme cxr)
@@ -36,6 +37,7 @@
           (scm compile)
           (scm io)
           (scm macro)
+          (scm ooxml docprops)
           (scm zip))
 
   (begin
@@ -144,8 +146,8 @@ Example:
             ((get) (vector font-name font-size bold italic underline color))))))
 
     ;; ── Document data structure ───────────────────────────────────────────────
-    ;; (vector 'doc paragraphs named-styles images next-image-id page-size header footer)
-    ;;               1          2             3      4             5         6      7
+    ;; (vector 'doc paragraphs named-styles images next-image-id page-size header footer props)
+    ;;               1          2             3      4             5         6      7      8
 
     (define (make-document)
       "Syntax: (make-document)
@@ -155,7 +157,7 @@ Example:
   (let ((doc (make-document)))
     (document-add-paragraph! doc)
     (document-save doc \"out.docx\"))"
-      (vector 'doc '() '() '() 2 #f #f #f))
+      (vector 'doc '() '() '() 2 #f #f #f '()))
 
     (define (doc-paragraphs doc)       (vector-ref doc 1))
     (define (doc-named-styles doc)     (vector-ref doc 2))
@@ -171,6 +173,23 @@ Example:
     (define (doc-set-page-size! doc v)     (vector-set! doc 5 v))
     (define (doc-set-header*! doc v)       (vector-set! doc 6 v))
     (define (doc-set-footer*! doc v)       (vector-set! doc 7 v))
+    (define (doc-properties doc)           (vector-ref doc 8))
+
+    (define (document-set-properties! doc props)
+      "Syntax: (document-set-properties! doc props)
+Library: (scm ooxml word)
+Description: Sets the document properties written to docProps/core.xml and
+docProps/custom.xml. props is an alist: title, subject, creator, keywords,
+description and category map to strings; custom maps to an alist of
+(name . value) strings (custom properties, e.g. a classification). Without
+properties no docProps parts are written.
+Example:
+  (document-set-properties! doc
+    '((category . \"Intern\")
+      (custom (\"Klassifizierung\" . \"Intern\"))))"
+      (unless (docprops-valid? props)
+        (error "document-set-properties!: invalid properties" props))
+      (vector-set! doc 8 props))
 
     ;; ── Paragraph data structure ──────────────────────────────────────────────
     ;; (vector 'para doc style-name alignment spacing tab-stops indent runs outline-level page-break-before)
@@ -907,13 +926,14 @@ Example:
                    (doc-named-styles doc))
          (display "</w:styles>" port))))
 
-    (define (render-rels)
+    (define (render-rels doc)
       (call-with-output-string
        (lambda (port)
          (display xml-preamble port)
          (format port "<Relationships xmlns=\"~a\">" ns-pkg)
          (format port "<Relationship Id=\"rId1\" Type=\"~a/officeDocument\" Target=\"word/document.xml\"/>"
                  ns-rel-base)
+         (display (docprops-relationships (doc-properties doc)) port)
          (display "</Relationships>" port))))
 
     (define (render-content-types doc)
@@ -942,6 +962,7 @@ Example:
                        (format port "<Override PartName=\"/word/media/image~a.~a\" ContentType=\"~a\"/>"
                                img-num ext mime)))
                    (doc-images doc))
+         (display (docprops-content-types (doc-properties doc)) port)
          (display "</Types>" port))))
 
     (define (render-doc-rels doc)
@@ -985,7 +1006,9 @@ Example:
          (lambda (port) (display contents port))
          0))
       (add-entry "_rels/.rels"
-                 (render-rels))
+                 (render-rels doc))
+      (for-each (lambda (e) (add-entry (car e) (cdr e)))
+                (docprops-parts (doc-properties doc)))
       (add-entry "[Content_Types].xml"
                  (render-content-types doc))
       (add-entry "word/_rels/document.xml.rels"

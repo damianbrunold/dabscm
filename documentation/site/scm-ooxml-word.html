@@ -35,23 +35,24 @@
   <a href="#e10" data-name="document-set-footer!">document-set-footer!</a>
   <a href="#e11" data-name="document-set-header!">document-set-header!</a>
   <a href="#e12" data-name="document-set-page-size!">document-set-page-size!</a>
-  <a href="#e13" data-name="make-document">make-document</a>
-  <a href="#e14" data-name="make-run-style">make-run-style</a>
-  <a href="#e15" data-name="paragraph-add-break!">paragraph-add-break!</a>
-  <a href="#e16" data-name="paragraph-add-image!">paragraph-add-image!</a>
-  <a href="#e17" data-name="paragraph-add-index-entry!">paragraph-add-index-entry!</a>
-  <a href="#e18" data-name="paragraph-add-page-number!">paragraph-add-page-number!</a>
-  <a href="#e19" data-name="paragraph-add-run!">paragraph-add-run!</a>
-  <a href="#e20" data-name="paragraph-add-styled-run!">paragraph-add-styled-run!</a>
-  <a href="#e21" data-name="paragraph-add-tab!">paragraph-add-tab!</a>
-  <a href="#e22" data-name="paragraph-set-alignment!">paragraph-set-alignment!</a>
-  <a href="#e23" data-name="paragraph-set-indent!">paragraph-set-indent!</a>
-  <a href="#e24" data-name="paragraph-set-page-break-before!">paragraph-set-page-break-before!</a>
-  <a href="#e25" data-name="paragraph-set-spacing!">paragraph-set-spacing!</a>
-  <a href="#e26" data-name="paragraph-set-style!">paragraph-set-style!</a>
-  <a href="#e27" data-name="paragraph-set-tab-stops!">paragraph-set-tab-stops!</a>
-  <a href="#e28" data-name="register-color!">register-color!</a>
-  <a href="#e29" data-name="resolve-color">resolve-color</a>
+  <a href="#e13" data-name="document-set-properties!">document-set-properties!</a>
+  <a href="#e14" data-name="make-document">make-document</a>
+  <a href="#e15" data-name="make-run-style">make-run-style</a>
+  <a href="#e16" data-name="paragraph-add-break!">paragraph-add-break!</a>
+  <a href="#e17" data-name="paragraph-add-image!">paragraph-add-image!</a>
+  <a href="#e18" data-name="paragraph-add-index-entry!">paragraph-add-index-entry!</a>
+  <a href="#e19" data-name="paragraph-add-page-number!">paragraph-add-page-number!</a>
+  <a href="#e20" data-name="paragraph-add-run!">paragraph-add-run!</a>
+  <a href="#e21" data-name="paragraph-add-styled-run!">paragraph-add-styled-run!</a>
+  <a href="#e22" data-name="paragraph-add-tab!">paragraph-add-tab!</a>
+  <a href="#e23" data-name="paragraph-set-alignment!">paragraph-set-alignment!</a>
+  <a href="#e24" data-name="paragraph-set-indent!">paragraph-set-indent!</a>
+  <a href="#e25" data-name="paragraph-set-page-break-before!">paragraph-set-page-break-before!</a>
+  <a href="#e26" data-name="paragraph-set-spacing!">paragraph-set-spacing!</a>
+  <a href="#e27" data-name="paragraph-set-style!">paragraph-set-style!</a>
+  <a href="#e28" data-name="paragraph-set-tab-stops!">paragraph-set-tab-stops!</a>
+  <a href="#e29" data-name="register-color!">register-color!</a>
+  <a href="#e30" data-name="resolve-color">resolve-color</a>
 </nav>
 
 <main>
@@ -78,10 +79,11 @@
 (paragraph-add-run! p "world" bold size: 14)
 
 (document-save doc "letter.docx")</code></pre>
-<p><a class="xref" href="#e19"><code>paragraph-add-run!</code></a> takes optional formatting: <code>font:</code>, <code>size:</code>, <code>color:</code>, and the flags <code>bold</code>, <code>italic</code>, <code>underline</code>. Headings come from <a class="xref" href="#e1"><code>document-add-heading!</code></a>, reusable styles from <a class="xref" href="#e7"><code>document-define-style!</code></a>, and <a class="xref" href="#e9"><code>document-save-to-bytevector</code></a> returns the file as bytes.</p>
+<p><a class="xref" href="#e20"><code>paragraph-add-run!</code></a> takes optional formatting: <code>font:</code>, <code>size:</code>, <code>color:</code>, and the flags <code>bold</code>, <code>italic</code>, <code>underline</code>. Headings come from <a class="xref" href="#e1"><code>document-add-heading!</code></a>, reusable styles from <a class="xref" href="#e7"><code>document-define-style!</code></a>, and <a class="xref" href="#e9"><code>document-save-to-bytevector</code></a> returns the file as bytes.</p>
+<p>Document properties (title, category, keywords, custom properties such as a classification) go into <code>docProps/</code> via <a class="xref" href="#e13"><code>document-set-properties!</code></a>.</p>
 </div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
-<p class="export-count">30 bindings</p>
+<p class="export-count">31 bindings</p>
 
 <div class="entry" id="e0" data-name="call-with-document">
   <div class="entry-name">call-with-document</div>
@@ -219,7 +221,21 @@ Example:
   (document-set-page-size! doc 'a5)
   (document-set-page-size! doc '(8391 . 11906))</pre>
 </div>
-<div class="entry" id="e13" data-name="make-document">
+<div class="entry" id="e13" data-name="document-set-properties!">
+  <div class="entry-name">document-set-properties!</div>
+  <pre class="entry-doc">Syntax: (document-set-properties! doc props)
+Library: (scm ooxml word)
+Description: Sets the document properties written to docProps/core.xml and
+docProps/custom.xml. props is an alist: title, subject, creator, keywords,
+description and category map to strings; custom maps to an alist of
+(name . value) strings (custom properties, e.g. a classification). Without
+properties no docProps parts are written.
+Example:
+  (document-set-properties! doc
+    '((category . "Intern")
+      (custom ("Klassifizierung" . "Intern"))))</pre>
+</div>
+<div class="entry" id="e14" data-name="make-document">
   <div class="entry-name">make-document</div>
   <pre class="entry-doc">Syntax: (make-document)
 Library: (scm ooxml word)
@@ -229,7 +245,7 @@ Example:
     (document-add-paragraph! doc)
     (document-save doc "out.docx"))</pre>
 </div>
-<div class="entry" id="e14" data-name="make-run-style">
+<div class="entry" id="e15" data-name="make-run-style">
   <div class="entry-name">make-run-style</div>
   <pre class="entry-doc">Syntax: (make-run-style)
 Library: (scm ooxml word)
@@ -241,7 +257,7 @@ Example:
     (rs 'set-color (resolve-color 'red))
     (paragraph-add-styled-run! para "text" rs))</pre>
 </div>
-<div class="entry" id="e15" data-name="paragraph-add-break!">
+<div class="entry" id="e16" data-name="paragraph-add-break!">
   <div class="entry-name">paragraph-add-break!</div>
   <pre class="entry-doc">Syntax: (paragraph-add-break! para)
 Library: (scm ooxml word)
@@ -249,7 +265,7 @@ Description: Adds a line break (w:br) to para.
 Example:
   (paragraph-add-break! para)</pre>
 </div>
-<div class="entry" id="e16" data-name="paragraph-add-image!">
+<div class="entry" id="e17" data-name="paragraph-add-image!">
   <div class="entry-name">paragraph-add-image!</div>
   <pre class="entry-doc">Syntax: (paragraph-add-image! para filename width-pt height-pt)
 Library: (scm ooxml word)
@@ -258,7 +274,7 @@ are the display dimensions in points (1 pt = 12700 EMU).
 Example:
   (paragraph-add-image! para "logo.png" 100 50)</pre>
 </div>
-<div class="entry" id="e17" data-name="paragraph-add-index-entry!">
+<div class="entry" id="e18" data-name="paragraph-add-index-entry!">
   <div class="entry-name">paragraph-add-index-entry!</div>
   <pre class="entry-doc">Syntax: (paragraph-add-index-entry! para term)
 Library: (scm ooxml word)
@@ -268,7 +284,7 @@ Example:
   (paragraph-add-run! para "Scheme is a programming language.")
   (paragraph-add-index-entry! para "Scheme")</pre>
 </div>
-<div class="entry" id="e18" data-name="paragraph-add-page-number!">
+<div class="entry" id="e19" data-name="paragraph-add-page-number!">
   <div class="entry-name">paragraph-add-page-number!</div>
   <pre class="entry-doc">Syntax: (paragraph-add-page-number! para)
 Library: (scm ooxml word)
@@ -279,7 +295,7 @@ Example:
     (paragraph-add-run! p "Page ")
     (paragraph-add-page-number! p))</pre>
 </div>
-<div class="entry" id="e19" data-name="paragraph-add-run!">
+<div class="entry" id="e20" data-name="paragraph-add-run!">
   <div class="entry-name">paragraph-add-run!</div>
   <pre class="entry-doc">Syntax: (paragraph-add-run! para text [font: n] [size: n] [color: c] [bold] [italic] [underline])
 Library: (scm ooxml word)
@@ -289,7 +305,7 @@ Example:
   (paragraph-add-run! para "hello")
   (paragraph-add-run! para "bold red" bold color: 'red)</pre>
 </div>
-<div class="entry" id="e20" data-name="paragraph-add-styled-run!">
+<div class="entry" id="e21" data-name="paragraph-add-styled-run!">
   <div class="entry-name">paragraph-add-styled-run!</div>
   <pre class="entry-doc">Syntax: (paragraph-add-styled-run! para text run-style-or-false)
 Library: (scm ooxml word)
@@ -300,7 +316,7 @@ Example:
   (let ((rs (make-run-style))) (rs 'set-bold #t)
     (paragraph-add-styled-run! para "bold" rs))</pre>
 </div>
-<div class="entry" id="e21" data-name="paragraph-add-tab!">
+<div class="entry" id="e22" data-name="paragraph-add-tab!">
   <div class="entry-name">paragraph-add-tab!</div>
   <pre class="entry-doc">Syntax: (paragraph-add-tab! para)
 Library: (scm ooxml word)
@@ -308,7 +324,7 @@ Description: Adds a tab character to para.
 Example:
   (paragraph-add-tab! para)</pre>
 </div>
-<div class="entry" id="e22" data-name="paragraph-set-alignment!">
+<div class="entry" id="e23" data-name="paragraph-set-alignment!">
   <div class="entry-name">paragraph-set-alignment!</div>
   <pre class="entry-doc">Syntax: (paragraph-set-alignment! para alignment)
 Library: (scm ooxml word)
@@ -317,7 +333,7 @@ Description: Sets the alignment of para. alignment is one of 'left 'center
 Example:
   (paragraph-set-alignment! para 'center)</pre>
 </div>
-<div class="entry" id="e23" data-name="paragraph-set-indent!">
+<div class="entry" id="e24" data-name="paragraph-set-indent!">
   <div class="entry-name">paragraph-set-indent!</div>
   <pre class="entry-doc">Syntax: (paragraph-set-indent! para left-pt [right-pt [first-pt]])
 Library: (scm ooxml word)
@@ -326,7 +342,7 @@ Example:
   (paragraph-set-indent! para 1.0)
   (paragraph-set-indent! para 0.5 0 -0.5)</pre>
 </div>
-<div class="entry" id="e24" data-name="paragraph-set-page-break-before!">
+<div class="entry" id="e25" data-name="paragraph-set-page-break-before!">
   <div class="entry-name">paragraph-set-page-break-before!</div>
   <pre class="entry-doc">Syntax: (paragraph-set-page-break-before! para)
 Library: (scm ooxml word)
@@ -337,7 +353,7 @@ Example:
     (paragraph-set-page-break-before! p)
     (paragraph-add-run! p "New page content"))</pre>
 </div>
-<div class="entry" id="e25" data-name="paragraph-set-spacing!">
+<div class="entry" id="e26" data-name="paragraph-set-spacing!">
   <div class="entry-name">paragraph-set-spacing!</div>
   <pre class="entry-doc">Syntax: (paragraph-set-spacing! para before-pt after-pt [line-pt])
 Library: (scm ooxml word)
@@ -347,7 +363,7 @@ Example:
   (paragraph-set-spacing! para 12 6)
   (paragraph-set-spacing! para 0 0 14)</pre>
 </div>
-<div class="entry" id="e26" data-name="paragraph-set-style!">
+<div class="entry" id="e27" data-name="paragraph-set-style!">
   <div class="entry-name">paragraph-set-style!</div>
   <pre class="entry-doc">Syntax: (paragraph-set-style! para style-name)
 Library: (scm ooxml word)
@@ -356,7 +372,7 @@ style defined with document-define-style! or a built-in Word style.
 Example:
   (paragraph-set-style! para "Heading1")</pre>
 </div>
-<div class="entry" id="e27" data-name="paragraph-set-tab-stops!">
+<div class="entry" id="e28" data-name="paragraph-set-tab-stops!">
   <div class="entry-name">paragraph-set-tab-stops!</div>
   <pre class="entry-doc">Syntax: (paragraph-set-tab-stops! para stops)
 Library: (scm ooxml word)
@@ -366,7 +382,7 @@ where pos-pt is in points and alignment is a symbol ('left 'center 'right
 Example:
   (paragraph-set-tab-stops! para '((2.5 left) (5.0 center)))</pre>
 </div>
-<div class="entry" id="e28" data-name="register-color!">
+<div class="entry" id="e29" data-name="register-color!">
   <div class="entry-name">register-color!</div>
   <pre class="entry-doc">Syntax: (register-color! name hex-string)
 Library: (scm ooxml word)
@@ -375,7 +391,7 @@ Description: Registers a new named color. name is a symbol; hex-string is an
 Example:
   (register-color! 'salmon "FFFA8072")</pre>
 </div>
-<div class="entry" id="e29" data-name="resolve-color">
+<div class="entry" id="e30" data-name="resolve-color">
   <div class="entry-name">resolve-color</div>
   <pre class="entry-doc">Syntax: (resolve-color color)
 Library: (scm ooxml word)
