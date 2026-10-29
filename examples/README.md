@@ -51,6 +51,17 @@ To run one, see its own `README.md`, e.g.:
 cd starter-public && scm bin/server.scm
 ```
 
+To start a new application from a starter, let `scm new-app` copy and rename
+it (see `(scm scaffold)`); it works from an installed dabscm, without this
+repository:
+
+```sh
+scm new-app starter-admin ~/projects/ledger
+```
+
+The starters are built into dabscm as data: after changing one, run
+`./builder.sh update-scheme-files.scm` to regenerate `(scm scaffold starters)`.
+
 ## Single-file snippets
 
 Small standalone examples of individual libraries:

@@ -461,7 +461,11 @@ public class Scheme implements IEvaluator {
                 }
                 scheme.bind("script-name", script.toCharArray());
                 scheme.bind("script-arguments", arguments);
-                var result = scheme.evalFile(new File(script));
+                // `scm new-app <starter> <dir> [name]`, unless there is a
+                // script of that name: see (scm scaffold).
+                var result = script.equals("new-app") && !new File(script).exists()
+                    ? scheme.evalString("(import (scm scaffold)) (new-app-command script-arguments)", "{new-app}")
+                    : scheme.evalFile(new File(script));
                 // A deferred exit code (set via set-exit-code!) takes precedence
                 // so a script can signal failure without terminating; otherwise
                 // an integer result is the code.

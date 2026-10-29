@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm scaffold) — Dabscm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="toc">
+  <h2>Bindings</h2>
+  <a href="#e0" data-name="app-name-variants">app-name-variants</a>
+  <a href="#e1" data-name="new-app">new-app</a>
+  <a href="#e2" data-name="new-app-command">new-app-command</a>
+  <a href="#e3" data-name="starter-names">starter-names</a>
+</nav>
+
+<main>
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="index.html">All libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="index.html#sec-scm">Scm Extensions</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm scaffold)</span>
+</nav>
+
+<div class="lib-title scm">(scm scaffold)</div>
+<p class="lib-sub">New applications from the starters: scm new-app</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><a class="xref" href="scm-scaffold.html"><code>(scm scaffold)</code></a> starts a new application from one of the starters in <code>examples/</code> (<code>starter-public</code>, <code>starter-login</code>, <code>starter-admin</code>, <code>starter-api</code>): it copies the starter into a new directory and renames it, replacing every spelling of the starter's name in paths and file contents (<code>starter-admin</code>, <code>starter_admin</code>, <code>Starter Admin</code>, <code>STARTER_ADMIN</code>) with the same spelling of the new name. Local configs the starter's <code>.gitignore</code> names are left out; shell scripts are made executable.</p>
+<p>The command line runs it as <code>scm new-app</code>:</p>
+<pre><code class="language-sh">scm new-app starter-admin ~/projects/ledger          # name: ledger
+scm new-app starter-api ./svc city-stats             # name: city-stats
+scm new-app                                          # usage and starters</code></pre>
+<p>The starters' files are built into dabscm (<a class="xref" href="scm-scaffold-starters.html"><code>(scm scaffold starters)</code></a>, generated from <code>examples/</code> by <code>update-scheme-files.scm</code>), so <a class="xref" href="#e1"><code>new-app</code></a> needs no checkout of the dabscm repository.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scm scaffold))
+
+(starter-names)                       ; =&gt; ("starter-public" ... "starter-api")
+(new-app "starter-login" "/home/me/projects/notes")
+(new-app "starter-admin" "/srv/src/ledger" "ledger-app")</code></pre>
+</div>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">4 bindings</p>
+
+<div class="entry" id="e0" data-name="app-name-variants">
+  <div class="entry-name">app-name-variants</div>
+  <pre class="entry-doc">Syntax: (app-name-variants name)
+Library: (scm scaffold)
+Description: The spellings of a kebab-case app name that new-app
+  replaces, in this order: kebab, snake, title and upper case.
+Example:
+  (app-name-variants "my-app") =&gt; ("my-app" "my_app" "My App" "MY_APP")</pre>
+</div>
+<div class="entry" id="e1" data-name="new-app">
+  <div class="entry-name">new-app</div>
+  <pre class="entry-doc">Syntax: (new-app starter dir [name])
+Library: (scm scaffold)
+Description: Copies the starter (one of (starter-names)) into the new or
+  empty directory dir and renames it to name, a kebab-case name (default:
+  the last component of dir). Shell scripts are made executable. Returns
+  the list of files written, relative to dir. Signals an error for an
+  unknown starter, an invalid name or a directory that is not empty.
+Example:
+  (new-app "starter-admin" "/home/me/projects/ledger")
+  =&gt; (".gitignore" "README.md" "bin/server.scm" ...)</pre>
+</div>
+<div class="entry" id="e2" data-name="new-app-command">
+  <div class="entry-name">new-app-command</div>
+  <pre class="entry-doc">Syntax: (new-app-command args)
+Library: (scm scaffold)
+Description: The `scm new-app` command: args are the command-line
+  arguments after "new-app". Prints what it did, or the usage, and
+  returns the exit code.</pre>
+</div>
+<div class="entry" id="e3" data-name="starter-names">
+  <div class="entry-name">starter-names</div>
+  <pre class="entry-doc">Syntax: (starter-names)
+Library: (scm scaffold)
+Description: The names of the starters new-app can copy, simplest first.
+Example:
+  (starter-names) =&gt; ("starter-public" "starter-login" "starter-admin" "starter-api")</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

@@ -198,7 +198,11 @@ class SchemeRepl
                     }
                     scheme.Bind("script-name", script.ToCharArray());
                     scheme.Bind("script-arguments", arguments);
-                    var result = scheme.EvalFile(script);
+                    // `scm new-app <starter> <dir> [name]`, unless there is
+                    // a script of that name: see (scm scaffold).
+                    var result = script == "new-app" && !System.IO.File.Exists(script)
+                        ? scheme.EvalString("(import (scm scaffold)) (new-app-command script-arguments)", "{new-app}")
+                        : scheme.EvalFile(script);
                     //scheme.DumpCallCounts();
                     // A deferred exit code (set via set-exit-code!) takes
                     // precedence so a script can signal failure without
