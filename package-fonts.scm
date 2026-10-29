@@ -5,10 +5,7 @@
 ;;                                          the font search path (Windows,
 ;;                                          .NET deployments, containers)
 ;;
-;;   scm package-fonts.scm [--out <dir>]
-;;
-;; (Run with an installed scm, not builder.sh: the bootstrap jar's HTTP
-;; client returns binary downloads as text.)
+;;   ./builder.sh package-fonts.scm [--out <dir>]
 ;;
 ;; Downloads the files (once; they are kept in fonts/cache/), checks each
 ;; against its SHA-256 in the manifest, and lays them out one directory
