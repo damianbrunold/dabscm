@@ -61,16 +61,21 @@ Example:
     (define (format-set-cookie name value max-age path . opt)
       "Syntax: (format-set-cookie name value max-age path [flag ...])
 Library: (scm net http cookies)
-Description: Builds a Set-Cookie header value. HttpOnly and SameSite=Strict
-  are always emitted. The Secure attribute is added unless 'no-secure' is
-  present in flags; this default is right for production but should be
-  disabled for local HTTP development. max-age may be #f to omit the
-  Max-Age attribute (session cookie).
+Description: Builds a Set-Cookie header value. HttpOnly is always emitted,
+  and SameSite=Strict unless 'lax' is present in flags, which emits
+  SameSite=Lax instead: the cookie then also comes along when a link from
+  another site or app (a scanned QR code, a mail) opens a page, but still
+  not with cross-site POSTs or subresource requests. The Secure attribute
+  is added unless 'no-secure' is present in flags; this default is right
+  for production but should be disabled for local HTTP development.
+  max-age may be #f to omit the Max-Age attribute (session cookie).
 Example:
   (format-set-cookie \"sid\" \"abc\" 3600 \"/\")
   => \"sid=abc; Path=/; Max-Age=3600; HttpOnly; SameSite=Strict; Secure\"
   (format-set-cookie \"sid\" \"abc\" #f \"/\" 'no-secure)
-  => \"sid=abc; Path=/; HttpOnly; SameSite=Strict\""
+  => \"sid=abc; Path=/; HttpOnly; SameSite=Strict\"
+  (format-set-cookie \"t\" \"xyz\" 600 \"/\" 'lax)
+  => \"t=xyz; Path=/; Max-Age=600; HttpOnly; SameSite=Lax; Secure\""
       (let ((out (open-output-string)))
         (write-string name out)
         (write-char #\= out)
@@ -80,7 +85,10 @@ Example:
         (when max-age
           (write-string "; Max-Age=" out)
           (write-string (number->string max-age) out))
-        (write-string "; HttpOnly; SameSite=Strict" out)
+        (write-string (if (memv 'lax opt)
+                          "; HttpOnly; SameSite=Lax"
+                          "; HttpOnly; SameSite=Strict")
+                      out)
         (when (not (memv 'no-secure opt))
           (write-string "; Secure" out))
         (get-output-string out)))

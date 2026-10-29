@@ -51,7 +51,10 @@
 
 (cookie-ref '(("sid" . "abc")) "sid")   ;; =&gt; "abc"</code></pre>
 <p>Format a <code>Set-Cookie</code> value (name, value, max-age in seconds, path):</p>
-<pre><code class="language-scheme">(format-set-cookie "sid" "abc" 3600 "/")</code></pre>
+<pre><code class="language-scheme">(format-set-cookie "sid" "abc" 3600 "/")
+;; =&gt; "sid=abc; Path=/; Max-Age=3600; HttpOnly; SameSite=Strict; Secure"</code></pre>
+<p>Cookies are <code>HttpOnly</code> and <code>SameSite=Strict</code> by default. Flags after the path adjust that: <code>'no-secure</code> drops <code>Secure</code> (local HTTP development), <code>'lax</code> emits <code>SameSite=Lax</code>, for a cookie that must survive arriving from a link outside the site — for example a token set by a page that a scanned QR code opened and then redirects:</p>
+<pre><code class="language-scheme">(format-set-cookie "remote" token 43200 "/" 'lax)</code></pre>
 <p>Cookie values are not percent-decoded — many are opaque tokens, so the caller decides whether decoding is appropriate.</p>
 </div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
@@ -70,16 +73,21 @@ Example:
   <div class="entry-name">format-set-cookie</div>
   <pre class="entry-doc">Syntax: (format-set-cookie name value max-age path [flag ...])
 Library: (scm net http cookies)
-Description: Builds a Set-Cookie header value. HttpOnly and SameSite=Strict
-  are always emitted. The Secure attribute is added unless 'no-secure' is
-  present in flags; this default is right for production but should be
-  disabled for local HTTP development. max-age may be #f to omit the
-  Max-Age attribute (session cookie).
+Description: Builds a Set-Cookie header value. HttpOnly is always emitted,
+  and SameSite=Strict unless 'lax' is present in flags, which emits
+  SameSite=Lax instead: the cookie then also comes along when a link from
+  another site or app (a scanned QR code, a mail) opens a page, but still
+  not with cross-site POSTs or subresource requests. The Secure attribute
+  is added unless 'no-secure' is present in flags; this default is right
+  for production but should be disabled for local HTTP development.
+  max-age may be #f to omit the Max-Age attribute (session cookie).
 Example:
   (format-set-cookie "sid" "abc" 3600 "/")
   =&gt; "sid=abc; Path=/; Max-Age=3600; HttpOnly; SameSite=Strict; Secure"
   (format-set-cookie "sid" "abc" #f "/" 'no-secure)
-  =&gt; "sid=abc; Path=/; HttpOnly; SameSite=Strict"</pre>
+  =&gt; "sid=abc; Path=/; HttpOnly; SameSite=Strict"
+  (format-set-cookie "t" "xyz" 600 "/" 'lax)
+  =&gt; "t=xyz; Path=/; Max-Age=600; HttpOnly; SameSite=Lax; Secure"</pre>
 </div>
 <div class="entry" id="e2" data-name="parse-cookie-header">
   <div class="entry-name">parse-cookie-header</div>

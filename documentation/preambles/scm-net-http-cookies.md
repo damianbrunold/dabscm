@@ -20,6 +20,17 @@ Format a `Set-Cookie` value (name, value, max-age in seconds, path):
 
 ```scheme
 (format-set-cookie "sid" "abc" 3600 "/")
+;; => "sid=abc; Path=/; Max-Age=3600; HttpOnly; SameSite=Strict; Secure"
+```
+
+Cookies are `HttpOnly` and `SameSite=Strict` by default. Flags after the path
+adjust that: `'no-secure` drops `Secure` (local HTTP development), `'lax`
+emits `SameSite=Lax`, for a cookie that must survive arriving from a link
+outside the site — for example a token set by a page that a scanned QR code
+opened and then redirects:
+
+```scheme
+(format-set-cookie "remote" token 43200 "/" 'lax)
 ```
 
 Cookie values are not percent-decoded — many are opaque tokens, so the caller

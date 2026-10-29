@@ -36,6 +36,11 @@
               (format-set-cookie "sid" "abc" #f "/"))
   ;; no-secure flag drops the Secure attribute (for local-HTTP dev)
   (test-equal "sid=abc; Path=/; Max-Age=60; HttpOnly; SameSite=Strict"
-              (format-set-cookie "sid" "abc" 60 "/" 'no-secure)))
+              (format-set-cookie "sid" "abc" 60 "/" 'no-secure))
+  ;; lax flag: SameSite=Lax instead of Strict, alone or with no-secure
+  (test-equal "t=xyz; Path=/app/; Max-Age=600; HttpOnly; SameSite=Lax; Secure"
+              (format-set-cookie "t" "xyz" 600 "/app/" 'lax))
+  (test-equal "t=xyz; Path=/; HttpOnly; SameSite=Lax"
+              (format-set-cookie "t" "xyz" #f "/" 'no-secure 'lax)))
 
 (test-end "scm-http-cookies")

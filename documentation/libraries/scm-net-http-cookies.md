@@ -24,6 +24,17 @@ Format a `Set-Cookie` value (name, value, max-age in seconds, path):
 
 ```scheme
 (format-set-cookie "sid" "abc" 3600 "/")
+;; => "sid=abc; Path=/; Max-Age=3600; HttpOnly; SameSite=Strict; Secure"
+```
+
+Cookies are `HttpOnly` and `SameSite=Strict` by default. Flags after the path
+adjust that: `'no-secure` drops `Secure` (local HTTP development), `'lax`
+emits `SameSite=Lax`, for a cookie that must survive arriving from a link
+outside the site — for example a token set by a page that a scanned QR code
+opened and then redirects:
+
+```scheme
+(format-set-cookie "remote" token 43200 "/" 'lax)
 ```
 
 Cookie values are not percent-decoded — many are opaque tokens, so the caller
@@ -48,16 +59,21 @@ Example:
 ```
 Syntax: (format-set-cookie name value max-age path [flag ...])
 Library: (scm net http cookies)
-Description: Builds a Set-Cookie header value. HttpOnly and SameSite=Strict
-  are always emitted. The Secure attribute is added unless 'no-secure' is
-  present in flags; this default is right for production but should be
-  disabled for local HTTP development. max-age may be #f to omit the
-  Max-Age attribute (session cookie).
+Description: Builds a Set-Cookie header value. HttpOnly is always emitted,
+  and SameSite=Strict unless 'lax' is present in flags, which emits
+  SameSite=Lax instead: the cookie then also comes along when a link from
+  another site or app (a scanned QR code, a mail) opens a page, but still
+  not with cross-site POSTs or subresource requests. The Secure attribute
+  is added unless 'no-secure' is present in flags; this default is right
+  for production but should be disabled for local HTTP development.
+  max-age may be #f to omit the Max-Age attribute (session cookie).
 Example:
   (format-set-cookie "sid" "abc" 3600 "/")
   => "sid=abc; Path=/; Max-Age=3600; HttpOnly; SameSite=Strict; Secure"
   (format-set-cookie "sid" "abc" #f "/" 'no-secure)
   => "sid=abc; Path=/; HttpOnly; SameSite=Strict"
+  (format-set-cookie "t" "xyz" 600 "/" 'lax)
+  => "t=xyz; Path=/; Max-Age=600; HttpOnly; SameSite=Lax; Secure"
 ```
 
 ### `parse-cookie-header`
