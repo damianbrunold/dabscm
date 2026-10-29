@@ -3082,9 +3082,9 @@ Description: Embeds a PNG image in doc as an Image XObject. The PNG's
   stream with /DecodeParms /Predictor 15 so the reader applies the
   PNG filter rules. Color types 0 (grayscale) and 2 (RGB) pass through
   the IDAT verbatim. Color types 4 (gray + alpha) and 6 (RGB + alpha)
-  are fully decoded, then the color and alpha channels are emitted as
-  two separate flate-compressed Image XObjects with the alpha as an
-  /SMask. 8-bit depth only. Returns a pdf-image handle for use with
+  are decoded, then the color and alpha channels are emitted as two
+  separate flate-compressed Image XObjects with the alpha as an
+  /SMask; when every pixel is opaque, the image gets no /SMask. 8-bit depth only. Returns a pdf-image handle for use with
   pdf-draw-image.
 Example:
   (define p (pdf-embed-png doc (pdf-read-binary-file \"logo.png\")))
@@ -3138,100 +3138,37 @@ Example:
                                      (pdf/name "FlateDecode") parms idat #f)))
         (%register-image! doc img)))
 
-    ;; ── Full PNG decoder (for alpha PNGs) ─────────────────────────────────
+    ;; ── PNGs with alpha ──────────────────────────────────────────────────
+    ;; Decoded natively (the same decoder as (scm image)) and split into
+    ;; colour and alpha natively: a byte-by-byte decode in Scheme took
+    ;; seconds for a screenshot. An image whose alpha is 255 everywhere
+    ;; (a screenshot, say) needs no mask and gets none.
 
-    (define (%png-paeth a b c)
-      (let* ((p  (- (+ a b) c))
-             (pa (abs (- p a)))
-             (pb (abs (- p b)))
-             (pc (abs (- p c))))
-        (cond
-          ((and (<= pa pb) (<= pa pc)) a)
-          ((<= pb pc) b)
-          (else c))))
-
-    (define (%png-decode-pixels bv chunks width height samples)
-      ;; 8-bit only. Walks IDAT zlib stream, unfilters each scanline,
-      ;; and returns raw pixel bytes (height * width * samples).
-      (let* ((stride   (* width samples))
-             (bpp      samples)         ; bytes-per-pixel at 8-bit depth
-             (idat     (%png-collect-idat bv chunks))
-             (raw      (zlib-decompress idat))
-             (out      (make-bytevector (* height stride) 0))
-             (prev     (make-bytevector stride 0)))
-        (let loop ((y 0))
-          (cond
-            ((= y height) out)
-            (else
-             (let* ((src-off (* y (+ 1 stride)))
-                    (dst-off (* y stride))
-                    (ftype   (bytevector-u8-ref raw src-off)))
-               (let xloop ((x 0))
-                 (cond
-                   ((= x stride) #t)
-                   (else
-                    (let* ((cur  (bytevector-u8-ref raw (+ src-off 1 x)))
-                           (left (if (< x bpp) 0
-                                     (bytevector-u8-ref out (+ dst-off x (- bpp)))))
-                           (up   (bytevector-u8-ref prev x))
-                           (ul   (if (< x bpp) 0
-                                     (bytevector-u8-ref prev (- x bpp))))
-                           (recon
-                            (case ftype
-                              ((0) cur)
-                              ((1) (modulo (+ cur left) 256))
-                              ((2) (modulo (+ cur up)   256))
-                              ((3) (modulo (+ cur (quotient (+ left up) 2))
-                                           256))
-                              ((4) (modulo (+ cur (%png-paeth left up ul))
-                                           256))
-                              (else (error "PNG: unknown filter type" ftype)))))
-                      (bytevector-u8-set! out (+ dst-off x) recon)
-                      (xloop (+ x 1))))))
-               ;; Copy reconstructed row to prev for next iteration.
-               (bytevector-copy! prev 0 out dst-off (+ dst-off stride))
-               (loop (+ y 1))))))))
+    (define %image-decode-rgba (%primitive "image-decode-rgba"))
+    (define %rgba-split (%primitive "rgba-split"))
 
     (define (%png-embed-with-alpha doc bv chunks width height color-comps)
-      ;; For color types 4 (gray+alpha) and 6 (RGB+alpha). Decodes
-      ;; pixels, splits color and alpha into two buffers, and emits a
-      ;; color XObject + grayscale /SMask XObject.
-      (let* ((samples (+ color-comps 1))
-             (npx     (* width height))
-             (pixels  (%png-decode-pixels bv chunks width height samples))
-             (color   (make-bytevector (* npx color-comps) 0))
-             (alpha   (make-bytevector npx 0)))
-        (let loop ((i 0))
-          (cond
-            ((= i npx) #t)
-            (else
-             (let ((src  (* i samples))
-                   (cdst (* i color-comps)))
-               (let cl ((j 0))
-                 (when (< j color-comps)
-                   (bytevector-u8-set! color (+ cdst j)
-                                       (bytevector-u8-ref pixels (+ src j)))
-                   (cl (+ j 1))))
-               (bytevector-u8-set! alpha i
-                                   (bytevector-u8-ref pixels (+ src color-comps)))
-               (loop (+ i 1))))))
-        (let* ((color-z (zlib-compress color))
-               (alpha-z (zlib-compress alpha))
-               (cs      (if (= color-comps 1)
-                            (pdf/name "DeviceGray")
-                            (pdf/name "DeviceRGB")))
-               ;; SMask isn't registered on the document — it lives on
-               ;; the parent image's smask slot and gets an object id
-               ;; allocated at write time.
-               (smask   (%make-pdf-image "" #f width height
-                                         (pdf/name "DeviceGray") 8
-                                         (pdf/name "FlateDecode") #f
-                                         alpha-z #f))
-               (rname   (%next-image-resource-name doc))
-               (img     (%make-pdf-image rname #f width height cs 8
-                                         (pdf/name "FlateDecode") #f
-                                         color-z smask)))
-          (%register-image! doc img))))
+      ;; For color types 4 (gray+alpha) and 6 (RGB+alpha): a color XObject,
+      ;; plus a grayscale /SMask XObject unless the image is opaque.
+      (let* ((decoded (%image-decode-rgba bv (* width height)))
+             (parts   (%rgba-split (car (cddr decoded)) color-comps))
+             (alpha   (cadr parts))
+             (cs      (if (= color-comps 1)
+                          (pdf/name "DeviceGray")
+                          (pdf/name "DeviceRGB")))
+             ;; SMask isn't registered on the document — it lives on
+             ;; the parent image's smask slot and gets an object id
+             ;; allocated at write time.
+             (smask   (and alpha
+                           (%make-pdf-image "" #f width height
+                                            (pdf/name "DeviceGray") 8
+                                            (pdf/name "FlateDecode") #f
+                                            (zlib-compress alpha) #f)))
+             (rname   (%next-image-resource-name doc))
+             (img     (%make-pdf-image rname #f width height cs 8
+                                       (pdf/name "FlateDecode") #f
+                                       (zlib-compress (car parts)) smask)))
+        (%register-image! doc img)))
 
     ;; ── Emit + draw ──────────────────────────────────────────────────────
 

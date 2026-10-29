@@ -232,9 +232,9 @@ Description: Embeds a PNG image in doc as an Image XObject. The PNG's
   stream with /DecodeParms /Predictor 15 so the reader applies the
   PNG filter rules. Color types 0 (grayscale) and 2 (RGB) pass through
   the IDAT verbatim. Color types 4 (gray + alpha) and 6 (RGB + alpha)
-  are fully decoded, then the color and alpha channels are emitted as
-  two separate flate-compressed Image XObjects with the alpha as an
-  /SMask. 8-bit depth only. Returns a pdf-image handle for use with
+  are decoded, then the color and alpha channels are emitted as two
+  separate flate-compressed Image XObjects with the alpha as an
+  /SMask; when every pixel is opaque, the image gets no /SMask. 8-bit depth only. Returns a pdf-image handle for use with
   pdf-draw-image.
 Example:
   (define p (pdf-embed-png doc (pdf-read-binary-file "logo.png")))

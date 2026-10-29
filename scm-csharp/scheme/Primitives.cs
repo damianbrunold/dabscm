@@ -124,6 +124,7 @@ public class Primitives
         Bind(new PrimitiveCos());
         Bind(new PrimitiveCrc32());
         Bind(new PrimitiveImageDecodeRgba());
+        Bind(new PrimitiveRgbaSplit());
         Bind(new PrimitiveImageResizeRgba());
         Bind(new PrimitiveImageOrientRgba());
         Bind(new PrimitiveRgbaToJpeg());

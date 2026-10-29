@@ -664,6 +664,33 @@
     (let ((out (pdf->bytevector doc)))
       (test-assert (bv-contains-ascii? out "/SMask")))))
 
+(test-group "embed-png opaque RGBA has no /SMask"
+  ;; A screenshot: RGBA, but alpha 255 everywhere. No mask is needed.
+  (let* ((doc (make-pdf))
+         (page (pdf-add-page! doc))
+         (px (bytevector 255 0 0 255  0 255 0 255  0 0 255 255  9 9 9 255))
+         (img (pdf-embed-png doc (png-encode-rgba 2 2 px))))
+    (pdf-draw-image page img 0 0 10 10)
+    (test-equal 2 (pdf-image-width img))
+    (let ((out (pdf->bytevector doc)))
+      (test-assert (bv-contains-ascii? out "/ColorSpace /DeviceRGB"))
+      (test-assert (not (bv-contains-ascii? out "/SMask"))))))
+
+(define rgba-split (%primitive "rgba-split"))
+
+(test-group "rgba-split: colour and alpha apart, no alpha when opaque"
+  (let* ((doc (make-pdf))
+         (page (pdf-add-page! doc))
+         (px (bytevector 255 0 0 255  0 255 0 128  0 0 255 0  1 2 3 255))
+         (img (pdf-embed-png doc (png-encode-rgba 2 2 px)))
+         (out (begin (pdf-draw-image page img 0 0 10 10) (pdf->bytevector doc))))
+    (test-assert (bv-contains-ascii? out "/SMask"))
+    (test-equal (list (bytevector 255 0 0  0 255 0  0 0 255  1 2 3) (bytevector 255 128 0 255))
+                (rgba-split px 3))
+    (test-equal (list (bytevector 7 8) #f) (rgba-split (bytevector 7 0 0 255  8 0 0 255) 1))
+    (test-error (rgba-split (bytevector 1 2 3) 3))
+    (test-error (rgba-split (bytevector 1 2 3 4) 2))))
+
 (test-group "embed-png non-alpha PNGs have no /SMask"
   (let* ((doc (make-pdf))
          (page (pdf-add-page! doc))
