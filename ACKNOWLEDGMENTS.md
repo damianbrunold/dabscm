@@ -66,12 +66,14 @@ The licence is reproduced in full at the top of the file.
 - **Files:** `fonts/manifest.scm`, built by `package-fonts.scm` into the
   separate `dabscm-fonts` package (not part of the interpreter)
 - **Fonts:** Inter, Roboto, Roboto Slab, Source Serif 4, JetBrains Mono,
-  Noto Sans, Noto Serif, IBM Plex Sans, Serif and Mono
+  Noto Sans, Noto Serif, Carlito, IBM Plex Sans, Serif and Mono
 - **Licenses:** SIL Open Font License 1.1; Roboto Slab under the Apache
   License 2.0
 
 The upstream TrueType files, unchanged, each pinned in the manifest by
-URL and SHA-256, with each family's licence beside its files.
+URL and SHA-256, with each family's licence beside its files. Carlito
+declares the Reserved Font Name "Carlito"; the package ships its files
+unmodified, under that name.
 
 ### Rasterization algorithm
 

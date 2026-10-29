@@ -14,7 +14,7 @@
 ;; static TrueType files (glyf outlines): (scm truetype) reads no CFF and
 ;; only the default instance of a variable font.
 
-(version "1.0.0")
+(version "1.1.0")
 (archive inter "https://github.com/rsms/inter/releases/download/v4.1/Inter-4.1.zip"
          "9883fdd4a49d4fb66bd8177ba6625ef9a64aa45899767dde3d36aa425756b11e")
 (archive roboto "https://github.com/googlefonts/roboto-3-classic/releases/download/v3.016/Roboto_v3.016.zip"
@@ -149,6 +149,24 @@
     (url "https://raw.githubusercontent.com/notofonts/notofonts.github.io/c1d3718e2a0eb25c2567a694ee017061fdaa5f51/fonts/NotoSerif/unhinted/ttf/NotoSerif-BoldItalic.ttf")
     "1bc4f86502eaa368718f6192bee022ea9a703d5af1c18b7d291212657b63074a")
 )
+
+(family "Carlito" "carlito"
+  (source "Carlito 1.104 (metric-compatible with Calibri), https://github.com/googlefonts/carlito")
+  (license "SIL Open Font License 1.1" "OFL.txt"
+    (url "https://raw.githubusercontent.com/googlefonts/carlito/3a810cab78ebd6e2e4eed42af9e8453c4f9b850a/OFL.txt")
+    "58402f82a7c332a700294988fe7554fbb0a63a8d27ccc1ee3bbc640311990a00")
+  (face 400 #f "Carlito-Regular.ttf"
+    (url "https://raw.githubusercontent.com/googlefonts/carlito/3a810cab78ebd6e2e4eed42af9e8453c4f9b850a/fonts/ttf/Carlito-Regular.ttf")
+    "f6418f708baede9789daef5d458c0f53d2a888af9820e8062934e504fedc6595")
+  (face 700 #f "Carlito-Bold.ttf"
+    (url "https://raw.githubusercontent.com/googlefonts/carlito/3a810cab78ebd6e2e4eed42af9e8453c4f9b850a/fonts/ttf/Carlito-Bold.ttf")
+    "bb5d20f79b82599ec72983597437373a80f2d2085fa91fc144fd74e876a594db")
+  (face 400 #t "Carlito-Italic.ttf"
+    (url "https://raw.githubusercontent.com/googlefonts/carlito/3a810cab78ebd6e2e4eed42af9e8453c4f9b850a/fonts/ttf/Carlito-Italic.ttf")
+    "0b019225e58d702bfedcbd35c21696769f8ee115cb6343f84c2f240312450d1c")
+  (face 700 #t "Carlito-BoldItalic.ttf"
+    (url "https://raw.githubusercontent.com/googlefonts/carlito/3a810cab78ebd6e2e4eed42af9e8453c4f9b850a/fonts/ttf/Carlito-BoldItalic.ttf")
+    "b32928186c119599e03ca6a1ffc680fdcb7fac95772f4b95d989cf6cd3861517"))
 
 (family "IBM Plex Sans" "ibm-plex-sans"
   (source "IBM Plex (@ibm/plex-sans 1.1.0 tree), https://github.com/IBM/plex")

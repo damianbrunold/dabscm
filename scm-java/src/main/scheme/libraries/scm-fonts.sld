@@ -1,6 +1,6 @@
 ;; (scm fonts) — fonts by family name, from font files: the dabscm-fonts
 ;; package (Inter, Roboto, Roboto Slab, Source Serif 4, JetBrains Mono,
-;; Noto Sans and Serif, IBM Plex) or any directory of .ttf files.
+;; Noto Sans and Serif, Carlito, IBM Plex) or any directory of .ttf files.
 ;;
 ;; The fonts are looked up along a search path of directories and zip
 ;; files. Each holds .ttf files (at its top or one directory down) and,
