@@ -25,6 +25,7 @@ public class PrimitiveHttpResponseWithHeaders : Primitive
         c.FileOffset = r.FileOffset;
         c.FileLength = r.FileLength;
         c.Writer = r.Writer;
+        c.WebSocket = r.WebSocket;
         return new NativeValue(c);
     }
 }

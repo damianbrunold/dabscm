@@ -28,6 +28,7 @@ public class PrimitiveHttpResponseWithHeaders extends Primitive {
         c.fileOffset = r.fileOffset;
         c.fileLength = r.fileLength;
         c.writer = r.writer;
+        c.websocket = r.websocket;
         return new NativeValue(c);
     }
 }

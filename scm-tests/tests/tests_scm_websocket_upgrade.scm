@@ -37,6 +37,10 @@
                                '(("Sec-WebSocket-Protocol" . "folien"))))
       ((string=? path "/bye")
        (http-websocket-upgrade (lambda (ws) (ws-receive ws) (set! handler-done 'returned))))
+      ((string=? path "/wrapped")                 ; as middleware adds headers
+       (let ((r (http-websocket-upgrade echo)))
+         (http-response-with-headers r (http-response-status r)
+                                     (cons '("X-Frame-Options" . "DENY") (http-response-headers r)))))
       ((string=? path "/fail")
        (http-websocket-upgrade (lambda (ws) (error "handler failed on purpose"))))
       (else (http-ok "plain")))))
@@ -74,6 +78,12 @@
     (test-equal "hi" (ws-receive ws))
     (ws-send ws "x")
     (test-equal "x" (ws-receive ws))
+    (ws-close ws)))
+
+(test-group "through http-response-with-headers"
+  (let ((ws (ws-connect "127.0.0.1" port "/wrapped")))
+    (ws-send ws "still a socket")
+    (test-equal "still a socket" (ws-receive ws 5000))
     (ws-close ws)))
 
 (test-group "the handler returns when the client closes"
