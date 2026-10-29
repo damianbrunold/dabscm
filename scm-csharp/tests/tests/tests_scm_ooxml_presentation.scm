@@ -39,6 +39,9 @@
 (slide-add-line! s1 0 2000000 3000000 0 '((color . "000000") (width . 12700) (flip . #t)))
 (slide-add-picture! s1 png "image/png" 0 3000000 1000000 1000000 '((key . "blue") (description . "Blau")))
 (slide-set-notes! s1 '(((runs . (((text . "Eine Notiz")))))))
+(slide-add-shape! s1 'text 0 6000000 2000000 300000
+  '((text . (((runs . (((text . "Folie ")) ((text . "1") (field . slide-number)) ((text . " · "))
+                       ((text . "29.10.2026") (field . date)))))))))
 
 (define s2 (presentation-add-slide! p))
 (slide-set-transition! s2 'fade 300)
@@ -97,6 +100,8 @@
               (s2 (part z "ppt/slides/slide2.xml"))
               (rels (part z "ppt/slides/_rels/slide1.xml.rels")))
           (test-assert (has? s1 "&lt;Titel&gt;"))
+          (test-assert "slide number field" (has? s1 "type=\"slidenum\"><a:rPr lang=\"de-CH\" dirty=\"0\"></a:rPr><a:t>1</a:t></a:fld>"))
+          (test-assert "date field" (has? s1 "type=\"datetime1\">"))
           (test-assert "line break" (has? s1 "<a:br>"))
           (test-assert (has? s1 "sz=\"4000\""))
           (test-assert (has? s1 "<a:buChar char=\"–\"/>"))

@@ -10,6 +10,8 @@ videos can be file paths; they are copied into the package in pieces.
 
 Positions and sizes are in EMU (914400 per inch; `points->emu`,
 `inches->emu`), font sizes in points, angles in degrees, colours "RRGGBB".
+A text run with `(field . slide-number)` or `(field . date)` becomes a
+PowerPoint field that PowerPoint keeps up to date (slide numbers in footers).
 
 ## Common uses
 

@@ -22,7 +22,10 @@
 ;;   (runs . (run ...))
 ;; and a run is an alist: (text . string) (size . points) (bold . #t)
 ;; (italic . #t) (underline . #t) (color . "RRGGBB") (font . "Inter")
-;; (link . "https://..."); "\n" in a text is a line break.
+;; (link . "https://..."); "\n" in a text is a line break. A run with
+;; (field . slide-number | date) is a PowerPoint field: its text is shown
+;; until PowerPoint updates it to the slide's number or today's date (in
+;; the language's short format).
 
 (define-library (scm ooxml presentation)
   (import (scheme base)
@@ -216,8 +219,21 @@ Description: The speaker notes of the slide (paragraphs as for text)."
                  "")
              "</a:" tag ">")))
 
+    ;; Field ids: any GUID, the same for all fields of a kind.
+    (define field-types
+      '((slide-number "slidenum" "{4FAE4C6E-6C1B-4E0B-9A3E-2B7C5D9A1F01}")
+        (date "datetime1" "{4FAE4C6E-6C1B-4E0B-9A3E-2B7C5D9A1F02}")))
+
     ;; "a\nb" -> runs with <a:br/> between the lines
     (define (run-xml slide run)
+      (let ((field (assq (opt run 'field #f) field-types)))
+        (if field
+            (cat "<a:fld" (attr "id" (caddr field)) (attr "type" (cadr field)) ">"
+                 (run-props slide run "rPr")
+                 "<a:t>" (esc (opt run 'text "")) "</a:t></a:fld>")
+            (text-run-xml slide run))))
+
+    (define (text-run-xml slide run)
       (let loop ((lines (split-lines (opt run 'text ""))) (first #t) (acc '()))
         (if (null? lines)
             (strings (reverse acc))

@@ -12,6 +12,8 @@ videos can be file paths; they are copied into the package in pieces.
 
 Positions and sizes are in EMU (914400 per inch; `points->emu`,
 `inches->emu`), font sizes in points, angles in degrees, colours "RRGGBB".
+A text run with `(field . slide-number)` or `(field . date)` becomes a
+PowerPoint field that PowerPoint keeps up to date (slide numbers in footers).
 
 ## Common uses
 
@@ -138,7 +140,25 @@ Example:
 
 ### `slide-add-table!`
 
-*(no documentation)*
+```
+Syntax: (slide-add-table! slide x y w h rows [options])
+Library: (scm ooxml presentation)
+Description: Adds a table. rows is a list of rows, a row a list of cells
+  (every row as long as the first), a cell an alist: (text . paragraphs),
+  (fill . color), (anchor . top | middle | bottom). Columns share the
+  width equally unless options has (column-widths . (emu ...)); rows are
+  h / rows high (PowerPoint makes a row higher when its text needs it)
+  unless (row-heights . (emu ...)). Other options: (margins . (left top
+  right bottom)) in EMU (default 91440 45720 91440 45720), (header . #t)
+  (the first row is a header row), (name . string), (build . (order
+  effect)). Cells have no borders.
+Example:
+  (slide-add-table! s 914400 914400 7315200 1828800
+    (list (list '((text . (((runs . (((text . "Name") (bold . #t))))))) (fill . "0070B4"))
+                '((text . (((runs . (((text . "Wert") (bold . #t))))))) (fill . "0070B4")))
+          (list '((text . (((runs . (((text . "a")))))))) '((text . (((runs . (((text . "1"))))))))))
+    '((header . #t)))
+```
 
 ### `slide-add-video!`
 
