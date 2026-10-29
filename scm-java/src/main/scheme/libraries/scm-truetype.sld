@@ -4,7 +4,8 @@
 ;; read-truetype parses a .ttf held in a bytevector: the cmap (formats 4
 ;; and 12), hmtx, loca and glyf (simple and composite glyphs), and the
 ;; kerning: the format 0 kern table when there is one, else the pair
-;; adjustments of the GPOS kern feature (lookup type 2, both formats). Glyphs are decoded on first use.
+;; adjustments of the GPOS kern feature (lookup type 2, both formats; the
+;; lookups' adjustments added up). Glyphs are decoded on first use.
 ;; OpenType features that substitute one glyph for another (GSUB lookup
 ;; type 1, also behind an extension lookup) can be switched on: stylistic
 ;; sets, character variants, tabular figures.
@@ -18,6 +19,7 @@
 
 (define-library (scm truetype)
   (export read-truetype
+          truetype-info
           make-outline-font
           font?
           font-units-per-em
@@ -33,13 +35,14 @@
           (scheme char)
           (scheme inexact)
           (scheme cxr)
+          (scheme lazy)
           (srfi 69)
           (scm bytevector))
   (begin
 
     ;; lookup: char -> glyph or #f; kern: (char char) -> font units;
-    ;; chars: the characters with glyphs, ascending, when known (fonts
-    ;; made from glyph data), else #f.
+    ;; chars: the characters with glyphs, ascending, or a promise of them
+    ;; (fonts read from a file list them from their cmap on demand).
     (define-record-type font
       (%make-font units-per-em ascent descent lookup kern chars)
       font?
@@ -53,11 +56,12 @@
     (define (font-chars font)
       "Syntax: (font-chars font)
 Library: (scm truetype)
-Description: The characters font has glyphs for, ascending, or #f when
-  the font does not list them (fonts read with read-truetype).
+Description: The characters font has glyphs for, ascending. For a font
+  read with read-truetype they come from its cmap.
 Example:
   (length (font-chars inter-regular)) => 312"
-      (%font-chars font))
+      (let ((cs (%font-chars font)))
+        (if (promise? cs) (force cs) cs)))
 
     (define (font-glyph font char)
       "Syntax: (font-glyph font char)
@@ -111,6 +115,46 @@ Example:
 
     ;; -> procedure code-point -> glyph id (0 when unmapped)
     (define (cmap-lookup bv cmap)
+      (let ((st (cmap-subtable bv cmap)))
+        (if (= (car st) 12) (cmap12 bv (cdr st)) (cmap4 bv (cdr st)))))
+
+    ;; -> the code points the cmap maps, ascending (unmapped ones in its
+    ;; ranges included; callers check the glyph id)
+    (define (cmap-code-points bv cmap)
+      (let* ((st (cmap-subtable bv cmap))
+             (o (cdr st))
+             (ranges
+              (if (= (car st) 12)
+                  (let loop ((i (- (u32 bv (+ o 12)) 1)) (acc '()))
+                    (if (< i 0)
+                        acc
+                        (let ((g (+ o 16 (* 12 i))))
+                          (loop (- i 1) (cons (cons (u32 bv g) (u32 bv (+ g 4))) acc)))))
+                  (let* ((segs (/ (u16 bv (+ o 6)) 2))
+                         (ends (+ o 14))
+                         (starts (+ ends (* 2 segs) 2)))
+                    (let loop ((i (- segs 1)) (acc '()))
+                      (if (< i 0)
+                          acc
+                          (loop (- i 1)
+                                (let ((a (u16 bv (+ starts (* 2 i))))
+                                      (b (u16 bv (+ ends (* 2 i)))))
+                                  ;; the final 0xFFFF segment maps nothing
+                                  (if (= a #xFFFF) acc (cons (cons a b) acc))))))))))
+        (let loop ((rs (reverse ranges)) (acc '()))
+          (if (null? rs)
+              acc
+              (loop (cdr rs)
+                    (let range ((c (cdar rs)) (acc acc))
+                      (if (< c (caar rs))
+                          acc
+                          (range (- c 1)
+                                 ;; no surrogates: they are not characters
+                                 (if (<= #xD800 c #xDFFF) acc (cons c acc))))))))))
+
+    ;; -> (format . offset) of the Unicode subtable used: 12 (full
+    ;; Unicode) before 4 (BMP)
+    (define (cmap-subtable bv cmap)
       (let* ((n (u16 bv (+ cmap 2)))
              (subtables
               (let loop ((i 0) (acc '()))
@@ -130,9 +174,9 @@ Example:
                              (else (loop (cdr s))))))))
         (cond
          ((find 12 (lambda (p e) (or (and (= p 3) (= e 10)) (= p 0))))
-          => (lambda (o) (cmap12 bv o)))
+          => (lambda (o) (cons 12 o)))
          ((find 4 (lambda (p e) (or (and (= p 3) (memv e '(0 1))) (= p 0))))
-          => (lambda (o) (cmap4 bv o)))
+          => (lambda (o) (cons 4 o)))
          (else (error "read-truetype: no usable cmap")))))
 
     (define (cmap4 bv o)
@@ -386,8 +430,10 @@ Example:
                                         (append acc (map (lambda (k) (u16 bv (+ ft 4 (* 2 k))))
                                                          (iota-list (u16 bv (+ ft 2)))))
                                         acc)))))))
-                    (subtables
-                     (apply append
+                    ;; per lookup its pair subtables
+                    (lookups
+                     (filter-map-list
+                      (lambda (st) (and (pair? st) st))
                             (map (lambda (li)
                                    (let* ((lk (+ ll (u16 bv (+ ll 2 (* 2 li)))))
                                           (type (u16 bv lk)))
@@ -400,13 +446,21 @@ Example:
                                                 (else #f))))
                                       (iota-list (u16 bv (+ lk 4))))))
                                  indices))))
-               (and (pair? subtables)
+               ;; As OpenType applies them: in each lookup the first
+               ;; subtable that covers the pair, the lookups' adjustments
+               ;; added up (fonts such as IBM Plex split their kerning
+               ;; over several lookups).
+               (and (pair? lookups)
                     (lambda (l r)
-                      (let loop ((ss subtables))
-                        (if (null? ss)
-                            0
-                            (let ((v ((car ss) l r)))
-                              (if v v (loop (cdr ss))))))))))))
+                      (let next ((ls lookups) (sum 0))
+                        (if (null? ls)
+                            sum
+                            (next (cdr ls)
+                                  (+ sum (let loop ((ss (car ls)))
+                                           (if (null? ss)
+                                               0
+                                               (let ((v ((car ss) l r)))
+                                                 (if v v (loop (cdr ss))))))))))))))))
 
     (define (delete-dups l)
       (let loop ((l l) (acc '()))
@@ -512,7 +566,8 @@ Example:
              (loca (table tables "loca"))
              (long-loca? (= 1 (s16 bv (+ head 50))))
              (subst (gsub-singles bv tables features))
-             (gid-of (let ((cmap (cmap-lookup bv (table tables "cmap"))))
+             (cmap-offset (table tables "cmap"))
+             (gid-of (let ((cmap (cmap-lookup bv cmap-offset)))
                        (if (= 0 (hash-table-size subst))
                            cmap
                            (lambda (c)
@@ -540,7 +595,79 @@ Example:
              (if gpos
                  (gpos l r)
                  (hash-table-ref/default pairs (cons l r) 0))))
-         #f)))
+         (delay
+           (let loop ((cps (reverse (cmap-code-points bv cmap-offset))) (acc '()))
+             (cond ((null? cps) acc)
+                   ;; only characters this implementation represents
+                   ;; (one without code points beyond U+FFFF truncates
+                   ;; them)
+                   ((and (> (gid-of (car cps)) 0)
+                         (= (char->integer (integer->char (car cps))) (car cps)))
+                    (loop (cdr cps) (cons (integer->char (car cps)) acc)))
+                   (else (loop (cdr cps) acc))))))))
+
+    ;; --- naming --------------------------------------------------------
+
+    ;; The name with id from the name table: Windows Unicode (UTF-16BE),
+    ;; US English first, else Mac Roman (as Latin-1), else #f.
+    (define (name-string bv tables id)
+      (let ((n (assoc "name" tables)))
+        (and n
+             (let* ((o (cadr n))
+                    (count (u16 bv (+ o 2)))
+                    (strings (+ o (u16 bv (+ o 4))))
+                    (records (let loop ((i (- count 1)) (acc '()))
+                               (if (< i 0)
+                                   acc
+                                   (let ((r (+ o 6 (* 12 i))))
+                                     (loop (- i 1)
+                                           (if (= (u16 bv (+ r 6)) id)
+                                               (cons (list (u16 bv r) (u16 bv (+ r 2)) (u16 bv (+ r 4))
+                                                           (+ strings (u16 bv (+ r 10))) (u16 bv (+ r 8)))
+                                                     acc)
+                                               acc))))))
+                    (pick (lambda (ok?)
+                            (let loop ((rs records))
+                              (cond ((null? rs) #f)
+                                    ((ok? (car rs)) (car rs))
+                                    (else (loop (cdr rs))))))))
+               (cond
+                ((or (pick (lambda (r) (and (= (car r) 3) (= (cadr r) 1) (= (caddr r) #x409))))
+                     (pick (lambda (r) (and (= (car r) 3) (memv (cadr r) '(0 1 10))))))
+                 => (lambda (r)
+                      (let loop ((i (- (list-ref r 4) 2)) (acc '()))
+                        (if (< i 0)
+                            (list->string acc)
+                            (loop (- i 2)
+                                  (cons (integer->char (u16 bv (+ (list-ref r 3) i))) acc))))))
+                ((pick (lambda (r) (and (= (car r) 1) (= (cadr r) 0))))
+                 => (lambda (r)
+                      (let loop ((i (- (list-ref r 4) 1)) (acc '()))
+                        (if (< i 0)
+                            (list->string acc)
+                            (loop (- i 1) (cons (integer->char (u8 bv (+ (list-ref r 3) i))) acc))))))
+                (else #f))))))
+
+    (define (truetype-info bv)
+      "Syntax: (truetype-info bytevector)
+Library: (scm truetype)
+Description: What a TrueType font (.ttf) says about itself, without
+  reading its glyphs: an alist with family (the typographic family name,
+  e.g. \"Inter\" also for Inter Bold), style (e.g. \"Bold Italic\"),
+  weight (100 to 900, from the OS/2 table) and italic (#t or #f).
+Example:
+  (truetype-info bv)
+  => ((family . \"JetBrains Mono\") (style . \"Bold Italic\") (weight . 700) (italic . #t))"
+      (let* ((tables (table-directory bv))
+             (os2 (assoc "OS/2" tables))
+             (head (table tables "head"))
+             (mac-style (u16 bv (+ head 44))))
+        `((family . ,(or (name-string bv tables 16) (name-string bv tables 1) ""))
+          (style . ,(or (name-string bv tables 17) (name-string bv tables 2) "Regular"))
+          (weight . ,(if os2 (u16 bv (+ (cadr os2) 4)) (if (odd? mac-style) 700 400)))
+          (italic . ,(if os2
+                         (odd? (u16 bv (+ (cadr os2) 62)))
+                         (odd? (quotient mac-style 2)))))))
 
     (define (make-outline-font units-per-em ascent descent glyphs . kerning)
       "Syntax: (make-outline-font units-per-em ascent descent glyphs [kerning])
@@ -827,20 +954,29 @@ Example:
         (if (= r 0) bv (bytevector-append bv (make-bytevector (- 4 r) 0)))))
 
     (define (font->truetype font family . style)
-      "Syntax: (font->truetype font family [style])
+      "Syntax: (font->truetype font family [style [chars]])
 Library: (scm truetype)
 Description: Returns a TrueType file (bytevector) with the glyphs of
-  font, which must list its characters (fonts made with
-  make-outline-font, such as those of (scm fonts inter) and
-  (scm fonts dejavu)). family names it; style is \"Regular\" (default),
-  \"Bold\", \"Black\" and so on, which also sets the weight. The file
-  has no hinting and no kerning table: a PDF positions the glyphs
-  itself.
+  font as it draws them (OpenType features it was read with applied):
+  for the characters chars (a list or string), by default all of the
+  font's. family names it; style is \"Regular\" (default), \"Bold\",
+  \"Black\" and so on, which also sets the weight. The file has no
+  hinting and no kerning table: a PDF positions the glyphs itself.
 Example:
-  (pdf-embed-truetype-font doc (font->truetype inter-regular \"Inter\") \"Inter\")"
-      (let* ((style (if (pair? style) (car style) "Regular"))
-             (chars (or (font-chars font)
-                        (error "font->truetype: the font does not list its characters")))
+  (pdf-embed-truetype-font doc (font->truetype inter-regular \"Inter\") \"Inter\")
+  (font->truetype (read-truetype bv '((features \"tnum\"))) \"Inter\" \"Regular\" \"0123456789\")"
+      (let* ((args style)
+             (style (if (pair? args) (car args) "Regular"))
+             ;; ascending and once each: the font's, or those of them
+             ;; asked for
+             (chars (if (and (pair? args) (pair? (cdr args)))
+                        (let ((wanted (make-hash-table eqv?))
+                              (cs (cadr args)))
+                          (for-each (lambda (c) (hash-table-set! wanted c #t))
+                                    (if (string? cs) (string->list cs) cs))
+                          (filter-map-list (lambda (c) (and (hash-table-ref/default wanted c #f) c))
+                                           (font-chars font)))
+                        (font-chars font)))
              (upem (font-units-per-em font))
              (glyphs (cons (cons (quotient upem 2) '())    ; .notdef
                            (map (lambda (c) (font-glyph font c)) chars)))

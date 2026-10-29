@@ -7,17 +7,17 @@ TrueType font reading — glyph outlines, advances, kerning, OpenType features, 
 ### `font->truetype`
 
 ```
-Syntax: (font->truetype font family [style])
+Syntax: (font->truetype font family [style [chars]])
 Library: (scm truetype)
 Description: Returns a TrueType file (bytevector) with the glyphs of
-  font, which must list its characters (fonts made with
-  make-outline-font, such as those of (scm fonts inter) and
-  (scm fonts dejavu)). family names it; style is "Regular" (default),
-  "Bold", "Black" and so on, which also sets the weight. The file
-  has no hinting and no kerning table: a PDF positions the glyphs
-  itself.
+  font as it draws them (OpenType features it was read with applied):
+  for the characters chars (a list or string), by default all of the
+  font's. family names it; style is "Regular" (default), "Bold",
+  "Black" and so on, which also sets the weight. The file has no
+  hinting and no kerning table: a PDF positions the glyphs itself.
 Example:
   (pdf-embed-truetype-font doc (font->truetype inter-regular "Inter") "Inter")
+  (font->truetype (read-truetype bv '((features "tnum"))) "Inter" "Regular" "0123456789")
 ```
 
 ### `font-ascent`
@@ -29,8 +29,8 @@ Example:
 ```
 Syntax: (font-chars font)
 Library: (scm truetype)
-Description: The characters font has glyphs for, ascending, or #f when
-  the font does not list them (fonts read with read-truetype).
+Description: The characters font has glyphs for, ascending. For a font
+  read with read-truetype they come from its cmap.
 Example:
   (length (font-chars inter-regular)) => 312
 ```
@@ -125,5 +125,19 @@ Example:
                  (open-binary-input-file "DejaVuSans.ttf")
                  (lambda (p) (read-bytevector 1000000 p)))))
   (read-truetype bv '((features "tnum")))
+```
+
+### `truetype-info`
+
+```
+Syntax: (truetype-info bytevector)
+Library: (scm truetype)
+Description: What a TrueType font (.ttf) says about itself, without
+  reading its glyphs: an alist with family (the typographic family name,
+  e.g. "Inter" also for Inter Bold), style (e.g. "Bold Italic"),
+  weight (100 to 900, from the OS/2 table) and italic (#t or #f).
+Example:
+  (truetype-info bv)
+  => ((family . "JetBrains Mono") (style . "Bold Italic") (weight . 700) (italic . #t))
 ```
 

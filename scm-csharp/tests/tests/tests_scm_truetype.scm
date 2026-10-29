@@ -160,6 +160,28 @@
     (test-equal 0 (font-kerning f #\A #\A))
     (test-equal 0 (font-kerning f #\B #\B))))
 
+;; GPOS kern in two lookups, as IBM Plex has it: each lookup's A B
+;; adjustment counts (-30 and -20), as OpenType adds them up.
+(define (pair-lookup value)
+  (append (u16 2) (u16 0) (u16 1) (u16 8)              ; type 2, one subtable
+          (u16 1) (u16 18) (u16 4) (u16 0) (u16 1) (u16 12)
+          (u16 1) (u16 2) (u16 value)
+          (u16 1) (u16 1) (u16 1)))
+
+(define gpos-two-lookups
+  (append (u16 1) (u16 0) (u16 10) (u16 12) (u16 28)
+          (u16 0)
+          (u16 1) (map char->integer (string->list "kern")) (u16 8)
+          (u16 0) (u16 2) (u16 0) (u16 1)              ; feature: lookups 0 and 1
+          (u16 2) (u16 6) (u16 38)
+          (pair-lookup -30)
+          (pair-lookup -20)))
+
+(test-group "GPOS kerning over several lookups"
+  (let ((f (read-truetype (font-with (cons "GPOS" gpos-two-lookups)))))
+    (test-equal -50 (font-kerning f #\A #\B))
+    (test-equal 0 (font-kerning f #\B #\A))))
+
 (test-group "text"
   ;; at 1000 px per em, one unit is one pixel
   (test-approximate 1250.0 (font-text-width font 1000 "AB") 1e-9)
@@ -237,7 +259,9 @@
 (test-group "font->truetype"
   (test-equal 257 (length (font-chars inter-regular)))
   (test-assert (char<? (car (font-chars inter-regular)) (cadr (font-chars inter-regular))))
-  (test-equal #f (font-chars (read-truetype (font->truetype dejavu-sans "DejaVu Sans"))))
+  ;; a font read from a file lists the characters of its cmap
+  (test-equal (font-chars dejavu-sans) (font-chars (read-truetype (font->truetype dejavu-sans "DejaVu Sans"))))
+  (test-equal '(#\A #\B) (font-chars font))
   ;; A file with the same glyphs: read back, every glyph is the same.
   (let* ((ttf (font->truetype inter-black "Inter" "Black"))
          (back (read-truetype ttf)))
@@ -248,6 +272,22 @@
     (test-equal (font-units-per-em inter-black) (font-units-per-em back))
     (test-equal (font-ascent inter-black) (font-ascent back))
     (test-equal #f (font-glyph back #\x4E00)))
-  (test-error (font->truetype (read-truetype (font->truetype inter-regular "Inter")) "X")))
+  ;; a font read from a file, again: all its glyphs, or those asked for
+  (let* ((read (read-truetype (font->truetype inter-black "Inter" "Black")))
+         (again (read-truetype (font->truetype read "Inter" "Black"))))
+    (test-equal (font-chars inter-black) (font-chars again))
+    (test-equal (font-glyph inter-black #\g) (font-glyph again #\g)))
+  (let ((sub (read-truetype (font->truetype inter-regular "Inter" "Regular" "Zürich, Zürich!\x4E00;"))))
+    (test-equal (string->list " !,Zchirü") (font-chars sub))
+    (test-equal (font-glyph inter-regular #\ü) (font-glyph sub #\ü))))
+
+(test-group "truetype-info"
+  (test-equal '((family . "Inter") (style . "Black") (weight . 900) (italic . #f))
+              (truetype-info (font->truetype inter-black "Inter" "Black")))
+  (test-equal '((family . "DejaVu Sans") (style . "Bold") (weight . 700) (italic . #f))
+              (truetype-info (font->truetype dejavu-sans-bold "DejaVu Sans" "Bold")))
+  ;; the minimal font has no name and OS/2 tables
+  (test-equal '((family . "") (style . "Regular") (weight . 400) (italic . #f))
+              (truetype-info (font-with))))
 
 (test-end "scm truetype")
