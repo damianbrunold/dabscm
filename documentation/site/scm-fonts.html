@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm fonts) — Dabscm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="toc">
+  <h2>Bindings</h2>
+  <a href="#e0" data-name="find-font">find-font</a>
+  <a href="#e1" data-name="find-font-file">find-font-file</a>
+  <a href="#e2" data-name="font-faces">font-faces</a>
+  <a href="#e3" data-name="font-families">font-families</a>
+  <a href="#e4" data-name="font-license">font-license</a>
+  <a href="#e5" data-name="font-search-path">font-search-path</a>
+  <a href="#e6" data-name="font-search-path!">font-search-path!</a>
+</nav>
+
+<main>
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="index.html">All libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="index.html#sec-scm">Scm Extensions</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm fonts)</span>
+</nav>
+
+<div class="lib-title scm">(scm fonts)</div>
+<p class="lib-sub">Fonts by family name from font files: the dabscm-fonts package or any directory or zip of .ttf files</p>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">7 bindings</p>
+
+<div class="entry" id="e0" data-name="find-font">
+  <div class="entry-name">find-font</div>
+  <pre class="entry-doc">Syntax: (find-font family [weight [style [options]]])
+Library: (scm fonts)
+Description: The font (see (scm truetype)) of family nearest to weight
+  (100 to 900, or thin, extra-light, light, regular, medium, semi-bold,
+  bold, extra-bold, black; default 400) and style (normal or italic,
+  default normal), or #f when the family is not found. options go to
+  read-truetype, e.g. ((features "tnum")). Fonts are read once.
+Example:
+  (find-font "JetBrains Mono" 'bold 'italic)
+  (find-font "Inter" 400 'normal '((features "tnum")))</pre>
+</div>
+<div class="entry" id="e1" data-name="find-font-file">
+  <div class="entry-name">find-font-file</div>
+  <pre class="entry-doc">Syntax: (find-font-file family [weight [style]])
+Library: (scm fonts)
+Description: The TrueType file (bytevector) of the face find-font
+  would choose, or #f: for embedding the font as it is, e.g. with
+  pdf-embed-truetype-font (which subsets it).
+Example:
+  (pdf-embed-truetype-font doc (find-font-file "Roboto" 'bold) "Roboto-Bold")</pre>
+</div>
+<div class="entry" id="e2" data-name="font-faces">
+  <div class="entry-name">font-faces</div>
+  <pre class="entry-doc">Syntax: (font-faces family)
+Library: (scm fonts)
+Description: The faces of family as (weight italic?) lists, upright
+  before italic, lighter first; () when the family is not found.
+Example:
+  (font-faces "JetBrains Mono") =&gt; ((400 #f) (700 #f) (400 #t) (700 #t))</pre>
+</div>
+<div class="entry" id="e3" data-name="font-families">
+  <div class="entry-name">font-families</div>
+  <pre class="entry-doc">Syntax: (font-families)
+Library: (scm fonts)
+Description: The names of the font families found along the search
+  path, sorted.
+Example:
+  (font-families) =&gt; ("IBM Plex Mono" "IBM Plex Sans" "Inter" "JetBrains Mono" ...)</pre>
+</div>
+<div class="entry" id="e4" data-name="font-license">
+  <div class="entry-name">font-license</div>
+  <pre class="entry-doc">Syntax: (font-license family)
+Library: (scm fonts)
+Description: The licence text of family's fonts, or #f when the family
+  is not found or no licence file is beside its fonts.
+Example:
+  (font-license "JetBrains Mono") =&gt; "Copyright 2020 The JetBrains Mono Project Authors ..."</pre>
+</div>
+<div class="entry" id="e5" data-name="font-search-path">
+  <div class="entry-name">font-search-path</div>
+  <pre class="entry-doc">Syntax: (font-search-path)
+Library: (scm fonts)
+Description: The directories and zip files fonts are looked up in, in
+  order.
+Example:
+  (font-search-path) =&gt; ("/home/me/.local/share/dabscm/fonts" "/usr/local/share/dabscm/fonts" "/usr/share/dabscm/fonts")</pre>
+</div>
+<div class="entry" id="e6" data-name="font-search-path!">
+  <div class="entry-name">font-search-path!</div>
+  <pre class="entry-doc">Syntax: (font-search-path! paths)
+Library: (scm fonts)
+Description: Sets the directories and zip files fonts are looked up in
+  (a list of paths), and forgets the fonts found so far.
+Example:
+  (font-search-path! (cons "/srv/app/fonts" (font-search-path)))</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

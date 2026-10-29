@@ -92,6 +92,7 @@
     ((scm doc)                . "Documentation access")
     ((scm duration)           . "Duration string parsing and formatting (seconds, minutes, hours, days)")
     ((scm feed)               . "Atom and RSS 2.0 feed parsing")
+    ((scm fonts)              . "Fonts by family name from font files: the dabscm-fonts package or any directory or zip of .ttf files")
     ((scm fonts dejavu)       . "DejaVu Sans and Sans Bold glyph outlines, built in for text rendering")
     ((scm fonts inter)        . "Inter Regular and Black glyph outlines with ZH design features, built in for text rendering")
     ((scm fonts roboto-slab)  . "Roboto Slab Regular and Bold glyph outlines, built in for text rendering")

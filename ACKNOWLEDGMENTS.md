@@ -61,6 +61,18 @@ subset's characters the fonts have (Roboto Slab has no arrows and only
 some superscript digits), extracted by `notes/gen-font.scm roboto-slab`.
 The licence is reproduced in full at the top of the file.
 
+### dabscm-fonts
+
+- **Files:** `fonts/manifest.scm`, built by `package-fonts.scm` into the
+  separate `dabscm-fonts` package (not part of the interpreter)
+- **Fonts:** Inter, Roboto, Roboto Slab, Source Serif 4, JetBrains Mono,
+  Noto Sans, Noto Serif, IBM Plex Sans, Serif and Mono
+- **Licenses:** SIL Open Font License 1.1; Roboto Slab under the Apache
+  License 2.0
+
+The upstream TrueType files, unchanged, each pinned in the manifest by
+URL and SHA-256, with each family's licence beside its files.
+
 ### Rasterization algorithm
 
 - **File:** `scm-lib/libraries/scm-raster.sld`
