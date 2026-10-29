@@ -17,8 +17,9 @@ public class PrimitiveHttpGet : Primitive
         "Optional headers is an alist of (name . value) pairs. " +
         "Optional timeout-seconds overrides the default request timeout (600s); <= 0 means no timeout.\n" +
         "  The body is a string when the response is text (Content-Type text/*, JSON, XML,\n" +
-        "  JavaScript, form data, or none), decoded by its charset (UTF-8 by default), and a\n" +
-        "  bytevector otherwise (images, archives, ...), as it arrived.\n" +
+        "  JavaScript, form data, any type with a charset parameter such as\n" +
+        "  application/x-sexp; charset=utf-8, or none), decoded by its charset (UTF-8 by\n" +
+        "  default), and a bytevector otherwise (images, archives, ...), as it arrived.\n" +
         "Example:\n" +
         "  (define resp (http-get \"http://example.com/\"))\n" +
         "  (http-response-status resp) => 200";
@@ -61,7 +62,7 @@ public class PrimitiveHttpGet : Primitive
         var headers = ResponseHeaders(response);
         var contentType = response.Content.Headers.ContentType;
         byte[] bytes = response.Content.ReadAsByteArrayAsync().GetAwaiter().GetResult();
-        if (!IsText(contentType?.MediaType))
+        if (!IsText(contentType?.MediaType, contentType?.CharSet))
             return new NativeValue(new SchemeHttpResponse(status, headers, bytes));
         return new NativeValue(new SchemeHttpResponse(status, headers, Decode(bytes, contentType?.CharSet)));
     }
@@ -81,11 +82,16 @@ public class PrimitiveHttpGet : Primitive
         return headers;
     }
 
-    internal static bool IsText(string? mediaType)
+    // Text: no type, text/*, the JSON/XML/JavaScript/form types, or any type
+    // that names a charset (application/x-sexp; charset=utf-8) -- a charset
+    // only makes sense for text. charset=binary is the one exception.
+    internal static bool IsText(string? mediaType, string? charset = null)
     {
         if (string.IsNullOrWhiteSpace(mediaType)) return true;
         var t = mediaType.Trim().ToLowerInvariant();
         if (t.StartsWith("text/")) return true;
+        var cs = charset?.Trim().Trim('"');
+        if (!string.IsNullOrEmpty(cs) && !cs.Equals("binary", StringComparison.OrdinalIgnoreCase)) return true;
         if (t.EndsWith("+json") || t.EndsWith("+xml")) return true;
         return t is "application/json" or "application/xml" or "application/javascript"
             or "application/ecmascript" or "application/x-www-form-urlencoded"

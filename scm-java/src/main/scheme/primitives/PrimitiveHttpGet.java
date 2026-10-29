@@ -22,8 +22,9 @@ public class PrimitiveHttpGet extends Primitive {
                "Description: Performs an HTTP GET request and returns an http-response object.\n" +
                "  Optional timeout-seconds overrides the default request timeout (600s); <= 0 means no timeout.\n" +
                "  The body is a string when the response is text (Content-Type text/*, JSON, XML,\n" +
-               "  JavaScript, form data, or none), decoded by its charset (UTF-8 by default), and a\n" +
-               "  bytevector otherwise (images, archives, ...), as it arrived.\n" +
+               "  JavaScript, form data, any type with a charset parameter such as\n" +
+               "  application/x-sexp; charset=utf-8, or none), decoded by its charset (UTF-8 by\n" +
+               "  default), and a bytevector otherwise (images, archives, ...), as it arrived.\n" +
                "Example:\n" +
                "  (http-response-status (http-get \"http://example.com/\")) => 200";
     }
@@ -78,10 +79,15 @@ public class PrimitiveHttpGet extends Primitive {
         return new NativeValue(new SchemeHttpResponse(status, headers, new String(bytes, charset(contentType))));
     }
 
+    // Text: no type, text/*, the JSON/XML/JavaScript/form types, or any type
+    // that names a charset (application/x-sexp; charset=utf-8) -- a charset
+    // only makes sense for text. charset=binary is the one exception.
     static boolean isText(String contentType) {
         if (contentType == null) return true;
         String t = contentType.split(";", 2)[0].trim().toLowerCase(Locale.ROOT);
         if (t.isEmpty() || t.startsWith("text/")) return true;
+        String cs = charsetName(contentType);
+        if (cs != null && !cs.equalsIgnoreCase("binary")) return true;
         if (t.endsWith("+json") || t.endsWith("+xml")) return true;
         switch (t) {
             case "application/json":
@@ -94,6 +100,18 @@ public class PrimitiveHttpGet extends Primitive {
             default:
                 return false;
         }
+    }
+
+    // The charset parameter of a Content-Type, null when there is none.
+    static String charsetName(String contentType) {
+        for (String part : contentType.split(";")) {
+            String p = part.trim();
+            if (p.toLowerCase(Locale.ROOT).startsWith("charset=")) {
+                String cs = p.substring(8).trim().replace("\"", "");
+                return cs.isEmpty() ? null : cs;
+            }
+        }
+        return null;
     }
 
     static Charset charset(String contentType) {

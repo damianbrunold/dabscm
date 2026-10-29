@@ -227,7 +227,8 @@
   ;; A PNG signature is not valid UTF-8: decoded as text it came back
   ;; corrupted. Whatever the call, a body that is not text arrives as the
   ;; bytes that were sent; text is decoded by its charset, UTF-8 or not,
-  ;; and Content-Type is among the headers on both implementations.
+  ;; and Content-Type is among the headers on both implementations. Any
+  ;; type naming a charset is text (x-sexp), except charset=binary.
   (let* ((png (bytevector 137 80 78 71 13 10 26 10 0 255))
          (server (tcp-http-serve 18089
                    (lambda (req)
@@ -236,6 +237,12 @@
                         ((string=? url "/latin1")
                          (make-http-response 200 '(("Content-Type" . "text/plain; charset=iso-8859-1"))
                                              (bytevector 90 252 114 105 99 104)))
+                        ((string=? url "/sexp")
+                         (make-http-response 200 '(("Content-Type" . "application/x-sexp; charset=utf-8"))
+                                             "(ok \"\x00e4;\")"))
+                        ((string=? url "/octet")
+                         (make-http-response 200 '(("Content-Type" . "application/octet-stream; charset=binary"))
+                                             png))
                         ((string=? url "/json")
                          (make-http-response 200 '(("Content-Type" . "application/json"))
                                              "{\"a\":\"\x00e4;\"}"))
@@ -254,6 +261,8 @@
            (body (lambda () (http-send (make-http-request "GET" "http://localhost:18089/a.png" '() #f))))
            (body (lambda () (http-get "http://localhost:18089/latin1")))
            (body (lambda () (http-get "http://localhost:18089/json")))
+           (body (lambda () (http-post "http://localhost:18089/sexp" "x")))
+           (body (lambda () (http-get "http://localhost:18089/octet")))
            (guard (e (#t #f))
              (http-response-header (retry (lambda () (http-get "http://localhost:18089/a.png")))
                                    "Content-Type")))))
@@ -263,7 +272,9 @@
     (test-equal png (list-ref results 2))
     (test-equal "Z\x00fc;rich" (list-ref results 3))
     (test-equal "{\"a\":\"\x00e4;\"}" (list-ref results 4))
-    (test-equal "image/png" (list-ref results 5))))
+    (test-equal "(ok \"\x00e4;\")" (list-ref results 5))
+    (test-equal png (list-ref results 6))
+    (test-equal "image/png" (list-ref results 7))))
 
 ;;; ---- Hardening tests (max-body, 503 saturation, host bind) ----
 (test-group "hardening"

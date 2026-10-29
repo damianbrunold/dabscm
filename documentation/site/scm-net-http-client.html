@@ -85,8 +85,9 @@ Library: (scm net http client)
 Description: Performs an HTTP GET request and returns an http-response object.
   Optional timeout-seconds overrides the default request timeout (600s); &lt;= 0 means no timeout.
   The body is a string when the response is text (Content-Type text/*, JSON, XML,
-  JavaScript, form data, or none), decoded by its charset (UTF-8 by default), and a
-  bytevector otherwise (images, archives, ...), as it arrived.
+  JavaScript, form data, any type with a charset parameter such as
+  application/x-sexp; charset=utf-8, or none), decoded by its charset (UTF-8 by
+  default), and a bytevector otherwise (images, archives, ...), as it arrived.
 Example:
   (http-response-status (http-get "http://example.com/")) =&gt; 200</pre>
 </div>
