@@ -130,6 +130,10 @@ public class Primitives {
         bind(new PrimitiveCopyFile());
         bind(new PrimitiveCos());
         bind(new PrimitiveCrc32());
+        bind(new PrimitiveImageDecodeRgba());
+        bind(new PrimitiveImageResizeRgba());
+        bind(new PrimitiveImageOrientRgba());
+        bind(new PrimitiveRgbaToJpeg());
         bind(new PrimitiveCreateModule(modules));
         bind(new PrimitiveCsvLineToFields());
         bind(new PrimitiveCurrentDirectory());

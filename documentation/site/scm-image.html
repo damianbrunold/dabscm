@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm image) — Dabscm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="toc">
+  <h2>Bindings</h2>
+  <a href="#e0" data-name="canvas-&gt;image">canvas-&gt;image</a>
+  <a href="#e1" data-name="image-&gt;canvas">image-&gt;canvas</a>
+  <a href="#e2" data-name="image-&gt;jpeg">image-&gt;jpeg</a>
+  <a href="#e3" data-name="image-&gt;png">image-&gt;png</a>
+  <a href="#e4" data-name="image-crop">image-crop</a>
+  <a href="#e5" data-name="image-decode">image-decode</a>
+  <a href="#e6" data-name="image-fit">image-fit</a>
+  <a href="#e7" data-name="image-height">image-height</a>
+  <a href="#e8" data-name="image-info">image-info</a>
+  <a href="#e9" data-name="image-orient">image-orient</a>
+  <a href="#e10" data-name="image-pixels">image-pixels</a>
+  <a href="#e11" data-name="image-read">image-read</a>
+  <a href="#e12" data-name="image-resize">image-resize</a>
+  <a href="#e13" data-name="image-width">image-width</a>
+  <a href="#e14" data-name="image?">image?</a>
+  <a href="#e15" data-name="make-image">make-image</a>
+</nav>
+
+<main>
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="index.html">All libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="index.html#sec-scm">Scm Extensions</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm image)</span>
+</nav>
+
+<div class="lib-title scm">(scm image)</div>
+<p class="lib-sub">Image decoding (PNG, JPEG), resizing, cropping, EXIF orientation, PNG and JPEG encoding</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><a class="xref" href="scm-image.html"><code>(scm image)</code></a> decodes PNG and JPEG files, scales, crops and turns images, and encodes them as PNG or JPEG. An image is width × height pixels of straight RGBA (8 bits per channel, rows top to bottom), the pixel format of <a class="xref" href="scm-raster.html"><code>(scm raster)</code></a> canvases, so you can decode a photo, draw on it and encode it again.</p>
+<ul>
+<li><strong>PNG</strong>: every colour type and bit depth (1 to 16 bits), palettes,</li>
+</ul>
+<p>transparency (tRNS), Adam7 interlacing.</p>
+<ul>
+<li><strong>JPEG</strong>: baseline and progressive Huffman-coded frames, any sampling</li>
+</ul>
+<p>factors, restart intervals; grayscale, YCbCr, RGB, CMYK and YCCK (Adobe). Subsampled colour is interpolated as libjpeg does, so pixels come out within a few levels of libjpeg's. Arithmetic-coded, lossless and 12-bit JPEGs are refused.</p>
+<ul>
+<li><strong>EXIF orientation</strong>: JPEGs are turned upright when decoded, as browsers</li>
+</ul>
+<p>show them (<code>(orient . #f)</code> keeps them as stored).</p>
+<ul>
+<li><strong>Limits</strong>: <a class="xref" href="#e5"><code>image-decode</code></a> refuses images of more than 50 million pixels</li>
+</ul>
+<p>(option <code>max-pixels</code>) before decoding them, so an upload cannot claim a gigantic size and exhaust memory. <a class="xref" href="#e8"><code>image-info</code></a> reads only the headers.</p>
+<p>Decoding, resizing, orientation and JPEG encoding run as native code (the same algorithms in the Java and .NET builds, which give identical pixels): a 12-megapixel JPEG decodes in about a second.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scm image))
+
+;; Validate an upload (bytes: a bytevector) without decoding it, then make
+;; a thumbnail.
+(let ((info (image-info bytes)))
+  (unless (and info (&lt;= (* (cdr (assq 'width info)) (cdr (assq 'height info))) 40000000))
+    (error "not a usable image")))
+(define photo (image-decode bytes))                  ; upright by EXIF
+(define thumb (image-fit photo 400 400))             ; at most 400 x 400
+(define jpeg (image-&gt;jpeg thumb 80))                 ; bytevector
+
+;; Exact sizes, crops, other filters.
+(image-resize photo 1920 1080 'bilinear)
+(image-crop photo 100 100 800 600)
+
+;; Draw on a photo with (scm raster).
+(import (scm raster))
+(define c (image-&gt;canvas photo))
+(canvas-fill-path! c (path-rect 0 0 200 80) (rgba 0 0 0 0.5))
+(image-&gt;png (canvas-&gt;image c))</code></pre>
+</div>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">16 bindings</p>
+
+<div class="entry" id="e0" data-name="canvas-&gt;image">
+  <div class="entry-name">canvas-&gt;image</div>
+  <pre class="entry-doc">Syntax: (canvas-&gt;image canvas)
+Library: (scm image)
+Description: An image with a copy of a (scm raster) canvas's pixels.
+Example:
+  (image-height (canvas-&gt;image (make-canvas 3 2))) =&gt; 2</pre>
+</div>
+<div class="entry" id="e1" data-name="image-&gt;canvas">
+  <div class="entry-name">image-&gt;canvas</div>
+  <pre class="entry-doc">Syntax: (image-&gt;canvas image)
+Library: (scm image)
+Description: A (scm raster) canvas with a copy of the image's pixels, to
+  draw on.
+Example:
+  (canvas-width (image-&gt;canvas (make-image 3 2))) =&gt; 3</pre>
+</div>
+<div class="entry" id="e2" data-name="image-&gt;jpeg">
+  <div class="entry-name">image-&gt;jpeg</div>
+  <pre class="entry-doc">Syntax: (image-&gt;jpeg image [quality])
+Library: (scm image)
+Description: The image as a baseline JPEG file (bytevector) at quality 1
+  to 100 (default 85); transparent parts become white.
+Example:
+  (bytevector-u8-ref (image-&gt;jpeg (make-image 8 8)) 0) =&gt; 255</pre>
+</div>
+<div class="entry" id="e3" data-name="image-&gt;png">
+  <div class="entry-name">image-&gt;png</div>
+  <pre class="entry-doc">Syntax: (image-&gt;png image)
+Library: (scm image)
+Description: The image as a PNG file (bytevector, RGBA).
+Example:
+  (bytevector-u8-ref (image-&gt;png (make-image 1 1)) 1) =&gt; 80</pre>
+</div>
+<div class="entry" id="e4" data-name="image-crop">
+  <div class="entry-name">image-crop</div>
+  <pre class="entry-doc">Syntax: (image-crop image x y width height)
+Library: (scm image)
+Description: The width x height part of the image whose top-left pixel
+  is at column x, row y. The part must lie within the image.
+Example:
+  (image-width (image-crop (make-image 10 10) 2 2 5 3)) =&gt; 5</pre>
+</div>
+<div class="entry" id="e5" data-name="image-decode">
+  <div class="entry-name">image-decode</div>
+  <pre class="entry-doc">Syntax: (image-decode bytevector [option ...])
+Library: (scm image)
+Description: Decodes a PNG or JPEG image. Options: (max-pixels . n)
+  refuses images of more than n pixels before decoding them (default
+  50 000 000: about 200 MB of pixels); (orient . #f) keeps a JPEG as
+  stored instead of turning it upright by its EXIF orientation. Signals
+  an error for data that is not a well-formed PNG or JPEG, or uses what
+  the decoder does not support (arithmetic coding, lossless JPEG, 12-bit
+  samples).
+Example:
+  (image-width (image-decode (image-&gt;png (make-image 3 2)))) =&gt; 3</pre>
+</div>
+<div class="entry" id="e6" data-name="image-fit">
+  <div class="entry-name">image-fit</div>
+  <pre class="entry-doc">Syntax: (image-fit image max-width max-height)
+Library: (scm image)
+Description: The image shrunk to fit into max-width x max-height,
+  keeping its aspect ratio (each side at least 1 pixel); an image that
+  fits already is returned as it is, never enlarged. For thumbnails and
+  downscaled copies.
+Example:
+  (let ((t (image-fit (make-image 4000 3000) 400 400)))
+    (list (image-width t) (image-height t)))  =&gt; (400 300)</pre>
+</div>
+<div class="entry" id="e7" data-name="image-height">
+  <div class="entry-name">image-height</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e8" data-name="image-info">
+  <div class="entry-name">image-info</div>
+  <pre class="entry-doc">Syntax: (image-info bytevector)
+Library: (scm image)
+Description: What the headers of an image file say, without decoding
+  it: an alist ((format . png | jpeg) (width . w) (height . h)
+  (orientation . 1-8)), width and height as stored (before orientation),
+  or #f if bytevector is not a PNG or JPEG.
+Example:
+  (image-info (image-&gt;png (make-image 3 2)))
+  =&gt; ((format . png) (width . 3) (height . 2) (orientation . 1))</pre>
+</div>
+<div class="entry" id="e9" data-name="image-orient">
+  <div class="entry-name">image-orient</div>
+  <pre class="entry-doc">Syntax: (image-orient image orientation)
+Library: (scm image)
+Description: The image turned and mirrored by an EXIF orientation: 1 as
+  is, 2 mirrored, 3 turned 180 degrees, 4 flipped, 5 transposed, 6 turned
+  90 degrees clockwise, 7 transversed, 8 turned 90 degrees
+  counterclockwise. 5 to 8 swap width and height.
+Example:
+  (image-width (image-orient (make-image 3 2) 6)) =&gt; 2</pre>
+</div>
+<div class="entry" id="e10" data-name="image-pixels">
+  <div class="entry-name">image-pixels</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e11" data-name="image-read">
+  <div class="entry-name">image-read</div>
+  <pre class="entry-doc">Syntax: (image-read path [option ...])
+Library: (scm image)
+Description: Reads and decodes the PNG or JPEG file at path; options as
+  for image-decode.
+Example:
+  (image-width (image-read "photo.jpg")) =&gt; 4032</pre>
+</div>
+<div class="entry" id="e12" data-name="image-resize">
+  <div class="entry-name">image-resize</div>
+  <pre class="entry-doc">Syntax: (image-resize image width height [method])
+Library: (scm image)
+Description: The image scaled to width x height pixels. method is 'box
+  (each new pixel the average of the area it covers: sharp, right for
+  shrinking) or 'bilinear (smoother, right for enlarging); the default is
+  'box when the image shrinks in both directions, else 'bilinear.
+  Transparent pixels do not darken their neighbours.
+Example:
+  (image-height (image-resize (make-image 400 300) 200 150)) =&gt; 150</pre>
+</div>
+<div class="entry" id="e13" data-name="image-width">
+  <div class="entry-name">image-width</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e14" data-name="image?">
+  <div class="entry-name">image?</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e15" data-name="make-image">
+  <div class="entry-name">make-image</div>
+  <pre class="entry-doc">Syntax: (make-image width height [pixels])
+Library: (scm image)
+Description: An image of width x height pixels: pixels is a bytevector
+  of straight RGBA, 4 bytes per pixel, rows top to bottom (default:
+  transparent black). image-width, image-height and image-pixels return
+  the parts; the pixels are shared, not copied.
+Example:
+  (image-width (make-image 3 2)) =&gt; 3</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>
