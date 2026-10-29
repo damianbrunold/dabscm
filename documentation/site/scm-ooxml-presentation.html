@@ -150,8 +150,10 @@ Description: Adds a shape: kind is rect, rounded, ellipse, triangle,
   outline, for text boxes). options is an alist: (fill . color),
   (fill-alpha . 0..1), (line . color), (line-width . emu), (rotation .
   degrees), (text . paragraphs), (anchor . top | middle | bottom),
-  (name . string), (build . (order effect)) with effect appear, fade,
-  fly-left, fly-right, fly-up (from below), fly-down (from above).
+  (insets . (left top right bottom)) the space in EMU between the edge
+  and the text (default none), (name . string), (build . (order effect))
+  with effect appear, fade, fly-left, fly-right, fly-up (from below),
+  fly-down (from above).
 Example:
   (slide-add-shape! s 'rounded 914400 914400 3657600 1828800
     '((fill . "0070B4")

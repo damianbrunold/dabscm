@@ -278,8 +278,13 @@ Description: The speaker notes of the slide (paragraphs as for text)."
              (run-props #f last-run "endParaRPr")
              "</a:p>")))
 
-    (define (text-body slide paragraphs anchor)
-      (cat "<p:txBody><a:bodyPr wrap=\"square\" lIns=\"0\" tIns=\"0\" rIns=\"0\" bIns=\"0\""
+    ;; insets: (left top right bottom) in EMU between the shape's edge and
+    ;; its text.
+    (define (text-body slide paragraphs anchor . insets)
+      (cat "<p:txBody><a:bodyPr wrap=\"square\""
+           (let ((i (if (and (pair? insets) (car insets)) (car insets) '(0 0 0 0))))
+             (cat (attr "lIns" (n (list-ref i 0))) (attr "tIns" (n (list-ref i 1)))
+                  (attr "rIns" (n (list-ref i 2))) (attr "bIns" (n (list-ref i 3)))))
            (attr "anchor" (case anchor ((middle) "ctr") ((bottom) "b") (else "t")))
            " rtlCol=\"0\"><a:noAutofit/></a:bodyPr><a:lstStyle/>"
            (if (null? paragraphs)
@@ -335,8 +340,10 @@ Description: Adds a shape: kind is rect, rounded, ellipse, triangle,
   outline, for text boxes). options is an alist: (fill . color),
   (fill-alpha . 0..1), (line . color), (line-width . emu), (rotation .
   degrees), (text . paragraphs), (anchor . top | middle | bottom),
-  (name . string), (build . (order effect)) with effect appear, fade,
-  fly-left, fly-right, fly-up (from below), fly-down (from above).
+  (insets . (left top right bottom)) the space in EMU between the edge
+  and the text (default none), (name . string), (build . (order effect))
+  with effect appear, fade, fly-left, fly-right, fly-up (from below),
+  fly-down (from above).
 Example:
   (slide-add-shape! s 'rounded 914400 914400 3657600 1828800
     '((fill . \"0070B4\")
@@ -358,7 +365,9 @@ Example:
                    (color-fill (opt opts 'fill #f) (opt opts 'fill-alpha #f)))
                (line-xml (opt opts 'line #f) (opt opts 'line-width #f))
                "</p:spPr>"
-               (if (or text text-box?) (text-body slide (or text '()) (opt opts 'anchor 'top)) "")
+               (if (or text text-box?)
+                   (text-body slide (or text '()) (opt opts 'anchor 'top) (opt opts 'insets #f))
+                   "")
                "</p:sp>"))
         (note-build! slide opts id (and text #t))
         id))

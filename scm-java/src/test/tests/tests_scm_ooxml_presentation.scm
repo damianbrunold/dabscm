@@ -39,6 +39,9 @@
 (slide-add-line! s1 0 2000000 3000000 0 '((color . "000000") (width . 12700) (flip . #t)))
 (slide-add-picture! s1 png "image/png" 0 3000000 1000000 1000000 '((key . "blue") (description . "Blau")))
 (slide-set-notes! s1 '(((runs . (((text . "Eine Notiz")))))))
+(slide-add-shape! s1 'rect 3000000 0 2000000 1000000
+  '((fill . "EEEEEE") (insets . (12700 25400 38100 50800))
+    (text . (((runs . (((text . "(f x)") (font . "JetBrains Mono")))))))))
 (slide-add-shape! s1 'text 0 6000000 2000000 300000
   '((text . (((runs . (((text . "Folie ")) ((text . "1") (field . slide-number)) ((text . " · "))
                        ((text . "29.10.2026") (field . date)))))))))
@@ -106,6 +109,8 @@
           (test-assert (has? s1 "sz=\"4000\""))
           (test-assert (has? s1 "<a:buChar char=\"–\"/>"))
           (test-assert (has? s1 "anchor=\"ctr\""))
+          (test-assert "insets" (has? s1 "lIns=\"12700\" tIns=\"25400\" rIns=\"38100\" bIns=\"50800\""))
+          (test-assert "none by default" (has? s1 "lIns=\"0\" tIns=\"0\" rIns=\"0\" bIns=\"0\""))
           (test-assert (has? s1 "rot=\"19800000\""))   ; -30 degrees
           (test-assert (has? s1 "<a:alpha val=\"50000\"/>"))
           (test-assert (has? s1 "flipV=\"1\""))
