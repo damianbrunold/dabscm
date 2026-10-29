@@ -283,6 +283,7 @@ public class Primitives {
         bind(new PrimitiveMakeHttpResponse());
         bind(new PrimitiveMakeHttpFileResponse());
         bind(new PrimitiveMakeHttpStreamResponse());
+        bind(new PrimitiveHttpWebsocketUpgrade());
         bind(new PrimitiveHttpResponseWithHeaders());
         bind(new PrimitiveMakeInstruction());
         bind(new PrimitiveMakeMutex());

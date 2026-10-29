@@ -38,11 +38,12 @@
   <a href="#e13" data-name="http-response?">http-response?</a>
   <a href="#e14" data-name="http-see-other">http-see-other</a>
   <a href="#e15" data-name="http-unauthorized">http-unauthorized</a>
-  <a href="#e16" data-name="json-response">json-response</a>
-  <a href="#e17" data-name="make-http-file-response">make-http-file-response</a>
-  <a href="#e18" data-name="make-http-response">make-http-response</a>
-  <a href="#e19" data-name="make-http-stream-response">make-http-stream-response</a>
-  <a href="#e20" data-name="text-response">text-response</a>
+  <a href="#e16" data-name="http-websocket-upgrade">http-websocket-upgrade</a>
+  <a href="#e17" data-name="json-response">json-response</a>
+  <a href="#e18" data-name="make-http-file-response">make-http-file-response</a>
+  <a href="#e19" data-name="make-http-response">make-http-response</a>
+  <a href="#e20" data-name="make-http-stream-response">make-http-stream-response</a>
+  <a href="#e21" data-name="text-response">text-response</a>
 </nav>
 
 <main>
@@ -59,7 +60,7 @@
 <p class="lib-sub">HTTP response construction and accessors</p>
 <div class="lib-preamble">
 <h2>Overview</h2>
-<p><a class="xref" href="scm-net-http-response.html"><code>(scm net http response)</code></a> is the HTTP response value type plus a set of constructors for common status codes. Server handlers return one of these; the client returns one to you. There are ready-made helpers for typical responses (<a class="xref" href="#e5"><code>http-ok</code></a>, <a class="xref" href="#e4"><code>http-not-found</code></a>, …) and content shortcuts (<a class="xref" href="#e0"><code>html-response</code></a>, <a class="xref" href="#e16"><code>json-response</code></a>).</p>
+<p><a class="xref" href="scm-net-http-response.html"><code>(scm net http response)</code></a> is the HTTP response value type plus a set of constructors for common status codes. Server handlers return one of these; the client returns one to you. There are ready-made helpers for typical responses (<a class="xref" href="#e5"><code>http-ok</code></a>, <a class="xref" href="#e4"><code>http-not-found</code></a>, …) and content shortcuts (<a class="xref" href="#e0"><code>html-response</code></a>, <a class="xref" href="#e17"><code>json-response</code></a>).</p>
 <h2>Common uses</h2>
 <p>Build responses in a handler:</p>
 <pre><code class="language-scheme">(import (scm net http response))
@@ -74,7 +75,7 @@
 (http-response-body resp)</code></pre>
 </div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
-<p class="export-count">21 bindings</p>
+<p class="export-count">22 bindings</p>
 
 <div class="entry" id="e0" data-name="html-response">
   <div class="entry-name">html-response</div>
@@ -213,7 +214,24 @@ Description: Creates a 401 Unauthorized HTTP response. msg defaults to "Unauthor
 Example:
   (http-unauthorized)</pre>
 </div>
-<div class="entry" id="e16" data-name="json-response">
+<div class="entry" id="e16" data-name="http-websocket-upgrade">
+  <div class="entry-name">http-websocket-upgrade</div>
+  <pre class="entry-doc">Syntax: (http-websocket-upgrade handler [headers])
+Library: (scm net http response)
+Description: The response that turns the request's connection into a WebSocket (RFC 6455):
+  tcp-http-serve checks the upgrade request (else it answers 400, or 426 for another protocol
+  version), sends 101 Switching Protocols with headers (an alist, e.g. a chosen
+  Sec-WebSocket-Protocol), and calls (handler ws) on the server thread; use ws-receive,
+  ws-send and ws-close from (scm net websocket). The connection closes when handler returns,
+  and holds one of the server's max-threads until then.
+Example:
+  (route-get "/echo" (lambda (req)
+    (http-websocket-upgrade
+      (lambda (ws)
+        (let loop ((m (ws-receive ws)))
+          (when m (ws-send ws m) (loop (ws-receive ws))))))))</pre>
+</div>
+<div class="entry" id="e17" data-name="json-response">
   <div class="entry-name">json-response</div>
   <pre class="entry-doc">Syntax: (json-response body)
 Library: (scm net http response)
@@ -222,7 +240,7 @@ Description: Creates a 200 OK response with Content-Type application/json; chars
 Example:
   (json-response "{\"ok\":true}")</pre>
 </div>
-<div class="entry" id="e17" data-name="make-http-file-response">
+<div class="entry" id="e18" data-name="make-http-file-response">
   <div class="entry-name">make-http-file-response</div>
   <pre class="entry-doc">Syntax: (make-http-file-response status headers path [offset [length]])
 Library: (scm net http response)
@@ -234,7 +252,7 @@ Example:
   (make-http-file-response 200 '(("Content-Type" . "video/mp4")) "/srv/v.mp4")
   (make-http-file-response 206 headers "/srv/v.mp4" 1000 500)</pre>
 </div>
-<div class="entry" id="e18" data-name="make-http-response">
+<div class="entry" id="e19" data-name="make-http-response">
   <div class="entry-name">make-http-response</div>
   <pre class="entry-doc">Syntax: (make-http-response status headers body)
 Library: (scm net http response)
@@ -242,7 +260,7 @@ Description: Creates an HTTP response object. status is an integer, headers is a
 Example:
   (make-http-response 200 '() "OK")</pre>
 </div>
-<div class="entry" id="e19" data-name="make-http-stream-response">
+<div class="entry" id="e20" data-name="make-http-stream-response">
   <div class="entry-name">make-http-stream-response</div>
   <pre class="entry-doc">Syntax: (make-http-stream-response status headers writer)
 Library: (scm net http response)
@@ -257,7 +275,7 @@ Example:
       (write-bytevector (string-&gt;utf8 "data: hello\n\n") port)
       (flush-output-port port)))</pre>
 </div>
-<div class="entry" id="e20" data-name="text-response">
+<div class="entry" id="e21" data-name="text-response">
   <div class="entry-name">text-response</div>
   <pre class="entry-doc">Syntax: (text-response body)
 Library: (scm net http response)

@@ -41,19 +41,35 @@
 </nav>
 
 <div class="lib-title scm">(scm net websocket)</div>
-<p class="lib-sub">WebSocket client and server support</p>
+<p class="lib-sub">WebSocket client and server — also in HTTP servers via http-websocket-upgrade</p>
 <div class="lib-preamble">
 <h2>Overview</h2>
-<p><a class="xref" href="scm-net-websocket.html"><code>(scm net websocket)</code></a> provides WebSocket support for both sides of a connection: upgrade an accepted server connection with <a class="xref" href="#e0"><code>ws-accept</code></a>, or open a client connection with <a class="xref" href="#e2"><code>ws-connect</code></a>, then exchange messages with <a class="xref" href="#e4"><code>ws-send</code></a> / <a class="xref" href="#e3"><code>ws-receive</code></a>.</p>
+<p><a class="xref" href="scm-net-websocket.html"><code>(scm net websocket)</code></a> speaks WebSocket (RFC 6455) on both sides of a connection. A server gets its connections from an HTTP route that returns <a class="xref" href="scm-net-http-response.html#e16"><code>http-websocket-upgrade</code></a> (see <a class="xref" href="scm-net-http-response.html"><code>(scm net http response)</code></a>), or from a raw TCP socket with <a class="xref" href="#e0"><code>ws-accept</code></a>; a client opens one with <a class="xref" href="#e2"><code>ws-connect</code></a>. Then <a class="xref" href="#e4"><code>ws-send</code></a>, <a class="xref" href="#e3"><code>ws-receive</code></a> and <a class="xref" href="#e1"><code>ws-close</code></a> exchange messages.</p>
+<p>The protocol details are handled for you: pings are answered with pongs, fragmented messages are joined, a close frame is answered, client frames are masked (and a server refuses unmasked ones), and a message over 16 MB ends the connection. One thread receives; any number of threads may send at the same time, also while the receiver waits.</p>
 <h2>Common uses</h2>
-<p>Client:</p>
-<pre><code class="language-scheme">(import (scm net websocket))
+<p>In an HTTP server, a route upgrades its connection:</p>
+<pre><code class="language-scheme">(import (scm net http server) (scm net http response) (scm net websocket))
 
-(define ws (ws-connect "ws://example.com/socket"))
+(define (handler req)
+  (http-websocket-upgrade
+    (lambda (ws)
+      (ws-send ws "welcome")
+      (let loop ()
+        (let ((m (ws-receive ws 30000)))   ; wait at most 30 s
+          (cond ((not m) 'closed)            ; the client went away
+                ((eq? m 'timeout)            ; quiet: still there?
+                 (ws-send ws "ping")
+                 (loop))
+                (else (ws-send ws m) (loop))))))))
+
+(serve-forever 8080 handler)</code></pre>
+<p>The handler runs on the server thread of that connection, which stays taken until the handler returns: give <a class="xref" href="scm-net-http-server.html#e5"><code>tcp-http-serve</code></a> enough <code>max-threads</code> for the connections you expect. A client:</p>
+<pre><code class="language-scheme">(define ws (ws-connect "localhost" 8080 "/socket"))
+(ws-receive ws)     ;; =&gt; "welcome"
 (ws-send ws "hello")
-(ws-receive ws)     ;; =&gt; the next message
+(ws-receive ws)     ;; =&gt; "hello"
 (ws-close ws)</code></pre>
-<p>On the server side, <a class="xref" href="#e0"><code>ws-accept</code></a> upgrades an accepted TCP connection to a WebSocket, after which the same <a class="xref" href="#e4"><code>ws-send</code></a> / <a class="xref" href="#e3"><code>ws-receive</code></a> / <a class="xref" href="#e1"><code>ws-close</code></a> apply. <a class="xref" href="#e5"><code>ws?</code></a> tests whether a value is a WebSocket.</p>
+<p><a class="xref" href="#e3"><code>ws-receive</code></a> returns a string for a text message, a bytevector for a binary one, <code>#f</code> once the connection has closed, and with a timeout the symbol <code>timeout</code> when nothing arrived in time. <a class="xref" href="#e5"><code>ws?</code></a> tests whether a value is a WebSocket.</p>
 </div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">6 bindings</p>
@@ -63,6 +79,7 @@
   <pre class="entry-doc">Syntax: (ws-accept socket)
 Library: (scm net websocket)
 Description: Performs a WebSocket server-side handshake (RFC 6455) on the given TCP socket. Returns a WebSocket object.
+  In an HTTP server, use http-websocket-upgrade instead.
 Example:
   (define ws (ws-accept sock))</pre>
 </div>
@@ -70,7 +87,8 @@ Example:
   <div class="entry-name">ws-close</div>
   <pre class="entry-doc">Syntax: (ws-close ws)
 Library: (scm net websocket)
-Description: Sends a close frame and closes the WebSocket connection.
+Description: Sends a close frame (status 1000) and closes the WebSocket connection; a thread
+  waiting in ws-receive gets #f.
 Example:
   (ws-close ws)</pre>
 </div>
@@ -84,17 +102,24 @@ Example:
 </div>
 <div class="entry" id="e3" data-name="ws-receive">
   <div class="entry-name">ws-receive</div>
-  <pre class="entry-doc">Syntax: (ws-receive ws)
+  <pre class="entry-doc">Syntax: (ws-receive ws [timeout-ms])
 Library: (scm net websocket)
-Description: Receives a message from the WebSocket. Returns a string for text frames, a bytevector for binary frames, or #f on close/error.
+Description: Waits for the next message from the WebSocket and returns it: a string for a text
+  message, a bytevector for a binary one (fragmented messages are joined), or #f when the
+  connection has closed (by the peer, an error, or a message over 16 MB). Pings are answered
+  with pongs on the way. With timeout-ms, returns the symbol timeout if no message began
+  within that time (the connection stays usable).
 Example:
-  (ws-receive ws) =&gt; "Hello!"</pre>
+  (ws-receive ws) =&gt; "Hello!"
+  (ws-receive ws 30000) =&gt; timeout</pre>
 </div>
 <div class="entry" id="e4" data-name="ws-send">
   <div class="entry-name">ws-send</div>
   <pre class="entry-doc">Syntax: (ws-send ws message)
 Library: (scm net websocket)
-Description: Sends a message over the WebSocket. message may be a string (text frame) or a bytevector (binary frame).
+Description: Sends a message over the WebSocket. message may be a string (text frame) or a bytevector
+  (binary frame). Safe to call from several threads, also while another thread waits in ws-receive.
+  Signals an error when the connection is closed.
 Example:
   (ws-send ws "Hello!")</pre>
 </div>

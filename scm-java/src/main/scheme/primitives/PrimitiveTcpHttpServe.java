@@ -198,6 +198,11 @@ public class PrimitiveTcpHttpServe extends Primitive {
                                     resp = new SchemeHttpResponse(500, new ArrayList<>(), "Internal Server Error");
                                 }
 
+                                if (resp.websocket != null) {
+                                    upgrade(c, raw, out, method, url, headers, resp);
+                                    return;
+                                }
+
                                 StringBuilder sb = new StringBuilder();
                                 sb.append("HTTP/1.1 ").append(resp.status).append(" ").append(statusText(resp.status)).append("\r\n");
                                 boolean hasContentLength = false;
@@ -331,6 +336,61 @@ public class PrimitiveTcpHttpServe extends Primitive {
             if (!tracked.failed) logHandlerError(method, url, "stream writer raised: " + ex.getMessage());
         }
         if (!tracked.failed) port.flush();
+    }
+
+    private static String headerValue(List<String[]> headers, String name) {
+        for (String[] h : headers) if (h[0].equalsIgnoreCase(name)) return h[1];
+        return null;
+    }
+
+    // True if a comma-separated header value has token (case-insensitive).
+    private static boolean hasToken(String value, String token) {
+        if (value == null) return false;
+        for (String t : value.split(",")) if (t.trim().equalsIgnoreCase(token)) return true;
+        return false;
+    }
+
+    // The handler returned http-websocket-upgrade: check the handshake
+    // (RFC 6455, 4.2.1), switch protocols, and run (handler ws) on this
+    // connection; it holds one of the server's threads until it returns.
+    private void upgrade(Socket c, InputStream raw, OutputStream out, String method, String url,
+                         List<String[]> headers, SchemeHttpResponse resp) throws IOException {
+        String key = headerValue(headers, "Sec-WebSocket-Key");
+        if (!method.equals("GET") || !hasToken(headerValue(headers, "Upgrade"), "websocket")
+                || !hasToken(headerValue(headers, "Connection"), "upgrade") || key == null || key.isEmpty()) {
+            writeStatusOnly(out, 400);
+            return;
+        }
+        if (!"13".equals(headerValue(headers, "Sec-WebSocket-Version"))) {
+            out.write(("HTTP/1.1 426 Upgrade Required\r\nSec-WebSocket-Version: 13\r\n"
+                + "Content-Length: 0\r\nConnection: close\r\n\r\n").getBytes(StandardCharsets.UTF_8));
+            return;
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append("HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n");
+        sb.append("Sec-WebSocket-Accept: ").append(SchemeWebSocket.acceptKey(key)).append("\r\n");
+        for (String[] h : resp.headers)
+            sb.append(sanitizeHeader(h[0])).append(": ").append(sanitizeHeader(h[1])).append("\r\n");
+        sb.append("\r\n");
+        out.write(sb.toString().getBytes(StandardCharsets.UTF_8));
+        out.flush();
+        c.setSoTimeout(0);           // a WebSocket may be quiet for long; see ws-receive's timeout
+        c.setKeepAlive(true);
+        SchemeWebSocket ws = new SchemeWebSocket(raw, out, true, c);
+        try {
+            VM vm = new VM(modules);
+            Lambda wrapper = new Lambda(Value.NIL, Instruction.seq(
+                new Instruction(Opcode.ARGS, 0),
+                new Instruction(Opcode.CONST, new NativeValue(ws)),
+                new Instruction(Opcode.CONST, resp.websocket),
+                new Instruction(Opcode.CALLJ, 1)));
+            vm.execute(wrapper);
+        } catch (Exception ex) {
+            if (!ws.isClosed()) logHandlerError(method, url, "websocket handler raised: " + ex.getMessage());
+        } finally {
+            ws.close(1000);
+            ws.shutdown();
+        }
     }
 
     private static String sanitizeHeader(String s) {

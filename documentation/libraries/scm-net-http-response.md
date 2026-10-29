@@ -203,6 +203,25 @@ Example:
   (http-unauthorized)
 ```
 
+### `http-websocket-upgrade`
+
+```
+Syntax: (http-websocket-upgrade handler [headers])
+Library: (scm net http response)
+Description: The response that turns the request's connection into a WebSocket (RFC 6455):
+  tcp-http-serve checks the upgrade request (else it answers 400, or 426 for another protocol
+  version), sends 101 Switching Protocols with headers (an alist, e.g. a chosen
+  Sec-WebSocket-Protocol), and calls (handler ws) on the server thread; use ws-receive,
+  ws-send and ws-close from (scm net websocket). The connection closes when handler returns,
+  and holds one of the server's max-threads until then.
+Example:
+  (route-get "/echo" (lambda (req)
+    (http-websocket-upgrade
+      (lambda (ws)
+        (let loop ((m (ws-receive ws)))
+          (when m (ws-send ws m) (loop (ws-receive ws))))))))
+```
+
 ### `json-response`
 
 ```

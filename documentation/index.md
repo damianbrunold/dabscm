@@ -88,6 +88,7 @@
 | [`(scm glob)`](libraries/scm-glob.md) | Filename globbing and pattern matching |
 | [`(scm html builder)`](libraries/scm-html-builder.md) | SXML-shaped HTML5 builder with automatic escaping |
 | [`(scm html)`](libraries/scm-html.md) | HTML escaping and tag stripping |
+| [`(scm image)`](libraries/scm-image.md) | Image decoding (PNG, JPEG), resizing, cropping, EXIF orientation, PNG and JPEG encoding |
 | [`(scm io)`](libraries/scm-io.md) | Extended I/O — formatting, port utilities, property lists |
 | [`(scm json simple)`](libraries/scm-json-simple.md) | High-level JSON codec — parse and serialize JSON as Scheme data |
 | [`(scm json)`](libraries/scm-json.md) | JSON file reading |
@@ -113,7 +114,7 @@
 | [`(scm net-remote)`](libraries/scm-net-remote.md) | Remote operations — curl, wget, ssh, scp, rsync |
 | [`(scm net smtp)`](libraries/scm-net-smtp.md) |  |
 | [`(scm net sockets)`](libraries/scm-net-sockets.md) | TCP socket operations — listen, accept, connect |
-| [`(scm net websocket)`](libraries/scm-net-websocket.md) | WebSocket client and server support |
+| [`(scm net websocket)`](libraries/scm-net-websocket.md) | WebSocket client and server — also in HTTP servers via http-websocket-upgrade |
 | [`(scm odf spreadsheet)`](libraries/scm-odf-spreadsheet.md) | ODF spreadsheet creation (ODS format) |
 | [`(scm odf writer)`](libraries/scm-odf-writer.md) | ODF text document creation (ODT format) |
 | [`(scm ooxml excel-reader)`](libraries/scm-ooxml-excel-reader.md) | Excel workbook reading (OOXML/XLSX format) |
@@ -130,6 +131,8 @@
 | [`(scm raster)`](libraries/scm-raster.md) | Anti-aliased 2D rasterization — paths, fills, strokes, dashes, PNG output |
 | [`(scm reloader)`](libraries/scm-reloader.md) |  |
 | [`(scm repl)`](libraries/scm-repl.md) | REPL support — completions, syntax info, core form names |
+| [`(scm scaffold starters)`](libraries/scm-scaffold-starters.md) | The starter applications' files (generated) |
+| [`(scm scaffold)`](libraries/scm-scaffold.md) | New applications from the starters: scm new-app |
 | [`(scm store)`](libraries/scm-store.md) | Immutable on-disk indexed record store |
 | [`(scm string)`](libraries/scm-string.md) | Extended string operations — search, split, trim, convert |
 | [`(scm svg raster)`](libraries/scm-svg-raster.md) | SVG rendering to a raster canvas or PNG — shapes, paths, CSS, text, patterns |

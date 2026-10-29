@@ -29,7 +29,9 @@ public class PrimitiveWsConnect extends Primitive {
             Socket socket = new Socket(host, port);
             InputStream rawIn = socket.getInputStream();
             OutputStream rawOut = socket.getOutputStream();
-            String key = Base64.getEncoder().encodeToString(UUID.randomUUID().toString().getBytes());
+            byte[] nonce = new byte[16];
+            new java.security.SecureRandom().nextBytes(nonce);
+            String key = Base64.getEncoder().encodeToString(nonce);
             String request = "GET " + path + " HTTP/1.1\r\n" +
                 "Host: " + host + ":" + port + "\r\n" +
                 "Upgrade: websocket\r\n" +
@@ -38,10 +40,18 @@ public class PrimitiveWsConnect extends Primitive {
                 "Sec-WebSocket-Version: 13\r\n\r\n";
             rawOut.write(request.getBytes(StandardCharsets.UTF_8));
             rawOut.flush();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(rawIn, StandardCharsets.UTF_8));
-            String line;
-            while ((line = reader.readLine()) != null && !line.isEmpty()) { /* drain */ }
-            return new NativeValue(new SchemeWebSocket(rawIn, rawOut, false));
-        } catch (Exception e) { throw new SchemeError(pos, "ws-connect: " + e.getMessage()); }
+            String headers = SchemeWebSocket.readHeaders(rawIn);
+            if (headers == null || !headers.startsWith("HTTP/1.1 101")) {
+                socket.close();
+                String status = headers == null ? "no response" : headers.split("\r\n", 2)[0];
+                throw new SchemeError(pos, "ws-connect: the server refused the upgrade: ~a", status);
+            }
+            if (!headers.toLowerCase().contains("sec-websocket-accept: " + SchemeWebSocket.acceptKey(key).toLowerCase())) {
+                socket.close();
+                throw new SchemeError(pos, "ws-connect: ~a", "bad Sec-WebSocket-Accept");
+            }
+            return new NativeValue(new SchemeWebSocket(rawIn, rawOut, false, socket));
+        } catch (SchemeError e) { throw e; }
+        catch (Exception e) { throw new SchemeError(pos, "ws-connect: " + e.getMessage()); }
     }
 }

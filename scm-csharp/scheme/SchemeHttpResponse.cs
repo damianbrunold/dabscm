@@ -15,6 +15,7 @@ public class SchemeHttpResponse
     public long FileOffset;
     public long FileLength;
     public Lambda? Writer;      // body: written by this procedure (make-http-stream-response)
+    public Lambda? WebSocket;   // no body: the connection becomes a WebSocket for this procedure (http-websocket-upgrade)
 
     public SchemeHttpResponse(int status, List<(string, string)> headers, string body)
     {
@@ -49,10 +50,17 @@ public class SchemeHttpResponse
         return r;
     }
 
+    public static SchemeHttpResponse OfWebSocket(List<(string, string)> headers, Lambda handler)
+    {
+        var r = new SchemeHttpResponse(101, headers, "");
+        r.WebSocket = handler;
+        return r;
+    }
+
     // The body length when known in advance, else -1 (a streamed body).
     public long BodyLength()
     {
-        if (Writer != null) return -1;
+        if (Writer != null || WebSocket != null) return -1;
         if (FilePath != null) return FileLength;
         return GetBodyBytes().Length;
     }
@@ -62,6 +70,8 @@ public class SchemeHttpResponse
     {
         if (Writer != null)
             throw new SchemeError("http-response-body: a streamed response has no body to read");
+        if (WebSocket != null)
+            throw new SchemeError("http-response-body: a WebSocket upgrade has no body");
         if (FilePath != null)
         {
             if (FileLength > int.MaxValue - 16)

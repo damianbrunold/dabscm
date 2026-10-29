@@ -211,6 +211,12 @@ public class PrimitiveTcpHttpServe : Primitive
                                     schemeResp = new SchemeHttpResponse(500, new List<(string,string)>(), "Internal Server Error");
                                 }
 
+                                if (schemeResp.WebSocket != null)
+                                {
+                                    Upgrade(tcpClient, stream, method, url, headers, schemeResp);
+                                    return;
+                                }
+
                                 // Write response
                                 var sb = new StringBuilder();
                                 sb.Append($"HTTP/1.1 {schemeResp.Status} {StatusText(schemeResp.Status)}\r\n");
@@ -350,6 +356,77 @@ public class PrimitiveTcpHttpServe : Primitive
         {
             try { inner.Flush(); }
             catch (Exception) { Failed = true; throw; }
+        }
+    }
+
+    private static string? HeaderValue(List<(string, string)> headers, string name)
+    {
+        foreach (var (hn, hv) in headers)
+            if (hn.Equals(name, StringComparison.OrdinalIgnoreCase)) return hv;
+        return null;
+    }
+
+    // True if a comma-separated header value has token (case-insensitive).
+    private static bool HasToken(string? value, string token)
+    {
+        if (value == null) return false;
+        foreach (var t in value.Split(','))
+            if (t.Trim().Equals(token, StringComparison.OrdinalIgnoreCase)) return true;
+        return false;
+    }
+
+    // The handler returned http-websocket-upgrade: check the handshake
+    // (RFC 6455, 4.2.1), switch protocols, and run (handler ws) on this
+    // connection; it holds one of the server's threads until it returns.
+    private void Upgrade(TcpClient client, Stream stream, string method, string url,
+                         List<(string, string)> headers, SchemeHttpResponse resp)
+    {
+        string? key = HeaderValue(headers, "Sec-WebSocket-Key");
+        if (method != "GET" || !HasToken(HeaderValue(headers, "Upgrade"), "websocket")
+            || !HasToken(HeaderValue(headers, "Connection"), "upgrade") || string.IsNullOrEmpty(key))
+        {
+            WriteStatusOnly(stream, 400);
+            return;
+        }
+        if (HeaderValue(headers, "Sec-WebSocket-Version") != "13")
+        {
+            var b426 = Encoding.UTF8.GetBytes("HTTP/1.1 426 Upgrade Required\r\nSec-WebSocket-Version: 13\r\n"
+                + "Content-Length: 0\r\nConnection: close\r\n\r\n");
+            stream.Write(b426, 0, b426.Length);
+            return;
+        }
+        var sb = new StringBuilder();
+        sb.Append("HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n");
+        sb.Append("Sec-WebSocket-Accept: ").Append(SchemeWebSocket.AcceptKey(key)).Append("\r\n");
+        foreach (var (hn, hv) in resp.Headers)
+            sb.Append(SanitizeHeader(hn)).Append(": ").Append(SanitizeHeader(hv)).Append("\r\n");
+        sb.Append("\r\n");
+        var head = Encoding.UTF8.GetBytes(sb.ToString());
+        stream.Write(head, 0, head.Length);
+        stream.Flush();
+        // A WebSocket may be quiet for long; see ws-receive's timeout.
+        client.ReceiveTimeout = 0;
+        client.SendTimeout = 0;
+        client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
+        var ws = new SchemeWebSocket(stream, true, client);
+        try
+        {
+            VM vm = new VM(modules);
+            Lambda wrapper = new Lambda(Value.NIL, Instruction.Seq(
+                new Instruction(Opcode.ARGS, 0),
+                new Instruction(Opcode.CONST, new NativeValue(ws)),
+                new Instruction(Opcode.CONST, resp.WebSocket!),
+                new Instruction(Opcode.CALLJ, 1)));
+            vm.Execute(wrapper);
+        }
+        catch (Exception ex)
+        {
+            if (!ws.IsClosed) LogHandlerError(method, url, "websocket handler raised: " + ex.Message);
+        }
+        finally
+        {
+            ws.Close(1000);
+            ws.Shutdown();
         }
     }
 

@@ -1,23 +1,52 @@
 ## Overview
 
-`(scm net websocket)` provides WebSocket support for both sides of a connection:
-upgrade an accepted server connection with `ws-accept`, or open a client
-connection with `ws-connect`, then exchange messages with `ws-send` /
-`ws-receive`.
+`(scm net websocket)` speaks WebSocket (RFC 6455) on both sides of a
+connection. A server gets its connections from an HTTP route that returns
+`http-websocket-upgrade` (see `(scm net http response)`), or from a raw TCP
+socket with `ws-accept`; a client opens one with `ws-connect`. Then
+`ws-send`, `ws-receive` and `ws-close` exchange messages.
+
+The protocol details are handled for you: pings are answered with pongs,
+fragmented messages are joined, a close frame is answered, client frames are
+masked (and a server refuses unmasked ones), and a message over 16 MB ends
+the connection. One thread receives; any number of threads may send at the
+same time, also while the receiver waits.
 
 ## Common uses
 
-Client:
+In an HTTP server, a route upgrades its connection:
 
 ```scheme
-(import (scm net websocket))
+(import (scm net http server) (scm net http response) (scm net websocket))
 
-(define ws (ws-connect "ws://example.com/socket"))
+(define (handler req)
+  (http-websocket-upgrade
+    (lambda (ws)
+      (ws-send ws "welcome")
+      (let loop ()
+        (let ((m (ws-receive ws 30000)))   ; wait at most 30 s
+          (cond ((not m) 'closed)            ; the client went away
+                ((eq? m 'timeout)            ; quiet: still there?
+                 (ws-send ws "ping")
+                 (loop))
+                (else (ws-send ws m) (loop))))))))
+
+(serve-forever 8080 handler)
+```
+
+The handler runs on the server thread of that connection, which stays taken
+until the handler returns: give `tcp-http-serve` enough `max-threads` for
+the connections you expect. A client:
+
+```scheme
+(define ws (ws-connect "localhost" 8080 "/socket"))
+(ws-receive ws)     ;; => "welcome"
 (ws-send ws "hello")
-(ws-receive ws)     ;; => the next message
+(ws-receive ws)     ;; => "hello"
 (ws-close ws)
 ```
 
-On the server side, `ws-accept` upgrades an accepted TCP connection to a
-WebSocket, after which the same `ws-send` / `ws-receive` / `ws-close` apply.
-`ws?` tests whether a value is a WebSocket.
+`ws-receive` returns a string for a text message, a bytevector for a binary
+one, `#f` once the connection has closed, and with a timeout the symbol
+`timeout` when nothing arrived in time. `ws?` tests whether a value is a
+WebSocket.

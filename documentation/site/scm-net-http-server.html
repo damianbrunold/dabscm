@@ -68,7 +68,7 @@
         (let ((p (open-binary-output-file dest)))
           (write-bytevector (http-request-body-bytes req) p)
           (close-port p)))))</code></pre>
-<p>Responses need not be in memory either: <a class="xref" href="scm-net-http-response.html#e17"><code>make-http-file-response</code></a> sends (a part of) a file from disk, and <a class="xref" href="scm-net-http-static.html#e0"><code>file-response</code></a> in <a class="xref" href="scm-net-http-static.html"><code>(scm net http static)</code></a> answers byte-range requests with it, so audio and video can seek. <a class="xref" href="scm-net-http-response.html#e19"><code>make-http-stream-response</code></a> calls a procedure with a port to the client, for server-sent events or large generated downloads:</p>
+<p>Responses need not be in memory either: <a class="xref" href="scm-net-http-response.html#e18"><code>make-http-file-response</code></a> sends (a part of) a file from disk, and <a class="xref" href="scm-net-http-static.html#e0"><code>file-response</code></a> in <a class="xref" href="scm-net-http-static.html"><code>(scm net http static)</code></a> answers byte-range requests with it, so audio and video can seek. <a class="xref" href="scm-net-http-response.html#e20"><code>make-http-stream-response</code></a> calls a procedure with a port to the client, for server-sent events or large generated downloads:</p>
 <pre><code class="language-scheme">(make-http-stream-response 200 '(("Content-Type" . "text/event-stream"))
   (lambda (port)
     (let loop ((i 0))
@@ -76,6 +76,12 @@
       (flush-output-port port)
       (thread-sleep! 1)
       (loop (+ i 1)))))   ; ends with an error once the client is gone</code></pre>
+<p>A route can also turn its connection into a WebSocket: it returns <a class="xref" href="scm-net-http-response.html#e16"><code>http-websocket-upgrade</code></a> with a procedure, the server checks the upgrade request and switches protocols, and the procedure talks over the socket with <a class="xref" href="scm-net-websocket.html"><code>(scm net websocket)</code></a> until it returns:</p>
+<pre><code class="language-scheme">(http-websocket-upgrade
+  (lambda (ws)
+    (let loop ((m (ws-receive ws)))
+      (when m (ws-send ws m) (loop (ws-receive ws))))))</code></pre>
+<p>Streamed responses and WebSockets hold a server thread while they run, so <code>max-threads</code> bounds how many can be open at once.</p>
 </div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
 <p class="export-count">6 bindings</p>

@@ -68,6 +68,21 @@ for server-sent events or large generated downloads:
       (loop (+ i 1)))))   ; ends with an error once the client is gone
 ```
 
+A route can also turn its connection into a WebSocket: it returns
+`http-websocket-upgrade` with a procedure, the server checks the upgrade
+request and switches protocols, and the procedure talks over the socket
+with `(scm net websocket)` until it returns:
+
+```scheme
+(http-websocket-upgrade
+  (lambda (ws)
+    (let loop ((m (ws-receive ws)))
+      (when m (ws-send ws m) (loop (ws-receive ws))))))
+```
+
+Streamed responses and WebSockets hold a server thread while they run, so
+`max-threads` bounds how many can be open at once.
+
 
 ## Exports
 

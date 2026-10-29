@@ -25,7 +25,7 @@ public class PrimitiveWsConnect : Primitive
 
         var client = new TcpClient(host, port);
         var stream = client.GetStream();
-        string key = Convert.ToBase64String(Guid.NewGuid().ToByteArray());
+        string key = Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(16));
 
         string request =
             $"GET {path} HTTP/1.1\r\n" +
@@ -38,10 +38,18 @@ public class PrimitiveWsConnect : Primitive
         stream.Write(requestBytes, 0, requestBytes.Length);
         stream.Flush();
 
-        // Read response (just drain headers)
-        var reader = new StreamReader(stream, Encoding.UTF8, leaveOpen: true);
-        while ((reader.ReadLine() ?? "") != "") { }
-
-        return new NativeValue(new SchemeWebSocket(stream, false));
+        string? headers = SchemeWebSocket.ReadHeaders(stream);
+        if (headers == null || !headers.StartsWith("HTTP/1.1 101"))
+        {
+            client.Close();
+            string status = headers == null ? "no response" : headers.Split("\r\n", 2)[0];
+            throw new SchemeError(pos, "ws-connect: the server refused the upgrade: ~a", status);
+        }
+        if (!headers.ToLowerInvariant().Contains("sec-websocket-accept: " + SchemeWebSocket.AcceptKey(key).ToLowerInvariant()))
+        {
+            client.Close();
+            throw new SchemeError(pos, "ws-connect: ~a", "bad Sec-WebSocket-Accept");
+        }
+        return new NativeValue(new SchemeWebSocket(stream, false, client));
     }
 }
