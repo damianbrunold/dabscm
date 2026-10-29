@@ -65,11 +65,23 @@ public class SyntaxObject
         {
             return new SyntaxObject(datum, scopes, pos);
         }
-        if (datum is Pair p)
+        if (datum is Pair)
         {
-            var wrappedCar = WrapDatum(p.car, scopes, p.pos);
-            var wrappedCdr = WrapDatum(p.cdr, scopes, null);
-            return new Pair(wrappedCar, wrappedCdr, p.pos ?? pos);
+            // Along the spine in a loop (see MapList).
+            var pairs = new List<Pair>();
+            object rest = datum;
+            while (rest is Pair q)
+            {
+                pairs.Add(q);
+                rest = q.cdr;
+            }
+            object result = WrapDatum(rest, scopes, null);
+            for (int i = pairs.Count - 1; i >= 0; i--)
+            {
+                var p = pairs[i];
+                result = new Pair(WrapDatum(p.car, scopes, p.pos), result, p.pos ?? (i == 0 ? pos : null));
+            }
+            return result;
         }
         if (Value.IsVector(datum))
         {
@@ -95,12 +107,7 @@ public class SyntaxObject
             return new SyntaxObject(so.Datum, so.Scopes.Add(scope), so.Pos);
         }
         if (stx is Pair p)
-        {
-            var car = AddScope(p.car, scope);
-            var cdr = AddScope(p.cdr, scope);
-            if (car == p.car && cdr == p.cdr) return stx;
-            return new Pair(car, cdr, p.pos);
-        }
+            return MapList(p, x => AddScope(x, scope));
         if (Value.IsVector(stx))
         {
             var vec = Value.AsVector(stx);
@@ -128,12 +135,7 @@ public class SyntaxObject
             return new SyntaxObject(so.Datum, so.Scopes.Flip(scope), so.Pos);
         }
         if (stx is Pair p)
-        {
-            var car = FlipScope(p.car, scope);
-            var cdr = FlipScope(p.cdr, scope);
-            if (car == p.car && cdr == p.cdr) return stx;
-            return new Pair(car, cdr, p.pos);
-        }
+            return MapList(p, x => FlipScope(x, scope));
         if (Value.IsVector(stx))
         {
             var vec = Value.AsVector(stx);
@@ -154,6 +156,40 @@ public class SyntaxObject
     /// through the binding table. Resolved identifiers use their ResolvedName;
     /// unresolved identifiers use their symbol name.
     /// </summary>
+    /// <summary>
+    /// f applied to the elements of a list (and to the tail of an improper
+    /// one): along the spine in a loop, not by recursion on the cdr, which
+    /// would overflow the stack on a long quoted list (a font's kerning
+    /// table). Unchanged tails are shared; positions are kept.
+    /// </summary>
+    internal static object MapList(Pair list, Func<object, object> f)
+    {
+        var pairs = new List<Pair>();
+        var cars = new List<object>();
+        object rest = list;
+        while (rest is Pair p)
+        {
+            pairs.Add(p);
+            cars.Add(f(p.car));
+            rest = p.cdr;
+        }
+        object result = f(rest);
+        bool same = result == rest;
+        for (int i = pairs.Count - 1; i >= 0; i--)
+        {
+            var p = pairs[i];
+            var car = cars[i];
+            if (same && car == p.car)
+                result = p;
+            else
+            {
+                result = new Pair(car, result, p.pos);
+                same = false;
+            }
+        }
+        return result;
+    }
+
     public static object Strip(object stx, BindingTable bindingTable)
     {
         if (stx is SyntaxObject so)
@@ -170,13 +206,7 @@ public class SyntaxObject
             return Strip(so.Datum, bindingTable);
         }
         if (stx is Pair p)
-        {
-            var car = Strip(p.car, bindingTable);
-            var cdr = Strip(p.cdr, bindingTable);
-            if (car == p.car && cdr == p.cdr)
-                return p;
-            return new Pair(car, cdr, p.pos);
-        }
+            return MapList(p, x => Strip(x, bindingTable));
         if (Value.IsVector(stx))
         {
             var vec = Value.AsVector(stx);
@@ -206,13 +236,7 @@ public class SyntaxObject
             return Strip(so.Datum);
         }
         if (stx is Pair p)
-        {
-            var car = Strip(p.car);
-            var cdr = Strip(p.cdr);
-            if (car == p.car && cdr == p.cdr)
-                return p;
-            return new Pair(car, cdr, p.pos);
-        }
+            return MapList(p, x => Strip(x));
         if (Value.IsVector(stx))
         {
             var vec = Value.AsVector(stx);

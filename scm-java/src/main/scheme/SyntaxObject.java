@@ -68,12 +68,21 @@ public class SyntaxObject {
             return new SyntaxObject(datum, scopes, pos);
         }
         if (datum instanceof Pair) {
-            Pair p = (Pair) datum;
-            Object wrappedCar = wrapDatum(p.car, scopes, p.pos);
-            Object wrappedCdr = wrapDatum(p.cdr, scopes, null);
-            Pair newPair = new Pair(wrappedCar, wrappedCdr);
-            newPair.pos = p.pos != null ? p.pos : pos;
-            return newPair;
+            // Along the spine in a loop (see mapList).
+            java.util.ArrayList<Pair> pairs = new java.util.ArrayList<>();
+            Object rest = datum;
+            while (rest instanceof Pair) {
+                pairs.add((Pair) rest);
+                rest = ((Pair) rest).cdr;
+            }
+            Object result = wrapDatum(rest, scopes, null);
+            for (int i = pairs.size() - 1; i >= 0; i--) {
+                Pair p = pairs.get(i);
+                Pair newPair = new Pair(wrapDatum(p.car, scopes, p.pos), result);
+                newPair.pos = p.pos != null ? p.pos : (i == 0 ? pos : null);
+                result = newPair;
+            }
+            return result;
         }
         if (Value.isVector(datum)) {
             Object[] vec = Value.asVector(datum);
@@ -98,15 +107,8 @@ public class SyntaxObject {
             SyntaxObject so = (SyntaxObject) stx;
             return new SyntaxObject(so.datum, so.scopes.add(scope), so.pos);
         }
-        if (stx instanceof Pair) {
-            Pair p = (Pair) stx;
-            Object car = addScope(p.car, scope);
-            Object cdr = addScope(p.cdr, scope);
-            if (car == p.car && cdr == p.cdr) return stx;
-            Pair result = new Pair(car, cdr);
-            result.pos = p.pos;
-            return result;
-        }
+        if (stx instanceof Pair)
+            return mapList((Pair) stx, x -> addScope(x, scope));
         if (Value.isVector(stx)) {
             Object[] vec = Value.asVector(stx);
             Object[] newVec = new Object[vec.length];
@@ -132,15 +134,8 @@ public class SyntaxObject {
             SyntaxObject so = (SyntaxObject) stx;
             return new SyntaxObject(so.datum, so.scopes.flip(scope), so.pos);
         }
-        if (stx instanceof Pair) {
-            Pair p = (Pair) stx;
-            Object car = flipScope(p.car, scope);
-            Object cdr = flipScope(p.cdr, scope);
-            if (car == p.car && cdr == p.cdr) return stx;
-            Pair result = new Pair(car, cdr);
-            result.pos = p.pos;
-            return result;
-        }
+        if (stx instanceof Pair)
+            return mapList((Pair) stx, x -> flipScope(x, scope));
         if (Value.isVector(stx)) {
             Object[] vec = Value.asVector(stx);
             Object[] newVec = new Object[vec.length];
@@ -171,16 +166,8 @@ public class SyntaxObject {
             }
             return strip(so.datum, bindingTable);
         }
-        if (stx instanceof Pair) {
-            Pair p = (Pair) stx;
-            Object car = strip(p.car, bindingTable);
-            Object cdr = strip(p.cdr, bindingTable);
-            if (car == p.car && cdr == p.cdr)
-                return p;
-            Pair result = new Pair(car, cdr);
-            result.pos = p.pos;
-            return result;
-        }
+        if (stx instanceof Pair)
+            return mapList((Pair) stx, x -> strip(x, bindingTable));
         if (Value.isVector(stx)) {
             Object[] vec = Value.asVector(stx);
             Object[] newVec = new Object[vec.length];
@@ -197,6 +184,39 @@ public class SyntaxObject {
     /**
      * Strip syntax objects back to plain S-expressions without resolving names.
      */
+    /**
+     * f applied to the elements of a list (and to the tail of an improper
+     * one): along the spine in a loop, not by recursion on the cdr, which
+     * would overflow the stack on a long quoted list (a font's kerning
+     * table). Unchanged tails are shared; positions are kept.
+     */
+    static Object mapList(Pair list, java.util.function.UnaryOperator<Object> f) {
+        java.util.ArrayList<Pair> pairs = new java.util.ArrayList<>();
+        java.util.ArrayList<Object> cars = new java.util.ArrayList<>();
+        Object rest = list;
+        while (rest instanceof Pair) {
+            Pair p = (Pair) rest;
+            pairs.add(p);
+            cars.add(f.apply(p.car));
+            rest = p.cdr;
+        }
+        Object result = f.apply(rest);
+        boolean same = result == rest;
+        for (int i = pairs.size() - 1; i >= 0; i--) {
+            Pair p = pairs.get(i);
+            Object car = cars.get(i);
+            if (same && car == p.car) {
+                result = p;
+            } else {
+                Pair copy = new Pair(car, result);
+                copy.pos = p.pos;
+                result = copy;
+                same = false;
+            }
+        }
+        return result;
+    }
+
     public static Object strip(Object stx) {
         return strip(stx, null);
     }

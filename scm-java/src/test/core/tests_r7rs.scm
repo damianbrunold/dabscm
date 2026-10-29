@@ -264,6 +264,14 @@
   (import (scheme eval) (scheme base))
   (=> (eval '(+ 1 2) (environment '(scheme base))) 3))
 
+;; A long quoted list goes through the expander without overflowing the
+;; stack (as the kerning tables of the font libraries do).
+(test-group
+  (import (scheme eval) (scheme base))
+  (=> (length (eval (list 'quote (make-list 200000 1)) (environment '(scheme base)))) 200000)
+  (=> (eval (list 'length (list 'quote (make-list 200000 '(a . b)))) (environment '(scheme base)))
+      200000))
+
 (test-group
   (import (scheme load))
   (=> (procedure? load) #t))
