@@ -12,6 +12,7 @@
           (scm truetype)
           (scm fonts dejavu)
           (scm svg raster)
+          (scm svg pdf)
           (scm data core)
           (scm data format)
           (scm data frame)
@@ -25,6 +26,7 @@
           plot->svg
           plot->svg-string
           plot->png
+          plot->pdf
           save-plot
           plot-css
           bar-chart
@@ -818,20 +820,38 @@ Example:
   (plot->png p)"
       (svg->png (render p) (list (cons 'scale (if (pair? scale) (car scale) 2)))))
 
+    (define (plot->pdf p . options)
+      "Syntax: (plot->pdf plot [options])
+Library: (scm data plot)
+Description: The plot as a one-page PDF bytevector, drawn as vectors with
+  embedded text. A pixel of the plot is 0.75 point (as in CSS) unless
+  options, an alist as for svg->pdf of (scm svg pdf), give (width . pt)
+  or (height . pt); (margin . pt) adds a margin, (title . s) sets the
+  document title.
+Example:
+  (plot->pdf p '((width . 400)))"
+      (let* ((options (if (pair? options) (car options) '()))
+             (svg (render p)))
+        (let-values (((w h) (svg-size svg)))
+          (svg->pdf svg (if (or (assq 'width options) (assq 'height options))
+                            options
+                            (cons (cons 'width (* 0.75 w)) options))))))
+
     (define (save-plot p path . scale)
       "Syntax: (save-plot plot path [scale])
 Library: (scm data plot)
-Description: Writes the plot to path as SVG or PNG, chosen by the
-  extension (.svg or .png).
+Description: Writes the plot to path as SVG, PNG or PDF, chosen by the
+  extension (.svg, .png or .pdf); scale applies to PNG.
 Example:
   (save-plot p \"points.png\")"
+      (define (write-bytes bv)
+        (call-with-port (open-binary-output-file path)
+          (lambda (o) (write-bytevector bv o))))
       (cond ((string-suffix-ci? ".svg" path)
              (call-with-output-file path (lambda (o) (write-string (plot->svg-string p) o))))
-            ((string-suffix-ci? ".png" path)
-             (let ((bv (apply plot->png p scale)))
-               (call-with-port (open-binary-output-file path)
-                 (lambda (o) (write-bytevector bv o)))))
-            (else (error "save-plot: use a .svg or .png file name" path))))
+            ((string-suffix-ci? ".png" path) (write-bytes (apply plot->png p scale)))
+            ((string-suffix-ci? ".pdf" path) (write-bytes (plot->pdf p)))
+            (else (error "save-plot: use a .svg, .png or .pdf file name" path))))
 
     ;; --- quick charts ---------------------------------------------------
 

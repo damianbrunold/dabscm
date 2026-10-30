@@ -1,4 +1,4 @@
-(import (scheme base) (scheme file) (srfi 13) (scm fs) (scm data) (scm test))
+(import (scheme base) (scheme file) (srfi 1) (srfi 13) (scm fs) (scm data) (scm test))
 
 (test-runner-factory scm-test-runner)
 
@@ -67,7 +67,9 @@
     (test-assert (file-exists? (join-path dir "r-fig1.png")))
     (write-report doc (join-path dir "s.md") 'svg)
     (test-assert (file-exists? (join-path dir "s-fig1.svg")))
-    (test-error (write-report doc (join-path dir "r.pdf")))))
+    (write-report doc (join-path dir "r.pdf"))
+    (test-assert (file-exists? (join-path dir "r.pdf")))
+    (test-error (write-report doc (join-path dir "r.docx")))))
 
 (test-group "umbrella helpers"
   (define spec '((years . (2024 2025)) (out . "report") (regroup . #f) (n . 5) (mode . v1)))
@@ -80,5 +82,33 @@
   (test-equal '((out . "x") (keys a b) (on . #f))
               (script-args '((out string #f) (keys list-symbol ()) (on bool #t)) #f '("out=x" "keys=a,b" "on=no")))
   (test-equal 42 (with-timing "answer" (lambda () 42))))
+
+;; PDF: the bytes as a Latin-1 string, to look for structure
+(define (pdf-text bv)
+  (let ((s (make-string (bytevector-length bv))))
+    (do ((i 0 (+ i 1))) ((= i (bytevector-length bv)) s)
+      (string-set! s i (integer->char (bytevector-u8-ref bv i))))))
+
+(define (count-matches s pat)
+  (let loop ((i 0) (n 0))
+    (let ((j (string-contains s pat i)))
+      (if j (loop (+ j 1) (+ n 1)) n))))
+
+(test-group "pdf"
+  (let* ((bv (report->pdf doc))
+         (s (pdf-text bv)))
+    (test-assert (string-prefix? "%PDF-" s))
+    (test-assert (<= 1 (count-matches s "/Type /Page ") 3))
+    (test-assert (string-contains s "/Outlines"))
+    (test-assert (string-contains s "(Points)"))          ; an h2 as a bookmark
+    (test-assert (string-contains s "/Title (MFZO)")))
+  ;; a long table goes over several pages
+  (let* ((big (make-df (list (cons 'i (list->vector (list-tabulate 120 (lambda (i) i)))))))
+         (s (pdf-text (report->pdf (report (title "Long") (table ,big))))))
+    (test-assert (>= (count-matches s "/Type /Page ") 3)))
+  (let* ((s (pdf-text (plot->pdf plot))))
+    (test-assert (string-prefix? "%PDF-" s))
+    (test-equal 1 (count-matches s "/Type /Page "))
+    (test-assert (string-contains s "/FontFile2"))))
 
 (test-end "scm-data-report")

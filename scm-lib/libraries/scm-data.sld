@@ -9,6 +9,7 @@
           (scm data frame)
           (scm data expr)
           (scm data stats)
+          (scm data tests)
           (scm data verbs)
           (scm data io)
           (scm data plot)
@@ -36,6 +37,17 @@
           sum mean weighted-mean median quantile var sd iqr value-range cumsum
           ranks zscore cov cor pct-change freq crosstab histogram-bins
           lm-simple
+          ;; (scm data tests)
+          lgamma lbeta lchoose pgamma-regularized pbeta-regularized dnorm
+          pnorm qnorm dt pt qt dchisq pchisq qchisq dF pf qf dbeta pbeta
+          qbeta dbinom pbinom qbinom dpois ppois htest? htest-method
+          htest-data-name htest-statistic htest-parameter htest-p-value
+          htest-conf-int htest-conf-level htest-estimate htest-null-value
+          htest-alternative htest-extra htest-ref htest->string htest-print
+          tidy t-test wilcox-test chisq-test fisher-test binom-test prop-test
+          cor-test shapiro-test ks-test oneway-test kruskal-test p-adjust lm
+          lm? lm-coefficients lm-residuals lm-fitted lm-summary lm->string
+          lm-print predict
           ;; (scm data verbs)
           -> where mutate transmute summarise summarize select rename arrange
           distinct group-by tally add-count pull relocate left-join inner-join
@@ -55,9 +67,11 @@
           query-result->df
           ;; (scm data plot)
           ggplot make-plot plot? plot-add plot->svg plot->svg-string plot->png
+          plot->pdf
           save-plot plot-css bar-chart line-chart scatter-plot histogram
           ;; (scm data report)
-          report make-report report->html report->markdown write-report)
+          report make-report report->html report->markdown report->pdf
+          write-report)
   (begin
 
     ;; ================================================================

@@ -512,8 +512,24 @@ Example:
         ((and (rational? n) (exact? n))
          ;; Convert exact non-integer rationals to inexact to avoid
          ;; emitting fractions like 1/2 that PDF can't parse.
-         (number->string (inexact n)))
-        (else (number->string n))))
+         (pdf-format-number (inexact n)))
+        ((not (and (real? n) (= n n) (< (abs n) 1e300))) "0")
+        (else
+         ;; PDF has no exponent notation (6e-17 from a rotation would
+         ;; break the content stream): plain decimals, 6 places at most
+         (let* ((r (exact (round (* n 1000000))))
+                (s (number->string (abs r)))
+                (s (if (< (string-length s) 7)
+                       (string-append (make-string (- 7 (string-length s)) #\0) s)
+                       s))
+                (int (substring s 0 (- (string-length s) 6)))
+                (frac (let trim ((f (substring s (- (string-length s) 6) (string-length s))))
+                        (if (and (> (string-length f) 0)
+                                 (char=? (string-ref f (- (string-length f) 1)) #\0))
+                            (trim (substring f 0 (- (string-length f) 1)))
+                            f))))
+           (string-append (if (< r 0) "-" "") int
+                          (if (string=? frac "") "" ".") frac)))))
 
     (define (pdf-pad10 n)
       (let* ((s (number->string n))
@@ -769,11 +785,7 @@ Example:
     (define (pdf-fmt-num n)
       ;; PDF wants plain decimal — never scientific. Integers print plain;
       ;; exact rationals get coerced to inexact so we don't emit "1/2".
-      (cond
-        ((exact-integer? n) (number->string n))
-        ((and (rational? n) (exact? n))
-         (number->string (inexact n)))
-        (else (number->string n))))
+      (pdf-format-number n))
 
     (define (emit-op! page . tokens)
       ;; tokens is a list of pre-formatted strings; they are joined with
