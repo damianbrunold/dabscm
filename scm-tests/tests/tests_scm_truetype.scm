@@ -224,6 +224,14 @@
   (test-assert (pair? (cdr (font-glyph dejavu-sans (integer->char #x2082)))))
   (test-assert (pair? (cdr (font-glyph inter-black (integer->char #x2082)))))
   (test-assert (pair? (cdr (font-glyph inter-regular (integer->char #xB3)))))
+  ;; Greek and Cyrillic in every built-in face
+  (for-each (lambda (font)
+              (for-each (lambda (code) (test-assert (pair? (cdr (font-glyph font (integer->char code))))))
+                        '(#x394 #x3C9 #x3AC #x416 #x44F #x407 #x491)))   ; Δ ω ά Ж я Ї ґ
+            (list dejavu-sans dejavu-sans-bold inter-regular inter-black roboto-slab-regular roboto-slab-bold))
+  ;; kerning within a script is kept, across scripts left out
+  (test-assert (< (font-kerning inter-regular (integer->char #x413) (integer->char #x430)) 0))   ; Га
+  (test-equal 0 (font-kerning inter-regular #\A (integer->char #x423)))                            ; A, У
   (test-assert (> (font-text-width dejavu-sans-bold 12 "Intern")
                   (font-text-width dejavu-sans 12 "Intern")))
   ;; it draws
@@ -257,7 +265,7 @@
     (test-equal (font-glyph roboto-slab-bold #\g) (font-glyph back #\g))))
 
 (test-group "font->truetype"
-  (test-equal 257 (length (font-chars inter-regular)))
+  (test-equal 427 (length (font-chars inter-regular)))
   (test-assert (char<? (car (font-chars inter-regular)) (cadr (font-chars inter-regular))))
   ;; a font read from a file lists the characters of its cmap
   (test-equal (font-chars dejavu-sans) (font-chars (read-truetype (font->truetype dejavu-sans "DejaVu Sans"))))

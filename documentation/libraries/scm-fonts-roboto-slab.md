@@ -1,6 +1,6 @@
 # `(scm fonts roboto-slab)`
 
-Roboto Slab Regular and Bold glyph outlines, built in for text rendering
+Roboto Slab Regular and Bold glyph outlines (Latin, Greek, Cyrillic), built in for text rendering
 
 ## Exports
 

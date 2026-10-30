@@ -1,6 +1,6 @@
 # `(scm fonts dejavu)`
 
-DejaVu Sans and Sans Bold glyph outlines, built in for text rendering
+DejaVu Sans and Sans Bold glyph outlines (Latin, Greek, Cyrillic), built in for text rendering
 
 ## Exports
 

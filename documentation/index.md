@@ -88,9 +88,9 @@
 | [`(scm doc)`](libraries/scm-doc.md) | Documentation access |
 | [`(scm duration)`](libraries/scm-duration.md) | Duration string parsing and formatting (seconds, minutes, hours, days) |
 | [`(scm feed)`](libraries/scm-feed.md) | Atom and RSS 2.0 feed parsing |
-| [`(scm fonts dejavu)`](libraries/scm-fonts-dejavu.md) | DejaVu Sans and Sans Bold glyph outlines, built in for text rendering |
-| [`(scm fonts inter)`](libraries/scm-fonts-inter.md) | Inter Regular and Black glyph outlines with ZH design features, built in for text rendering |
-| [`(scm fonts roboto-slab)`](libraries/scm-fonts-roboto-slab.md) | Roboto Slab Regular and Bold glyph outlines, built in for text rendering |
+| [`(scm fonts dejavu)`](libraries/scm-fonts-dejavu.md) | DejaVu Sans and Sans Bold glyph outlines (Latin, Greek, Cyrillic), built in for text rendering |
+| [`(scm fonts inter)`](libraries/scm-fonts-inter.md) | Inter Regular and Black glyph outlines (Latin, Greek, Cyrillic) with ZH design features, built in for text rendering |
+| [`(scm fonts roboto-slab)`](libraries/scm-fonts-roboto-slab.md) | Roboto Slab Regular and Bold glyph outlines (Latin, Greek, Cyrillic), built in for text rendering |
 | [`(scm fonts)`](libraries/scm-fonts.md) | Fonts by family name from font files: the dabscm-fonts package or any directory or zip of .ttf files |
 | [`(scm fs-find)`](libraries/scm-fs-find.md) | Filesystem traversal and reporting — find-file, tree, du, df, xargs |
 | [`(scm fs)`](libraries/scm-fs.md) | Filesystem operations — paths, directories, files |
