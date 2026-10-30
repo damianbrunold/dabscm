@@ -45,19 +45,20 @@ public class PrimitiveProcessKill : Primitive
             {
                 // Forceful path (always on Windows, where console processes have
                 // no graceful-close API). Mirror the Python original, which
-                // enumerated the whole tree and TerminateProcess'd every pid:
-                // rely on the framework tree-walk, which works even where the Job
-                // Object is ineffective (e.g. the child is already job-contained
-                // on a locked-down box, so AssignProcessToJobObject was refused).
-                // Terminate the job too when we have one — a race-free bonus, not
-                // the sole mechanism it used to be.
-                if (sp.jobHandle != IntPtr.Zero)
+                // enumerated the whole tree and TerminateProcess'd every pid.
+                // On Windows the tree is snapshotted while the root is still
+                // alive (killing the job or the root first loses the links to
+                // children that escaped the job); the job is terminated too.
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    try { WindowsJobObject.Terminate(sp.jobHandle); } catch { /* already gone */ }
+                    WindowsProcessTree.Kill(sp.process, sp.jobHandle);
                     sp.jobHandle = IntPtr.Zero;
                 }
-                try { sp.process.Kill(entireProcessTree: true); }
-                catch (InvalidOperationException) { /* already exited */ }
+                else
+                {
+                    try { sp.process.Kill(entireProcessTree: true); }
+                    catch (InvalidOperationException) { /* already exited */ }
+                }
             }
         }
         catch (InvalidOperationException) { /* already exited */ }

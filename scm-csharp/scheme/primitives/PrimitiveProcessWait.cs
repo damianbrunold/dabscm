@@ -21,9 +21,14 @@ public class PrimitiveProcessWait : Primitive
         SchemeProcess sp = (SchemeProcess) Value.AsNativeValue(arguments[0]).value;
         if (arguments.Length == 1)
         {
-            // Parameterless WaitForExit also drains the async output handlers, so
-            // the log is fully written before we release it.
-            sp.process.WaitForExit();
+            // Wait for the process itself, then give the async output handlers
+            // a bounded time to drain. Parameterless WaitForExit waits for EOF
+            // on the redirected pipes, which never comes while an orphaned
+            // descendant still holds them, so it alone could block forever
+            // (Java's waitFor does not wait for the pipes either).
+            while (!sp.process.WaitForExit(1000)) { }
+            var drain = Task.Run(() => sp.process.WaitForExit());
+            drain.Wait(2000);
             sp.CloseLog();
             return (long) sp.process.ExitCode;
         }
