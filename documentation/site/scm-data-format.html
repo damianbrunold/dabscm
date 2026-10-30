@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm data format) — Dabscm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="toc">
+  <h2>Bindings</h2>
+  <a href="#e0" data-name="data-locale">data-locale</a>
+  <a href="#e1" data-name="fmt-date">fmt-date</a>
+  <a href="#e2" data-name="fmt-int">fmt-int</a>
+  <a href="#e3" data-name="fmt-num">fmt-num</a>
+  <a href="#e4" data-name="fmt-pct">fmt-pct</a>
+  <a href="#e5" data-name="fmt-pct-change">fmt-pct-change</a>
+  <a href="#e6" data-name="fmt-si">fmt-si</a>
+  <a href="#e7" data-name="fmt-value">fmt-value</a>
+  <a href="#e8" data-name="na-string">na-string</a>
+</nav>
+
+<main>
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="index.html">All libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="index.html#sec-scm">Scm Extensions</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm data format)</span>
+</nav>
+
+<div class="lib-title scm">(scm data format)</div>
+<p class="lib-sub">Number, percent and date formatting with thousands separators</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p>Formatting for reports, tables and chart axes, rounding half away from zero. The parameter <a class="xref" href="#e0"><code>data-locale</code></a> holds the separators (Swiss <code>'</code> and <code>.</code> by default); <a class="xref" href="#e8"><code>na-string</code></a> the text for missing values.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(fmt-num 24973.25 1)              ;; =&gt; "24'973.3"
+(fmt-pct 0.2345)                  ;; =&gt; "23.5 %"
+(fmt-pct-change 20316 24973)      ;; =&gt; "+23 %"
+(fmt-si 12345)                    ;; =&gt; "12.3k"</code></pre>
+</div>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">9 bindings</p>
+
+<div class="entry" id="e0" data-name="data-locale">
+  <div class="entry-name">data-locale</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e1" data-name="fmt-date">
+  <div class="entry-name">fmt-date</div>
+  <pre class="entry-doc">Syntax: (fmt-date day [style])
+Library: (scm data format)
+Description: Formats a date: iso (default, 2024-03-11) or dmy (11.03.2024).
+Example:
+  (fmt-date (ymd-&gt;day 2024 3 11) 'dmy) =&gt; "11.03.2024"</pre>
+</div>
+<div class="entry" id="e2" data-name="fmt-int">
+  <div class="entry-name">fmt-int</div>
+  <pre class="entry-doc">Syntax: (fmt-int x)
+Library: (scm data format)
+Description: (fmt-num x 0): rounded, with thousands separators.
+Example:
+  (fmt-int 1234567) =&gt; "1'234'567"</pre>
+</div>
+<div class="entry" id="e3" data-name="fmt-num">
+  <div class="entry-name">fmt-num</div>
+  <pre class="entry-doc">Syntax: (fmt-num x [decimals [thousands?]])
+Library: (scm data format)
+Description: Formats a number with a fixed number of decimals (default 0)
+  and thousands separators from data-locale (pass #f as thousands? to
+  leave them out). na gives (na-string).
+Example:
+  (fmt-num 24973.25 1) =&gt; "24'973.3"
+  (fmt-num -0.04 1)    =&gt; "0.0"</pre>
+</div>
+<div class="entry" id="e4" data-name="fmt-pct">
+  <div class="entry-name">fmt-pct</div>
+  <pre class="entry-doc">Syntax: (fmt-pct fraction [decimals])
+Library: (scm data format)
+Description: Formats a fraction as percent with a space before % (default
+  1 decimal).
+Example:
+  (fmt-pct 0.2345) =&gt; "23.5 %"</pre>
+</div>
+<div class="entry" id="e5" data-name="fmt-pct-change">
+  <div class="entry-name">fmt-pct-change</div>
+  <pre class="entry-doc">Syntax: (fmt-pct-change from to [decimals])
+Library: (scm data format)
+Description: The relative change from a to b as a signed percent (default
+  0 decimals); "n/a" when a is 0 and b is not.
+Example:
+  (fmt-pct-change 20316 24973) =&gt; "+23 %"</pre>
+</div>
+<div class="entry" id="e6" data-name="fmt-si">
+  <div class="entry-name">fmt-si</div>
+  <pre class="entry-doc">Syntax: (fmt-si x [decimals])
+Library: (scm data format)
+Description: Short form with k / M / G suffix (default 1 decimal), for
+  axis labels.
+Example:
+  (fmt-si 12345) =&gt; "12.3k"</pre>
+</div>
+<div class="entry" id="e7" data-name="fmt-value">
+  <div class="entry-name">fmt-value</div>
+  <pre class="entry-doc">Syntax: (fmt-value x)
+Library: (scm data format)
+Description: Generic display form of a cell value, used when printing data
+  frames: integers plain, reals with up to 4 decimals, dates ISO, strings
+  as they are, na as (na-string), lists and other values written.
+Example:
+  (fmt-value 2.50) =&gt; "2.5"</pre>
+</div>
+<div class="entry" id="e8" data-name="na-string">
+  <div class="entry-name">na-string</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

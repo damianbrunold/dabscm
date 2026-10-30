@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm data verbs) — Dabscm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="toc">
+  <h2>Bindings</h2>
+  <a href="#e0" data-name="-&gt;">-&gt;</a>
+  <a href="#e1" data-name="add-count">add-count</a>
+  <a href="#e2" data-name="anti-join">anti-join</a>
+  <a href="#e3" data-name="arrange">arrange</a>
+  <a href="#e4" data-name="bind-cols">bind-cols</a>
+  <a href="#e5" data-name="bind-rows">bind-rows</a>
+  <a href="#e6" data-name="df-add-count">df-add-count</a>
+  <a href="#e7" data-name="df-arrange">df-arrange</a>
+  <a href="#e8" data-name="df-bind-cols">df-bind-cols</a>
+  <a href="#e9" data-name="df-bind-rows">df-bind-rows</a>
+  <a href="#e10" data-name="df-count">df-count</a>
+  <a href="#e11" data-name="df-distinct">df-distinct</a>
+  <a href="#e12" data-name="df-drop-na">df-drop-na</a>
+  <a href="#e13" data-name="df-fill">df-fill</a>
+  <a href="#e14" data-name="df-filter">df-filter</a>
+  <a href="#e15" data-name="df-group-by">df-group-by</a>
+  <a href="#e16" data-name="df-group-keys">df-group-keys</a>
+  <a href="#e17" data-name="df-head">df-head</a>
+  <a href="#e18" data-name="df-join">df-join</a>
+  <a href="#e19" data-name="df-map-rows">df-map-rows</a>
+  <a href="#e20" data-name="df-mutate">df-mutate</a>
+  <a href="#e21" data-name="df-pivot-longer">df-pivot-longer</a>
+  <a href="#e22" data-name="df-pivot-wider">df-pivot-wider</a>
+  <a href="#e23" data-name="df-pull">df-pull</a>
+  <a href="#e24" data-name="df-relocate">df-relocate</a>
+  <a href="#e25" data-name="df-rename">df-rename</a>
+  <a href="#e26" data-name="df-replace-na">df-replace-na</a>
+  <a href="#e27" data-name="df-sample-n">df-sample-n</a>
+  <a href="#e28" data-name="df-select">df-select</a>
+  <a href="#e29" data-name="df-separate">df-separate</a>
+  <a href="#e30" data-name="df-slice">df-slice</a>
+  <a href="#e31" data-name="df-split">df-split</a>
+  <a href="#e32" data-name="df-summarise">df-summarise</a>
+  <a href="#e33" data-name="df-tail">df-tail</a>
+  <a href="#e34" data-name="df-transmute">df-transmute</a>
+  <a href="#e35" data-name="df-ungroup">df-ungroup</a>
+  <a href="#e36" data-name="df-unnest-longer">df-unnest-longer</a>
+  <a href="#e37" data-name="distinct">distinct</a>
+  <a href="#e38" data-name="drop-na">drop-na</a>
+  <a href="#e39" data-name="eval-column">eval-column</a>
+  <a href="#e40" data-name="fill-down">fill-down</a>
+  <a href="#e41" data-name="fill-up">fill-up</a>
+  <a href="#e42" data-name="full-join">full-join</a>
+  <a href="#e43" data-name="group-by">group-by</a>
+  <a href="#e44" data-name="head">head</a>
+  <a href="#e45" data-name="inner-join">inner-join</a>
+  <a href="#e46" data-name="left-join">left-join</a>
+  <a href="#e47" data-name="mutate">mutate</a>
+  <a href="#e48" data-name="pivot-longer">pivot-longer</a>
+  <a href="#e49" data-name="pivot-wider">pivot-wider</a>
+  <a href="#e50" data-name="pull">pull</a>
+  <a href="#e51" data-name="relocate">relocate</a>
+  <a href="#e52" data-name="rename">rename</a>
+  <a href="#e53" data-name="replace-na">replace-na</a>
+  <a href="#e54" data-name="sample-n">sample-n</a>
+  <a href="#e55" data-name="select">select</a>
+  <a href="#e56" data-name="semi-join">semi-join</a>
+  <a href="#e57" data-name="separate">separate</a>
+  <a href="#e58" data-name="slice">slice</a>
+  <a href="#e59" data-name="summarise">summarise</a>
+  <a href="#e60" data-name="summarize">summarize</a>
+  <a href="#e61" data-name="tail">tail</a>
+  <a href="#e62" data-name="tally">tally</a>
+  <a href="#e63" data-name="transmute">transmute</a>
+  <a href="#e64" data-name="ungroup">ungroup</a>
+  <a href="#e65" data-name="unnest-longer">unnest-longer</a>
+  <a href="#e66" data-name="where">where</a>
+</nav>
+
+<main>
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="index.html">All libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="index.html#sec-scm">Scm Extensions</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm data verbs)</span>
+</nav>
+
+<div class="lib-title scm">(scm data verbs)</div>
+<p class="lib-sub">dplyr/tidyr-style data-frame verbs — where, mutate, summarise, joins, pivots</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p>dplyr/tidyr-style operations. Each is a macro (columns as bare names, Scheme values via unquote) and a procedure (<code>df-…</code>, with quoted expressions). <a class="xref" href="#e0"><code>-&gt;</code></a> threads a frame through a pipeline.</p>
+<p>| Rows | <a class="xref" href="#e66"><code>where</code></a> <a class="xref" href="#e3"><code>arrange</code></a> <a class="xref" href="#e37"><code>distinct</code></a> <a class="xref" href="#e44"><code>head</code></a> <a class="xref" href="#e61"><code>tail</code></a> <a class="xref" href="#e58"><code>slice</code></a> <a class="xref" href="#e54"><code>sample-n</code></a> | |---|---| | Columns | <a class="xref" href="#e55"><code>select</code></a> <a class="xref" href="#e52"><code>rename</code></a> <a class="xref" href="#e47"><code>mutate</code></a> <a class="xref" href="#e63"><code>transmute</code></a> <a class="xref" href="#e51"><code>relocate</code></a> <a class="xref" href="#e50"><code>pull</code></a> | | Groups | <a class="xref" href="#e43"><code>group-by</code></a> <a class="xref" href="#e64"><code>ungroup</code></a> <a class="xref" href="#e59"><code>summarise</code></a> <a class="xref" href="#e62"><code>tally</code></a> <a class="xref" href="#e1"><code>add-count</code></a> | | Combining | <a class="xref" href="#e46"><code>left-join</code></a> <a class="xref" href="#e45"><code>inner-join</code></a> <a class="xref" href="#e42"><code>full-join</code></a> <a class="xref" href="#e56"><code>semi-join</code></a> <a class="xref" href="#e2"><code>anti-join</code></a> <a class="xref" href="#e5"><code>bind-rows</code></a> <a class="xref" href="#e4"><code>bind-cols</code></a> | | Reshaping | <a class="xref" href="#e48"><code>pivot-longer</code></a> <a class="xref" href="#e49"><code>pivot-wider</code></a> <a class="xref" href="#e65"><code>unnest-longer</code></a> <a class="xref" href="#e57"><code>separate</code></a> | | Missing | <a class="xref" href="#e38"><code>drop-na</code></a> <a class="xref" href="#e53"><code>replace-na</code></a> <a class="xref" href="#e40"><code>fill-down</code></a> <a class="xref" href="#e41"><code>fill-up</code></a> |</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(-&gt; pts
+    (where (in splg ,mfzo-splgs))
+    (group-by splg year model)
+    (summarise (points (sum points)))
+    (pivot-wider (names-from year model) (values-from points))
+    (left-join limits (by splg)))</code></pre>
+</div>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">67 bindings</p>
+
+<div class="entry" id="e0" data-name="-&gt;">
+  <div class="entry-name">-&gt;</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e1" data-name="add-count">
+  <div class="entry-name">add-count</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e2" data-name="anti-join">
+  <div class="entry-name">anti-join</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e3" data-name="arrange">
+  <div class="entry-name">arrange</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e4" data-name="bind-cols">
+  <div class="entry-name">bind-cols</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e5" data-name="bind-rows">
+  <div class="entry-name">bind-rows</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e6" data-name="df-add-count">
+  <div class="entry-name">df-add-count</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e7" data-name="df-arrange">
+  <div class="entry-name">df-arrange</div>
+  <pre class="entry-doc">Syntax: (df-arrange df keys)
+Library: (scm data verbs)
+Description: Sorts the rows (stable) by the keys: a column, an expression
+  or (desc key) for descending order; na sorts last. Macro form:
+  (arrange df key …).
+Example:
+  (arrange df splg (desc pts))</pre>
+</div>
+<div class="entry" id="e8" data-name="df-bind-cols">
+  <div class="entry-name">df-bind-cols</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e9" data-name="df-bind-rows">
+  <div class="entry-name">df-bind-rows</div>
+  <pre class="entry-doc">Syntax: (df-bind-rows frames [id-column labels])
+Library: (scm data verbs)
+Description: Stacks frames on top of each other; columns are matched by
+  name (missing ones filled with na). With an id-column, a first column
+  tells which frame each row came from (labels, default 1, 2, …). Also:
+  (bind-rows df …).
+Example:
+  (df-bind-rows (list a b) 'year '(2024 2025))</pre>
+</div>
+<div class="entry" id="e10" data-name="df-count">
+  <div class="entry-name">df-count</div>
+  <pre class="entry-doc">Syntax: (df-count df cols)
+Library: (scm data verbs)
+Description: The number of rows per combination of cols (column n),
+  sorted by cols; with no cols, of the existing groups (or all rows).
+  Macro form: (tally df col …).
+Example:
+  (tally df splg year)</pre>
+</div>
+<div class="entry" id="e11" data-name="df-distinct">
+  <div class="entry-name">df-distinct</div>
+  <pre class="entry-doc">Syntax: (df-distinct df cols)
+Library: (scm data verbs)
+Description: The first row of each distinct combination of the given
+  columns, keeping only those columns ('() = all columns). Macro form:
+  (distinct df col …).
+Example:
+  (distinct df splg gln)</pre>
+</div>
+<div class="entry" id="e12" data-name="df-drop-na">
+  <div class="entry-name">df-drop-na</div>
+  <pre class="entry-doc">Syntax: (df-drop-na df cols)
+Library: (scm data verbs)
+Description: The rows without na in cols ('() = in any column). Macro
+  form: (drop-na df col …).
+Example:
+  (drop-na df pts)</pre>
+</div>
+<div class="entry" id="e13" data-name="df-fill">
+  <div class="entry-name">df-fill</div>
+  <pre class="entry-doc">Syntax: (df-fill df cols direction)
+Library: (scm data verbs)
+Description: Fills na with the previous (direction down) or next (up)
+  non-na value of the column, per group. Macro forms: (fill-down df col …),
+  (fill-up df col …).
+Example:
+  (fill-down df kanton)</pre>
+</div>
+<div class="entry" id="e14" data-name="df-filter">
+  <div class="entry-name">df-filter</div>
+  <pre class="entry-doc">Syntax: (df-filter df exprs)
+Library: (scm data verbs)
+Description: The rows for which all expressions are true (na counts as
+  false); macro form: (where df expr …). Grouped frames evaluate
+  aggregates per group, e.g. (where df (= pts (max pts))).
+Example:
+  (df-filter df '((&gt; pts 10) (= splg 'BEW8)))</pre>
+</div>
+<div class="entry" id="e15" data-name="df-group-by">
+  <div class="entry-name">df-group-by</div>
+  <pre class="entry-doc">Syntax: (df-group-by df cols)
+Library: (scm data verbs)
+Description: The frame grouped by the given columns; summarise, mutate,
+  where and tally then work per group. Macro form: (group-by df col …).
+Example:
+  (group-by df splg year)</pre>
+</div>
+<div class="entry" id="e16" data-name="df-group-keys">
+  <div class="entry-name">df-group-keys</div>
+  <pre class="entry-doc">Syntax: (df-group-keys df)
+Library: (scm data verbs)
+Description: The groups of a grouped frame as a list of (key-values .
+  row-index-vector), sorted by key.
+Example:
+  (map car (df-group-keys (group-by df splg))) =&gt; ((BEW8) (GYN2))</pre>
+</div>
+<div class="entry" id="e17" data-name="df-head">
+  <div class="entry-name">df-head</div>
+  <pre class="entry-doc">Syntax: (head df [n])
+Library: (scm data verbs)
+Description: The first n rows (default 6).
+Example:
+  (head df 3)</pre>
+</div>
+<div class="entry" id="e18" data-name="df-join">
+  <div class="entry-name">df-join</div>
+  <pre class="entry-doc">Syntax: (df-join kind x y by [suffix-x suffix-y])
+Library: (scm data verbs)
+Description: Joins two frames on key columns. kind is left, inner, full,
+  semi (rows of x with a match) or anti (rows of x without). by lists the
+  keys: a name present in both, or (x-name . y-name); '() means all
+  common column names. Non-key columns present in both get the suffixes
+  (default ".x" and ".y"). Macro forms: (left-join x y [(by key …)]),
+  inner-join, full-join, semi-join, anti-join.
+Example:
+  (left-join pts limits (by splg))</pre>
+</div>
+<div class="entry" id="e19" data-name="df-map-rows">
+  <div class="entry-name">df-map-rows</div>
+  <pre class="entry-doc">Syntax: (df-map-rows df proc)
+Library: (scm data verbs)
+Description: Calls proc with each row as an alist and returns the list of
+  results (escape hatch for anything the verbs don't cover).
+Example:
+  (df-map-rows df (lambda (r) (cdr (assq 'pts r))))</pre>
+</div>
+<div class="entry" id="e20" data-name="df-mutate">
+  <div class="entry-name">df-mutate</div>
+  <pre class="entry-doc">Syntax: (df-mutate df specs)
+Library: (scm data verbs)
+Description: Adds or replaces columns; specs is a list of (name . expr),
+  evaluated in order, so later expressions see earlier results. Grouped
+  frames evaluate aggregates and window functions per group. Macro form:
+  (mutate df (name expr) …).
+Example:
+  (df-mutate df '((pts2 . (* 2 pts))))</pre>
+</div>
+<div class="entry" id="e21" data-name="df-pivot-longer">
+  <div class="entry-name">df-pivot-longer</div>
+  <pre class="entry-doc">Syntax: (df-pivot-longer df cols names-to values-to)
+Library: (scm data verbs)
+Description: Turns the columns cols into rows: each row becomes one row per
+  column, with the column name (a symbol) in names-to and the value in
+  values-to; the other columns are repeated. Macro form:
+  (pivot-longer df (cols c …) (names-to name) (values-to name)).
+Example:
+  (pivot-longer df (cols v1 v2) (names-to model) (values-to pts))</pre>
+</div>
+<div class="entry" id="e22" data-name="df-pivot-wider">
+  <div class="entry-name">df-pivot-wider</div>
+  <pre class="entry-doc">Syntax: (df-pivot-wider df names-from values-from [fill])
+Library: (scm data verbs)
+Description: Turns rows into columns: one column per distinct value of the
+  names-from columns (joined with _ when several), holding values-from;
+  the remaining columns identify the rows. Missing combinations get fill
+  (default na). Macro form:
+  (pivot-wider df (names-from col …) (values-from col) [(values-fill v)]).
+Example:
+  (pivot-wider df (names-from year model) (values-from pts) (values-fill 0))</pre>
+</div>
+<div class="entry" id="e23" data-name="df-pull">
+  <div class="entry-name">df-pull</div>
+  <pre class="entry-doc">Syntax: (df-pull df col)
+Library: (scm data verbs)
+Description: The values of one column as a list. Macro form: (pull df col).
+Example:
+  (pull df splg) =&gt; (BEW8 GYN2)</pre>
+</div>
+<div class="entry" id="e24" data-name="df-relocate">
+  <div class="entry-name">df-relocate</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e25" data-name="df-rename">
+  <div class="entry-name">df-rename</div>
+  <pre class="entry-doc">Syntax: (df-rename df pairs)
+Library: (scm data verbs)
+Description: Renames columns; pairs is a list of (new . old). Macro form:
+  (rename df (new old) …).
+Example:
+  (rename df (points pts))</pre>
+</div>
+<div class="entry" id="e26" data-name="df-replace-na">
+  <div class="entry-name">df-replace-na</div>
+  <pre class="entry-doc">Syntax: (df-replace-na df pairs)
+Library: (scm data verbs)
+Description: Replaces na in the given columns; pairs is ((col . value) …).
+  Macro form: (replace-na df (col value) …).
+Example:
+  (replace-na df (pts 0))</pre>
+</div>
+<div class="entry" id="e27" data-name="df-sample-n">
+  <div class="entry-name">df-sample-n</div>
+  <pre class="entry-doc">Syntax: (sample-n df n [seed])
+Library: (scm data verbs)
+Description: n rows drawn at random without replacement (in their
+  original order); a seed makes the draw reproducible.
+Example:
+  (sample-n df 100 42)</pre>
+</div>
+<div class="entry" id="e28" data-name="df-select">
+  <div class="entry-name">df-select</div>
+  <pre class="entry-doc">Syntax: (df-select df specs)
+Library: (scm data verbs)
+Description: Keeps and orders columns. A spec is a column name,
+  (starts-with "x"), (ends-with "x"), (contains "x"), (matches regex),
+  (everything), (where pred) with pred on the column vector,
+  (except spec …) to drop columns, or (rename new old). Grouping
+  columns are always kept. Macro form: (select df spec …).
+Example:
+  (select df splg (starts-with "pts") (except pts-raw))</pre>
+</div>
+<div class="entry" id="e29" data-name="df-separate">
+  <div class="entry-name">df-separate</div>
+  <pre class="entry-doc">Syntax: (df-separate df col into separator-regex)
+Library: (scm data verbs)
+Description: Splits a string column into several columns at a separator
+  (a regular expression); missing parts become na. Macro form:
+  (separate df col (into a b …) [(sep regex)]) (default separator: one
+  of space , ; : / _ - .).
+Example:
+  (separate df falltyp (into art stat sub) (sep ":"))</pre>
+</div>
+<div class="entry" id="e30" data-name="df-slice">
+  <div class="entry-name">df-slice</div>
+  <pre class="entry-doc">Syntax: (df-slice df start [end])
+Library: (scm data verbs)
+Description: Rows start (inclusive, 0-based) to end (exclusive, default
+  the last row), like substring. Also: (slice df start [end]).
+Example:
+  (slice df 0 10)</pre>
+</div>
+<div class="entry" id="e31" data-name="df-split">
+  <div class="entry-name">df-split</div>
+  <pre class="entry-doc">Syntax: (df-split df)
+Library: (scm data verbs)
+Description: A grouped frame as a list of (key-values . frame), one per
+  group, sorted by key.
+Example:
+  (df-split (group-by df splg))</pre>
+</div>
+<div class="entry" id="e32" data-name="df-summarise">
+  <div class="entry-name">df-summarise</div>
+  <pre class="entry-doc">Syntax: (df-summarise df specs)
+Library: (scm data verbs)
+Description: One row per group (one row if ungrouped): the grouping
+  columns plus a column per (name . expr) spec, normally an aggregate
+  such as (sum pts) or (n). Later specs may use earlier ones. The result
+  is ungrouped and sorted by the grouping columns. Macro form:
+  (summarise df (name expr) …).
+Example:
+  (df-summarise (df-group-by df '(splg)) '((total . (sum pts))))</pre>
+</div>
+<div class="entry" id="e33" data-name="df-tail">
+  <div class="entry-name">df-tail</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e34" data-name="df-transmute">
+  <div class="entry-name">df-transmute</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e35" data-name="df-ungroup">
+  <div class="entry-name">df-ungroup</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e36" data-name="df-unnest-longer">
+  <div class="entry-name">df-unnest-longer</div>
+  <pre class="entry-doc">Syntax: (df-unnest-longer df col [into])
+Library: (scm data verbs)
+Description: One row per element of the list column col (rows with an
+  empty list are dropped). With into, a list of names, each element must
+  be a list and is spread into those columns (col is dropped). Macro form:
+  (unnest-longer df col [(into name …)]).
+Example:
+  (unnest-longer cases operateure (into gln splg points))</pre>
+</div>
+<div class="entry" id="e37" data-name="distinct">
+  <div class="entry-name">distinct</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e38" data-name="drop-na">
+  <div class="entry-name">drop-na</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e39" data-name="eval-column">
+  <div class="entry-name">eval-column</div>
+  <pre class="entry-doc">Syntax: (eval-column df expr)
+Library: (scm data verbs)
+Description: Evaluates an expression for every row (per group when df is
+  grouped) and returns the vector of results.
+Example:
+  (eval-column df '(* 2 pts))</pre>
+</div>
+<div class="entry" id="e40" data-name="fill-down">
+  <div class="entry-name">fill-down</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e41" data-name="fill-up">
+  <div class="entry-name">fill-up</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e42" data-name="full-join">
+  <div class="entry-name">full-join</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e43" data-name="group-by">
+  <div class="entry-name">group-by</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e44" data-name="head">
+  <div class="entry-name">head</div>
+  <pre class="entry-doc">Syntax: (head df [n])
+Library: (scm data verbs)
+Description: The first n rows (default 6).
+Example:
+  (head df 3)</pre>
+</div>
+<div class="entry" id="e45" data-name="inner-join">
+  <div class="entry-name">inner-join</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e46" data-name="left-join">
+  <div class="entry-name">left-join</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e47" data-name="mutate">
+  <div class="entry-name">mutate</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e48" data-name="pivot-longer">
+  <div class="entry-name">pivot-longer</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e49" data-name="pivot-wider">
+  <div class="entry-name">pivot-wider</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e50" data-name="pull">
+  <div class="entry-name">pull</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e51" data-name="relocate">
+  <div class="entry-name">relocate</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e52" data-name="rename">
+  <div class="entry-name">rename</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e53" data-name="replace-na">
+  <div class="entry-name">replace-na</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e54" data-name="sample-n">
+  <div class="entry-name">sample-n</div>
+  <pre class="entry-doc">Syntax: (sample-n df n [seed])
+Library: (scm data verbs)
+Description: n rows drawn at random without replacement (in their
+  original order); a seed makes the draw reproducible.
+Example:
+  (sample-n df 100 42)</pre>
+</div>
+<div class="entry" id="e55" data-name="select">
+  <div class="entry-name">select</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e56" data-name="semi-join">
+  <div class="entry-name">semi-join</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e57" data-name="separate">
+  <div class="entry-name">separate</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e58" data-name="slice">
+  <div class="entry-name">slice</div>
+  <pre class="entry-doc">Syntax: (df-slice df start [end])
+Library: (scm data verbs)
+Description: Rows start (inclusive, 0-based) to end (exclusive, default
+  the last row), like substring. Also: (slice df start [end]).
+Example:
+  (slice df 0 10)</pre>
+</div>
+<div class="entry" id="e59" data-name="summarise">
+  <div class="entry-name">summarise</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e60" data-name="summarize">
+  <div class="entry-name">summarize</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e61" data-name="tail">
+  <div class="entry-name">tail</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e62" data-name="tally">
+  <div class="entry-name">tally</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e63" data-name="transmute">
+  <div class="entry-name">transmute</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e64" data-name="ungroup">
+  <div class="entry-name">ungroup</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e65" data-name="unnest-longer">
+  <div class="entry-name">unnest-longer</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e66" data-name="where">
+  <div class="entry-name">where</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

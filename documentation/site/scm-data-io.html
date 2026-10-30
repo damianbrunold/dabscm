@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm data io) — Dabscm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="toc">
+  <h2>Bindings</h2>
+  <a href="#e0" data-name="csv-for-each">csv-for-each</a>
+  <a href="#e1" data-name="df-&gt;csv-string">df-&gt;csv-string</a>
+  <a href="#e2" data-name="query-result-&gt;df">query-result-&gt;df</a>
+  <a href="#e3" data-name="read-csv">read-csv</a>
+  <a href="#e4" data-name="read-csv-string">read-csv-string</a>
+  <a href="#e5" data-name="read-json-records">read-json-records</a>
+  <a href="#e6" data-name="read-jsonl">read-jsonl</a>
+  <a href="#e7" data-name="read-sexp-lines">read-sexp-lines</a>
+  <a href="#e8" data-name="read-xlsx">read-xlsx</a>
+  <a href="#e9" data-name="strings-&gt;df">strings-&gt;df</a>
+  <a href="#e10" data-name="write-csv">write-csv</a>
+  <a href="#e11" data-name="write-json-records">write-json-records</a>
+  <a href="#e12" data-name="write-jsonl">write-jsonl</a>
+  <a href="#e13" data-name="write-sexp-lines">write-sexp-lines</a>
+  <a href="#e14" data-name="write-xlsx">write-xlsx</a>
+</nav>
+
+<main>
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="index.html">All libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="index.html#sec-scm">Scm Extensions</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm data io)</span>
+</nav>
+
+<div class="lib-title scm">(scm data io)</div>
+<p class="lib-sub">Data frames from and to CSV, XLSX, JSON, s-expression lines, SQL results</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p>Reading and writing data frames. Options follow the required arguments as a quoted property list. Column types are inferred (integers, reals, booleans, dates, strings; values with leading zeros such as <code>"007"</code> stay strings) unless <code>'col-types</code> names them.</p>
+<p>| Format | Read | Write | |---|---|---| | CSV (RFC 4180) | <a class="xref" href="#e3"><code>read-csv</code></a>, <a class="xref" href="#e4"><code>read-csv-string</code></a>, <a class="xref" href="#e0"><code>csv-for-each</code></a> (streaming) | <a class="xref" href="#e10"><code>write-csv</code></a> | | XLSX | <a class="xref" href="#e8"><code>read-xlsx</code></a> | <a class="xref" href="#e14"><code>write-xlsx</code></a> (one or more sheets) | | JSON | <a class="xref" href="#e5"><code>read-json-records</code></a>, <a class="xref" href="#e6"><code>read-jsonl</code></a> | <a class="xref" href="#e11"><code>write-json-records</code></a>, <a class="xref" href="#e12"><code>write-jsonl</code></a> | | s-expression lines | <a class="xref" href="#e7"><code>read-sexp-lines</code></a> | <a class="xref" href="#e13"><code>write-sexp-lines</code></a> | | SQL | <a class="xref" href="#e2"><code>query-result-&gt;df</code></a> (pg-query / ss-query results) | |</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(read-csv "cases.csv" 'sep #\; 'decimal #\, 'col-types '((plz . string)))
+(write-xlsx `(("2024" . ,df24) ("2025" . ,df25)) "points.xlsx")
+(read-sexp-lines "splg.scm" 'list-cols '(operateure) 'add '((year . 2024)))
+(query-result-&gt;df (pg-query conn "SELECT splg, pts FROM mfzo_summary"))</code></pre>
+</div>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">15 bindings</p>
+
+<div class="entry" id="e0" data-name="csv-for-each">
+  <div class="entry-name">csv-for-each</div>
+  <pre class="entry-doc">Syntax: (csv-for-each path proc option ...)
+Library: (scm data io)
+Description: Streams a large CSV file: calls proc with each record as an
+  alist ((column . string) …), without building a frame. Takes the
+  options 'sep, 'header, 'names and 'skip of read-csv.
+Example:
+  (csv-for-each "big.csv" (lambda (r) (display (cdr (assq 'id r)))))</pre>
+</div>
+<div class="entry" id="e1" data-name="df-&gt;csv-string">
+  <div class="entry-name">df-&gt;csv-string</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e2" data-name="query-result-&gt;df">
+  <div class="entry-name">query-result-&gt;df</div>
+  <pre class="entry-doc">Syntax: (query-result-&gt;df result option ...)
+Library: (scm data io)
+Description: A frame from a database query result of (scm database
+  postgres) pg-query or (scm database sqlserver) ss-query: column names
+  from the result, NULL as na, values converted by type inference or
+  'col-types (other options as strings-&gt;df).
+Example:
+  (query-result-&gt;df (pg-query conn "SELECT splg, pts FROM mfzo_summary"))</pre>
+</div>
+<div class="entry" id="e3" data-name="read-csv">
+  <div class="entry-name">read-csv</div>
+  <pre class="entry-doc">Syntax: (read-csv path option ...)
+Library: (scm data io)
+Description: Reads a CSV file (RFC 4180: quoted fields may hold separators,
+  quotes as "" and line breaks) into a frame. Options:
+  'sep char (default: detected from , ; tab |), 'header #t|#f,
+  'names (a b …) to name the columns, 'na ("" "NA" …) strings read as
+  na, 'decimal char (#\. or #\,), 'col-types ((col . type) …),
+  'skip n lines before the header, 'n-max rows to read.
+Example:
+  (read-csv "cases.csv" 'sep #\; 'col-types '((plz . string)))</pre>
+</div>
+<div class="entry" id="e4" data-name="read-csv-string">
+  <div class="entry-name">read-csv-string</div>
+  <pre class="entry-doc">Syntax: (read-csv-string string option ...)
+Library: (scm data io)
+Description: read-csv on a string.
+Example:
+  (df-nrow (read-csv-string "a,b\n1,2\n")) =&gt; 1</pre>
+</div>
+<div class="entry" id="e5" data-name="read-json-records">
+  <div class="entry-name">read-json-records</div>
+  <pre class="entry-doc">Syntax: (read-json-records path)
+Library: (scm data io)
+Description: Reads a JSON file holding an array of objects into a frame,
+  one row per object; null becomes na, arrays become list cells.
+Example:
+  (read-json-records "cases.json")</pre>
+</div>
+<div class="entry" id="e6" data-name="read-jsonl">
+  <div class="entry-name">read-jsonl</div>
+  <pre class="entry-doc">Syntax: (read-jsonl path)
+Library: (scm data io)
+Description: Reads JSON Lines (one object per line) into a frame.
+Example:
+  (read-jsonl "events.jsonl")</pre>
+</div>
+<div class="entry" id="e7" data-name="read-sexp-lines">
+  <div class="entry-name">read-sexp-lines</div>
+  <pre class="entry-doc">Syntax: (read-sexp-lines path option ...)
+Library: (scm data io)
+Description: Reads a file of data, one per line, each an alist of entries
+  into a frame. An entry (key value) gives the cell value, (key v1 v2 …)
+  a list cell, (key . value) the value, (key) the empty list. Options:
+  'list-cols (k …) columns whose entries are always lists, so (k v) gives
+  (v) and a missing entry the empty list; 'map proc to turn each datum
+  into an alist yourself (return #f to skip it); 'names to fix the
+  columns; 'add ((col . value) …) for constant columns (e.g. which run a
+  file comes from).
+Example:
+  (read-sexp-lines "splg.scm" 'list-cols '(lgs operateure)
+                   'add '((year . 2024) (model . v1)))</pre>
+</div>
+<div class="entry" id="e8" data-name="read-xlsx">
+  <div class="entry-name">read-xlsx</div>
+  <pre class="entry-doc">Syntax: (read-xlsx path option ...)
+Library: (scm data io)
+Description: Reads one sheet of an XLSX file into a frame. Options:
+  'sheet name or 1-based number (default 1), 'header #t|#f, 'skip rows
+  before the header, 'names, 'na, 'col-types (as read-csv). Numeric
+  columns stay numeric; date cells are recognised as dates.
+Example:
+  (read-xlsx "list.xlsx" 'sheet "Daten" 'skip 2)</pre>
+</div>
+<div class="entry" id="e9" data-name="strings-&gt;df">
+  <div class="entry-name">strings-&gt;df</div>
+  <pre class="entry-doc">Syntax: (strings-&gt;df names string-vectors opts)
+Library: (scm data io)
+Description: Builds a frame from columns of strings, converting each column
+  by type inference or by 'col-types; honours 'na and 'decimal like
+  read-csv. Used by the readers; handy for other text sources (SQL results).
+Example:
+  (df-types (strings-&gt;df '(a) (list (vector "1" "2")) '())) =&gt; ((a . int))</pre>
+</div>
+<div class="entry" id="e10" data-name="write-csv">
+  <div class="entry-name">write-csv</div>
+  <pre class="entry-doc">Syntax: (write-csv df path option ...)
+Library: (scm data io)
+Description: Writes a frame as CSV (header row, CRLF line ends, fields
+  quoted when needed). Options: 'sep char (default #\,), 'decimal char,
+  'na string for missing cells (default ""), 'bom #t to start with a
+  UTF-8 byte order mark (so Excel detects UTF-8).
+Example:
+  (write-csv df "out.csv" 'sep #\; 'decimal #\, 'bom #t)</pre>
+</div>
+<div class="entry" id="e11" data-name="write-json-records">
+  <div class="entry-name">write-json-records</div>
+  <pre class="entry-doc">Syntax: (write-json-records df path [pretty?])
+Library: (scm data io)
+Description: Writes a frame as a JSON array of objects (na as null, dates
+  as ISO strings, list cells as arrays).
+Example:
+  (write-json-records df "out.json" #t)</pre>
+</div>
+<div class="entry" id="e12" data-name="write-jsonl">
+  <div class="entry-name">write-jsonl</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e13" data-name="write-sexp-lines">
+  <div class="entry-name">write-sexp-lines</div>
+  <pre class="entry-doc">Syntax: (write-sexp-lines df path)
+Library: (scm data io)
+Description: Writes each row as one line ((column value) …), the format
+  read-sexp-lines reads back; list cells are written as (column v1 v2 …),
+  na cells are left out, dates are written as ISO strings.
+Example:
+  (write-sexp-lines df "rows.scm")</pre>
+</div>
+<div class="entry" id="e14" data-name="write-xlsx">
+  <div class="entry-name">write-xlsx</div>
+  <pre class="entry-doc">Syntax: (write-xlsx df-or-sheets path option ...)
+Library: (scm data io)
+Description: Writes one frame, or several given as an alist
+  (("Sheet name" . df) …), to an XLSX file: bold header row with an
+  AutoFilter, the header frozen, column widths fitted to the content,
+  numbers as numeric cells, na as empty cells, dates as ISO text.
+  Option 'sheet-name for a single frame (default "Data").
+Example:
+  (write-xlsx `(("2024" . ,df24) ("2025" . ,df25)) "points.xlsx")</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

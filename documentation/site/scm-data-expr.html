@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm data expr) — Dabscm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="toc">
+  <h2>Bindings</h2>
+  <a href="#e0" data-name="all-rows">all-rows</a>
+  <a href="#e1" data-name="compile-expr">compile-expr</a>
+  <a href="#e2" data-name="define-df-function">define-df-function</a>
+  <a href="#e3" data-name="df-function-names">df-function-names</a>
+  <a href="#e4" data-name="expr-uses-aggregate?">expr-uses-aggregate?</a>
+  <a href="#e5" data-name="value&lt;?">value&lt;?</a>
+  <a href="#e6" data-name="value=?">value=?</a>
+</nav>
+
+<main>
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="index.html">All libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="index.html#sec-scm">Scm Extensions</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm data expr)</span>
+</nav>
+
+<div class="lib-title scm">(scm data expr)</div>
+<p class="lib-sub">Column expressions for data-frame verbs — vocabulary and compiler</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p>The expression language of the data-frame verbs. A bare symbol names a column; numbers, strings and quoted data are constants; <code>,x</code> splices in a Scheme value and <code>(,proc a b)</code> calls a Scheme procedure per row. Expressions are compiled once per verb into closures over the row index.</p>
+<p>The vocabulary covers arithmetic, comparison (numbers, strings, symbols, dates), logic, <a class="xref" href="scheme-base.html#e93"><code>if</code></a>/<code>case-when</code>/<code>in</code>/<code>coalesce</code>, string and date functions, aggregates (<code>n</code> <code>sum</code> <code>mean</code> <code>median</code> <code>quantile</code> <code>sd</code> …) and window functions (<code>lag</code> <code>lead</code> <code>cumsum</code> <code>rank</code> <code>share</code> …). Add functions with <a class="xref" href="#e2"><code>define-df-function</code></a>.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(mutate df (share (/ points (sum points)))            ; per group when grouped
+           (band (case-when ((&lt; points 10) 'low) ((&lt; points 50) 'mid) (else 'high))))
+(define-df-function 'sq 'scalar (lambda (x) (* x x)))</code></pre>
+</div>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">7 bindings</p>
+
+<div class="entry" id="e0" data-name="all-rows">
+  <div class="entry-name">all-rows</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e1" data-name="compile-expr">
+  <div class="entry-name">compile-expr</div>
+  <pre class="entry-doc">Syntax: (compile-expr df expr)
+Library: (scm data expr)
+Description: Compiles a column expression against the columns of df into
+  a procedure (lambda (i rows) value): the value for row i, with rows the
+  vector of row indices of its group (used by aggregates and window
+  functions; (all-rows df) when ungrouped). See the library comment for
+  the vocabulary.
+Example:
+  ((compile-expr df '(* pts 2)) 0 (all-rows df))</pre>
+</div>
+<div class="entry" id="e2" data-name="define-df-function">
+  <div class="entry-name">define-df-function</div>
+  <pre class="entry-doc">Syntax: (define-df-function name kind proc)
+Library: (scm data expr)
+Description: Adds a function to the expression vocabulary. kind is
+  scalar (called per row, returns na if an argument is na), raw (per row,
+  gets na unchanged), agg (called with the list of the group's non-na
+  values of the first argument plus the other arguments, returns one
+  value) or window (called with the vector of the group's values plus the
+  other arguments, returns a vector of the same length).
+Example:
+  (define-df-function 'sq 'scalar (lambda (x) (* x x)))
+  (mutate df (pts2 (sq pts)))</pre>
+</div>
+<div class="entry" id="e3" data-name="df-function-names">
+  <div class="entry-name">df-function-names</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e4" data-name="expr-uses-aggregate?">
+  <div class="entry-name">expr-uses-aggregate?</div>
+  <pre class="entry-doc">Syntax: (expr-uses-aggregate? expr)
+Library: (scm data expr)
+Description: True if the expression calls an aggregate function (or (n)).
+Example:
+  (expr-uses-aggregate? '(/ (sum pts) (n))) =&gt; #t</pre>
+</div>
+<div class="entry" id="e5" data-name="value&lt;?">
+  <div class="entry-name">value&lt;?</div>
+  <pre class="entry-doc">Syntax: (value&lt;? a b)
+Library: (scm data expr)
+Description: Total order used for sorting and grouping: numbers, strings,
+  symbols and dates in their natural order, #f before #t; values of
+  different types by type; na sorts last.
+Example:
+  (value&lt;? "a" "b") =&gt; #t</pre>
+</div>
+<div class="entry" id="e6" data-name="value=?">
+  <div class="entry-name">value=?</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

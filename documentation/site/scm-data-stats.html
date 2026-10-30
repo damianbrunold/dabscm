@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm data stats) — Dabscm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="toc">
+  <h2>Bindings</h2>
+  <a href="#e0" data-name="cor">cor</a>
+  <a href="#e1" data-name="cov">cov</a>
+  <a href="#e2" data-name="crosstab">crosstab</a>
+  <a href="#e3" data-name="cumsum">cumsum</a>
+  <a href="#e4" data-name="freq">freq</a>
+  <a href="#e5" data-name="histogram-bins">histogram-bins</a>
+  <a href="#e6" data-name="iqr">iqr</a>
+  <a href="#e7" data-name="lm-simple">lm-simple</a>
+  <a href="#e8" data-name="mean">mean</a>
+  <a href="#e9" data-name="median">median</a>
+  <a href="#e10" data-name="pct-change">pct-change</a>
+  <a href="#e11" data-name="quantile">quantile</a>
+  <a href="#e12" data-name="ranks">ranks</a>
+  <a href="#e13" data-name="sd">sd</a>
+  <a href="#e14" data-name="sum">sum</a>
+  <a href="#e15" data-name="value-range">value-range</a>
+  <a href="#e16" data-name="var">var</a>
+  <a href="#e17" data-name="weighted-mean">weighted-mean</a>
+  <a href="#e18" data-name="zscore">zscore</a>
+</nav>
+
+<main>
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="index.html">All libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="index.html#sec-scm">Scm Extensions</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm data stats)</span>
+</nav>
+
+<div class="lib-title scm">(scm data stats)</div>
+<p class="lib-sub">Descriptive statistics — quantiles, correlation, frequency tables, regression</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p>Descriptive statistics on lists or vectors (<code>na</code> skipped): <a class="xref" href="#e14"><code>sum</code></a> <a class="xref" href="#e8"><code>mean</code></a> <a class="xref" href="#e17"><code>weighted-mean</code></a> <a class="xref" href="#e9"><code>median</code></a> <a class="xref" href="#e11"><code>quantile</code></a> (R type 7) <a class="xref" href="#e16"><code>var</code></a> <a class="xref" href="#e13"><code>sd</code></a> (n-1) <a class="xref" href="#e6"><code>iqr</code></a> <a class="xref" href="#e15"><code>value-range</code></a> <a class="xref" href="#e3"><code>cumsum</code></a> <a class="xref" href="#e12"><code>ranks</code></a> <a class="xref" href="#e18"><code>zscore</code></a> <a class="xref" href="#e1"><code>cov</code></a> <a class="xref" href="#e0"><code>cor</code></a> (Pearson or Spearman) <a class="xref" href="#e10"><code>pct-change</code></a> <a class="xref" href="#e7"><code>lm-simple</code></a>, and as data frames <a class="xref" href="#e4"><code>freq</code></a>, <a class="xref" href="#e2"><code>crosstab</code></a> and <a class="xref" href="#e5"><code>histogram-bins</code></a>.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(quantile '(1 2 3 4) 0.25)          ;; =&gt; 1.75
+(cor xs ys 'spearman)
+(df-print (freq (df-column cases 'splg) 'by-count))</code></pre>
+</div>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">19 bindings</p>
+
+<div class="entry" id="e0" data-name="cor">
+  <div class="entry-name">cor</div>
+  <pre class="entry-doc">Syntax: (cor xs ys [method])
+Library: (scm data stats)
+Description: The correlation coefficient; method pearson (default) or
+  spearman (Pearson on the average ranks).
+Example:
+  (cor '(1 2 3 4) '(1 3 2 4)) =&gt; 0.8</pre>
+</div>
+<div class="entry" id="e1" data-name="cov">
+  <div class="entry-name">cov</div>
+  <pre class="entry-doc">Syntax: (cov xs ys)
+Library: (scm data stats)
+Description: The sample covariance of two equally long lists (pairs with
+  a na are skipped).
+Example:
+  (cov '(1 2 3) '(2 4 6)) =&gt; 2.0</pre>
+</div>
+<div class="entry" id="e2" data-name="crosstab">
+  <div class="entry-name">crosstab</div>
+  <pre class="entry-doc">Syntax: (crosstab row-values col-values [margins?])
+Library: (scm data stats)
+Description: A two-way frequency table as a data frame: a column row with
+  the distinct row values, then one column per distinct column value
+  (named after it) holding counts. With margins? #t a total column and
+  a total row are added.
+Example:
+  (crosstab '(a a b) '(x y x) #t)</pre>
+</div>
+<div class="entry" id="e3" data-name="cumsum">
+  <div class="entry-name">cumsum</div>
+  <pre class="entry-doc">Syntax: (cumsum xs)
+Library: (scm data stats)
+Description: The running sums, as a list; na stays na and is skipped.
+Example:
+  (cumsum (list 1 2 na 3)) =&gt; (1 3 na 6)</pre>
+</div>
+<div class="entry" id="e4" data-name="freq">
+  <div class="entry-name">freq</div>
+  <pre class="entry-doc">Syntax: (freq xs [sort])
+Library: (scm data stats)
+Description: A frequency table as a data frame with columns value, n and
+  share (fraction); sorted by value, or by descending n with 'by-count.
+  na values are counted as their own value.
+Example:
+  (freq '(a b a)) ; value a b, n 2 1, share 0.667 0.333</pre>
+</div>
+<div class="entry" id="e5" data-name="histogram-bins">
+  <div class="entry-name">histogram-bins</div>
+  <pre class="entry-doc">Syntax: (histogram-bins xs [bins | 'width w])
+Library: (scm data stats)
+Description: Bins numbers for a histogram: a data frame with columns from,
+  to and n (left-closed bins [from, to), the last one closed). The number
+  of bins defaults to Sturges' rule; give a count, or 'width w for fixed
+  width bins starting at a multiple of w.
+Example:
+  (histogram-bins '(1 2 2 3 7) 3)</pre>
+</div>
+<div class="entry" id="e6" data-name="iqr">
+  <div class="entry-name">iqr</div>
+  <pre class="entry-doc">Syntax: (iqr xs)
+Library: (scm data stats)
+Description: The interquartile range, quantile 0.75 minus quantile 0.25.
+Example:
+  (iqr '(1 2 3 4 5)) =&gt; 2</pre>
+</div>
+<div class="entry" id="e7" data-name="lm-simple">
+  <div class="entry-name">lm-simple</div>
+  <pre class="entry-doc">Syntax: (lm-simple xs ys)
+Library: (scm data stats)
+Description: Least-squares line y = intercept + slope * x; returns an
+  alist ((intercept . a) (slope . b) (r2 . r²) (n . pairs)).
+Example:
+  (lm-simple '(1 2 3) '(2 4 6)) =&gt; ((intercept . 0.0) (slope . 2.0) (r2 . 1.0) (n . 3))</pre>
+</div>
+<div class="entry" id="e8" data-name="mean">
+  <div class="entry-name">mean</div>
+  <pre class="entry-doc">Syntax: (mean xs)
+Library: (scm data stats)
+Description: The arithmetic mean (inexact); na if there are no values.
+Example:
+  (mean #(1 2 3 4)) =&gt; 2.5</pre>
+</div>
+<div class="entry" id="e9" data-name="median">
+  <div class="entry-name">median</div>
+  <pre class="entry-doc">Syntax: (median xs)
+Library: (scm data stats)
+Description: The median (middle value, or mean of the two middle values).
+Example:
+  (median '(3 1 2 10)) =&gt; 5/2</pre>
+</div>
+<div class="entry" id="e10" data-name="pct-change">
+  <div class="entry-name">pct-change</div>
+  <pre class="entry-doc">Syntax: (pct-change from to)
+Library: (scm data stats)
+Description: The relative change (to - from) / from as a fraction; na if
+  from is 0 or a value is na.
+Example:
+  (pct-change 200 250) =&gt; 0.25</pre>
+</div>
+<div class="entry" id="e11" data-name="quantile">
+  <div class="entry-name">quantile</div>
+  <pre class="entry-doc">Syntax: (quantile xs p)
+Library: (scm data stats)
+Description: The p-quantile (0 &lt;= p &lt;= 1) with linear interpolation (R's
+  type 7, also pandas' default); p may be a list, giving a list.
+Example:
+  (quantile '(1 2 3 4) 0.25) =&gt; 1.75</pre>
+</div>
+<div class="entry" id="e12" data-name="ranks">
+  <div class="entry-name">ranks</div>
+  <pre class="entry-doc">Syntax: (ranks xs [ties])
+Library: (scm data stats)
+Description: The rank of each value (1 = smallest) as a list; ties is
+  average (default, as R's rank), min or dense. na stays na.
+Example:
+  (ranks '(10 20 10 30)) =&gt; (1.5 3 1.5 4)</pre>
+</div>
+<div class="entry" id="e13" data-name="sd">
+  <div class="entry-name">sd</div>
+  <pre class="entry-doc">Syntax: (sd xs)
+Library: (scm data stats)
+Description: The sample standard deviation, (sqrt (var xs)).
+Example:
+  (sd '(2 4 4 4 5 5 7 9)) =&gt; 2.138089935299395</pre>
+</div>
+<div class="entry" id="e14" data-name="sum">
+  <div class="entry-name">sum</div>
+  <pre class="entry-doc">Syntax: (sum xs)
+Library: (scm data stats)
+Description: The sum of the numbers in the list or vector xs (na skipped).
+Example:
+  (sum (list 1 2 na 3)) =&gt; 6</pre>
+</div>
+<div class="entry" id="e15" data-name="value-range">
+  <div class="entry-name">value-range</div>
+  <pre class="entry-doc">Syntax: (value-range xs)
+Library: (scm data stats)
+Description: The list (min max) of the numbers, #f if there are none.
+Example:
+  (value-range (list 3 na 1 7)) =&gt; (1 7)</pre>
+</div>
+<div class="entry" id="e16" data-name="var">
+  <div class="entry-name">var</div>
+  <pre class="entry-doc">Syntax: (var xs)
+Library: (scm data stats)
+Description: The sample variance (divided by n-1); na for fewer than 2
+  values.
+Example:
+  (var '(1 2 3 4)) =&gt; 1.6666666666666667</pre>
+</div>
+<div class="entry" id="e17" data-name="weighted-mean">
+  <div class="entry-name">weighted-mean</div>
+  <pre class="entry-doc">Syntax: (weighted-mean xs weights)
+Library: (scm data stats)
+Description: The mean of xs weighted by ws (pairs with a na are skipped).
+Example:
+  (weighted-mean '(1 3) '(3 1)) =&gt; 1.5</pre>
+</div>
+<div class="entry" id="e18" data-name="zscore">
+  <div class="entry-name">zscore</div>
+  <pre class="entry-doc">Syntax: (zscore xs)
+Library: (scm data stats)
+Description: The standardised values (x - mean) / sd, as a list.
+Example:
+  (zscore '(1 2 3)) =&gt; (-1.0 0.0 1.0)</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

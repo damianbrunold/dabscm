@@ -68,6 +68,16 @@
 | [`(scm crypto token)`](libraries/scm-crypto-token.md) |  |
 | [`(scm crypto)`](libraries/scm-crypto.md) | Cryptographic hashing and encoding utilities |
 | [`(scm csv)`](libraries/scm-csv.md) | CSV parsing |
+| [`(scm data core)`](libraries/scm-data-core.md) | Data-frame base — missing value na, calendar dates, type inference |
+| [`(scm data expr)`](libraries/scm-data-expr.md) | Column expressions for data-frame verbs — vocabulary and compiler |
+| [`(scm data format)`](libraries/scm-data-format.md) | Number, percent and date formatting with thousands separators |
+| [`(scm data frame)`](libraries/scm-data-frame.md) | Column-oriented data frames — construction, access, printing |
+| [`(scm data io)`](libraries/scm-data-io.md) | Data frames from and to CSV, XLSX, JSON, s-expression lines, SQL results |
+| [`(scm data plot)`](libraries/scm-data-plot.md) | ggplot-style charts rendered to SVG and PNG |
+| [`(scm data report)`](libraries/scm-data-report.md) | Reports with tables and charts rendered to HTML and Markdown |
+| [`(scm data stats)`](libraries/scm-data-stats.md) | Descriptive statistics — quantiles, correlation, frequency tables, regression |
+| [`(scm data verbs)`](libraries/scm-data-verbs.md) | dplyr/tidyr-style data-frame verbs — where, mutate, summarise, joins, pivots |
+| [`(scm data)`](libraries/scm-data.md) | Data analysis in one import — frames, verbs, stats, IO, charts, reports |
 | [`(scm database migrations)`](libraries/scm-database-migrations.md) | Forward-only SQL migration runner |
 | [`(scm database postgres)`](libraries/scm-database-postgres.md) | PostgreSQL database connectivity |
 | [`(scm database sqlserver)`](libraries/scm-database-sqlserver.md) | SQL Server database connectivity |

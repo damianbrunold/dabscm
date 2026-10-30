@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm data plot) — Dabscm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="toc">
+  <h2>Bindings</h2>
+  <a href="#e0" data-name="bar-chart">bar-chart</a>
+  <a href="#e1" data-name="ggplot">ggplot</a>
+  <a href="#e2" data-name="histogram">histogram</a>
+  <a href="#e3" data-name="line-chart">line-chart</a>
+  <a href="#e4" data-name="make-plot">make-plot</a>
+  <a href="#e5" data-name="plot-&gt;png">plot-&gt;png</a>
+  <a href="#e6" data-name="plot-&gt;svg">plot-&gt;svg</a>
+  <a href="#e7" data-name="plot-&gt;svg-string">plot-&gt;svg-string</a>
+  <a href="#e8" data-name="plot-add">plot-add</a>
+  <a href="#e9" data-name="plot-css">plot-css</a>
+  <a href="#e10" data-name="plot?">plot?</a>
+  <a href="#e11" data-name="save-plot">save-plot</a>
+  <a href="#e12" data-name="scatter-plot">scatter-plot</a>
+</nav>
+
+<main>
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="index.html">All libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="index.html#sec-scm">Scm Extensions</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm data plot)</span>
+</nav>
+
+<div class="lib-title scm">(scm data plot)</div>
+<p class="lib-sub">ggplot-style charts rendered to SVG and PNG</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p>Charts in the style of ggplot2, rendered to SVG (SXML) and PNG. A plot is a data frame plus specs: aesthetics, geoms (<code>geom-col</code> <code>geom-bar</code> <code>geom-line</code> <code>geom-point</code> <code>geom-area</code> <code>geom-histogram</code> <code>geom-boxplot</code> <code>geom-text</code> <code>geom-hline</code> <code>geom-vline</code>), labels, scales, <code>coord-flip</code>, <code>facet-wrap</code> and a theme. The look is fixed and restrained: thin bars with rounded data ends, 2px lines, hairline gridlines, a colour-blind-checked palette of eight colours in fixed order, a legend from two series on, <code>&lt;title&gt;</code> tooltips, light and dark colours via CSS classes.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(save-plot (ggplot df (aes (x splg) (y points) (fill model))
+             (geom-col (position dodge) (labels #t))
+             (coord-flip)
+             (labs (title "MFZO points") (x #f) (y "Points")))
+           "points.png")
+(bar-chart df 'splg 'points)        ; quick charts: bar-chart line-chart scatter-plot histogram</code></pre>
+</div>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">13 bindings</p>
+
+<div class="entry" id="e0" data-name="bar-chart">
+  <div class="entry-name">bar-chart</div>
+  <pre class="entry-doc">Syntax: (bar-chart df x y [fill [title]])
+Library: (scm data plot)
+Description: A bar chart of column y per x (dodged by fill when given;
+  horizontal bars when there are many or long categories).
+Example:
+  (bar-chart df 'splg 'points 'model "Points")</pre>
+</div>
+<div class="entry" id="e1" data-name="ggplot">
+  <div class="entry-name">ggplot</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e2" data-name="histogram">
+  <div class="entry-name">histogram</div>
+  <pre class="entry-doc">Syntax: (histogram df x [bins])
+Library: (scm data plot)
+Description: A histogram of column x.
+Example:
+  (histogram df 'age 20)</pre>
+</div>
+<div class="entry" id="e3" data-name="line-chart">
+  <div class="entry-name">line-chart</div>
+  <pre class="entry-doc">Syntax: (line-chart df x y [color [title]])
+Library: (scm data plot)
+Description: Lines of y over x, one per value of color.
+Example:
+  (line-chart df 'year 'cases 'kanton)</pre>
+</div>
+<div class="entry" id="e4" data-name="make-plot">
+  <div class="entry-name">make-plot</div>
+  <pre class="entry-doc">Syntax: (make-plot df specs)
+Library: (scm data plot)
+Description: A plot of df from a list of specs (the procedure behind the
+  ggplot macro, for specs built at run time).
+Example:
+  (make-plot df '((aes (x splg) (y n)) (geom-col)))</pre>
+</div>
+<div class="entry" id="e5" data-name="plot-&gt;png">
+  <div class="entry-name">plot-&gt;png</div>
+  <pre class="entry-doc">Syntax: (plot-&gt;png plot [scale])
+Library: (scm data plot)
+Description: The plot as a PNG bytevector, rendered at scale (default 2,
+  for sharp output on high-resolution screens and in documents).
+Example:
+  (plot-&gt;png p)</pre>
+</div>
+<div class="entry" id="e6" data-name="plot-&gt;svg">
+  <div class="entry-name">plot-&gt;svg</div>
+  <pre class="entry-doc">Syntax: (plot-&gt;svg plot)
+Library: (scm data plot)
+Description: Renders the plot to SVG as SXML (with its style sheet
+  embedded), for inline use in (scm html builder) pages.
+Example:
+  (html-&gt;string (plot-&gt;svg p))</pre>
+</div>
+<div class="entry" id="e7" data-name="plot-&gt;svg-string">
+  <div class="entry-name">plot-&gt;svg-string</div>
+  <pre class="entry-doc">Syntax: (plot-&gt;svg-string plot)
+Library: (scm data plot)
+Description: The plot as SVG text (a standalone .svg document).
+Example:
+  (plot-&gt;svg-string p)</pre>
+</div>
+<div class="entry" id="e8" data-name="plot-add">
+  <div class="entry-name">plot-add</div>
+  <pre class="entry-doc">Syntax: (plot-add plot spec …)
+Library: (scm data plot)
+Description: The plot with more specs (layers, labels, …) appended.
+Example:
+  (plot-add p '(geom-point) '(labs (title "x")))</pre>
+</div>
+<div class="entry" id="e9" data-name="plot-css">
+  <div class="entry-name">plot-css</div>
+  <pre class="entry-doc">Syntax: (plot-css [scope])
+Library: (scm data plot)
+Description: The CSS for charts on an HTML page: light colours, and dark
+  ones for prefers-color-scheme: dark and for [data-theme=dark] on the
+  root element (a [data-theme=light] root stays light). Charts embed the
+  light sheet themselves, so this is only needed for dark mode.
+Example:
+  (plot-css)</pre>
+</div>
+<div class="entry" id="e10" data-name="plot?">
+  <div class="entry-name">plot?</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e11" data-name="save-plot">
+  <div class="entry-name">save-plot</div>
+  <pre class="entry-doc">Syntax: (save-plot plot path [scale])
+Library: (scm data plot)
+Description: Writes the plot to path as SVG or PNG, chosen by the
+  extension (.svg or .png).
+Example:
+  (save-plot p "points.png")</pre>
+</div>
+<div class="entry" id="e12" data-name="scatter-plot">
+  <div class="entry-name">scatter-plot</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>
