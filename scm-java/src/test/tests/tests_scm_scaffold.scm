@@ -3,6 +3,7 @@
 
 (import (scheme base)
         (scheme file)
+        (scheme cxr)
         (scm test)
         (scm fs)
         (scm string)
@@ -51,10 +52,25 @@
     (test-assert (member "README.md" files))
     (test-assert (has? (read-all (join-path (join-path base "web") "README.md")) "city-stats"))))
 
+;; Runs (new-app-command args) with its output captured; returns
+;; (exit-code stdout stderr).
+(define (run-command args)
+  (let* ((out (open-output-string))
+         (err (open-output-string))
+         (code (parameterize ((current-output-port out) (current-error-port err))
+                 (new-app-command args))))
+    (list code (get-output-string out) (get-output-string err))))
+
 (test-group "command"
-  (test-equal 2 (new-app-command '("starter-api")))
-  (test-equal 1 (new-app-command (list "starter-nope" (join-path base "d"))))
-  (test-equal 0 (new-app-command (list "starter-api" (join-path base "api") "tokens"))))
+  (let ((r (run-command '("starter-api"))))
+    (test-equal 2 (car r))
+    (test-assert "usage" (has? (caddr r) "Usage: scm new-app")))
+  (let ((r (run-command (list "starter-nope" (join-path base "d")))))
+    (test-equal 1 (car r))
+    (test-assert "unknown starter" (has? (caddr r) "starter-nope")))
+  (let ((r (run-command (list "starter-api" (join-path base "api") "tokens"))))
+    (test-equal 0 (car r))
+    (test-assert "created" (has? (cadr r) "Created "))))
 
 (rm base 'recursive)
 

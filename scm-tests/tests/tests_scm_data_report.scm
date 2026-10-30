@@ -81,7 +81,9 @@
               (script-args '((out string #f) (keys list-symbol ()) (on bool #t)) #f '()))
   (test-equal '((out . "x") (keys a b) (on . #f))
               (script-args '((out string #f) (keys list-symbol ()) (on bool #t)) #f '("out=x" "keys=a,b" "on=no")))
-  (test-equal 42 (with-timing "answer" (lambda () 42))))
+  (let ((p (open-output-string)))
+    (test-equal 42 (parameterize ((current-output-port p)) (with-timing "answer" (lambda () 42))))
+    (test-assert (string-prefix? "answer: " (get-output-string p)))))
 
 ;; PDF: the bytes as a Latin-1 string, to look for structure
 (define (pdf-text bv)

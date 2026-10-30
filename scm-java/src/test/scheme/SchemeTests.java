@@ -120,11 +120,23 @@ public class SchemeTests {
         var total = 0;
         var failed = 0;
 
-        Scheme.strictImports = true;
-        Scheme scheme = Scheme.forProgram();
-        scheme.evalString(content, displayName);
-        total = (int) (long) Value.asInteger(scheme.evalString("(last-run-total-tests)", "scheme-tests"));
-        failed = (int) (long) Value.asInteger(scheme.evalString("(last-run-failed-tests)", "scheme-tests"));
+        // Diagnostics on stderr (e.g. the HTTP server's handler-error log,
+        // provoked on purpose) are only shown when the suite fails.
+        PrintStream originalErr = System.err;
+        ByteArrayOutputStream capturedErr = new ByteArrayOutputStream();
+        System.setErr(new PrintStream(capturedErr, true, StandardCharsets.UTF_8));
+        boolean ok = false;
+        try {
+            Scheme.strictImports = true;
+            Scheme scheme = Scheme.forProgram();
+            scheme.evalString(content, displayName);
+            total = (int) (long) Value.asInteger(scheme.evalString("(last-run-total-tests)", "scheme-tests"));
+            failed = (int) (long) Value.asInteger(scheme.evalString("(last-run-failed-tests)", "scheme-tests"));
+            ok = failed == 0;
+        } finally {
+            System.setErr(originalErr);
+            if (!ok) System.out.print(capturedErr.toString(StandardCharsets.UTF_8));
+        }
 
         return new int[]{total, failed};
     }

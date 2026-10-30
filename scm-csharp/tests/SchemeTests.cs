@@ -125,11 +125,26 @@ public class SchemeTests
         var total = 0;
         var failed = 0;
 
-        Scheme.StrictImports = true;
-        Scheme scheme = Scheme.ForProgram();
-        scheme.EvalString(content, resourceName);
-        total = (int) Value.AsInteger(scheme.EvalString("(last-run-total-tests)", "scheme-tests"));
-        failed = (int) Value.AsInteger(scheme.EvalString("(last-run-failed-tests)", "scheme-tests"));
+        // Diagnostics on stderr (e.g. the HTTP server's handler-error log,
+        // provoked on purpose) are only shown when the suite fails.
+        var originalErr = Console.Error;
+        var capturedErr = new StringWriter();
+        Console.SetError(TextWriter.Synchronized(capturedErr));
+        var ok = false;
+        try
+        {
+            Scheme.StrictImports = true;
+            Scheme scheme = Scheme.ForProgram();
+            scheme.EvalString(content, resourceName);
+            total = (int) Value.AsInteger(scheme.EvalString("(last-run-total-tests)", "scheme-tests"));
+            failed = (int) Value.AsInteger(scheme.EvalString("(last-run-failed-tests)", "scheme-tests"));
+            ok = failed == 0;
+        }
+        finally
+        {
+            Console.SetError(originalErr);
+            if (!ok) Console.Write(capturedErr.ToString());
+        }
 
         return (total, failed);
     }
