@@ -23,6 +23,8 @@
 <nav class="toc">
   <h2>Bindings</h2>
   <a href="#e0" data-name="features-&gt;topojson">features-&gt;topojson</a>
+  <a href="#e1" data-name="topojson-&gt;features">topojson-&gt;features</a>
+  <a href="#e2" data-name="topojson-layers">topojson-layers</a>
 </nav>
 
 <main>
@@ -36,10 +38,10 @@
 </nav>
 
 <div class="lib-title scm">(scm geo topojson)</div>
-<p class="lib-sub">Writing TopoJSON with shared arcs, simplification and quantization</p>
+<p class="lib-sub">TopoJSON: writing with shared arcs, simplification and quantization; reading</p>
 <div class="lib-preamble">
 <h2>Overview</h2>
-<p><a class="xref" href="scm-geo-topojson.html"><code>(scm geo topojson)</code></a> writes polygon features as a TopoJSON topology: every border shared by two rings, in one layer or across layers, is stored once as an arc that both rings refer to. Borders are matched by exactly equal coordinates, as <a class="xref" href="scm-geo-topology.html"><code>(scm geo topology)</code></a> produces them.</p>
+<p><a class="xref" href="scm-geo-topojson.html"><code>(scm geo topojson)</code></a> reads TopoJSON (<a class="xref" href="#e1"><code>topojson-&gt;features</code></a>, one layer at a time, <a class="xref" href="#e2"><code>topojson-layers</code></a> for their names) and writes polygon features as a TopoJSON topology: every border shared by two rings, in one layer or across layers, is stored once as an arc that both rings refer to. Borders are matched by exactly equal coordinates, as <a class="xref" href="scm-geo-topology.html"><code>(scm geo topology)</code></a> produces them.</p>
 <p>Options:</p>
 <ul>
 <li><code>(simplify . tolerance)</code>: Douglas-Peucker on each arc. A shared arc is</li>
@@ -65,7 +67,7 @@
      p)))</code></pre>
 </div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
-<p class="export-count">1 bindings</p>
+<p class="export-count">3 bindings</p>
 
 <div class="entry" id="e0" data-name="features-&gt;topojson">
   <div class="entry-name">features-&gt;topojson</div>
@@ -90,6 +92,27 @@ Description: Returns a TopoJSON topology of the polygon features in layers, an
 Example:
   (json-&gt;string (features-&gt;topojson (list (cons "cantons" features))
                                     '((simplify . 20) (quantization . 100000))))</pre>
+</div>
+<div class="entry" id="e1" data-name="topojson-&gt;features">
+  <div class="entry-name">topojson-&gt;features</div>
+  <pre class="entry-doc">Syntax: (topojson-&gt;features json [layer])
+Library: (scm geo topojson)
+Description: The features of one object (layer) of a TopoJSON topology,
+  json as parsed by (scm json simple), by default the first: arcs are
+  decoded (with the transform, when quantized) and stitched into rings
+  and paths; a MultiPolygon becomes one polygon with all its rings.
+  Properties are those of the geometries, plus "id" from their id.
+Example:
+  (topojson-&gt;features (json-parse text) "cantons")</pre>
+</div>
+<div class="entry" id="e2" data-name="topojson-layers">
+  <div class="entry-name">topojson-layers</div>
+  <pre class="entry-doc">Syntax: (topojson-layers json)
+Library: (scm geo topojson)
+Description: The names of the objects (layers) of a TopoJSON topology,
+  json as parsed by (scm json simple).
+Example:
+  (topojson-layers (json-parse text)) =&gt; ("cantons" "lakes")</pre>
 </div>
 
 </main>

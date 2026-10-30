@@ -35,7 +35,7 @@ Example:
 
 ```
 Syntax: (svg-text->sxml text)
-Library: (scm svg raster)
+Library: (scm svg core)
 Description: Parses SVG (or other simple XML) text into SXML, the tree
   shape svg->canvas accepts: (tag (@ (name "value") ...) child ...).
   Comments, the prolog, the doctype and processing instructions are

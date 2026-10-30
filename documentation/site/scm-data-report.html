@@ -26,7 +26,8 @@
   <a href="#e1" data-name="report">report</a>
   <a href="#e2" data-name="report-&gt;html">report-&gt;html</a>
   <a href="#e3" data-name="report-&gt;markdown">report-&gt;markdown</a>
-  <a href="#e4" data-name="write-report">write-report</a>
+  <a href="#e4" data-name="report-&gt;pdf">report-&gt;pdf</a>
+  <a href="#e5" data-name="write-report">write-report</a>
 </nav>
 
 <main>
@@ -40,10 +41,10 @@
 </nav>
 
 <div class="lib-title scm">(scm data report)</div>
-<p class="lib-sub">Reports with tables and charts rendered to HTML and Markdown</p>
+<p class="lib-sub">Reports with tables and charts rendered to HTML, Markdown and PDF</p>
 <div class="lib-preamble">
 <h2>Overview</h2>
-<p>Reports as data: <a class="xref" href="#e1"><code>report</code></a> quasiquotes a list of blocks (title, headings, paragraphs with inline markup, lists, notes, code, tables from data frames and figures from plots), rendered to a self-contained HTML page (light and dark theme, inline SVG charts, table of contents) or to GitHub-flavoured Markdown with the figures written as PNG or SVG files next to it.</p>
+<p>Reports as data: <a class="xref" href="#e1"><code>report</code></a> quasiquotes a list of blocks (title, headings, paragraphs with inline markup, lists, notes, code, tables from data frames and figures from plots), rendered to a self-contained HTML page (light and dark theme, inline SVG charts, table of contents), to GitHub-flavoured Markdown with the figures written as PNG or SVG files next to it, or to PDF (<a class="xref" href="#e4"><code>report-&gt;pdf</code></a>): A4 pages with embedded fonts, tables whose header repeats after a page break, figures as vector graphics, the headings as bookmarks and a footer with the title and page numbers.</p>
 <h2>Common uses</h2>
 <pre><code class="language-scheme">(write-report
   (report (title "MFZO v1 vs v2") (date)
@@ -51,10 +52,10 @@
           (p "Totals rise by " (b ,(fmt-pct-change a b)) ".")
           (table ,per-splg (columns (splg "SPLG") (v1 "2024 v1" num)) (total-row))
           (figure ,plot (caption "Points per SPLG")))
-  "report.html")                    ; or "report.md"</code></pre>
+  "report.html")                    ; or "report.md", "report.pdf"</code></pre>
 </div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
-<p class="export-count">5 bindings</p>
+<p class="export-count">6 bindings</p>
 
 <div class="entry" id="e0" data-name="make-report">
   <div class="entry-name">make-report</div>
@@ -91,12 +92,30 @@ Description: The report as GitHub-flavoured Markdown (string). Figures are
 Example:
   (report-&gt;markdown doc)</pre>
 </div>
-<div class="entry" id="e4" data-name="write-report">
+<div class="entry" id="e4" data-name="report-&gt;pdf">
+  <div class="entry-name">report-&gt;pdf</div>
+  <pre class="entry-doc">Syntax: (report-&gt;pdf report [options])
+Library: (scm data report)
+Description: The report as a PDF document (bytevector): A4 pages with the
+  text in embedded fonts, tables (header repeated after a page break,
+  wide tables wrapped), figures as vector graphics, h1–h3 as bookmarks
+  and a footer with the title and page numbers. options is an alist:
+  (page-size . (w . h)) in points (pdf-page-size-a4 by default, see
+  (scm pdf)), (margin . pt) 56, (font-size . pt) 10, (font . family) a
+  family found by (scm fonts) for the text and the figures, DejaVu Sans
+  by default, (mono-font . family) for code, (footer . #f) to leave the
+  footer out.
+Example:
+  (call-with-port (open-binary-output-file "r.pdf")
+    (lambda (o) (write-bytevector (report-&gt;pdf doc) o)))</pre>
+</div>
+<div class="entry" id="e5" data-name="write-report">
   <div class="entry-name">write-report</div>
   <pre class="entry-doc">Syntax: (write-report report path [figure-format])
 Library: (scm data report)
-Description: Writes the report to path, as HTML (.html) or Markdown (.md).
-  For Markdown, figures are written next to the file as
+Description: Writes the report to path, as HTML (.html), Markdown (.md)
+  or PDF (.pdf, see report-&gt;pdf). For Markdown, figures are written next
+  to the file as
   &lt;name&gt;-fig&lt;n&gt;.png (figure-format png, the default) or .svg, and linked.
 Example:
   (write-report doc "report.html")

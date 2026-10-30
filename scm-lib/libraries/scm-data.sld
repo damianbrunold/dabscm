@@ -76,9 +76,11 @@
 
     ;; ================================================================
     ;; (scm data) — the data-analysis toolkit in one import: frames,
-    ;; expressions, verbs, statistics, formatting, IO, plots and reports
-    ;; (see the individual (scm data …) libraries), plus two helpers for
-    ;; analysis scripts: script-args and with-timing.
+    ;; expressions, verbs, statistics, hypothesis tests, formatting, IO,
+    ;; plots and maps, reports (see the individual (scm data …)
+    ;; libraries), plus two helpers for analysis scripts: script-args and
+    ;; with-timing. (scm data r), imported on its own, translates code
+    ;; between R and (scm data).
     ;; ================================================================
 
     ;; type of a spec entry: (key . default) infers it, (key type default) names it

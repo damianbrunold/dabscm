@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm data r) — Dabscm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="toc">
+  <h2>Bindings</h2>
+  <a href="#e0" data-name="r-&gt;scm">r-&gt;scm</a>
+  <a href="#e1" data-name="r-&gt;scm-string">r-&gt;scm-string</a>
+  <a href="#e2" data-name="r-deparse">r-deparse</a>
+  <a href="#e3" data-name="r-file-&gt;scm">r-file-&gt;scm</a>
+  <a href="#e4" data-name="r-parse">r-parse</a>
+  <a href="#e5" data-name="report-&gt;rmd">report-&gt;rmd</a>
+  <a href="#e6" data-name="scm-&gt;r">scm-&gt;r</a>
+  <a href="#e7" data-name="scm-&gt;r-string">scm-&gt;r-string</a>
+  <a href="#e8" data-name="scm-file-&gt;r">scm-file-&gt;r</a>
+  <a href="#e9" data-name="scm-pretty">scm-pretty</a>
+</nav>
+
+<main>
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="index.html">All libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="index.html#sec-scm">Scm Extensions</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm data r)</span>
+</nav>
+
+<div class="lib-title scm">(scm data r)</div>
+<p class="lib-sub">Translating analysis code between R (tidyverse) and (scm data), both ways</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p>Translates analysis code between R and <a class="xref" href="scm-data.html"><code>(scm data)</code></a>, best effort, in both directions. It covers the common subset of the tidyverse: pipes (<code>%&gt;%</code>, <code>|&gt;</code>), the dplyr and tidyr verbs, readr/readxl/writexl/sf input and output, ggplot2 chains (geoms, <code>labs</code>, scales, facets, maps with <code>geom_sf</code>), the stats tests and <code>lm</code>.</p>
+<ul>
+<li><strong>R → Scheme</strong>: <a class="xref" href="#e1"><code>r-&gt;scm-string</code></a> (or <a class="xref" href="#e3"><code>r-file-&gt;scm</code></a>) parses R with its real</li>
+</ul>
+<p>grammar (precedence, newlines, named arguments, formulas, functions) and maps pipes to <code>-&gt;</code>, verbs to verbs and ggplot <code>+</code> chains to <code>ggplot</code> forms. Inside verbs a name is a column unless the script assigned it, then it is spliced in with unquote. What has no counterpart is marked <code>(r:unsupported "…")</code> inline or <code>;; TODO (R): …</code> for a whole statement or step, and listed as the second value; the translation never fails.</p>
+<ul>
+<li><strong>Scheme → R</strong>: <a class="xref" href="#e7"><code>scm-&gt;r-string</code></a> (or <a class="xref" href="#e8"><code>scm-file-&gt;r</code></a>) writes pipe-style R with</li>
+</ul>
+<p>the <code>library()</code> calls it needs; values unquoted into verb expressions become <code>!!</code>, reports become R Markdown (<a class="xref" href="#e5"><code>report-&gt;rmd</code></a>). Unknown forms become R calls with R-style names, or <code>stop("TODO scheme: …")</code>.</p>
+<p><a class="xref" href="#e4"><code>r-parse</code></a>/<a class="xref" href="#e2"><code>r-deparse</code></a> give access to the R syntax tree, <a class="xref" href="#e9"><code>scm-pretty</code></a> to the code printer.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scm data r))
+
+(let-values (((code unsupported) (r-file-&gt;scm "analysis.R")))
+  (display code))
+(display (scm-file-&gt;r "analysis.scm"))</code></pre>
+<p>From the shell: <code>scm examples/r-convert.scm analysis.R</code> (or <code>analysis.scm</code>).</p>
+</div>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">10 bindings</p>
+
+<div class="entry" id="e0" data-name="r-&gt;scm">
+  <div class="entry-name">r-&gt;scm</div>
+  <pre class="entry-doc">Syntax: (r-&gt;scm r-source)
+Library: (scm data r)
+Description: Translates R source text (or a list of R syntax trees from
+  r-parse) to (scm data) code: returns two values, the list of top-level
+  forms (an import first; comments as (:comment text), see scm-pretty)
+  and the list of R snippets that had no translation. See
+  r-&gt;scm-string for text.
+Example:
+  (r-&gt;scm "d &lt;- read_csv('a.csv') |&gt; filter(x &gt; 1)")</pre>
+</div>
+<div class="entry" id="e1" data-name="r-&gt;scm-string">
+  <div class="entry-name">r-&gt;scm-string</div>
+  <pre class="entry-doc">Syntax: (r-&gt;scm-string r-source)
+Library: (scm data r)
+Description: Translates R source text to (scm data) code as text,
+  pretty-printed; returns two values, the text and the list of R snippets
+  without a translation (also marked in the text as TODO or
+  r:unsupported).
+Example:
+  (r-&gt;scm-string "mtcars |&gt; group_by(cyl) |&gt; summarise(m = mean(mpg))")</pre>
+</div>
+<div class="entry" id="e2" data-name="r-deparse">
+  <div class="entry-name">r-deparse</div>
+  <pre class="entry-doc">Syntax: (r-deparse tree)
+Library: (scm data r)
+Description: R source text of an R syntax tree as r-parse returns it (one
+  line; parentheses added where precedence needs them).
+Example:
+  (r-deparse (car (r-parse "f(x = 1) + 2"))) =&gt; "f(x = 1) + 2"</pre>
+</div>
+<div class="entry" id="e3" data-name="r-file-&gt;scm">
+  <div class="entry-name">r-file-&gt;scm</div>
+  <pre class="entry-doc">Syntax: (r-file-&gt;scm path)
+Library: (scm data r)
+Description: r-&gt;scm-string on the contents of an R script.
+Example:
+  (r-file-&gt;scm "analysis.R")</pre>
+</div>
+<div class="entry" id="e4" data-name="r-parse">
+  <div class="entry-name">r-parse</div>
+  <pre class="entry-doc">Syntax: (r-parse text)
+Library: (scm data r)
+Description: Parses R source text into a list of statements, as R syntax
+  trees: numbers, strings, #t/#f and symbols as themselves, calls as
+  (:call f (name . argument) …) — operators too, as R sees them, e.g.
+  x + 1 is (:call + (#f . x) (#f . 1)) — and functions as (:function
+  ((parameter . default) …) body).
+Example:
+  (r-parse "x &lt;- 1 + 2") =&gt; ((:call &lt;- (#f . x) (#f . (:call + (#f . 1) (#f . 2)))))</pre>
+</div>
+<div class="entry" id="e5" data-name="report-&gt;rmd">
+  <div class="entry-name">report-&gt;rmd</div>
+  <pre class="entry-doc">Syntax: (report-&gt;rmd report-form)
+Library: (scm data r)
+Description: R Markdown text for a report written as a (report …) form
+  (as data): the title in the YAML header, headings and text as
+  Markdown, tables as knitr::kable chunks and figures as chunks printing
+  the plot.
+Example:
+  (report-&gt;rmd '(report (title "T") (h2 "A") (p "text") (table ,df)))</pre>
+</div>
+<div class="entry" id="e6" data-name="scm-&gt;r">
+  <div class="entry-name">scm-&gt;r</div>
+  <pre class="entry-doc">Syntax: (scm-&gt;r forms)
+Library: (scm data r)
+Description: Translates (scm data) code, a list of top-level forms (or a
+  string to read them from), to R: returns two values, the list of R
+  statements as R syntax trees (comments as (:comment text)) and the
+  library names they need.
+Example:
+  (scm-&gt;r '((define d (-&gt; (read-csv "a.csv") (where (&gt; x 1))))))</pre>
+</div>
+<div class="entry" id="e7" data-name="scm-&gt;r-string">
+  <div class="entry-name">scm-&gt;r-string</div>
+  <pre class="entry-doc">Syntax: (scm-&gt;r-string forms)
+Library: (scm data r)
+Description: Translates (scm data) code (a list of forms, or Scheme
+  source text) to R source text: library() calls for what it uses, then
+  the statements, pipes and ggplot chains broken over lines.
+Example:
+  (display (scm-&gt;r-string "(define d (-&gt; (read-csv \"a.csv\") (where (&gt; x 1))))"))</pre>
+</div>
+<div class="entry" id="e8" data-name="scm-file-&gt;r">
+  <div class="entry-name">scm-file-&gt;r</div>
+  <pre class="entry-doc">Syntax: (scm-file-&gt;r path)
+Library: (scm data r)
+Description: scm-&gt;r-string on the forms of a Scheme file.
+Example:
+  (display (scm-file-&gt;r "analysis.scm"))</pre>
+</div>
+<div class="entry" id="e9" data-name="scm-pretty">
+  <div class="entry-name">scm-pretty</div>
+  <pre class="entry-doc">Syntax: (scm-pretty datum [indent])
+Library: (scm data r)
+Description: A Scheme datum as code text, broken over lines and indented
+  where it does not fit in 80 columns; (:comment text) as ;; comment
+  lines (where a list breaks) or #| |# (inside a line).
+Example:
+  (display (scm-pretty '(define x (-&gt; df (where (&gt; a 1)) (mutate (b (* a 2)))))))</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

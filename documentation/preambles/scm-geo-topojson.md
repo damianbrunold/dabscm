@@ -1,6 +1,8 @@
 ## Overview
 
-`(scm geo topojson)` writes polygon features as a TopoJSON topology: every
+`(scm geo topojson)` reads TopoJSON (`topojson->features`, one layer at a
+time, `topojson-layers` for their names) and writes polygon features as a
+TopoJSON topology: every
 border shared by two rings, in one layer or across layers, is stored once as
 an arc that both rings refer to. Borders are matched by exactly equal
 coordinates, as `(scm geo topology)` produces them.

@@ -159,6 +159,12 @@ Example:
     ;; attributes as an alist of symbol -> string; children with
     ;; fragments spliced and #f / () dropped, as (scm html builder) does
     (define (el-attrs node)
+      "Syntax: (el-attrs node)
+Library: (scm svg core)
+Description: The attributes of an SXML element as an alist of symbol -> string
+  (numbers and raw values converted, #f dropped).
+Example:
+  (el-attrs '(rect (@ (x 1) (y \"2\")))) => ((x . \"1\") (y . \"2\"))"
       (if (and (pair? (cdr node)) (pair? (cadr node)) (eq? (car (cadr node)) '@))
           (filter-map (lambda (a)
                         (let ((v (if (pair? (cdr a)) (cadr a) #f)))
@@ -171,6 +177,12 @@ Example:
           '()))
 
     (define (el-children node)
+      "Syntax: (el-children node)
+Library: (scm svg core)
+Description: The children of an SXML element, with nested fragments spliced in
+  and #f and () dropped, as (scm html builder) does.
+Example:
+  (el-children '(g (@) (rect) #f ((circle)))) => ((rect) (circle))"
       (let ((body (if (and (pair? (cdr node)) (pair? (cadr node)) (eq? (car (cadr node)) '@))
                       (cddr node)
                       (cdr node))))
@@ -186,13 +198,30 @@ Example:
                (else (flat (cdr xs) (cons x acc))))))))))
 
     (define (element? x) (and (pair? x) (symbol? (car x))))
+      "Syntax: (element? x)
+Library: (scm svg core)
+Description: Whether x is an SXML element (a list headed by a symbol).
+Example:
+  (element? '(rect)) => #t"
 
     (define (attr node name . default)
+      "Syntax: (attr node name [default])
+Library: (scm svg core)
+Description: The value (a string) of attribute name of an SXML element, or
+  default (#f).
+Example:
+  (attr '(rect (@ (x \"5\"))) 'x) => \"5\""
       (let ((p (assq name (el-attrs node))))
         (if p (cdr p) (if (pair? default) (car default) #f))))
 
     ;; text content of a node: strings, numbers and raw text, recursively
     (define (node-text node)
+      "Syntax: (node-text node)
+Library: (scm svg core)
+Description: The text content of an element: its strings, numbers and raw
+  text, recursively.
+Example:
+  (node-text '(text \"a\" (tspan \"b\"))) => \"ab\""
       (apply string-append
              (map (lambda (c)
                     (cond ((string? c) c)
@@ -206,6 +235,12 @@ Example:
 
     ;; The numbers in s, in order: "1,2 -3.5e2.5" -> (1 2 -350 0.5)
     (define (numbers s)
+      "Syntax: (numbers string)
+Library: (scm svg core)
+Description: The numbers in an SVG number list (separated by spaces or
+  commas; exponents and signs allowed), as inexact numbers.
+Example:
+  (numbers \"1,2 -3.5e2\") => (1.0 2.0 -350.0)"
       (let ((n (string-length s)))
         (let loop ((i 0) (acc '()))
           (let ((i (skip-separators s i)))
@@ -257,6 +292,12 @@ Example:
                       (values (inexact (if neg? (- v) v)) j))))))))
 
     (define (number-or s default)
+      "Syntax: (number-or string default)
+Library: (scm svg core)
+Description: The number at the start of string (an SVG length; units are
+  ignored), or default when there is none or string is #f.
+Example:
+  (number-or \"12px\" 0) => 12.0"
       (if (not s)
           default
           (let-values (((v j) (read-number (string-trim-both s) 0)))
@@ -265,6 +306,12 @@ Example:
     ;; --- transforms -------------------------------------------------------
 
     (define (parse-transform s)
+      "Syntax: (parse-transform string)
+Library: (scm svg core)
+Description: An SVG transform attribute (matrix, translate, scale, rotate,
+  skewX, skewY, in sequence) as a transform vector of (scm raster).
+Example:
+  (parse-transform \"translate(10 5) scale(2)\")"
       (let ((n (string-length s)))
         (let loop ((i 0) (m (transform-identity)))
           (let ((open (string-index s #\( i)))
@@ -298,6 +345,12 @@ Example:
     (define pi (* 4 (atan 1)))
 
     (define (invert m)
+      "Syntax: (invert transform)
+Library: (scm svg core)
+Description: The inverse of a transform vector (the identity for a singular
+  one).
+Example:
+  (invert (transform-scale 2)) => #(0.5 0.0 0.0 0.5 0.0 0.0)"
       (let* ((a (vector-ref m 0)) (b (vector-ref m 1)) (c (vector-ref m 2))
              (d (vector-ref m 3)) (e (vector-ref m 4)) (f (vector-ref m 5))
              (det (- (* a d) (* b c))))
@@ -307,6 +360,12 @@ Example:
                     (/ (- (* c f) (* d e)) det) (/ (- (* b e) (* a f)) det)))))
 
     (define (scale-factor m)
+      "Syntax: (scale-factor transform)
+Library: (scm svg core)
+Description: The geometric mean scale of a transform: the square root of its
+  determinant's absolute value.
+Example:
+  (scale-factor (transform-scale 2 8)) => 4.0"
       (sqrt (abs (- (* (vector-ref m 0) (vector-ref m 3))
                     (* (vector-ref m 1) (vector-ref m 2))))))
 
@@ -314,6 +373,13 @@ Example:
 
     ;; SVG path data -> absolute (M L Q C Z) commands for (scm raster)
     (define (parse-path-data d)
+      "Syntax: (parse-path-data string)
+Library: (scm svg core)
+Description: SVG path data as a list of absolute commands (M x y) (L x y)
+  (Q x1 y1 x y) (C x1 y1 x2 y2 x y) (Z): relative commands resolved, H
+  and V made lines, S and T reflected, arcs turned into cubic curves.
+Example:
+  (parse-path-data \"M0 0 h10 v10 z\") => ((M 0.0 0.0) (L 10.0 0.0) (L 10.0 10.0) (Z))"
       (let ((n (string-length d)))
         (define (num i)
           (let-values (((v j) (read-number d (skip-separators d i))))
@@ -456,6 +522,13 @@ Example:
     ;; (tag id classes), tag and id #f when absent. Declarations are an
     ;; alist property -> value, both strings.
     (define (parse-css text)
+      "Syntax: (parse-css text)
+Library: (scm svg core)
+Description: The rules of a style sheet: (specificity order compounds .
+  declarations) for each selector with type, class and id parts and
+  descendant combinators; at-rule blocks and other selectors are skipped.
+Example:
+  (parse-css \".a{fill:red}\")"
       (let ((text (strip-comments text)) (n 0))
         (let loop ((i 0) (order 0) (acc '()))
           (let ((open (string-index text #\{ i)))
@@ -498,6 +571,12 @@ Example:
               (reverse (cons (substring s i (string-length s)) acc))))))
 
     (define (parse-declarations s)
+      "Syntax: (parse-declarations string)
+Library: (scm svg core)
+Description: CSS declarations (a style attribute) as an alist of property ->
+  value, both strings, !important dropped.
+Example:
+  (parse-declarations \"fill: red; stroke:none\") => ((\"fill\" . \"red\") (\"stroke\" . \"none\"))"
       (filter-map (lambda (d)
                     (let ((colon (string-index d #\:)))
                       (and colon
@@ -555,6 +634,12 @@ Example:
                      (else (loop cs (cdr as))))))))
 
     (define (element-info node)
+      "Syntax: (element-info node)
+Library: (scm svg core)
+Description: An element's tag, id and classes, (\"tag\" id (class …)), as the
+  selector matching takes them.
+Example:
+  (element-info '(rect (@ (class \"a b\")))) => (\"rect\" #f (\"a\" \"b\"))"
       (list (symbol->string (car node))
             (attr node 'id)
             (let ((c (attr node 'class))) (if c (string-tokenize c) '()))))
@@ -579,6 +664,15 @@ Example:
     ;; attributes, then matching rules by specificity and order, then the
     ;; style attribute
     (define (compute-style node parent rules ancestors)
+      "Syntax: (compute-style node parent-style rules ancestors)
+Library: (scm svg core)
+Description: The computed style of an element (an alist property -> value):
+  the inherited properties of parent-style, then its presentation
+  attributes, the matching rules by specificity and order, and its style
+  attribute. ancestors is the list of element-info of its ancestors,
+  nearest first.
+Example:
+  (compute-style node '() rules '())"
       (let* ((info (element-info node))
              (base (filter (lambda (p) (member (car p) inherited)) parent))
              (attrs (filter-map (lambda (a)
@@ -606,6 +700,12 @@ Example:
             '() rules))
 
     (define (prop style name)
+      "Syntax: (prop style name)
+Library: (scm svg core)
+Description: The value of property name (a string) in a computed style, or its
+  initial value (fill black, stroke none, font-size 16 …), or #f.
+Example:
+  (prop '((\"fill\" . \"red\")) \"stroke\") => \"none\""
       (let ((p (assoc name style)))
         (if p (cdr p) (let ((i (assoc name initial-style))) (and i (cdr i))))))
 
@@ -624,6 +724,12 @@ Example:
 
     ;; -> rgba vector, 'none, (url . id), or #f when not understood
     (define (parse-paint s)
+      "Syntax: (parse-paint string)
+Library: (scm svg core)
+Description: A paint value: an rgba vector #(r g b a) (hex, rgb(), rgba(),
+  named colours), none, (url . id), or #f when not understood.
+Example:
+  (parse-paint \"#ff0000\") => #(255 0 0 1.0)"
       (let ((s (string-trim-both (string-downcase s))))
         (cond
          ((or (string=? s "none") (string=? s "transparent")) 'none)
@@ -664,6 +770,11 @@ Example:
          (else #f))))
 
     (define (with-alpha c a)
+      "Syntax: (with-alpha colour alpha)
+Library: (scm svg core)
+Description: An rgba colour with its alpha multiplied by alpha.
+Example:
+  (with-alpha #(0 0 0 1.0) 0.5) => #(0 0 0 0.5)"
       (vector (vector-ref c 0) (vector-ref c 1) (vector-ref c 2) (* a (vector-ref c 3))))
 
     ;; Style sheets and ids of the whole document, found first so that a
@@ -672,6 +783,14 @@ Example:
     ;; stands, so a descendant selector such as ".chart .hatch" reaches
     ;; into it.
     (define (collect node rules ids ancestors)
+      "Syntax: (collect node rules ids ancestors)
+Library: (scm svg core)
+Description: Walks a document once before drawing: appends the rules of its
+  style elements to (car rules), a one-element list used as a box, and
+  records each element with an id in the hash table ids as (node .
+  ancestors).
+Example:
+  (collect root (list '()) (make-hash-table equal?) '())"
       (when (element? node)
         (let ((id (attr node 'id)))
           (when id (hash-table-set! ids id (cons node ancestors))))
@@ -681,12 +800,24 @@ Example:
               (for-each (lambda (c) (collect c rules ids anc)) (el-children node))))))
 
     (define (length-attr node name default)
+      "Syntax: (length-attr node name default)
+Library: (scm svg core)
+Description: A length attribute as a number (percentages give default).
+Example:
+  (length-attr '(rect (@ (width \"20\"))) 'width 0) => 20.0"
       (let ((v (attr node name)))
         (if (and v (not (string-suffix? "%" v))) (number-or v default) default)))
 
     ;; from the viewBox to the element's own width and height; width and
     ;; height default to the viewBox's (preserveAspectRatio xMidYMid meet)
     (define (viewbox-transform node width height)
+      "Syntax: (viewbox-transform node width height)
+Library: (scm svg core)
+Description: The transform from an svg element's viewBox to its width and
+  height (or the given ones), as preserveAspectRatio xMidYMid meet; the
+  identity without a viewBox.
+Example:
+  (viewbox-transform root 200 100)"
       (let ((vb (let ((v (attr node 'viewBox))) (and v (numbers v)))))
         (if (not (and vb (= (length vb) 4) (> (caddr vb) 0) (> (cadddr vb) 0)))
             (transform-identity)
@@ -698,6 +829,12 @@ Example:
               (vector s 0.0 0.0 s tx ty)))))
 
     (define (shape-path node)
+      "Syntax: (shape-path node)
+Library: (scm svg core)
+Description: The outline of a basic shape (rect with rounded corners, circle,
+  ellipse, line, polyline, polygon, path) as a path, or () when empty.
+Example:
+  (shape-path '(rect (@ (width \"10\") (height \"5\"))))"
       (let ((n (lambda (name) (length-attr node name 0))))
         (case (car node)
           ((rect)
@@ -718,12 +855,23 @@ Example:
           (else '()))))
 
     (define (collapse-spaces s)
+      "Syntax: (collapse-spaces string)
+Library: (scm svg core)
+Description: Text as SVG lays it out: runs of whitespace become one space,
+  leading and trailing whitespace removed.
+Example:
+  (collapse-spaces \"  a \\n b \") => \"a b\""
       (let loop ((cs (string->list s)) (acc '()) (space? #f))
         (cond ((null? cs) (string-trim-both (list->string (reverse acc))))
               ((char-whitespace? (car cs)) (loop (cdr cs) acc #t))
               (else (loop (cdr cs) (cons (car cs) (if (and space? (pair? acc)) (cons #\space acc) acc)) #f)))))
 
     (define (option options key default)
+      "Syntax: (option alist key default)
+Library: (scm svg core)
+Description: The value of key in an options alist, or default.
+Example:
+  (option '((scale . 2)) 'scale 1) => 2"
       (let ((p (assq key options))) (if p (cdr p) default)))
 
 

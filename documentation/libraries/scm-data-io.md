@@ -1,6 +1,6 @@
 # `(scm data io)`
 
-Data frames from and to CSV, XLSX, JSON, s-expression lines, SQL results
+Data frames from and to CSV, XLSX, JSON, s-expression lines, SQL results, shapefiles, GeoJSON
 
 ## Overview
 
@@ -16,6 +16,7 @@ dates, strings; values with leading zeros such as `"007"` stay strings) unless
 | JSON | `read-json-records`, `read-jsonl` | `write-json-records`, `write-jsonl` |
 | s-expression lines | `read-sexp-lines` | `write-sexp-lines` |
 | SQL | `query-result->df` (pg-query / ss-query results) | |
+| Geometry | `read-sf` (shapefile, GeoJSON, TopoJSON), `features->df` | `write-geojson`, `df->features` |
 
 ## Common uses
 
@@ -24,6 +25,7 @@ dates, strings; values with leading zeros such as `"007"` stay strings) unless
 (write-xlsx `(("2024" . ,df24) ("2025" . ,df25)) "points.xlsx")
 (read-sexp-lines "splg.scm" 'list-cols '(operateure) 'add '((year . 2024)))
 (query-result->df (pg-query conn "SELECT splg, pts FROM mfzo_summary"))
+(read-sf "gemeinden.topojson" 'layer "gemeinden")   ; properties + a geometry column
 ```
 
 
@@ -44,6 +46,30 @@ Example:
 ### `df->csv-string`
 
 *(no documentation)*
+
+### `df->features`
+
+```
+Syntax: (df->features df [geometry-column])
+Library: (scm data io)
+Description: The rows of a frame with a geometry column as (scm geo)
+  features, the other columns as their properties (keys are strings, na
+  becomes null). Rows without a geometry are left out.
+Example:
+  (features->geojson (df->features regions))
+```
+
+### `features->df`
+
+```
+Syntax: (features->df features [geometry-column])
+Library: (scm data io)
+Description: A frame of (scm geo) features, as R's sf has them: one
+  column per property (null becomes na) and their geometries in the
+  column geometry (or the name given).
+Example:
+  (features->df (read-shapefile "cantons.shp"))
+```
 
 ### `query-result->df`
 
@@ -122,6 +148,21 @@ Example:
                    'add '((year . 2024) (model . v1)))
 ```
 
+### `read-sf`
+
+```
+Syntax: (read-sf path option ...)
+Library: (scm data io)
+Description: Reads geometries with their attributes into a frame (see
+  features->df): an ESRI shapefile (.shp, with the .dbf next to it), a
+  GeoJSON FeatureCollection (.geojson, .json) or a TopoJSON topology
+  (.topojson, or any JSON file of type Topology). Options: 'layer name
+  (TopoJSON object, default the first), 'encoding utf-8|latin-1 (the
+  shapefile's attributes, default from its .cpg file).
+Example:
+  (read-sf "cantons.shp" 'encoding 'latin-1)
+```
+
 ### `read-xlsx`
 
 ```
@@ -158,6 +199,17 @@ Description: Writes a frame as CSV (header row, CRLF line ends, fields
   UTF-8 byte order mark (so Excel detects UTF-8).
 Example:
   (write-csv df "out.csv" 'sep #\; 'decimal #\, 'bom #t)
+```
+
+### `write-geojson`
+
+```
+Syntax: (write-geojson df path [geometry-column])
+Library: (scm data io)
+Description: Writes a frame with a geometry column as a GeoJSON
+  FeatureCollection (see df->features).
+Example:
+  (write-geojson regions "regions.geojson")
 ```
 
 ### `write-json-records`

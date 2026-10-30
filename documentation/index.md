@@ -72,12 +72,14 @@
 | [`(scm data expr)`](libraries/scm-data-expr.md) | Column expressions for data-frame verbs — vocabulary and compiler |
 | [`(scm data format)`](libraries/scm-data-format.md) | Number, percent and date formatting with thousands separators |
 | [`(scm data frame)`](libraries/scm-data-frame.md) | Column-oriented data frames — construction, access, printing |
-| [`(scm data io)`](libraries/scm-data-io.md) | Data frames from and to CSV, XLSX, JSON, s-expression lines, SQL results |
-| [`(scm data plot)`](libraries/scm-data-plot.md) | ggplot-style charts rendered to SVG and PNG |
-| [`(scm data report)`](libraries/scm-data-report.md) | Reports with tables and charts rendered to HTML and Markdown |
+| [`(scm data io)`](libraries/scm-data-io.md) | Data frames from and to CSV, XLSX, JSON, s-expression lines, SQL results, shapefiles, GeoJSON |
+| [`(scm data plot)`](libraries/scm-data-plot.md) | ggplot-style charts and maps rendered to SVG, PNG and PDF |
+| [`(scm data r)`](libraries/scm-data-r.md) | Translating analysis code between R (tidyverse) and (scm data), both ways |
+| [`(scm data report)`](libraries/scm-data-report.md) | Reports with tables and charts rendered to HTML, Markdown and PDF |
 | [`(scm data stats)`](libraries/scm-data-stats.md) | Descriptive statistics — quantiles, correlation, frequency tables, regression |
+| [`(scm data tests)`](libraries/scm-data-tests.md) | Distributions and hypothesis tests as in R — t, Wilcoxon, chi-squared, Fisher, lm, … |
 | [`(scm data verbs)`](libraries/scm-data-verbs.md) | dplyr/tidyr-style data-frame verbs — where, mutate, summarise, joins, pivots |
-| [`(scm data)`](libraries/scm-data.md) | Data analysis in one import — frames, verbs, stats, IO, charts, reports |
+| [`(scm data)`](libraries/scm-data.md) | Data analysis in one import — frames, verbs, stats, tests, IO, charts, maps, reports |
 | [`(scm database migrations)`](libraries/scm-database-migrations.md) | Forward-only SQL migration runner |
 | [`(scm database postgres)`](libraries/scm-database-postgres.md) | PostgreSQL database connectivity |
 | [`(scm database sqlserver)`](libraries/scm-database-sqlserver.md) | SQL Server database connectivity |
@@ -94,7 +96,7 @@
 | [`(scm fs)`](libraries/scm-fs.md) | Filesystem operations — paths, directories, files |
 | [`(scm geiser)`](libraries/scm-geiser.md) |  |
 | [`(scm geo shapefile)`](libraries/scm-geo-shapefile.md) | Reading ESRI shapefiles and dBASE tables |
-| [`(scm geo topojson)`](libraries/scm-geo-topojson.md) | Writing TopoJSON with shared arcs, simplification and quantization |
+| [`(scm geo topojson)`](libraries/scm-geo-topojson.md) | TopoJSON: writing with shared arcs, simplification and quantization; reading |
 | [`(scm geo topology)`](libraries/scm-geo-topology.md) | Planar graphs of polygon layers — overlay, dissolve, gap and sliver cleanup |
 | [`(scm geo)`](libraries/scm-geo.md) | Planar geometry of features — rings, areas, simplification, label points, GeoJSON |
 | [`(scm glob)`](libraries/scm-glob.md) | Filename globbing and pattern matching |
@@ -148,6 +150,8 @@
 | [`(scm scaffold)`](libraries/scm-scaffold.md) | New applications from the starters: scm new-app |
 | [`(scm store)`](libraries/scm-store.md) | Immutable on-disk indexed record store |
 | [`(scm string)`](libraries/scm-string.md) | Extended string operations — search, split, trim, convert |
+| [`(scm svg core)`](libraries/scm-svg-core.md) | SVG parsing shared by the renderers — XML, CSS cascade, transforms, paths, paints |
+| [`(scm svg pdf)`](libraries/scm-svg-pdf.md) | SVG drawn on PDF pages as vectors, with embedded fonts |
 | [`(scm svg raster)`](libraries/scm-svg-raster.md) | SVG rendering to a raster canvas or PNG — shapes, paths, CSS, text, patterns |
 | [`(scm sysadmin)`](libraries/scm-sysadmin.md) | System administration toolkit aggregating fs, archive, remote, logging, and more |
 | [`(scm system)`](libraries/scm-system.md) | System info, environment variables, process execution |

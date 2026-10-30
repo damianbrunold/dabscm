@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm svg core) — Dabscm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="toc">
+  <h2>Bindings</h2>
+  <a href="#e0" data-name="attr">attr</a>
+  <a href="#e1" data-name="collapse-spaces">collapse-spaces</a>
+  <a href="#e2" data-name="collect">collect</a>
+  <a href="#e3" data-name="compute-style">compute-style</a>
+  <a href="#e4" data-name="el-attrs">el-attrs</a>
+  <a href="#e5" data-name="el-children">el-children</a>
+  <a href="#e6" data-name="element-info">element-info</a>
+  <a href="#e7" data-name="element?">element?</a>
+  <a href="#e8" data-name="invert">invert</a>
+  <a href="#e9" data-name="length-attr">length-attr</a>
+  <a href="#e10" data-name="node-text">node-text</a>
+  <a href="#e11" data-name="number-or">number-or</a>
+  <a href="#e12" data-name="numbers">numbers</a>
+  <a href="#e13" data-name="option">option</a>
+  <a href="#e14" data-name="parse-css">parse-css</a>
+  <a href="#e15" data-name="parse-declarations">parse-declarations</a>
+  <a href="#e16" data-name="parse-paint">parse-paint</a>
+  <a href="#e17" data-name="parse-path-data">parse-path-data</a>
+  <a href="#e18" data-name="parse-transform">parse-transform</a>
+  <a href="#e19" data-name="prop">prop</a>
+  <a href="#e20" data-name="scale-factor">scale-factor</a>
+  <a href="#e21" data-name="shape-path">shape-path</a>
+  <a href="#e22" data-name="svg-text-&gt;sxml">svg-text-&gt;sxml</a>
+  <a href="#e23" data-name="viewbox-transform">viewbox-transform</a>
+  <a href="#e24" data-name="with-alpha">with-alpha</a>
+</nav>
+
+<main>
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="index.html">All libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="index.html#sec-scm">Scm Extensions</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm svg core)</span>
+</nav>
+
+<div class="lib-title scm">(scm svg core)</div>
+<p class="lib-sub">SVG parsing shared by the renderers — XML, CSS cascade, transforms, paths, paints</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p>The format-neutral half of the SVG renderers, shared by <a class="xref" href="scm-svg-raster.html"><code>(scm svg raster)</code></a> (canvas, PNG) and <a class="xref" href="scm-svg-pdf.html"><code>(scm svg pdf)</code></a> (PDF vectors): an XML reader to SXML, tree accessors, number and transform parsing, path data (arcs become cubic curves), CSS rules with the cascade (type, class and id selectors, descendants, specificity), paints and the geometry of the basic shapes. Both renderers support the same SVG subset, described in <a class="xref" href="scm-svg-raster.html"><code>(scm svg raster)</code></a>.</p>
+<p>Programs normally use the renderers; this library is for writing another one.</p>
+</div>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">25 bindings</p>
+
+<div class="entry" id="e0" data-name="attr">
+  <div class="entry-name">attr</div>
+  <pre class="entry-doc">Syntax: (attr node name [default])
+Library: (scm svg core)
+Description: The value (a string) of attribute name of an SXML element, or
+  default (#f).
+Example:
+  (attr '(rect (@ (x "5"))) 'x) =&gt; "5"</pre>
+</div>
+<div class="entry" id="e1" data-name="collapse-spaces">
+  <div class="entry-name">collapse-spaces</div>
+  <pre class="entry-doc">Syntax: (collapse-spaces string)
+Library: (scm svg core)
+Description: Text as SVG lays it out: runs of whitespace become one space,
+  leading and trailing whitespace removed.
+Example:
+  (collapse-spaces "  a \n b ") =&gt; "a b"</pre>
+</div>
+<div class="entry" id="e2" data-name="collect">
+  <div class="entry-name">collect</div>
+  <pre class="entry-doc">Syntax: (collect node rules ids ancestors)
+Library: (scm svg core)
+Description: Walks a document once before drawing: appends the rules of its
+  style elements to (car rules), a one-element list used as a box, and
+  records each element with an id in the hash table ids as (node .
+  ancestors).
+Example:
+  (collect root (list '()) (make-hash-table equal?) '())</pre>
+</div>
+<div class="entry" id="e3" data-name="compute-style">
+  <div class="entry-name">compute-style</div>
+  <pre class="entry-doc">Syntax: (compute-style node parent-style rules ancestors)
+Library: (scm svg core)
+Description: The computed style of an element (an alist property -&gt; value):
+  the inherited properties of parent-style, then its presentation
+  attributes, the matching rules by specificity and order, and its style
+  attribute. ancestors is the list of element-info of its ancestors,
+  nearest first.
+Example:
+  (compute-style node '() rules '())</pre>
+</div>
+<div class="entry" id="e4" data-name="el-attrs">
+  <div class="entry-name">el-attrs</div>
+  <pre class="entry-doc">Syntax: (el-attrs node)
+Library: (scm svg core)
+Description: The attributes of an SXML element as an alist of symbol -&gt; string
+  (numbers and raw values converted, #f dropped).
+Example:
+  (el-attrs '(rect (@ (x 1) (y "2")))) =&gt; ((x . "1") (y . "2"))</pre>
+</div>
+<div class="entry" id="e5" data-name="el-children">
+  <div class="entry-name">el-children</div>
+  <pre class="entry-doc">Syntax: (el-children node)
+Library: (scm svg core)
+Description: The children of an SXML element, with nested fragments spliced in
+  and #f and () dropped, as (scm html builder) does.
+Example:
+  (el-children '(g (@) (rect) #f ((circle)))) =&gt; ((rect) (circle))</pre>
+</div>
+<div class="entry" id="e6" data-name="element-info">
+  <div class="entry-name">element-info</div>
+  <pre class="entry-doc">Syntax: (element-info node)
+Library: (scm svg core)
+Description: An element's tag, id and classes, ("tag" id (class …)), as the
+  selector matching takes them.
+Example:
+  (element-info '(rect (@ (class "a b")))) =&gt; ("rect" #f ("a" "b"))</pre>
+</div>
+<div class="entry" id="e7" data-name="element?">
+  <div class="entry-name">element?</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e8" data-name="invert">
+  <div class="entry-name">invert</div>
+  <pre class="entry-doc">Syntax: (invert transform)
+Library: (scm svg core)
+Description: The inverse of a transform vector (the identity for a singular
+  one).
+Example:
+  (invert (transform-scale 2)) =&gt; #(0.5 0.0 0.0 0.5 0.0 0.0)</pre>
+</div>
+<div class="entry" id="e9" data-name="length-attr">
+  <div class="entry-name">length-attr</div>
+  <pre class="entry-doc">Syntax: (length-attr node name default)
+Library: (scm svg core)
+Description: A length attribute as a number (percentages give default).
+Example:
+  (length-attr '(rect (@ (width "20"))) 'width 0) =&gt; 20.0</pre>
+</div>
+<div class="entry" id="e10" data-name="node-text">
+  <div class="entry-name">node-text</div>
+  <pre class="entry-doc">Syntax: (node-text node)
+Library: (scm svg core)
+Description: The text content of an element: its strings, numbers and raw
+  text, recursively.
+Example:
+  (node-text '(text "a" (tspan "b"))) =&gt; "ab"</pre>
+</div>
+<div class="entry" id="e11" data-name="number-or">
+  <div class="entry-name">number-or</div>
+  <pre class="entry-doc">Syntax: (number-or string default)
+Library: (scm svg core)
+Description: The number at the start of string (an SVG length; units are
+  ignored), or default when there is none or string is #f.
+Example:
+  (number-or "12px" 0) =&gt; 12.0</pre>
+</div>
+<div class="entry" id="e12" data-name="numbers">
+  <div class="entry-name">numbers</div>
+  <pre class="entry-doc">Syntax: (numbers string)
+Library: (scm svg core)
+Description: The numbers in an SVG number list (separated by spaces or
+  commas; exponents and signs allowed), as inexact numbers.
+Example:
+  (numbers "1,2 -3.5e2") =&gt; (1.0 2.0 -350.0)</pre>
+</div>
+<div class="entry" id="e13" data-name="option">
+  <div class="entry-name">option</div>
+  <pre class="entry-doc">Syntax: (option alist key default)
+Library: (scm svg core)
+Description: The value of key in an options alist, or default.
+Example:
+  (option '((scale . 2)) 'scale 1) =&gt; 2</pre>
+</div>
+<div class="entry" id="e14" data-name="parse-css">
+  <div class="entry-name">parse-css</div>
+  <pre class="entry-doc">Syntax: (parse-css text)
+Library: (scm svg core)
+Description: The rules of a style sheet: (specificity order compounds .
+  declarations) for each selector with type, class and id parts and
+  descendant combinators; at-rule blocks and other selectors are skipped.
+Example:
+  (parse-css ".a{fill:red}")</pre>
+</div>
+<div class="entry" id="e15" data-name="parse-declarations">
+  <div class="entry-name">parse-declarations</div>
+  <pre class="entry-doc">Syntax: (parse-declarations string)
+Library: (scm svg core)
+Description: CSS declarations (a style attribute) as an alist of property -&gt;
+  value, both strings, !important dropped.
+Example:
+  (parse-declarations "fill: red; stroke:none") =&gt; (("fill" . "red") ("stroke" . "none"))</pre>
+</div>
+<div class="entry" id="e16" data-name="parse-paint">
+  <div class="entry-name">parse-paint</div>
+  <pre class="entry-doc">Syntax: (parse-paint string)
+Library: (scm svg core)
+Description: A paint value: an rgba vector #(r g b a) (hex, rgb(), rgba(),
+  named colours), none, (url . id), or #f when not understood.
+Example:
+  (parse-paint "#ff0000") =&gt; #(255 0 0 1.0)</pre>
+</div>
+<div class="entry" id="e17" data-name="parse-path-data">
+  <div class="entry-name">parse-path-data</div>
+  <pre class="entry-doc">Syntax: (parse-path-data string)
+Library: (scm svg core)
+Description: SVG path data as a list of absolute commands (M x y) (L x y)
+  (Q x1 y1 x y) (C x1 y1 x2 y2 x y) (Z): relative commands resolved, H
+  and V made lines, S and T reflected, arcs turned into cubic curves.
+Example:
+  (parse-path-data "M0 0 h10 v10 z") =&gt; ((M 0.0 0.0) (L 10.0 0.0) (L 10.0 10.0) (Z))</pre>
+</div>
+<div class="entry" id="e18" data-name="parse-transform">
+  <div class="entry-name">parse-transform</div>
+  <pre class="entry-doc">Syntax: (parse-transform string)
+Library: (scm svg core)
+Description: An SVG transform attribute (matrix, translate, scale, rotate,
+  skewX, skewY, in sequence) as a transform vector of (scm raster).
+Example:
+  (parse-transform "translate(10 5) scale(2)")</pre>
+</div>
+<div class="entry" id="e19" data-name="prop">
+  <div class="entry-name">prop</div>
+  <pre class="entry-doc">Syntax: (prop style name)
+Library: (scm svg core)
+Description: The value of property name (a string) in a computed style, or its
+  initial value (fill black, stroke none, font-size 16 …), or #f.
+Example:
+  (prop '(("fill" . "red")) "stroke") =&gt; "none"</pre>
+</div>
+<div class="entry" id="e20" data-name="scale-factor">
+  <div class="entry-name">scale-factor</div>
+  <pre class="entry-doc">Syntax: (scale-factor transform)
+Library: (scm svg core)
+Description: The geometric mean scale of a transform: the square root of its
+  determinant's absolute value.
+Example:
+  (scale-factor (transform-scale 2 8)) =&gt; 4.0</pre>
+</div>
+<div class="entry" id="e21" data-name="shape-path">
+  <div class="entry-name">shape-path</div>
+  <pre class="entry-doc">Syntax: (shape-path node)
+Library: (scm svg core)
+Description: The outline of a basic shape (rect with rounded corners, circle,
+  ellipse, line, polyline, polygon, path) as a path, or () when empty.
+Example:
+  (shape-path '(rect (@ (width "10") (height "5"))))</pre>
+</div>
+<div class="entry" id="e22" data-name="svg-text-&gt;sxml">
+  <div class="entry-name">svg-text-&gt;sxml</div>
+  <pre class="entry-doc">Syntax: (svg-text-&gt;sxml text)
+Library: (scm svg core)
+Description: Parses SVG (or other simple XML) text into SXML, the tree
+  shape svg-&gt;canvas accepts: (tag (@ (name "value") ...) child ...).
+  Comments, the prolog, the doctype and processing instructions are
+  dropped; entities are decoded.
+Example:
+  (svg-text-&gt;sxml "&lt;svg width='10'&gt;&lt;rect/&gt;&lt;/svg&gt;")
+  =&gt; (svg (@ (width "10")) (rect (@)))</pre>
+</div>
+<div class="entry" id="e23" data-name="viewbox-transform">
+  <div class="entry-name">viewbox-transform</div>
+  <pre class="entry-doc">Syntax: (viewbox-transform node width height)
+Library: (scm svg core)
+Description: The transform from an svg element's viewBox to its width and
+  height (or the given ones), as preserveAspectRatio xMidYMid meet; the
+  identity without a viewBox.
+Example:
+  (viewbox-transform root 200 100)</pre>
+</div>
+<div class="entry" id="e24" data-name="with-alpha">
+  <div class="entry-name">with-alpha</div>
+  <pre class="entry-doc">Syntax: (with-alpha colour alpha)
+Library: (scm svg core)
+Description: An rgba colour with its alpha multiplied by alpha.
+Example:
+  (with-alpha #(0 0 0 1.0) 0.5) =&gt; #(0 0 0 0.5)</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

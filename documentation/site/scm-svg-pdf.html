@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm svg pdf) — Dabscm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="toc">
+  <h2>Bindings</h2>
+  <a href="#e0" data-name="svg-&gt;pdf">svg-&gt;pdf</a>
+  <a href="#e1" data-name="svg-&gt;pdf-page!">svg-&gt;pdf-page!</a>
+  <a href="#e2" data-name="svg-pdf-font">svg-pdf-font</a>
+  <a href="#e3" data-name="svg-size">svg-size</a>
+</nav>
+
+<main>
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="index.html">All libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="index.html#sec-scm">Scm Extensions</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm svg pdf)</span>
+</nav>
+
+<div class="lib-title scm">(scm svg pdf)</div>
+<p class="lib-sub">SVG drawn on PDF pages as vectors, with embedded fonts</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p>Draws SVG on pages of <a class="xref" href="scm-pdf.html"><code>(scm pdf)</code></a> as vectors: paths stay paths (fills, strokes with joins, caps and dashes, opacity, even-odd fills) and text stays text, set in an embedded font (DejaVu Sans by default, or fonts of <a class="xref" href="scm-truetype.html"><code>(scm truetype)</code></a>), so it scales, prints sharp and can be searched and copied. The SVG subset is that of <a class="xref" href="scm-svg-raster.html"><code>(scm svg raster)</code></a>, without patterns. Each font is embedded once per document (<a class="xref" href="#e2"><code>svg-pdf-font</code></a>), also when a page adds its own text in it.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scm pdf) (scm svg pdf))
+
+;; a one-page PDF the size of the drawing
+(svg-&gt;pdf chart-sxml '((width . 400) (margin . 10)))
+
+;; on a page of a larger document: top-left corner at (50, 790), 495 points wide
+(svg-&gt;pdf-page! doc page chart-sxml 50 790 '((width . 495)))</code></pre>
+<p><a class="xref" href="scm-data-plot.html"><code>(scm data plot)</code></a> uses it for <code>plot-&gt;pdf</code>, <a class="xref" href="scm-data-report.html"><code>(scm data report)</code></a> for figures in <code>report-&gt;pdf</code>.</p>
+</div>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">4 bindings</p>
+
+<div class="entry" id="e0" data-name="svg-&gt;pdf">
+  <div class="entry-name">svg-&gt;pdf</div>
+  <pre class="entry-doc">Syntax: (svg-&gt;pdf svg [options])
+Library: (scm svg pdf)
+Description: A one-page PDF (bytevector) of svg, the page the size of
+  the drawing (one SVG unit = one point, or scaled to (width . w) or
+  (height . h)) plus (margin . m) points on each side, 0 by default.
+  options as for svg-&gt;pdf-page!, and (title . s) for the document's
+  metadata.
+Example:
+  (pdf-save-bytes (svg-&gt;pdf chart '((width . 400) (margin . 10))))</pre>
+</div>
+<div class="entry" id="e1" data-name="svg-&gt;pdf-page!">
+  <div class="entry-name">svg-&gt;pdf-page!</div>
+  <pre class="entry-doc">Syntax: (svg-&gt;pdf-page! doc page svg x y [options])
+Library: (scm svg pdf)
+Description: Draws svg (SVG text or an SXML tree) on page, a page of doc,
+  with its top-left corner at (x, y) in PDF points (y counts from the
+  bottom of the page, as everywhere in (scm pdf)). One SVG unit is one
+  point unless options give (width . w) or (height . h) in points, which
+  scale the drawing (keeping its aspect ratio). Returns the drawn width
+  and height as two values. options is an alist: width, height, and
+  (fonts . ((normal . font) (bold . font))) fonts of (scm truetype),
+  DejaVu Sans by default.
+Example:
+  (svg-&gt;pdf-page! doc page chart 50 790 '((width . 495)))</pre>
+</div>
+<div class="entry" id="e2" data-name="svg-pdf-font">
+  <div class="entry-name">svg-pdf-font</div>
+  <pre class="entry-doc">Syntax: (svg-pdf-font doc font)
+Library: (scm svg pdf)
+Description: The PDF font of doc for font, a font of (scm truetype),
+  embedded on first use and shared with the SVG drawn on doc, so a page
+  that adds its own text in the same font embeds it only once.
+Example:
+  (pdf-draw-text page (svg-pdf-font doc dejavu-sans) 10 50 700 "Hello")</pre>
+</div>
+<div class="entry" id="e3" data-name="svg-size">
+  <div class="entry-name">svg-size</div>
+  <pre class="entry-doc">Syntax: (svg-size svg)
+Library: (scm svg pdf)
+Description: The width and height of svg (SVG text or SXML) in its own
+  units, as two values: the root's width and height, or its viewBox's
+  size, or 300 by 150.
+Example:
+  (svg-size "&lt;svg width='20' height='10'/&gt;") =&gt; 20 10</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

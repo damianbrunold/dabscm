@@ -71,5 +71,7 @@ Small standalone examples of individual libraries:
 - [`test-postgres.scm`](test-postgres.scm) — connecting to PostgreSQL, querying,
   and cursor streaming.
 - [`zip-directory.scm`](zip-directory.scm) — zipping a directory with `(scm zip)`.
+- [`r-convert.scm`](r-convert.scm) — translating an analysis script between R
+  (tidyverse) and `(scm data)`, in either direction, with `(scm data r)`.
 
 Run any of them with `scm <file>.scm`.

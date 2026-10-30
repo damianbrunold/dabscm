@@ -1,10 +1,12 @@
 # `(scm geo topojson)`
 
-Writing TopoJSON with shared arcs, simplification and quantization
+TopoJSON: writing with shared arcs, simplification and quantization; reading
 
 ## Overview
 
-`(scm geo topojson)` writes polygon features as a TopoJSON topology: every
+`(scm geo topojson)` reads TopoJSON (`topojson->features`, one layer at a
+time, `topojson-layers` for their names) and writes polygon features as a
+TopoJSON topology: every
 border shared by two rings, in one layer or across layers, is stored once as
 an arc that both rings refer to. Borders are matched by exactly equal
 coordinates, as `(scm geo topology)` produces them.
@@ -61,5 +63,30 @@ Description: Returns a TopoJSON topology of the polygon features in layers, an
 Example:
   (json->string (features->topojson (list (cons "cantons" features))
                                     '((simplify . 20) (quantization . 100000))))
+```
+
+### `topojson->features`
+
+```
+Syntax: (topojson->features json [layer])
+Library: (scm geo topojson)
+Description: The features of one object (layer) of a TopoJSON topology,
+  json as parsed by (scm json simple), by default the first: arcs are
+  decoded (with the transform, when quantized) and stitched into rings
+  and paths; a MultiPolygon becomes one polygon with all its rings.
+  Properties are those of the geometries, plus "id" from their id.
+Example:
+  (topojson->features (json-parse text) "cantons")
+```
+
+### `topojson-layers`
+
+```
+Syntax: (topojson-layers json)
+Library: (scm geo topojson)
+Description: The names of the objects (layers) of a TopoJSON topology,
+  json as parsed by (scm json simple).
+Example:
+  (topojson-layers (json-parse text)) => ("cantons" "lakes")
 ```
 

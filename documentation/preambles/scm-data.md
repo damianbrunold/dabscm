@@ -11,14 +11,19 @@ enough:
 | `(scm data verbs)` | `where`, `mutate`, `summarise`, `group-by`, `arrange`, joins, pivots, … |
 | `(scm data expr)` | the expression language used inside the verbs |
 | `(scm data stats)` | `mean`, `median`, `quantile`, `sd`, `cor`, `freq`, `crosstab`, … |
+| `(scm data tests)` | distributions and hypothesis tests as in R: `t-test`, `chisq-test`, `fisher-test`, `lm`, … |
 | `(scm data format)` | `fmt-num`, `fmt-pct`, `fmt-pct-change` (Swiss separators by default) |
-| `(scm data io)` | CSV, XLSX, JSON, s-expression lines, SQL results |
-| `(scm data plot)` | ggplot-style charts to SVG and PNG |
-| `(scm data report)` | reports with tables and charts to HTML and Markdown |
+| `(scm data io)` | CSV, XLSX, JSON, s-expression lines, SQL results, shapefiles, GeoJSON, TopoJSON |
+| `(scm data plot)` | ggplot-style charts and maps to SVG, PNG and PDF |
+| `(scm data report)` | reports with tables and charts to HTML, Markdown and PDF |
 | `(scm data core)` | the missing value `na`, dates, type inference |
 
 It covers the everyday 80 % of analysis work and deliberately stops there: no
-lazy evaluation, no modelling beyond simple regression, no interactive charts.
+lazy evaluation, no modelling beyond linear models and the classic tests, no
+interactive charts.
+
+`(scm data r)`, imported on its own, translates analysis code between R
+(tidyverse) and `(scm data)` in both directions.
 
 ## Common uses
 

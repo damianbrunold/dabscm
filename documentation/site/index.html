@@ -84,8 +84,10 @@
   <a href="scm-data-frame.html" class="scm">(scm data frame)</a>
   <a href="scm-data-io.html" class="scm">(scm data io)</a>
   <a href="scm-data-plot.html" class="scm">(scm data plot)</a>
+  <a href="scm-data-r.html" class="scm">(scm data r)</a>
   <a href="scm-data-report.html" class="scm">(scm data report)</a>
   <a href="scm-data-stats.html" class="scm">(scm data stats)</a>
+  <a href="scm-data-tests.html" class="scm">(scm data tests)</a>
   <a href="scm-data-verbs.html" class="scm">(scm data verbs)</a>
   <a href="scm-data.html" class="scm">(scm data)</a>
   <a href="scm-database-migrations.html" class="scm">(scm database migrations)</a>
@@ -158,6 +160,8 @@
   <a href="scm-scaffold.html" class="scm">(scm scaffold)</a>
   <a href="scm-store.html" class="scm">(scm store)</a>
   <a href="scm-string.html" class="scm">(scm string)</a>
+  <a href="scm-svg-core.html" class="scm">(scm svg core)</a>
+  <a href="scm-svg-pdf.html" class="scm">(scm svg pdf)</a>
   <a href="scm-svg-raster.html" class="scm">(scm svg raster)</a>
   <a href="scm-sysadmin.html" class="scm">(scm sysadmin)</a>
   <a href="scm-system.html" class="scm">(scm system)</a>
@@ -175,7 +179,7 @@
 
 <main>
 
-<p class="intro">A browsable reference for the scm interpreter's libraries — 16 R7RS, 29 SRFI, and 102 extension libraries. Pick a library below, or use the search box to jump straight to any binding.</p>
+<p class="intro">A browsable reference for the scm interpreter's libraries — 16 R7RS, 29 SRFI, and 106 extension libraries. Pick a library below, or use the search box to jump straight to any binding.</p>
 
 <div class="section-heading" id="sec-r7rs">
   <h2>R7RS Standard Libraries</h2>
@@ -436,19 +440,27 @@
   </a>
   <a class="lib-card scm" href="scm-data-io.html">
     <span class="name">(scm data io)</span>
-    <span class="desc">Data frames from and to CSV, XLSX, JSON, s-expression lines, SQL results</span>
+    <span class="desc">Data frames from and to CSV, XLSX, JSON, s-expression lines, SQL results, shapefiles, GeoJSON</span>
   </a>
   <a class="lib-card scm" href="scm-data-plot.html">
     <span class="name">(scm data plot)</span>
-    <span class="desc">ggplot-style charts rendered to SVG and PNG</span>
+    <span class="desc">ggplot-style charts and maps rendered to SVG, PNG and PDF</span>
+  </a>
+  <a class="lib-card scm" href="scm-data-r.html">
+    <span class="name">(scm data r)</span>
+    <span class="desc">Translating analysis code between R (tidyverse) and (scm data), both ways</span>
   </a>
   <a class="lib-card scm" href="scm-data-report.html">
     <span class="name">(scm data report)</span>
-    <span class="desc">Reports with tables and charts rendered to HTML and Markdown</span>
+    <span class="desc">Reports with tables and charts rendered to HTML, Markdown and PDF</span>
   </a>
   <a class="lib-card scm" href="scm-data-stats.html">
     <span class="name">(scm data stats)</span>
     <span class="desc">Descriptive statistics — quantiles, correlation, frequency tables, regression</span>
+  </a>
+  <a class="lib-card scm" href="scm-data-tests.html">
+    <span class="name">(scm data tests)</span>
+    <span class="desc">Distributions and hypothesis tests as in R — t, Wilcoxon, chi-squared, Fisher, lm, …</span>
   </a>
   <a class="lib-card scm" href="scm-data-verbs.html">
     <span class="name">(scm data verbs)</span>
@@ -456,7 +468,7 @@
   </a>
   <a class="lib-card scm" href="scm-data.html">
     <span class="name">(scm data)</span>
-    <span class="desc">Data analysis in one import — frames, verbs, stats, IO, charts, reports</span>
+    <span class="desc">Data analysis in one import — frames, verbs, stats, tests, IO, charts, maps, reports</span>
   </a>
   <a class="lib-card scm" href="scm-database-migrations.html">
     <span class="name">(scm database migrations)</span>
@@ -524,7 +536,7 @@
   </a>
   <a class="lib-card scm" href="scm-geo-topojson.html">
     <span class="name">(scm geo topojson)</span>
-    <span class="desc">Writing TopoJSON with shared arcs, simplification and quantization</span>
+    <span class="desc">TopoJSON: writing with shared arcs, simplification and quantization; reading</span>
   </a>
   <a class="lib-card scm" href="scm-geo-topology.html">
     <span class="name">(scm geo topology)</span>
@@ -737,6 +749,14 @@
   <a class="lib-card scm" href="scm-string.html">
     <span class="name">(scm string)</span>
     <span class="desc">Extended string operations — search, split, trim, convert</span>
+  </a>
+  <a class="lib-card scm" href="scm-svg-core.html">
+    <span class="name">(scm svg core)</span>
+    <span class="desc">SVG parsing shared by the renderers — XML, CSS cascade, transforms, paths, paints</span>
+  </a>
+  <a class="lib-card scm" href="scm-svg-pdf.html">
+    <span class="name">(scm svg pdf)</span>
+    <span class="desc">SVG drawn on PDF pages as vectors, with embedded fonts</span>
   </a>
   <a class="lib-card scm" href="scm-svg-raster.html">
     <span class="name">(scm svg raster)</span>

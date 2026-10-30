@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm data tests) — Dabscm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="toc">
+  <h2>Bindings</h2>
+  <a href="#e0" data-name="binom-test">binom-test</a>
+  <a href="#e1" data-name="chisq-test">chisq-test</a>
+  <a href="#e2" data-name="cor-test">cor-test</a>
+  <a href="#e3" data-name="dF">dF</a>
+  <a href="#e4" data-name="dbeta">dbeta</a>
+  <a href="#e5" data-name="dbinom">dbinom</a>
+  <a href="#e6" data-name="dchisq">dchisq</a>
+  <a href="#e7" data-name="dnorm">dnorm</a>
+  <a href="#e8" data-name="dpois">dpois</a>
+  <a href="#e9" data-name="dt">dt</a>
+  <a href="#e10" data-name="fisher-test">fisher-test</a>
+  <a href="#e11" data-name="htest-&gt;string">htest-&gt;string</a>
+  <a href="#e12" data-name="htest-alternative">htest-alternative</a>
+  <a href="#e13" data-name="htest-conf-int">htest-conf-int</a>
+  <a href="#e14" data-name="htest-conf-level">htest-conf-level</a>
+  <a href="#e15" data-name="htest-data-name">htest-data-name</a>
+  <a href="#e16" data-name="htest-estimate">htest-estimate</a>
+  <a href="#e17" data-name="htest-extra">htest-extra</a>
+  <a href="#e18" data-name="htest-method">htest-method</a>
+  <a href="#e19" data-name="htest-null-value">htest-null-value</a>
+  <a href="#e20" data-name="htest-p-value">htest-p-value</a>
+  <a href="#e21" data-name="htest-parameter">htest-parameter</a>
+  <a href="#e22" data-name="htest-print">htest-print</a>
+  <a href="#e23" data-name="htest-ref">htest-ref</a>
+  <a href="#e24" data-name="htest-statistic">htest-statistic</a>
+  <a href="#e25" data-name="htest?">htest?</a>
+  <a href="#e26" data-name="kruskal-test">kruskal-test</a>
+  <a href="#e27" data-name="ks-test">ks-test</a>
+  <a href="#e28" data-name="lbeta">lbeta</a>
+  <a href="#e29" data-name="lchoose">lchoose</a>
+  <a href="#e30" data-name="lgamma">lgamma</a>
+  <a href="#e31" data-name="lm">lm</a>
+  <a href="#e32" data-name="lm-&gt;string">lm-&gt;string</a>
+  <a href="#e33" data-name="lm-coefficients">lm-coefficients</a>
+  <a href="#e34" data-name="lm-fitted">lm-fitted</a>
+  <a href="#e35" data-name="lm-print">lm-print</a>
+  <a href="#e36" data-name="lm-residuals">lm-residuals</a>
+  <a href="#e37" data-name="lm-summary">lm-summary</a>
+  <a href="#e38" data-name="lm?">lm?</a>
+  <a href="#e39" data-name="oneway-test">oneway-test</a>
+  <a href="#e40" data-name="p-adjust">p-adjust</a>
+  <a href="#e41" data-name="pbeta">pbeta</a>
+  <a href="#e42" data-name="pbeta-regularized">pbeta-regularized</a>
+  <a href="#e43" data-name="pbinom">pbinom</a>
+  <a href="#e44" data-name="pchisq">pchisq</a>
+  <a href="#e45" data-name="pf">pf</a>
+  <a href="#e46" data-name="pgamma-regularized">pgamma-regularized</a>
+  <a href="#e47" data-name="pnorm">pnorm</a>
+  <a href="#e48" data-name="ppois">ppois</a>
+  <a href="#e49" data-name="predict">predict</a>
+  <a href="#e50" data-name="prop-test">prop-test</a>
+  <a href="#e51" data-name="pt">pt</a>
+  <a href="#e52" data-name="qbeta">qbeta</a>
+  <a href="#e53" data-name="qbinom">qbinom</a>
+  <a href="#e54" data-name="qchisq">qchisq</a>
+  <a href="#e55" data-name="qf">qf</a>
+  <a href="#e56" data-name="qnorm">qnorm</a>
+  <a href="#e57" data-name="qt">qt</a>
+  <a href="#e58" data-name="shapiro-test">shapiro-test</a>
+  <a href="#e59" data-name="t-test">t-test</a>
+  <a href="#e60" data-name="tidy">tidy</a>
+  <a href="#e61" data-name="wilcox-test">wilcox-test</a>
+</nav>
+
+<main>
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="index.html">All libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="index.html#sec-scm">Scm Extensions</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm data tests)</span>
+</nav>
+
+<div class="lib-title scm">(scm data tests)</div>
+<p class="lib-sub">Distributions and hypothesis tests as in R — t, Wilcoxon, chi-squared, Fisher, lm, …</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p>Probability distributions and hypothesis tests that follow R's <code>stats</code> package: the same names, defaults, p-values and confidence intervals (checked against R). Tests take lists or vectors, or a data frame and a formula such as <code>'(extra ~ group)</code>; options come as <code>'key value</code> pairs (<code>'alternative 'less</code>, <code>'conf-level 0.9</code>, <code>'paired #t</code>, …).</p>
+<p>| Area | Procedures | |---|---| | Distributions | <a class="xref" href="#e7"><code>dnorm</code></a> <a class="xref" href="#e47"><code>pnorm</code></a> <a class="xref" href="#e56"><code>qnorm</code></a>, <a class="xref" href="#e9"><code>dt</code></a> <a class="xref" href="#e51"><code>pt</code></a> <a class="xref" href="#e57"><code>qt</code></a>, <a class="xref" href="#e6"><code>dchisq</code></a> <a class="xref" href="#e44"><code>pchisq</code></a> <a class="xref" href="#e54"><code>qchisq</code></a>, <a class="xref" href="#e3"><code>dF</code></a> <a class="xref" href="#e45"><code>pf</code></a> <a class="xref" href="#e55"><code>qf</code></a>, <a class="xref" href="#e4"><code>dbeta</code></a> <a class="xref" href="#e41"><code>pbeta</code></a> <a class="xref" href="#e52"><code>qbeta</code></a>, <a class="xref" href="#e5"><code>dbinom</code></a> <a class="xref" href="#e43"><code>pbinom</code></a> <a class="xref" href="#e53"><code>qbinom</code></a>, <a class="xref" href="#e8"><code>dpois</code></a> <a class="xref" href="#e48"><code>ppois</code></a>, <a class="xref" href="#e30"><code>lgamma</code></a>, incomplete gamma and beta | | Location | <a class="xref" href="#e59"><code>t-test</code></a> (one sample, Welch, pooled, paired), <a class="xref" href="#e61"><code>wilcox-test</code></a> (exact or normal approximation, as R) | | Counts | <a class="xref" href="#e1"><code>chisq-test</code></a> (contingency table or goodness of fit), <a class="xref" href="#e10"><code>fisher-test</code></a> (2×2), <a class="xref" href="#e0"><code>binom-test</code></a>, <a class="xref" href="#e50"><code>prop-test</code></a> | | Association | <a class="xref" href="#e2"><code>cor-test</code></a> (Pearson, Kendall, Spearman) | | Distribution | <a class="xref" href="#e58"><code>shapiro-test</code></a>, <a class="xref" href="#e27"><code>ks-test</code></a> (one and two samples) | | k groups | <a class="xref" href="#e39"><code>oneway-test</code></a> (Welch or classic ANOVA), <a class="xref" href="#e26"><code>kruskal-test</code></a> | | Multiple tests | <a class="xref" href="#e40"><code>p-adjust</code></a> (holm, hochberg, bonferroni, BH, BY) | | Linear models | <a class="xref" href="#e31"><code>lm</code></a> (QR; factors dummy-coded), <a class="xref" href="#e37"><code>lm-summary</code></a>, <a class="xref" href="#e35"><code>lm-print</code></a>, <a class="xref" href="#e49"><code>predict</code></a> |</p>
+<p>A test returns an <code>htest</code>: <a class="xref" href="#e22"><code>htest-print</code></a> writes it in R's layout, <a class="xref" href="#e23"><code>htest-ref</code></a> reads one value, <a class="xref" href="#e60"><code>tidy</code></a> turns it into a one-row frame like broom's.</p>
+<p><a class="xref" href="#e3"><code>dF</code></a> is the F density (R's <code>df</code>), renamed so it does not take the name every script gives its data frame.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(define h (t-test sleep '(extra ~ group)))
+(htest-print h)                       ; t = -1.8608, df = 17.776, p-value = 0.07939
+(htest-ref h 'p-value)
+(df-print (tidy (chisq-test (crosstab (df-column d 'a) (df-column d 'b)))))
+(lm-print (lm mtcars '(mpg ~ wt + hp)))
+(p-adjust ps 'BH)</code></pre>
+</div>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">62 bindings</p>
+
+<div class="entry" id="e0" data-name="binom-test">
+  <div class="entry-name">binom-test</div>
+  <pre class="entry-doc">Syntax: (binom-test successes trials option ...)
+Library: (scm data tests)
+Description: The exact binomial test, as R's binom.test, with the
+  Clopper-Pearson confidence interval. Options: 'p 0.5, 'alternative,
+  'conf-level 0.95.
+Example:
+  (binom-test 682 925 'p 0.75)</pre>
+</div>
+<div class="entry" id="e1" data-name="chisq-test">
+  <div class="entry-name">chisq-test</div>
+  <pre class="entry-doc">Syntax: (chisq-test x [y] option ...)
+Library: (scm data tests)
+Description: Pearson's chi-squared test, as R's chisq.test: for a
+  contingency table (a list or vector of rows, or a frame whose numeric
+  columns are the table, such as crosstab gives without margins), for two
+  vectors of categories (cross-tabulated), or a goodness-of-fit test for
+  one vector of counts against 'p (default: equal; 'rescale-p #t scales p
+  to sum 1). 2x2 tables get Yates' correction unless 'correct #f.
+  (htest-ref h 'expected) and 'residuals give the expected counts and
+  Pearson residuals.
+Example:
+  (chisq-test '((762 327 468) (484 239 477)))</pre>
+</div>
+<div class="entry" id="e2" data-name="cor-test">
+  <div class="entry-name">cor-test</div>
+  <pre class="entry-doc">Syntax: (cor-test x y option ...)
+Library: (scm data tests)
+Description: Test of association, as R's cor.test: 'method pearson
+  (t test with Fisher's z confidence interval), kendall (exact below 50
+  pairs without ties, else normal with tie correction) or spearman (the
+  t approximation, as R with exact = FALSE). Options: 'alternative,
+  'conf-level, 'exact 'auto|#f.
+Example:
+  (cor-test '(1 2 3 4 5) '(2 1 4 3 5))</pre>
+</div>
+<div class="entry" id="e3" data-name="dF">
+  <div class="entry-name">dF</div>
+  <pre class="entry-doc">Syntax: (dF x df1 df2)
+Library: (scm data tests)
+Description: The density of the F distribution (dF, not df as in R, so
+  that it does not take the usual name of a data frame).
+Example:
+  (dF 1 5 10) =&gt; 0.4954798</pre>
+</div>
+<div class="entry" id="e4" data-name="dbeta">
+  <div class="entry-name">dbeta</div>
+  <pre class="entry-doc">Syntax: (dbeta x a b)
+Library: (scm data tests)
+Description: The density of the beta distribution.
+Example:
+  (dbeta 0.5 2 2) =&gt; 1.5</pre>
+</div>
+<div class="entry" id="e5" data-name="dbinom">
+  <div class="entry-name">dbinom</div>
+  <pre class="entry-doc">Syntax: (dbinom k n p)
+Library: (scm data tests)
+Description: The binomial probability P(X = k) for n trials with success
+  probability p.
+Example:
+  (dbinom 2 4 0.5) =&gt; 0.375</pre>
+</div>
+<div class="entry" id="e6" data-name="dchisq">
+  <div class="entry-name">dchisq</div>
+  <pre class="entry-doc">Syntax: (dchisq x df)
+Library: (scm data tests)
+Description: The density of the chi-squared distribution.
+Example:
+  (dchisq 1 2) =&gt; 0.30326532985631671</pre>
+</div>
+<div class="entry" id="e7" data-name="dnorm">
+  <div class="entry-name">dnorm</div>
+  <pre class="entry-doc">Syntax: (dnorm x [mean sd])
+Library: (scm data tests)
+Description: The normal density.
+Example:
+  (dnorm 0) =&gt; 0.3989422804014327</pre>
+</div>
+<div class="entry" id="e8" data-name="dpois">
+  <div class="entry-name">dpois</div>
+  <pre class="entry-doc">Syntax: (dpois k lambda)
+Library: (scm data tests)
+Description: The Poisson probability P(X = k).
+Example:
+  (dpois 0 1) =&gt; 0.36787944117144233</pre>
+</div>
+<div class="entry" id="e9" data-name="dt">
+  <div class="entry-name">dt</div>
+  <pre class="entry-doc">Syntax: (dt x df)
+Library: (scm data tests)
+Description: The density of Student's t distribution.
+Example:
+  (dt 0 10) =&gt; 0.389108383966031</pre>
+</div>
+<div class="entry" id="e10" data-name="fisher-test">
+  <div class="entry-name">fisher-test</div>
+  <pre class="entry-doc">Syntax: (fisher-test table option ...)
+Library: (scm data tests)
+Description: Fisher's exact test for a 2x2 table (rows as lists, or a
+  frame as for chisq-test), as R's fisher.test: the p-value sums the
+  probabilities of tables no more likely than the observed one; the
+  estimate is the conditional maximum likelihood odds ratio with its
+  exact confidence interval. Options: 'alternative, 'or 1 (odds ratio
+  under the null), 'conf-level 0.95.
+Example:
+  (fisher-test '((3 1) (1 3)))</pre>
+</div>
+<div class="entry" id="e11" data-name="htest-&gt;string">
+  <div class="entry-name">htest-&gt;string</div>
+  <pre class="entry-doc">Syntax: (htest-&gt;string htest)
+Library: (scm data tests)
+Description: The test result as text, in the layout of R's print.htest.
+Example:
+  (display (htest-&gt;string (t-test '(1 2 3 4))))</pre>
+</div>
+<div class="entry" id="e12" data-name="htest-alternative">
+  <div class="entry-name">htest-alternative</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e13" data-name="htest-conf-int">
+  <div class="entry-name">htest-conf-int</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e14" data-name="htest-conf-level">
+  <div class="entry-name">htest-conf-level</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e15" data-name="htest-data-name">
+  <div class="entry-name">htest-data-name</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e16" data-name="htest-estimate">
+  <div class="entry-name">htest-estimate</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e17" data-name="htest-extra">
+  <div class="entry-name">htest-extra</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e18" data-name="htest-method">
+  <div class="entry-name">htest-method</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e19" data-name="htest-null-value">
+  <div class="entry-name">htest-null-value</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e20" data-name="htest-p-value">
+  <div class="entry-name">htest-p-value</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e21" data-name="htest-parameter">
+  <div class="entry-name">htest-parameter</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e22" data-name="htest-print">
+  <div class="entry-name">htest-print</div>
+  <pre class="entry-doc">Syntax: (htest-print htest [port])
+Library: (scm data tests)
+Description: Writes the test result like R prints it.
+Example:
+  (htest-print (t-test '(1 2 3 4)))</pre>
+</div>
+<div class="entry" id="e23" data-name="htest-ref">
+  <div class="entry-name">htest-ref</div>
+  <pre class="entry-doc">Syntax: (htest-ref htest key)
+Library: (scm data tests)
+Description: One value of a test result: statistic, parameter (a list
+  when there are several), p-value, conf-int, conf-level, estimate (a
+  list when there are several), null-value, alternative, method, or a
+  key of the extra results (e.g. expected for chisq-test).
+Example:
+  (htest-ref (t-test '(1 2 3 4)) 'p-value)</pre>
+</div>
+<div class="entry" id="e24" data-name="htest-statistic">
+  <div class="entry-name">htest-statistic</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e25" data-name="htest?">
+  <div class="entry-name">htest?</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e26" data-name="kruskal-test">
+  <div class="entry-name">kruskal-test</div>
+  <pre class="entry-doc">Syntax: (kruskal-test df '(y ~ g)) or (kruskal-test samples)
+Library: (scm data tests)
+Description: The Kruskal-Wallis rank sum test, as R's kruskal.test (with
+  the tie correction). samples is a list of lists of numbers.
+Example:
+  (kruskal-test '((2.9 3.0 2.5 2.6 3.2) (3.8 2.7 4.0 2.4) (2.8 3.4 3.7 2.2 2.0)))</pre>
+</div>
+<div class="entry" id="e27" data-name="ks-test">
+  <div class="entry-name">ks-test</div>
+  <pre class="entry-doc">Syntax: (ks-test x y option ...)
+Library: (scm data tests)
+Description: The Kolmogorov-Smirnov test, as R's ks.test: y is either a
+  second sample, or a distribution function (a procedure of one
+  argument, e.g. (lambda (q) (pnorm q 0 1))). Exact p-values for one
+  sample below 100 values and for two samples with m*n &lt; 10000 (two-sided,
+  no ties); otherwise the asymptotic distribution. Options: 'alternative
+  two-sided|less|greater, 'exact 'auto|#f.
+Example:
+  (ks-test '(0.1 -0.4 1.2 0.8 -1.5) pnorm)</pre>
+</div>
+<div class="entry" id="e28" data-name="lbeta">
+  <div class="entry-name">lbeta</div>
+  <pre class="entry-doc">Syntax: (lbeta a b)
+Library: (scm data tests)
+Description: The natural logarithm of the beta function B(a, b).
+Example:
+  (lbeta 2 3) =&gt; -2.4849066497880004 ; log(1/12)</pre>
+</div>
+<div class="entry" id="e29" data-name="lchoose">
+  <div class="entry-name">lchoose</div>
+  <pre class="entry-doc">Syntax: (lchoose n k)
+Library: (scm data tests)
+Description: The natural logarithm of the binomial coefficient n over k.
+Example:
+  (exp (lchoose 5 2)) =&gt; 10.000000000000002</pre>
+</div>
+<div class="entry" id="e30" data-name="lgamma">
+  <div class="entry-name">lgamma</div>
+  <pre class="entry-doc">Syntax: (lgamma x)
+Library: (scm data tests)
+Description: The natural logarithm of the absolute value of the gamma
+  function (Lanczos approximation, about 15 digits).
+Example:
+  (lgamma 5) =&gt; 3.1780538303479458 ; log(24)</pre>
+</div>
+<div class="entry" id="e31" data-name="lm">
+  <div class="entry-name">lm</div>
+  <pre class="entry-doc">Syntax: (lm df formula)
+Library: (scm data tests)
+Description: Fits a linear model by least squares (Householder QR), as
+  R's lm. formula is a list such as (y ~ x1 + x2), (y ~ .) for all other
+  columns, with 0 or - 1 to drop the intercept. Non-numeric columns are
+  factors, coded against their first level (sorted), named like R's
+  (column name followed by the level). Rows with na are dropped. See
+  lm-summary, lm-coefficients, predict and tidy.
+Example:
+  (lm mtcars '(mpg ~ wt + hp))</pre>
+</div>
+<div class="entry" id="e32" data-name="lm-&gt;string">
+  <div class="entry-name">lm-&gt;string</div>
+  <pre class="entry-doc">Syntax: (lm-&gt;string lm)
+Library: (scm data tests)
+Description: The summary of a fit as text, in the layout of R's
+  print(summary(fit)).
+Example:
+  (display (lm-&gt;string fit))</pre>
+</div>
+<div class="entry" id="e33" data-name="lm-coefficients">
+  <div class="entry-name">lm-coefficients</div>
+  <pre class="entry-doc">Syntax: (lm-coefficients lm)
+Library: (scm data tests)
+Description: The coefficients as an alist (term name . estimate).
+Example:
+  (lm-coefficients (lm df '(y ~ x)))</pre>
+</div>
+<div class="entry" id="e34" data-name="lm-fitted">
+  <div class="entry-name">lm-fitted</div>
+  <pre class="entry-doc">Syntax: (lm-fitted lm)
+Library: (scm data tests)
+Description: The fitted values as a list.
+Example:
+  (lm-fitted fit)</pre>
+</div>
+<div class="entry" id="e35" data-name="lm-print">
+  <div class="entry-name">lm-print</div>
+  <pre class="entry-doc">Syntax: (lm-print lm [port])
+Library: (scm data tests)
+Description: Writes the summary of a fit like R prints summary(fit).
+Example:
+  (lm-print fit)</pre>
+</div>
+<div class="entry" id="e36" data-name="lm-residuals">
+  <div class="entry-name">lm-residuals</div>
+  <pre class="entry-doc">Syntax: (lm-residuals lm)
+Library: (scm data tests)
+Description: The residuals as a list.
+Example:
+  (lm-residuals fit)</pre>
+</div>
+<div class="entry" id="e37" data-name="lm-summary">
+  <div class="entry-name">lm-summary</div>
+  <pre class="entry-doc">Syntax: (lm-summary lm)
+Library: (scm data tests)
+Description: The summary of a fit, as R's summary.lm, as an alist:
+  coefficients (a frame: term estimate std-error statistic p-value),
+  sigma (residual standard error), df, r-squared, adj-r-squared,
+  f-statistic, f-df1, f-df2, f-p-value.
+Example:
+  (cdr (assq 'r-squared (lm-summary fit)))</pre>
+</div>
+<div class="entry" id="e38" data-name="lm?">
+  <div class="entry-name">lm?</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e39" data-name="oneway-test">
+  <div class="entry-name">oneway-test</div>
+  <pre class="entry-doc">Syntax: (oneway-test df '(y ~ g) option ...) or (oneway-test samples option ...)
+Library: (scm data tests)
+Description: Test of equal means in k groups, as R's oneway.test: Welch's
+  F test, or the classic one-way ANOVA F test with 'var-equal #t.
+  samples is a list of lists of numbers.
+Example:
+  (oneway-test '((1 2 3) (2 3 4) (5 6 7)) 'var-equal #t)</pre>
+</div>
+<div class="entry" id="e40" data-name="p-adjust">
+  <div class="entry-name">p-adjust</div>
+  <pre class="entry-doc">Syntax: (p-adjust p-values [method])
+Library: (scm data tests)
+Description: Adjusts p-values for multiple comparisons, as R's p.adjust:
+  holm (default), hochberg, bonferroni, BH (or fdr), BY or none.
+  Returns a list in the input order; na stays na.
+Example:
+  (p-adjust '(0.01 0.02 0.03) 'bonferroni) =&gt; (0.03 0.06 0.09)</pre>
+</div>
+<div class="entry" id="e41" data-name="pbeta">
+  <div class="entry-name">pbeta</div>
+  <pre class="entry-doc">Syntax: (pbeta q a b [lower?])
+Library: (scm data tests)
+Description: The distribution function of the beta distribution.
+Example:
+  (pbeta 0.5 2 3) =&gt; 0.6875</pre>
+</div>
+<div class="entry" id="e42" data-name="pbeta-regularized">
+  <div class="entry-name">pbeta-regularized</div>
+  <pre class="entry-doc">Syntax: (pbeta-regularized x a b [upper?])
+Library: (scm data tests)
+Description: The regularized incomplete beta function I_x(a, b), or
+  1 - I_x(a, b) with upper? #t (computed as I_{1-x}(b, a)).
+Example:
+  (pbeta-regularized 0.5 2 2) =&gt; 0.5</pre>
+</div>
+<div class="entry" id="e43" data-name="pbinom">
+  <div class="entry-name">pbinom</div>
+  <pre class="entry-doc">Syntax: (pbinom q n p [lower?])
+Library: (scm data tests)
+Description: The binomial distribution function P(X &lt;= q); with lower?
+  #f P(X &gt; q).
+Example:
+  (pbinom 2 4 0.5) =&gt; 0.6875</pre>
+</div>
+<div class="entry" id="e44" data-name="pchisq">
+  <div class="entry-name">pchisq</div>
+  <pre class="entry-doc">Syntax: (pchisq q df [lower?])
+Library: (scm data tests)
+Description: The distribution function of the chi-squared distribution;
+  (pchisq q df #f) is the p-value of a chi-squared statistic.
+Example:
+  (pchisq 3.841459 1 #f) =&gt; 0.05</pre>
+</div>
+<div class="entry" id="e45" data-name="pf">
+  <div class="entry-name">pf</div>
+  <pre class="entry-doc">Syntax: (pf q df1 df2 [lower?])
+Library: (scm data tests)
+Description: The distribution function of the F distribution.
+Example:
+  (pf 4.964603 1 10 #f) =&gt; 0.05</pre>
+</div>
+<div class="entry" id="e46" data-name="pgamma-regularized">
+  <div class="entry-name">pgamma-regularized</div>
+  <pre class="entry-doc">Syntax: (pgamma-regularized a x [upper?])
+Library: (scm data tests)
+Description: The regularized incomplete gamma function P(a, x), or
+  Q(a, x) = 1 - P(a, x) with upper? #t, each computed directly so that
+  small tail values keep their precision.
+Example:
+  (pgamma-regularized 1 1) =&gt; 0.6321205588285577</pre>
+</div>
+<div class="entry" id="e47" data-name="pnorm">
+  <div class="entry-name">pnorm</div>
+  <pre class="entry-doc">Syntax: (pnorm q [mean sd [lower?]])
+Library: (scm data tests)
+Description: The normal distribution function P(X &lt;= q); with lower? #f
+  the upper tail P(X &gt; q).
+Example:
+  (pnorm 1.96) =&gt; 0.9750021048517795</pre>
+</div>
+<div class="entry" id="e48" data-name="ppois">
+  <div class="entry-name">ppois</div>
+  <pre class="entry-doc">Syntax: (ppois q lambda [lower?])
+Library: (scm data tests)
+Description: The Poisson distribution function P(X &lt;= q).
+Example:
+  (ppois 2 1) =&gt; 0.9196986029286058</pre>
+</div>
+<div class="entry" id="e49" data-name="predict">
+  <div class="entry-name">predict</div>
+  <pre class="entry-doc">Syntax: (predict lm df)
+Library: (scm data tests)
+Description: The predictions of a fit for the rows of df (a vector; na
+  where a predictor is na or a factor level is unknown).
+Example:
+  (predict fit (tibble (wt 3.0) (hp 120)))</pre>
+</div>
+<div class="entry" id="e50" data-name="prop-test">
+  <div class="entry-name">prop-test</div>
+  <pre class="entry-doc">Syntax: (prop-test successes trials option ...)
+Library: (scm data tests)
+Description: The test of equal (or given) proportions, as R's prop.test:
+  successes and trials are numbers (one group) or lists (k groups).
+  One group gets Wilson's score interval, two groups the interval of the
+  difference, both with continuity correction (k &lt;= 2) unless
+  'correct #f. Options: 'p (null proportion(s)), 'alternative,
+  'conf-level, 'correct.
+Example:
+  (prop-test '(83 90 129 70) '(86 93 136 82))</pre>
+</div>
+<div class="entry" id="e51" data-name="pt">
+  <div class="entry-name">pt</div>
+  <pre class="entry-doc">Syntax: (pt q df [lower?])
+Library: (scm data tests)
+Description: The distribution function of Student's t distribution.
+Example:
+  (pt 2.228139 10) =&gt; 0.975</pre>
+</div>
+<div class="entry" id="e52" data-name="qbeta">
+  <div class="entry-name">qbeta</div>
+  <pre class="entry-doc">Syntax: (qbeta p a b [lower?])
+Library: (scm data tests)
+Description: The quantile function of the beta distribution.
+Example:
+  (qbeta 0.5 2 2) =&gt; 0.5</pre>
+</div>
+<div class="entry" id="e53" data-name="qbinom">
+  <div class="entry-name">qbinom</div>
+  <pre class="entry-doc">Syntax: (qbinom p n prob [lower?])
+Library: (scm data tests)
+Description: The smallest k with P(X &lt;= k) &gt;= p.
+Example:
+  (qbinom 0.5 10 0.5) =&gt; 5</pre>
+</div>
+<div class="entry" id="e54" data-name="qchisq">
+  <div class="entry-name">qchisq</div>
+  <pre class="entry-doc">Syntax: (qchisq p df [lower?])
+Library: (scm data tests)
+Description: The quantile function of the chi-squared distribution.
+Example:
+  (qchisq 0.95 1) =&gt; 3.841458820694124</pre>
+</div>
+<div class="entry" id="e55" data-name="qf">
+  <div class="entry-name">qf</div>
+  <pre class="entry-doc">Syntax: (qf p df1 df2 [lower?])
+Library: (scm data tests)
+Description: The quantile function of the F distribution.
+Example:
+  (qf 0.95 1 10) =&gt; 4.9646027437307</pre>
+</div>
+<div class="entry" id="e56" data-name="qnorm">
+  <div class="entry-name">qnorm</div>
+  <pre class="entry-doc">Syntax: (qnorm p [mean sd [lower?]])
+Library: (scm data tests)
+Description: The normal quantile function (Wichura's AS241).
+Example:
+  (qnorm 0.975) =&gt; 1.959963984540054</pre>
+</div>
+<div class="entry" id="e57" data-name="qt">
+  <div class="entry-name">qt</div>
+  <pre class="entry-doc">Syntax: (qt p df [lower?])
+Library: (scm data tests)
+Description: The quantile function of Student's t distribution.
+Example:
+  (qt 0.975 10) =&gt; 2.2281388519649385</pre>
+</div>
+<div class="entry" id="e58" data-name="shapiro-test">
+  <div class="entry-name">shapiro-test</div>
+  <pre class="entry-doc">Syntax: (shapiro-test x)
+Library: (scm data tests)
+Description: The Shapiro-Wilk normality test (Royston's algorithm, as R's
+  shapiro.test) for 3 to 5000 values.
+Example:
+  (shapiro-test '(2.1 3.4 1.9 5.6 4.4 3.3 2.8))</pre>
+</div>
+<div class="entry" id="e59" data-name="t-test">
+  <div class="entry-name">t-test</div>
+  <pre class="entry-doc">Syntax: (t-test x [y] option ...) or (t-test df '(y ~ g) option ...)
+Library: (scm data tests)
+Description: Student's t test, as R's t.test: one sample (x alone), two
+  samples (Welch unless 'var-equal #t), or paired ('paired #t). With a
+  frame and a formula (y ~ g), g must have two levels; (y ~ 1) is the
+  one-sample test. Options: 'alternative two-sided|less|greater, 'mu 0,
+  'paired #f, 'var-equal #f, 'conf-level 0.95. na values are dropped
+  (pairwise when paired).
+Example:
+  (t-test '(0.7 -1.6 -0.2) '(1.9 0.8 1.1) 'var-equal #t)</pre>
+</div>
+<div class="entry" id="e60" data-name="tidy">
+  <div class="entry-name">tidy</div>
+  <pre class="entry-doc">Syntax: (tidy htest-or-lm)
+Library: (scm data tests)
+Description: A test result as a one-row frame in the style of broom's
+  tidy: estimate (for two estimates their difference, then estimate1 and
+  estimate2), statistic, p-value, parameter (df1/df2 for two), conf-low,
+  conf-high, method and alternative; columns without a value are left
+  out. For an lm fit, the coefficient table.
+Example:
+  (tidy (t-test '(1 2 3 4)))</pre>
+</div>
+<div class="entry" id="e61" data-name="wilcox-test">
+  <div class="entry-name">wilcox-test</div>
+  <pre class="entry-doc">Syntax: (wilcox-test x [y] option ...) or (wilcox-test df '(y ~ g) option ...)
+Library: (scm data tests)
+Description: The Wilcoxon signed-rank test (x alone, or paired) or rank-sum
+  (Mann-Whitney) test, as R's wilcox.test: exact p-values below 50
+  observations without ties (and zeros), else the normal approximation
+  with tie correction and continuity correction. Options: 'alternative,
+  'mu 0, 'paired #f, 'exact 'auto|#t|#f, 'correct #t.
+Example:
+  (wilcox-test '(1 2 3) '(4 5 6 7))</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>
