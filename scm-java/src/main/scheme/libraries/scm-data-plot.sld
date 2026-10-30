@@ -13,6 +13,7 @@
           (scm fonts dejavu)
           (scm svg raster)
           (scm svg pdf)
+          (scm geo)
           (scm data core)
           (scm data format)
           (scm data frame)
@@ -57,6 +58,23 @@
     ;;     int, pct, si; (limits lo hi); (levels a b …) order of a discrete
     ;;     axis; (log10)
     ;;   (coord-flip)  (facet-wrap col [(ncol n)])
+    ;;
+    ;; Maps (as R's sf): (geom-sf [(aes …)] [(data ,df)] [(fill none)]
+    ;;   [(size w)]) draws the geometry column (aes geometry, default the
+    ;;   column geometry, see read-sf) of each row: polygons filled by
+    ;;   the fill aesthetic, lines, points; (fill none) only outlines
+    ;;   them (e.g. cantons over municipalities). (geom-sf-text (aes
+    ;;   (label e)) [(size px)] [(overlap #t)]) labels polygons at their
+    ;;   pole of inaccessibility, larger ones first, leaving out labels
+    ;;   that would overlap (unless overlap).
+    ;;   A numeric fill is classed: (scale-fill-steps (n 5) (breaks
+    ;;   quantile|equal|(t1 t2 …)) (palette blue|green|orange|red|violet|
+    ;;   blue-red|red-blue|blue-orange|orange-blue|violet-green|
+    ;;   green-violet) (midpoint 0) (labels fmt)); scale-fill-continuous
+    ;;   is the same with 7 equal classes. A discrete fill takes the
+    ;;   categorical colours. (coord-sf (projection auto|identity|equirect|
+    ;;   mercator)): auto draws lon/lat data equirectangular (scaled by
+    ;;   the cosine of the middle latitude), anything else as it is.
     ;;   (theme (width px) (height px) (font-size px) (legend right|bottom|none))
     ;;
     ;; Look: thin bars (at most 24px) with a 4px rounded data end, 2px
@@ -74,6 +92,46 @@
     (define categorical-dark '("#3987e5" "#d95926" "#199e70" "#c98500" "#d55181" "#008300" "#9085e9" "#e66767"))
     (define sequential '("#cde2fb" "#b7d3f6" "#9ec5f4" "#86b6ef" "#6da7ec" "#5598e7" "#3987e5" "#2a78d6"
                          "#256abf" "#1c5cab" "#184f95"))
+
+    ;; Sequential ramps for maps, 13 steps light to dark (the validated
+    ;; ramps of the dashboards project: blue is the palette's documented
+    ;; ramp, the others carry its lightness and chroma in their hue). In
+    ;; dark mode a ramp runs the other way, so low values recede.
+    (define ramps
+      '((blue "#cde2fb" "#b7d3f6" "#9ec5f4" "#86b6ef" "#6da7ec" "#5598e7" "#3987e5"
+              "#2a78d6" "#256abf" "#1c5cab" "#184f95" "#104281" "#0d366b")
+        (green "#d1e7ce" "#bbdab8" "#a5cfa0" "#8ec289" "#76b771" "#5faa5a" "#429e3d"
+               "#31902c" "#2a7f26" "#1f701c" "#196116" "#10520e" "#0d440b")
+        (orange "#f9d7cb" "#f2c4b4" "#efb19b" "#e89d83" "#e28969" "#da7550" "#d45e2f"
+                "#c54e1c" "#af4517" "#9c390c" "#883008" "#752601" "#611f02")
+        (red "#fad6d2" "#f4c2be" "#f1aea8" "#ea9a93" "#e4857e" "#dd716a" "#d75853"
+             "#c74845" "#b13f3c" "#9e3432" "#892b2a" "#762221" "#621b1a")
+        (violet "#dbddfb" "#cbccf6" "#babbf4" "#aaaaee" "#9a99eb" "#8b88e6" "#7c75e3"
+                "#6f67d4" "#625bbd" "#564ea9" "#4a4393" "#3e3780" "#322d6a")))
+
+    ;; two-sided: the ramp below the midpoint, then the one above it
+    (define two-sided-ramps
+      '((blue-red blue . red) (red-blue red . blue) (blue-orange blue . orange)
+        (orange-blue orange . blue) (violet-green violet . green) (green-violet green . violet)))
+
+    (define (ramp-class name step)
+      (string-append "viz-r" (symbol->string name) (number->string step)))
+
+    (define (ramp-rules dark?)
+      (append
+       (list (cons "viz-rneutral" (string-append "fill:" (if dark? "#383835" "#f0efec")))
+             (cons "viz-na" (string-append "fill:" (if dark? "#2c2c2a" "#e8e7e2")))
+             (cons "viz-mr" (string-append "stroke:" (if dark? "#1a1a19" "#fcfcfb") ";stroke-width:0.6;stroke-linejoin:round;fill-rule:evenodd"))
+             (cons "viz-mo" (string-append "fill:none;stroke:" (if dark? "#c3c2b7" "#52514e") ";stroke-linejoin:round"))
+             (cons "viz-ml" "fill:none;stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round")
+             (cons "viz-halo" (string-append "stroke:" (if dark? "#1a1a19" "#fcfcfb") ";stroke-width:3;paint-order:stroke;stroke-linejoin:round")))
+       (append-map (lambda (r)
+                     (let ((steps (cdr r)))
+                       (map (lambda (c i)
+                              (cons (ramp-class (car r) i)
+                                    (string-append "fill:" (if dark? (list-ref steps (- 12 i)) c))))
+                            steps (iota 13))))
+                   ramps)))
 
     (define (css-rules mode)
       (let* ((dark? (eq? mode 'dark))
@@ -101,7 +159,8 @@
                                (cons (string-append "viz-w" k) (string-append "fill:" c ";fill-opacity:0.12")))))
                      cats (iota 8 1))
          (map (lambda (c i) (cons (string-append "viz-q" (number->string i)) (string-append "fill:" c)))
-              sequential (iota (length sequential) 1)))))
+              sequential (iota (length sequential) 1))
+         (ramp-rules dark?))))
 
     (define (plot-css . opts)
       "Syntax: (plot-css [scope])
@@ -123,8 +182,16 @@ Example:
          "}\n"
          (rules 'dark ":root[data-theme=\"dark\"] "))))
 
-    (define (style-sheet)
-      (string-concatenate (map (lambda (r) (string-append "." (car r) "{" (cdr r) "}")) (css-rules 'light))))
+    ;; the light rules a chart needs: the ramp rules only for maps, and
+    ;; then only the classes used
+    (define (style-sheet . used)
+      (let ((ramp-names (map car (ramp-rules #f))))
+        (string-concatenate
+         (filter-map (lambda (r)
+                       (and (or (not (member (car r) ramp-names))
+                                (and (pair? used) (member (car r) (car used))))
+                            (string-append "." (car r) "{" (cdr r) "}")))
+                     (css-rules 'light)))))
 
     ;; --- plot specification ---------------------------------------------
 
@@ -419,6 +486,11 @@ Example:
                            "L" (pt a1 base) "Z"))))
 
     (define (render p)
+      (if (any (lambda (s) (and (pair? s) (memq (car s) map-geoms))) (plot-specs p))
+          (render-map p)
+          (render-xy p)))
+
+    (define (render-xy p)
       (let* ((specs (plot-specs p))
              (df (plot-data p))
              (plot-aes (let ((a (find-spec specs 'aes))) (if a (map (lambda (q) (cons (car q) (cadr q))) (cdr a)) '())))
@@ -791,6 +863,361 @@ Example:
                  (aria-label ,(or title "chart")))
               (style ,(raw (style-sheet)))
               ,@(reverse out))))
+
+
+    ;; --- maps ----------------------------------------------------------
+
+    (define map-geoms '(geom-sf geom-sf-text))
+
+    ;; A projection by name, as two procedures (x and y apart: all three
+    ;; are separable, which keeps the per-point work small); lon/lat in
+    ;; degrees.
+    (define (projector name bbox)
+      (let* ((lonlat? (and bbox (>= (car bbox) -180.5) (<= (caddr bbox) 180.5)
+                           (>= (cadr bbox) -90.5) (<= (cadddr bbox) 90.5)))
+             (name (if (eq? name 'auto) (if lonlat? 'equirect 'identity) name))
+             (rad (/ (* 4 (atan 1)) 180)))
+        (case name
+          ((identity) (values (lambda (x) x) (lambda (y) y)))
+          ((equirect)
+           (let ((k (if bbox (cos (* rad (/ (+ (cadr bbox) (cadddr bbox)) 2))) 1)))
+             (values (lambda (x) (* x k)) (lambda (y) y))))
+          ((mercator)
+           (values (lambda (x) x)
+                   (lambda (y)
+                     (let ((y (max -85 (min 85 y))))
+                       (/ (log (tan (+ (/ (* 4 (atan 1)) 4) (* rad y 0.5)))) rad)))))
+          (else (error "coord-sf: unknown projection" name)))))
+
+    (define (geometry-bbox g)
+      (let ((parts (geometry-parts g)))
+        (if (eq? (geometry-type g) 'multipoint)
+            (and (pair? parts)
+                 (fold (lambda (p b) (let ((x (vector-ref p 0)) (y (vector-ref p 1)))
+                                       (if b (list (min x (car b)) (min y (cadr b)) (max x (caddr b)) (max y (cadddr b)))
+                                           (list x y x y))))
+                       #f parts))
+            (and (pair? parts) (vector->list (rings-bbox parts))))))
+
+    (define (bbox+ a b)
+      (cond ((not a) b) ((not b) a)
+            (else (list (min (car a) (car b)) (min (cadr a) (cadr b))
+                        (max (caddr a) (caddr b)) (max (cadddr a) (cadddr b))))))
+
+    ;; A flat coordinate vector to pixels (x through fx, y through fy),
+    ;; leaving out points within tol pixels of the last one kept (the
+    ;; last point is always kept, so rings stay closed).
+    (define (to-pixels v fx fy tol)
+      (let* ((n (quotient (vector-length v) 2))
+             (out (make-vector (* 2 (max n 1)))))
+        (let loop ((i 0) (j 0) (lx 0.0) (ly 0.0))
+          (if (= i n)
+              (if (= j (vector-length out)) out (vector-copy out 0 j))
+              (let ((x (fx (vector-ref v (* 2 i))))
+                    (y (fy (vector-ref v (+ 1 (* 2 i))))))
+                (if (and (> i 0) (< i (- n 1))
+                         (< (+ (abs (- x lx)) (abs (- y ly))) tol))
+                    (loop (+ i 1) j lx ly)
+                    (begin
+                      (vector-set! out j x)
+                      (vector-set! out (+ j 1) y)
+                      (loop (+ i 1) (+ j 2) x y))))))))
+
+    (define (coords->path v close?)
+      (let ((n (quotient (vector-length v) 2)) (out (open-output-string)))
+        (do ((i 0 (+ i 1))) ((= i n))
+          (write-string (if (= i 0) "M" "L") out)
+          (write-string (px (vector-ref v (* 2 i))) out)
+          (write-string "," out)
+          (write-string (px (vector-ref v (+ 1 (* 2 i)))) out))
+        (when close? (write-string "Z" out))
+        (get-output-string out)))
+
+    ;; thresholds t1 < … < t(k-1): class i holds t(i) <= v < t(i+1)
+    (define (class-thresholds vals k breaks midpoint)
+      (let* ((sorted (list-sort < vals)) (n (length sorted)))
+        (cond
+         ((pair? breaks) breaks)
+         ((< n 2) '())
+         ((eq? breaks 'equal)
+          (if midpoint
+              ;; symmetric around the midpoint
+              (let ((d (apply max (map (lambda (v) (abs (- v midpoint))) sorted))))
+                (if (= d 0) '() (map (lambda (i) (+ (- midpoint d) (* i (/ d k) 2))) (iota (- k 1) 1))))
+              (let ((lo (car sorted)) (hi (last sorted)))
+                (if (= lo hi) '() (map (lambda (i) (+ lo (* i (- (/ hi k) (/ lo k))))) (iota (- k 1) 1))))))
+         (else
+          ;; quantiles; ties can merge thresholds, and an empty class helps nobody
+          (filter (lambda (x) (> x (car sorted)))
+                  (delete-duplicates
+                   (map (lambda (i) (list-ref sorted (min (- n 1) (exact (floor (/ (* i n) k))))))
+                        (iota (- k 1) 1))))))))
+
+    (define (class-of ts v)
+      (let loop ((ts ts) (i 0))
+        (if (or (null? ts) (< v (car ts))) i (loop (cdr ts) (+ i 1)))))
+
+    ;; the CSS class of each of k classes
+    (define (class-colours palette k ts lo hi midpoint)
+      (let ((sides (assq palette two-sided-ramps)))
+        (if (not sides)
+            (begin
+              (unless (assq palette ramps) (error "scale-fill-steps: unknown palette" palette))
+              (if (= k 1)
+                  (list (ramp-class palette 6))
+                  (map (lambda (i) (ramp-class palette (exact (round (/ (* i 12) (- k 1)))))) (iota k))))
+            (let* ((m (or midpoint 0))
+                   (bounds (map (lambda (j)
+                                  (cons (if (> j 0) (list-ref ts (- j 1)) (if (= k 1) lo -inf.0))
+                                        (if (< j (- k 1)) (list-ref ts j) (if (= k 1) hi +inf.0))))
+                                (iota k)))
+                   (side (map (lambda (b) (cond ((and (<= (cdr b) m) (< (car b) m)) 'low)
+                                                ((and (>= (car b) m) (> (cdr b) m)) 'high)
+                                                (else 'mid)))
+                              bounds))
+                   (n (max 1 (count (lambda (x) (eq? x 'low)) side) (count (lambda (x) (eq? x 'high)) side)))
+                   ;; arm steps from the midpoint outwards: 3 .. 10
+                   (arm (lambda (rank) (if (= n 1) 6 (exact (round (+ 3 (/ (* rank 7) (- n 1)))))))))
+              (map (lambda (j)
+                     (case (list-ref side j)
+                       ((mid) "viz-rneutral")
+                       ((low) (ramp-class (cadr sides)
+                                          (arm (count (lambda (i) (and (> i j) (eq? (list-ref side i) 'low))) (iota k)))))
+                       (else (ramp-class (cddr sides)
+                                         (arm (count (lambda (i) (and (< i j) (eq? (list-ref side i) 'high))) (iota k)))))))
+                   (iota k))))))
+
+    (define (render-map p)
+      (let* ((specs (plot-specs p))
+             (df (plot-data p))
+             (plot-aes (let ((a (find-spec specs 'aes))) (if a (map (lambda (q) (cons (car q) (cadr q))) (cdr a)) '())))
+             (labs (spec-opts (or (find-spec specs 'labs) '(labs))))
+             (theme (spec-opts (or (find-spec specs 'theme) '(theme))))
+             (scale (or (find-spec specs 'scale-fill-steps) (find-spec specs 'scale-fill-continuous)))
+             (sopts (if scale (spec-opts scale) '()))
+             (continuous? (and scale (eq? (car scale) 'scale-fill-continuous)))
+             (coord (spec-opts (or (find-spec specs 'coord-sf) '(coord-sf))))
+             (W (opt theme 'width 720))
+             (fs (opt theme 'font-size 12))
+             (sfs (- fs 1))
+             (title (opt labs 'title #f)) (subtitle (opt labs 'subtitle #f)) (caption (opt labs 'caption #f))
+             ;; layers: (geom opts items), items #(geometry fill label)
+             (layers (filter-map
+                      (lambda (s)
+                        (and (pair? s) (memq (car s) map-geoms)
+                             (let* ((opts (spec-opts s))
+                                    (d (df-ungroup (layer-data df opts)))
+                                    ;; a layer with data of its own inherits the
+                                    ;; aesthetics its data can give
+                                    (aes (append (aes-of opts)
+                                                 (filter (lambda (a) (or (not (opt opts 'data #f))
+                                                                         (not (symbol? (cdr a)))
+                                                                         (df-has-column? d (cdr a))))
+                                                         plot-aes)))
+                                    (aes (if (eq? (opt opts 'fill #f) 'none) (remove (lambda (a) (eq? (car a) 'fill)) aes) aes))
+                                    (gv (if (assq 'geometry aes) (eval-aes d aes 'geometry) (df-column d 'geometry)))
+                                    (fv (eval-aes d aes 'fill))
+                                    (lv (eval-aes d aes 'label)))
+                               (list (car s) opts
+                                     (filter-map (lambda (i)
+                                                   (let ((g (vector-ref gv i)))
+                                                     (and (pair? g) (pair? (geometry-parts g))
+                                                          (vector g (vref fv i) (vref lv i)))))
+                                                 (iota (df-nrow d)))))))
+                      specs))
+             (all-items (append-map caddr layers))
+             (bbox0 (fold (lambda (it b) (bbox+ (geometry-bbox (vector-ref it 0)) b)) #f all-items))
+             (_ (unless bbox0 (error "geom-sf: no geometries to draw")))
+             (pfx+pfy (call-with-values (lambda () (projector (opt coord 'projection 'auto) bbox0)) cons))
+             (pfx (car pfx+pfy)) (pfy (cdr pfx+pfy))
+             (pbbox (let ((x0 (pfx (car bbox0))) (y0 (pfy (cadr bbox0)))
+                          (x1 (pfx (caddr bbox0))) (y1 (pfy (cadddr bbox0))))
+                      (list (min x0 x1) (min y0 y1) (max x0 x1) (max y0 y1))))
+             ;; fill scale
+             (fill-layers (filter (lambda (l) (and (eq? (car l) 'geom-sf) (not (eq? (opt (cadr l) 'fill #f) 'none)))) layers))
+             (fills (remove na? (append-map (lambda (l) (map (lambda (it) (vector-ref it 1)) (caddr l))) fill-layers)))
+             (numeric? (and (pair? fills) (every real? fills)))
+             (discrete? (and (pair? fills) (not numeric?)))
+             (keys (if discrete? (let ((v (delete-duplicates fills value=?)))
+                                   (if (every (lambda (x) (or (real? x) (day? x))) v) (list-sort value<? v) v))
+                       '()))
+             (_ (when (> (length keys) 8) (error "geom-sf: more than 8 fill categories")))
+             (palette (opt sopts 'palette 'blue))
+             (midpoint (if (assq palette two-sided-ramps) (opt sopts 'midpoint 0) #f))
+             (nclass (if continuous? 7 (max 1 (min 9 (opt sopts 'n 5)))))
+             (breaks (cond ((opt-list sopts 'breaks) => (lambda (l) (if (and (= (length l) 1) (symbol? (car l))) (car l) l)))
+                           (continuous? 'equal)
+                           (else 'quantile)))
+             (lo (and numeric? (apply min fills))) (hi (and numeric? (apply max fills)))
+             (ts (if numeric? (class-thresholds fills nclass breaks midpoint) '()))
+             (k (+ 1 (length ts)))
+             (colours (if numeric? (class-colours palette k ts lo hi midpoint) '()))
+             (fmt (let ((f (opt sopts 'labels #f)))
+                    (cond (f (formatter f (if (and numeric? (> hi lo)) (/ (- hi lo) 10) 1)))
+                          (numeric? (default-formatter (max (abs lo) (abs hi)) (if (> hi lo) (/ (- hi lo) 20) 1)))
+                          (else fmt-value))))
+             (class-labels (if numeric?
+                               (if (pair? breaks)
+                                   (append (list (string-append "< " (fmt (car ts))))
+                                           (map (lambda (a b) (string-append (fmt a) " – " (fmt b))) (drop-right ts 1) (cdr ts))
+                                           (list (string-append "≥ " (fmt (last ts)))))
+                                   (let ((edges (append (list lo) ts (list hi))))
+                                     (map (lambda (a b) (string-append (fmt a) " – " (fmt b))) (drop-right edges 1) (cdr edges))))
+                               '()))
+             (no-data? (any (lambda (l) (any (lambda (it) (na? (vector-ref it 1))) (caddr l)))
+                            (filter (lambda (l) (or numeric? discrete?)) fill-layers)))
+             (legend-title (let ((t (opt labs 'fill #f)))
+                             (cond ((string? t) t)
+                                   (else (let ((e (or (assq 'fill plot-aes)
+                                                      (any (lambda (l) (assq 'fill (aes-of (cadr l)))) fill-layers))))
+                                           (and e (symbol? (cdr e)) (symbol->string (cdr e))))))))
+             (legend-entries (append (if numeric? (map cons colours class-labels) '())
+                                     (if discrete?
+                                         (map (lambda (k i) (cons (string-append "viz-s" (number->string i)) (fmt-value k)))
+                                              keys (iota (length keys) 1))
+                                         '())
+                                     (if no-data? (list (cons "viz-na" (opt labs 'no-data "No data"))) '())))
+             (legend? (and (pair? legend-entries) (not (eq? (opt theme 'legend 'right) 'none))))
+             (legend-w (if legend?
+                           (+ 28 (fold (lambda (e m) (max m (text-width (cdr e) sfs)))
+                                       (if legend-title (text-width legend-title sfs) 0) legend-entries))
+                           0))
+             (top (+ 12 (if title (+ fs 10) 0) (if subtitle (+ fs 6) 0) (if (or title subtitle) 8 0)))
+             (bottom (+ 12 (if caption (+ fs 6) 0)))
+             (left 12)
+             (mw (- W left 16 legend-w))
+             (dx (max 1e-12 (- (caddr pbbox) (car pbbox))))
+             (dy (max 1e-12 (- (cadddr pbbox) (cadr pbbox))))
+             (H (opt theme 'height (exact (ceiling (+ top bottom (min 900 (* mw (/ dy dx))))))))
+             (mh (- H top bottom))
+             (s (min (/ mw dx) (/ mh dy)))
+             ;; centred in the map area
+             (ox (+ left (/ (- mw (* s dx)) 2)))
+             (oy (+ top (/ (- mh (* s dy)) 2)))
+             (fx (let ((x0 (car pbbox))) (lambda (x) (+ ox (* s (- (pfx x) x0))))))
+             (fy (let ((y1 (cadddr pbbox))) (lambda (y) (+ oy (* s (- y1 (pfy y)))))))
+             (to-px (lambda (x y) (values (fx x) (fy y))))
+             (tol 0.4)
+             (used '())
+             (out '()))
+        (define (emit! x) (set! out (cons x out)))
+        (define (use! cls) (unless (member cls used) (set! used (cons cls used))) cls)
+        (define (fill-class v)
+          (cond ((na? v) (if (or numeric? discrete?) (use! "viz-na") "viz-na"))
+                (numeric? (use! (list-ref colours (class-of ts v))))
+                (discrete? (string-append "viz-s" (number->string (+ 1 (or (list-index (lambda (k) (value=? k v)) keys) 0)))))
+                (else "viz-na")))
+        (define (pixel-rings g)
+          ;; projected to pixels and simplified; degenerate rings dropped
+          (filter-map (lambda (r)
+                        (let ((v (path-simplify (to-pixels r fx fy (/ tol 2)) tol)))
+                          (and (>= (vector-length v) (if (eq? (geometry-type g) 'polygon) 8 4)) v)))
+                      (geometry-parts g)))
+        (define (tip it)
+          (let ((l (vector-ref it 2)) (v (vector-ref it 1)))
+            (string-append (if (na? l) "" (fmt-value l))
+                           (if (or (na? l) (na? v)) "" ": ")
+                           (if (na? v) (if (na? l) "" "") (if (real? v) (fmt v) (fmt-value v))))))
+        (emit! `(rect (@ (x 0) (y 0) (width ,W) (height ,H) (class "viz-bg"))))
+        (let ((ty (+ 12 fs)))
+          (when title (emit! (text left ty title "viz-t1" '(font-size "15") '(font-weight "bold"))))
+          (when subtitle (emit! (text left (+ ty (if title (+ fs 6) 0)) subtitle "viz-t2" `(font-size ,(number->string fs))))))
+        (when caption
+          (emit! (text left (- H 8) caption "viz-t3" `(font-size ,(number->string (- fs 2))))))
+        (for-each
+         (lambda (l)
+           (let ((geom (car l)) (lopts (cadr l)) (items (caddr l)))
+             (case geom
+               ((geom-sf)
+                (let ((outline? (eq? (opt lopts 'fill #f) 'none))
+                      (w (opt lopts 'size #f)))
+                  (for-each
+                   (lambda (it)
+                     (let* ((g (vector-ref it 0)) (type (geometry-type g)) (t (tip it)))
+                       (case type
+                         ((polygon)
+                          (let ((rings (pixel-rings g)))
+                            (when (pair? rings)
+                              (let ((d (string-concatenate (map (lambda (r) (coords->path r #t)) rings))))
+                                (emit! `(path (@ (d ,d)
+                                                 (class ,(if outline? "viz-mo" (string-append (fill-class (vector-ref it 1)) " viz-mr")))
+                                                 ,@(if outline? `((stroke-width ,(number->string (or w 1.1)))) '())
+                                                 ,@(if (and w (not outline?)) `((stroke-width ,(number->string w))) '()))
+                                              ,@(if (string-null? t) '() `((title ,t)))))))))
+                         ((polyline)
+                          (for-each (lambda (r)
+                                      (emit! `(path (@ (d ,(coords->path r #f))
+                                                       (class ,(if (or outline? (na? (vector-ref it 1)))
+                                                                   "viz-mo"
+                                                                   (string-append "viz-ml " (string-replace-prefix (fill-class (vector-ref it 1))))))
+                                                       ,@(if w `((stroke-width ,(number->string w))) '()))
+                                                    ,@(if (string-null? t) '() `((title ,t))))))
+                                    (pixel-rings g)))
+                         ((multipoint)
+                          (for-each (lambda (pt)
+                                      (let-values (((x y) (to-px (vector-ref pt 0) (vector-ref pt 1))))
+                                        (emit! `(circle (@ (cx ,(px x)) (cy ,(px y)) (r ,(number->string (or w 3.5)))
+                                                           (class ,(string-append (if (na? (vector-ref it 1)) "viz-s1" (fill-class (vector-ref it 1)))
+                                                                                  " viz-ring")))
+                                                        ,@(if (string-null? t) '() `((title ,t)))))))
+                                    (geometry-parts g))))))
+                   items)))
+               ((geom-sf-text)
+                ;; larger regions first; a label that would overlap one
+                ;; already placed is left out
+                (let* ((lsz (opt lopts 'size sfs))
+                       (cands (filter-map
+                               (lambda (it)
+                                 (let ((g (vector-ref it 0)) (label (vector-ref it 2)))
+                                   (and (not (na? label))
+                                        (let* ((rings (if (eq? (geometry-type g) 'multipoint) '() (pixel-rings g)))
+                                               (pt (case (geometry-type g)
+                                                     ((polygon) (and (pair? rings) (polygon-inner-point rings 0.5)))
+                                                     ((multipoint) (let ((q (car (geometry-parts g))))
+                                                                     (vector (fx (vector-ref q 0)) (- (fy (vector-ref q 1)) 8))))
+                                                     (else (and (pair? rings) (vector (vector-ref (car rings) 0) (vector-ref (car rings) 1))))))
+                                               (area (if (eq? (geometry-type g) 'polygon) (abs (rings-area rings)) 0)))
+                                          (and pt (list area pt (fmt-value label)))))))
+                               items))
+                       (placed '()))
+                  (for-each
+                   (lambda (c)
+                     (let* ((pt (cadr c)) (str (caddr c))
+                            (w (text-width str lsz))
+                            (box (list (- (vector-ref pt 0) (/ w 2) 1) (- (vector-ref pt 1) (* 0.5 lsz) 1)
+                                       (+ (vector-ref pt 0) (/ w 2) 1) (+ (vector-ref pt 1) (* 0.5 lsz) 1))))
+                       (unless (and (not (opt lopts 'overlap #f))
+                                    (any (lambda (b) (and (< (car b) (caddr box)) (< (car box) (caddr b))
+                                                          (< (cadr b) (cadddr box)) (< (cadr box) (cadddr b))))
+                                         placed))
+                         (set! placed (cons box placed))
+                         (emit! (text (vector-ref pt 0) (+ (vector-ref pt 1) (* 0.35 lsz)) str "viz-t1 viz-halo"
+                                      '(text-anchor "middle") `(font-size ,(number->string lsz)))))))
+                   (list-sort (lambda (a b) (> (car a) (car b))) cands)))))))
+         layers)
+        ;; legend
+        (when legend?
+          (let ((x (- W 16 legend-w -12)) (y0 (+ top 4)))
+            (when legend-title
+              (emit! (text x (+ y0 9) legend-title "viz-t2" `(font-size ,(number->string sfs)) '(font-weight "bold"))))
+            (for-each (lambda (e i)
+                        (let ((y (+ y0 (if legend-title (+ sfs 10) 0) (* i (+ sfs 8)))))
+                          (emit! `(rect (@ (x ,(px x)) (y ,(px y)) (width "12") (height "10") (rx "2")
+                                           (class ,(use! (car e))))))
+                          (emit! (text (+ x 18) (+ y 9) (cdr e) "viz-t2" `(font-size ,(number->string sfs))))))
+                      legend-entries (iota (length legend-entries)))))
+        (use! "viz-mr") (use! "viz-mo") (use! "viz-ml") (use! "viz-halo") (use! "viz-na")
+        `(svg (@ (xmlns "http://www.w3.org/2000/svg") (width ,W) (height ,H)
+                 (viewBox ,(string-append "0 0 " (number->string W) " " (number->string H)))
+                 (font-family "DejaVu Sans, Verdana, sans-serif") (role "img")
+                 (aria-label ,(or title "map")))
+              (style ,(raw (style-sheet used)))
+              ,@(reverse out))))
+
+    ;; a line takes its colour from the fill class as a stroke
+    (define (string-replace-prefix cls)
+      (cond ((string-prefix? "viz-s" cls) (string-append "viz-l" (substring cls 5 (string-length cls))))
+            (else cls)))
 
     (define (memv* k keys) (any (lambda (x) (value=? x k)) keys))
 

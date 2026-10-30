@@ -64,7 +64,7 @@
           read-csv read-csv-string csv-for-each write-csv df->csv-string
           read-xlsx write-xlsx read-json-records write-json-records read-jsonl
           write-jsonl read-sexp-lines write-sexp-lines strings->df
-          query-result->df
+          query-result->df read-sf features->df df->features write-geojson
           ;; (scm data plot)
           ggplot make-plot plot? plot-add plot->svg plot->svg-string plot->png
           plot->pdf

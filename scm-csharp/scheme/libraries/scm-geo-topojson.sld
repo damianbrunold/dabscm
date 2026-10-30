@@ -4,8 +4,110 @@
           (srfi 1)
           (srfi 69)
           (scm geo))
-  (export features->topojson)
+  (export features->topojson
+          topojson->features
+          topojson-layers)
   (begin
+
+    ;; --- reading ---------------------------------------------------------
+
+    (define (jref obj key default)
+      (let ((p (and (list? obj) (assoc key obj)))) (if p (cdr p) default)))
+
+    ;; the arcs of a topology as vectors of points #(x y), decoded
+    ;; (delta-encoded and quantized when there is a transform)
+    (define (decode-topo-arcs json)
+      (let* ((tr (jref json "transform" #f))
+             (scale (and tr (jref tr "scale" #f)))
+             (translate (and tr (jref tr "translate" #f))))
+        (vector-map
+         (lambda (arc)
+           (if (not scale)
+               (vector-map (lambda (p) (vector (inexact (vector-ref p 0)) (inexact (vector-ref p 1)))) arc)
+               (let ((n (vector-length arc))
+                     (sx (vector-ref scale 0)) (sy (vector-ref scale 1))
+                     (tx (vector-ref translate 0)) (ty (vector-ref translate 1)))
+                 (let loop ((i 0) (qx 0) (qy 0) (acc '()))
+                   (if (= i n)
+                       (list->vector (reverse acc))
+                       (let* ((d (vector-ref arc i))
+                              (qx (+ qx (vector-ref d 0)))
+                              (qy (+ qy (vector-ref d 1))))
+                         (loop (+ i 1) qx qy
+                               (cons (vector (inexact (+ tx (* qx sx))) (inexact (+ ty (* qy sy)))) acc))))))))
+         (jref json "arcs" #()))))
+
+    ;; a list of arc indexes -> one flat coordinate vector; ~i is arc i
+    ;; reversed, and each arc after the first starts where the previous ended
+    (define (stitch arcs indexes)
+      (let loop ((is indexes) (first? #t) (acc '()))
+        (if (null? is)
+            (list->vector (reverse acc))
+            (let* ((a (car is))
+                   (pts (vector->list (vector-ref arcs (if (< a 0) (- -1 a) a))))
+                   (pts (if (< a 0) (reverse pts) pts))
+                   (pts (if first? pts (if (pair? pts) (cdr pts) pts))))
+              (loop (cdr is) #f
+                    (fold (lambda (p acc) (cons (vector-ref p 1) (cons (vector-ref p 0) acc))) acc pts))))))
+
+    (define (point-of json-point transform)
+      (let ((x (vector-ref json-point 0)) (y (vector-ref json-point 1)))
+        (if transform
+            (let ((scale (jref transform "scale" #f)) (translate (jref transform "translate" #f)))
+              (vector (inexact (+ (vector-ref translate 0) (* x (vector-ref scale 0))))
+                      (inexact (+ (vector-ref translate 1) (* y (vector-ref scale 1))))))
+            (vector (inexact x) (inexact y)))))
+
+    ;; a TopoJSON geometry -> a list of features (GeometryCollections
+    ;; nest; geometries without a type we know are skipped)
+    (define (geometry->features g arcs transform)
+      (let* ((type (jref g "type" #f))
+             (props (let ((p (jref g "properties" '()))) (if (list? p) p '())))
+             (props (let ((id (jref g "id" #f)))
+                      (if (and id (not (assoc "id" props))) (cons (cons "id" id) props) props)))
+             (rings (lambda (v) (map (lambda (r) (stitch arcs (vector->list r))) (vector->list v))))
+             (feature (lambda (geom) (list (make-feature props geom)))))
+        (cond
+         ((equal? type "GeometryCollection")
+          (append-map (lambda (x) (geometry->features x arcs transform)) (vector->list (jref g "geometries" #()))))
+         ((equal? type "Polygon") (feature (make-polygon (rings (jref g "arcs" #())))))
+         ((equal? type "MultiPolygon")
+          (feature (make-polygon (append-map rings (vector->list (jref g "arcs" #()))))))
+         ((equal? type "LineString") (feature (make-polyline (list (stitch arcs (vector->list (jref g "arcs" #())))))))
+         ((equal? type "MultiLineString") (feature (make-polyline (rings (jref g "arcs" #())))))
+         ((equal? type "Point") (feature (make-multipoint (list (point-of (jref g "coordinates" #()) transform)))))
+         ((equal? type "MultiPoint")
+          (feature (make-multipoint (map (lambda (p) (point-of p transform)) (vector->list (jref g "coordinates" #()))))))
+         (else '()))))
+
+    (define (topojson-layers json)
+      "Syntax: (topojson-layers json)
+Library: (scm geo topojson)
+Description: The names of the objects (layers) of a TopoJSON topology,
+  json as parsed by (scm json simple).
+Example:
+  (topojson-layers (json-parse text)) => (\"cantons\" \"lakes\")"
+      (map car (jref json "objects" '())))
+
+    (define (topojson->features json . layer)
+      "Syntax: (topojson->features json [layer])
+Library: (scm geo topojson)
+Description: The features of one object (layer) of a TopoJSON topology,
+  json as parsed by (scm json simple), by default the first: arcs are
+  decoded (with the transform, when quantized) and stitched into rings
+  and paths; a MultiPolygon becomes one polygon with all its rings.
+  Properties are those of the geometries, plus \"id\" from their id.
+Example:
+  (topojson->features (json-parse text) \"cantons\")"
+      (let* ((objects (jref json "objects" '()))
+             (obj (if (pair? layer)
+                      (let ((p (assoc (car layer) objects)))
+                        (if p (cdr p) (error "topojson->features: no such layer" (car layer) (map car objects))))
+                      (if (pair? objects) (cdar objects) (error "topojson->features: no objects"))))
+             (arcs (decode-topo-arcs json)))
+        (geometry->features obj arcs (jref json "transform" #f))))
+
+    ;; --- writing ---------------------------------------------------------
 
     ;; Features to a TopoJSON topology. Borders are found by coordinates:
     ;; rings that share a run of vertices (exactly equal coordinates, as

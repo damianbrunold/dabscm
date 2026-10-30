@@ -1,6 +1,7 @@
 (define-library (scm data format)
   (import (scheme base)
           (scheme write)
+          (only (srfi 1) every fold)
           (srfi 13)
           (scm data core))
   (export data-locale
@@ -161,4 +162,14 @@ Example:
             ((boolean? x) (if x "TRUE" "FALSE"))
             ((day? x) (day->string x))
             ((symbol? x) (symbol->string x))
+            ;; a geometry of (scm geo): its type and size, not its coordinates
+            ((and (pair? x) (memq (car x) '(polygon polyline multipoint)) (list? (cdr x)) (every vector? (cdr x)))
+             (let ((parts (length (cdr x)))
+                   (points (fold (lambda (v n) (+ n (if (eq? (car x) 'multipoint) 1 (quotient (vector-length v) 2)))) 0 (cdr x))))
+               (string-append "<" (symbol->string (car x)) " "
+                              (if (eq? (car x) 'multipoint)
+                                  (string-append (number->string points) " pt")
+                                  (string-append (number->string parts) (if (eq? (car x) 'polygon) " rings " " paths ")
+                                                 (number->string points) " pt"))
+                              ">")))
             (else (let ((p (open-output-string))) (write x p) (get-output-string p)))))))

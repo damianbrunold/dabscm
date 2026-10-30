@@ -10,6 +10,9 @@
           (scm json simple)
           (scm ooxml excel)
           (scm ooxml excel-reader)
+          (scm geo)
+          (scm geo shapefile)
+          (scm geo topojson)
           (scm data core)
           (scm data format)
           (scm data frame))
@@ -27,7 +30,11 @@
           read-sexp-lines
           write-sexp-lines
           strings->df
-          query-result->df)
+          query-result->df
+          read-sf
+          features->df
+          df->features
+          write-geojson)
   (begin
 
     ;; ================================================================
@@ -448,6 +455,79 @@ Example:
           (let ((v (list->vector (df->objects df))))
             (if (and (pair? opts) (car opts)) (json-write-pretty v port) (json-write v port))
             (newline port)))))
+
+
+    ;; --- geometry (shapefile, GeoJSON, TopoJSON) ----------------------
+
+    (define (features->df features . col)
+      "Syntax: (features->df features [geometry-column])
+Library: (scm data io)
+Description: A frame of (scm geo) features, as R's sf has them: one
+  column per property (null becomes na) and their geometries in the
+  column geometry (or the name given).
+Example:
+  (features->df (read-shapefile \"cantons.shp\"))"
+      (let* ((col (if (pair? col) (car col) 'geometry))
+             (props (map (lambda (f)
+                           (map (lambda (p) (cons (car p) (json->cell (cdr p))))
+                                (feature-properties f)))
+                         features))
+             (df (if (every null? props)
+                     (make-df (list (cons 'id (list->vector (iota (length features) 1)))))
+                     (alists->df props))))
+        (df-with-column df col (list->vector (map feature-geometry features)))))
+
+    (define (df->features df . col)
+      "Syntax: (df->features df [geometry-column])
+Library: (scm data io)
+Description: The rows of a frame with a geometry column as (scm geo)
+  features, the other columns as their properties (keys are strings, na
+  becomes null). Rows without a geometry are left out.
+Example:
+  (features->geojson (df->features regions))"
+      (let* ((col (if (pair? col) (car col) 'geometry))
+             (geoms (df-column df col))
+             (names (remove (lambda (n) (eq? n col)) (df-names df))))
+        (filter-map (lambda (i)
+                      (let ((g (vector-ref geoms i)))
+                        (and (pair? g)
+                             (make-feature (map (lambda (n) (cons (symbol->string n) (cell->json (vector-ref (df-column df n) i))))
+                                                names)
+                                           g))))
+                    (iota (df-nrow df)))))
+
+    (define (read-sf path . opts)
+      "Syntax: (read-sf path option ...)
+Library: (scm data io)
+Description: Reads geometries with their attributes into a frame (see
+  features->df): an ESRI shapefile (.shp, with the .dbf next to it), a
+  GeoJSON FeatureCollection (.geojson, .json) or a TopoJSON topology
+  (.topojson, or any JSON file of type Topology). Options: 'layer name
+  (TopoJSON object, default the first), 'encoding utf-8|latin-1 (the
+  shapefile's attributes, default from its .cpg file).
+Example:
+  (read-sf \"cantons.shp\" 'encoding 'latin-1)"
+      (features->df
+       (if (string-suffix-ci? ".shp" path)
+           (let ((enc (opt opts 'encoding #f)))
+             (if enc (read-shapefile path enc) (read-shapefile path)))
+           (let ((json (call-with-input-file path json-read)))
+             (if (equal? (let ((t (and (list? json) (assoc "type" json)))) (and t (cdr t))) "Topology")
+                 (let ((layer (opt opts 'layer #f)))
+                   (if layer (topojson->features json layer) (topojson->features json)))
+                 (geojson->features json))))))
+
+    (define (write-geojson df path . col)
+      "Syntax: (write-geojson df path [geometry-column])
+Library: (scm data io)
+Description: Writes a frame with a geometry column as a GeoJSON
+  FeatureCollection (see df->features).
+Example:
+  (write-geojson regions \"regions.geojson\")"
+      (call-with-output-file path
+        (lambda (port)
+          (json-write (features->geojson (apply df->features df col)) port)
+          (newline port))))
 
     (define (read-jsonl path)
       "Syntax: (read-jsonl path)
