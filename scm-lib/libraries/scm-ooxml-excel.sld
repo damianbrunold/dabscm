@@ -631,22 +631,27 @@ Example:
 
     (define (render-freeze-pane port cell)
       ;; cell is the top-left cell of the unfrozen region, e.g. "A4" freezes
-      ;; the top 3 rows; "B1" freezes column A; "B4" freezes both.
+      ;; the top 3 rows; "B1" freezes column A; "B4" freezes both. "A1"
+      ;; freezes nothing: no pane is written (a frozen pane without
+      ;; xSplit/ySplit makes Excel refuse the workbook).
       (let* ((split  (cell-id-split cell))
              (xsplit (- (col-string->index (car split)) 1))
              (ysplit (- (string->number (cdr split)) 1))
              (active (cond ((and (> xsplit 0) (> ysplit 0)) "bottomRight")
                            ((> ysplit 0) "bottomLeft")
                            (else "topRight"))))
-        (display "<sheetViews><sheetView workbookViewId=\"0\">" port)
-        (display "<pane" port)
-        (when (> xsplit 0) (format port " xSplit=\"~a\"" xsplit))
-        (when (> ysplit 0) (format port " ySplit=\"~a\"" ysplit))
-        (format port " topLeftCell=\"~a\" activePane=\"~a\" state=\"frozen\"/>"
-                cell active)
-        (format port "<selection pane=\"~a\" activeCell=\"~a\" sqref=\"~a\"/>"
-                active cell cell)
-        (display "</sheetView></sheetViews>" port)))
+        (if (and (<= xsplit 0) (<= ysplit 0))
+            (display "<sheetViews><sheetView workbookViewId=\"0\"/></sheetViews>" port)
+            (begin
+              (display "<sheetViews><sheetView workbookViewId=\"0\">" port)
+              (display "<pane" port)
+              (when (> xsplit 0) (format port " xSplit=\"~a\"" xsplit))
+              (when (> ysplit 0) (format port " ySplit=\"~a\"" ysplit))
+              (format port " topLeftCell=\"~a\" activePane=\"~a\" state=\"frozen\"/>"
+                      cell active)
+              (format port "<selection pane=\"~a\" activeCell=\"~a\" sqref=\"~a\"/>"
+                      active cell cell)
+              (display "</sheetView></sheetViews>" port)))))
 
     (define (render-autofilter port ref columns)
       ;; columns is a list of (col-idx . values); empty -> self-closing tag

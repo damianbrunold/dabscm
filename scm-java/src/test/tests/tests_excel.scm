@@ -332,6 +332,20 @@
       (test-equal #t (and (string-contains xml "ySplit=\"3\"") #t))
       (test-equal #t (and (string-contains xml "activePane=\"bottomRight\"") #t)))))
 
+;; freeze at A1 freezes nothing: no pane (a frozen pane without a split
+;; makes Excel refuse the workbook)
+(test-group "freeze-panes-none"
+  (let* ((path (join-path (special-folder-temp) "test-scm-excel-freeze3.xlsx"))
+         (wb   (make-workbook))
+         (ws   (workbook-add-worksheet! wb "S")))
+    (worksheet-set-cell! ws "A1" "x" 'string #f)
+    (worksheet-freeze-panes! ws "A1")
+    (workbook-save wb path)
+    (let ((xml (read-sheet1-xml path)))
+      (test-equal #f (string-contains xml "<pane"))
+      (test-equal #f (string-contains xml "state=\"frozen\""))
+      (test-equal #t (and (string-contains xml "<sheetView workbookViewId=\"0\"/>") #t)))))
+
 ;; hidden rows: hidden="1" on the row tag
 (test-group "row-hidden"
   (let* ((path (join-path (special-folder-temp) "test-scm-excel-hidden.xlsx"))
