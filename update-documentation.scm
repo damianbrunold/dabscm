@@ -78,6 +78,8 @@
     ((scheme time)            . "Timestamps and time formatting")
     ((scheme write)           . "Writing and displaying values to ports")
     ((scm archive)            . "Archive and compression — tar, gzip, bzip2, xz, and zip operations")
+    ((scm deb)                . "Debian packages in pure Scheme — tar, ar and .deb writers")
+    ((scm deb webapp)         . "Debian package for a dabscm web application (systemd, /opt + /etc + /var/lib)")
     ((scm args)               . "Declarative command-line argument parsing — options, flags, positionals, typed values")
     ((scm bytevector)         . "Multi-byte integers and IEEE floats in bytevectors, either byte order")
     ((scm compile)            . "Compiler introspection, bytecode access, and type predicates")

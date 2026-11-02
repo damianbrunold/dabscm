@@ -84,6 +84,8 @@
 | [`(scm database postgres)`](libraries/scm-database-postgres.md) | PostgreSQL database connectivity |
 | [`(scm database sqlserver)`](libraries/scm-database-sqlserver.md) | SQL Server database connectivity |
 | [`(scm datetime)`](libraries/scm-datetime.md) | Date and time operations |
+| [`(scm deb webapp)`](libraries/scm-deb-webapp.md) | Debian package for a dabscm web application (systemd, /opt + /etc + /var/lib) |
+| [`(scm deb)`](libraries/scm-deb.md) | Debian packages in pure Scheme — tar, ar and .deb writers |
 | [`(scm dict)`](libraries/scm-dict.md) | Dictionary / associative map operations |
 | [`(scm doc)`](libraries/scm-doc.md) | Documentation access |
 | [`(scm duration)`](libraries/scm-duration.md) | Duration string parsing and formatting (seconds, minutes, hours, days) |

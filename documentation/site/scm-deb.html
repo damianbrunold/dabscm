@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm deb) — Dabscm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="toc">
+  <h2>Bindings</h2>
+  <a href="#e0" data-name="add-parent-dirs">add-parent-dirs</a>
+  <a href="#e1" data-name="ar-bytevector">ar-bytevector</a>
+  <a href="#e2" data-name="deb-bytevector">deb-bytevector</a>
+  <a href="#e3" data-name="entry-content">entry-content</a>
+  <a href="#e4" data-name="entry-mode">entry-mode</a>
+  <a href="#e5" data-name="entry-name">entry-name</a>
+  <a href="#e6" data-name="sort-entries">sort-entries</a>
+  <a href="#e7" data-name="tar-bytevector">tar-bytevector</a>
+</nav>
+
+<main>
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="index.html">All libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="index.html#sec-scm">Scm Extensions</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm deb)</span>
+</nav>
+
+<div class="lib-title scm">(scm deb)</div>
+<p class="lib-sub">Debian packages in pure Scheme — tar, ar and .deb writers</p>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">8 bindings</p>
+
+<div class="entry" id="e0" data-name="add-parent-dirs">
+  <div class="entry-name">add-parent-dirs</div>
+  <pre class="entry-doc">Syntax: (add-parent-dirs entries)
+Library: (scm deb)
+Description: entries plus a 0755 directory entry for every parent directory
+  that has none yet.
+Example:
+  (map entry-name (add-parent-dirs (list (list "a/b/c" #o644 (bytevector)))))
+  =&gt; ("a/" "a/b/" "a/b/c")</pre>
+</div>
+<div class="entry" id="e1" data-name="ar-bytevector">
+  <div class="entry-name">ar-bytevector</div>
+  <pre class="entry-doc">Syntax: (ar-bytevector members mtime)
+Library: (scm deb)
+Description: A common-format ar archive (the outer container of a .deb) as
+  a bytevector. members is a list of (name bytevector); names are at most
+  15 characters.
+Example:
+  (ar-bytevector (list (list "debian-binary" (string-&gt;utf8 "2.0\n"))) 0)</pre>
+</div>
+<div class="entry" id="e2" data-name="deb-bytevector">
+  <div class="entry-name">deb-bytevector</div>
+  <pre class="entry-doc">Syntax: (deb-bytevector control-entries data-entries mtime)
+Library: (scm deb)
+Description: A complete .deb package as a bytevector: debian-binary,
+  control.tar.gz from control-entries (control, md5sums, maintainer
+  scripts) and data.tar.gz from data-entries (missing parent directories
+  are added). All entries get mtime; write the result with
+  write-bytevector to &lt;name&gt;_&lt;version&gt;_&lt;arch&gt;.deb.
+Example:
+  (deb-bytevector (list (list "control" #o644 (string-&gt;utf8 control-text)))
+                  (list (list "usr/bin/hello" #o755 script-bytes))
+                  1700000000)</pre>
+</div>
+<div class="entry" id="e3" data-name="entry-content">
+  <div class="entry-name">entry-content</div>
+  <pre class="entry-doc">Syntax: (entry-content entry)
+Library: (scm deb)
+Description: The bytes of a package entry, or #f for a directory.
+Example:
+  (entry-content (list "opt/app/" #o755 #f)) =&gt; #f</pre>
+</div>
+<div class="entry" id="e4" data-name="entry-mode">
+  <div class="entry-name">entry-mode</div>
+  <pre class="entry-doc">Syntax: (entry-mode entry)
+Library: (scm deb)
+Description: The file mode (an integer such as #o644) of a package entry.
+Example:
+  (entry-mode (list "etc/app.conf" #o644 (bytevector))) =&gt; 420</pre>
+</div>
+<div class="entry" id="e5" data-name="entry-name">
+  <div class="entry-name">entry-name</div>
+  <pre class="entry-doc">Syntax: (entry-name entry)
+Library: (scm deb)
+Description: The archive path of a package entry (name mode content),
+  without the "./" prefix; directories end in "/".
+Example:
+  (entry-name (list "usr/bin/app" #o755 (bytevector))) =&gt; "usr/bin/app"</pre>
+</div>
+<div class="entry" id="e6" data-name="sort-entries">
+  <div class="entry-name">sort-entries</div>
+  <pre class="entry-doc">Syntax: (sort-entries entries)
+Library: (scm deb)
+Description: entries sorted by name, so a directory precedes its contents
+  and the order is the same on every host.
+Example:
+  (map entry-name (sort-entries (list (list "b" #o644 #f) (list "a" #o644 #f))))
+  =&gt; ("a" "b")</pre>
+</div>
+<div class="entry" id="e7" data-name="tar-bytevector">
+  <div class="entry-name">tar-bytevector</div>
+  <pre class="entry-doc">Syntax: (tar-bytevector entries mtime)
+Library: (scm deb)
+Description: An uncompressed USTAR tar archive of entries as a bytevector,
+  as dpkg-deb writes it: names get a "./" prefix, the archive starts with
+  the "./" directory, owner root:root, every entry with mtime (seconds
+  since the epoch). Entries are written in the given order.
+Example:
+  (bytevector-length (tar-bytevector (list (list "a.txt" #o644 (string-&gt;utf8 "hi"))) 0))
+  =&gt; 2560</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

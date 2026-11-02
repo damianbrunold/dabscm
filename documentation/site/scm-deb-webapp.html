@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm deb webapp) — Dabscm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="toc">
+  <h2>Bindings</h2>
+  <a href="#e0" data-name="package-webapp-deb">package-webapp-deb</a>
+  <a href="#e1" data-name="webapp-deb-main">webapp-deb-main</a>
+  <a href="#e2" data-name="webapp-deb-version">webapp-deb-version</a>
+  <a href="#e3" data-name="webapp-default-config">webapp-default-config</a>
+</nav>
+
+<main>
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="index.html">All libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="index.html#sec-scm">Scm Extensions</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm deb webapp)</span>
+</nav>
+
+<div class="lib-title scm">(scm deb webapp)</div>
+<p class="lib-sub">Debian package for a dabscm web application (systemd, /opt + /etc + /var/lib)</p>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">4 bindings</p>
+
+<div class="entry" id="e0" data-name="package-webapp-deb">
+  <div class="entry-name">package-webapp-deb</div>
+  <pre class="entry-doc">Syntax: (package-webapp-deb spec [option ...])
+Library: (scm deb webapp)
+Description: Builds &lt;out&gt;/&lt;pkg&gt;_&lt;version&gt;_all.deb for the web application
+  described by spec and returns its path. spec is an alist:
+    (pkg . "myapp")              package, system user and unit prefix
+    (summary . "...")            one-line description
+    (description "line" ...)     long description
+    (services "myapp.service")   started after install when configured
+    (timers "myapp-health.timer" ...)
+  optional:
+    (app-dir . ".")              the app (a git checkout)
+    (trees "src" "static")       directories copied to /opt/&lt;pkg&gt;/app
+    (bin-exclude "dev-server.scm") bin/ scripts left out
+    (data-subdirs "files")       created under /var/lib/&lt;pkg&gt;
+    (config-settings ("name" . "value") ...)  see webapp-default-config
+    (setup-hints "line" ...)     printed while the config is unfinished
+    (depends "postgresql-client")  extra Depends
+    (recommends "postgresql")    Recommends
+    (default-port . 8080)        health probe port if the config has none
+    (maintainer . "Name &lt;mail&gt;")
+  Options, each a pair: (out . dir) (default "dist" in app-dir),
+  (jar . path) (default ../dabscm/scm-java/scm.jar next to app-dir),
+  (allow-dirty . #t) to package uncommitted changes. The version comes from
+  the last commit (webapp-deb-version), so the same commit gives the same
+  bytes.
+Example:
+  (package-webapp-deb
+    '((pkg . "myapp") (summary . "My app") (description "My app.")
+      (services "myapp.service") (timers "myapp-health.timer"))
+    '(out . "dist"))</pre>
+</div>
+<div class="entry" id="e1" data-name="webapp-deb-main">
+  <div class="entry-name">webapp-deb-main</div>
+  <pre class="entry-doc">Syntax: (webapp-deb-main spec args)
+Library: (scm deb webapp)
+Description: Command-line front end for package-webapp-deb, for an app's
+  package-deb.scm: args (usually (cdr (command-line))) may hold
+  --out &lt;dir&gt;, --jar &lt;scm.jar&gt;, --dabscm &lt;checkout&gt; (uses its
+  scm-java/scm.jar) and --allow-dirty. Prints the package path and returns
+  it; prints the error and exits with status 1 on failure.
+Example:
+  ;; package-deb.scm
+  (import (scheme base) (scheme process-context) (scm deb webapp))
+  (webapp-deb-main '((pkg . "myapp") ...) (cdr (command-line)))</pre>
+</div>
+<div class="entry" id="e2" data-name="webapp-deb-version">
+  <div class="entry-name">webapp-deb-version</div>
+  <pre class="entry-doc">Syntax: (webapp-deb-version epoch hash dirty?)
+Library: (scm deb webapp)
+Description: The package version for a build of commit hash made at epoch
+  (seconds, UTC): YYYY.MM.DD.HHMMSS+g&lt;hash&gt;, with a ".dirty" suffix for
+  uncommitted changes. Versions of later commits sort higher.
+Example:
+  (webapp-deb-version 1792241802 "1056360d" #f) =&gt; "2026.10.17.125642+g1056360d"</pre>
+</div>
+<div class="entry" id="e3" data-name="webapp-default-config">
+  <div class="entry-name">webapp-default-config</div>
+  <pre class="entry-doc">Syntax: (webapp-default-config example-text pkg settings)
+Library: (scm deb webapp)
+Description: The config a package installs as /etc/&lt;pkg&gt;/config.scm:
+  example-text (the app's config.example.scm) with a header comment and
+  every (define name value) listed in settings, an alist of
+  (name . value-source), replaced by (define name value-source). Each
+  name must have a single-line define in the example; an error otherwise,
+  so a renamed setting cannot silently keep its development value.
+Example:
+  (webapp-default-config text "myapp"
+    '(("files-dir" . "\"/var/lib/myapp/files\"")
+      ("secure-cookies?" . "#t")))</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>
