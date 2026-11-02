@@ -11,6 +11,7 @@
           worksheet-set-autofilter-column!
           worksheet-merge-cells!
           worksheet-freeze-panes!
+          worksheet-set-page-setup!
           worksheet-add-image!
           workbook-save
           workbook-save-to-bytevector
@@ -475,7 +476,8 @@ Example:
               #f           ;; 9  freeze-panes (cell ref string or #f)
               (make-dict)  ;; 10 hidden-rows (row-string -> #t)
               '()          ;; 11 autofilter-columns (list of (col-idx . values))
-              '()))        ;; 12 images (list of image-anchor vectors)
+              '()          ;; 12 images (list of image-anchor vectors)
+              #f))         ;; 13 page setup #(orientation fit-width fit-height) or #f
 
     (define (worksheet-name ws)        (vector-ref ws 1))
     (define (worksheet-id ws)          (vector-ref ws 2))
@@ -489,6 +491,8 @@ Example:
     (define (worksheet-hidden-rows ws)        (vector-ref ws 10))
     (define (worksheet-autofilter-columns ws) (vector-ref ws 11))
     (define (worksheet-images ws)             (vector-ref ws 12))
+    (define (worksheet-page-setup ws)
+      (and (> (vector-length ws) 13) (vector-ref ws 13)))
 
     ;; image anchor: #(cell bytes ext width-px height-px)
     (define (img-cell a)  (vector-ref a 0))
@@ -568,6 +572,46 @@ Example:
       (if (procedure? ws)
           (ws 'merge-cells! ref)
           (vector-set! ws 8 (cons ref (worksheet-merged-cells ws)))))
+
+    (define (worksheet-set-page-setup! ws orientation fit-width fit-height)
+      "Syntax: (worksheet-set-page-setup! ws orientation fit-width fit-height)
+Library: (scm ooxml excel)
+Description: Sets how worksheet ws is printed. orientation is 'portrait,
+'landscape or #f (Excel's default). fit-width and fit-height are the number
+of pages the sheet is scaled to across and down; 0 means as many as needed,
+#f for both means no fitting (print at 100%). Fit to the page width with
+(worksheet-set-page-setup! ws 'portrait 1 0).
+Example:
+  (worksheet-set-page-setup! ws 'portrait 1 0)"
+      (unless (memq orientation '(portrait landscape #f))
+        (error "worksheet-set-page-setup!: orientation must be portrait, landscape or #f"
+               orientation))
+      (for-each (lambda (n)
+                  (unless (or (not n) (and (exact-integer? n) (>= n 0)))
+                    (error "worksheet-set-page-setup!: fit value must be #f or an integer >= 0" n)))
+                (list fit-width fit-height))
+      (vector-set! ws 13 (vector orientation fit-width fit-height)))
+
+    (define (page-setup-fit? ps)
+      (and ps (or (vector-ref ps 1) (vector-ref ps 2))))
+
+    (define (render-sheet-pr port ps)
+      ;; must be the first child of <worksheet>
+      (when (page-setup-fit? ps)
+        (display "<sheetPr><pageSetUpPr fitToPage=\"1\"/></sheetPr>" port)))
+
+    (define (render-page-setup port ps)
+      ;; pageMargins (Excel's defaults) + pageSetup, after mergeCells and
+      ;; before drawing per schema order
+      (when ps
+        (display "<pageMargins left=\"0.7\" right=\"0.7\" top=\"0.75\" bottom=\"0.75\" header=\"0.3\" footer=\"0.3\"/>" port)
+        (display "<pageSetup" port)
+        (when (vector-ref ps 0)
+          (format port " orientation=\"~a\"" (symbol->string (vector-ref ps 0))))
+        (when (page-setup-fit? ps)
+          (format port " fitToWidth=\"~a\" fitToHeight=\"~a\""
+                  (or (vector-ref ps 1) 1) (or (vector-ref ps 2) 1)))
+        (display "/>" port)))
 
     (define (worksheet-freeze-panes! ws cell)
       "Syntax: (worksheet-freeze-panes! ws cell)
@@ -697,6 +741,7 @@ Example:
                      (ns 'spreadsheetml-main))
              (format port "<worksheet xmlns=\"~a\" xmlns:r=\"~a\">"
                      (ns 'spreadsheetml-main) (ns 'doc-relationships)))
+         (render-sheet-pr port (worksheet-page-setup ws))
          ;; Freeze panes (must precede cols/sheetData)
          (let ((fz (worksheet-freeze ws)))
            (when fz (render-freeze-pane port fz)))
@@ -736,6 +781,7 @@ Example:
                                 (reverse (worksheet-autofilter-columns ws)))))
          ;; Merged cells (after autoFilter per schema order)
          (render-merge-cells port (reverse (worksheet-merged-cells ws)))
+         (render-page-setup port (worksheet-page-setup ws))
          ;; Drawing (images) — the relationship + parts are written by
          ;; workbook-write-zip; each image-bearing sheet uses rId1 here.
          (unless (null? (worksheet-images ws))

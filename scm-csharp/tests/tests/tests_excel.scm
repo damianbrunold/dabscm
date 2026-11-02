@@ -346,6 +346,35 @@
       (test-equal #f (string-contains xml "state=\"frozen\""))
       (test-equal #t (and (string-contains xml "<sheetView workbookViewId=\"0\"/>") #t)))))
 
+;; page setup: fit to page width -> sheetPr first, pageSetup after mergeCells
+(test-group "page-setup-fit-width"
+  (let* ((path (join-path (special-folder-temp) "test-scm-excel-pagesetup.xlsx"))
+         (wb   (make-workbook))
+         (ws   (workbook-add-worksheet! wb "S")))
+    (worksheet-set-cell! ws "A1" "x" 'string #f)
+    (worksheet-merge-cells! ws "A1:B1")
+    (worksheet-freeze-panes! ws "A2")
+    (worksheet-set-page-setup! ws 'portrait 1 0)
+    (workbook-save wb path)
+    (let ((xml (read-sheet1-xml path)))
+      (test-equal #t (and (string-contains xml "<worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><sheetPr><pageSetUpPr fitToPage=\"1\"/></sheetPr><sheetViews>") #t))
+      (test-equal #t (and (string-contains xml "<pageSetup orientation=\"portrait\" fitToWidth=\"1\" fitToHeight=\"0\"/>") #t))
+      (test-equal #t (< (string-contains xml "</mergeCells>")
+                        (string-contains xml "<pageMargins")
+                        (string-contains xml "<pageSetup"))))))
+
+;; page setup without fitting: orientation only, no sheetPr
+(test-group "page-setup-orientation"
+  (let* ((path (join-path (special-folder-temp) "test-scm-excel-pagesetup2.xlsx"))
+         (wb   (make-workbook))
+         (ws   (workbook-add-worksheet! wb "S")))
+    (worksheet-set-cell! ws "A1" "x" 'string #f)
+    (worksheet-set-page-setup! ws 'landscape #f #f)
+    (workbook-save wb path)
+    (let ((xml (read-sheet1-xml path)))
+      (test-equal #f (string-contains xml "<sheetPr>"))
+      (test-equal #t (and (string-contains xml "<pageSetup orientation=\"landscape\"/>") #t)))))
+
 ;; hidden rows: hidden="1" on the row tag
 (test-group "row-hidden"
   (let* ((path (join-path (special-folder-temp) "test-scm-excel-hidden.xlsx"))
