@@ -26,6 +26,8 @@ Description: Builds <out>/<pkg>_<version>_all.deb for the web application
     (depends "postgresql-client")  extra Depends
     (recommends "postgresql")    Recommends
     (default-port . 8080)        health probe port if the config has none
+    (copyright-notes "line" ...) appended to the copyright file (bundled
+                                 third-party material, attributions)
     (maintainer . "Name <mail>")
   Options, each a pair: (out . dir) (default "dist" in app-dir),
   (jar . path) (default ../dabscm/scm-java/scm.jar next to app-dir),

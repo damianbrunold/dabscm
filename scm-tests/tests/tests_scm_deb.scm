@@ -132,7 +132,8 @@
                      (setup-hints "set db-password")
                      (recommends "postgresql")
                      (services "myapp.service") (timers "myapp-health.timer")
-                     (default-port . 8070)))
+                     (default-port . 8070)
+                     (copyright-notes "Map data: (c) swisstopo.")))
              (deb (package-webapp-deb spec (cons 'out (join-path tmp "dist"))
                                       (cons 'jar (join-path tmp "scm.jar"))))
              (members (ar-members (read-file-bytes deb)))
@@ -152,6 +153,9 @@
         (test-assert "config default relocated"
           (bytes-contain? data "(define data-dir \"/var/lib/myapp/data\")"))
         (test-assert "copyright" (bytes-contain? data "./usr/share/doc/myapp/copyright"))
+        (test-assert "copyright: notes and runtime"
+          (and (bytes-contain? data "Bundled third-party material:\n\nMap data: (c) swisstopo.\n")
+               (bytes-contain? data "Scheme runtime /opt/myapp/lib/scm.jar: dabscm ")))
         (test-assert "control fields"
           (and (bytes-contain? control "Package: myapp")
                (bytes-contain? control "Recommends: postgresql")

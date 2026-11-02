@@ -380,6 +380,23 @@ fi
 
     ;; --- building -------------------------------------------------------------
 
+    ;; The copyright file: the app's LICENSE, the spec's copyright-notes
+    ;; (third-party material the app ships, e.g. data and its attribution)
+    ;; and the bundled dabscm runtime with its licence (from the checkout
+    ;; the jar was built in, when it has one).
+    (define (copyright-text pkg license notes dabscm-dir dabscm-version)
+      (let ((dabscm-license (join-path dabscm-dir "LICENSE")))
+        (string-append
+          license
+          (if (pair? notes)
+              (string-append "\n\nBundled third-party material:\n\n"
+                             (string-join notes "\n") "\n")
+              "")
+          "\n\nScheme runtime /opt/" pkg "/lib/scm.jar: dabscm " dabscm-version
+          (if (file-exists? dabscm-license)
+              (string-append ", under this licence:\n\n" (read-text dabscm-license))
+              ".\n"))))
+
     (define (shell-quote s)
       (string-append "'" (string-replace-all s "'" "'\\''") "'"))
 
@@ -403,6 +420,8 @@ Description: Builds <out>/<pkg>_<version>_all.deb for the web application
     (depends \"postgresql-client\")  extra Depends
     (recommends \"postgresql\")    Recommends
     (default-port . 8080)        health probe port if the config has none
+    (copyright-notes \"line\" ...) appended to the copyright file (bundled
+                                 third-party material, attributions)
     (maintainer . \"Name <mail>\")
   Options, each a pair: (out . dir) (default \"dist\" in app-dir),
   (jar . path) (default ../dabscm/scm-java/scm.jar next to app-dir),
@@ -482,7 +501,11 @@ Example:
                  (append
                    (list (from (string-append doc "README.Debian") #o644
                                (join-path dir "deploy" "debian" "README.Debian"))
-                         (from (string-append doc "copyright") #o644 (join-path dir "LICENSE")))
+                         (text (string-append doc "copyright") #o644
+                               (copyright-text pkg (read-text (join-path dir "LICENSE"))
+                                               (spec-opt spec 'copyright-notes '())
+                                               (directory-name (directory-name jar))
+                                               dabscm-version)))
                    (filter-map
                      (lambda (f)
                        (let ((p (join-path dir "deploy" f)))
