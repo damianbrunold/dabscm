@@ -3,7 +3,7 @@
 ;;   ./builder.sh package-deb-java.scm [--out <dir>] [--allow-dirty]
 ;;
 ;; Packages the scm-java/scm.jar already built (build-and-test-scm-java.scm
-;; first). Pure Scheme (see build-deb.sld), no dpkg-deb/tar/gzip needed.
+;; first). Pure Scheme (see (scm deb)), no dpkg-deb/tar/gzip needed.
 ;; Install with `sudo apt install ./dabscm_<version>_all.deb`.
 ;;
 ;; Installed layout:
@@ -28,7 +28,7 @@
         (scm io)
         (scm system)
         (build tools)
-        (build deb))
+        (scm deb))
 
 (define maintainer "Damian Brunold <damian.brunold@bluewin.ch>")
 

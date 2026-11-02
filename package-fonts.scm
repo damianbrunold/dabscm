@@ -33,7 +33,7 @@
         (scm net http client)
         (scm net http response)
         (build tools)
-        (build deb))
+        (scm deb))
 
 (define maintainer "Damian Brunold <damian.brunold@bluewin.ch>")
 
