@@ -28,7 +28,7 @@ public class PrimitiveOpenXmlBytevector extends Primitive {
         checkArgs(pos, arguments, 1, 1);
         byte[] bytes = Value.asBytevector(arguments[0]);
         try {
-            XMLInputFactory xmlif = XMLInputFactory.newInstance();
+            XMLInputFactory xmlif = XmlInput.factory();
             XMLStreamReader xmlr = xmlif.createXMLStreamReader(new ByteArrayInputStream(bytes));
             return new NativeValue(xmlr);
         } catch (Exception e) {

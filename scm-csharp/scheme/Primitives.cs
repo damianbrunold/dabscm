@@ -380,6 +380,7 @@ public class Primitives
         Bind(new PrimitiveRationalDenominator());
         Bind(new PrimitiveRationalNumerator());
         Bind(new PrimitiveRead(modules));
+        Bind(new PrimitiveReadData(modules));
         Bind(new PrimitiveReadBytevector());
         Bind(new PrimitiveReadBytevectorB());
         Bind(new PrimitiveReadChar(modules));

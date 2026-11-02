@@ -31,7 +31,7 @@ public class PrimitiveOpenXmlFile extends Primitive {
             throw new SchemeError(pos, name() + " ~a: file not found", filename);
         }
         try {
-            XMLInputFactory xmlif = XMLInputFactory.newInstance();
+            XMLInputFactory xmlif = XmlInput.factory();
             XMLStreamReader xmlr = xmlif.createXMLStreamReader(filename,
                                    new FileInputStream(filename));
             return new NativeValue(xmlr);

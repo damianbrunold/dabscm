@@ -12,6 +12,7 @@
           line-sep
           port-position
           read-chars
+          read-data
           read-file-lines
           read-file-string
           with-input-from-string)
@@ -19,6 +20,7 @@
     (define format (%primitive "format"))
     (define flush (%primitive "flush-output-port"))
     (define read-chars (%primitive "read-chars"))
+    (define read-data (%primitive "read-data"))
     (define port-position (%primitive "port-position"))
     (define field-sep (%primitive "field-sep"))
     (define line-sep (%primitive "line-sep"))

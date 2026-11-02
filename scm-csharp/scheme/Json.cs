@@ -100,6 +100,7 @@ public class JsonParser
 
     public JsonObject ParseObject()
     {
+        System.Runtime.CompilerServices.RuntimeHelpers.EnsureSufficientExecutionStack(); // deep nesting: an error, not a dead process
         JsonObject result = new();
         lexer.MatchToken("{");
         string? token = lexer.NextToken();
@@ -156,6 +157,7 @@ public class JsonParser
 
     public JsonList ParseList()
     {
+        System.Runtime.CompilerServices.RuntimeHelpers.EnsureSufficientExecutionStack(); // deep nesting: an error, not a dead process
         JsonList result = new();
         lexer.MatchToken("[");
         string? token = lexer.NextToken();

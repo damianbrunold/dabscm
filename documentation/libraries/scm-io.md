@@ -178,6 +178,24 @@ Example:
   (read-chars 3 p) => "hel"
 ```
 
+### `read-data`
+
+```
+Syntax: (read-data port [max-depth])
+Library: (scm io)
+Description: Like read, for data from an untrusted source (uploads,
+  pasted text, network). Datum labels (#0= and #0#) are rejected, so
+  the result never shares structure or contains cycles, and lists,
+  vectors and quote forms may nest at most max-depth levels (default
+  1000). Either violation raises a read error (read-error? is true)
+  instead of building a cyclic datum or exhausting the stack. Returns
+  an end-of-file object at the end of the input.
+Example:
+  (read-data (open-input-string "(a (b c))")) => (a (b c))
+  (read-data (open-input-string "#0=(a . #0#)")) => read error
+  (read-data (open-input-string "((x))") 1) => read error
+```
+
 ### `read-file-lines`
 
 ```

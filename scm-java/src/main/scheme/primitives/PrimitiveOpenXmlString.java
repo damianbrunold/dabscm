@@ -28,7 +28,7 @@ public class PrimitiveOpenXmlString extends Primitive {
         checkArgs(pos, arguments, 1, 1);
         String source = new String(Value.asString(arguments[0]));
         try {
-            XMLInputFactory xmlif = XMLInputFactory.newInstance();
+            XMLInputFactory xmlif = XmlInput.factory();
             XMLStreamReader xmlr = xmlif.createXMLStreamReader(new StringReader(source));
             return new NativeValue(xmlr);
         } catch (Exception e) {

@@ -26,7 +26,9 @@ Description: Starts an HTTP server on port with the given handler and blocks
   indefinitely. handler receives each http-request and must return an http-response.
   Optional extra arguments forward to tcp-http-serve and configure: maximum
   concurrent worker threads (default 32; excess connections rejected with 503),
-  bind host (default \"0.0.0.0\"), per-connection read timeout in ms (default 30000),
+  bind host (default \"0.0.0.0\"), read timeout in ms (default 30000; bounds each
+  read and the whole request head, and a body must arrive within it plus its
+  size at 16 KB/s),
   maximum request body size in bytes (default 4194304; oversize rejected with 413),
   graceful-stop drain period in ms (default 10000), and the body size above which
   a request body is spooled to a temporary file (default 1048576; see

@@ -388,6 +388,7 @@ public class Primitives {
         bind(new PrimitiveRationalDenominator());
         bind(new PrimitiveRationalNumerator());
         bind(new PrimitiveRead(modules));
+        bind(new PrimitiveReadData(modules));
         bind(new PrimitiveReadBytevector());
         bind(new PrimitiveReadBytevectorB());
         bind(new PrimitiveReadChar(modules));

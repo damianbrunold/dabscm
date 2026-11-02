@@ -183,6 +183,50 @@
   (test-error (make-http-file-response 200 '() big 199999 2))
   (test-error (make-http-file-response 200 '() (string-append dir "/missing") 0 1)))
 
+;; A client that trickles its request (a byte now and then, each within
+;; the read timeout) is cut off at the overall deadline: the head gets
+;; read-timeout-ms in total, the body read-timeout-ms plus its size at
+;; 16 KB/s. The handler never runs.
+(define (trickle port head-bytes body-bytes tail-bytes)
+  (retry
+   (lambda ()
+     (let* ((s (tcp-connect "127.0.0.1" port))
+            (out (socket-binary-output-port s))
+            (in (socket-binary-input-port s))
+            (send! (lambda (bv) (guard (e (#t #f))
+                                  (write-bytevector bv out)
+                                  (flush-output-port out)))))
+       (send! head-bytes)
+       (do ((i 0 (+ i 1))) ((= i 12))
+         (thread-sleep! 0.2)
+         (send! body-bytes))
+       ;; the request is complete now: only the deadline can refuse it
+       (send! tail-bytes)
+       (let ((r (guard (e (#t (eof-object))) (read-bytevector 4096 in))))
+         (socket-close s)
+         (if (eof-object? r) "" (utf8->string r)))))))
+
+(test-group "slow clients cannot hold a thread"
+  (let ((called 0))
+    (with-server 18127
+      (lambda (req) (set! called (+ called 1)) (http-ok "x"))
+      '(4 "127.0.0.1" 600)
+      (lambda ()
+        ;; the head, one header line every 200 ms
+        (test-equal "trickled head: no response" #f
+                    (has? (trickle 18127 (string->utf8 "GET / HTTP/1.1\r\n")
+                                   (string->utf8 "X-A: b\r\n") (string->utf8 "\r\n"))
+                          "200"))
+        ;; the body, one byte every 200 ms
+        (test-equal "trickled body: no response" #f
+                    (has? (trickle 18127 (string->utf8 "POST / HTTP/1.1\r\nContent-Length: 13\r\n\r\n")
+                                   (string->utf8 "a") (string->utf8 "b"))
+                          "200"))
+        (test-equal "handler never called" 0 called)
+        ;; a normal request still works
+        (test-equal "normal request" #t
+                    (has? (raw-request 18127 (string->utf8 "GET / HTTP/1.1\r\nHost: x\r\n\r\n")) "200"))))))
+
 (delete-file big)
 (delete-directory dir)
 

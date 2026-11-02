@@ -32,8 +32,8 @@ public class PrimitiveTcpHttpServe : Primitive
         "Use server-stop to shut it down. Notes: request bodies come with Content-Length or " +
         "Transfer-Encoding: chunked; bodies larger than max-body-bytes are rejected with 413, and bodies " +
         "larger than spool-threshold-bytes are written to a temporary file (http-request-body-file) " +
-        "that is deleted after the response; per-connection read-timeout-ms guards against slow " +
-        "clients; max-threads bounds concurrency (excess connections are rejected with 503). Responses " +
+        "that is deleted after the response; read-timeout-ms bounds each read and the whole request head, " +
+        "and a body must arrive within read-timeout-ms plus its size at 16 KB/s (slow clients cannot hold a thread); max-threads bounds concurrency (excess connections are rejected with 503). Responses " +
         "may be file responses (sent from the file) or streamed (make-http-stream-response). 0 or " +
         "omitted parameters use defaults: max-threads=32, host=\"0.0.0.0\", read-timeout-ms=30000, " +
         "max-body-bytes=4194304, graceful-stop-ms=10000, spool-threshold-bytes=1048576.\n" +
@@ -111,13 +111,16 @@ public class PrimitiveTcpHttpServe : Primitive
                             using (tcpClient)
                             {
                                 var stream = tcpClient.GetStream();
+                                // Reads of the request: the head in read-timeout-ms
+                                // overall, the body at a minimum rate (DeadlineStream).
+                                var rin = new DeadlineStream(stream, readTimeoutMs);
                                 // Read headers byte-by-byte so binary body bytes that
                                 // follow are not consumed/decoded by a text reader.
                                 var headerBuf = new MemoryStream(1024);
                                 int matched = 0; // matches in "\r\n\r\n"
                                 while (matched < 4)
                                 {
-                                    int b = stream.ReadByte();
+                                    int b = rin.ReadByte();
                                     if (b < 0) return; // client closed
                                     headerBuf.WriteByte((byte)b);
                                     if ((matched == 0 || matched == 2) && b == (byte)'\r') matched++;
@@ -172,7 +175,8 @@ public class PrimitiveTcpHttpServe : Primitive
                                 string? bodyFile = null;
                                 if (chunked || contentLength > 0)
                                 {
-                                    spooled = HttpBody.Read(stream, chunked ? -1 : contentLength, maxBodyBytes, spoolThreshold);
+                                    rin.StartBody(readTimeoutMs, chunked ? -1 : contentLength, maxBodyBytes);
+                                    spooled = HttpBody.Read(rin, chunked ? -1 : contentLength, maxBodyBytes, spoolThreshold);
                                     if (spooled.TooLarge) { WriteStatusOnly(stream, 413); LingerClose(tcpClient, stream); return; }
                                     if (spooled.Malformed) { WriteStatusOnly(stream, 400); LingerClose(tcpClient, stream); return; }
                                     bodyBytes = spooled.Bytes;

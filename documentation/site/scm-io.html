@@ -33,9 +33,10 @@
   <a href="#e8" data-name="line-sep">line-sep</a>
   <a href="#e9" data-name="port-position">port-position</a>
   <a href="#e10" data-name="read-chars">read-chars</a>
-  <a href="#e11" data-name="read-file-lines">read-file-lines</a>
-  <a href="#e12" data-name="read-file-string">read-file-string</a>
-  <a href="#e13" data-name="with-input-from-string">with-input-from-string</a>
+  <a href="#e11" data-name="read-data">read-data</a>
+  <a href="#e12" data-name="read-file-lines">read-file-lines</a>
+  <a href="#e13" data-name="read-file-string">read-file-string</a>
+  <a href="#e14" data-name="with-input-from-string">with-input-from-string</a>
 </nav>
 
 <main>
@@ -64,10 +65,10 @@
   (lambda (p) (write-bytevector #u8(1 2 3) p)))     ;; =&gt; #u8(1 2 3)</code></pre>
 <p>Formatted strings — the first argument is the destination (<code>#f</code> for a string, or a port):</p>
 <pre><code class="language-scheme">(format #f "~a + ~a = ~a" 1 2 3)    ;; =&gt; "1 + 2 = 3"</code></pre>
-<p><a class="xref" href="#e10"><code>read-chars</code></a> reads a fixed number of characters, <a class="xref" href="#e13"><code>with-input-from-string</code></a> rebinds the current input port, and <a class="xref" href="#e9"><code>port-position</code></a> / <a class="xref" href="#e6"><code>flush</code></a> round things out.</p>
+<p><a class="xref" href="#e10"><code>read-chars</code></a> reads a fixed number of characters, <a class="xref" href="#e14"><code>with-input-from-string</code></a> rebinds the current input port, and <a class="xref" href="#e9"><code>port-position</code></a> / <a class="xref" href="#e6"><code>flush</code></a> round things out.</p>
 </div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
-<p class="export-count">14 bindings</p>
+<p class="export-count">15 bindings</p>
 
 <div class="entry" id="e0" data-name="call-with-input-string">
   <div class="entry-name">call-with-input-string</div>
@@ -194,7 +195,23 @@ Example:
   (define p (open-input-string "hello"))
   (read-chars 3 p) =&gt; "hel"</pre>
 </div>
-<div class="entry" id="e11" data-name="read-file-lines">
+<div class="entry" id="e11" data-name="read-data">
+  <div class="entry-name">read-data</div>
+  <pre class="entry-doc">Syntax: (read-data port [max-depth])
+Library: (scm io)
+Description: Like read, for data from an untrusted source (uploads,
+  pasted text, network). Datum labels (#0= and #0#) are rejected, so
+  the result never shares structure or contains cycles, and lists,
+  vectors and quote forms may nest at most max-depth levels (default
+  1000). Either violation raises a read error (read-error? is true)
+  instead of building a cyclic datum or exhausting the stack. Returns
+  an end-of-file object at the end of the input.
+Example:
+  (read-data (open-input-string "(a (b c))")) =&gt; (a (b c))
+  (read-data (open-input-string "#0=(a . #0#)")) =&gt; read error
+  (read-data (open-input-string "((x))") 1) =&gt; read error</pre>
+</div>
+<div class="entry" id="e12" data-name="read-file-lines">
   <div class="entry-name">read-file-lines</div>
   <pre class="entry-doc">Syntax: (read-file-lines path option ...)
 Library: (scm io)
@@ -209,7 +226,7 @@ Example:
   (read-file-lines "hello.txt") =&gt; ("hello" "world")
   (read-file-lines "data.txt" 'latin-1) =&gt; ("...")</pre>
 </div>
-<div class="entry" id="e12" data-name="read-file-string">
+<div class="entry" id="e13" data-name="read-file-string">
   <div class="entry-name">read-file-string</div>
   <pre class="entry-doc">Syntax: (read-file-string path option ...)
 Library: (scm io)
@@ -224,7 +241,7 @@ Example:
   (read-file-string "hello.txt") =&gt; "hello\nworld\n"
   (read-file-string "data.txt" 'latin-1) =&gt; "..."</pre>
 </div>
-<div class="entry" id="e13" data-name="with-input-from-string">
+<div class="entry" id="e14" data-name="with-input-from-string">
   <div class="entry-name">with-input-from-string</div>
   <pre class="entry-doc">Syntax: (with-input-from-string str thunk)
 Library: (scm io)

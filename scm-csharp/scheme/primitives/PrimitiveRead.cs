@@ -65,7 +65,55 @@ public class PrimitiveRead : Primitive
         return ReadDatum(token, reader, new Dictionary<int, object>());
     }
 
+    // read-data: the limits for untrusted input travel in the labels map,
+    // so the recursive reader needs no extra parameter.
+    internal sealed class DataLimits : Dictionary<int, object>
+    {
+        internal readonly int maxDepth;
+        internal int depth;
+        internal DataLimits(int maxDepth) { this.maxDepth = maxDepth; }
+    }
+
+    public object ReadData(TextStream reader, int maxDepth)
+    {
+        return ReadDatum(ReadToken(reader), reader, new DataLimits(maxDepth));
+    }
+
     private object ReadDatum(Token? token, TextStream reader, Dictionary<int, object> labels)
+    {
+        // A stack overflow kills a .NET process outright: deeply nested
+        // input raises InsufficientExecutionStackException (a read error)
+        // instead.
+        System.Runtime.CompilerServices.RuntimeHelpers.EnsureSufficientExecutionStack();
+        if (labels is not DataLimits lim) return ReadDatum0(token, reader, labels);
+        if (token != null && (token.type == TokenType.LABELDEFINITION || token.type == TokenType.LABELREFERENCE))
+            throw new SchemeError(token.pos, new ReadErrorObject("read-data: datum labels are not allowed", Array.Empty<object>()));
+        if (token == null || !Nests(token.type)) return ReadDatum0(token, reader, labels);
+        if (++lim.depth > lim.maxDepth)
+        {
+            lim.depth = 0;
+            throw new SchemeError(token != null ? token.pos : reader.Pos(),
+                new ReadErrorObject("read-data: nesting deeper than the limit", new object[] { (long)lim.maxDepth }));
+        }
+        try
+        {
+            return ReadDatum0(token, reader, labels);
+        }
+        finally
+        {
+            lim.depth--;
+        }
+    }
+
+    // Tokens that open a nesting level: lists, vectors, bytevectors and the
+    // quote abbreviations.
+    private static bool Nests(TokenType t) =>
+        t == TokenType.OPENPAR || t == TokenType.SHARPOPENPAR || t == TokenType.BYTEVECTOROPENPAR
+        || t == TokenType.QUOTE || t == TokenType.BACKQUOTE || t == TokenType.COMMA || t == TokenType.COMMAAT
+        || t == TokenType.SYNTAX || t == TokenType.QUASISYNTAX || t == TokenType.UNSYNTAX
+        || t == TokenType.UNSYNTAXSPLICING || t == TokenType.DATUMCOMMENT;
+
+    private object ReadDatum0(Token? token, TextStream reader, Dictionary<int, object> labels)
     {
         if (token == null) return Value.EOF;
         if (token.type == TokenType.DATUMCOMMENT)

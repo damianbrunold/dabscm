@@ -53,8 +53,9 @@
   <a href="#e28" data-name="worksheet-set-autofilter-column!">worksheet-set-autofilter-column!</a>
   <a href="#e29" data-name="worksheet-set-cell!">worksheet-set-cell!</a>
   <a href="#e30" data-name="worksheet-set-col-width!">worksheet-set-col-width!</a>
-  <a href="#e31" data-name="worksheet-set-row-height!">worksheet-set-row-height!</a>
-  <a href="#e32" data-name="worksheet-set-row-hidden!">worksheet-set-row-hidden!</a>
+  <a href="#e31" data-name="worksheet-set-page-setup!">worksheet-set-page-setup!</a>
+  <a href="#e32" data-name="worksheet-set-row-height!">worksheet-set-row-height!</a>
+  <a href="#e33" data-name="worksheet-set-row-hidden!">worksheet-set-row-hidden!</a>
 </nav>
 
 <main>
@@ -86,7 +87,7 @@
 <p>Document properties (title, category, keywords, custom properties such as a classification) go into <code>docProps/</code> via <a class="xref" href="#e22"><code>workbook-set-properties!</code></a>; the streaming writers take them as an optional argument (<a class="xref" href="#e6"><code>open-streaming-table</code></a>, <a class="xref" href="#e7"><code>open-streaming-workbook</code></a>) or through the wb-proxy.</p>
 </div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
-<p class="export-count">33 bindings</p>
+<p class="export-count">34 bindings</p>
 
 <div class="entry" id="e0" data-name="call-with-streaming-table">
   <div class="entry-name">call-with-streaming-table</div>
@@ -423,7 +424,19 @@ Example:
   (worksheet-set-col-width! ws "A" 20)
   (worksheet-set-col-width! ws "B" 12.5)</pre>
 </div>
-<div class="entry" id="e31" data-name="worksheet-set-row-height!">
+<div class="entry" id="e31" data-name="worksheet-set-page-setup!">
+  <div class="entry-name">worksheet-set-page-setup!</div>
+  <pre class="entry-doc">Syntax: (worksheet-set-page-setup! ws orientation fit-width fit-height)
+Library: (scm ooxml excel)
+Description: Sets how worksheet ws is printed. orientation is 'portrait,
+'landscape or #f (Excel's default). fit-width and fit-height are the number
+of pages the sheet is scaled to across and down; 0 means as many as needed,
+#f for both means no fitting (print at 100%). Fit to the page width with
+(worksheet-set-page-setup! ws 'portrait 1 0).
+Example:
+  (worksheet-set-page-setup! ws 'portrait 1 0)</pre>
+</div>
+<div class="entry" id="e32" data-name="worksheet-set-row-height!">
   <div class="entry-name">worksheet-set-row-height!</div>
   <pre class="entry-doc">Syntax: (worksheet-set-row-height! ws row height)
 Library: (scm ooxml excel)
@@ -432,7 +445,7 @@ ws. Works for both regular and streaming worksheets.
 Example:
   (worksheet-set-row-height! ws 1 30)</pre>
 </div>
-<div class="entry" id="e32" data-name="worksheet-set-row-hidden!">
+<div class="entry" id="e33" data-name="worksheet-set-row-hidden!">
   <div class="entry-name">worksheet-set-row-hidden!</div>
   <pre class="entry-doc">Syntax: (worksheet-set-row-hidden! ws row hidden?)
 Library: (scm ooxml excel)

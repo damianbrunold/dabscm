@@ -36,8 +36,9 @@ public class PrimitiveTcpHttpServe extends Primitive {
                "Use server-stop to shut it down. Notes: request bodies come with Content-Length or " +
                "Transfer-Encoding: chunked; bodies larger than max-body-bytes are rejected with 413, and bodies " +
                "larger than spool-threshold-bytes are written to a temporary file (http-request-body-file) " +
-               "that is deleted after the response; per-connection read-timeout-ms guards against slow " +
-               "clients; max-threads bounds concurrency (excess connections are rejected with 503). Responses " +
+               "that is deleted after the response; read-timeout-ms bounds each read and the whole request head, and a body must arrive within " +
+               "read-timeout-ms plus its size at 16 KB/s (slow clients cannot hold a thread); " +
+               " max-threads bounds concurrency (excess connections are rejected with 503). Responses " +
                "may be file responses (sent from the file) or streamed (make-http-stream-response). 0 or " +
                "omitted parameters use defaults: max-threads=32, host=\"0.0.0.0\", read-timeout-ms=30000, " +
                "max-body-bytes=4194304, graceful-stop-ms=10000, spool-threshold-bytes=1048576.\n" +
@@ -104,7 +105,10 @@ public class PrimitiveTcpHttpServe extends Primitive {
                             HttpBody spooled = null;
                             try (Socket c = client) {
                                 c.setSoTimeout(readTimeoutF);
-                                InputStream raw = c.getInputStream();
+                                InputStream sock = c.getInputStream();
+                                // The head in read-timeout-ms overall, the body at
+                                // a minimum rate (DeadlineInputStream).
+                                DeadlineInputStream raw = new DeadlineInputStream(sock, readTimeoutF);
                                 // Read headers byte-by-byte so binary body bytes that
                                 // follow are not consumed/decoded by a text Reader.
                                 ByteArrayOutputStream headerBuf = new ByteArrayOutputStream(1024);
@@ -164,6 +168,7 @@ public class PrimitiveTcpHttpServe extends Primitive {
                                 byte[] bodyBytes = null;
                                 java.nio.file.Path bodyFile = null;
                                 if (chunked || contentLength > 0) {
+                                    raw.startBody(readTimeoutF, chunked ? -1 : contentLength, maxBodyF);
                                     spooled = HttpBody.read(raw, chunked ? -1 : contentLength, maxBodyF, spoolF);
                                     if (spooled.tooLarge) { writeStatusOnly(out, 413); lingerClose(c, raw); return; }
                                     if (spooled.malformed) { writeStatusOnly(out, 400); lingerClose(c, raw); return; }
@@ -196,10 +201,13 @@ public class PrimitiveTcpHttpServe extends Primitive {
                                     // internals: log it, never send it.
                                     logHandlerError(method, url, "raised: " + ex.getMessage());
                                     resp = new SchemeHttpResponse(500, new ArrayList<>(), "Internal Server Error");
+                                } catch (StackOverflowError ex) {
+                                    logHandlerError(method, url, "raised: stack overflow");
+                                    resp = new SchemeHttpResponse(500, new ArrayList<>(), "Internal Server Error");
                                 }
 
                                 if (resp.websocket != null) {
-                                    upgrade(c, raw, out, method, url, headers, resp);
+                                    upgrade(c, sock, out, method, url, headers, resp);
                                     return;
                                 }
 

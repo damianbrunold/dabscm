@@ -1227,6 +1227,13 @@ public class VM {
             pending = e;
         } catch (ClassCastException cce) {
             pending = castError(fn, ip, cce);
+        } catch (StackOverflowError so) {
+            // A recursive primitive (reader, writer, equal?, JSON ...) on
+            // too deeply nested data: a Scheme error that guard can catch,
+            // not a dead thread. The Java frames above are unwound by now.
+            Instruction at = fn != null && ip > 0 && ip <= fn.codeArr.length ? fn.codeArr[ip - 1] : null;
+            pending = new SchemeError(at != null ? at.pos : null,
+                new ErrorObject("stack overflow: data or recursion nested too deeply", new Object[0]));
         } catch (FrameCapture fc) {
             if (!act.root) {
                 if (fc.last != act) fc.add(Arrays.copyOfRange(stackArr, act.base + 1, sp), act);

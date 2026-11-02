@@ -112,4 +112,42 @@
       (test-equal "column + 1" 3 (+ 1 (list-ref pos 2)))
       (test-equal "filename is a string" #t (string? (car pos))))))
 
+(test-group "read-data"
+  (define (rd s . depth) (apply read-data (open-input-string s) depth))
+  (define (rd-error s . depth)
+    (guard (e ((read-error? e) 'read-error) (#t 'other))
+      (apply rd s depth)
+      'no-error))
+  (test-equal '(a (b "c") #(1 2) 'q) (rd "(a (b \"c\") #(1 2) 'q)"))
+  (test-equal #t (eof-object? (rd "  ")))
+  (test-equal 'x (rd "#;(skipped) x"))
+  (let ((p (open-input-string "(a) (b)")))
+    (test-equal '(a) (read-data p))
+    (test-equal '(b) (read-data p))
+    (test-equal #t (eof-object? (read-data p))))
+  ;; datum labels: never a cycle or shared structure
+  (test-equal 'read-error (rd-error "#0=(a . #0#)"))
+  (test-equal 'read-error (rd-error "((burnr 1) #0=(icd \"A\" . #0#))"))
+  (test-equal 'read-error (rd-error "(#1=(x) #1#)"))
+  ;; nesting depth
+  (test-equal '((x)) (rd "((x))" 2))
+  (test-equal 'read-error (rd-error "((x))" 1))
+  (test-equal 'read-error (rd-error "(quote (quote (quote (quote x))))" 3))
+  (test-equal 'read-error
+              (rd-error (string-append (make-string 5000 #\() (make-string 5000 #\)))))
+  (test-equal 'read-error
+              (rd-error (string-append (make-string 200000 #\() (make-string 200000 #\)))))
+  ;; plain read still understands datum labels
+  (let ((v (read (open-input-string "#0=(a . #0#)"))))
+    (test-equal #t (eq? v (cdr v)))))
+
+(test-group "deep nesting is a catchable error"
+  ;; Java: a StackOverflowError becomes a Scheme error; .NET: the reader
+  ;; checks its stack. Either way guard sees it and the thread lives on.
+  (let ((deep (string-append (make-string 300000 #\() (make-string 300000 #\)))))
+    (test-equal 'caught
+                (guard (e (#t 'caught))
+                  (read (open-input-string deep))
+                  'not-caught))))
+
 (test-end "scm-io")

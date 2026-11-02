@@ -78,6 +78,7 @@ public class PrimitiveJsonSimpleParse : Primitive
 
         public object ParseValue()
         {
+            System.Runtime.CompilerServices.RuntimeHelpers.EnsureSufficientExecutionStack(); // deep nesting: an error, not a dead process
             SkipWs();
             int c = Peek();
             if (c == -1) Err("unexpected end of input");

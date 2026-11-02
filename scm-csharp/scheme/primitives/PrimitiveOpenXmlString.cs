@@ -27,7 +27,7 @@ public class PrimitiveOpenXmlString : Primitive
         string source = new String(Value.AsString(arguments[0]));
         try
         {
-            var reader = XmlReader.Create(new StringReader(source));
+            var reader = XmlReader.Create(new StringReader(source), XmlInput.Settings());
             return new NativeValue(reader);
         }
         catch (Exception)

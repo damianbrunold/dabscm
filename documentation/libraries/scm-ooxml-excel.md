@@ -432,6 +432,20 @@ Example:
   (worksheet-set-col-width! ws "B" 12.5)
 ```
 
+### `worksheet-set-page-setup!`
+
+```
+Syntax: (worksheet-set-page-setup! ws orientation fit-width fit-height)
+Library: (scm ooxml excel)
+Description: Sets how worksheet ws is printed. orientation is 'portrait,
+'landscape or #f (Excel's default). fit-width and fit-height are the number
+of pages the sheet is scaled to across and down; 0 means as many as needed,
+#f for both means no fitting (print at 100%). Fit to the page width with
+(worksheet-set-page-setup! ws 'portrait 1 0).
+Example:
+  (worksheet-set-page-setup! ws 'portrait 1 0)
+```
+
 ### `worksheet-set-row-height!`
 
 ```

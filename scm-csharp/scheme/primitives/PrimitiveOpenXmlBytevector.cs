@@ -27,7 +27,7 @@ public class PrimitiveOpenXmlBytevector : Primitive
         byte[] bytes = Value.AsBytevector(arguments[0]);
         try
         {
-            var reader = XmlReader.Create(new MemoryStream(bytes));
+            var reader = XmlReader.Create(new MemoryStream(bytes), XmlInput.Settings());
             return new NativeValue(reader);
         }
         catch (Exception)

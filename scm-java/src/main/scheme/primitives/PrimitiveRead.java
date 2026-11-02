@@ -58,7 +58,46 @@ public class PrimitiveRead extends Primitive {
         return readDatum(token, in, new HashMap<>());
     }
 
+    // read-data: the limits for untrusted input travel in the labels map,
+    // so the recursive reader needs no extra parameter.
+    static final class DataLimits extends HashMap<Integer, Object> {
+        final int maxDepth;
+        int depth;
+        DataLimits(int maxDepth) { this.maxDepth = maxDepth; }
+    }
+
+    public Object readData(TextStream in, int maxDepth) throws IOException {
+        return readDatum(readToken(in), in, new DataLimits(maxDepth));
+    }
+
     private Object readDatum(Token token, TextStream in, Map<Integer, Object> labels) throws IOException {
+        if (!(labels instanceof DataLimits)) return readDatum0(token, in, labels);
+        DataLimits lim = (DataLimits) labels;
+        if (token != null && (token.type == TokenType.LABELDEFINITION || token.type == TokenType.LABELREFERENCE))
+            throw new SchemeError(token.pos, new ReadErrorObject("read-data: datum labels are not allowed", new Object[0]));
+        if (token == null || !nests(token.type)) return readDatum0(token, in, labels);
+        if (++lim.depth > lim.maxDepth) {
+            lim.depth = 0;
+            throw new SchemeError(token != null ? token.pos : in.pos(),
+                new ReadErrorObject("read-data: nesting deeper than the limit", new Object[] { (long) lim.maxDepth }));
+        }
+        try {
+            return readDatum0(token, in, labels);
+        } finally {
+            lim.depth--;
+        }
+    }
+
+    // Tokens that open a nesting level: lists, vectors, bytevectors and the
+    // quote abbreviations.
+    private static boolean nests(TokenType t) {
+        return t == TokenType.OPENPAR || t == TokenType.SHARPOPENPAR || t == TokenType.BYTEVECTOROPENPAR
+            || t == TokenType.QUOTE || t == TokenType.BACKQUOTE || t == TokenType.COMMA || t == TokenType.COMMAAT
+            || t == TokenType.SYNTAX || t == TokenType.QUASISYNTAX || t == TokenType.UNSYNTAX
+            || t == TokenType.UNSYNTAXSPLICING || t == TokenType.DATUMCOMMENT;
+    }
+
+    private Object readDatum0(Token token, TextStream in, Map<Integer, Object> labels) throws IOException {
         if (token == null) {
             return Value.EOF;
         }
