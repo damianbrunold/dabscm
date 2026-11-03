@@ -67,6 +67,9 @@ public class PrimitiveMutexLockB extends Primitive {
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
+                // unlock wakes a single waiter: one that leaves without the
+                // mutex passes the wake-up on, or a free mutex would go unnoticed
+                if (!m.locked) m.condition.signal();
                 return Value.F;
             }
 

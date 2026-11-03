@@ -24,16 +24,12 @@ public class PrimitiveMutexUnlockB extends Primitive {
         checkArgs(pos, arguments, 1, 3);
         SchemeMutex m = (SchemeMutex) Value.asNativeValue(arguments[0]).value;
 
-        m.lock.lock();
-        try {
-            m.locked = false;
-            m.owner = null;
-            m.condition.signalAll();
-        } finally {
-            m.lock.unlock();
+        if (arguments.length < 2) {
+            release(m);
+            return Value.T;
         }
 
-        if (arguments.length >= 2) {
+        {
             SchemeConditionVariable cv = (SchemeConditionVariable) Value.asNativeValue(arguments[1]).value;
 
             boolean hasTimeout = arguments.length >= 3 && arguments[2] != Value.F;
@@ -51,19 +47,38 @@ public class PrimitiveMutexUnlockB extends Primitive {
                 timeoutMs = seconds <= 0 ? 0 : (long)(seconds * 1000);
             }
 
+            // SRFI-18: unlocking and starting to wait are one atomic step. The
+            // cv's lock is taken before the mutex is released, and signal and
+            // broadcast take it too, so no signal can fall into the gap.
+            cv.lock.lock();
             try {
+                release(m);
                 if (timeoutMs < 0) {
-                    cv.awaitUninterruptibly();
+                    cv.condition.await();
                     return Value.T;
                 } else {
-                    return cv.await(timeoutMs) ? Value.T : Value.F;
+                    return cv.condition.await(timeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS)
+                        ? Value.T : Value.F;
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 return Value.F;
+            } finally {
+                cv.lock.unlock();
             }
         }
+    }
 
-        return Value.T;
+    // Each waiter in mutex-lock! waits only for the mutex to be free, and one
+    // of them can take it: waking all of them made every unlock cost O(waiters).
+    static void release(SchemeMutex m) {
+        m.lock.lock();
+        try {
+            m.locked = false;
+            m.owner = null;
+            m.condition.signal();
+        } finally {
+            m.lock.unlock();
+        }
     }
 }

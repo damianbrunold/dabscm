@@ -23,14 +23,12 @@ public class PrimitiveMutexUnlockB : Primitive
         CheckArgs(pos, arguments, 1, 3);
         SchemeMutex m = (SchemeMutex) Value.AsNativeValue(arguments[0]).value;
 
-        lock (m.Lock)
+        if (arguments.Length < 2)
         {
-            m.locked = false;
-            m.owner = null;
-            Monitor.PulseAll(m.Lock);
+            Release(m);
+            return Value.T;
         }
 
-        if (arguments.Length >= 2)
         {
             SchemeConditionVariable cv = (SchemeConditionVariable) Value.AsNativeValue(arguments[1]).value;
 
@@ -49,17 +47,31 @@ public class PrimitiveMutexUnlockB : Primitive
                 timeoutMs = seconds <= 0 ? 0 : (int)(seconds * 1000);
             }
 
-            if (timeoutMs < 0)
+            // SRFI-18: unlocking and starting to wait are one atomic step. The
+            // cv's lock is taken before the mutex is released, and Signal and
+            // Broadcast take it too, so no signal can fall into the gap.
+            lock (cv.Lock)
             {
-                cv.Wait();
-                return Value.T;
-            }
-            else
-            {
-                return cv.Wait(timeoutMs) ? Value.T : Value.F;
+                Release(m);
+                if (timeoutMs < 0)
+                {
+                    Monitor.Wait(cv.Lock);
+                    return Value.T;
+                }
+                return Monitor.Wait(cv.Lock, timeoutMs) ? Value.T : Value.F;
             }
         }
+    }
 
-        return Value.T;
+    // Each waiter in mutex-lock! waits only for the mutex to be free, and one
+    // of them can take it: waking all of them made every unlock cost O(waiters).
+    internal static void Release(SchemeMutex m)
+    {
+        lock (m.Lock)
+        {
+            m.locked = false;
+            m.owner = null;
+            Monitor.Pulse(m.Lock);
+        }
     }
 }

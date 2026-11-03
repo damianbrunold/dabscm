@@ -32,12 +32,12 @@ public class PrimitiveServerInstallShutdownHook : Primitive
             if (Interlocked.Exchange(ref alreadyStopped, 1) != 0) return;
             try { s.cts.Cancel(); } catch { }
             try { s.listener.Stop(); } catch { }
-            if (s.sem != null && s.maxThreads > 0)
+            if (s.sem != null && s.admitted > 0)
             {
                 var deadline = DateTime.UtcNow.AddMilliseconds(graceMs);
                 while (DateTime.UtcNow < deadline)
                 {
-                    if (s.sem.CurrentCount >= s.maxThreads) break;
+                    if (s.sem.CurrentCount >= s.admitted) break;
                     Thread.Sleep(50);
                 }
             }

@@ -11,6 +11,7 @@ public class SchemeServer
     public TcpListener listener;
     public SemaphoreSlim? sem;
     public int maxThreads;
+    public int admitted;     // capacity of sem: max-threads + max-queued
     public int gracefulStopMs;
 
     public SchemeServer(CancellationTokenSource cts, Task task, TcpListener listener)

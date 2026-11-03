@@ -105,19 +105,23 @@ Example:
 ### `serve-forever`
 
 ```
-Syntax: (serve-forever port handler [max-threads [host [read-timeout-ms [max-body-bytes [graceful-stop-ms [spool-threshold-bytes]]]]]])
+Syntax: (serve-forever port handler [max-threads [host [read-timeout-ms [max-body-bytes [graceful-stop-ms [spool-threshold-bytes [max-queued]]]]]]]])
 Library: (scm net http server)
 Description: Starts an HTTP server on port with the given handler and blocks
   indefinitely. handler receives each http-request and must return an http-response.
   Optional extra arguments forward to tcp-http-serve and configure: maximum
-  concurrent worker threads (default 32; excess connections rejected with 503),
+  concurrent worker threads (default 32),
   bind host (default "0.0.0.0"), read timeout in ms (default 30000; bounds each
   read and the whole request head, and a body must arrive within it plus its
   size at 16 KB/s),
   maximum request body size in bytes (default 4194304; oversize rejected with 413),
   graceful-stop drain period in ms (default 10000), and the body size above which
   a request body is spooled to a temporary file (default 1048576; see
-  http-request-body-file). 0 or omitted means default.
+  http-request-body-file), and how many further connections may wait for a
+  worker (default 4 times max-threads): a connection beyond those, or one that
+  waited longer than the read timeout, is answered 503 Service Unavailable; a
+  negative max-queued answers 503 at once whenever every worker is busy.
+  0 or omitted means default.
   Returns only if the server is stopped from another thread via server-stop.
 Example:
   (serve-forever 8080 (lambda (req) (http-ok "hello")))
@@ -160,9 +164,9 @@ Example:
 ### `tcp-http-serve`
 
 ```
-Syntax: (tcp-http-serve port handler [max-threads [host [read-timeout-ms [max-body-bytes [graceful-stop-ms [spool-threshold-bytes]]]]]])
+Syntax: (tcp-http-serve port handler [max-threads [host [read-timeout-ms [max-body-bytes [graceful-stop-ms [spool-threshold-bytes [max-queued]]]]]]]])
 Library: (scm net http server)
-Description: Starts an HTTP server on the given port. handler is called with each incoming http-request and must return an http-response. Returns a server object. Use server-stop to shut it down. Notes: request bodies come with Content-Length or Transfer-Encoding: chunked; bodies larger than max-body-bytes are rejected with 413, and bodies larger than spool-threshold-bytes are written to a temporary file (http-request-body-file) that is deleted after the response; read-timeout-ms bounds each read and the whole request head, and a body must arrive within read-timeout-ms plus its size at 16 KB/s (slow clients cannot hold a thread);  max-threads bounds concurrency (excess connections are rejected with 503). Responses may be file responses (sent from the file) or streamed (make-http-stream-response). 0 or omitted parameters use defaults: max-threads=32, host="0.0.0.0", read-timeout-ms=30000, max-body-bytes=4194304, graceful-stop-ms=10000, spool-threshold-bytes=1048576.
+Description: Starts an HTTP server on the given port. handler is called with each incoming http-request and must return an http-response. Returns a server object. Use server-stop to shut it down. Notes: request bodies come with Content-Length or Transfer-Encoding: chunked; bodies larger than max-body-bytes are rejected with 413, and bodies larger than spool-threshold-bytes are written to a temporary file (http-request-body-file) that is deleted after the response; read-timeout-ms bounds each read and the whole request head, and a body must arrive within read-timeout-ms plus its size at 16 KB/s (slow clients cannot hold a thread);  max-threads bounds concurrency; up to max-queued further connections wait for a worker, and a connection beyond those, or one that waited longer than read-timeout-ms, is answered 503 (a negative max-queued rejects at once when all workers are busy). Responses may be file responses (sent from the file) or streamed (make-http-stream-response). 0 or omitted parameters use defaults: max-threads=32, host="0.0.0.0", read-timeout-ms=30000, max-body-bytes=4194304, graceful-stop-ms=10000, spool-threshold-bytes=1048576, max-queued=4*max-threads.
 Example:
   (define s (tcp-http-serve 8080 (lambda (req) (http-ok "Hello"))))
   (define s (tcp-http-serve 8080 handler 16 "127.0.0.1"))

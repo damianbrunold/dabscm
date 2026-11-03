@@ -12,6 +12,22 @@ namespace scheme;
 public class PrimitiveTcpHttpServe : Primitive
 {
     private const int DefaultMaxThreads = 32;
+    // Connections that may wait for a worker, per worker thread.
+    private const int DefaultQueuePerThread = 4;
+
+    private static void Reject503(TcpClient client)
+    {
+        try
+        {
+            using (client)
+            {
+                var b503 = Encoding.UTF8.GetBytes(
+                    "HTTP/1.1 503 Service Unavailable\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+                client.GetStream().Write(b503, 0, b503.Length);
+            }
+        }
+        catch { }
+    }
     private const string DefaultHost = "0.0.0.0";
     private const int DefaultReadTimeoutMs = 30_000;
     private const long DefaultMaxBodyBytes = 4 * 1024 * 1024;
@@ -25,7 +41,7 @@ public class PrimitiveTcpHttpServe : Primitive
     public override string Name() => "tcp-http-serve";
 
     public override string Info() =>
-        "Syntax: (tcp-http-serve port handler [max-threads [host [read-timeout-ms [max-body-bytes [graceful-stop-ms [spool-threshold-bytes]]]]]])\n" +
+        "Syntax: (tcp-http-serve port handler [max-threads [host [read-timeout-ms [max-body-bytes [graceful-stop-ms [spool-threshold-bytes [max-queued]]]]]]]])\n" +
         "Library: (scm net http server)\n" +
         "Description: Starts an HTTP server on the given port. handler is called with each " +
         "incoming http-request and must return an http-response. Returns a server object. " +
@@ -33,17 +49,20 @@ public class PrimitiveTcpHttpServe : Primitive
         "Transfer-Encoding: chunked; bodies larger than max-body-bytes are rejected with 413, and bodies " +
         "larger than spool-threshold-bytes are written to a temporary file (http-request-body-file) " +
         "that is deleted after the response; read-timeout-ms bounds each read and the whole request head, " +
-        "and a body must arrive within read-timeout-ms plus its size at 16 KB/s (slow clients cannot hold a thread); max-threads bounds concurrency (excess connections are rejected with 503). Responses " +
+        "and a body must arrive within read-timeout-ms plus its size at 16 KB/s (slow clients cannot hold a thread); max-threads bounds concurrency; up to max-queued further connections wait for a worker, " +
+        "and a connection beyond those, or one that waited longer than read-timeout-ms, is answered " +
+        "503 (a negative max-queued rejects at once when all workers are busy). Responses " +
         "may be file responses (sent from the file) or streamed (make-http-stream-response). 0 or " +
         "omitted parameters use defaults: max-threads=32, host=\"0.0.0.0\", read-timeout-ms=30000, " +
-        "max-body-bytes=4194304, graceful-stop-ms=10000, spool-threshold-bytes=1048576.\n" +
+        "max-body-bytes=4194304, graceful-stop-ms=10000, spool-threshold-bytes=1048576, " +
+        "max-queued=4*max-threads.\n" +
         "Example:\n" +
         "  (define s (tcp-http-serve 8080 (lambda (req) (http-ok \"Hello\"))))\n" +
         "  (define s (tcp-http-serve 8080 handler 16 \"127.0.0.1\"))";
 
     public override object Apply(SourcePos? pos, object[] arguments)
     {
-        CheckArgs(pos, arguments, 2, 8);
+        CheckArgs(pos, arguments, 2, 9);
         int port = IntegerMath.ToInt(arguments[0]);
         Lambda handler = Value.AsLambda(arguments[1]);
         int maxThreads = arguments.Length > 2 ? IntegerMath.ToInt(arguments[2]) : 0;
@@ -58,8 +77,18 @@ public class PrimitiveTcpHttpServe : Primitive
         if (gracefulStopMs <= 0) gracefulStopMs = DefaultGracefulStopMs;
         long spoolThreshold = arguments.Length > 7 ? IntegerMath.ToLong(arguments[7]) : 0;
         if (spoolThreshold <= 0) spoolThreshold = DefaultSpoolThreshold;
+        int maxQueued = arguments.Length > 8 ? IntegerMath.ToInt(arguments[8]) : 0;
+        if (maxQueued == 0) maxQueued = DefaultQueuePerThread * maxThreads;
+        if (maxQueued < 0) maxQueued = 0;
 
-        var sem = new SemaphoreSlim(maxThreads, maxThreads);
+        // sem admits max-threads + max-queued connections in all, so the queue
+        // is bounded: beyond it a connection gets a fast 503. running lets
+        // max-threads of them be served at once; the others wait for it, at
+        // most read-timeout-ms, without holding a pool thread. A short burst
+        // therefore waits a little rather than failing.
+        int admitted = maxThreads + maxQueued;
+        var sem = new SemaphoreSlim(admitted, admitted);
+        var running = new SemaphoreSlim(maxThreads, maxThreads);
 
         var cts = new CancellationTokenSource();
         var token = cts.Token;
@@ -82,25 +111,15 @@ public class PrimitiveTcpHttpServe : Primitive
                     }
                     catch (OperationCanceledException) { break; }
                     catch (ObjectDisposedException) { break; }
-                    // Bound concurrency: if the pool is saturated, reject with 503
-                    // rather than queueing or blocking the accept loop. This keeps
-                    // memory bounded under load and gives clients fast feedback.
+                    // Workers and queue full: reject with 503 rather than
+                    // blocking the accept loop, so memory stays bounded and
+                    // clients get fast feedback.
                     if (!sem.Wait(0, token))
                     {
-                        try
-                        {
-                            using (client)
-                            {
-                                var s = client.GetStream();
-                                string r503 = "HTTP/1.1 503 Service Unavailable\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
-                                var b503 = Encoding.UTF8.GetBytes(r503);
-                                s.Write(b503, 0, b503.Length);
-                            }
-                        }
-                        catch { }
+                        Reject503(client);
                         continue;
                     }
-                    Task.Factory.StartNew((obj) =>
+                    Action<object> serveOne = (obj) =>
                     {
                         var tcpClient = (TcpClient)obj!;
                         HttpBody? spooled = null;
@@ -272,7 +291,24 @@ public class PrimitiveTcpHttpServe : Primitive
                             spooled?.Discard();
                             sem.Release();
                         }
-                    }, client);
+                    };
+                    long acceptedAt = Environment.TickCount64;
+                    _ = Task.Run(async () =>
+                    {
+                        int left = (int) Math.Max(0, readTimeoutMs - (Environment.TickCount64 - acceptedAt));
+                        bool got;
+                        try { got = await running.WaitAsync(left, token).ConfigureAwait(false); }
+                        catch (OperationCanceledException) { got = false; }
+                        if (!got)
+                        {
+                            // queued for longer than a client is expected to wait
+                            Reject503(client);
+                            sem.Release();
+                            return;
+                        }
+                        try { serveOne(client); }
+                        finally { running.Release(); }
+                    });
                 }
                 catch (Exception ex)
                 {
@@ -286,6 +322,7 @@ public class PrimitiveTcpHttpServe : Primitive
         var server = new SchemeServer(cts, serverTask, listener);
         server.sem = sem;
         server.maxThreads = maxThreads;
+        server.admitted = admitted;
         server.gracefulStopMs = gracefulStopMs;
         return new NativeValue(server);
     }

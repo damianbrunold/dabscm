@@ -375,4 +375,51 @@
   (test-equal "text/plain; charset=utf-8"
               (http-response-header (text-response "hi") "Content-Type")))
 
+;;; ---- Connections waiting for a worker ----
+;; Requests sent at once from threads; their statuses, sorted.
+(define (statuses-of urls)
+  (let ((ts (map (lambda (u)
+                   (let ((t (thread-start!
+                             (make-thread
+                              (lambda ()
+                                (guard (e (#t 'failed))
+                                  (http-response-status (http-get u))))))))
+                     (thread-sleep! 0.05)        ; in this order
+                     t))
+                 urls)))
+    (list-sort-numbers (map (lambda (t) (thread-join! t 30 'hung)) ts))))
+
+(define (list-sort-numbers xs)               ; numbers ascending, others last
+  (define (before? a b) (and (number? a) (or (not (number? b)) (< a b))))
+  (let insert ((xs xs) (acc '()))
+    (if (null? xs)
+        acc
+        (insert (cdr xs)
+                (let place ((acc acc))
+                  (cond ((null? acc) (list (car xs)))
+                        ((before? (car xs) (car acc)) (cons (car xs) acc))
+                        (else (cons (car acc) (place (cdr acc))))))))))
+
+(define (slow-handler secs) (lambda (req) (thread-sleep! secs) (http-ok "ok")))
+
+(test-group "request queue"
+  ;; one worker and the default queue: three at once are served in turn
+  (test-equal "queued, then served" '(200 200 200)
+    (let* ((server (tcp-http-serve 18083 (slow-handler 0.3) 1 "127.0.0.1"))
+           (codes (statuses-of (make-list 3 "http://127.0.0.1:18083/"))))
+      (server-stop server)
+      codes))
+  ;; max-queued below zero: no queue, a busy worker means 503 at once
+  (test-equal "no queue" '(200 503 503)
+    (let* ((server (tcp-http-serve 18084 (slow-handler 0.5) 1 "127.0.0.1" 0 0 0 0 -1))
+           (codes (statuses-of (make-list 3 "http://127.0.0.1:18084/"))))
+      (server-stop server)
+      codes))
+  ;; a connection queued for longer than the read timeout gets 503
+  (test-equal "waited too long" '(200 503)
+    (let* ((server (tcp-http-serve 18085 (slow-handler 1.5) 1 "127.0.0.1" 400))
+           (codes (statuses-of (make-list 2 "http://127.0.0.1:18085/"))))
+      (server-stop server)
+      codes)))
+
 (test-end "net")

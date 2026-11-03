@@ -218,4 +218,61 @@
         (for-each thread-join! ts)
         shared-counter))))
 
+;;; ---- Contention ----
+;; A contended mutex: each unlock wakes one waiter. Before 2.20.0 it woke
+;; all of them, and the cost of an unlock grew with the number of waiters.
+(define (run-threads n body)
+  (let loop ((i 0) (ts '()))
+    (if (= i n)
+        ts
+        (loop (+ i 1) (cons (thread-start! (make-thread (lambda () (body i)))) ts)))))
+
+(test-group "contended mutex"
+  (test-equal "64 threads, no update lost" 12800
+    (let* ((m (make-mutex)) (count 0)
+           (ts (run-threads 64 (lambda (i)
+                                 (do ((k 0 (+ k 1))) ((= k 200))
+                                   (mutex-lock! m)
+                                   (set! count (+ count 1))
+                                   (mutex-unlock! m))))))
+      (for-each (lambda (t) (thread-join! t 60 #f)) ts)
+      count))
+  ;; waiters that give up (a timeout) must not leave a free mutex unnoticed
+  ;; by the others, which now are woken one at a time
+  (test-equal "with timeouts" 3200
+    (let* ((m (make-mutex)) (count 0)
+           (ts (run-threads 16 (lambda (i)
+                                 (do ((k 0 (+ k 1))) ((= k 200))
+                                   (if (even? i)
+                                       (let retry () (unless (mutex-lock! m 0.0005) (retry)))
+                                       (mutex-lock! m))
+                                   (set! count (+ count 1))
+                                   (mutex-unlock! m))))))
+      (for-each (lambda (t) (thread-join! t 60 #f)) ts)
+      count)))
+
+;;; ---- Condition variables: no lost wake-up ----
+;; (mutex-unlock! m cv) unlocks and starts waiting in one atomic step. Before
+;; 2.20.0 a signal sent between the two was lost, and this textbook hand-off,
+;; waiting without a timeout, hung.
+(test-group "condition variable hand-off"
+  (test-equal 'done
+    (let* ((m (make-mutex)) (cv (make-condition-variable)) (turn 0)
+           (player (lambda (me)
+                     (lambda ()
+                       (let loop ((i 0))
+                         (when (< i 3000)
+                           (mutex-lock! m)
+                           (let wait ()
+                             (unless (= turn me) (mutex-unlock! m cv) (mutex-lock! m) (wait)))
+                           (set! turn (- 1 me))
+                           (condition-variable-broadcast! cv)
+                           (mutex-unlock! m)
+                           (loop (+ i 1))))
+                       'done)))
+           (a (thread-start! (make-thread (player 0))))
+           (b (thread-start! (make-thread (player 1)))))
+      (and (eq? (thread-join! a 30 'hung) 'done)
+           (thread-join! b 30 'hung)))))
+
 (test-end "srfi-18")

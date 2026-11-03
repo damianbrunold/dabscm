@@ -55,20 +55,30 @@ public class PrimitiveMutexLockB : Primitive
             if (timeoutMs == 0)
                 return Value.F;
 
-            if (timeoutMs < 0)
+            try
             {
-                while (m.locked)
-                    Monitor.Wait(m.Lock);
-            }
-            else
-            {
-                long deadline = Environment.TickCount64 + timeoutMs;
-                while (m.locked)
+                if (timeoutMs < 0)
                 {
-                    long remaining = deadline - Environment.TickCount64;
-                    if (remaining <= 0) return Value.F;
-                    Monitor.Wait(m.Lock, (int) remaining);
+                    while (m.locked)
+                        Monitor.Wait(m.Lock);
                 }
+                else
+                {
+                    long deadline = Environment.TickCount64 + timeoutMs;
+                    while (m.locked)
+                    {
+                        long remaining = deadline - Environment.TickCount64;
+                        if (remaining <= 0) return Value.F;
+                        Monitor.Wait(m.Lock, (int) remaining);
+                    }
+                }
+            }
+            catch (ThreadInterruptedException)
+            {
+                // unlock wakes a single waiter: one that leaves without the
+                // mutex passes the wake-up on, or a free mutex would go unnoticed
+                if (!m.locked) Monitor.Pulse(m.Lock);
+                throw;
             }
 
             m.locked = true;

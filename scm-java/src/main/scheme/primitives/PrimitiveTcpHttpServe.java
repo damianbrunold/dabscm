@@ -19,6 +19,11 @@ public class PrimitiveTcpHttpServe extends Primitive {
     private static final long DEFAULT_MAX_BODY_BYTES = 4 * 1024 * 1024;
     private static final long DEFAULT_SPOOL_THRESHOLD = 1024 * 1024;
     private static final int DEFAULT_GRACEFUL_STOP_MS = 10_000;
+    // Connections that may wait for a worker, per worker thread.
+    private static final int DEFAULT_QUEUE_PER_THREAD = 4;
+
+    private static final String R503 =
+        "HTTP/1.1 503 Service Unavailable\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
 
     private Modules modules;
 
@@ -29,7 +34,7 @@ public class PrimitiveTcpHttpServe extends Primitive {
 
     @Override
     public String info() {
-        return "Syntax: (tcp-http-serve port handler [max-threads [host [read-timeout-ms [max-body-bytes [graceful-stop-ms [spool-threshold-bytes]]]]]])\n" +
+        return "Syntax: (tcp-http-serve port handler [max-threads [host [read-timeout-ms [max-body-bytes [graceful-stop-ms [spool-threshold-bytes [max-queued]]]]]]]])\n" +
                "Library: (scm net http server)\n" +
                "Description: Starts an HTTP server on the given port. handler is called with each " +
                "incoming http-request and must return an http-response. Returns a server object. " +
@@ -38,10 +43,13 @@ public class PrimitiveTcpHttpServe extends Primitive {
                "larger than spool-threshold-bytes are written to a temporary file (http-request-body-file) " +
                "that is deleted after the response; read-timeout-ms bounds each read and the whole request head, and a body must arrive within " +
                "read-timeout-ms plus its size at 16 KB/s (slow clients cannot hold a thread); " +
-               " max-threads bounds concurrency (excess connections are rejected with 503). Responses " +
+               " max-threads bounds concurrency; up to max-queued further connections wait for a worker, " +
+               "and a connection beyond those, or one that waited longer than read-timeout-ms, is answered " +
+               "503 (a negative max-queued rejects at once when all workers are busy). Responses " +
                "may be file responses (sent from the file) or streamed (make-http-stream-response). 0 or " +
                "omitted parameters use defaults: max-threads=32, host=\"0.0.0.0\", read-timeout-ms=30000, " +
-               "max-body-bytes=4194304, graceful-stop-ms=10000, spool-threshold-bytes=1048576.\n" +
+               "max-body-bytes=4194304, graceful-stop-ms=10000, spool-threshold-bytes=1048576, " +
+               "max-queued=4*max-threads.\n" +
                "Example:\n" +
                "  (define s (tcp-http-serve 8080 (lambda (req) (http-ok \"Hello\"))))\n" +
                "  (define s (tcp-http-serve 8080 handler 16 \"127.0.0.1\"))";
@@ -49,7 +57,7 @@ public class PrimitiveTcpHttpServe extends Primitive {
 
     @Override
     public Object apply(SourcePos pos, Object[] arguments) {
-        checkArgs(pos, arguments, 2, 8);
+        checkArgs(pos, arguments, 2, 9);
         int port = IntegerMath.toInt(arguments[0]);
         Lambda handler = Value.asLambda(arguments[1]);
         int maxThreads = arguments.length > 2 ? IntegerMath.toInt(arguments[2]) : 0;
@@ -64,6 +72,9 @@ public class PrimitiveTcpHttpServe extends Primitive {
         if (gracefulStopMs <= 0) gracefulStopMs = DEFAULT_GRACEFUL_STOP_MS;
         long spoolThreshold = arguments.length > 7 ? IntegerMath.toLong(arguments[7]) : 0;
         if (spoolThreshold <= 0) spoolThreshold = DEFAULT_SPOOL_THRESHOLD;
+        int maxQueued = arguments.length > 8 ? IntegerMath.toInt(arguments[8]) : 0;
+        if (maxQueued == 0) maxQueued = DEFAULT_QUEUE_PER_THREAD * maxThreads;
+        if (maxQueued < 0) maxQueued = 0;
 
         final int maxThreadsF = maxThreads;
         final int readTimeoutF = readTimeoutMs;
@@ -78,11 +89,15 @@ public class PrimitiveTcpHttpServe extends Primitive {
             server.serverSocket = serverSocket;
             server.maxThreads = maxThreadsF;
             server.gracefulStopMs = gracefulStopMs;
-            // Fixed pool bounds threads; the semaphore enforces "reject when full"
-            // semantics so requests get a fast 503 instead of unbounded queueing.
+            // The fixed pool bounds the threads; its queue holds connections
+            // waiting for one. The semaphore admits max-threads + max-queued
+            // connections in all, so the queue is bounded too: beyond it a
+            // connection gets a fast 503 instead of waiting without end. A short
+            // burst therefore waits a little rather than failing.
             ExecutorService executor = Executors.newFixedThreadPool(maxThreadsF);
             server.executor = executor;
-            Semaphore sem = new Semaphore(maxThreadsF);
+            Semaphore sem = new Semaphore(maxThreadsF + maxQueued);
+            final long maxWaitNs = readTimeoutMs * 1_000_000L;
             server.sem = sem;
 
             Thread t = new Thread(() -> {
@@ -95,14 +110,25 @@ public class PrimitiveTcpHttpServe extends Primitive {
 
                         if (!sem.tryAcquire()) {
                             try (Socket cc = client) {
-                                String r503 = "HTTP/1.1 503 Service Unavailable\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
-                                cc.getOutputStream().write(r503.getBytes(StandardCharsets.UTF_8));
+                                cc.getOutputStream().write(R503.getBytes(StandardCharsets.UTF_8));
                             } catch (Exception ignored) {}
                             continue;
                         }
 
+                        final long acceptedAt = System.nanoTime();
                         executor.submit(() -> {
                             HttpBody spooled = null;
+                            // Queued for longer than a client is expected to wait:
+                            // a 503 now, rather than work for one that has left.
+                            if (System.nanoTime() - acceptedAt > maxWaitNs) {
+                                try (Socket cc = client) {
+                                    cc.getOutputStream().write(R503.getBytes(StandardCharsets.UTF_8));
+                                } catch (Exception ignored) {
+                                } finally {
+                                    sem.release();
+                                }
+                                return;
+                            }
                             try (Socket c = client) {
                                 c.setSoTimeout(readTimeoutF);
                                 InputStream sock = c.getInputStream();

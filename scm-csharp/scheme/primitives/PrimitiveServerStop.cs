@@ -30,12 +30,12 @@ public class PrimitiveServerStop : Primitive
         // Drain in-flight requests by waiting for the semaphore to refill to its
         // initial capacity, up to the grace period. After that, give up — the
         // process will exit and any remaining requests will be cut.
-        if (s.sem != null && s.maxThreads > 0)
+        if (s.sem != null && s.admitted > 0)
         {
             var deadline = DateTime.UtcNow.AddMilliseconds(graceMs);
             while (DateTime.UtcNow < deadline)
             {
-                if (s.sem.CurrentCount >= s.maxThreads) break;
+                if (s.sem.CurrentCount >= s.admitted) break;
                 Thread.Sleep(50);
             }
         }
