@@ -49,6 +49,9 @@
                           "(import (no such lib))\n(foo)\n")))
   (test-assert (not (has? 'unbound-identifier
                           (prog "(load \"x.scm\")" "(foo)"))))
+  (test-assert (not (has? 'unbound-identifier
+                          (prog "(define (setup) (load \"x.scm\"))" "(setup)"
+                                "(foo)"))))
   (test-assert (not (has? 'unbound-identifier "(foo bar)\n")))
   (test-assert (not (has? 'unbound-identifier (prog "(display +inf.0)")))))
 

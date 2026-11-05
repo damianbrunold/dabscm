@@ -2039,10 +2039,9 @@ Example:
           (for-each (lambda (f)
                       (when (eq? (head-symbol f) 'import)
                         (for-each add-import! (cdr (code-items f))))
-                      ;; a loaded file can define anything
-                      (when
-                          (memq (head-symbol f)
-                                '(load require include include-ci))
+                      ;; a loaded file can define anything, also when it
+                      ;; is loaded from inside a procedure
+                      (when (calls-any? f '(load require include include-ci))
                         (set! complete? #f)))
                     forms)
           (let ((body (let loop ((fs forms) (acc '()))
@@ -2253,6 +2252,17 @@ Example:
                                              (cddr items)
                                              '())))
                                       forms))))))
+
+    ;; Whether node contains a list headed by one of the symbols.
+    (define (calls-any? node names)
+      (and (memq (cst-kind node) '(list vector prefix label))
+           (or (and (eq? (cst-kind node) 'list)
+                    (let ((items (code-items node)))
+                      (and (pair? items)
+                           (symbol-node? (car items))
+                           (memq (node-symbol (car items)) names)
+                           #t)))
+               (any? (lambda (k) (calls-any? k names)) (cst-children node)))))
 
     (define (import-group set)
       (let
