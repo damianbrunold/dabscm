@@ -1,4 +1,6 @@
-(import (scheme base) (scm html builder) (scm test))
+(import (scheme base)
+        (scm html builder)
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 
@@ -28,8 +30,7 @@
   (test-equal "<div><p>a</p><p>b</p></div>"
               (html->string '(div (p "a") (p "b"))))
   ;; nested escaping
-  (test-equal "<p>&lt;script&gt;</p>"
-              (html->string '(p "<script>"))))
+  (test-equal "<p>&lt;script&gt;</p>" (html->string '(p "<script>"))))
 
 (test-group "attributes"
   (test-equal "<a href=\"/x\">link</a>"
@@ -43,15 +44,14 @@
   (test-equal "<input maxlength=\"40\">"
               (html->string '(input (@ (maxlength 40)))))
   ;; #f attribute → omitted
-  (test-equal "<a>x</a>"
-              (html->string `(a (@ (class ,#f)) "x")))
+  (test-equal "<a>x</a>" (html->string `(a (@ (class ,#f)) "x")))
   ;; #t attribute → boolean (name-only)
   (test-equal "<input type=\"checkbox\" checked>"
               (html->string `(input (@ (type "checkbox") (checked #t)))))
   ;; mixing #f and #t and a real value
   (test-equal "<a class=\"active\">x</a>"
               (html->string `(a (@ (class ,(if #t "active" #f))
-                                  (rel  ,(if #f "x" #f)))
+                                   (rel ,(if #f "x" #f)))
                                 "x"))))
 
 (test-group "void elements"
@@ -64,32 +64,24 @@
 
 (test-group "fragment lists"
   ;; A list whose car is not a symbol is treated as a sequence.
-  (test-equal "<p>a</p><p>b</p>"
-              (html->string '((p "a") (p "b"))))
+  (test-equal "<p>a</p><p>b</p>" (html->string '((p "a") (p "b"))))
   ;; Splicing pattern via map:
   (test-equal "<ul><li>1</li><li>2</li><li>3</li></ul>"
-              (html->string
-                `(ul ,@(map (lambda (n) `(li ,(number->string n)))
-                            '(1 2 3))))))
+              (html->string `(ul ,@(map (lambda (n) `(li ,(number->string n)))
+                                        '(1 2 3))))))
 
 (test-group "html5"
   (test-equal
-    "<!doctype html>\n<html><head><title>hi</title></head><body><p>hello</p></body></html>"
-    (html->string
-      (html5 '(head (title "hi"))
-             '(body (p "hello")))))
-  (test-equal
-    "<!doctype html>\n<html></html>"
-    (html->string (html5))))
+   "<!doctype html>\n<html><head><title>hi</title></head><body><p>hello</p></body></html>"
+   (html->string (html5 '(head (title "hi")) '(body (p "hello")))))
+  (test-equal "<!doctype html>\n<html></html>" (html->string (html5))))
 
 (test-group "mixed content"
   (test-equal "<p>Hello, <b>world</b>!</p>"
               (html->string '(p "Hello, " (b "world") "!")))
   ;; A trusted HTML chunk embedded in tree content.
   (test-equal "<main><h1>page</h1><b>x</b></main>"
-              (html->string
-                `(main (h1 "page")
-                       ,(raw "<b>x</b>")))))
+              (html->string `(main (h1 "page") ,(raw "<b>x</b>")))))
 
 (test-group "xss safety"
   ;; The whole point: user values can never produce executable script.
@@ -98,9 +90,8 @@
                 (html->string `(p ,bad))))
   ;; Attribute injection attempt: quote-break.
   (let ((bad "\" onmouseover=alert(1) x=\""))
-    (test-equal
-      "<a title=\"&quot; onmouseover=alert(1) x=&quot;\">x</a>"
-      (html->string `(a (@ (title ,bad)) "x")))))
+    (test-equal "<a title=\"&quot; onmouseover=alert(1) x=&quot;\">x</a>"
+                (html->string `(a (@ (title ,bad)) "x")))))
 
 (test-group "html->port"
   (let ((out (open-output-string)))

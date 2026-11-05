@@ -1,7 +1,9 @@
 (define-library (scm duration)
-  (import (scm core) (scheme base) (srfi 13))
-  (export parse-duration
-          format-duration)
+  (import (scheme base)
+          (srfi 13)
+          (scm core))
+  (export format-duration
+          parse-duration)
   (begin
 
     (define (parse-duration s)
@@ -18,28 +20,25 @@ Example:
   (parse-duration \"3h\")  => 10800
   (parse-duration \"1d\")  => 86400
   (parse-duration \"x\")   => #f"
-      (cond
-        ((not (string? s)) #f)
-        ((string=? s "") #f)
-        (else
-         (let* ((s     (string-trim-both s))
-                (n     (string-length s))
-                (last  (string-ref s (- n 1)))
-                (digits (cond
-                          ((or (char=? last #\s) (char=? last #\m)
-                               (char=? last #\h) (char=? last #\d))
-                           (substring s 0 (- n 1)))
-                          (else s)))
-                (num   (string->number digits))
-                (mult  (cond
-                         ((char=? last #\m) 60)
-                         ((char=? last #\h) 3600)
-                         ((char=? last #\d) 86400)
-                         (else 1))))
-           (cond
-             ((and num (integer? num) (>= num 0))
-              (* (exact num) mult))
-             (else #f))))))
+      (cond ((not (string? s)) #f)
+            ((string=? s "") #f)
+            (else (let* ((s (string-trim-both s))
+                         (n (string-length s))
+                         (last (string-ref s (- n 1)))
+                         (digits (cond ((or (char=? last #\s)
+                                            (char=? last #\m)
+                                            (char=? last #\h)
+                                            (char=? last #\d))
+                                        (substring s 0 (- n 1)))
+                                       (else s)))
+                         (num (string->number digits))
+                         (mult (cond ((char=? last #\m) 60)
+                                     ((char=? last #\h) 3600)
+                                     ((char=? last #\d) 86400)
+                                     (else 1))))
+                    (cond ((and num (integer? num) (>= num 0))
+                           (* (exact num) mult))
+                          (else #f))))))
 
     (define (format-duration seconds)
       "Syntax: (format-duration seconds)
@@ -53,15 +52,13 @@ Example:
   (format-duration 86400) => \"1d\"
   (format-duration 90)    => \"90s\"
   (format-duration 0)     => \"0s\""
-      (cond
-        ((not (and (integer? seconds) (>= seconds 0)))
-         (cond ((integer? seconds) (number->string seconds))
-               (else "")))
-        ((and (> seconds 0) (zero? (modulo seconds 86400)))
-         (string-append (number->string (quotient seconds 86400)) "d"))
-        ((and (> seconds 0) (zero? (modulo seconds 3600)))
-         (string-append (number->string (quotient seconds 3600)) "h"))
-        ((and (> seconds 0) (zero? (modulo seconds 60)))
-         (string-append (number->string (quotient seconds 60)) "m"))
-        (else (string-append (number->string seconds) "s"))))
-))
+      (cond ((not (and (integer? seconds) (>= seconds 0)))
+             (cond ((integer? seconds) (number->string seconds))
+                   (else "")))
+            ((and (> seconds 0) (zero? (modulo seconds 86400)))
+             (string-append (number->string (quotient seconds 86400)) "d"))
+            ((and (> seconds 0) (zero? (modulo seconds 3600)))
+             (string-append (number->string (quotient seconds 3600)) "h"))
+            ((and (> seconds 0) (zero? (modulo seconds 60)))
+             (string-append (number->string (quotient seconds 60)) "m"))
+            (else (string-append (number->string seconds) "s"))))))

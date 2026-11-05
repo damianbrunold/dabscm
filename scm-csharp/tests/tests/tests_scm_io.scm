@@ -2,24 +2,23 @@
         (scheme file)
         (scheme read)
         (scheme write)
-        (scm test)
+        (scm fs)
         (scm io)
-        (scm fs))
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 
 (test-begin "scm-io")
 
-(define test-base (normalized-path (join-path (special-folder-temp) "scm-io-test")))
+(define test-base
+  (normalized-path (join-path (special-folder-temp) "scm-io-test")))
 
 (define (setup)
-  (when (directory-exists? test-base)
-    (delete-directory test-base))
+  (when (directory-exists? test-base) (delete-directory test-base))
   (make-directory test-base))
 
 (define (teardown)
-  (when (directory-exists? test-base)
-    (delete-directory test-base)))
+  (when (directory-exists? test-base) (delete-directory test-base)))
 
 (define (write-text path text . opts)
   (let ((p (apply open-output-file path opts)))
@@ -66,7 +65,9 @@
 
 ;; --- read-file-* raising variants ---
 (define (raised? thunk)
-  (guard (e (#t #t)) (thunk) #f))
+  (guard (e (#t #t))
+    (thunk)
+    #f))
 
 (test-group "read-file-success"
   (setup)
@@ -88,8 +89,10 @@
   (setup)
   (let ((path (join-path test-base "data.def")))
     (write-text path "compressed one\ncompressed two\n" 'deflate)
-    (test-equal "compressed one\ncompressed two\n" (file->string path 'deflate))
-    (test-equal '("compressed one" "compressed two") (file->lines path 'deflate)))
+    (test-equal "compressed one\ncompressed two\n"
+                (file->string path 'deflate))
+    (test-equal '("compressed one" "compressed two")
+                (file->lines path 'deflate)))
   (teardown))
 
 ;; --- encoding option round-trips ---
@@ -105,7 +108,10 @@
   (let ((p (open-input-string "(a)\n\n  (b)")))
     (test-equal '("{string}" 1 0) (port-position p))
     (read p)
-    (read-char p) (read-char p) (read-char p) (read-char p)
+    (read-char p)
+    (read-char p)
+    (read-char p)
+    (read-char p)
     (let ((pos (port-position p)))
       (test-equal "line is a number" #t (number? (cadr pos)))
       (test-equal "line" 3 (cadr pos))
@@ -115,7 +121,8 @@
 (test-group "read-data"
   (define (rd s . depth) (apply read-data (open-input-string s) depth))
   (define (rd-error s . depth)
-    (guard (e ((read-error? e) 'read-error) (#t 'other))
+    (guard (e ((read-error? e) 'read-error)
+              (#t 'other))
       (apply rd s depth)
       'no-error))
   (test-equal '(a (b "c") #(1 2) 'q) (rd "(a (b \"c\") #(1 2) 'q)"))
@@ -134,9 +141,11 @@
   (test-equal 'read-error (rd-error "((x))" 1))
   (test-equal 'read-error (rd-error "(quote (quote (quote (quote x))))" 3))
   (test-equal 'read-error
-              (rd-error (string-append (make-string 5000 #\() (make-string 5000 #\)))))
+              (rd-error (string-append (make-string 5000 #\()
+                                       (make-string 5000 #\)))))
   (test-equal 'read-error
-              (rd-error (string-append (make-string 200000 #\() (make-string 200000 #\)))))
+              (rd-error (string-append (make-string 200000 #\()
+                                       (make-string 200000 #\)))))
   ;; plain read still understands datum labels
   (let ((v (read (open-input-string "#0=(a . #0#)"))))
     (test-equal #t (eq? v (cdr v)))))
@@ -144,7 +153,9 @@
 (test-group "deep nesting is a catchable error"
   ;; Java: a StackOverflowError becomes a Scheme error; .NET: the reader
   ;; checks its stack. Either way guard sees it and the thread lives on.
-  (let ((deep (string-append (make-string 300000 #\() (make-string 300000 #\)))))
+  (let
+      ((deep (string-append (make-string 300000 #\()
+                            (make-string 300000 #\)))))
     (test-equal 'caught
                 (guard (e (#t 'caught))
                   (read (open-input-string deep))

@@ -1,6 +1,6 @@
 (import (scheme base)
-        (scm test)
-        (srfi 26))
+        (srfi 26)
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 
@@ -20,11 +20,16 @@
 (test-equal '(1 2 3 4) ((cut list 1 <...>) 2 3 4))
 
 ;; cute: non-slot args evaluated once
-(test-equal 1 (let ((count 0))
-  (define add-n (cute + <> (begin (set! count (+ count 1)) count)))
-  (add-n 10)
-  (add-n 20)
-  count))
+(test-equal 1
+            (let ((count 0))
+              (define add-n
+                (cute + <>
+                      (begin
+                        (set! count (+ count 1))
+                        count)))
+              (add-n 10)
+              (add-n 20)
+              count))
 
 ;; cute with multiple invocations
 (test-equal 10 ((cute * 2 <>) 5))

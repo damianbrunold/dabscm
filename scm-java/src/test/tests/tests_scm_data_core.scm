@@ -1,4 +1,7 @@
-(import (scheme base) (scm data core) (scm data format) (scm test))
+(import (scheme base)
+        (scm data core)
+        (scm data format)
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 
@@ -13,7 +16,9 @@
   (test-equal 0 (day-number (ymd->day 1970 1 1)))
   (test-equal -1 (day-number (ymd->day 1969 12 31)))
   (test-equal '(2024 2 29) (day->ymd (ymd->day 2024 2 29)))
-  (test-equal '(2000 3 1) (day->ymd (day-from-number (+ 1 (day-number (ymd->day 2000 2 29))))))
+  (test-equal '(2000 3 1)
+              (day->ymd (day-from-number
+                         (+ 1 (day-number (ymd->day 2000 2 29))))))
   (test-equal 5 (day-weekday (ymd->day 2026 10 30)))
   (test-equal 7 (day-weekday (ymd->day 1970 1 4)))
   (test-equal '(2024 3 11) (day->ymd (string->day "2024-03-11")))
@@ -47,9 +52,11 @@
     (test-equal 1 (vector-ref v 0))
     (test-assert (na? (vector-ref v 1))))
   (test-equal 'real (column-type (infer-column (vector "1" "2.5"))))
-  (test-equal 'real (column-type (infer-column (vector "1,5" "2") '("NA") #\,)))
+  (test-equal 'real
+              (column-type (infer-column (vector "1,5" "2") '("NA") #\,)))
   (test-equal 'bool (column-type (infer-column (vector "t" "f" ""))))
-  (test-equal 'date (column-type (infer-column (vector "2024-01-01" "11.03.2024"))))
+  (test-equal 'date
+              (column-type (infer-column (vector "2024-01-01" "11.03.2024"))))
   ;; leading zeros and other text keep the column a string
   (test-equal 'string (column-type (infer-column (vector "8001" "Zürich"))))
   (test-equal "007" (vector-ref (infer-column (vector "007" "x")) 0))

@@ -1,5 +1,6 @@
 (define-library (scheme file)
-  (import (scm core) (scheme base))
+  (import (scheme base)
+          (scm core))
   (export call-with-input-file
           call-with-output-file
           close-input-port
@@ -32,9 +33,10 @@ Description: Opens the file named by filename for input and calls proc with the 
 Example:
   (call-with-input-file \"data.txt\"
     (lambda (port) (read port))) => <first datum from file>"
-      (let ((p (if (pair? filename)
-                   (apply open-input-file filename)
-                   (open-input-file filename))))
+      (let
+          ((p (if (pair? filename)
+                  (apply open-input-file filename)
+                  (open-input-file filename))))
         (dynamic-wind
           (lambda () #f)
           (lambda () (proc p))
@@ -72,9 +74,10 @@ Description: Opens the file named by filename for output and calls proc with the
 Example:
   (call-with-output-file \"out.txt\"
     (lambda (port) (write 42 port))) => <unspecified>"
-      (let ((p (if (pair? filename)
-                   (apply open-output-file filename)
-                   (open-output-file filename))))
+      (let
+          ((p (if (pair? filename)
+                  (apply open-output-file filename)
+                  (open-output-file filename))))
         (dynamic-wind
           (lambda () #f)
           (lambda () (proc p))

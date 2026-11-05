@@ -1,9 +1,9 @@
 (import (scheme base)
         (scheme write)
-        (scm test)
+        (scm compression)
         (scm pdf)
         (scm png)
-        (scm compression))
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 
@@ -11,24 +11,22 @@
 
 ;; ── Helpers ────────────────────────────────────────────────────────────
 
-(define (bv->string bv)
-  (utf8->string bv))
+(define (bv->string bv) (utf8->string bv))
 
 (define (string-contains? hay needle)
   ;; substring search returning index or #f
   (let ((hlen (string-length hay))
         (nlen (string-length needle)))
     (let loop ((i 0))
-      (cond
-        ((> (+ i nlen) hlen) #f)
-        ((string=? (substring hay i (+ i nlen)) needle) i)
-        (else (loop (+ i 1)))))))
+      (cond ((> (+ i nlen) hlen) #f)
+            ((string=? (substring hay i (+ i nlen)) needle) i)
+            (else (loop (+ i 1)))))))
 
 (test-group "header and trailer"
   (let* ((doc (make-pdf)))
     (pdf-add-page! doc)
     (let* ((bv (pdf->bytevector doc))
-           (s  (bv->string bv)))
+           (s (bv->string bv)))
       ;; PDF magic
       (test-equal "%PDF-1.4" (substring s 0 8))
       ;; Binary comment marker bytes
@@ -80,8 +78,7 @@
       (test-assert (string-contains? s "0000000000 65535 f \n")))))
 
 (test-group "empty document errors"
-  (let ((doc (make-pdf)))
-    (test-error (pdf->bytevector doc))))
+  (let ((doc (make-pdf))) (test-error (pdf->bytevector doc))))
 
 (test-group "value constructors"
   (test-assert (pdf-name? (pdf/name "Foo")))
@@ -98,13 +95,11 @@
   ;; content stream in the document.
   (let* ((s (utf8->string pdf-bv))
          (start (string-contains? s "\nstream\n"))
-         (end   (string-contains? s "\nendstream")))
-    (unless (and start end)
-      (error "no stream/endstream found in PDF"))
+         (end (string-contains? s "\nendstream")))
+    (unless (and start end) (error "no stream/endstream found in PDF"))
     (let* ((data-start (+ start (string-length "\nstream\n")))
            (compressed (let ((bv (make-bytevector (- end data-start) 0)))
-                         (bytevector-copy! bv 0 pdf-bv
-                                           data-start end)
+                         (bytevector-copy! bv 0 pdf-bv data-start end)
                          bv)))
       (utf8->string (zlib-decompress compressed)))))
 
@@ -121,7 +116,7 @@
     (pdf-rect page 10 20 100 200)
     (pdf-stroke page)
     (let* ((bv (pdf->bytevector doc))
-           (s  (utf8->string bv))
+           (s (utf8->string bv))
            (cs (extract-content-stream bv)))
       (test-assert (string-contains? s "/Contents"))
       (test-assert (string-contains? s "/Filter /FlateDecode"))
@@ -147,13 +142,13 @@
   (let* ((doc (make-pdf))
          (page (pdf-add-page! doc)))
     (pdf-with-state page
-      (lambda ()
-        (pdf-set-line-width page 2)
-        (pdf-rect page 0 0 10 10)
-        (pdf-stroke page)))
+                    (lambda ()
+                      (pdf-set-line-width page 2)
+                      (pdf-rect page 0 0 10 10)
+                      (pdf-stroke page)))
     (let ((cs (extract-content-stream (pdf->bytevector doc))))
       ;; q ... Q wraps the inner ops.
-      (let ((q  (string-contains? cs "q"))
+      (let ((q (string-contains? cs "q"))
             (qq (string-contains? cs "Q"))
             (lw (string-contains? cs "2 w")))
         (test-assert q)
@@ -194,8 +189,10 @@
   (let* ((doc (make-pdf))
          (p1 (pdf-add-page! doc))
          (p2 (pdf-add-page! doc)))
-    (pdf-rect p1 0 0 10 10) (pdf-stroke p1)
-    (pdf-rect p2 0 0 20 20) (pdf-stroke p2)
+    (pdf-rect p1 0 0 10 10)
+    (pdf-stroke p1)
+    (pdf-rect p2 0 0 20 20)
+    (pdf-stroke p2)
     (let ((s (utf8->string (pdf->bytevector doc))))
       ;; 1 catalog + 1 pages + 2 page + 2 contents = 6 indirect objects.
       (test-assert (string-contains? s "/Size 7")))))
@@ -214,16 +211,13 @@
 
 (test-group "pdf-use-font all 14 standard fonts"
   (let ((doc (make-pdf)))
-    (for-each
-      (lambda (sym)
-        (test-assert (pdf-font? (pdf-use-font doc sym))))
-      '(helvetica helvetica-bold helvetica-oblique helvetica-bold-oblique
-        times-roman times-bold times-italic times-bold-italic
-        courier courier-bold courier-oblique courier-bold-oblique
-        symbol zapf-dingbats))))
+    (for-each (lambda (sym) (test-assert (pdf-font? (pdf-use-font doc sym))))
+              '(helvetica helvetica-bold helvetica-oblique
+                helvetica-bold-oblique times-roman times-bold times-italic
+                times-bold-italic courier courier-bold courier-oblique
+                courier-bold-oblique symbol zapf-dingbats))))
 
-(define (approx= a b)
-  (< (abs (- a b)) 1e-9))
+(define (approx= a b) (< (abs (- a b)) 1e-9))
 
 (test-group "text-width Courier is monospace"
   (let* ((doc (make-pdf))
@@ -249,8 +243,9 @@
     ;; "€" (U+20AC, WinAnsi 128) = Euro = 556 in Helvetica.
     (test-assert (approx= 5.56 (pdf-text-width helv 10 "€")))
     ;; Unknown codepoint substitutes '?' (= 556 in Helvetica).
-    (test-assert (approx= 5.56 (pdf-text-width helv 10
-                                  (string (integer->char #x4E2D)))))))
+    (test-assert (approx= 5.56
+                          (pdf-text-width helv 10
+                                          (string (integer->char #x4E2D)))))))
 
 (test-group "font metrics"
   (let* ((doc (make-pdf))
@@ -266,7 +261,7 @@
          (helv (pdf-use-font doc 'helvetica)))
     (pdf-draw-text page helv 12 100 700 "Hello")
     (let* ((bv (pdf->bytevector doc))
-           (s  (utf8->string bv))
+           (s (utf8->string bv))
            (cs (extract-content-stream bv)))
       ;; BT/ET wrapper, font set, position, show.
       (test-assert (string-contains? cs "BT"))
@@ -287,23 +282,23 @@
     (pdf-draw-text page helv 12 0 0 "ä€")
     ;; Decompressed content stream should contain raw bytes 0xE4 (ä) and 0x80 (€).
     (let ((cs-bv (let* ((bv (pdf->bytevector doc))
-                        (s  (utf8->string bv))
+                        (s (utf8->string bv))
                         (start (string-contains? s "\nstream\n"))
-                        (end   (string-contains? s "\nendstream"))
+                        (end (string-contains? s "\nendstream"))
                         (data-start (+ start (string-length "\nstream\n")))
-                        (comp (let ((b (make-bytevector (- end data-start) 0)))
+                        (comp (let
+                                  ((b (make-bytevector (- end data-start) 0)))
                                 (bytevector-copy! b 0 bv data-start end)
                                 b)))
                    (zlib-decompress comp))))
       ;; Search the raw bytevector for the two bytes — between '(' (0x28) and ')'
       ;; (0x29) of the Tj operand we expect exactly 0xE4 0x80.
       (let loop ((i 0) (found #f))
-        (cond
-          ((>= i (- (bytevector-length cs-bv) 1)) (test-assert found))
-          ((and (= (bytevector-u8-ref cs-bv i) #xE4)
-                (= (bytevector-u8-ref cs-bv (+ i 1)) #x80))
-           (test-assert #t))
-          (else (loop (+ i 1) found)))))))
+        (cond ((>= i (- (bytevector-length cs-bv) 1)) (test-assert found))
+              ((and (= (bytevector-u8-ref cs-bv i) #xE4)
+                    (= (bytevector-u8-ref cs-bv (+ i 1)) #x80))
+               (test-assert #t))
+              (else (loop (+ i 1) found)))))))
 
 (test-group "draw-text parens are escaped"
   (let* ((doc (make-pdf))
@@ -316,16 +311,16 @@
 (test-group "Symbol font omits /Encoding"
   (let* ((doc (make-pdf))
          (page (pdf-add-page! doc))
-         (sym  (pdf-use-font doc 'symbol)))
+         (sym (pdf-use-font doc 'symbol)))
     (pdf-draw-text page sym 12 0 0 "abc")
     (let ((s (utf8->string (pdf->bytevector doc))))
       (test-assert (string-contains? s "/BaseFont /Symbol"))
       ;; Must NOT carry WinAnsi encoding.
       (let ((font-idx (string-contains? s "/BaseFont /Symbol")))
-        (test-assert
-          (not (string-contains?
-                 (substring s font-idx (min (+ font-idx 80) (string-length s)))
-                 "WinAnsiEncoding")))))))
+        (test-assert (not (string-contains?
+                           (substring s font-idx
+                                      (min (+ font-idx 80) (string-length s)))
+                           "WinAnsiEncoding")))))))
 
 ;; ── Text flow (phase 3) ───────────────────────────────────────────────
 
@@ -334,9 +329,10 @@
          (page (pdf-add-page! doc))
          (helv (pdf-use-font doc 'helvetica)))
     (call-with-values
-      (lambda ()
-        (pdf-flow-text page helv 10 '(50 50 200 200)
-                       "Hello world this is a short paragraph."))
+        (lambda ()
+          (pdf-flow-text page helv 10
+                         '(50 50 200 200)
+                         "Hello world this is a short paragraph."))
       (lambda (rest final-y)
         (test-equal "" rest)
         (test-assert (number? final-y))
@@ -352,45 +348,48 @@
          (helv (pdf-use-font doc 'helvetica)))
     ;; 30 pt tall × 100 pt wide at size 10 / leading 12 fits ~2 lines.
     (call-with-values
-      (lambda ()
-        (pdf-flow-text page helv 10 '(0 0 100 30)
-                       (string-append
-                         "The quick brown fox jumps over the lazy dog "
-                         "and then some additional words to overflow the box "
-                         "by quite a margin so leftovers are guaranteed.")
-                       'leading 12))
-      (lambda (rest final-y)
-        (test-assert (> (string-length rest) 0))))))
+        (lambda ()
+          (pdf-flow-text page helv 10
+                         '(0 0 100 30)
+                         (string-append
+                          "The quick brown fox jumps over the lazy dog "
+                          "and then some additional words to overflow the box "
+                          "by quite a margin so leftovers are guaranteed.")
+                         'leading
+                         12))
+      (lambda (rest final-y) (test-assert (> (string-length rest) 0))))))
 
 (test-group "flow-text hard newlines force breaks"
   (let* ((doc (make-pdf))
          (page (pdf-add-page! doc))
          (helv (pdf-use-font doc 'helvetica)))
     (call-with-values
-      (lambda ()
-        (pdf-flow-text page helv 10 '(0 0 500 200)
-                       "Line one.\nLine two.\nLine three."))
+        (lambda ()
+          (pdf-flow-text page helv 10
+                         '(0 0 500 200)
+                         "Line one.\nLine two.\nLine three."))
       (lambda (rest final-y)
         (test-equal "" rest)
         (let ((cs (extract-content-stream (pdf->bytevector doc))))
           ;; Three "Tj" string-show ops, one per line.
           (let count-tj ((i 0) (n 0))
-            (let ((idx (string-contains?
-                          (substring cs i (string-length cs)) "Tj")))
-              (cond
-                (idx (count-tj (+ i idx 2) (+ n 1)))
-                (else (test-equal 3 n))))))))))
+            (let
+                ((idx (string-contains? (substring cs i (string-length cs))
+                                        "Tj")))
+              (cond (idx (count-tj (+ i idx 2) (+ n 1)))
+                    (else (test-equal 3 n))))))))))
 
 (test-group "flow-text justify emits Tw on multi-word non-last lines"
   (let* ((doc (make-pdf))
          (page (pdf-add-page! doc))
          (helv (pdf-use-font doc 'helvetica)))
-    (call-with-values
-      (lambda ()
-        ;; Narrow box → many wrap points so at least one line gets slack.
-        (pdf-flow-text page helv 10 '(0 0 80 200)
-                       "Lorem ipsum dolor sit amet consectetur adipiscing elit."
-                       'align 'justify))
+    (call-with-values (lambda ()
+                        ;; Narrow box → many wrap points so at least one line gets slack.
+                        (pdf-flow-text page helv 10
+                                       '(0 0 80 200)
+                                       "Lorem ipsum dolor sit amet consectetur adipiscing elit."
+                                       'align
+                                       'justify))
       (lambda (rest final-y)
         (let ((cs (extract-content-stream (pdf->bytevector doc))))
           ;; Tw is only emitted when slack > 0 on a non-last, multi-word line.
@@ -420,8 +419,7 @@
          (page (pdf-add-page! doc))
          (helv (pdf-use-font doc 'helvetica)))
     (call-with-values
-      (lambda ()
-        (pdf-flow-text page helv 10 '(0 0 100 100) ""))
+        (lambda () (pdf-flow-text page helv 10 '(0 0 100 100) ""))
       (lambda (rest final-y)
         (test-equal "" rest)
         ;; No drawing operators expected for empty input — page has no content.
@@ -433,13 +431,12 @@
          (helv (pdf-use-font doc 'helvetica))
          (rect '(0 0 100 200)))
     (call-with-values
-      (lambda ()
-        (pdf-flow-text page helv 10 rect "A\nB\nC" 'leading 20))
+        (lambda () (pdf-flow-text page helv 10 rect "A\nB\nC" 'leading 20))
       (lambda (rest final-y1)
         (let* ((page2 (pdf-add-page! doc)))
           (call-with-values
-            (lambda ()
-              (pdf-flow-text page2 helv 10 rect "A\nB\nC" 'leading 40))
+              (lambda ()
+                (pdf-flow-text page2 helv 10 rect "A\nB\nC" 'leading 40))
             (lambda (rest2 final-y2)
               ;; final-y for leading=20 is higher than for leading=40
               ;; (less vertical advance ⇒ more y remaining).
@@ -449,34 +446,31 @@
 
 (define ttf-path "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf")
 (define ttf-available?
-  (guard (e (#t #f))
-    (bytevector? (pdf-read-binary-file ttf-path))))
+  (guard (e (#t #f)) (bytevector? (pdf-read-binary-file ttf-path))))
 
 (define (bv-contains-ascii? bv s)
   ;; Byte-level search of bytevector for the bytes of an ASCII string.
   ;; Safe to use even when bv contains invalid-UTF-8 bytes (binary
   ;; streams, compressed payloads).
   (let ((bvlen (bytevector-length bv))
-        (slen  (string-length s)))
+        (slen (string-length s)))
     (let loop ((i 0))
-      (cond
-        ((> (+ i slen) bvlen) #f)
-        ((let inner ((j 0))
-           (cond
-             ((= j slen) #t)
-             ((= (bytevector-u8-ref bv (+ i j))
-                 (char->integer (string-ref s j)))
-              (inner (+ j 1)))
-             (else #f)))
-         #t)
-        (else (loop (+ i 1)))))))
+      (cond ((> (+ i slen) bvlen) #f)
+            ((let inner ((j 0))
+               (cond ((= j slen) #t)
+                     ((= (bytevector-u8-ref bv (+ i j))
+                         (char->integer (string-ref s j)))
+                      (inner (+ j 1)))
+                     (else #f)))
+             #t)
+            (else (loop (+ i 1)))))))
 
 (when ttf-available?
 
   (test-group "embed-truetype-font basics"
     (let* ((doc (make-pdf))
-           (bv  (pdf-read-binary-file ttf-path))
-           (ff  (pdf-embed-truetype-font doc bv "DejaVuSans")))
+           (bv (pdf-read-binary-file ttf-path))
+           (ff (pdf-embed-truetype-font doc bv "DejaVuSans")))
       (test-assert (pdf-font? ff))
       (test-equal "DejaVuSans" (pdf-font-base-name ff))
       (test-equal 'identity-h (pdf-font-encoding ff))
@@ -487,8 +481,8 @@
 
   (test-group "TTF cmap maps ASCII and Unicode"
     (let* ((doc (make-pdf))
-           (bv  (pdf-read-binary-file ttf-path))
-           (ff  (pdf-embed-truetype-font doc bv "DejaVu"))
+           (bv (pdf-read-binary-file ttf-path))
+           (ff (pdf-embed-truetype-font doc bv "DejaVu"))
            (lookup (pdf-font-cmap-lookup ff)))
       ;; ASCII 'A'.
       (test-assert (> (lookup 65) 0))
@@ -501,8 +495,8 @@
 
   (test-group "TTF text-width Latin is positive and scales"
     (let* ((doc (make-pdf))
-           (bv  (pdf-read-binary-file ttf-path))
-           (ff  (pdf-embed-truetype-font doc bv "DejaVu"))
+           (bv (pdf-read-binary-file ttf-path))
+           (ff (pdf-embed-truetype-font doc bv "DejaVu"))
            (w12 (pdf-text-width ff 12 "Hello"))
            (w24 (pdf-text-width ff 24 "Hello")))
       (test-assert (> w12 10))
@@ -511,8 +505,8 @@
   (test-group "TTF draw-text emits Type0 structures"
     (let* ((doc (make-pdf))
            (page (pdf-add-page! doc))
-           (bv  (pdf-read-binary-file ttf-path))
-           (ff  (pdf-embed-truetype-font doc bv "DejaVu")))
+           (bv (pdf-read-binary-file ttf-path))
+           (ff (pdf-embed-truetype-font doc bv "DejaVu")))
       (pdf-draw-text page ff 14 50 700 "Hi")
       (let ((out (pdf->bytevector doc)))
         (test-assert (bv-contains-ascii? out "/Subtype /Type0"))
@@ -525,8 +519,8 @@
   (test-group "TTF strings encoded as hex CIDs"
     (let* ((doc (make-pdf))
            (page (pdf-add-page! doc))
-           (bv  (pdf-read-binary-file ttf-path))
-           (ff  (pdf-embed-truetype-font doc bv "DejaVu")))
+           (bv (pdf-read-binary-file ttf-path))
+           (ff (pdf-embed-truetype-font doc bv "DejaVu")))
       (pdf-draw-text page ff 14 0 0 "A")
       ;; Look in the decompressed content stream for "<XXXX> Tj".
       (let ((cs (extract-content-stream (pdf->bytevector doc))))
@@ -536,8 +530,8 @@
   (test-group "TTF ToUnicode tracks used codepoints"
     (let* ((doc (make-pdf))
            (page (pdf-add-page! doc))
-           (bv  (pdf-read-binary-file ttf-path))
-           (ff  (pdf-embed-truetype-font doc bv "DejaVu")))
+           (bv (pdf-read-binary-file ttf-path))
+           (ff (pdf-embed-truetype-font doc bv "DejaVu")))
       (pdf-draw-text page ff 14 0 0 "AB")
       (let ((out (pdf->bytevector doc)))
         (test-assert (bv-contains-ascii? out "beginbfchar"))
@@ -546,21 +540,22 @@
   (test-group "TTF subset BaseFont carries 6-char tag prefix"
     (let* ((doc (make-pdf))
            (page (pdf-add-page! doc))
-           (bv  (pdf-read-binary-file ttf-path))
-           (ff  (pdf-embed-truetype-font doc bv "DejaVuSans")))
+           (bv (pdf-read-binary-file ttf-path))
+           (ff (pdf-embed-truetype-font doc bv "DejaVuSans")))
       (pdf-draw-text page ff 14 0 0 "Hi")
       (let ((out (pdf->bytevector doc)))
         ;; First registered font → tag "AAAAAA".
         (test-assert (bv-contains-ascii? out "/BaseFont /AAAAAA+DejaVuSans"))
         ;; Original (untagged) name should not appear alone as BaseFont.
-        (test-assert (not (bv-contains-ascii? out "/BaseFont /DejaVuSans"))))))
+        (test-assert (not (bv-contains-ascii? out
+                                              "/BaseFont /DejaVuSans"))))))
 
   (test-group "TTF subsetting shrinks the embedded font dramatically"
     (let* ((orig-bv (pdf-read-binary-file ttf-path))
            (orig-len (bytevector-length orig-bv))
            (doc (make-pdf))
            (page (pdf-add-page! doc))
-           (ff  (pdf-embed-truetype-font doc orig-bv "DejaVu")))
+           (ff (pdf-embed-truetype-font doc orig-bv "DejaVu")))
       ;; Just a couple of ASCII characters — should subset to a few
       ;; dozen glyphs of glyf data, vastly smaller than the full font.
       (pdf-draw-text page ff 14 0 0 "AB")
@@ -569,13 +564,12 @@
         ;; less than the raw original TTF. Full embedding gave us a
         ;; ~420 KB PDF for a 760 KB TTF; subsetting should land well
         ;; under 50 KB.
-        (test-assert (< (bytevector-length out)
-                        (quotient orig-len 5))))))
+        (test-assert (< (bytevector-length out) (quotient orig-len 5))))))
 
   (test-group "TTF subsetting per-font tag (F2 → AAAAAB)"
     (let* ((doc (make-pdf))
            (page (pdf-add-page! doc))
-           (bv  (pdf-read-binary-file ttf-path))
+           (bv (pdf-read-binary-file ttf-path))
            ;; First font registered as F1 → "AAAAAA"; second → "AAAAAB".
            (ff1 (pdf-embed-truetype-font doc bv "DejaVuSans"))
            (ff2 (pdf-embed-truetype-font doc bv "DejaVuSansAlt")))
@@ -583,7 +577,8 @@
       (pdf-draw-text page ff2 12 0 0 "B")
       (let ((out (pdf->bytevector doc)))
         (test-assert (bv-contains-ascii? out "/BaseFont /AAAAAA+DejaVuSans"))
-        (test-assert (bv-contains-ascii? out "/BaseFont /AAAAAB+DejaVuSansAlt"))))))
+        (test-assert (bv-contains-ascii? out
+                                         "/BaseFont /AAAAAB+DejaVuSansAlt"))))))
 
 ;; ── Images (phase 5) ───────────────────────────────────────────────────
 
@@ -592,12 +587,10 @@
          ;; 4x4 RGB checker via the (scm png) library.
          (pixels (let ((bv (make-bytevector (* 4 4 3) 0)))
                    (let loop ((i 0))
-                     (cond
-                       ((>= i (* 4 4)) bv)
-                       (else
-                        (when (odd? i)
-                          (bytevector-u8-set! bv (* 3 i) 255))
-                        (loop (+ i 1)))))))
+                     (cond ((>= i (* 4 4)) bv)
+                           (else (when (odd? i)
+                                   (bytevector-u8-set! bv (* 3 i) 255))
+                                 (loop (+ i 1)))))))
          (png-bv (png-encode-rgb 4 4 pixels))
          (img (pdf-embed-png doc png-bv)))
     (test-assert (pdf-image? img))
@@ -638,8 +631,7 @@
          (page (pdf-add-page! doc))
          ;; 2x2 RGBA: opaque red, half-transparent green, transparent blue,
          ;; opaque white.
-         (px (bytevector  255 0 0 255    0 255 0 128
-                          0 0 255 0    255 255 255 255))
+         (px (bytevector 255 0 0 255 0 255 0 128 0 0 255 0 255 255 255 255))
          (img (pdf-embed-png doc (png-encode-rgba 2 2 px))))
     (pdf-draw-image page img 0 0 100 100)
     (let ((out (pdf->bytevector doc)))
@@ -656,7 +648,7 @@
   (let* ((doc (make-pdf))
          (page (pdf-add-page! doc))
          ;; png-encode supports color types 0,2,4,6 — type 4 is gray+alpha.
-         (px (bytevector 100 255  200 128  50 64  255 0))
+         (px (bytevector 100 255 200 128 50 64 255 0))
          (png-bv (png-encode 2 2 px 4))
          (img (pdf-embed-png doc png-bv)))
     (pdf-draw-image page img 0 0 10 10)
@@ -668,7 +660,7 @@
   ;; A screenshot: RGBA, but alpha 255 everywhere. No mask is needed.
   (let* ((doc (make-pdf))
          (page (pdf-add-page! doc))
-         (px (bytevector 255 0 0 255  0 255 0 255  0 0 255 255  9 9 9 255))
+         (px (bytevector 255 0 0 255 0 255 0 255 0 0 255 255 9 9 9 255))
          (img (pdf-embed-png doc (png-encode-rgba 2 2 px))))
     (pdf-draw-image page img 0 0 10 10)
     (test-equal 2 (pdf-image-width img))
@@ -681,13 +673,17 @@
 (test-group "rgba-split: colour and alpha apart, no alpha when opaque"
   (let* ((doc (make-pdf))
          (page (pdf-add-page! doc))
-         (px (bytevector 255 0 0 255  0 255 0 128  0 0 255 0  1 2 3 255))
+         (px (bytevector 255 0 0 255 0 255 0 128 0 0 255 0 1 2 3 255))
          (img (pdf-embed-png doc (png-encode-rgba 2 2 px)))
-         (out (begin (pdf-draw-image page img 0 0 10 10) (pdf->bytevector doc))))
+         (out (begin
+                (pdf-draw-image page img 0 0 10 10)
+                (pdf->bytevector doc))))
     (test-assert (bv-contains-ascii? out "/SMask"))
-    (test-equal (list (bytevector 255 0 0  0 255 0  0 0 255  1 2 3) (bytevector 255 128 0 255))
+    (test-equal (list (bytevector 255 0 0 0 255 0 0 0 255 1 2 3)
+                      (bytevector 255 128 0 255))
                 (rgba-split px 3))
-    (test-equal (list (bytevector 7 8) #f) (rgba-split (bytevector 7 0 0 255  8 0 0 255) 1))
+    (test-equal (list (bytevector 7 8) #f)
+                (rgba-split (bytevector 7 0 0 255 8 0 0 255) 1))
     (test-error (rgba-split (bytevector 1 2 3) 3))
     (test-error (rgba-split (bytevector 1 2 3 4) 2))))
 
@@ -695,7 +691,7 @@
   (let* ((doc (make-pdf))
          (page (pdf-add-page! doc))
          (img (pdf-embed-png doc
-                (png-encode-rgb 2 2 (make-bytevector 12 0)))))
+                             (png-encode-rgb 2 2 (make-bytevector 12 0)))))
     (pdf-draw-image page img 0 0 10 10)
     (let ((out (pdf->bytevector doc)))
       (test-assert (not (bv-contains-ascii? out "/SMask"))))))
@@ -721,10 +717,10 @@
       ;; UTF-16BE: G=0047 r=0072 ö=00F6 ß=00DF e=0065 sp=0020
       ;; em-dash=2014 sp=0020 C=0043 a=0061 f=0066 é=00E9.
       (test-assert (bv-contains-ascii? out "/Title <FEFF"))
-      (test-assert (bv-contains-ascii? out "00F6"))   ; ö
-      (test-assert (bv-contains-ascii? out "00DF"))   ; ß
-      (test-assert (bv-contains-ascii? out "2014"))   ; em-dash
-      (test-assert (bv-contains-ascii? out "00E9"))   ; é
+      (test-assert (bv-contains-ascii? out "00F6")) ; ö
+      (test-assert (bv-contains-ascii? out "00DF")) ; ß
+      (test-assert (bv-contains-ascii? out "2014")) ; em-dash
+      (test-assert (bv-contains-ascii? out "00E9")) ; é
       ;; Must NOT have emitted the title as a literal — bytes between
       ;; '(' and ')' would not be valid here. Check that the original
       ;; UTF-8 sequence does not appear (the C3 B6 of 'ö').
@@ -745,7 +741,7 @@
     (pdf-add-outline! doc page "Kapitel 1 — Größe")
     (let ((out (pdf->bytevector doc)))
       (test-assert (bv-contains-ascii? out "/Title <FEFF"))
-      (test-assert (bv-contains-ascii? out "00F6")))))   ; ö
+      (test-assert (bv-contains-ascii? out "00F6"))))) ; ö
 
 (test-group "metadata overrides existing key"
   (let ((doc (make-pdf)))
@@ -821,7 +817,7 @@
          (page (pdf-add-page! doc)))
     (pdf-set-opacity page 0.5)
     (pdf-set-opacity page 0.25 1)
-    (pdf-set-opacity page 0.5)              ; reuses GS1
+    (pdf-set-opacity page 0.5) ; reuses GS1
     (let* ((bv (pdf->bytevector doc))
            (s (bv->string bv))
            (cs (extract-content-stream bv)))
@@ -838,7 +834,8 @@
          (kern (lambda (a b) (if (and (char=? a #\A) (char=? b #\V)) -80 0))))
     (test-equal (- (pdf-text-width helv 10 "AVA") 0.8)
                 (pdf-text-width helv 10 "AVA" kern))
-    (test-equal (pdf-text-width helv 10 "AVA") (pdf-text-width helv 10 "AVA" #f))
+    (test-equal (pdf-text-width helv 10 "AVA")
+                (pdf-text-width helv 10 "AVA" #f))
     (pdf-draw-text page helv 10 0 0 "AVA" 'kerning kern)
     (pdf-draw-text page helv 10 0 20 "Schief" 'skew 12)
     (let ((cs (extract-content-stream (pdf->bytevector doc))))

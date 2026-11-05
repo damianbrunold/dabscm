@@ -7,33 +7,33 @@
           (scm compression)
           (scm zip)
           (srfi 1))
-  (export tar-create
+  (export bunzip2
+          bzip2
+          gunzip
+          gzip
+          tar-create
           tar-extract
           tar-list
-          bzip2
-          bunzip2
-          gzip
-          gunzip
-          xz
           unxz
+          xz
           ;; re-exports from (scm zip)
-          open-output-zip-file
-          open-input-zip-file
-          close-output-zip
           close-input-zip
+          close-output-zip
+          open-input-zip-file
+          open-output-zip-file
           zip-add-binary-entry
           zip-add-stored-entry
           zip-add-text-entry
           zip-entry-names
-          zip-read-entry-bytevector
           zip-files-equal?
+          zip-read-entry-bytevector
           ;; re-exports from (scm compression)
+          deflate-compress
+          deflate-decompress
           gzip-compress
           gzip-decompress
           zlib-compress
-          zlib-decompress
-          deflate-compress
-          deflate-decompress)
+          zlib-decompress)
   (begin
 
     (define (%has-flag? opts sym)
@@ -50,7 +50,9 @@
 
     (define (%require-native name)
       (let ((p (which name)))
-        (or p (error (string-append name ": native command not found on PATH")))))
+        (or p
+            (error (string-append name
+                                  ": native command not found on PATH")))))
 
     (define (tar-create archive paths . opts)
       "Syntax: (tar-create archive paths [option ...])
@@ -67,28 +69,31 @@ Description: Creates a tar archive at path archive containing the listed
   still require native tools.
 Example:
   (tar-create \"backup.tar.gz\" '(\"src\" \"docs\"))"
-      (let* ((ext-gz?  (or (%has-flag? opts 'gzip)
-                           (tar-suffix? archive '(".tar.gz" ".tgz"))))
-             (ext-bz?  (or (%has-flag? opts 'bzip2)
-                           (tar-suffix? archive '(".tar.bz2" ".tbz"))))
+      (let* ((ext-gz? (or (%has-flag? opts 'gzip)
+                          (tar-suffix? archive '(".tar.gz" ".tgz"))))
+             (ext-bz? (or (%has-flag? opts 'bzip2)
+                          (tar-suffix? archive '(".tar.bz2" ".tbz"))))
              (work-dir (%opt-value opts 'work-dir #f))
              (verbose? (%has-flag? opts 'verbose))
-             (native   (and (not (%has-flag? opts 'pure)) (which "tar"))))
+             (native (and (not (%has-flag? opts 'pure)) (which "tar"))))
         (if native
-            (let* ((flags    (string-append
-                               "c"
-                               (if verbose? "v" "")
-                               (cond (ext-gz? "z") (ext-bz? "j") (else ""))
-                               "f"))
-                   (cmd-list (append
-                               (list native flags archive)
-                               paths))
+            (let* ((flags (string-append
+                           "c"
+                           (if verbose? "v" "")
+                           (cond (ext-gz? "z")
+                                 (ext-bz? "j")
+                                 (else ""))
+                           "f"))
+                   (cmd-list (append (list native flags archive) paths))
                    (r (if work-dir
-                          (run-program/capture cmd-list (list (list 'work-dir work-dir)))
+                          (run-program/capture
+                           cmd-list
+                           (list (list 'work-dir work-dir)))
                           (run-program/capture cmd-list))))
               (and (pair? r) (zero? (car r))))
             (if (%needs-native-compression? archive opts)
-                (error "tar: native tar required for bzip2/xz archives; only plain tar and tar.gz are supported without it")
+                (error
+                 "tar: native tar required for bzip2/xz archives; only plain tar and tar.gz are supported without it")
                 (%tar-create-fallback archive paths ext-gz? work-dir)))))
 
     (define (tar-extract archive . opts)
@@ -103,26 +108,31 @@ Description: Extracts archive into the current directory (or 'work-dir).
   (.tar.bz2/.tar.xz still require native tools).
 Example:
   (tar-extract \"backup.tar.gz\" '(work-dir . \"/tmp/restore\"))"
-      (let* ((ext-gz?  (or (%has-flag? opts 'gzip)
-                           (tar-suffix? archive '(".tar.gz" ".tgz"))))
-             (ext-bz?  (or (%has-flag? opts 'bzip2)
-                           (tar-suffix? archive '(".tar.bz2" ".tbz"))))
+      (let* ((ext-gz? (or (%has-flag? opts 'gzip)
+                          (tar-suffix? archive '(".tar.gz" ".tgz"))))
+             (ext-bz? (or (%has-flag? opts 'bzip2)
+                          (tar-suffix? archive '(".tar.bz2" ".tbz"))))
              (work-dir (%opt-value opts 'work-dir #f))
              (verbose? (%has-flag? opts 'verbose))
-             (native   (and (not (%has-flag? opts 'pure)) (which "tar"))))
+             (native (and (not (%has-flag? opts 'pure)) (which "tar"))))
         (if native
-            (let* ((flags    (string-append
-                               "x"
-                               (if verbose? "v" "")
-                               (cond (ext-gz? "z") (ext-bz? "j") (else ""))
-                               "f"))
+            (let* ((flags (string-append
+                           "x"
+                           (if verbose? "v" "")
+                           (cond (ext-gz? "z")
+                                 (ext-bz? "j")
+                                 (else ""))
+                           "f"))
                    (cmd-list (list native flags archive))
                    (r (if work-dir
-                          (run-program/capture cmd-list (list (list 'work-dir work-dir)))
+                          (run-program/capture
+                           cmd-list
+                           (list (list 'work-dir work-dir)))
                           (run-program/capture cmd-list))))
               (and (pair? r) (zero? (car r))))
             (if (%needs-native-compression? archive opts)
-                (error "tar: native tar required for bzip2/xz archives; only plain tar and tar.gz are supported without it")
+                (error
+                 "tar: native tar required for bzip2/xz archives; only plain tar and tar.gz are supported without it")
                 (%tar-extract-fallback archive ext-gz? work-dir)))))
 
     (define (tar-list archive . opts)
@@ -137,22 +147,23 @@ Description: Returns a list of entry names contained in archive.
   (.tar.bz2/.tar.xz still require native tools).
 Example:
   (tar-list \"backup.tar.gz\")"
-      (let* ((ext-gz?  (or (%has-flag? opts 'gzip)
-                           (tar-suffix? archive '(".tar.gz" ".tgz"))))
-             (ext-bz?  (or (%has-flag? opts 'bzip2)
-                           (tar-suffix? archive '(".tar.bz2" ".tbz"))))
-             (native   (and (not (%has-flag? opts 'pure)) (which "tar"))))
+      (let* ((ext-gz? (or (%has-flag? opts 'gzip)
+                          (tar-suffix? archive '(".tar.gz" ".tgz"))))
+             (ext-bz? (or (%has-flag? opts 'bzip2)
+                          (tar-suffix? archive '(".tar.bz2" ".tbz"))))
+             (native (and (not (%has-flag? opts 'pure)) (which "tar"))))
         (if native
-            (let* ((flags    (string-append
-                               "t"
-                               (cond (ext-gz? "z") (ext-bz? "j") (else ""))
-                               "f"))
+            (let* ((flags (string-append
+                           "t"
+                           (cond (ext-gz? "z")
+                                 (ext-bz? "j")
+                                 (else ""))
+                           "f"))
                    (r (run-program/capture (list native flags archive))))
-              (if (and (pair? r) (zero? (car r)))
-                  (split-lines (cadr r))
-                  '()))
+              (if (and (pair? r) (zero? (car r))) (split-lines (cadr r)) '()))
             (if (%needs-native-compression? archive opts)
-                (error "tar: native tar required for bzip2/xz archives; only plain tar and tar.gz are supported without it")
+                (error
+                 "tar: native tar required for bzip2/xz archives; only plain tar and tar.gz are supported without it")
                 (%tar-list-fallback archive ext-gz?)))))
 
     (define (gzip path . opts)
@@ -166,7 +177,9 @@ Example:
       (let ((native (which "gzip"))
             (keep? (%has-flag? opts 'keep)))
         (if native
-            (let* ((args (if keep? (list native "-k" path) (list native path)))
+            (let* ((args (if keep?
+                             (list native "-k" path)
+                             (list native path)))
                    (r (run-program/capture args)))
               (and (pair? r) (zero? (car r))))
             (gzip-fallback path keep?))))
@@ -181,7 +194,9 @@ Example:
       (let ((native (which "gunzip"))
             (keep? (%has-flag? opts 'keep)))
         (if native
-            (let* ((args (if keep? (list native "-k" path) (list native path)))
+            (let* ((args (if keep?
+                             (list native "-k" path)
+                             (list native path)))
                    (r (run-program/capture args)))
               (and (pair? r) (zero? (car r))))
             (gunzip-fallback path keep?))))
@@ -277,8 +292,8 @@ Example:
               out
               (begin
                 (string-set! out i
-                  (let ((c (string-ref s i)))
-                    (if (char=? c #\\) #\/ c)))
+                             (let ((c (string-ref s i)))
+                               (if (char=? c #\\) #\/ c)))
                 (loop (+ i 1)))))))
 
     (define (%strip-leading-slashes s)
@@ -312,16 +327,12 @@ Example:
 
     (define (%pad-left s n)
       (let ((len (string-length s)))
-        (if (>= len n)
-            s
-            (string-append (make-string (- n len) #\0) s))))
+        (if (>= len n) s (string-append (make-string (- n len) #\0) s))))
 
     (define (%safe-mtime path)
       (guard (e (#t 0))
         (let ((ts (file-modification-timestamp path)))
-          (if (and (integer? ts) (> ts 0))
-              (quotient ts 1000)
-              0))))
+          (if (and (integer? ts) (> ts 0)) (quotient ts 1000) 0))))
 
     (define (%bv-poke-string! bv off s)
       (let* ((bytes (string->utf8 s))
@@ -341,16 +352,16 @@ Example:
       ;; and the prefix in 155 bytes. Returns #f if no such split exists.
       (let ((len (string-length name)))
         (let loop ((i (- len 1)))
-          (cond
-            ((< i 0) #f)
-            ((char=? (string-ref name i) #\/)
-             (let ((prefix (substring name 0 i))
-                   (suffix (substring name (+ i 1) len)))
-               (if (and (<= (bytevector-length (string->utf8 suffix)) 100)
-                        (<= (bytevector-length (string->utf8 prefix)) 155))
-                   (cons prefix suffix)
-                   (loop (- i 1)))))
-            (else (loop (- i 1)))))))
+          (cond ((< i 0) #f)
+                ((char=? (string-ref name i) #\/)
+                 (let ((prefix (substring name 0 i))
+                       (suffix (substring name (+ i 1) len)))
+                   (if (and (<= (bytevector-length (string->utf8 suffix)) 100)
+                            (<= (bytevector-length (string->utf8 prefix))
+                                155))
+                       (cons prefix suffix)
+                       (loop (- i 1)))))
+                (else (loop (- i 1)))))))
 
     (define (%checksum! bv)
       ;; chksum field (148,8) is spaces while summing, then 6 octal digits +
@@ -378,31 +389,31 @@ Example:
                       (%bv-poke-string! bv 345 (car split))
                       (%bv-poke-string! bv 0 (cdr split)))
                     (error (string-append
-                             "tar: path too long for USTAR fallback: " name))))))
+                            "tar: path too long for USTAR fallback: "
+                            name))))))
         (%octal-field! bv 100 8 (if (char=? typeflag #\5) 493 420)) ; mode 0755/0644
-        (%octal-field! bv 108 8 0)            ; uid
-        (%octal-field! bv 116 8 0)            ; gid
-        (%octal-field! bv 124 12 size)        ; size
-        (%octal-field! bv 136 12 mtime)       ; mtime
+        (%octal-field! bv 108 8 0) ; uid
+        (%octal-field! bv 116 8 0) ; gid
+        (%octal-field! bv 124 12 size) ; size
+        (%octal-field! bv 136 12 mtime) ; mtime
         (bytevector-u8-set! bv 156 (char->integer typeflag))
-        (%bv-poke-string! bv 257 "ustar")     ; magic + NUL (262 stays 0)
-        (bytevector-u8-set! bv 263 48)        ; version "0"
-        (bytevector-u8-set! bv 264 48)        ; version "0"
+        (%bv-poke-string! bv 257 "ustar") ; magic + NUL (262 stays 0)
+        (bytevector-u8-set! bv 263 48) ; version "0"
+        (bytevector-u8-set! bv 264 48) ; version "0"
         (%checksum! bv)
         bv))
 
     (define (%dir-children os-path)
-      (append (directory-directories os-path)
-              (directory-files os-path)))
+      (append (directory-directories os-path) (directory-files os-path)))
 
     (define (%collect-entries entry os-path)
       ;; Returns an ordered list of (entry-name os-path dir?) records.
       (if (directory-exists? os-path)
           (cons (list (%ensure-slash entry) os-path #t)
-                (append-map
-                  (lambda (child)
-                    (%collect-entries (%join entry child) (%join os-path child)))
-                  (%dir-children os-path)))
+                (append-map (lambda (child)
+                              (%collect-entries (%join entry child)
+                                                (%join os-path child)))
+                            (%dir-children os-path)))
           (list (list entry os-path #f))))
 
     (define (%pad-block port size)
@@ -412,24 +423,29 @@ Example:
 
     (define (%tar-create-fallback archive paths ext-gz? work-dir)
       (let ((port (open-output-bytevector)))
-        (for-each
-          (lambda (top)
-            (let ((os-top (if work-dir (%join work-dir top) top)))
-              (for-each
-                (lambda (rec)
-                  (apply
-                    (lambda (name os dir?)
-                      (let ((mtime (%safe-mtime os)))
-                        (if dir?
-                            (write-bytevector (%tar-header name 0 mtime #\5) port)
-                            (let* ((bytes (slurp-bytes os))
-                                   (size (bytevector-length bytes)))
-                              (write-bytevector (%tar-header name size mtime #\0) port)
-                              (write-bytevector bytes port)
-                              (%pad-block port size)))))
-                    rec))
-                (%collect-entries (%tar-entry-name top) os-top))))
-          paths)
+        (for-each (lambda (top)
+                    (let ((os-top (if work-dir (%join work-dir top) top)))
+                      (for-each (lambda (rec)
+                                  (apply
+                                   (lambda (name os dir?)
+                                     (let ((mtime (%safe-mtime os)))
+                                       (if
+                                        dir?
+                                        (write-bytevector
+                                         (%tar-header name 0 mtime #\5)
+                                         port)
+                                        (let*
+                                            ((bytes (slurp-bytes os))
+                                             (size (bytevector-length bytes)))
+                                          (write-bytevector
+                                           (%tar-header name size mtime #\0)
+                                           port)
+                                          (write-bytevector bytes port)
+                                          (%pad-block port size)))))
+                                   rec))
+                                (%collect-entries (%tar-entry-name top)
+                                                  os-top))))
+                  paths)
         (write-bytevector (make-bytevector 1024 0) port) ; two zero blocks
         (let ((bv (get-output-bytevector port)))
           (dump-bytes archive (if ext-gz? (gzip-compress bv) bv))
@@ -463,12 +479,11 @@ Example:
         (if (>= i len)
             acc
             (let ((b (bytevector-u8-ref bv (+ off i))))
-              (cond
-                ((or (= b 0) (= b 32))            ; NUL or space
-                 (if started acc (loop (+ i 1) acc #f)))
-                ((and (>= b 48) (<= b 55))        ; octal digit 0-7
-                 (loop (+ i 1) (+ (* acc 8) (- b 48)) #t))
-                (else (loop (+ i 1) acc started)))))))
+              (cond ((or (= b 0) (= b 32)) ; NUL or space
+                     (if started acc (loop (+ i 1) acc #f)))
+                    ((and (>= b 48) (<= b 55)) ; octal digit 0-7
+                     (loop (+ i 1) (+ (* acc 8) (- b 48)) #t))
+                    (else (loop (+ i 1) acc started)))))))
 
     (define (%tar-parse bv)
       ;; Returns list of (name size typeflag-int data-offset) records.
@@ -489,45 +504,53 @@ Example:
     (define (%tar-extract-fallback archive ext-gz? work-dir)
       (let* ((bv (%tar-decompress archive ext-gz?))
              (records (%tar-parse bv)))
-        (for-each
-          (lambda (rec)
-            (apply
-              (lambda (name size tf data-off)
-                (let ((target (if work-dir (%join work-dir name) name)))
-                  (if (or (= tf 53)             ; '5' directory
-                          (and (> (string-length name) 0)
-                               (char=? (string-ref name (- (string-length name) 1)) #\/)))
-                      (make-directory (%strip-slash target))
-                      (begin
-                        (let ((parent (%parent-dir target)))
-                          (when parent (make-directory parent)))
-                        (dump-bytes target
-                                    (bytevector-copy bv data-off (+ data-off size)))))))
-              rec))
-          records)
+        (for-each (lambda (rec)
+                    (apply (lambda (name size tf data-off)
+                             (let
+                                 ((target
+                                   (if work-dir (%join work-dir name) name)))
+                               (if (or (= tf 53) ; '5' directory
+                                       (and
+                                        (> (string-length name) 0)
+                                        (char=?
+                                         (string-ref
+                                          name
+                                          (- (string-length name) 1))
+                                         #\/)))
+                                   (make-directory (%strip-slash target))
+                                   (begin
+                                     (let ((parent (%parent-dir target)))
+                                       (when parent (make-directory parent)))
+                                     (dump-bytes
+                                      target
+                                      (bytevector-copy bv data-off
+                                                       (+ data-off size)))))))
+                           rec))
+                  records)
         #t))
 
     (define (tar-suffix? path suffixes)
       (let ((plen (string-length path)))
         (let loop ((s suffixes))
-          (cond
-            ((null? s) #f)
-            ((let* ((suf (car s))
-                    (slen (string-length suf)))
-               (and (>= plen slen)
-                    (string=? (substring path (- plen slen) plen) suf)))
-             #t)
-            (else (loop (cdr s)))))))
+          (cond ((null? s) #f)
+                ((let* ((suf (car s))
+                        (slen (string-length suf)))
+                   (and (>= plen slen)
+                        (string=? (substring path (- plen slen) plen) suf)))
+                 #t)
+                (else (loop (cdr s)))))))
 
     (define (split-lines s)
       (let loop ((i 0) (start 0) (acc '()))
-        (cond
-          ((>= i (string-length s))
-           (reverse (if (= start i) acc (cons (substring s start i) acc))))
-          ((char=? (string-ref s i) #\newline)
-           (loop (+ i 1) (+ i 1)
-                 (if (= start i) acc (cons (substring s start i) acc))))
-          (else (loop (+ i 1) start acc)))))
+        (cond ((>= i (string-length s))
+               (reverse (if (= start i)
+                            acc
+                            (cons (substring s start i) acc))))
+              ((char=? (string-ref s i) #\newline)
+               (loop (+ i 1)
+                     (+ i 1)
+                     (if (= start i) acc (cons (substring s start i) acc))))
+              (else (loop (+ i 1) start acc)))))
 
     (define %slurp-chunk-size 1048576) ; 1 MiB
 
@@ -545,7 +568,8 @@ Example:
             (let ((chunk (read-bytevector %slurp-chunk-size p)))
               (if (eof-object? chunk)
                   (let ((out (make-bytevector total 0)))
-                    (let fill ((cs (reverse chunks)) (off 0))
+                    (let fill ((cs (reverse chunks))
+                               (off 0))
                       (if (null? cs)
                           out
                           (let* ((c (car cs))

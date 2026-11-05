@@ -1,7 +1,7 @@
 (import (scheme base)
-        (scm test)
         (srfi 18)
-        (srfi 19))
+        (srfi 19)
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 
@@ -35,10 +35,9 @@
 ;; copy-time
 (test-group "copy-time"
   (test-equal #t
-    (let ((t (make-time time-utc 500 1000)))
-      (let ((t2 (copy-time t)))
-        (and (time=? t t2)
-             (not (eq? t t2)))))))
+              (let ((t (make-time time-utc 500 1000)))
+                (let ((t2 (copy-time t)))
+                  (and (time=? t t2) (not (eq? t t2)))))))
 
 ;; ======================================================================
 ;; Time mutators
@@ -47,9 +46,18 @@
 ;; set-time-type!, set-time-second!, set-time-nanosecond!
 (test-group "time mutators"
   (define t (make-time time-utc 100 200))
-  (test-equal 'time-tai (begin (set-time-type! t time-tai) (time-type t)))
-  (test-equal 999 (begin (set-time-second! t 999) (time-second t)))
-  (test-equal 888 (begin (set-time-nanosecond! t 888) (time-nanosecond t))))
+  (test-equal 'time-tai
+              (begin
+                (set-time-type! t time-tai)
+                (time-type t)))
+  (test-equal 999
+              (begin
+                (set-time-second! t 999)
+                (time-second t)))
+  (test-equal 888
+              (begin
+                (set-time-nanosecond! t 888)
+                (time-nanosecond t))))
 
 ;; ======================================================================
 ;; Time comparisons
@@ -57,31 +65,49 @@
 
 ;; time=?
 (test-group "time=?"
-  (test-equal #t (time=? (make-time time-utc 0 100) (make-time time-utc 0 100)))
-  (test-equal #f (time=? (make-time time-utc 0 100) (make-time time-utc 0 200)))
-  (test-equal #f (time=? (make-time time-utc 1 100) (make-time time-utc 0 100))))
+  (test-equal #t
+              (time=? (make-time time-utc 0 100) (make-time time-utc 0 100)))
+  (test-equal #f
+              (time=? (make-time time-utc 0 100) (make-time time-utc 0 200)))
+  (test-equal #f
+              (time=? (make-time time-utc 1 100) (make-time time-utc 0 100))))
 
 ;; time<?
 (test-group "time<?"
-  (test-equal #t (time<? (make-time time-utc 0 100) (make-time time-utc 0 200)))
-  (test-equal #f (time<? (make-time time-utc 0 200) (make-time time-utc 0 100)))
-  (test-equal #f (time<? (make-time time-utc 0 100) (make-time time-utc 0 100)))
-  (test-equal #t (time<? (make-time time-utc 0 100) (make-time time-utc 1 100)))
-  (test-equal #t (time<? (make-time time-utc 999999999 100) (make-time time-utc 0 101))))
+  (test-equal #t
+              (time<? (make-time time-utc 0 100) (make-time time-utc 0 200)))
+  (test-equal #f
+              (time<? (make-time time-utc 0 200) (make-time time-utc 0 100)))
+  (test-equal #f
+              (time<? (make-time time-utc 0 100) (make-time time-utc 0 100)))
+  (test-equal #t
+              (time<? (make-time time-utc 0 100) (make-time time-utc 1 100)))
+  (test-equal #t
+              (time<? (make-time time-utc 999999999 100)
+                      (make-time time-utc 0 101))))
 
 ;; time>?
 (test-group "time>?"
-  (test-equal #t (time>? (make-time time-utc 0 200) (make-time time-utc 0 100)))
-  (test-equal #f (time>? (make-time time-utc 0 100) (make-time time-utc 0 200))))
+  (test-equal #t
+              (time>? (make-time time-utc 0 200) (make-time time-utc 0 100)))
+  (test-equal #f
+              (time>? (make-time time-utc 0 100) (make-time time-utc 0 200))))
 
 ;; time<=? and time>=?
 (test-group "time<=? and time>=?"
-  (test-equal #t (time<=? (make-time time-utc 0 100) (make-time time-utc 0 100)))
-  (test-equal #t (time<=? (make-time time-utc 0 100) (make-time time-utc 0 200)))
-  (test-equal #f (time<=? (make-time time-utc 0 200) (make-time time-utc 0 100)))
-  (test-equal #t (time>=? (make-time time-utc 0 100) (make-time time-utc 0 100)))
-  (test-equal #t (time>=? (make-time time-utc 0 200) (make-time time-utc 0 100)))
-  (test-equal #f (time>=? (make-time time-utc 0 100) (make-time time-utc 0 200))))
+  (test-equal #t
+              (time<=? (make-time time-utc 0 100) (make-time time-utc 0 100)))
+  (test-equal #t
+              (time<=? (make-time time-utc 0 100) (make-time time-utc 0 200)))
+  (test-equal #f
+              (time<=? (make-time time-utc 0 200) (make-time time-utc 0 100)))
+  (test-equal #t
+              (time>=? (make-time time-utc 0 100) (make-time time-utc 0 100)))
+  (test-equal #t
+              (time>=? (make-time time-utc 0 200) (make-time time-utc 0 100)))
+  (test-equal #f
+              (time>=? (make-time time-utc 0 100)
+                       (make-time time-utc 0 200))))
 
 ;; ======================================================================
 ;; Time arithmetic
@@ -90,44 +116,52 @@
 ;; time-difference
 (test-group "time-difference"
   (test-equal 100
-    (let ((d (time-difference (make-time time-utc 0 200) (make-time time-utc 0 100))))
-      (time-second d)))
+              (let
+                  ((d (time-difference (make-time time-utc 0 200)
+                                       (make-time time-utc 0 100))))
+                (time-second d)))
   (test-equal 'time-duration
-    (let ((d (time-difference (make-time time-utc 0 200) (make-time time-utc 0 100))))
-      (time-type d)))
+              (let
+                  ((d (time-difference (make-time time-utc 0 200)
+                                       (make-time time-utc 0 100))))
+                (time-type d)))
   (test-equal 200000000
-    (let ((d (time-difference (make-time time-utc 500000000 200) (make-time time-utc 300000000 200))))
-      (time-nanosecond d))))
+              (let
+                  ((d (time-difference (make-time time-utc 500000000 200)
+                                       (make-time time-utc 300000000 200))))
+                (time-nanosecond d))))
 
 ;; time-difference with borrow
 (test-group "time-difference with borrow"
   (test-equal (list 0 800000000)
-    (let ((d (time-difference (make-time time-utc 100000000 200) (make-time time-utc 300000000 199))))
-      (list (time-second d) (time-nanosecond d)))))
+              (let
+                  ((d (time-difference (make-time time-utc 100000000 200)
+                                       (make-time time-utc 300000000 199))))
+                (list (time-second d) (time-nanosecond d)))))
 
 ;; add-duration
 (test-group "add-duration"
   (test-equal (list 110 500000000 'time-utc)
-    (let* ((t (make-time time-utc 0 100))
-           (d (make-time time-duration 500000000 10))
-           (r (add-duration t d)))
-      (list (time-second r) (time-nanosecond r) (time-type r)))))
+              (let* ((t (make-time time-utc 0 100))
+                     (d (make-time time-duration 500000000 10))
+                     (r (add-duration t d)))
+                (list (time-second r) (time-nanosecond r) (time-type r)))))
 
 ;; subtract-duration
 (test-group "subtract-duration"
   (test-equal (list 150 500000000)
-    (let* ((t (make-time time-utc 500000000 200))
-           (d (make-time time-duration 0 50))
-           (r (subtract-duration t d)))
-      (list (time-second r) (time-nanosecond r)))))
+              (let* ((t (make-time time-utc 500000000 200))
+                     (d (make-time time-duration 0 50))
+                     (r (subtract-duration t d)))
+                (list (time-second r) (time-nanosecond r)))))
 
 ;; time-difference! (mutating)
 (test-group "time-difference!"
   (test-equal (list 'time-duration 200)
-    (let ((t1 (make-time time-utc 0 300))
-          (t2 (make-time time-utc 0 100)))
-      (time-difference! t1 t2)
-      (list (time-type t1) (time-second t1)))))
+              (let ((t1 (make-time time-utc 0 300))
+                    (t2 (make-time time-utc 0 100)))
+                (time-difference! t1 t2)
+                (list (time-type t1) (time-second t1)))))
 
 ;; ======================================================================
 ;; Current time
@@ -189,7 +223,9 @@
 
 ;; date-week-number
 (test-group "date-week-number"
-  (test-equal #t (integer? (date-week-number (make-date 0 0 0 0 28 3 2026 0) 0))))
+  (test-equal #t
+              (integer? (date-week-number (make-date 0 0 0 0 28 3 2026 0)
+                                          0))))
 
 ;; ======================================================================
 ;; Date <-> Time conversions
@@ -200,31 +236,40 @@
   ;; Unix epoch date -> time-utc
   (test-equal 0 (time-second (date->time-utc (make-date 0 0 0 0 1 1 1970 0))))
   ;; 2000-01-01 00:00:00 UTC = 946684800
-  (test-equal 946684800 (time-second (date->time-utc (make-date 0 0 0 0 1 1 2000 0)))))
+  (test-equal 946684800
+              (time-second (date->time-utc (make-date 0 0 0 0 1 1 2000 0)))))
 
 ;; time-utc->date round-trip
 (test-group "time-utc->date round-trip"
   (test-equal (list 2000 1 1 0 0 0)
-    (let* ((t (make-time time-utc 0 946684800))
-           (d (time-utc->date t 0)))
-      (list (date-year d) (date-month d) (date-day d)
-            (date-hour d) (date-minute d) (date-second d)))))
+              (let* ((t (make-time time-utc 0 946684800))
+                     (d (time-utc->date t 0)))
+                (list (date-year d)
+                      (date-month d)
+                      (date-day d)
+                      (date-hour d)
+                      (date-minute d)
+                      (date-second d)))))
 
 ;; time-utc->date with timezone offset
 (test-group "time-utc->date with timezone offset"
   (test-equal (list 1 3600)
-    (let* ((t (make-time time-utc 0 946684800))
-           (d (time-utc->date t 3600)))  ;; UTC+1
-      (list (date-hour d) (date-zone-offset d)))))
+              (let* ((t (make-time time-utc 0 946684800))
+                     (d (time-utc->date t 3600))) ;; UTC+1
+                (list (date-hour d) (date-zone-offset d)))))
 
 ;; date->time-utc->date round-trip
 (test-group "date->time-utc->date round-trip"
   (test-equal (list 2023 6 15 14 30 45)
-    (let* ((d1 (make-date 0 45 30 14 15 6 2023 -18000))
-           (t  (date->time-utc d1))
-           (d2 (time-utc->date t -18000)))
-      (list (date-year d2) (date-month d2) (date-day d2)
-            (date-hour d2) (date-minute d2) (date-second d2)))))
+              (let* ((d1 (make-date 0 45 30 14 15 6 2023 -18000))
+                     (t (date->time-utc d1))
+                     (d2 (time-utc->date t -18000)))
+                (list (date-year d2)
+                      (date-month d2)
+                      (date-day d2)
+                      (date-hour d2)
+                      (date-minute d2)
+                      (date-second d2)))))
 
 ;; ======================================================================
 ;; UTC <-> TAI conversions
@@ -234,19 +279,19 @@
 (test-group "UTC <-> TAI conversions"
   ;; UTC->TAI adds leap seconds (post-2017: offset = 37)
   (test-equal 37
-    (let* ((t-utc (make-time time-utc 0 1500000000))
-           (t-tai (time-utc->time-tai t-utc)))
-      (- (time-second t-tai) (time-second t-utc))))
+              (let* ((t-utc (make-time time-utc 0 1500000000))
+                     (t-tai (time-utc->time-tai t-utc)))
+                (- (time-second t-tai) (time-second t-utc))))
   ;; TAI->UTC removes leap seconds
   (test-equal 1500000000
-    (let* ((t-tai (make-time time-tai 0 1500000037))
-           (t-utc (time-tai->time-utc t-tai)))
-      (time-second t-utc)))
+              (let* ((t-tai (make-time time-tai 0 1500000037))
+                     (t-utc (time-tai->time-utc t-tai)))
+                (time-second t-utc)))
   ;; Pre-1972: no leap seconds
   (test-equal 0
-    (let* ((t-utc (make-time time-utc 0 0))
-           (t-tai (time-utc->time-tai t-utc)))
-      (- (time-second t-tai) (time-second t-utc)))))
+              (let* ((t-utc (make-time time-utc 0 0))
+                     (t-tai (time-utc->time-tai t-utc)))
+                (- (time-second t-tai) (time-second t-utc)))))
 
 ;; ======================================================================
 ;; Julian Day conversions
@@ -262,13 +307,17 @@
 ;; julian-day->date round-trip
 (test-group "julian-day->date round-trip"
   (test-equal (list 2000 1 1 12)
-    (let ((d (julian-day->date 2451545 0)))
-      (list (date-year d) (date-month d) (date-day d) (date-hour d)))))
+              (let ((d (julian-day->date 2451545 0)))
+                (list (date-year d)
+                      (date-month d)
+                      (date-day d)
+                      (date-hour d)))))
 
 ;; Modified Julian Day
 (test-group "modified julian day"
   ;; MJD = JD - 2400000.5
-  (test-equal 103089/2 (date->modified-julian-day (make-date 0 0 0 12 1 1 2000 0))))
+  (test-equal 103089/2
+              (date->modified-julian-day (make-date 0 0 0 12 1 1 2000 0))))
 
 ;; ======================================================================
 ;; date->string formatting
@@ -298,7 +347,8 @@
 (test-group "date->string timezone and combined"
   (define d (make-date 0 45 30 9 7 6 2023 -18000))
   (test-equal "-0500" (date->string d "~z"))
-  (test-equal "2023-06-07T09:30:45-0500" (date->string d "~Y-~m-~dT~H:~M:~S~z"))
+  (test-equal "2023-06-07T09:30:45-0500"
+              (date->string d "~Y-~m-~dT~H:~M:~S~z"))
   (test-equal "23" (date->string d "~y")))
 
 ;; AM/PM and 12-hour format
@@ -312,7 +362,8 @@
 ;; escape tilde and literal text
 (test-group "date->string escape and literal"
   (test-equal "~" (date->string (make-date 0 0 0 0 1 1 2026 0) "~~"))
-  (test-equal "Year: 2026" (date->string (make-date 0 0 0 0 1 1 2026 0) "Year: ~Y")))
+  (test-equal "Year: 2026"
+              (date->string (make-date 0 0 0 0 1 1 2026 0) "Year: ~Y")))
 
 ;; ======================================================================
 ;; string->date parsing
@@ -321,24 +372,34 @@
 ;; basic date parsing
 (test-group "string->date basic"
   (test-equal (list 2026 3 28)
-    (let ((d (string->date "2026-03-28" "~Y-~m-~d")))
-      (list (date-year d) (date-month d) (date-day d)))))
+              (let ((d (string->date "2026-03-28" "~Y-~m-~d")))
+                (list (date-year d) (date-month d) (date-day d)))))
 
 ;; date-time parsing
 (test-group "string->date date-time"
   (test-equal (list 2026 3 28 14 30 45)
-    (let ((d (string->date "2026-03-28T14:30:45" "~Y-~m-~dT~H:~M:~S")))
-      (list (date-year d) (date-month d) (date-day d)
-            (date-hour d) (date-minute d) (date-second d)))))
+              (let
+                  ((d (string->date "2026-03-28T14:30:45"
+                                    "~Y-~m-~dT~H:~M:~S")))
+                (list (date-year d)
+                      (date-month d)
+                      (date-day d)
+                      (date-hour d)
+                      (date-minute d)
+                      (date-second d)))))
 
 ;; timezone parsing
 (test-group "string->date timezone"
   (test-equal 3600
-    (let ((d (string->date "2026-03-28T14:30:45+0100" "~Y-~m-~dT~H:~M:~S~z")))
-      (date-zone-offset d)))
+              (let
+                  ((d (string->date "2026-03-28T14:30:45+0100"
+                                    "~Y-~m-~dT~H:~M:~S~z")))
+                (date-zone-offset d)))
   (test-equal -18000
-    (let ((d (string->date "2026-03-28T14:30:45-0500" "~Y-~m-~dT~H:~M:~S~z")))
-      (date-zone-offset d))))
+              (let
+                  ((d (string->date "2026-03-28T14:30:45-0500"
+                                    "~Y-~m-~dT~H:~M:~S~z")))
+                (date-zone-offset d))))
 
 ;; 2-digit year parsing
 (test-group "string->date 2-digit year"
@@ -434,32 +495,32 @@
       (test-equal #t (time=? tai-later utc->tai-later))))
 
   ;; All leap second boundaries from 1972 through 1999
-  (test-utc-tai-edge 915148800  32 31)
-  (test-utc-tai-edge 867715200  31 30)
-  (test-utc-tai-edge 820454400  30 29)
-  (test-utc-tai-edge 773020800  29 28)
-  (test-utc-tai-edge 741484800  28 27)
-  (test-utc-tai-edge 709948800  27 26)
-  (test-utc-tai-edge 662688000  26 25)
-  (test-utc-tai-edge 631152000  25 24)
-  (test-utc-tai-edge 567993600  24 23)
-  (test-utc-tai-edge 489024000  23 22)
-  (test-utc-tai-edge 425865600  22 21)
-  (test-utc-tai-edge 394329600  21 20)
-  (test-utc-tai-edge 362793600  20 19)
-  (test-utc-tai-edge 315532800  19 18)
-  (test-utc-tai-edge 283996800  18 17)
-  (test-utc-tai-edge 252460800  17 16)
-  (test-utc-tai-edge 220924800  16 15)
-  (test-utc-tai-edge 189302400  15 14)
-  (test-utc-tai-edge 157766400  14 13)
-  (test-utc-tai-edge 126230400  13 12)
-  (test-utc-tai-edge 94694400   12 11)
-  (test-utc-tai-edge 78796800   11 10)
-  (test-utc-tai-edge 63072000   10 0)
+  (test-utc-tai-edge 915148800 32 31)
+  (test-utc-tai-edge 867715200 31 30)
+  (test-utc-tai-edge 820454400 30 29)
+  (test-utc-tai-edge 773020800 29 28)
+  (test-utc-tai-edge 741484800 28 27)
+  (test-utc-tai-edge 709948800 27 26)
+  (test-utc-tai-edge 662688000 26 25)
+  (test-utc-tai-edge 631152000 25 24)
+  (test-utc-tai-edge 567993600 24 23)
+  (test-utc-tai-edge 489024000 23 22)
+  (test-utc-tai-edge 425865600 22 21)
+  (test-utc-tai-edge 394329600 21 20)
+  (test-utc-tai-edge 362793600 20 19)
+  (test-utc-tai-edge 315532800 19 18)
+  (test-utc-tai-edge 283996800 18 17)
+  (test-utc-tai-edge 252460800 17 16)
+  (test-utc-tai-edge 220924800 16 15)
+  (test-utc-tai-edge 189302400 15 14)
+  (test-utc-tai-edge 157766400 14 13)
+  (test-utc-tai-edge 126230400 13 12)
+  (test-utc-tai-edge 94694400 12 11)
+  (test-utc-tai-edge 78796800 11 10)
+  (test-utc-tai-edge 63072000 10 0)
   ;; At and near the epoch
-  (test-utc-tai-edge 0   0 0)
-  (test-utc-tai-edge 10  0 0)
+  (test-utc-tai-edge 0 0 0)
+  (test-utc-tai-edge 10 0 0)
   ;; A recent time (well past the last leap second)
   (test-utc-tai-edge 1045789645 32 32))
 
@@ -504,16 +565,19 @@
 
 (test-group "Date-UTC leap second conversions"
   (test-equal (- 915148800 2)
-    (time-second (date->time-utc (make-date 0 58 59 23 31 12 1998 0))))
+              (time-second (date->time-utc
+                            (make-date 0 58 59 23 31 12 1998 0))))
   (test-equal (- 915148800 1)
-    (time-second (date->time-utc (make-date 0 59 59 23 31 12 1998 0))))
+              (time-second (date->time-utc
+                            (make-date 0 59 59 23 31 12 1998 0))))
   ;; second=60 maps to the same UTC instant as second=0 of the next minute
   (test-equal 915148800
-    (time-second (date->time-utc (make-date 0 60 59 23 31 12 1998 0))))
+              (time-second (date->time-utc
+                            (make-date 0 60 59 23 31 12 1998 0))))
   (test-equal 915148800
-    (time-second (date->time-utc (make-date 0 0 0 0 1 1 1999 0))))
+              (time-second (date->time-utc (make-date 0 0 0 0 1 1 1999 0))))
   (test-equal (+ 915148800 1)
-    (time-second (date->time-utc (make-date 0 1 0 0 1 1 1999 0)))))
+              (time-second (date->time-utc (make-date 0 1 0 0 1 1 1999 0)))))
 
 ;; ----------------------------------------------------------------------
 ;; TZ offset conversion test from reference suite
@@ -552,7 +616,8 @@
 (test-group "date->string ~z zero offset"
   (test-equal "Z" (date->string (make-date 0 0 0 0 1 1 2026 0) "~z"))
   (test-equal "+0100" (date->string (make-date 0 0 0 0 1 1 2026 3600) "~z"))
-  (test-equal "-0500" (date->string (make-date 0 0 0 0 1 1 2026 -18000) "~z")))
+  (test-equal "-0500"
+              (date->string (make-date 0 0 0 0 1 1 2026 -18000) "~z")))
 
 ;; ----------------------------------------------------------------------
 ;; string->date with Z timezone
@@ -560,15 +625,20 @@
 
 (test-group "string->date Z timezone"
   (test-equal 0
-    (date-zone-offset (string->date "2026-01-01T00:00:00Z" "~Y-~m-~dT~H:~M:~S~z")))
+              (date-zone-offset (string->date "2026-01-01T00:00:00Z"
+                                              "~Y-~m-~dT~H:~M:~S~z")))
   ;; Round-trip: date->string with ~z -> string->date
   (test-equal (list 2026 1 1 0 0 0 0)
-    (let* ((d1 (make-date 0 0 0 0 1 1 2026 0))
-           (s (date->string d1 "~Y-~m-~dT~H:~M:~S~z"))
-           (d2 (string->date s "~Y-~m-~dT~H:~M:~S~z")))
-      (list (date-year d2) (date-month d2) (date-day d2)
-            (date-hour d2) (date-minute d2) (date-second d2)
-            (date-zone-offset d2)))))
+              (let* ((d1 (make-date 0 0 0 0 1 1 2026 0))
+                     (s (date->string d1 "~Y-~m-~dT~H:~M:~S~z"))
+                     (d2 (string->date s "~Y-~m-~dT~H:~M:~S~z")))
+                (list (date-year d2)
+                      (date-month d2)
+                      (date-day d2)
+                      (date-hour d2)
+                      (date-minute d2)
+                      (date-second d2)
+                      (date-zone-offset d2)))))
 
 ;; ----------------------------------------------------------------------
 ;; ~k and ~l space-padded hour formats
@@ -592,37 +662,36 @@
 ;; ----------------------------------------------------------------------
 
 (test-group "date->string ~V ISO week number"
-  (define (week-of y m d)
-    (date->string (make-date 0 0 0 0 d m y 0) "~V"))
+  (define (week-of y m d) (date->string (make-date 0 0 0 0 d m y 0) "~V"))
 
   ;; 2020-2021 boundary: 2020 has week 53
-  (test-equal "53" (week-of 2020 12 31))  ; Thursday
-  (test-equal "53" (week-of 2021 1 1))    ; Friday (still week 53 of 2020)
-  (test-equal "53" (week-of 2021 1 3))    ; Sunday (still week 53 of 2020)
-  (test-equal "01" (week-of 2021 1 4))    ; Monday = week 1 of 2021
+  (test-equal "53" (week-of 2020 12 31)) ; Thursday
+  (test-equal "53" (week-of 2021 1 1)) ; Friday (still week 53 of 2020)
+  (test-equal "53" (week-of 2021 1 3)) ; Sunday (still week 53 of 2020)
+  (test-equal "01" (week-of 2021 1 4)) ; Monday = week 1 of 2021
 
   ;; 2019-2020 boundary: 2020 week 1 starts on 2019-12-30
-  (test-equal "52" (week-of 2019 12 29))  ; Sunday = week 52 of 2019
-  (test-equal "01" (week-of 2019 12 30))  ; Monday = week 1 of 2020
-  (test-equal "01" (week-of 2019 12 31))  ; Tuesday = week 1 of 2020
-  (test-equal "01" (week-of 2020 1 1))    ; Wednesday = week 1 of 2020
+  (test-equal "52" (week-of 2019 12 29)) ; Sunday = week 52 of 2019
+  (test-equal "01" (week-of 2019 12 30)) ; Monday = week 1 of 2020
+  (test-equal "01" (week-of 2019 12 31)) ; Tuesday = week 1 of 2020
+  (test-equal "01" (week-of 2020 1 1)) ; Wednesday = week 1 of 2020
 
   ;; 2016-2017 boundary
-  (test-equal "52" (week-of 2016 12 31))  ; Saturday
-  (test-equal "52" (week-of 2017 1 1))    ; Sunday (still week 52 of 2016)
-  (test-equal "01" (week-of 2017 1 2))    ; Monday = week 1 of 2017
-  (test-equal "01" (week-of 2017 1 8))    ; Sunday = week 1 of 2017
-  (test-equal "02" (week-of 2017 1 9))    ; Monday = week 2 of 2017
+  (test-equal "52" (week-of 2016 12 31)) ; Saturday
+  (test-equal "52" (week-of 2017 1 1)) ; Sunday (still week 52 of 2016)
+  (test-equal "01" (week-of 2017 1 2)) ; Monday = week 1 of 2017
+  (test-equal "01" (week-of 2017 1 8)) ; Sunday = week 1 of 2017
+  (test-equal "02" (week-of 2017 1 9)) ; Monday = week 2 of 2017
 
   ;; 2014-2015 boundary: 2015 week 1 starts on 2014-12-29
-  (test-equal "52" (week-of 2014 12 28))  ; Sunday = week 52 of 2014
-  (test-equal "01" (week-of 2014 12 29))  ; Monday = week 1 of 2015
-  (test-equal "01" (week-of 2014 12 30))  ; Tuesday
-  (test-equal "01" (week-of 2014 12 31))  ; Wednesday
-  (test-equal "01" (week-of 2015 1 1))    ; Thursday
-  (test-equal "01" (week-of 2015 1 2))    ; Friday
-  (test-equal "01" (week-of 2015 1 3))    ; Saturday
-  (test-equal "01" (week-of 2015 1 4))    ; Sunday
-  (test-equal "02" (week-of 2015 1 5)))   ; Monday = week 2 of 2015
+  (test-equal "52" (week-of 2014 12 28)) ; Sunday = week 52 of 2014
+  (test-equal "01" (week-of 2014 12 29)) ; Monday = week 1 of 2015
+  (test-equal "01" (week-of 2014 12 30)) ; Tuesday
+  (test-equal "01" (week-of 2014 12 31)) ; Wednesday
+  (test-equal "01" (week-of 2015 1 1)) ; Thursday
+  (test-equal "01" (week-of 2015 1 2)) ; Friday
+  (test-equal "01" (week-of 2015 1 3)) ; Saturday
+  (test-equal "01" (week-of 2015 1 4)) ; Sunday
+  (test-equal "02" (week-of 2015 1 5))) ; Monday = week 2 of 2015
 
 (test-end "srfi-19")

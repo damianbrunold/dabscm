@@ -1,28 +1,66 @@
 (define-library (srfi 158)
-  (import (scheme base) (scheme case-lambda))
+  (import (scheme base)
+          (scheme case-lambda))
   (export
-    ;; Generator constructors
-    generator circular-generator make-iota-generator make-range-generator
-    make-coroutine-generator list->generator vector->generator
-    reverse-vector->generator string->generator bytevector->generator
-    make-for-each-generator make-unfold-generator
-    ;; Generator operations
-    gcons* gappend gflatten ggroup gmerge
-    gmap gcombine gfilter gremove gstate-filter
-    gtake gdrop gtake-while gdrop-while
-    gdelete gdelete-neighbor-dups gindex gselect
-    ;; Generator consumers
-    generator->list generator->reverse-list
-    generator->vector generator->vector! generator->string
-    generator-fold generator-for-each generator-map->list
-    generator-find generator-count generator-any generator-every
-    generator-unfold
-    ;; Accumulators
-    make-accumulator count-accumulator list-accumulator
-    reverse-list-accumulator vector-accumulator
-    reverse-vector-accumulator vector-accumulator!
-    string-accumulator bytevector-accumulator bytevector-accumulator!
-    sum-accumulator product-accumulator)
+   ;; Generator constructors
+   bytevector->generator
+   circular-generator
+   generator
+   list->generator
+   make-coroutine-generator
+   make-for-each-generator
+   make-iota-generator
+   make-range-generator
+   make-unfold-generator
+   reverse-vector->generator
+   string->generator
+   vector->generator
+   ;; Generator operations
+   gappend
+   gcombine
+   gcons*
+   gdelete
+   gdelete-neighbor-dups
+   gdrop
+   gdrop-while
+   gfilter
+   gflatten
+   ggroup
+   gindex
+   gmap
+   gmerge
+   gremove
+   gselect
+   gstate-filter
+   gtake
+   gtake-while
+   ;; Generator consumers
+   generator->list
+   generator->reverse-list
+   generator->string
+   generator->vector
+   generator->vector!
+   generator-any
+   generator-count
+   generator-every
+   generator-find
+   generator-fold
+   generator-for-each
+   generator-map->list
+   generator-unfold
+   ;; Accumulators
+   bytevector-accumulator
+   bytevector-accumulator!
+   count-accumulator
+   list-accumulator
+   make-accumulator
+   product-accumulator
+   reverse-list-accumulator
+   reverse-vector-accumulator
+   string-accumulator
+   sum-accumulator
+   vector-accumulator
+   vector-accumulator!)
   (begin
 
     ;;; Unique sentinel for "no value provided"
@@ -65,10 +103,8 @@ Example:
 
     (define make-iota-generator
       (case-lambda
-        ((count)
-         (make-iota-generator count 0 1))
-        ((count start)
-         (make-iota-generator count start 1))
+        ((count) (make-iota-generator count 0 1))
+        ((count start) (make-iota-generator count start 1))
         ((count start step)
          "Syntax: (make-iota-generator count)
        (make-iota-generator count start)
@@ -106,8 +142,7 @@ Example:
              (let ((v val))
                (set! val (+ val 1))
                v))))
-        ((start end)
-         (make-range-generator start end 1))
+        ((start end) (make-range-generator start end 1))
         ((start end step)
          (let ((val start))
            (lambda ()
@@ -141,8 +176,9 @@ Example:
             (set! return cc)
             (if resume
                 (resume #t)
-                (begin (proc yield)
-                       (return (eof-object))))))))
+                (begin
+                  (proc yield)
+                  (return (eof-object))))))))
 
     (define list->generator
       (case-lambda
@@ -162,10 +198,8 @@ Example:
 
     (define vector->generator
       (case-lambda
-        ((vec)
-         (vector->generator vec 0 (vector-length vec)))
-        ((vec start)
-         (vector->generator vec start (vector-length vec)))
+        ((vec) (vector->generator vec 0 (vector-length vec)))
+        ((vec start) (vector->generator vec start (vector-length vec)))
         ((vec start end)
          "Syntax: (vector->generator vec)
        (vector->generator vec start)
@@ -185,8 +219,7 @@ Example:
 
     (define reverse-vector->generator
       (case-lambda
-        ((vec)
-         (reverse-vector->generator vec 0 (vector-length vec)))
+        ((vec) (reverse-vector->generator vec 0 (vector-length vec)))
         ((vec start)
          (reverse-vector->generator vec start (vector-length vec)))
         ((vec start end)
@@ -209,10 +242,8 @@ Example:
 
     (define string->generator
       (case-lambda
-        ((str)
-         (string->generator str 0 (string-length str)))
-        ((str start)
-         (string->generator str start (string-length str)))
+        ((str) (string->generator str 0 (string-length str)))
+        ((str start) (string->generator str start (string-length str)))
         ((str start end)
          "Syntax: (string->generator str)
        (string->generator str start)
@@ -232,10 +263,8 @@ Example:
 
     (define bytevector->generator
       (case-lambda
-        ((bv)
-         (bytevector->generator bv 0 (bytevector-length bv)))
-        ((bv start)
-         (bytevector->generator bv start (bytevector-length bv)))
+        ((bv) (bytevector->generator bv 0 (bytevector-length bv)))
+        ((bv start) (bytevector->generator bv start (bytevector-length bv)))
         ((bv start end)
          "Syntax: (bytevector->generator bv)
        (bytevector->generator bv start)
@@ -263,9 +292,7 @@ Example:
   (generator->list (make-for-each-generator for-each '(a b c))) => (a b c)
   (generator->list (make-for-each-generator string-for-each \"abc\"))
     => (#\\a #\\b #\\c)"
-      (make-coroutine-generator
-        (lambda (yield)
-          (for-each yield obj))))
+      (make-coroutine-generator (lambda (yield) (for-each yield obj))))
 
     (define (make-unfold-generator stop? mapper successor seed)
       "Syntax: (make-unfold-generator stop? mapper successor seed)
@@ -284,7 +311,9 @@ Example:
           (if done
               (eof-object)
               (if (stop? s)
-                  (begin (set! done #t) (eof-object))
+                  (begin
+                    (set! done #t)
+                    (eof-object))
                   (let ((v (mapper s)))
                     (set! s (successor s))
                     v))))))
@@ -327,8 +356,9 @@ Example:
                 (eof-object)
                 (let ((v ((car gs))))
                   (if (eof-object? v)
-                      (begin (set! gs (cdr gs))
-                             (loop))
+                      (begin
+                        (set! gs (cdr gs))
+                        (loop))
                       v)))))))
 
     (define (gflatten gen)
@@ -347,16 +377,16 @@ Example:
                 (let ((v (gen)))
                   (if (eof-object? v)
                       (eof-object)
-                      (begin (set! current v)
-                             (loop))))
+                      (begin
+                        (set! current v)
+                        (loop))))
                 (let ((val (car current)))
                   (set! current (cdr current))
                   val))))))
 
     (define ggroup
       (case-lambda
-        ((gen k)
-         (ggroup gen k %no-padding))
+        ((gen k) (ggroup gen k %no-padding))
         ((gen k padding)
          "Syntax: (ggroup gen k)
        (ggroup gen k padding)
@@ -381,14 +411,18 @@ Example:
                        (let ((v (gen)))
                          (if (eof-object? v)
                              (if (null? acc)
-                                 (begin (set! done #t) (eof-object))
+                                 (begin
+                                   (set! done #t)
+                                   (eof-object))
                                  (begin
                                    (set! done #t)
                                    (if use-padding
                                        (let pad-loop ((j i) (a acc))
-                                         (if (= j k)
-                                             (reverse a)
-                                             (pad-loop (+ j 1) (cons padding a))))
+                                         (if
+                                          (= j k)
+                                          (reverse a)
+                                          (pad-loop (+ j 1)
+                                                    (cons padding a))))
                                        (reverse acc))))
                              (loop (+ i 1) (cons v acc))))))))))))
 
@@ -403,8 +437,7 @@ Example:
       (let* ((gen-vec (list->vector (cons gen1 gens)))
              (n (vector-length gen-vec))
              (buf (let ((v (make-vector n)))
-                    (do ((i 0 (+ i 1)))
-                        ((= i n) v)
+                    (do ((i 0 (+ i 1))) ((= i n) v)
                       (vector-set! v i ((vector-ref gen-vec i)))))))
         (lambda ()
           ;; Find the minimum buffered value across all generators
@@ -413,8 +446,7 @@ Example:
                 (if (< min-idx 0)
                     (eof-object)
                     (let ((result min-val))
-                      (vector-set! buf min-idx
-                                   ((vector-ref gen-vec min-idx)))
+                      (vector-set! buf min-idx ((vector-ref gen-vec min-idx)))
                       result))
                 (let ((v (vector-ref buf i)))
                   (if (eof-object? v)
@@ -435,10 +467,7 @@ Example:
       (if (null? gens)
           ;; Single generator fast path
           (lambda ()
-            (let ((v (gen)))
-              (if (eof-object? v)
-                  (eof-object)
-                  (proc v))))
+            (let ((v (gen))) (if (eof-object? v) (eof-object) (proc v))))
           ;; Multiple generators
           (let ((all-gens (cons gen gens)))
             (lambda ()
@@ -464,7 +493,7 @@ Example:
             (if (any eof-object? vals)
                 (eof-object)
                 (call-with-values
-                  (lambda () (apply proc (append vals (list s))))
+                    (lambda () (apply proc (append vals (list s))))
                   (lambda (value new-seed)
                     (set! s new-seed)
                     value)))))))
@@ -479,9 +508,7 @@ Example:
       (lambda ()
         (let loop ()
           (let ((v (gen)))
-            (if (eof-object? v)
-                (eof-object)
-                (if (pred v) v (loop)))))))
+            (if (eof-object? v) (eof-object) (if (pred v) v (loop)))))))
 
     (define (gremove pred gen)
       "Syntax: (gremove pred gen)
@@ -509,16 +536,14 @@ Example:
             (let ((v (gen)))
               (if (eof-object? v)
                   (eof-object)
-                  (call-with-values
-                    (lambda () (proc s v))
+                  (call-with-values (lambda () (proc s v))
                     (lambda (new-seed keep?)
                       (set! s new-seed)
                       (if keep? v (loop))))))))))
 
     (define gtake
       (case-lambda
-        ((gen k)
-         (gtake gen k %no-padding))
+        ((gen k) (gtake gen k %no-padding))
         ((gen k padding)
          "Syntax: (gtake gen k)
        (gtake gen k padding)
@@ -529,7 +554,8 @@ Description: Returns a generator that yields at most k values from gen. If
 Example:
   (generator->list (gtake (generator 1 2 3 4 5) 3)) => (1 2 3)
   (generator->list (gtake (generator 1 2) 4 0)) => (1 2 0 0)"
-         (let ((i 0) (use-padding (not (eq? padding %no-padding))))
+         (let ((i 0)
+               (use-padding (not (eq? padding %no-padding))))
            (lambda ()
              (if (>= i k)
                  (eof-object)
@@ -553,8 +579,7 @@ Example:
             (set! dropped #t)
             (let loop ((n 0))
               (when (< n k)
-                (let ((v (gen)))
-                  (unless (eof-object? v) (loop (+ n 1)))))))
+                (let ((v (gen))) (unless (eof-object? v) (loop (+ n 1)))))))
           (gen))))
 
     (define (gtake-while pred gen)
@@ -574,7 +599,9 @@ Example:
                     (eof-object)
                     (if (pred v)
                         v
-                        (begin (set! done #t) (eof-object)))))))))
+                        (begin
+                          (set! done #t)
+                          (eof-object)))))))))
 
     (define (gdrop-while pred gen)
       "Syntax: (gdrop-while pred gen)
@@ -589,16 +616,14 @@ Example:
           (if dropping
               (let loop ()
                 (let ((v (gen)))
-                  (cond
-                    ((eof-object? v) (eof-object))
-                    ((pred v) (loop))
-                    (else (set! dropping #f) v))))
+                  (cond ((eof-object? v) (eof-object))
+                        ((pred v) (loop))
+                        (else (set! dropping #f) v))))
               (gen)))))
 
     (define gdelete
       (case-lambda
-        ((item gen)
-         (gdelete item gen equal?))
+        ((item gen) (gdelete item gen equal?))
         ((item gen =)
          "Syntax: (gdelete item gen)
        (gdelete item gen =)
@@ -612,8 +637,7 @@ Example:
 
     (define gdelete-neighbor-dups
       (case-lambda
-        ((gen)
-         (gdelete-neighbor-dups gen equal?))
+        ((gen) (gdelete-neighbor-dups gen equal?))
         ((gen =)
          "Syntax: (gdelete-neighbor-dups gen)
        (gdelete-neighbor-dups gen =)
@@ -628,16 +652,10 @@ Example:
            (lambda ()
              (let loop ()
                (let ((v (gen)))
-                 (cond
-                   ((eof-object? v) (eof-object))
-                   (first
-                    (set! first #f)
-                    (set! prev v)
-                    v)
-                   ((= prev v) (loop))
-                   (else
-                    (set! prev v)
-                    v)))))))))
+                 (cond ((eof-object? v) (eof-object))
+                       (first (set! first #f) (set! prev v) v)
+                       ((= prev v) (loop))
+                       (else (set! prev v) v)))))))))
 
     (define (gindex value-gen index-gen)
       "Syntax: (gindex value-gen index-gen)
@@ -655,14 +673,12 @@ Example:
                 (eof-object)
                 (let loop ()
                   (let ((v (value-gen)))
-                    (cond
-                      ((eof-object? v) (eof-object))
-                      ((= current-idx target)
-                       (set! current-idx (+ current-idx 1))
-                       v)
-                      (else
-                       (set! current-idx (+ current-idx 1))
-                       (loop))))))))))
+                    (cond ((eof-object? v) (eof-object))
+                          ((= current-idx target)
+                           (set! current-idx (+ current-idx 1))
+                           v)
+                          (else (set! current-idx (+ current-idx 1))
+                                (loop))))))))))
 
     (define (gselect value-gen truth-gen)
       "Syntax: (gselect value-gen truth-gen)
@@ -676,10 +692,9 @@ Example:
         (let loop ()
           (let ((v (value-gen))
                 (t (truth-gen)))
-            (cond
-              ((or (eof-object? v) (eof-object? t)) (eof-object))
-              (t v)
-              (else (loop)))))))
+            (cond ((or (eof-object? v) (eof-object? t)) (eof-object))
+                  (t v)
+                  (else (loop)))))))
 
     ;;; ============================================================
     ;;; Generator Consumers
@@ -698,9 +713,7 @@ Example:
   (generator->list (generator 1 2 3 4 5) 3) => (1 2 3)"
          (let loop ((acc '()))
            (let ((v (gen)))
-             (if (eof-object? v)
-                 (reverse acc)
-                 (loop (cons v acc))))))
+             (if (eof-object? v) (reverse acc) (loop (cons v acc))))))
         ((gen k)
          (let loop ((acc '()) (i 0))
            (if (>= i k)
@@ -720,18 +733,13 @@ Description: Like generator->list, but returns the values in reverse order.
 Example:
   (generator->reverse-list (generator 1 2 3)) => (3 2 1)"
          (let loop ((acc '()))
-           (let ((v (gen)))
-             (if (eof-object? v)
-                 acc
-                 (loop (cons v acc))))))
+           (let ((v (gen))) (if (eof-object? v) acc (loop (cons v acc))))))
         ((gen k)
          (let loop ((acc '()) (i 0))
            (if (>= i k)
                acc
                (let ((v (gen)))
-                 (if (eof-object? v)
-                     acc
-                     (loop (cons v acc) (+ i 1)))))))))
+                 (if (eof-object? v) acc (loop (cons v acc) (+ i 1)))))))))
 
     (define generator->vector
       (case-lambda
@@ -744,8 +752,7 @@ Description: Reads values from gen and returns them as a vector. If k is
 Example:
   (generator->vector (generator 1 2 3)) => #(1 2 3)"
          (list->vector (generator->list gen)))
-        ((gen k)
-         (list->vector (generator->list gen k)))))
+        ((gen k) (list->vector (generator->list gen k)))))
 
     (define (generator->vector! vec at gen)
       "Syntax: (generator->vector! vec at gen)
@@ -777,8 +784,7 @@ Description: Reads characters from gen and returns them as a string. If k is
 Example:
   (generator->string (generator #\\a #\\b #\\c)) => \"abc\""
          (list->string (generator->list gen)))
-        ((gen k)
-         (list->string (generator->list gen k)))))
+        ((gen k) (list->string (generator->list gen k)))))
 
     (define (generator-fold proc seed gen . gens)
       "Syntax: (generator-fold proc seed gen gen2 ...)
@@ -793,10 +799,7 @@ Example:
       (if (null? gens)
           ;; Single generator fast path
           (let loop ((s seed))
-            (let ((v (gen)))
-              (if (eof-object? v)
-                  s
-                  (loop (proc v s)))))
+            (let ((v (gen))) (if (eof-object? v) s (loop (proc v s)))))
           ;; Multiple generators
           (let ((all-gens (cons gen gens)))
             (let loop ((s seed))
@@ -843,9 +846,7 @@ Example:
           ;; Single generator fast path
           (let loop ((acc '()))
             (let ((v (gen)))
-              (if (eof-object? v)
-                  (reverse acc)
-                  (loop (cons (proc v) acc)))))
+              (if (eof-object? v) (reverse acc) (loop (cons (proc v) acc)))))
           ;; Multiple generators
           (let ((all-gens (cons gen gens)))
             (let loop ((acc '()))
@@ -864,10 +865,9 @@ Example:
   (generator-find even? (generator 1 3 5 6 7)) => 6"
       (let loop ()
         (let ((v (gen)))
-          (cond
-            ((eof-object? v) #f)
-            ((pred v) v)
-            (else (loop))))))
+          (cond ((eof-object? v) #f)
+                ((pred v) v)
+                (else (loop))))))
 
     (define (generator-count pred gen)
       "Syntax: (generator-count pred gen)
@@ -878,9 +878,7 @@ Example:
   (generator-count even? (generator 1 2 3 4 5)) => 2"
       (let loop ((n 0))
         (let ((v (gen)))
-          (if (eof-object? v)
-              n
-              (loop (if (pred v) (+ n 1) n))))))
+          (if (eof-object? v) n (loop (if (pred v) (+ n 1) n))))))
 
     (define (generator-any pred gen)
       "Syntax: (generator-any pred gen)
@@ -892,10 +890,7 @@ Example:
   (generator-any odd? (generator 2 4 6 7 8)) => #t"
       (let loop ()
         (let ((v (gen)))
-          (if (eof-object? v)
-              #f
-              (let ((r (pred v)))
-                (if r r (loop)))))))
+          (if (eof-object? v) #f (let ((r (pred v))) (if r r (loop)))))))
 
     (define (generator-every pred gen)
       "Syntax: (generator-every pred gen)
@@ -907,10 +902,7 @@ Example:
   (generator-every odd? (generator 1 3 4 5)) => #f"
       (let loop ((last #t))
         (let ((v (gen)))
-          (if (eof-object? v)
-              last
-              (let ((r (pred v)))
-                (if r (loop r) #f))))))
+          (if (eof-object? v) last (let ((r (pred v))) (if r (loop r) #f))))))
 
     (define (generator-unfold gen unfold . args)
       "Syntax: (generator-unfold gen unfold arg ...)
@@ -921,18 +913,16 @@ Description: Uses the unfold procedure to convert generator values into a
   SRFI 1 unfold.
 Example:
   (generator-unfold (generator 1 2 3) unfold) ; requires (srfi 1)"
-      (apply unfold eof-object? (lambda (x) x) (lambda (x) (gen)) (gen)
-             args))
+      (apply unfold eof-object? (lambda (x) x) (lambda (x) (gen)) (gen) args))
 
     ;;; ============================================================
     ;;; Internal helper: any (avoids importing srfi-1 just for this)
     ;;; ============================================================
 
     (define (any pred lst)
-      (cond
-        ((null? lst) #f)
-        ((pred (car lst)) #t)
-        (else (any pred (cdr lst)))))
+      (cond ((null? lst) #f)
+            ((pred (car lst)) #t)
+            (else (any pred (cdr lst)))))
 
     ;;; ============================================================
     ;;; Accumulators
@@ -1075,6 +1065,4 @@ Description: Returns an accumulator that computes the product of accumulated
 Example:
   (let ((a (product-accumulator)))
     (a 1) (a 2) (a 3) (a 4) (a (eof-object))) => 24"
-      (make-accumulator * 1 (lambda (x) x)))
-
-    ))
+      (make-accumulator * 1 (lambda (x) x)))))

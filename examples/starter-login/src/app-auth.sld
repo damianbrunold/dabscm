@@ -17,13 +17,13 @@
           (scm crypto password)
           (scm net http session)
           (app users))
-  (export make-auth
-          sign-in
-          session-user
-          start-session
+  (export change-password!
           end-session
-          change-password!
-          min-password-length)
+          make-auth
+          min-password-length
+          session-user
+          sign-in
+          start-session)
   (begin
 
     (define min-password-length 8)
@@ -42,7 +42,9 @@ Description: Ties a (scm net http session) config to the user store."
 
     ;; Changes whenever the password (and so the hash) changes.
     (define (password-stamp hash)
-      (base64-encode (bytevector-copy (sha256-hash (string->utf8 hash)) 0 12)))
+      (base64-encode (bytevector-copy (sha256-hash (string->utf8 hash))
+                                      0
+                                      12)))
 
     (define (sign-in auth username password)
       "Syntax: (sign-in auth username password)
@@ -51,12 +53,12 @@ Description: The user entry if password is right for username, else #f.
   Upgrades an outdated password hash on success."
       (let* ((path (auth-users-file auth))
              (user (find-user path username)))
-        (cond
-          ((not (password-verify password (and user (user-hash user)))) #f)
-          ((password-needs-rehash? (user-hash user))
-           (save-user! path username (password-hash password))
-           (find-user path username))
-          (else user))))
+        (cond ((not (password-verify password (and user (user-hash user))))
+               #f)
+              ((password-needs-rehash? (user-hash user))
+               (save-user! path username (password-hash password))
+               (find-user path username))
+              (else user))))
 
     (define (session-user auth req)
       "Syntax: (session-user auth req)
@@ -67,8 +69,10 @@ Description: The signed-in user's entry, or #f if there is no valid session
         (and (pair? s)
              (let* ((name (assq 'user s))
                     (stamp (assq 'stamp s))
-                    (user (and name (string? (cdr name))
-                               (find-user (auth-users-file auth) (cdr name)))))
+                    (user (and name
+                               (string? (cdr name))
+                               (find-user (auth-users-file auth)
+                                          (cdr name)))))
                (and user stamp
                     (equal? (cdr stamp) (password-stamp (user-hash user)))
                     user)))))
@@ -92,5 +96,7 @@ Description: The Set-Cookie header pair that signs out."
 Library: (app auth)
 Description: Stores a new hash for user and returns the updated entry.
   Other sessions of the user end; start a new one for this browser."
-      (save-user! (auth-users-file auth) (user-name user) (password-hash new-password))
+      (save-user! (auth-users-file auth)
+                  (user-name user)
+                  (password-hash new-password))
       (find-user (auth-users-file auth) (user-name user)))))

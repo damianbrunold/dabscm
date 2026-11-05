@@ -18,23 +18,23 @@
 ;; instructions are ignored.
 
 (define-library (scm truetype)
-  (export read-truetype
-          truetype-info
-          make-outline-font
-          font?
-          font-units-per-em
+  (export font->truetype
           font-ascent
+          font-chars
           font-descent
           font-glyph
           font-kerning
-          font-text-width
           font-text-path
-          font-chars
-          font->truetype)
+          font-text-width
+          font-units-per-em
+          font?
+          make-outline-font
+          read-truetype
+          truetype-info)
   (import (scheme base)
           (scheme char)
-          (scheme inexact)
           (scheme cxr)
+          (scheme inexact)
           (scheme lazy)
           (srfi 69)
           (scm bytevector))
@@ -60,8 +60,7 @@ Description: The characters font has glyphs for, ascending. For a font
   read with read-truetype they come from its cmap.
 Example:
   (length (font-chars inter-regular)) => 312"
-      (let ((cs (%font-chars font)))
-        (if (promise? cs) (force cs) cs)))
+      (let ((cs (%font-chars font))) (if (promise? cs) (force cs) cs)))
 
     (define (font-glyph font char)
       "Syntax: (font-glyph font char)
@@ -93,8 +92,10 @@ Example:
     (define (f2dot14 bv o) (/ (s16 bv o) 16384.0))
 
     (define (tag bv o)
-      (string (integer->char (u8 bv o)) (integer->char (u8 bv (+ o 1)))
-              (integer->char (u8 bv (+ o 2))) (integer->char (u8 bv (+ o 3)))))
+      (string (integer->char (u8 bv o))
+              (integer->char (u8 bv (+ o 1)))
+              (integer->char (u8 bv (+ o 2)))
+              (integer->char (u8 bv (+ o 3)))))
 
     ;; -> alist tag -> (offset . length)
     (define (table-directory bv)
@@ -104,7 +105,8 @@ Example:
               acc
               (let ((r (+ 12 (* 16 i))))
                 (loop (+ i 1)
-                      (cons (cons (tag bv r) (cons (u32 bv (+ r 8)) (u32 bv (+ r 12))))
+                      (cons (cons (tag bv r)
+                                  (cons (u32 bv (+ r 8)) (u32 bv (+ r 12))))
                             acc)))))))
 
     (define (table tables name)
@@ -123,48 +125,60 @@ Example:
     (define (cmap-code-points bv cmap)
       (let* ((st (cmap-subtable bv cmap))
              (o (cdr st))
-             (ranges
-              (if (= (car st) 12)
-                  (let loop ((i (- (u32 bv (+ o 12)) 1)) (acc '()))
-                    (if (< i 0)
-                        acc
-                        (let ((g (+ o 16 (* 12 i))))
-                          (loop (- i 1) (cons (cons (u32 bv g) (u32 bv (+ g 4))) acc)))))
-                  (let* ((segs (/ (u16 bv (+ o 6)) 2))
-                         (ends (+ o 14))
-                         (starts (+ ends (* 2 segs) 2)))
-                    (let loop ((i (- segs 1)) (acc '()))
-                      (if (< i 0)
-                          acc
-                          (loop (- i 1)
-                                (let ((a (u16 bv (+ starts (* 2 i))))
-                                      (b (u16 bv (+ ends (* 2 i)))))
-                                  ;; the final 0xFFFF segment maps nothing
-                                  (if (= a #xFFFF) acc (cons (cons a b) acc))))))))))
-        (let loop ((rs (reverse ranges)) (acc '()))
+             (ranges (if (= (car st) 12)
+                         (let loop ((i (- (u32 bv (+ o 12)) 1))
+                                    (acc '()))
+                           (if (< i 0)
+                               acc
+                               (let ((g (+ o 16 (* 12 i))))
+                                 (loop (- i 1)
+                                       (cons
+                                        (cons (u32 bv g) (u32 bv (+ g 4)))
+                                        acc)))))
+                         (let* ((segs (/ (u16 bv (+ o 6)) 2))
+                                (ends (+ o 14))
+                                (starts (+ ends (* 2 segs) 2)))
+                           (let loop ((i (- segs 1))
+                                      (acc '()))
+                             (if (< i 0)
+                                 acc
+                                 (loop (- i 1)
+                                       (let
+                                           ((a (u16 bv (+ starts (* 2 i))))
+                                            (b (u16 bv (+ ends (* 2 i)))))
+                                         ;; the final 0xFFFF segment maps nothing
+                                         (if (= a #xFFFF)
+                                             acc
+                                             (cons (cons a b) acc))))))))))
+        (let loop ((rs (reverse ranges))
+                   (acc '()))
           (if (null? rs)
               acc
               (loop (cdr rs)
-                    (let range ((c (cdar rs)) (acc acc))
+                    (let range ((c (cdar rs))
+                                (acc acc))
                       (if (< c (caar rs))
                           acc
                           (range (- c 1)
                                  ;; no surrogates: they are not characters
-                                 (if (<= #xD800 c #xDFFF) acc (cons c acc))))))))))
+                                 (if (<= #xD800 c #xDFFF)
+                                     acc
+                                     (cons c acc))))))))))
 
     ;; -> (format . offset) of the Unicode subtable used: 12 (full
     ;; Unicode) before 4 (BMP)
     (define (cmap-subtable bv cmap)
       (let* ((n (u16 bv (+ cmap 2)))
-             (subtables
-              (let loop ((i 0) (acc '()))
-                (if (= i n)
-                    (reverse acc)
-                    (let ((r (+ cmap 4 (* 8 i))))
-                      (loop (+ i 1)
-                            (cons (list (u16 bv r) (u16 bv (+ r 2))
-                                        (+ cmap (u32 bv (+ r 4))))
-                                  acc))))))
+             (subtables (let loop ((i 0) (acc '()))
+                          (if (= i n)
+                              (reverse acc)
+                              (let ((r (+ cmap 4 (* 8 i))))
+                                (loop (+ i 1)
+                                      (cons
+                                       (list (u16 bv r)
+                                             (u16 bv (+ r 2))
+                                             (+ cmap (u32 bv (+ r 4))))
+                                       acc))))))
              (find (lambda (fmt ok?)
                      (let loop ((s subtables))
                        (cond ((null? s) #f)
@@ -172,12 +186,15 @@ Example:
                                    (= (u16 bv (caddar s)) fmt))
                               (caddar s))
                              (else (loop (cdr s))))))))
-        (cond
-         ((find 12 (lambda (p e) (or (and (= p 3) (= e 10)) (= p 0))))
-          => (lambda (o) (cons 12 o)))
-         ((find 4 (lambda (p e) (or (and (= p 3) (memv e '(0 1))) (= p 0))))
-          => (lambda (o) (cons 4 o)))
-         (else (error "read-truetype: no usable cmap")))))
+        (cond ((find 12 (lambda (p e) (or (and (= p 3) (= e 10)) (= p 0))))
+               =>
+               (lambda (o) (cons 12 o)))
+              ((find 4
+                     (lambda (p e)
+                       (or (and (= p 3) (memv e '(0 1))) (= p 0))))
+               =>
+               (lambda (o) (cons 4 o)))
+              (else (error "read-truetype: no usable cmap")))))
 
     (define (cmap4 bv o)
       (let* ((segs (/ (u16 bv (+ o 6)) 2))
@@ -187,19 +204,27 @@ Example:
              (ranges (+ deltas (* 2 segs))))
         (lambda (c)
           (let loop ((i 0))
-            (cond
-             ((= i segs) 0)
-             ((> c (u16 bv (+ ends (* 2 i)))) (loop (+ i 1)))
-             (else
-              (let ((start (u16 bv (+ starts (* 2 i)))))
-                (if (< c start)
-                    0
-                    (let ((ro (u16 bv (+ ranges (* 2 i))))
-                          (delta (u16 bv (+ deltas (* 2 i)))))
-                      (if (= ro 0)
-                          (modulo (+ c delta) 65536)
-                          (let ((g (u16 bv (+ ranges (* 2 i) ro (* 2 (- c start))))))
-                            (if (= g 0) 0 (modulo (+ g delta) 65536)))))))))))))
+            (cond ((= i segs) 0)
+                  ((> c (u16 bv (+ ends (* 2 i)))) (loop (+ i 1)))
+                  (else (let ((start (u16 bv (+ starts (* 2 i)))))
+                          (if (< c start)
+                              0
+                              (let ((ro (u16 bv (+ ranges (* 2 i))))
+                                    (delta (u16 bv (+ deltas (* 2 i)))))
+                                (if (= ro 0)
+                                    (modulo (+ c delta) 65536)
+                                    (let
+                                        ((g
+                                          (u16
+                                           bv
+                                           (+ ranges
+                                              (* 2 i)
+                                              ro
+                                              (* 2 (- c start))))))
+                                      (if
+                                       (= g 0)
+                                       0
+                                       (modulo (+ g delta) 65536)))))))))))))
 
     (define (cmap12 bv o)
       (let ((n (u32 bv (+ o 12))))
@@ -208,7 +233,8 @@ Example:
             (if (= i n)
                 0
                 (let* ((g (+ o 16 (* 12 i)))
-                       (start (u32 bv g)) (end (u32 bv (+ g 4))))
+                       (start (u32 bv g))
+                       (end (u32 bv (+ g 4))))
                   (cond ((< c start) 0)
                         ((<= c end) (+ (u32 bv (+ g 8)) (- c start)))
                         (else (loop (+ i 1))))))))))
@@ -217,12 +243,14 @@ Example:
 
     ;; -> list of contours of (x y on?), composites resolved
     (define (glyph-contours bv glyf loca long-loca? gid)
-      (let* ((at (lambda (i) (if long-loca?
-                                 (u32 bv (+ loca (* 4 i)))
-                                 (* 2 (u16 bv (+ loca (* 2 i)))))))
-             (start (at gid)) (end (at (+ gid 1))))
+      (let* ((at (lambda (i)
+                   (if long-loca?
+                       (u32 bv (+ loca (* 4 i)))
+                       (* 2 (u16 bv (+ loca (* 2 i)))))))
+             (start (at gid))
+             (end (at (+ gid 1))))
         (if (= start end)
-            '()                         ; an empty glyph, such as space
+            '() ; an empty glyph, such as space
             (let* ((o (+ glyf start))
                    (n (s16 bv o)))
               (if (>= n 0)
@@ -233,7 +261,8 @@ Example:
       (let* ((ends (let loop ((i 0) (acc '()))
                      (if (= i ncontours)
                          (reverse acc)
-                         (loop (+ i 1) (cons (u16 bv (+ o 10 (* 2 i))) acc)))))
+                         (loop (+ i 1)
+                               (cons (u16 bv (+ o 10 (* 2 i))) acc)))))
              (npoints (if (null? ends) 0 (+ 1 (apply max ends))))
              (ilen (u16 bv (+ o 10 (* 2 ncontours))))
              (fo (+ o 12 (* 2 ncontours) ilen))
@@ -247,46 +276,62 @@ Example:
                       (do ((k 0 (+ k 1))) ((or (> k r) (>= (+ i k) npoints)))
                         (vector-set! flags (+ i k) f))
                       (loop (+ i r 1) (+ p 2)))
-                    (begin (vector-set! flags i f) (loop (+ i 1) (+ p 1)))))
+                    (begin
+                      (vector-set! flags i f)
+                      (loop (+ i 1) (+ p 1)))))
               ;; coordinates: x then y, deltas
               (let* ((xs (make-vector npoints 0))
                      (ys (make-vector npoints 0))
-                     (read-coords!
-                      (lambda (p vec short-bit same-bit)
-                        (let loop ((i 0) (p p) (v 0))
-                          (if (= i npoints)
-                              p
-                              (let ((f (vector-ref flags i)))
-                                (cond
-                                 ((odd? (quotient f short-bit))
-                                  (let ((d (u8 bv p)))
-                                    (let ((v (if (odd? (quotient f same-bit)) (+ v d) (- v d))))
-                                      (vector-set! vec i v)
-                                      (loop (+ i 1) (+ p 1) v))))
-                                 ((odd? (quotient f same-bit))
-                                  (vector-set! vec i v)
-                                  (loop (+ i 1) p v))
-                                 (else
-                                  (let ((v (+ v (s16 bv p))))
-                                    (vector-set! vec i v)
-                                    (loop (+ i 1) (+ p 2) v)))))))))
+                     (read-coords! (lambda (p vec short-bit same-bit)
+                                     (let loop ((i 0) (p p) (v 0))
+                                       (if
+                                        (= i npoints)
+                                        p
+                                        (let ((f (vector-ref flags i)))
+                                          (cond
+                                           ((odd? (quotient f short-bit))
+                                            (let ((d (u8 bv p)))
+                                              (let
+                                                  ((v
+                                                    (if
+                                                     (odd?
+                                                      (quotient f same-bit))
+                                                     (+ v d)
+                                                     (- v d))))
+                                                (vector-set! vec i v)
+                                                (loop (+ i 1) (+ p 1) v))))
+                                           ((odd? (quotient f same-bit))
+                                            (vector-set! vec i v)
+                                            (loop (+ i 1) p v))
+                                           (else
+                                            (let ((v (+ v (s16 bv p))))
+                                              (vector-set! vec i v)
+                                              (loop (+ i 1) (+ p 2) v)))))))))
                      (yp (read-coords! p xs 2 16)))
                 (read-coords! yp ys 4 32)
                 (let loop ((ends ends) (first 0) (acc '()))
                   (if (null? ends)
                       (reverse acc)
-                      (loop (cdr ends) (+ (car ends) 1)
-                            (cons (let pts ((i (car ends)) (c '()))
-                                    (if (< i first)
-                                        c
-                                        (pts (- i 1)
-                                             (cons (list (vector-ref xs i) (vector-ref ys i)
-                                                         (odd? (vector-ref flags i)))
-                                                   c))))
+                      (loop (cdr ends)
+                            (+ (car ends) 1)
+                            (cons (let pts
+                                      ((i (car ends))
+                                       (c '()))
+                                    (if
+                                     (< i first)
+                                     c
+                                     (pts
+                                      (- i 1)
+                                      (cons
+                                       (list (vector-ref xs i)
+                                             (vector-ref ys i)
+                                             (odd? (vector-ref flags i)))
+                                       c))))
                                   acc)))))))))
 
     (define (composite-glyph bv glyf loca long-loca? o)
-      (let loop ((p (+ o 10)) (acc '()))
+      (let loop ((p (+ o 10))
+                 (acc '()))
         (let* ((flags (u16 bv p))
                (gid (u16 bv (+ p 2)))
                (words? (odd? flags))
@@ -295,25 +340,36 @@ Example:
                (dy (if words? (s16 bv (+ p 6)) (s8 bv (+ p 5))))
                (p (+ p 4 (if words? 4 2))))
           (let-values (((a b c d p)
-                        (cond
-                         ((odd? (quotient flags 8))       ; one scale
-                          (let ((s (f2dot14 bv p))) (values s 0.0 0.0 s (+ p 2))))
-                         ((odd? (quotient flags 64))      ; x and y scale
-                          (values (f2dot14 bv p) 0.0 0.0 (f2dot14 bv (+ p 2)) (+ p 4)))
-                         ((odd? (quotient flags 128))     ; 2 x 2
-                          (values (f2dot14 bv p) (f2dot14 bv (+ p 2))
-                                  (f2dot14 bv (+ p 4)) (f2dot14 bv (+ p 6)) (+ p 8)))
-                         (else (values 1.0 0.0 0.0 1.0 p)))))
-            (let* ((dx (if xy? dx 0)) (dy (if xy? dy 0))
+                        (cond ((odd? (quotient flags 8)) ; one scale
+                               (let ((s (f2dot14 bv p)))
+                                 (values s 0.0 0.0 s (+ p 2))))
+                              ((odd? (quotient flags 64)) ; x and y scale
+                               (values (f2dot14 bv p)
+                                       0.0
+                                       0.0
+                                       (f2dot14 bv (+ p 2))
+                                       (+ p 4)))
+                              ((odd? (quotient flags 128)) ; 2 x 2
+                               (values (f2dot14 bv p)
+                                       (f2dot14 bv (+ p 2))
+                                       (f2dot14 bv (+ p 4))
+                                       (f2dot14 bv (+ p 6))
+                                       (+ p 8)))
+                              (else (values 1.0 0.0 0.0 1.0 p)))))
+            (let* ((dx (if xy? dx 0))
+                   (dy (if xy? dy 0))
                    (part (map (lambda (contour)
                                 (map (lambda (pt)
-                                       (let ((x (car pt)) (y (cadr pt)))
-                                         (list (+ (* a x) (* c y) dx) (+ (* b x) (* d y) dy)
+                                       (let
+                                           ((x (car pt))
+                                            (y (cadr pt)))
+                                         (list (+ (* a x) (* c y) dx)
+                                               (+ (* b x) (* d y) dy)
                                                (caddr pt))))
                                      contour))
                               (glyph-contours bv glyf loca long-loca? gid)))
                    (acc (append acc part)))
-              (if (odd? (quotient flags 32))         ; more components
+              (if (odd? (quotient flags 32)) ; more components
                   (loop p acc)
                   acc))))))
 
@@ -327,7 +383,8 @@ Example:
         (when k
           (let* ((o (cadr k))
                  (ntables (u16 bv (+ o 2))))
-            (let loop ((i 0) (st (+ o 4)))
+            (let loop ((i 0)
+                       (st (+ o 4)))
               (when (< i ntables)
                 (let ((len (u16 bv (+ st 2)))
                       (coverage (u16 bv (+ st 4))))
@@ -335,8 +392,10 @@ Example:
                       (let ((npairs (u16 bv (+ st 6))))
                         (do ((j 0 (+ j 1))) ((= j npairs))
                           (let ((r (+ st 14 (* 6 j))))
-                            (hash-table-set! h (cons (u16 bv r) (u16 bv (+ r 2)))
-                                             (s16 bv (+ r 4))))))
+                            (hash-table-set!
+                             h
+                             (cons (u16 bv r) (u16 bv (+ r 2)))
+                             (s16 bv (+ r 4))))))
                       (loop (+ i 1) (+ st len))))))))
         h))
 
@@ -353,55 +412,69 @@ Example:
           (let* ((o (cadr g))
                  (fl (+ o (u16 bv (+ o 6))))
                  (ll (+ o (u16 bv (+ o 8))))
-                 (lookups
-                  (let loop ((i 0) (acc '()))
-                    (if (= i (u16 bv fl))
-                        acc
-                        (let* ((r (+ fl 2 (* 6 i)))
-                               (ft (+ fl (u16 bv (+ r 4)))))
-                          (loop (+ i 1)
-                                (if (member (tag bv r) tags)
-                                    (append acc
-                                            (map (lambda (k) (u16 bv (+ ft 4 (* 2 k))))
-                                                 (iota-list (u16 bv (+ ft 2)))))
-                                    acc)))))))
-            (for-each
-             (lambda (li)
-               (let* ((lk (+ ll (u16 bv (+ ll 2 (* 2 li)))))
-                      (type (u16 bv lk)))
-                 (for-each
-                  (lambda (k)
-                    (let* ((st (+ lk (u16 bv (+ lk 6 (* 2 k))))))
-                      (cond
-                       ((= type 1) (single-subst! h bv st))
-                       ((and (= type 7) (= 1 (u16 bv (+ st 2))))
-                        (single-subst! h bv (+ st (u32 bv (+ st 4))))))))
-                  (iota-list (u16 bv (+ lk 4))))))
-             lookups)))
+                 (lookups (let loop ((i 0) (acc '()))
+                            (if (= i (u16 bv fl))
+                                acc
+                                (let* ((r (+ fl 2 (* 6 i)))
+                                       (ft (+ fl (u16 bv (+ r 4)))))
+                                  (loop
+                                   (+ i 1)
+                                   (if (member (tag bv r) tags)
+                                       (append
+                                        acc
+                                        (map
+                                         (lambda (k)
+                                           (u16 bv (+ ft 4 (* 2 k))))
+                                         (iota-list (u16 bv (+ ft 2)))))
+                                       acc)))))))
+            (for-each (lambda (li)
+                        (let* ((lk (+ ll (u16 bv (+ ll 2 (* 2 li)))))
+                               (type (u16 bv lk)))
+                          (for-each (lambda (k)
+                                      (let*
+                                          ((st
+                                            (+ lk (u16 bv (+ lk 6 (* 2 k))))))
+                                        (cond
+                                         ((= type 1) (single-subst! h bv st))
+                                         ((and (= type 7)
+                                               (= 1 (u16 bv (+ st 2))))
+                                          (single-subst!
+                                           h
+                                           bv
+                                           (+ st (u32 bv (+ st 4))))))))
+                                    (iota-list (u16 bv (+ lk 4))))))
+                      lookups)))
         h))
 
-    (define (iota-list n) (let loop ((i (- n 1)) (acc '())) (if (< i 0) acc (loop (- i 1) (cons i acc)))))
+    (define (iota-list n)
+      (let loop ((i (- n 1))
+                 (acc '()))
+        (if (< i 0) acc (loop (- i 1) (cons i acc)))))
 
     (define (single-subst! h bv st)
       (let ((format (u16 bv st))
             (covered (coverage bv (+ st (u16 bv (+ st 2))))))
-        (for-each
-         (lambda (pair)                ; (gid . coverage index)
-           (hash-table-set!
-            h (car pair)
-            (if (= format 1)
-                (modulo (+ (car pair) (s16 bv (+ st 4))) 65536)
-                (u16 bv (+ st 6 (* 2 (cdr pair)))))))
-         covered)))
+        (for-each (lambda (pair) ; (gid . coverage index)
+                    (hash-table-set! h
+                                     (car pair)
+                                     (if
+                                      (= format 1)
+                                      (modulo (+ (car pair) (s16 bv (+ st 4)))
+                                              65536)
+                                      (u16 bv (+ st 6 (* 2 (cdr pair)))))))
+                  covered)))
 
     ;; -> list of (gid . coverage index)
     (define (coverage bv o)
       (if (= 1 (u16 bv o))
-          (map (lambda (i) (cons (u16 bv (+ o 4 (* 2 i))) i)) (iota-list (u16 bv (+ o 2))))
+          (map (lambda (i) (cons (u16 bv (+ o 4 (* 2 i))) i))
+               (iota-list (u16 bv (+ o 2))))
           (apply append
                  (map (lambda (i)
                         (let* ((r (+ o 4 (* 6 i)))
-                               (start (u16 bv r)) (end (u16 bv (+ r 2))) (ci (u16 bv (+ r 4))))
+                               (start (u16 bv r))
+                               (end (u16 bv (+ r 2)))
+                               (ci (u16 bv (+ r 4))))
                           (map (lambda (k) (cons (+ start k) (+ ci k)))
                                (iota-list (+ 1 (- end start))))))
                       (iota-list (u16 bv (+ o 2)))))))
@@ -418,34 +491,50 @@ Example:
              (let* ((o (cadr g))
                     (fl (+ o (u16 bv (+ o 6))))
                     (ll (+ o (u16 bv (+ o 8))))
-                    (indices
-                     (delete-dups
-                      (let loop ((i 0) (acc '()))
-                        (if (= i (u16 bv fl))
-                            acc
-                            (let* ((r (+ fl 2 (* 6 i)))
-                                   (ft (+ fl (u16 bv (+ r 4)))))
-                              (loop (+ i 1)
-                                    (if (string=? (tag bv r) "kern")
-                                        (append acc (map (lambda (k) (u16 bv (+ ft 4 (* 2 k))))
-                                                         (iota-list (u16 bv (+ ft 2)))))
+                    (indices (delete-dups
+                              (let loop ((i 0) (acc '()))
+                                (if (= i (u16 bv fl))
+                                    acc
+                                    (let*
+                                        ((r (+ fl 2 (* 6 i)))
+                                         (ft (+ fl (u16 bv (+ r 4)))))
+                                      (loop
+                                       (+ i 1)
+                                       (if
+                                        (string=? (tag bv r) "kern")
+                                        (append
+                                         acc
+                                         (map
+                                          (lambda (k)
+                                            (u16 bv (+ ft 4 (* 2 k))))
+                                          (iota-list (u16 bv (+ ft 2)))))
                                         acc)))))))
                     ;; per lookup its pair subtables
-                    (lookups
-                     (filter-map-list
-                      (lambda (st) (and (pair? st) st))
-                            (map (lambda (li)
-                                   (let* ((lk (+ ll (u16 bv (+ ll 2 (* 2 li)))))
+                    (lookups (filter-map-list
+                              (lambda (st) (and (pair? st) st))
+                              (map (lambda (li)
+                                     (let*
+                                         ((lk
+                                           (+ ll (u16 bv (+ ll 2 (* 2 li)))))
                                           (type (u16 bv lk)))
-                                     (filter-map-list
-                                      (lambda (k)
-                                        (let ((st (+ lk (u16 bv (+ lk 6 (* 2 k))))))
-                                          (cond ((= type 2) (pair-subtable bv st))
-                                                ((and (= type 9) (= 2 (u16 bv (+ st 2))))
-                                                 (pair-subtable bv (+ st (u32 bv (+ st 4)))))
-                                                (else #f))))
-                                      (iota-list (u16 bv (+ lk 4))))))
-                                 indices))))
+                                       (filter-map-list
+                                        (lambda (k)
+                                          (let
+                                              ((st
+                                                (+
+                                                 lk
+                                                 (u16 bv (+ lk 6 (* 2 k))))))
+                                            (cond
+                                             ((= type 2)
+                                              (pair-subtable bv st))
+                                             ((and (= type 9)
+                                                   (= 2 (u16 bv (+ st 2))))
+                                              (pair-subtable
+                                               bv
+                                               (+ st (u32 bv (+ st 4)))))
+                                             (else #f))))
+                                        (iota-list (u16 bv (+ lk 4))))))
+                                   indices))))
                ;; As OpenType applies them: in each lookup the first
                ;; subtable that covers the pair, the lookups' adjustments
                ;; added up (fonts such as IBM Plex split their kerning
@@ -456,11 +545,15 @@ Example:
                         (if (null? ls)
                             sum
                             (next (cdr ls)
-                                  (+ sum (let loop ((ss (car ls)))
-                                           (if (null? ss)
-                                               0
-                                               (let ((v ((car ss) l r)))
-                                                 (if v v (loop (cdr ss))))))))))))))))
+                                  (+ sum
+                                     (let loop ((ss (car ls)))
+                                       (if
+                                        (null? ss)
+                                        0
+                                        (let ((v ((car ss) l r)))
+                                          (if v
+                                              v
+                                              (loop (cdr ss))))))))))))))))
 
     (define (delete-dups l)
       (let loop ((l l) (acc '()))
@@ -470,13 +563,16 @@ Example:
 
     (define (filter-map-list f l)
       (let loop ((l l) (acc '()))
-        (if (null? l) (reverse acc)
+        (if (null? l)
+            (reverse acc)
             (let ((v (f (car l)))) (loop (cdr l) (if v (cons v acc) acc))))))
 
     ;; size in bytes of a ValueRecord, and where its x advance is
     (define (value-size fmt)
       (let loop ((b 0) (n 0))
-        (if (= b 8) (* 2 n) (loop (+ b 1) (if (odd? (quotient fmt (expt 2 b))) (+ n 1) n)))))
+        (if (= b 8)
+            (* 2 n)
+            (loop (+ b 1) (if (odd? (quotient fmt (expt 2 b))) (+ n 1) n)))))
     (define (x-advance bv rec fmt)
       (if (odd? (quotient fmt 4))
           (s16 bv (+ rec (value-size (modulo fmt 4))))
@@ -501,28 +597,34 @@ Example:
                     (let* ((ps (+ st (u16 bv (+ st 10 (* 2 ci)))))
                            (n (u16 bv ps)))
                       ;; pair value records are sorted by the second glyph
-                      (let search ((lo 0) (hi (- n 1)))
+                      (let search ((lo 0)
+                                   (hi (- n 1)))
                         (and (<= lo hi)
                              (let* ((mid (quotient (+ lo hi) 2))
                                     (rec (+ ps 2 (* mid (+ 2 rec-size))))
                                     (g (u16 bv rec)))
                                (cond ((< g r) (search (+ mid 1) hi))
                                      ((> g r) (search lo (- mid 1)))
-                                     (else (x-advance bv (+ rec 2) vf1)))))))))))
+                                     (else
+                                      (x-advance bv (+ rec 2) vf1)))))))))))
           ((2)
            (let ((cd1 (class-def bv (+ st (u16 bv (+ st 8)))))
                  (cd2 (class-def bv (+ st (u16 bv (+ st 10)))))
                  (c2n (u16 bv (+ st 14))))
              (lambda (l r)
                (and (hash-table-ref/default cov l #f)
-                    (let ((c1 (cd1 l)) (c2 (cd2 r)))
-                      (x-advance bv (+ st 16 (* rec-size (+ (* c1 c2n) c2))) vf1))))))
+                    (let ((c1 (cd1 l))
+                          (c2 (cd2 r)))
+                      (x-advance bv
+                                 (+ st 16 (* rec-size (+ (* c1 c2n) c2)))
+                                 vf1))))))
           (else (lambda (l r) #f)))))
 
     ;; -> procedure gid -> class (0 when not listed)
     (define (class-def bv o)
       (if (= 1 (u16 bv o))
-          (let ((start (u16 bv (+ o 2))) (n (u16 bv (+ o 4))))
+          (let ((start (u16 bv (+ o 2)))
+                (n (u16 bv (+ o 4))))
             (lambda (g)
               (if (and (>= g start) (< g (+ start n)))
                   (u16 bv (+ o 6 (* 2 (- g start))))
@@ -530,7 +632,8 @@ Example:
           (let ((n (u16 bv (+ o 2))))
             (lambda (g)
               ;; class range records are sorted by start glyph
-              (let search ((lo 0) (hi (- n 1)))
+              (let search ((lo 0)
+                           (hi (- n 1)))
                 (if (> lo hi)
                     0
                     (let* ((mid (quotient (+ lo hi) 2))
@@ -556,7 +659,8 @@ Example:
                  (lambda (p) (read-bytevector 1000000 p)))))
   (read-truetype bv '((features \"tnum\")))"
       (let* ((options (if (pair? options) (car options) '()))
-             (features (let ((p (assq 'features options))) (if p (cdr p) '())))
+             (features (let ((p (assq 'features options)))
+                         (if p (cdr p) '())))
              (tables (table-directory bv))
              (head (table tables "head"))
              (hhea (table tables "hhea"))
@@ -577,34 +681,44 @@ Example:
                         (u16 bv (+ hmtx (* 4 (min gid (- nmetrics 1)))))))
              (cache (make-hash-table eqv?))
              (pairs (kern-pairs bv tables))
-             (gpos (and (= 0 (hash-table-size pairs)) (gpos-kerning bv tables))))
-        (%make-font
-         (u16 bv (+ head 18))
-         (s16 bv (+ hhea 4))
-         (s16 bv (+ hhea 6))
-         (lambda (char)
-           (let ((gid (gid-of (char->integer char))))
-             (and (> gid 0)
-                  (or (hash-table-ref/default cache gid #f)
-                      (let ((g (cons (advance gid)
-                                     (glyph-contours bv glyf loca long-loca? gid))))
-                        (hash-table-set! cache gid g)
-                        g)))))
-         (lambda (left right)
-           (let ((l (gid-of (char->integer left))) (r (gid-of (char->integer right))))
-             (if gpos
-                 (gpos l r)
-                 (hash-table-ref/default pairs (cons l r) 0))))
-         (delay
-           (let loop ((cps (reverse (cmap-code-points bv cmap-offset))) (acc '()))
-             (cond ((null? cps) acc)
-                   ;; only characters this implementation represents
-                   ;; (one without code points beyond U+FFFF truncates
-                   ;; them)
-                   ((and (> (gid-of (car cps)) 0)
-                         (= (char->integer (integer->char (car cps))) (car cps)))
-                    (loop (cdr cps) (cons (integer->char (car cps)) acc)))
-                   (else (loop (cdr cps) acc))))))))
+             (gpos (and (= 0 (hash-table-size pairs))
+                        (gpos-kerning bv tables))))
+        (%make-font (u16 bv (+ head 18))
+                    (s16 bv (+ hhea 4))
+                    (s16 bv (+ hhea 6))
+                    (lambda (char)
+                      (let ((gid (gid-of (char->integer char))))
+                        (and (> gid 0)
+                             (or (hash-table-ref/default cache gid #f)
+                                 (let
+                                     ((g
+                                       (cons
+                                        (advance gid)
+                                        (glyph-contours bv glyf loca
+                                                        long-loca? gid))))
+                                   (hash-table-set! cache gid g)
+                                   g)))))
+                    (lambda (left right)
+                      (let ((l (gid-of (char->integer left)))
+                            (r (gid-of (char->integer right))))
+                        (if gpos
+                            (gpos l r)
+                            (hash-table-ref/default pairs (cons l r) 0))))
+                    (delay
+                      (let loop ((cps (reverse
+                                       (cmap-code-points bv cmap-offset)))
+                                 (acc '()))
+                        (cond ((null? cps) acc)
+                              ;; only characters this implementation represents
+                              ;; (one without code points beyond U+FFFF truncates
+                              ;; them)
+                              ((and (> (gid-of (car cps)) 0)
+                                    (= (char->integer
+                                        (integer->char (car cps)))
+                                       (car cps)))
+                               (loop (cdr cps)
+                                     (cons (integer->char (car cps)) acc)))
+                              (else (loop (cdr cps) acc))))))))
 
     ;; --- naming --------------------------------------------------------
 
@@ -616,37 +730,59 @@ Example:
              (let* ((o (cadr n))
                     (count (u16 bv (+ o 2)))
                     (strings (+ o (u16 bv (+ o 4))))
-                    (records (let loop ((i (- count 1)) (acc '()))
+                    (records (let loop ((i (- count 1))
+                                        (acc '()))
                                (if (< i 0)
                                    acc
                                    (let ((r (+ o 6 (* 12 i))))
-                                     (loop (- i 1)
-                                           (if (= (u16 bv (+ r 6)) id)
-                                               (cons (list (u16 bv r) (u16 bv (+ r 2)) (u16 bv (+ r 4))
-                                                           (+ strings (u16 bv (+ r 10))) (u16 bv (+ r 8)))
-                                                     acc)
-                                               acc))))))
+                                     (loop
+                                      (- i 1)
+                                      (if
+                                       (= (u16 bv (+ r 6)) id)
+                                       (cons
+                                        (list (u16 bv r)
+                                              (u16 bv (+ r 2))
+                                              (u16 bv (+ r 4))
+                                              (+ strings (u16 bv (+ r 10)))
+                                              (u16 bv (+ r 8)))
+                                        acc)
+                                       acc))))))
                     (pick (lambda (ok?)
                             (let loop ((rs records))
                               (cond ((null? rs) #f)
                                     ((ok? (car rs)) (car rs))
                                     (else (loop (cdr rs))))))))
-               (cond
-                ((or (pick (lambda (r) (and (= (car r) 3) (= (cadr r) 1) (= (caddr r) #x409))))
-                     (pick (lambda (r) (and (= (car r) 3) (memv (cadr r) '(0 1 10))))))
-                 => (lambda (r)
-                      (let loop ((i (- (list-ref r 4) 2)) (acc '()))
-                        (if (< i 0)
-                            (list->string acc)
-                            (loop (- i 2)
-                                  (cons (integer->char (u16 bv (+ (list-ref r 3) i))) acc))))))
-                ((pick (lambda (r) (and (= (car r) 1) (= (cadr r) 0))))
-                 => (lambda (r)
-                      (let loop ((i (- (list-ref r 4) 1)) (acc '()))
-                        (if (< i 0)
-                            (list->string acc)
-                            (loop (- i 1) (cons (integer->char (u8 bv (+ (list-ref r 3) i))) acc))))))
-                (else #f))))))
+               (cond ((or (pick (lambda (r)
+                                  (and (= (car r) 3)
+                                       (= (cadr r) 1)
+                                       (= (caddr r) #x409))))
+                          (pick (lambda (r)
+                                  (and (= (car r) 3)
+                                       (memv (cadr r) '(0 1 10))))))
+                      =>
+                      (lambda (r)
+                        (let loop ((i (- (list-ref r 4) 2))
+                                   (acc '()))
+                          (if (< i 0)
+                              (list->string acc)
+                              (loop (- i 2)
+                                    (cons
+                                     (integer->char
+                                      (u16 bv (+ (list-ref r 3) i)))
+                                     acc))))))
+                     ((pick (lambda (r) (and (= (car r) 1) (= (cadr r) 0))))
+                      =>
+                      (lambda (r)
+                        (let loop ((i (- (list-ref r 4) 1))
+                                   (acc '()))
+                          (if (< i 0)
+                              (list->string acc)
+                              (loop (- i 1)
+                                    (cons
+                                     (integer->char
+                                      (u8 bv (+ (list-ref r 3) i)))
+                                     acc))))))
+                     (else #f))))))
 
     (define (truetype-info bv)
       "Syntax: (truetype-info bytevector)
@@ -662,12 +798,22 @@ Example:
              (os2 (assoc "OS/2" tables))
              (head (table tables "head"))
              (mac-style (u16 bv (+ head 44))))
-        `((family . ,(or (name-string bv tables 16) (name-string bv tables 1) ""))
-          (style . ,(or (name-string bv tables 17) (name-string bv tables 2) "Regular"))
-          (weight . ,(if os2 (u16 bv (+ (cadr os2) 4)) (if (odd? mac-style) 700 400)))
-          (italic . ,(if os2
-                         (odd? (u16 bv (+ (cadr os2) 62)))
-                         (odd? (quotient mac-style 2)))))))
+        `((family .
+                  ,(or (name-string bv tables 16)
+                       (name-string bv tables 1)
+                       ""))
+          (style .
+                 ,(or (name-string bv tables 17)
+                      (name-string bv tables 2)
+                      "Regular"))
+          (weight .
+                  ,(if os2
+                       (u16 bv (+ (cadr os2) 4))
+                       (if (odd? mac-style) 700 400)))
+          (italic .
+                  ,(if os2
+                       (odd? (u16 bv (+ (cadr os2) 62)))
+                       (odd? (quotient mac-style 2)))))))
 
     (define (make-outline-font units-per-em ascent descent glyphs . kerning)
       "Syntax: (make-outline-font units-per-em ascent descent glyphs [kerning])
@@ -683,7 +829,8 @@ Example:
             (k (make-hash-table equal?)))
         (for-each (lambda (g) (hash-table-set! h (car g) (cdr g))) glyphs)
         (when (pair? kerning)
-          (for-each (lambda (p) (hash-table-set! k (car p) (cdr p))) (car kerning)))
+          (for-each (lambda (p) (hash-table-set! k (car p) (cdr p)))
+                    (car kerning)))
         (%make-font units-per-em ascent descent
                     (lambda (char) (hash-table-ref/default h char #f))
                     (lambda (left right)
@@ -717,13 +864,17 @@ Description: Returns the advance width of string set in font at size
 Example:
   (font-text-width font 11 \"Intern\") => 33.4..."
       (let ((s (/ (inexact size) (font-units-per-em font))))
-        (let loop ((cs (string->list string)) (w 0))
+        (let loop ((cs (string->list string))
+                   (w 0))
           (if (null? cs)
               (* s w)
               (let ((g (glyph-or-fallback font (car cs))))
                 (loop (cdr cs)
-                      (+ w (if g (car g) 0)
-                         (if (pair? (cdr cs)) (font-kerning font (car cs) (cadr cs)) 0))))))))
+                      (+ w
+                         (if g (car g) 0)
+                         (if (pair? (cdr cs))
+                             (font-kerning font (car cs) (cadr cs))
+                             0))))))))
 
     (define (font-text-path font size x y string)
       "Syntax: (font-text-path font size x y string)
@@ -735,22 +886,31 @@ Example:
   (canvas-fill-path! canvas (font-text-path font 11 10 20 \"Intern\")
                      (rgba 0 0 0))"
       (let ((s (/ (inexact size) (font-units-per-em font))))
-        (let loop ((cs (string->list string)) (pen 0) (acc '()))
+        (let loop ((cs (string->list string))
+                   (pen 0)
+                   (acc '()))
           (if (null? cs)
               (apply append (reverse acc))
               (let* ((g (glyph-or-fallback font (car cs)))
                      (ox (+ x (* s pen)))
                      (path (if g (contours->path (cdr g) ox y s) '())))
                 (loop (cdr cs)
-                      (+ pen (if g (car g) 0)
-                         (if (pair? (cdr cs)) (font-kerning font (car cs) (cadr cs)) 0))
+                      (+ pen
+                         (if g (car g) 0)
+                         (if (pair? (cdr cs))
+                             (font-kerning font (car cs) (cadr cs))
+                             0))
                       (cons path acc)))))))
 
     ;; TrueType contours are quadratic: between two off-curve points lies
     ;; an implied on-curve point at their midpoint.
     (define (contours->path contours ox oy s)
-      (let ((pt (lambda (p) (list (+ ox (* s (car p))) (- oy (* s (cadr p))))))
-            (mid (lambda (a b) (list (/ (+ (car a) (car b)) 2) (/ (+ (cadr a) (cadr b)) 2) #t))))
+      (let ((pt (lambda (p)
+                  (list (+ ox (* s (car p))) (- oy (* s (cadr p))))))
+            (mid (lambda (a b)
+                   (list (/ (+ (car a) (car b)) 2)
+                         (/ (+ (cadr a) (cadr b)) 2)
+                         #t))))
         (apply append
                (map (lambda (contour)
                       (if (null? contour)
@@ -758,10 +918,19 @@ Example:
                           ;; start on an on-curve point, or the midpoint of
                           ;; the first two when there is none
                           (let* ((on (let find ((c contour))
-                                       (cond ((null? c) #f) ((caddr (car c)) c) (else (find (cdr c))))))
-                                 (rot (if on
-                                          (append on (list-head contour (- (length contour) (length on))))
-                                          (cons (mid (car contour) (cadr contour)) contour)))
+                                       (cond ((null? c) #f)
+                                             ((caddr (car c)) c)
+                                             (else (find (cdr c))))))
+                                 (rot (if
+                                       on
+                                       (append
+                                        on
+                                        (list-head
+                                         contour
+                                         (- (length contour) (length on))))
+                                       (cons
+                                        (mid (car contour) (cadr contour))
+                                        contour)))
                                  (start (car rot)))
                             (let walk ((ps (append (cdr rot) (list start)))
                                        (ctrl #f)
@@ -771,20 +940,26 @@ Example:
                                   (let ((p (car ps)))
                                     (cond
                                      ((caddr p)
-                                      (walk (cdr ps) #f
-                                            (cons (if ctrl
-                                                      (append '(Q) (pt ctrl) (pt p))
-                                                      (cons 'L (pt p)))
-                                                  acc)))
+                                      (walk
+                                       (cdr ps)
+                                       #f
+                                       (cons
+                                        (if ctrl
+                                            (append '(Q) (pt ctrl) (pt p))
+                                            (cons 'L (pt p)))
+                                        acc)))
                                      (ctrl
                                       (let ((m (mid ctrl p)))
-                                        (walk (cdr ps) p (cons (append '(Q) (pt ctrl) (pt m)) acc))))
+                                        (walk
+                                         (cdr ps)
+                                         p
+                                         (cons (append '(Q) (pt ctrl) (pt m))
+                                               acc))))
                                      (else (walk (cdr ps) p acc)))))))))
                     contours))))
 
     (define (list-head l k)
       (if (= k 0) '() (cons (car l) (list-head (cdr l) (- k 1)))))
-
 
     ;; --- writing TrueType files ---------------------------------------
     ;; font->truetype turns a font made from glyph data back into a .ttf
@@ -797,11 +972,14 @@ Example:
     (define (w8 p v) (write-u8 (modulo v 256) p))
     (define (w16 p v)
       (let ((v (if (< v 0) (+ v 65536) v)))
-        (w8 p (quotient v 256)) (w8 p (remainder v 256))))
+        (w8 p (quotient v 256))
+        (w8 p (remainder v 256))))
     (define (w32 p v)
       (let ((v (if (< v 0) (+ v 4294967296) v)))
-        (w16 p (quotient v 65536)) (w16 p (remainder v 65536))))
-    (define (w-tag p s) (for-each (lambda (c) (w8 p (char->integer c))) (string->list s)))
+        (w16 p (quotient v 65536))
+        (w16 p (remainder v 65536))))
+    (define (w-tag p s)
+      (for-each (lambda (c) (w8 p (char->integer c))) (string->list s)))
 
     (define (glyph-points contours) (apply append contours))
 
@@ -814,10 +992,13 @@ Example:
             (let loop ((ps pts) (x0 #f) (y0 #f) (x1 #f) (y1 #f))
               (if (null? ps)
                   (list x0 y0 x1 y1)
-                  (let ((x (ipart (car (car ps)))) (y (ipart (cadr (car ps)))))
+                  (let ((x (ipart (car (car ps))))
+                        (y (ipart (cadr (car ps)))))
                     (loop (cdr ps)
-                          (if x0 (min x0 x) x) (if y0 (min y0 y) y)
-                          (if x1 (max x1 x) x) (if y1 (max y1 y) y))))))))
+                          (if x0 (min x0 x) x)
+                          (if y0 (min y0 y) y)
+                          (if x1 (max x1 x) x)
+                          (if y1 (max y1 y) y))))))))
 
     ;; The glyf entry of a simple glyph, padded to 4 bytes; empty for a
     ;; glyph without contours.
@@ -835,7 +1016,7 @@ Example:
                   (let ((e (+ end (length (car cs)))))
                     (w16 p e)
                     (loop (cdr cs) e))))
-              (w16 p 0)                       ; no instructions
+              (w16 p 0) ; no instructions
               (for-each (lambda (pt) (w8 p (if (caddr pt) 1 0))) pts)
               (let loop ((ps pts) (prev 0))
                 (unless (null? ps)
@@ -848,7 +1029,11 @@ Example:
                     (w16 p (- y prev))
                     (loop (cdr ps) y))))
               (let loop ()
-                (when (not (= 0 (remainder (bytevector-length (get-output-bytevector p)) 4)))
+                (when
+                    (not (= 0
+                            (remainder (bytevector-length
+                                        (get-output-bytevector p))
+                                       4)))
                   (w8 p 0)
                   (loop)))
               (get-output-bytevector p)))))
@@ -864,12 +1049,17 @@ Example:
       (let loop ((cps cps) (gid 1) (acc '()))
         (if (null? cps)
             (reverse acc)
-            (let run ((end (car cps)) (rest (cdr cps)) (n 1))
+            (let run ((end (car cps))
+                      (rest (cdr cps))
+                      (n 1))
               (if (and (pair? rest) (= (car rest) (+ end 1)))
                   (run (car rest) (cdr rest) (+ n 1))
-                  (loop rest (+ gid n) (cons (list (car cps) end gid) acc)))))))
+                  (loop rest
+                        (+ gid n)
+                        (cons (list (car cps) end gid) acc)))))))
 
-    (define (log2-floor n) (let loop ((k 0)) (if (> (expt 2 (+ k 1)) n) k (loop (+ k 1)))))
+    (define (log2-floor n)
+      (let loop ((k 0)) (if (> (expt 2 (+ k 1)) n) k (loop (+ k 1)))))
 
     (define (cmap-table cps)
       (let* ((segs (cmap-segments cps))
@@ -880,43 +1070,74 @@ Example:
              (segs4 (append bmp (list (list #xFFFF #xFFFF 0))))
              (n (length segs4))
              (f4 (let ((p (bv-out)))
-                   (w16 p 4) (w16 p (+ 16 (* 8 n))) (w16 p 0)
+                   (w16 p 4)
+                   (w16 p (+ 16 (* 8 n)))
+                   (w16 p 0)
                    (w16 p (* 2 n))
                    (let ((sr (* 2 (expt 2 (log2-floor n)))))
-                     (w16 p sr) (w16 p (log2-floor n)) (w16 p (- (* 2 n) sr)))
+                     (w16 p sr)
+                     (w16 p (log2-floor n))
+                     (w16 p (- (* 2 n) sr)))
                    (for-each (lambda (s) (w16 p (cadr s))) segs4)
                    (w16 p 0)
                    (for-each (lambda (s) (w16 p (car s))) segs4)
                    (for-each (lambda (s)
-                               (w16 p (if (= (car s) #xFFFF) 1
-                                          (modulo (- (caddr s) (car s)) 65536))))
+                               (w16 p
+                                    (if
+                                     (= (car s) #xFFFF)
+                                     1
+                                     (modulo (- (caddr s) (car s)) 65536))))
                              segs4)
                    (for-each (lambda (s) (w16 p 0)) segs4)
                    (get-output-bytevector p)))
              (f12 (let ((p (bv-out)))
-                    (w16 p 12) (w16 p 0) (w32 p (+ 16 (* 12 (length segs))))
-                    (w32 p 0) (w32 p (length segs))
-                    (for-each (lambda (s) (w32 p (car s)) (w32 p (cadr s)) (w32 p (caddr s))) segs)
+                    (w16 p 12)
+                    (w16 p 0)
+                    (w32 p (+ 16 (* 12 (length segs))))
+                    (w32 p 0)
+                    (w32 p (length segs))
+                    (for-each (lambda (s)
+                                (w32 p (car s))
+                                (w32 p (cadr s))
+                                (w32 p (caddr s)))
+                              segs)
                     (get-output-bytevector p)))
              (p (bv-out)))
-        (w16 p 0) (w16 p 2)
-        (w16 p 3) (w16 p 1) (w32 p 20)
-        (w16 p 3) (w16 p 10) (w32 p (+ 20 (bytevector-length f4)))
+        (w16 p 0)
+        (w16 p 2)
+        (w16 p 3)
+        (w16 p 1)
+        (w32 p 20)
+        (w16 p 3)
+        (w16 p 10)
+        (w32 p (+ 20 (bytevector-length f4)))
         (write-bytevector f4 p)
         (write-bytevector f12 p)
         (get-output-bytevector p)))
 
     (define (name-table family style)
-      (let* ((full (if (string=? style "Regular") family (string-append family " " style)))
+      (let* ((full (if (string=? style "Regular")
+                       family
+                       (string-append family " " style)))
              (ps (string-append (string-remove-spaces family) "-" style))
-             (records (list (cons 1 family) (cons 2 style) (cons 3 ps) (cons 4 full) (cons 6 ps)))
+             (records (list (cons 1 family)
+                            (cons 2 style)
+                            (cons 3 ps)
+                            (cons 4 full)
+                            (cons 6 ps)))
              (enc (map (lambda (r) (cons (car r) (utf16be (cdr r)))) records))
              (p (bv-out)))
-        (w16 p 0) (w16 p (length enc)) (w16 p (+ 6 (* 12 (length enc))))
+        (w16 p 0)
+        (w16 p (length enc))
+        (w16 p (+ 6 (* 12 (length enc))))
         (let loop ((rs enc) (off 0))
           (unless (null? rs)
-            (w16 p 3) (w16 p 1) (w16 p #x409) (w16 p (car (car rs)))
-            (w16 p (bytevector-length (cdr (car rs)))) (w16 p off)
+            (w16 p 3)
+            (w16 p 1)
+            (w16 p #x409)
+            (w16 p (car (car rs)))
+            (w16 p (bytevector-length (cdr (car rs))))
+            (w16 p off)
             (loop (cdr rs) (+ off (bytevector-length (cdr (car rs)))))))
         (for-each (lambda (r) (write-bytevector (cdr r) p)) enc)
         (get-output-bytevector p)))
@@ -944,9 +1165,15 @@ Example:
         (let loop ((i 0) (sum 0))
           (if (>= i n)
               sum
-              (let ((b (lambda (k) (if (< (+ i k) n) (bytevector-u8-ref bv (+ i k)) 0))))
+              (let
+                  ((b (lambda (k)
+                        (if (< (+ i k) n) (bytevector-u8-ref bv (+ i k)) 0))))
                 (loop (+ i 4)
-                      (modulo (+ sum (* (b 0) 16777216) (* (b 1) 65536) (* (b 2) 256) (b 3))
+                      (modulo (+ sum
+                                 (* (b 0) 16777216)
+                                 (* (b 1) 65536)
+                                 (* (b 2) 256)
+                                 (b 3))
                               4294967296)))))))
 
     (define (pad4 bv)
@@ -974,36 +1201,53 @@ Example:
                               (cs (cadr args)))
                           (for-each (lambda (c) (hash-table-set! wanted c #t))
                                     (if (string? cs) (string->list cs) cs))
-                          (filter-map-list (lambda (c) (and (hash-table-ref/default wanted c #f) c))
-                                           (font-chars font)))
+                          (filter-map-list
+                           (lambda (c)
+                             (and (hash-table-ref/default wanted c #f) c))
+                           (font-chars font)))
                         (font-chars font)))
              (upem (font-units-per-em font))
-             (glyphs (cons (cons (quotient upem 2) '())    ; .notdef
+             (glyphs (cons (cons (quotient upem 2) '()) ; .notdef
                            (map (lambda (c) (font-glyph font c)) chars)))
              (encoded (map (lambda (g) (encode-glyph (cdr g))) glyphs))
-             (bboxes (map (lambda (g) (glyph-bbox (filter-nonempty (cdr g)))) glyphs))
+             (bboxes (map (lambda (g) (glyph-bbox (filter-nonempty (cdr g))))
+                          glyphs))
              (num (length glyphs))
              (glyf (apply bytevector-append encoded))
              (loca (let ((p (bv-out)))
                      (let loop ((es encoded) (off 0))
                        (w32 p off)
                        (unless (null? es)
-                         (loop (cdr es) (+ off (bytevector-length (car es))))))
+                         (loop (cdr es)
+                               (+ off (bytevector-length (car es))))))
                      (get-output-bytevector p)))
              (advances (map car glyphs))
              (inked (let loop ((gs glyphs) (bs bboxes) (acc '()))
                       (cond ((null? gs) acc)
-                            ((null? (filter-nonempty (cdr (car gs)))) (loop (cdr gs) (cdr bs) acc))
-                            (else (loop (cdr gs) (cdr bs) (cons (car bs) acc))))))
+                            ((null? (filter-nonempty (cdr (car gs))))
+                             (loop (cdr gs) (cdr bs) acc))
+                            (else (loop (cdr gs)
+                                        (cdr bs)
+                                        (cons (car bs) acc))))))
              (x-min (apply min 0 (map car inked)))
              (y-min (apply min 0 (map cadr inked)))
              (x-max (apply max 0 (map caddr inked)))
              (y-max (apply max 0 (map cadddr inked)))
              (hmtx (let ((p (bv-out)))
-                     (for-each (lambda (a b) (w16 p (ipart a)) (w16 p (car b))) advances bboxes)
+                     (for-each (lambda (a b)
+                                 (w16 p (ipart a))
+                                 (w16 p (car b)))
+                               advances
+                               bboxes)
                      (get-output-bytevector p)))
-             (max-points (apply max 0 (map (lambda (g) (length (glyph-points (cdr g)))) glyphs)))
-             (max-contours (apply max 0 (map (lambda (g) (length (filter-nonempty (cdr g)))) glyphs)))
+             (max-points (apply max 0
+                                (map (lambda (g)
+                                       (length (glyph-points (cdr g))))
+                                     glyphs)))
+             (max-contours (apply max 0
+                                  (map (lambda (g)
+                                         (length (filter-nonempty (cdr g))))
+                                       glyphs)))
              (weight (cond ((member style '("Black" "Heavy")) 900)
                            ((member style '("Bold")) 700)
                            ((member style '("Light")) 300)
@@ -1011,60 +1255,128 @@ Example:
              (bold? (>= weight 700))
              (ascent (font-ascent font))
              (descent (font-descent font))
-             (yof (lambda (c) (let ((g (font-glyph font c)))
-                                (if g (cadddr (glyph-bbox (filter-nonempty (cdr g)))) 0))))
+             (yof (lambda (c)
+                    (let ((g (font-glyph font c)))
+                      (if g
+                          (cadddr (glyph-bbox (filter-nonempty (cdr g))))
+                          0))))
              (head (let ((p (bv-out)))
-                     (w32 p #x00010000) (w32 p #x00010000) (w32 p 0) (w32 p #x5F0F3CF5)
-                     (w16 p #x000B) (w16 p upem)
-                     (w32 p 0) (w32 p 0) (w32 p 0) (w32 p 0)
-                     (w16 p x-min) (w16 p y-min) (w16 p x-max) (w16 p y-max)
-                     (w16 p (if bold? 1 0)) (w16 p 8) (w16 p 2) (w16 p 1) (w16 p 0)
+                     (w32 p #x00010000)
+                     (w32 p #x00010000)
+                     (w32 p 0)
+                     (w32 p #x5F0F3CF5)
+                     (w16 p #x000B)
+                     (w16 p upem)
+                     (w32 p 0)
+                     (w32 p 0)
+                     (w32 p 0)
+                     (w32 p 0)
+                     (w16 p x-min)
+                     (w16 p y-min)
+                     (w16 p x-max)
+                     (w16 p y-max)
+                     (w16 p (if bold? 1 0))
+                     (w16 p 8)
+                     (w16 p 2)
+                     (w16 p 1)
+                     (w16 p 0)
                      (get-output-bytevector p)))
              (hhea (let ((p (bv-out)))
-                     (w32 p #x00010000) (w16 p ascent) (w16 p descent) (w16 p 0)
-                     (w16 p (ipart (apply max advances))) (w16 p x-min) (w16 p 0) (w16 p x-max)
-                     (w16 p 1) (w16 p 0) (w16 p 0)
-                     (w16 p 0) (w16 p 0) (w16 p 0) (w16 p 0) (w16 p 0) (w16 p num)
+                     (w32 p #x00010000)
+                     (w16 p ascent)
+                     (w16 p descent)
+                     (w16 p 0)
+                     (w16 p (ipart (apply max advances)))
+                     (w16 p x-min)
+                     (w16 p 0)
+                     (w16 p x-max)
+                     (w16 p 1)
+                     (w16 p 0)
+                     (w16 p 0)
+                     (w16 p 0)
+                     (w16 p 0)
+                     (w16 p 0)
+                     (w16 p 0)
+                     (w16 p 0)
+                     (w16 p num)
                      (get-output-bytevector p)))
              (maxp (let ((p (bv-out)))
-                     (w32 p #x00010000) (w16 p num) (w16 p max-points) (w16 p max-contours)
-                     (w16 p 0) (w16 p 0) (w16 p 2)
+                     (w32 p #x00010000)
+                     (w16 p num)
+                     (w16 p max-points)
+                     (w16 p max-contours)
+                     (w16 p 0)
+                     (w16 p 0)
+                     (w16 p 2)
                      (do ((i 0 (+ i 1))) ((= i 8)) (w16 p 0))
                      (get-output-bytevector p)))
              (os2 (let ((p (bv-out))
                         (cps (map char->integer chars)))
                     (w16 p 4)
                     (w16 p (ipart (/ (apply + advances) num)))
-                    (w16 p weight) (w16 p 5) (w16 p 0)
-                    (w16 p (quotient upem 2)) (w16 p (quotient upem 2)) (w16 p 0) (w16 p (quotient upem 10))
-                    (w16 p (quotient upem 2)) (w16 p (quotient upem 2)) (w16 p 0) (w16 p (quotient upem 3))
-                    (w16 p (quotient upem 20)) (w16 p (quotient upem 4))
+                    (w16 p weight)
+                    (w16 p 5)
+                    (w16 p 0)
+                    (w16 p (quotient upem 2))
+                    (w16 p (quotient upem 2))
+                    (w16 p 0)
+                    (w16 p (quotient upem 10))
+                    (w16 p (quotient upem 2))
+                    (w16 p (quotient upem 2))
+                    (w16 p 0)
+                    (w16 p (quotient upem 3))
+                    (w16 p (quotient upem 20))
+                    (w16 p (quotient upem 4))
                     (w16 p 0)
                     (do ((i 0 (+ i 1))) ((= i 10)) (w8 p 0))
-                    (w32 p 3) (w32 p 0) (w32 p 0) (w32 p 0)
+                    (w32 p 3)
+                    (w32 p 0)
+                    (w32 p 0)
+                    (w32 p 0)
                     (w-tag p "NONE")
                     (w16 p (if bold? #x20 #x40))
-                    (w16 p (min #xFFFF (apply min cps))) (w16 p (min #xFFFF (apply max cps)))
-                    (w16 p ascent) (w16 p descent) (w16 p 0)
-                    (w16 p ascent) (w16 p (- descent))
-                    (w32 p 1) (w32 p 0)
-                    (w16 p (yof #\x)) (w16 p (yof #\H))
-                    (w16 p 0) (w16 p 32) (w16 p 0)
+                    (w16 p (min #xFFFF (apply min cps)))
+                    (w16 p (min #xFFFF (apply max cps)))
+                    (w16 p ascent)
+                    (w16 p descent)
+                    (w16 p 0)
+                    (w16 p ascent)
+                    (w16 p (- descent))
+                    (w32 p 1)
+                    (w32 p 0)
+                    (w16 p (yof #\x))
+                    (w16 p (yof #\H))
+                    (w16 p 0)
+                    (w16 p 32)
+                    (w16 p 0)
                     (get-output-bytevector p)))
              (post (let ((p (bv-out)))
-                     (w32 p #x00030000) (w32 p 0) (w16 p (- (quotient upem 10))) (w16 p (quotient upem 20))
+                     (w32 p #x00030000)
+                     (w32 p 0)
+                     (w16 p (- (quotient upem 10)))
+                     (w16 p (quotient upem 20))
                      (do ((i 0 (+ i 1))) ((= i 5)) (w32 p 0))
                      (get-output-bytevector p)))
-             (tables (list (cons "OS/2" os2) (cons "cmap" (cmap-table (map char->integer chars)))
-                           (cons "glyf" glyf) (cons "head" head) (cons "hhea" hhea)
-                           (cons "hmtx" hmtx) (cons "loca" loca) (cons "maxp" maxp)
-                           (cons "name" (name-table family style)) (cons "post" post)))
+             (tables (list (cons "OS/2" os2)
+                           (cons "cmap"
+                                 (cmap-table (map char->integer chars)))
+                           (cons "glyf" glyf)
+                           (cons "head" head)
+                           (cons "hhea" hhea)
+                           (cons "hmtx" hmtx)
+                           (cons "loca" loca)
+                           (cons "maxp" maxp)
+                           (cons "name" (name-table family style))
+                           (cons "post" post)))
              (n (length tables))
              (dir-len (+ 12 (* 16 n)))
              (out (bv-out)))
-        (w32 out #x00010000) (w16 out n)
+        (w32 out #x00010000)
+        (w16 out n)
         (let ((sr (* 16 (expt 2 (log2-floor n)))))
-          (w16 out sr) (w16 out (log2-floor n)) (w16 out (- (* 16 n) sr)))
+          (w16 out sr)
+          (w16 out (log2-floor n))
+          (w16 out (- (* 16 n) sr)))
         (let loop ((ts tables) (off dir-len))
           (unless (null? ts)
             (let ((data (cdr (car ts))))
@@ -1078,9 +1390,14 @@ Example:
                (head-off (let loop ((ts tables) (off dir-len))
                            (if (string=? (car (car ts)) "head")
                                off
-                               (loop (cdr ts) (+ off (bytevector-length (pad4 (cdr (car ts))))))))))
-          (bytevector-u32-set! bv (+ head-off 8)
-                               (modulo (- #xB1B0AFBA (table-checksum bv)) 4294967296) 'big)
-          bv)))
-
-))
+                               (loop (cdr ts)
+                                     (+
+                                      off
+                                      (bytevector-length
+                                       (pad4 (cdr (car ts))))))))))
+          (bytevector-u32-set! bv
+                               (+ head-off 8)
+                               (modulo (- #xB1B0AFBA (table-checksum bv))
+                                       4294967296)
+                               'big)
+          bv)))))

@@ -1,5 +1,7 @@
 (define-library (scheme time)
-  (export current-second current-jiffy jiffies-per-second)
+  (export current-jiffy
+          current-second
+          jiffies-per-second)
   (begin
     (define current-jiffy (%primitive "%jiffy"))
     (define (jiffies-per-second)

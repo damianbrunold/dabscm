@@ -1,31 +1,31 @@
 (define-library (scm net http route)
-  (import (scm core)
-          (scheme base)
+  (import (scheme base)
           (scheme char)
-          (scm string)
           (srfi 13)
-          (scm uri)
-          (scm net http server)
+          (scm core)
           (scm net http request)
-          (scm net http response))
-  (export make-router
-          router-add!
-          router-dispatch
-          router->handler
-          route!
+          (scm net http response)
+          (scm net http server)
+          (scm string)
+          (scm uri))
+  (export delete!
           get!
+          make-router
+          params-ref
+          parse-query-string
           post!
           put!
-          delete!
+          route!
+          router->handler
+          router-add!
+          router-dispatch
           run-app
           run-app-with-router
           start-app
           start-app-with-router
-          params-ref
           url-path
-          url-query-string
-          parse-query-string
-          url-query-params)
+          url-query-params
+          url-query-string)
   (begin
 
     ;; --- URL utilities ---
@@ -43,21 +43,19 @@ Example:
       (let* ((s (if (and (>= (string-length url) 4)
                          (string=? (substring url 0 4) "http"))
                     (let loop ((i 0) (slashes 0))
-                      (cond
-                        ((= i (string-length url)) url)
-                        ((and (char=? (string-ref url i) #\/)
-                              (= slashes 2))
-                         (substring url i (string-length url)))
-                        ((char=? (string-ref url i) #\/)
-                         (loop (+ i 1) (+ slashes 1)))
-                        (else (loop (+ i 1) slashes))))
+                      (cond ((= i (string-length url)) url)
+                            ((and (char=? (string-ref url i) #\/)
+                                  (= slashes 2))
+                             (substring url i (string-length url)))
+                            ((char=? (string-ref url i) #\/)
+                             (loop (+ i 1) (+ slashes 1)))
+                            (else (loop (+ i 1) slashes))))
                     url))
              (n (string-length s)))
         (let loop ((i 0))
-          (cond
-            ((= i n) s)
-            ((char=? (string-ref s i) #\?) (substring s 0 i))
-            (else (loop (+ i 1)))))))
+          (cond ((= i n) s)
+                ((char=? (string-ref s i) #\?) (substring s 0 i))
+                (else (loop (+ i 1)))))))
 
     (define (url-query-string url)
       "Syntax: (url-query-string url)
@@ -68,11 +66,9 @@ Example:
   (url-query-string \"/users\") => \"\""
       (let ((n (string-length url)))
         (let loop ((i 0))
-          (cond
-            ((= i n) "")
-            ((char=? (string-ref url i) #\?)
-             (substring url (+ i 1) n))
-            (else (loop (+ i 1)))))))
+          (cond ((= i n) "")
+                ((char=? (string-ref url i) #\?) (substring url (+ i 1) n))
+                (else (loop (+ i 1)))))))
 
     (define (parse-query-string qs)
       "Syntax: (parse-query-string qs)
@@ -90,12 +86,12 @@ Example:
           (map (lambda (pair)
                  (let ((n (string-length pair)))
                    (let loop ((i 0))
-                     (cond
-                       ((= i n) (cons (percent-decode pair) ""))
-                       ((char=? (string-ref pair i) #\=)
-                        (cons (percent-decode (substring pair 0 i))
-                              (percent-decode (substring pair (+ i 1) n))))
-                       (else (loop (+ i 1)))))))
+                     (cond ((= i n) (cons (percent-decode pair) ""))
+                           ((char=? (string-ref pair i) #\=)
+                            (cons (percent-decode (substring pair 0 i))
+                                  (percent-decode
+                                   (substring pair (+ i 1) n))))
+                           (else (loop (+ i 1)))))))
                (string-split qs "&"))))
 
     (define (url-query-params url)
@@ -110,11 +106,11 @@ Example:
     ;; --- Path matching ---
 
     (define (split-path path)
-      (let loop ((segs (string-split path "/")) (acc '()))
-        (cond
-          ((null? segs) (reverse acc))
-          ((string=? (car segs) "") (loop (cdr segs) acc))
-          (else (loop (cdr segs) (cons (car segs) acc))))))
+      (let loop ((segs (string-split path "/"))
+                 (acc '()))
+        (cond ((null? segs) (reverse acc))
+              ((string=? (car segs) "") (loop (cdr segs) acc))
+              (else (loop (cdr segs) (cons (car segs) acc))))))
 
     (define (match-path pattern-segs actual-segs)
       ;; Returns params alist on match, #f on no match. A :named segment
@@ -125,22 +121,23 @@ Example:
       ;; character in a path segment. The '*' wildcard captures the remaining
       ;; path verbatim (raw); decode it per-segment in the handler if needed.
       (let loop ((pat pattern-segs) (act actual-segs) (params '()))
-        (cond
-          ((and (null? pat) (null? act))
-           (reverse params))
-          ((null? pat) #f)
-          ((string=? (car pat) "*")
-           (reverse (cons (cons "*" (string-join act "/")) params)))
-          ((null? act) #f)
-          ((and (> (string-length (car pat)) 0)
-                (char=? (string-ref (car pat) 0) #\:))
-           (loop (cdr pat) (cdr act)
-                 (cons (cons (substring (car pat) 1 (string-length (car pat)))
-                             (percent-decode (car act) #f))
-                       params)))
-          ((string=? (car pat) (car act))
-           (loop (cdr pat) (cdr act) params))
-          (else #f))))
+        (cond ((and (null? pat) (null? act)) (reverse params))
+              ((null? pat) #f)
+              ((string=? (car pat) "*")
+               (reverse (cons (cons "*" (string-join act "/")) params)))
+              ((null? act) #f)
+              ((and (> (string-length (car pat)) 0)
+                    (char=? (string-ref (car pat) 0) #\:))
+               (loop (cdr pat)
+                     (cdr act)
+                     (cons (cons (substring (car pat)
+                                            1
+                                            (string-length (car pat)))
+                                 (percent-decode (car act) #f))
+                           params)))
+              ((string=? (car pat) (car act))
+               (loop (cdr pat) (cdr act) params))
+              (else #f))))
 
     ;; --- Router ---
 
@@ -155,62 +152,60 @@ Example:
   (run-app-with-router r 8080)"
       (let ((routes '()))
         (define (add! method pattern handler)
-          (set! routes (append routes
-                               (list (list (string-upcase method)
-                                           (split-path pattern)
-                                           handler)))))
+          (set! routes
+                (append routes
+                        (list (list (string-upcase method)
+                                    (split-path pattern)
+                                    handler)))))
         ;; Methods of the routes whose pattern matches segs, in
         ;; registration order, without duplicates. A GET route also
         ;; answers HEAD, so HEAD follows GET unless it has its own route.
         (define (allowed-methods segs)
           (let loop ((rs routes) (acc '()))
-            (cond
-              ((null? rs)
-               (let ((ms (reverse acc)))
-                 (if (and (member "GET" ms) (not (member "HEAD" ms)))
-                     (let ins ((xs ms))
-                       (if (string=? (car xs) "GET")
-                           (cons "GET" (cons "HEAD" (cdr xs)))
-                           (cons (car xs) (ins (cdr xs)))))
-                     ms)))
-              ((and (not (member (car (car rs)) acc))
-                    (match-path (cadr (car rs)) segs))
-               (loop (cdr rs) (cons (car (car rs)) acc)))
-              (else (loop (cdr rs) acc)))))
+            (cond ((null? rs)
+                   (let ((ms (reverse acc)))
+                     (if (and (member "GET" ms) (not (member "HEAD" ms)))
+                         (let ins ((xs ms))
+                           (if (string=? (car xs) "GET")
+                               (cons "GET" (cons "HEAD" (cdr xs)))
+                               (cons (car xs) (ins (cdr xs)))))
+                         ms)))
+                  ((and (not (member (car (car rs)) acc))
+                        (match-path (cadr (car rs)) segs))
+                   (loop (cdr rs) (cons (car (car rs)) acc)))
+                  (else (loop (cdr rs) acc)))))
         ;; The first route for method whose pattern matches segs, as
         ;; (handler . params), or #f.
         (define (find-route method segs)
           (let loop ((rs routes))
             (and (pair? rs)
-                 (let* ((r       (car rs))
+                 (let* ((r (car rs))
                         (matched (and (string=? (car r) method)
                                       (match-path (cadr r) segs))))
-                   (if matched
-                       (cons (caddr r) matched)
-                       (loop (cdr rs)))))))
+                   (if matched (cons (caddr r) matched) (loop (cdr rs)))))))
         (define (dispatch req)
           (let* ((method (string-upcase (http-request-method req)))
-                 (path   (url-path (http-request-url req)))
-                 (segs   (split-path path))
+                 (path (url-path (http-request-url req)))
+                 (segs (split-path path))
                  ;; HEAD without its own route runs the GET handler; the
                  ;; server then sends the headers only.
-                 (found  (or (find-route method segs)
-                             (and (string=? method "HEAD")
-                                  (find-route "GET" segs)))))
+                 (found (or (find-route method segs)
+                            (and (string=? method "HEAD")
+                                 (find-route "GET" segs)))))
             (if found
                 ((car found) req (cdr found))
                 ;; The path exists under other methods: 405 + Allow.
                 (let ((allowed (allowed-methods segs)))
                   (if (null? allowed)
                       (http-not-found)
-                      (make-http-response 405
-                        (list (cons "Allow" (string-join allowed ", ")))
-                        "Method Not Allowed"))))))
+                      (make-http-response
+                       405
+                       (list (cons "Allow" (string-join allowed ", ")))
+                       "Method Not Allowed"))))))
         (lambda (msg . args)
-          (cond
-            ((eq? msg 'add!)     (apply add! args))
-            ((eq? msg 'dispatch) (apply dispatch args))
-            (else (error "make-router: unknown message" msg))))))
+          (cond ((eq? msg 'add!) (apply add! args))
+                ((eq? msg 'dispatch) (apply dispatch args))
+                (else (error "make-router: unknown message" msg))))))
 
     (define (router-add! router method pattern handler)
       "Syntax: (router-add! router method pattern handler)
@@ -255,8 +250,7 @@ Library: (scm net http route)
 Description: Returns the value for key in the path params alist, or #f if not found.
 Example:
   (params-ref params \"id\") => \"42\""
-      (let ((pair (assoc key params)))
-        (if pair (cdr pair) #f)))
+      (let ((pair (assoc key params))) (if pair (cdr pair) #f)))
 
     ;; --- Default router and convenience API ---
 
@@ -314,7 +308,9 @@ Example:
   (get! \"/\" (lambda (req p) (http-ok \"Hello, world!\")))
   (run-app 8080)
   (run-app 8080 16 \"127.0.0.1\")"
-      (apply serve-forever port (lambda (req) (*default-router* 'dispatch req)) rest))
+      (apply serve-forever port
+             (lambda (req) (*default-router* 'dispatch req))
+             rest))
 
     (define (run-app-with-router router port . rest)
       "Syntax: (run-app-with-router router port [max-threads [host [read-timeout-ms [max-body-bytes [graceful-stop-ms]]]]])
@@ -339,7 +335,9 @@ Example:
   (define s (start-app 8080))
   (server-install-shutdown-hook s)
   (server-wait s)"
-      (apply tcp-http-serve port (lambda (req) (*default-router* 'dispatch req)) rest))
+      (apply tcp-http-serve port
+             (lambda (req) (*default-router* 'dispatch req))
+             rest))
 
     (define (start-app-with-router router port . rest)
       "Syntax: (start-app-with-router router port [max-threads [host [read-timeout-ms [max-body-bytes [graceful-stop-ms]]]]])
@@ -350,4 +348,6 @@ Example:
   (define s (start-app-with-router my-router 8080))
   (server-install-shutdown-hook s)
   (server-wait s)"
-      (apply tcp-http-serve port (lambda (req) (router 'dispatch req)) rest))))
+      (apply tcp-http-serve port
+             (lambda (req) (router 'dispatch req))
+             rest))))

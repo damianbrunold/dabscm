@@ -2,8 +2,8 @@
         (scheme file)
         (scheme write)
         (srfi 1)
-        (scm test)
-        (scm fs))
+        (scm fs)
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 
@@ -14,8 +14,7 @@
   (normalized-path (join-path (special-folder-temp) "scm-fs-symlink-test")))
 
 (define (setup)
-  (when (directory-exists? test-base)
-    (delete-directory test-base))
+  (when (directory-exists? test-base) (delete-directory test-base))
   (make-directory test-base)
   (make-directory (join-path test-base "sub"))
   (let ((p (open-output-file (join-path test-base "file.txt"))))
@@ -23,13 +22,11 @@
     (close-output-port p)))
 
 (define (cleanup)
-  (when (directory-exists? test-base)
-    (delete-directory test-base)))
+  (when (directory-exists? test-base) (delete-directory test-base)))
 
 ;; Look up the type symbol for a name in a directory-entries result.
 (define (entry-type entries name)
-  (let ((pair (assoc name entries)))
-    (and pair (cdr pair))))
+  (let ((pair (assoc name entries))) (and pair (cdr pair))))
 
 (setup)
 

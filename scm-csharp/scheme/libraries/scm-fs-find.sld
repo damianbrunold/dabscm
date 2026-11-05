@@ -6,8 +6,8 @@
           (scm glob)
           (scm system)
           (srfi 1))
-  (export du
-          df
+  (export df
+          du
           find-file
           tree
           xargs)
@@ -36,17 +36,17 @@
       "Yields a list of (path type) pairs reachable from root.
 type is one of 'file or 'directory. root itself is included."
       (let walk ((p root) (acc '()))
-        (cond
-          ((directory-exists? p)
-           (let* ((acc (cons (list p 'directory) acc))
-                  (subs (directory-files p))
-                  (acc (fold (lambda (n a)
-                               (cons (list (%join p n) 'file) a))
-                             acc subs))
-                  (dirs (directory-directories p)))
-             (fold (lambda (d a) (walk (%join p d) a)) acc dirs)))
-          ((file-exists? p) (cons (list p 'file) acc))
-          (else acc))))
+        (cond ((directory-exists? p)
+               (let* ((acc (cons (list p 'directory) acc))
+                      (subs (directory-files p))
+                      (acc (fold (lambda (n a)
+                                   (cons (list (%join p n) 'file) a))
+                                 acc
+                                 subs))
+                      (dirs (directory-directories p)))
+                 (fold (lambda (d a) (walk (%join p d) a)) acc dirs)))
+              ((file-exists? p) (cons (list p 'file) acc))
+              (else acc))))
 
     (define (find-file root . opts)
       "Syntax: (find-file root [option ...])
@@ -62,13 +62,13 @@ Description: Recursively walks the filesystem starting at root and returns
 Example:
   (find-file \".\" '(name . \"*.scm\") '(type . file))
   (find-file \"/var/log\" `(predicate . ,(lambda (p) (> (file-size p) 1024))))"
-      (let ((name      (%opt-value opts 'name #f))
-            (type      (%opt-value opts 'type #f))
-            (maxdepth  (%opt-value opts 'maxdepth -1))
-            (mindepth  (%opt-value opts 'mindepth 0))
+      (let ((name (%opt-value opts 'name #f))
+            (type (%opt-value opts 'type #f))
+            (maxdepth (%opt-value opts 'maxdepth -1))
+            (mindepth (%opt-value opts 'mindepth 0))
             (predicate (%opt-value opts 'predicate (lambda (_) #t)))
-            (action    (%opt-value opts 'action    #f))
-            (sep-ch    (string-ref path-sep 0)))
+            (action (%opt-value opts 'action #f))
+            (sep-ch (string-ref path-sep 0)))
         (define (depth p)
           (let loop ((i 0) (d 0))
             (if (>= i (string-length p))
@@ -77,19 +77,20 @@ Example:
                       (if (char=? (string-ref p i) sep-ch) (+ d 1) d)))))
         (let* ((root-depth (depth root))
                (all (reverse (%walk root)))
-               (filtered
-                 (filter
-                   (lambda (entry)
-                     (let* ((p (car entry))
-                            (t (cadr entry))
-                            (rel-depth (- (depth p) root-depth))
-                            (bn (base-name p)))
-                       (and (or (= maxdepth -1) (<= rel-depth maxdepth))
-                            (>= rel-depth mindepth)
-                            (or (not type) (eq? type t))
-                            (or (not name) (glob-match? name bn))
-                            (predicate p))))
-                   all))
+               (filtered (filter (lambda (entry)
+                                   (let*
+                                       ((p (car entry))
+                                        (t (cadr entry))
+                                        (rel-depth (- (depth p) root-depth))
+                                        (bn (base-name p)))
+                                     (and
+                                      (or (= maxdepth -1)
+                                          (<= rel-depth maxdepth))
+                                      (>= rel-depth mindepth)
+                                      (or (not type) (eq? type t))
+                                      (or (not name) (glob-match? name bn))
+                                      (predicate p))))
+                                 all))
                (paths (map car filtered)))
           (when action (for-each action paths))
           paths)))
@@ -106,31 +107,35 @@ Example:
   (du \"/var/log\")"
       (let ((block? (%has-flag? opts 'block-size))
             (native (which "du")))
-        (cond
-          ((and block? native)
-           (let ((r (run-program/capture (list native "-sb" path))))
-             (if (and (pair? r) (zero? (car r)))
-                 (string->number
-                   (car (let ((s (cadr r)))
-                          (let loop ((i 0))
-                            (if (or (>= i (string-length s))
-                                    (char=? (string-ref s i) #\tab)
-                                    (char=? (string-ref s i) #\space))
-                                (list (substring s 0 i))
-                                (loop (+ i 1)))))))
-                 0)))
-          (else
-           (let walk ((p path) (acc 0))
-             (cond
-               ((directory-exists? p)
-                (let* ((files (directory-files p))
-                       (acc (fold (lambda (n a)
-                                    (+ a (file-size (%join p n))))
-                                  acc files))
-                       (dirs (directory-directories p)))
-                  (fold (lambda (d a) (walk (%join p d) a)) acc dirs)))
-               ((file-exists? p) (+ acc (file-size p)))
-               (else acc)))))))
+        (cond ((and block? native)
+               (let ((r (run-program/capture (list native "-sb" path))))
+                 (if (and (pair? r) (zero? (car r)))
+                     (string->number (car
+                                      (let ((s (cadr r)))
+                                        (let loop ((i 0))
+                                          (if
+                                           (or
+                                            (>= i (string-length s))
+                                            (char=? (string-ref s i) #\tab)
+                                            (char=? (string-ref s i) #\space))
+                                           (list (substring s 0 i))
+                                           (loop (+ i 1)))))))
+                     0)))
+              (else (let walk ((p path) (acc 0))
+                      (cond ((directory-exists? p)
+                             (let* ((files (directory-files p))
+                                    (acc
+                                     (fold
+                                      (lambda (n a)
+                                        (+ a (file-size (%join p n))))
+                                      acc
+                                      files))
+                                    (dirs (directory-directories p)))
+                               (fold (lambda (d a) (walk (%join p d) a))
+                                     acc
+                                     dirs)))
+                            ((file-exists? p) (+ acc (file-size p)))
+                            (else acc)))))))
 
     (define (df . opts)
       "Syntax: (df [path])
@@ -146,39 +151,39 @@ Example:
         (if (not native)
             '()
             (let* ((path (and (pair? opts) (car opts)))
-                   (args (if path
-                             (list native "-P" path)
-                             (list native "-P")))
+                   (args (if path (list native "-P" path) (list native "-P")))
                    (r (run-program/capture args)))
-              (if (and (pair? r) (zero? (car r)))
-                  (df-parse (cadr r))
-                  '())))))
+              (if (and (pair? r) (zero? (car r))) (df-parse (cadr r)) '())))))
 
     (define (df-parse out)
       ;; Split into lines, drop header, parse 6-column df -P output:
       ;; Filesystem 1024-blocks Used Available Capacity Mounted-on
       (let* ((lines (let loop ((i 0) (start 0) (acc '()))
-                      (cond
-                        ((>= i (string-length out))
-                         (reverse (if (= start i)
-                                      acc
-                                      (cons (substring out start i) acc))))
-                        ((char=? (string-ref out i) #\newline)
-                         (loop (+ i 1) (+ i 1)
-                               (if (= start i)
-                                   acc
-                                   (cons (substring out start i) acc))))
-                        (else (loop (+ i 1) start acc)))))
+                      (cond ((>= i (string-length out))
+                             (reverse (if
+                                       (= start i)
+                                       acc
+                                       (cons (substring out start i) acc))))
+                            ((char=? (string-ref out i) #\newline)
+                             (loop (+ i 1)
+                                   (+ i 1)
+                                   (if (= start i)
+                                       acc
+                                       (cons (substring out start i) acc))))
+                            (else (loop (+ i 1) start acc)))))
              (data (if (pair? lines) (cdr lines) '())))
         (map (lambda (line)
                (let ((fields (df-split-fields line)))
                  (if (>= (length fields) 6)
                      (list (cons 'filesystem (list-ref fields 0))
-                           (cons 'size       (or (string->number (list-ref fields 1)) 0))
-                           (cons 'used       (or (string->number (list-ref fields 2)) 0))
-                           (cons 'available  (or (string->number (list-ref fields 3)) 0))
-                           (cons 'use%       (list-ref fields 4))
-                           (cons 'mount      (list-ref fields 5)))
+                           (cons 'size
+                                 (or (string->number (list-ref fields 1)) 0))
+                           (cons 'used
+                                 (or (string->number (list-ref fields 2)) 0))
+                           (cons 'available
+                                 (or (string->number (list-ref fields 3)) 0))
+                           (cons 'use% (list-ref fields 4))
+                           (cons 'mount (list-ref fields 5)))
                      '())))
              data)))
 
@@ -187,27 +192,23 @@ Example:
       ;; even if it contains spaces by limiting to 6 splits.
       (let ((n (string-length line)))
         (let loop ((i 0) (acc '()) (cur 0) (in-tok? #f) (count 0))
-          (cond
-            ((>= i n)
-             (reverse (if in-tok?
-                          (cons (substring line cur n) acc)
-                          acc)))
-            ((and (= count 5) in-tok?)
-             ;; collect remainder as one field
-             (reverse (cons (substring line cur n) acc)))
-            (else
-             (let ((ch (string-ref line i)))
-               (cond
-                 ((or (char=? ch #\space) (char=? ch #\tab))
-                  (if in-tok?
-                      (loop (+ i 1)
-                            (cons (substring line cur i) acc)
-                            (+ i 1) #f (+ count 1))
-                      (loop (+ i 1) acc (+ i 1) #f count)))
-                 (else
-                  (if in-tok?
-                      (loop (+ i 1) acc cur #t count)
-                      (loop (+ i 1) acc i #t count))))))))))
+          (cond ((>= i n)
+                 (reverse (if in-tok? (cons (substring line cur n) acc) acc)))
+                ((and (= count 5) in-tok?)
+                 ;; collect remainder as one field
+                 (reverse (cons (substring line cur n) acc)))
+                (else (let ((ch (string-ref line i)))
+                        (cond ((or (char=? ch #\space) (char=? ch #\tab))
+                               (if in-tok?
+                                   (loop (+ i 1)
+                                         (cons (substring line cur i) acc)
+                                         (+ i 1)
+                                         #f
+                                         (+ count 1))
+                                   (loop (+ i 1) acc (+ i 1) #f count)))
+                              (else (if in-tok?
+                                        (loop (+ i 1) acc cur #t count)
+                                        (loop (+ i 1) acc i #t count))))))))))
 
     (define (tree root . opts)
       "Syntax: (tree root [option ...])
@@ -223,18 +224,19 @@ Example:
             (out (open-output-string)))
         (define (entries dir)
           ;; list of (name is-dir?), sorted, dirs after files for stable layout
-          (let* ((files (if dirs-only? '()
+          (let* ((files (if dirs-only?
+                            '()
                             (map (lambda (n) (cons n #f))
                                  (directory-files dir))))
-                 (dirs  (map (lambda (n) (cons n #t))
-                             (directory-directories dir)))
+                 (dirs (map (lambda (n) (cons n #t))
+                            (directory-directories dir)))
                  (all (append files dirs))
                  (cmp (lambda (a b) (string<? (car a) (car b)))))
             (sort-by cmp all)))
         (define (walk dir prefix depth)
           (when (or (= maxdepth -1) (< depth maxdepth))
             (let* ((es (entries dir))
-                   (n  (length es)))
+                   (n (length es)))
               (let loop ((es es) (i 0))
                 (when (pair? es)
                   (let* ((e (car es))
@@ -260,7 +262,8 @@ Example:
     (define (sort-by cmp lst)
       ;; small wrapper to avoid depending on srfi-132 list-sort symbol clash
       ;; with this module's exports.
-      (if (null? lst) lst
+      (if (null? lst)
+          lst
           (let* ((vec (list->vector lst))
                  (n (vector-length vec)))
             (define (swap! i j)
@@ -271,8 +274,9 @@ Example:
             (let outer ((i 1))
               (when (< i n)
                 (let inner ((j i))
-                  (when (and (> j 0)
-                             (cmp (vector-ref vec j) (vector-ref vec (- j 1))))
+                  (when
+                      (and (> j 0)
+                           (cmp (vector-ref vec j) (vector-ref vec (- j 1))))
                     (swap! j (- j 1))
                     (inner (- j 1))))
                 (outer (+ i 1))))
@@ -292,10 +296,8 @@ Example:
         (if (= batch-size 1)
             (map proc items)
             (let loop ((rest items) (acc '()))
-              (cond
-                ((null? rest) (reverse acc))
-                (else
-                 (let* ((take-n (min batch-size (length rest)))
-                        (batch (take rest take-n))
-                        (rest2 (drop rest take-n)))
-                   (loop rest2 (cons (proc batch) acc))))))))) ))
+              (cond ((null? rest) (reverse acc))
+                    (else (let* ((take-n (min batch-size (length rest)))
+                                 (batch (take rest take-n))
+                                 (rest2 (drop rest take-n)))
+                            (loop rest2 (cons (proc batch) acc)))))))))))

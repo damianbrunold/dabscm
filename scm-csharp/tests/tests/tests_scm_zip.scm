@@ -2,8 +2,8 @@
 
 (import (scheme base)
         (scheme file)
-        (scm test)
         (scm fs)
+        (scm test)
         (scm zip))
 
 (test-runner-factory scm-test-runner)
@@ -25,9 +25,10 @@
 
 ;; 300 kB that compress well, and 1 kB of varied bytes
 (define big (make-bytevector 300000 65))
-(define small (let ((bv (make-bytevector 1000)))
-                (do ((i 0 (+ i 1))) ((= i 1000) bv)
-                  (bytevector-u8-set! bv i (modulo (* i 7) 256)))))
+(define small
+  (let ((bv (make-bytevector 1000)))
+    (do ((i 0 (+ i 1))) ((= i 1000) bv)
+      (bytevector-u8-set! bv i (modulo (* i 7) 256)))))
 (write-bytes! (path "big.bin") big)
 (write-bytes! (path "small.bin") small)
 
@@ -36,7 +37,7 @@
     (lambda (z)
       (let ((p (zip-add-text-entry z "readme.txt")))
         (write-string "Hallo" p)
-        (flush-output-port p))          ; before the next entry, as with all text entries
+        (flush-output-port p)) ; before the next entry, as with all text entries
       (zip-add-file-entry z "data/big.bin" (path "big.bin") #t)
       (zip-add-file-entry z "data/small.bin" (path "small.bin"))
       (zip-add-stored-entry z "stored.txt" (string->utf8 "abc"))))
@@ -46,14 +47,20 @@
 (test-group "reading"
   (call-with-input-zip (path "a.zip")
     (lambda (z)
-      (test-equal '("readme.txt" "data/big.bin" "data/small.bin" "stored.txt") (zip-entry-names z))
+      (test-equal '("readme.txt" "data/big.bin" "data/small.bin" "stored.txt")
+                  (zip-entry-names z))
       (test-equal 300000 (zip-entry-size z "data/big.bin"))
       (test-equal 1000 (zip-entry-size z "data/small.bin"))
       (test-equal small (zip-read-entry-bytevector z "data/small.bin"))
-      (test-equal "Hallo" (utf8->string (zip-read-entry-bytevector z "readme.txt")))
-      (test-equal 300000 (zip-extract-entry z "data/big.bin" (path "out.bin")))
+      (test-equal "Hallo"
+                  (utf8->string (zip-read-entry-bytevector z "readme.txt")))
+      (test-equal 300000
+                  (zip-extract-entry z "data/big.bin" (path "out.bin")))
       (test-equal big (read-bytes (path "out.bin")))
-      (test-equal 1000 (zip-extract-entry z "data/small.bin" (path "out2.bin") 1000))
+      (test-equal 1000
+                  (zip-extract-entry z "data/small.bin"
+                                     (path "out2.bin")
+                                     1000))
       ;; over the limit: an error, and no file left behind
       (test-error (zip-extract-entry z "data/big.bin" (path "out3.bin") 1000))
       (test-assert (not (file-exists? (path "out3.bin"))))

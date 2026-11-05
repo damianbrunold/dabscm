@@ -1,6 +1,6 @@
 (import (scheme base)
-        (scm test)
-        (srfi 128))
+        (srfi 128)
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 
@@ -8,7 +8,9 @@
 
 ;; comparator construction and predicate
 (test-group "comparator construction"
-  (test-equal #t (comparator? (make-comparator string? string=? string<? string-hash)))
+  (test-equal #t
+              (comparator? (make-comparator string? string=? string<?
+                                            string-hash)))
   (test-equal #f (comparator? 42))
   (test-equal #f (comparator? '())))
 
@@ -156,7 +158,9 @@
 
 ;; make-pair-comparator
 (test-group "make-pair-comparator"
-  (define c (make-pair-comparator (make-default-comparator) (make-default-comparator)))
+  (define c
+    (make-pair-comparator (make-default-comparator)
+                          (make-default-comparator)))
   (test-equal #t (=? c '(1 . 2) '(1 . 2)))
   (test-equal #f (=? c '(1 . 2) '(1 . 3)))
   (test-equal #t (<? c '(1 . 2) '(2 . 1)))
@@ -164,7 +168,8 @@
 
 ;; make-list-comparator
 (test-group "make-list-comparator"
-  (define c (make-list-comparator (make-default-comparator) list? null? car cdr))
+  (define c
+    (make-list-comparator (make-default-comparator) list? null? car cdr))
   (test-equal #t (=? c '(1 2 3) '(1 2 3)))
   (test-equal #f (=? c '(1 2) '(1 3)))
   (test-equal #t (<? c '(1 2) '(1 3)))
@@ -173,7 +178,11 @@
 
 ;; make-vector-comparator
 (test-group "make-vector-comparator"
-  (define c (make-vector-comparator (make-default-comparator) vector? vector-length vector-ref))
+  (define c
+    (make-vector-comparator (make-default-comparator)
+                            vector?
+                            vector-length
+                            vector-ref))
   (test-equal #t (=? c #(1 2 3) #(1 2 3)))
   (test-equal #f (=? c #(1 2) #(1 3)))
   (test-equal #t (<? c #(1 2) #(1 3)))

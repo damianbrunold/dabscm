@@ -1,4 +1,9 @@
-(import (scheme base) (srfi 13) (scm pdf) (scm svg pdf) (scm fonts dejavu) (scm test))
+(import (scheme base)
+        (srfi 13)
+        (scm fonts dejavu)
+        (scm pdf)
+        (scm svg pdf)
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 
@@ -26,19 +31,24 @@
   (let ((s (pdf-text (svg->pdf svg '((width . 400) (margin . 10))))))
     (test-assert (string-prefix? "%PDF-" s))
     (test-assert (string-contains s "/MediaBox [0 0 420 220]"))
-    (test-assert (string-contains s "/FontFile2"))       ; text embedded as text
-    (test-assert (string-contains s "/ca 0.5")))         ; fill opacity
+    (test-assert (string-contains s "/FontFile2")) ; text embedded as text
+    (test-assert (string-contains s "/ca 0.5"))) ; fill opacity
   ;; a rotation leaves tiny values such as 6e-17 in the matrix: PDF has
   ;; no exponent notation (no text here, so no binary font data)
-  (let ((s (pdf-text (svg->pdf "<svg width='10' height='10'><g transform='rotate(90 5 5)'><rect width='3' height='4'/></g></svg>"))))
+  (let
+      ((s (pdf-text (svg->pdf
+                     "<svg width='10' height='10'><g transform='rotate(90 5 5)'><rect width='3' height='4'/></g></svg>"))))
     (test-assert (not (string-contains s "e-")))))
 
 (test-group "on a page"
   (let* ((doc (make-pdf))
          (page (pdf-add-page! doc)))
-    (call-with-values (lambda () (svg->pdf-page! doc page svg 50 800 '((width . 300))))
-      (lambda (w h) (test-equal '(300 150) (list (exact (round w)) (exact (round h))))))
+    (call-with-values
+        (lambda () (svg->pdf-page! doc page svg 50 800 '((width . 300))))
+      (lambda (w h)
+        (test-equal '(300 150) (list (exact (round w)) (exact (round h))))))
     ;; the same font is embedded once per document
-    (test-assert (eq? (svg-pdf-font doc dejavu-sans) (svg-pdf-font doc dejavu-sans)))))
+    (test-assert (eq? (svg-pdf-font doc dejavu-sans)
+                      (svg-pdf-font doc dejavu-sans)))))
 
 (test-end "scm svg pdf")

@@ -31,23 +31,24 @@ Example:
   (force (make-promise 42))               => 42
   (force (make-promise (lambda () (+ 1 2)))) => 3
   (force (make-promise (delay 10)))       => 10"
-      (cond
-        ((promise? p) p)
-        ((or (lambda? p) (primitive? p))
-         ;; Thunk — used internally by delay/delay-force
-         (let ((vals #f) (set? #f))
-           (let ((self
-                  (lambda ()
-                    (if (not set?)
-                        (call-with-values p
-                          (lambda x
-                            (if (not set?)
-                                (begin (set! vals x) (set! set? #t))))))
-                    (apply values vals))))
-             (vector 'promise self))))
-        (else
-         ;; Plain value — wrap as pre-forced promise
-         (vector 'promise (lambda () p)))))
+      (cond ((promise? p) p)
+            ((or (lambda? p) (primitive? p))
+             ;; Thunk — used internally by delay/delay-force
+             (let ((vals #f) (set? #f))
+               (let ((self (lambda ()
+                             (if (not set?)
+                                 (call-with-values p
+                                   (lambda x
+                                     (if
+                                      (not set?)
+                                      (begin
+                                        (set! vals x)
+                                        (set! set? #t))))))
+                             (apply values vals))))
+                 (vector 'promise self))))
+            (else
+             ;; Plain value — wrap as pre-forced promise
+             (vector 'promise (lambda () p)))))
 
     (define (promise? x)
       "Syntax: (promise? obj)
@@ -74,9 +75,7 @@ Example:
   (define p (delay (begin (display \"computed\") 42)))
   (force p)  => 42  ; prints \"computed\" once
   (force p)  => 42  ; cached, no output"
-      (if (promise? p)
-          ((vector-ref p 1))
-          p))
+      (if (promise? p) ((vector-ref p 1)) p))
 
     (define-syntax delay
       "Syntax: (delay expr)
@@ -88,8 +87,7 @@ Example:
   (define p (delay (begin (display \"once\") 42)))
   (force p) => 42  ; prints \"once\"
   (force p) => 42  ; cached, no output"
-      (syntax-rules ()
-        ((delay expr) (make-promise (lambda () expr)))))
+      (syntax-rules () ((delay expr) (make-promise (lambda () expr)))))
 
     (define-syntax delay-force
       "Syntax: (delay-force expr)

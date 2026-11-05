@@ -4,13 +4,13 @@
 (import (scheme base)
         (scheme file)
         (scheme process-context)
-        (scm module)
         (scm fs)
         (scm log)
-        (scm string)
-        (scm test)
+        (scm module)
         (scm net http request)
-        (scm net http response))
+        (scm net http response)
+        (scm string)
+        (scm test))
 
 (define root
   (directory-name (directory-name (absolute-path (car (command-line))))))
@@ -48,11 +48,14 @@
 (test-group "home page"
   (let ((r (get app "/")))
     (test-equal 200 (http-response-status r))
-    (test-assert "data is escaped" (has? (body r) "&lt;script&gt;x&lt;/script&gt;"))
+    (test-assert "data is escaped"
+                 (has? (body r) "&lt;script&gt;x&lt;/script&gt;"))
     (test-assert "lang" (has? (body r) "<html lang=\"en\">"))
-    (test-assert "versioned stylesheet" (has? (body r) "/static/css/app.css?v="))
+    (test-assert "versioned stylesheet"
+                 (has? (body r) "/static/css/app.css?v="))
     (test-assert "security headers"
-      (has? (http-response-header r "Content-Security-Policy") "script-src 'self'"))))
+                 (has? (http-response-header r "Content-Security-Policy")
+                       "script-src 'self'"))))
 
 (test-group "strict CSP holds"
   ;; Every <script> must load a file and no element may carry style="".
@@ -63,8 +66,11 @@
 (test-group "static and health"
   (let ((r (get app "/static/css/app.css")))
     (test-equal 200 (http-response-status r))
-    (test-equal "text/css; charset=utf-8" (http-response-header r "Content-Type")))
-  (test-equal 404 (http-response-status (get app "/static/../config.example.scm")))
+    (test-equal "text/css; charset=utf-8"
+                (http-response-header r "Content-Type")))
+  (test-equal 404
+              (http-response-status (get app
+                                         "/static/../config.example.scm")))
   (test-equal 404 (http-response-status (get app "/nope")))
   (test-equal "ok\n" (body (get app "/healthz"))))
 
@@ -73,8 +79,11 @@
     (test-equal 200 (http-response-status (get app "/inventory/")))
     (test-equal 200 (http-response-status (get app "/inventory")))
     (test-equal 404 (http-response-status (get app "/")))
-    (test-assert (has? (body (get app "/inventory/")) "href=\"/inventory/static/css/app.css?v="))
-    (test-equal 200 (http-response-status (get app "/inventory/static/js/theme-init.js")))
+    (test-assert (has? (body (get app "/inventory/"))
+                       "href=\"/inventory/static/css/app.css?v="))
+    (test-equal 200
+                (http-response-status (get app
+                                           "/inventory/static/js/theme-init.js")))
     (test-equal "ok\n" (body (get app "/healthz")))))
 
 (test-group "errors are logged, not shown"
@@ -85,7 +94,8 @@
     (test-equal 500 (http-response-status r))
     (test-assert "error page" (has? (body r) "Something went wrong"))
     (test-assert "no detail in page" (not (has? (body r) "missing.json")))
-    (test-assert "detail in log" (has? (get-output-string log) "ERROR [http] GET /"))
+    (test-assert "detail in log"
+                 (has? (get-output-string log) "ERROR [http] GET /"))
     (test-assert "access log" (has? (get-output-string log) "GET / -> 500"))))
 
 (delete-file data-file)

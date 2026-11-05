@@ -30,16 +30,19 @@
           svg-text->sxml)
   (import (scheme base)
           (scheme char)
-          (scheme inexact)
           (scheme cxr)
+          (scheme inexact)
           (srfi 1)
           (srfi 13)
-          (only (srfi 69) make-hash-table hash-table-set! hash-table-ref/default)
+          (only (srfi 69)
+                make-hash-table
+                hash-table-set!
+                hash-table-ref/default)
+          (scm fonts dejavu)
           (scm html builder)
           (scm raster)
           (scm svg core)
-          (scm truetype)
-          (scm fonts dejavu))
+          (scm truetype))
   (begin
 
     ;; --- rendering ---------------------------------------------------------
@@ -68,7 +71,9 @@
                (anc (cons (element-info node) ancestors)))
           (unless (equal? (prop st "display") "none")
             (case tag
-              ((g a) (for-each (lambda (k) (render-node c k m st anc)) (el-children node)))
+              ((g a)
+               (for-each (lambda (k) (render-node c k m st anc))
+                         (el-children node)))
               ((svg) (render-nested-svg c node m st anc))
               ((use) (render-use c node m st anc))
               ((rect circle ellipse line polyline polygon path)
@@ -77,68 +82,104 @@
               (else #f))))))
 
     (define (render-nested-svg c node m st anc)
-      (let* ((x (length-attr node 'x 0)) (y (length-attr node 'y 0))
-             (m (transform-multiply m (transform-multiply (transform-translate x y)
-                                                          (viewbox-transform node #f #f)))))
-        (for-each (lambda (k) (render-node c k m st anc)) (el-children node))))
+      (let* ((x (length-attr node 'x 0))
+             (y (length-attr node 'y 0))
+             (m (transform-multiply m
+                                    (transform-multiply
+                                     (transform-translate x y)
+                                     (viewbox-transform node #f #f)))))
+        (for-each (lambda (k) (render-node c k m st anc))
+                  (el-children node))))
 
     (define (render-use c node m st anc)
       (let* ((href (or (attr node 'href) (attr node 'xlink:href)))
-             (entry (and href (string-prefix? "#" href)
-                         (hash-table-ref/default (ctx-ids c) (substring href 1 (string-length href)) #f)))
+             (entry (and href
+                         (string-prefix? "#" href)
+                         (hash-table-ref/default
+                          (ctx-ids c)
+                          (substring href 1 (string-length href))
+                          #f)))
              (target (and entry (car entry))))
         (when (and target (not (eq? (car target) 'use)))
           (render-node c target
-                       (transform-multiply m (transform-translate (length-attr node 'x 0)
-                                                                  (length-attr node 'y 0)))
-                       st anc))))
+                       (transform-multiply
+                        m
+                        (transform-translate (length-attr node 'x 0)
+                                             (length-attr node 'y 0)))
+                       st
+                       anc))))
 
     ;; resolves a paint property to what (scm raster) takes, or #f
     (define (paint-for c st name opacity-name m)
       (let ((p (parse-paint (or (prop st name) "none")))
             (a (* (ctx-opacity c) (number-or (prop st opacity-name) 1.0))))
-        (cond
-         ((or (not p) (eq? p 'none) (<= a 0)) #f)
-         ((vector? p) (with-alpha p a))
-         ((pair? p)
-          (let ((entry (hash-table-ref/default (ctx-ids c) (cdr p) #f)))
-            (and entry (eq? (car (car entry)) 'pattern)
-                 (pattern-paint c (car entry) (cdr entry) m a))))
-         (else #f))))
+        (cond ((or (not p) (eq? p 'none) (<= a 0)) #f)
+              ((vector? p) (with-alpha p a))
+              ((pair? p)
+               (let ((entry (hash-table-ref/default (ctx-ids c) (cdr p) #f)))
+                 (and entry
+                      (eq? (car (car entry)) 'pattern)
+                      (pattern-paint c (car entry) (cdr entry) m a))))
+              (else #f))))
 
     (define (draw-shape c path m st fill?)
       (unless (or (null? path) (equal? (prop st "visibility") "hidden"))
         (let ((fill (and fill? (paint-for c st "fill" "fill-opacity" m)))
               (stroke (paint-for c st "stroke" "stroke-opacity" m))
               (stroke-first? (let ((po (prop st "paint-order")))
-                               (and po (string-prefix? "stroke" (string-trim-both po))))))
+                               (and po
+                                    (string-prefix? "stroke"
+                                                    (string-trim-both po))))))
           (define (do-fill)
             (when fill
-              (canvas-fill-path! (ctx-canvas c) path fill
+              (canvas-fill-path! (ctx-canvas c)
+                                 path
+                                 fill
                                  `((transform . ,m)
-                                   (fill-rule . ,(if (equal? (prop st "fill-rule") "evenodd")
-                                                     'evenodd 'nonzero))))))
+                                   (fill-rule
+                                    .
+                                    ,(if
+                                      (equal? (prop st "fill-rule") "evenodd")
+                                      'evenodd
+                                      'nonzero))))))
           (define (do-stroke)
             (when stroke
               (let ((w (number-or (prop st "stroke-width") 1)))
                 (when (> w 0)
-                  (canvas-stroke-path! (ctx-canvas c) path stroke (stroke-options st m w))))))
+                  (canvas-stroke-path! (ctx-canvas c)
+                                       path
+                                       stroke
+                                       (stroke-options st m w))))))
           (if stroke-first?
-              (begin (do-stroke) (do-fill))
-              (begin (do-fill) (do-stroke))))))
+              (begin
+                (do-stroke)
+                (do-fill))
+              (begin
+                (do-fill)
+                (do-stroke))))))
 
     (define (stroke-options st m w)
       (let ((join (prop st "stroke-linejoin"))
             (cap (prop st "stroke-linecap"))
             (dash (let ((d (prop st "stroke-dasharray")))
-                    (and d (not (string=? (string-trim-both d) "none"))
+                    (and d
+                         (not (string=? (string-trim-both d) "none"))
                          (let ((ns (numbers d))) (and (pair? ns) ns))))))
-        `((transform . ,m) (width . ,w)
-          (join . ,(cond ((equal? join "round") 'round) ((equal? join "bevel") 'bevel) (else 'miter)))
-          (cap . ,(cond ((equal? cap "round") 'round) ((equal? cap "square") 'square) (else 'butt)))
+        `((transform . ,m)
+          (width . ,w)
+          (join .
+                ,(cond ((equal? join "round") 'round)
+                       ((equal? join "bevel") 'bevel)
+                       (else 'miter)))
+          (cap .
+               ,(cond ((equal? cap "round") 'round)
+                      ((equal? cap "square") 'square)
+                      (else 'butt)))
           (miter-limit . ,(number-or (prop st "stroke-miterlimit") 4))
           ,@(if dash
-                `((dash . ,dash) (dash-offset . ,(number-or (prop st "stroke-dashoffset") 0)))
+                `((dash . ,dash)
+                  (dash-offset .
+                               ,(number-or (prop st "stroke-dashoffset") 0)))
                 '()))))
 
     ;; One line of text per element: tspans are part of the text, not
@@ -151,8 +192,14 @@
                         (>= (number-or weight 400) 600)))
              (font (cdr (or (assq (if bold? 'bold 'normal) (ctx-fonts c))
                             (assq 'normal (ctx-fonts c)))))
-             (x (let ((v (attr node 'x))) (if v (let ((ns (numbers v))) (if (pair? ns) (car ns) 0)) 0)))
-             (y (let ((v (attr node 'y))) (if v (let ((ns (numbers v))) (if (pair? ns) (car ns) 0)) 0)))
+             (x (let ((v (attr node 'x)))
+                  (if v
+                      (let ((ns (numbers v))) (if (pair? ns) (car ns) 0))
+                      0)))
+             (y (let ((v (attr node 'y)))
+                  (if v
+                      (let ((ns (numbers v))) (if (pair? ns) (car ns) 0))
+                      0)))
              (anchor (prop st "text-anchor"))
              (w (font-text-width font size text))
              (x (cond ((equal? anchor "middle") (- x (/ w 2)))
@@ -160,44 +207,65 @@
                       (else x))))
         (unless (string-null? text)
           ;; a stroke around text (a halo) looks right only with round joins
-          (draw-shape c (font-text-path font size x y text) m
-                      (if (assoc "stroke-linejoin" st) st (cons '("stroke-linejoin" . "round") st))
+          (draw-shape c
+                      (font-text-path font size x y text)
+                      m
+                      (if (assoc "stroke-linejoin" st)
+                          st
+                          (cons '("stroke-linejoin" . "round") st))
                       #t))))
 
     ;; A pattern (patternUnits userSpaceOnUse, as user space is assumed in
     ;; any case) is rendered once into a tile at device resolution and
     ;; sampled through the inverse of the transform it is painted with.
     (define (pattern-paint c pat ancestors m alpha)
-      (let* ((pw (length-attr pat 'width 0)) (ph (length-attr pat 'height 0))
-             (px (length-attr pat 'x 0)) (py (length-attr pat 'y 0)))
-        (and (> pw 0) (> ph 0)
+      (let* ((pw (length-attr pat 'width 0))
+             (ph (length-attr pat 'height 0))
+             (px (length-attr pat 'x 0))
+             (py (length-attr pat 'y 0)))
+        (and (> pw 0)
+             (> ph 0)
              (let* ((pm (transform-multiply
-                         m (transform-multiply
-                            (let ((t (attr pat 'patternTransform))) (if t (parse-transform t) (transform-identity)))
-                            (transform-translate px py))))
+                         m
+                         (transform-multiply
+                          (let ((t (attr pat 'patternTransform)))
+                            (if t (parse-transform t) (transform-identity)))
+                          (transform-translate px py))))
                     (s (max 0.01 (scale-factor pm)))
                     (tw (max 1 (min 512 (exact (ceiling (* pw s))))))
                     (th (max 1 (min 512 (exact (ceiling (* ph s))))))
-                    (sx (/ tw pw)) (sy (/ th ph))
+                    (sx (/ tw pw))
+                    (sy (/ th ph))
                     (tile (make-canvas tw th))
-                    (tc (make-ctx tile (ctx-rules c) (ctx-ids c) (ctx-fonts c) 1.0))
+                    (tc (make-ctx tile
+                                  (ctx-rules c)
+                                  (ctx-ids c)
+                                  (ctx-fonts c)
+                                  1.0))
                     (st (compute-style pat '() (ctx-rules c) ancestors))
                     (anc (cons (element-info pat) ancestors))
                     (inv (invert pm))
                     (px (canvas-pixels tile)))
-               (for-each (lambda (k) (render-node tc k (transform-scale sx sy) st anc))
+               (for-each (lambda (k)
+                           (render-node tc k (transform-scale sx sy) st anc))
                          (el-children pat))
                (lambda (x y)
-                 (let* ((u (+ (* (vector-ref inv 0) x) (* (vector-ref inv 2) y) (vector-ref inv 4)))
-                        (v (+ (* (vector-ref inv 1) x) (* (vector-ref inv 3) y) (vector-ref inv 5)))
+                 (let* ((u (+ (* (vector-ref inv 0) x)
+                              (* (vector-ref inv 2) y)
+                              (vector-ref inv 4)))
+                        (v (+ (* (vector-ref inv 1) x)
+                              (* (vector-ref inv 3) y)
+                              (vector-ref inv 5)))
                         (u (- u (* pw (floor (/ u pw)))))
                         (v (- v (* ph (floor (/ v ph)))))
                         (i (min (- tw 1) (exact (floor (* u sx)))))
                         (j (min (- th 1) (exact (floor (* v sy)))))
                         (k (* 4 (+ i (* j tw)))))
-                   (vector (bytevector-u8-ref px k) (bytevector-u8-ref px (+ k 1))
+                   (vector (bytevector-u8-ref px k)
+                           (bytevector-u8-ref px (+ k 1))
                            (bytevector-u8-ref px (+ k 2))
-                           (* alpha (/ (bytevector-u8-ref px (+ k 3)) 255.0)))))))))
+                           (* alpha
+                              (/ (bytevector-u8-ref px (+ k 3)) 255.0)))))))))
 
     ;; --- entry points -------------------------------------------------------
 
@@ -217,8 +285,12 @@ Example:
              (root (if (string? svg) (svg-text->sxml svg) svg))
              (scale (inexact (option options 'scale 1)))
              (vb (let ((v (attr root 'viewBox))) (and v (numbers v))))
-             (w (length-attr root 'width (if (and vb (= (length vb) 4)) (caddr vb) 300)))
-             (h (length-attr root 'height (if (and vb (= (length vb) 4)) (cadddr vb) 150)))
+             (w (length-attr root
+                             'width
+                             (if (and vb (= (length vb) 4)) (caddr vb) 300)))
+             (h (length-attr root
+                             'height
+                             (if (and vb (= (length vb) 4)) (cadddr vb) 150)))
              (canvas (let ((bg (option options 'background #f))
                            (cw (max 1 (exact (ceiling (* w scale)))))
                            (ch (max 1 (exact (ceiling (* h scale))))))
@@ -227,16 +299,22 @@ Example:
              (ids (make-hash-table equal?)))
         (collect root rules ids '())
         ;; the root's children, through its viewBox and the scale
-        (let* ((c (make-ctx canvas (car rules) ids
-                            (option options 'fonts
-                                    (list (cons 'normal dejavu-sans) (cons 'bold dejavu-sans-bold)))
+        (let* ((c (make-ctx canvas
+                            (car rules)
+                            ids
+                            (option options
+                                    'fonts
+                                    (list (cons 'normal dejavu-sans)
+                                          (cons 'bold dejavu-sans-bold)))
                             1.0))
                (st (compute-style root '() (car rules) '()))
-               (m (transform-multiply (transform-scale scale) (viewbox-transform root w h)))
+               (m (transform-multiply (transform-scale scale)
+                                      (viewbox-transform root w h)))
                (c (with-opacity c (number-or (prop st "opacity") 1.0)))
                (anc (list (element-info root))))
           (unless (equal? (prop st "display") "none")
-            (for-each (lambda (k) (render-node c k m st anc)) (el-children root))))
+            (for-each (lambda (k) (render-node c k m st anc))
+                      (el-children root))))
         canvas))
 
     (define (svg->png svg . options)
@@ -246,6 +324,4 @@ Description: Renders svg like svg->canvas and returns it encoded as a PNG
   bytevector.
 Example:
   (svg->png chart-sxml '((scale . 2) (background . #(255 255 255 1.0))))"
-      (canvas->png (apply svg->canvas svg options)))
-
-))
+      (canvas->png (apply svg->canvas svg options)))))

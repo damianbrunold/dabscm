@@ -5,10 +5,10 @@
 
 (import (scheme base)
         (scheme char)
-        (scm test)
+        (scm image)
         (scm png)
         (scm raster)
-        (scm image))
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 (test-begin "scm image")
@@ -17,32 +17,42 @@
   (let* ((n (quotient (string-length s) 2))
          (bv (make-bytevector n)))
     (do ((i 0 (+ i 1))) ((= i n) bv)
-      (bytevector-u8-set! bv i (string->number (substring s (* 2 i) (+ (* 2 i) 2)) 16)))))
+      (bytevector-u8-set! bv i
+                          (string->number (substring s (* 2 i) (+ (* 2 i) 2))
+                                          16)))))
 
 (define (max-difference a b)
   (let loop ((i 0) (m 0))
     (if (= i (bytevector-length a))
         m
-        (loop (+ i 1) (max m (abs (- (bytevector-u8-ref a i) (bytevector-u8-ref b i))))))))
+        (loop (+ i 1)
+              (max m
+                   (abs (- (bytevector-u8-ref a i)
+                           (bytevector-u8-ref b i))))))))
 
 (define (mean-difference a b)
   (let loop ((i 0) (sum 0))
     (if (= i (bytevector-length a))
         (/ sum (bytevector-length a) 1.0)
-        (loop (+ i 1) (+ sum (abs (- (bytevector-u8-ref a i) (bytevector-u8-ref b i))))))))
+        (loop (+ i 1)
+              (+ sum
+                 (abs (- (bytevector-u8-ref a i)
+                         (bytevector-u8-ref b i))))))))
 
 (define (pixel img x y)
-  (let ((px (image-pixels img)) (k (* 4 (+ x (* y (image-width img))))))
-    (list (bytevector-u8-ref px k) (bytevector-u8-ref px (+ k 1))
-          (bytevector-u8-ref px (+ k 2)) (bytevector-u8-ref px (+ k 3)))))
+  (let ((px (image-pixels img))
+        (k (* 4 (+ x (* y (image-width img))))))
+    (list (bytevector-u8-ref px k)
+          (bytevector-u8-ref px (+ k 1))
+          (bytevector-u8-ref px (+ k 2))
+          (bytevector-u8-ref px (+ k 3)))))
 
 (define (image-of w h . pixels)
   (make-image w h (apply bytevector (apply append pixels))))
 
 ;; Generated with PIL (see the test's header): name, file, PIL's RGBA, width, height, tolerance
 (define fixtures
-  '(
-    ("jpeg progressive 4:2:0"
+  '(("jpeg progressive 4:2:0"
      "ffd8ffe000104a46494600010100000100010000ffdb0043000302020302020303030304030304050805050404050a070706080c0a0c0c0b0a0b0b0d0e12100d0e110e0b0b1016101113141515150c0f171816141812141514ffdb00430103040405040509050509140d0b0d1414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414ffc2001108000d001303012200021101031101ffc400160001010100000000000000000000000000070005ffc400160101010100000000000000000000000000070104ffda000c030100021003100000013adb53dbc94e2718b13bffc4001c1000020202030000000000000000000000020403050001111521ffda00080101000105020aa18b1240263d52f9d3c0c05750aca66abe3e3fffc4001f110001020603000000000000000000000002000601041112131551a1b1ffda0008010301013f016db9a435e236967ebde10b84e905ffc4001d110001020700000000000000000000000002000601040511132251ffda0008010201013f01af39a67311c4f5e22751dd7fffc4001e10000104010500000000000000000000000100021231102122415281ffda0008010100063f02120a206b6a945e3d1c2d80977675e3ffc4001a10000301010101000000000000000000000001112161d1f0ffda0008010100013f2140d0a35e72198c6639830a2b028f66fb848f0fffda000c03010002000300000010dfefffc4001a110100030003000000000000000000000001112131004161ffda0008010301013f1091ec5bdad84701012256fd354e73ffc4001a110002030101000000000000000000000011210051610131ffda0008010201013f103bb40c655b272177df67ffc4001f1001010002020105000000000000000000011100312141517181a1b1f1ffda0008010100013f108e1684dcfdc72feadc083f667b57c63c502ee24947e634e0a389a87249567406b42c2d4b9ab758ffd9"
      "0100fdff0c02f6ff1c04deff2201caff370dd1ff3e05c3ff5500bdff6501b3ff7302a8ff8007a0ff880498ff980a94ffa20586ffb2047dffc30476ffd2056effde0463ffe9075dfff40759ff040ffdff1013f6ff2214e3ff290fd0ff381ad0ff4314c2ff5b12b9ff7211aeff7e0b9cff8e1098ff8e1193ff9a1690ffaa1589ffb61481ffc41479ffd51673ffe21466ffee165ffff9165bff002bf4ff0e2cf0ff2428e1ff2d25d0ff362fcaff432cb8ff612ba7ff7f2798ff9b1d89ffa72086ff9b2788ff9c2b87ffb02e88ffb62a80ffbc2977ffce2d71ffe02b62ffef2b5bfffa2b57ff0140e7ff0d41e3ff233dd8ff373ac7ff4a3bb0ff623999ff7f3687ff9b3277ffb72a6effbd2b69ffb1356bffaa356affb93f7affbc3f77ffc03d71ffd0416cffe0405cffef3f53fff9404eff0a54dbff1154d6ff2153ccff434fb1ff744082ff9d3766ffb43256ffc42e4bffcc2840ffcf2a38ffcb3034ffbf3439ffbc4356ffc7516bffce4e65ffdc5462ffe45454ffed564bfff75747ff0869d2ff1069cdff1e6ac2ff4e60a2ff943f60ffc3313effd22b35ffd8272dffd7272affd52821ffd52c15ffc9311affbc3d37ffd15f5fffd6615affdd6554ffe4684cffed6c45fff66b40ff0281ceff0c82caff1c80beff576e9affa93a4bffda272affdc2527ffdc2527ffdc292fffd72825ffd32d13ffcc3314ffbd3525ffdf6c59ffd87850ffd87d48ffe57e44fff08040fffa813cff0097c9ff0a97c5ff1e94baff597d95ffa74044ffd82a21ffdd281dffdf2820ffe1272affdc2623ffd52c15ffcb3615ffb53a19ffe07f52ffd9904bffd69440ffe3933effef9439fff89434ff00a9c8ff0caac3ff23a6b8ff5b949bff874841ffbd3422ffd63217ffdd270fffe7251bffe01f16ffdc2d1affc63a17ffa0470fffd39a4dffd0a346ffd8a93fffe4a838fff0aa31fffaaa2dff00bcbeff0dc0bdff1fbbb0ff54b7a3ff90997eff88522cffa14214ffbf4216ffc72d11ffd0391effb13712ff9e4910ffd1ac54ffc6b549ffcec046ffd3bc38ffe3be31ffefc02afff8c025ff07dab7ff06d4adff17d6aaff2cce9cff52c58aff75bb7cff9cb976ff6c5e21ff905626ff884f18ffc4bc6bffb7ca61ffb1ce4effb6d343ffc2d53dffd3d937ffe0d428ffeed521fff8d61dff00e2a3ff14f5b1ff12e8a0ff28ed9eff41ef96ff4edf82ff6cd97eff8fd57dffa9c672ffbbd476ff98d95bff98e654ffabef4effb1e93effc3ec3affcae228ffe2e824fff0e91dfffaea19ff0bfcabff0ff9a4ff19f89bff32ff99ff38f37eff57ff85ff64f880ff72f277ff84ef6dff8def5cffa0ff56ff98f23bffaefe45ffbfff42ffcdfd39ffdbfc2fffe6f923fff3fb1cfffdfc18ff"
      19 13 4)
@@ -92,44 +102,54 @@
      19 13 0)))
 
 (test-group "decoding"
-  (for-each
-   (lambda (f)
-     (let* ((name (car f))
-            (img (image-decode (hex->bytevector (cadr f))))
-            (ref (hex->bytevector (caddr f))))
-       (test-equal (string-append name ": size")
-         (list (list-ref f 3) (list-ref f 4)) (list (image-width img) (image-height img)))
-       (test-assert (string-append name ": pixels")
-         (<= (max-difference (image-pixels img) ref) (list-ref f 5)))))
-   fixtures))
+  (for-each (lambda (f)
+              (let* ((name (car f))
+                     (img (image-decode (hex->bytevector (cadr f))))
+                     (ref (hex->bytevector (caddr f))))
+                (test-equal (string-append name ": size")
+                            (list (list-ref f 3) (list-ref f 4))
+                            (list (image-width img) (image-height img)))
+                (test-assert (string-append name ": pixels")
+                             (<= (max-difference (image-pixels img) ref)
+                                 (list-ref f 5)))))
+            fixtures))
 
-(define (fixture name)
-  (hex->bytevector (cadr (assoc name fixtures))))
+(define (fixture name) (hex->bytevector (cadr (assoc name fixtures))))
 
 (test-group "image-info"
   (test-equal '((format . jpeg) (width . 19) (height . 13) (orientation . 6))
-    (image-info (fixture "jpeg exif orientation 6")))
+              (image-info (fixture "jpeg exif orientation 6")))
   (test-equal '((format . png) (width . 19) (height . 13) (orientation . 1))
-    (image-info (fixture "png gray 2-bit")))
-  (test-equal 'jpeg (cdr (assq 'format (image-info (fixture "jpeg progressive 4:2:0")))))
+              (image-info (fixture "png gray 2-bit")))
+  (test-equal 'jpeg
+              (cdr (assq 'format
+                         (image-info (fixture "jpeg progressive 4:2:0")))))
   (test-equal #f (image-info (string->utf8 "GIF89a not an image here"))))
 
 (test-group "orientation"
   (test-equal "stored as is with (orient . #f)" 19
-    (image-width (image-decode (fixture "jpeg exif orientation 6") '(orient . #f))))
+              (image-width (image-decode (fixture "jpeg exif orientation 6")
+                                         '(orient . #f))))
   ;; 3 x 2: a b c / d e f
-  (let* ((a '(1 0 0 255)) (b '(2 0 0 255)) (c '(3 0 0 255))
-         (d '(4 0 0 255)) (e '(5 0 0 255)) (f '(6 0 0 255))
+  (let* ((a '(1 0 0 255))
+         (b '(2 0 0 255))
+         (c '(3 0 0 255))
+         (d '(4 0 0 255))
+         (e '(5 0 0 255))
+         (f '(6 0 0 255))
          (img (image-of 3 2 a b c d e f))
-         (rows (lambda (img) (let loop ((y 0) (acc '()))
-                               (if (= y (image-height img))
-                                   (reverse acc)
-                                   (loop (+ y 1)
-                                         (cons (let row ((x 0) (r '()))
-                                                 (if (= x (image-width img))
-                                                     (reverse r)
-                                                     (row (+ x 1) (cons (car (pixel img x y)) r))))
-                                               acc)))))))
+         (rows (lambda (img)
+                 (let loop ((y 0) (acc '()))
+                   (if (= y (image-height img))
+                       (reverse acc)
+                       (loop (+ y 1)
+                             (cons (let row ((x 0) (r '()))
+                                     (if
+                                      (= x (image-width img))
+                                      (reverse r)
+                                      (row (+ x 1)
+                                           (cons (car (pixel img x y)) r))))
+                                   acc)))))))
     (test-equal '((1 2 3) (4 5 6)) (rows (image-orient img 1)))
     (test-equal '((3 2 1) (6 5 4)) (rows (image-orient img 2)))
     (test-equal '((6 5 4) (3 2 1)) (rows (image-orient img 3)))
@@ -141,23 +161,51 @@
     (test-error (image-orient img 9))))
 
 (test-group "resizing"
-  (let ((img (image-of 2 2 '(0 0 0 255) '(100 100 100 255) '(200 200 200 255) '(100 100 100 255))))
-    (test-equal "box averages" '(100 100 100 255) (pixel (image-resize img 1 1) 0 0))
-    (test-equal '(4 3) (let ((r (image-resize img 4 3))) (list (image-width r) (image-height r)))))
-  (test-equal "transparent pixels do not darken" '(255 0 0 128)
-    (pixel (image-resize (image-of 2 1 '(255 0 0 255) '(0 0 0 0)) 1 1) 0 0))
-  (let ((up (image-resize (image-of 2 1 '(0 0 0 255) '(200 200 200 255)) 4 1 'bilinear)))
+  (let
+      ((img (image-of 2 2
+                      '(0 0 0 255)
+                      '(100 100 100 255)
+                      '(200 200 200 255)
+                      '(100 100 100 255))))
+    (test-equal "box averages"
+                '(100 100 100 255)
+                (pixel (image-resize img 1 1) 0 0))
+    (test-equal '(4 3)
+                (let ((r (image-resize img 4 3)))
+                  (list (image-width r) (image-height r)))))
+  (test-equal "transparent pixels do not darken"
+              '(255 0 0 128)
+              (pixel (image-resize (image-of 2 1 '(255 0 0 255) '(0 0 0 0))
+                                   1
+                                   1)
+                     0
+                     0))
+  (let
+      ((up (image-resize (image-of 2 1 '(0 0 0 255) '(200 200 200 255))
+                         4
+                         1
+                         'bilinear)))
     (test-equal '(0 0 0 255) (pixel up 0 0))
     (test-equal '(50 50 50 255) (pixel up 1 0))
     (test-equal '(150 150 150 255) (pixel up 2 0)))
   (test-error (image-resize (make-image 2 2) 0 1))
   (test-error (image-resize (make-image 2 2) 1 1 'lanczos))
   (let ((big (make-image 400 100)))
-    (test-equal '(40 10) (let ((t (image-fit big 40 40))) (list (image-width t) (image-height t))))
-    (test-assert "fits already: the same image" (eq? big (image-fit big 400 400)))))
+    (test-equal '(40 10)
+                (let ((t (image-fit big 40 40)))
+                  (list (image-width t) (image-height t))))
+    (test-assert "fits already: the same image"
+                 (eq? big (image-fit big 400 400)))))
 
 (test-group "cropping"
-  (let ((img (image-of 3 2 '(1 0 0 255) '(2 0 0 255) '(3 0 0 255) '(4 0 0 255) '(5 0 0 255) '(6 0 0 255))))
+  (let
+      ((img (image-of 3 2
+                      '(1 0 0 255)
+                      '(2 0 0 255)
+                      '(3 0 0 255)
+                      '(4 0 0 255)
+                      '(5 0 0 255)
+                      '(6 0 0 255))))
     (let ((c (image-crop img 1 0 2 2)))
       (test-equal '(2 2) (list (image-width c) (image-height c)))
       (test-equal '(2 0 0 255) (pixel c 0 0))
@@ -167,17 +215,28 @@
 (test-group "encoding"
   (let* ((src (image-decode (fixture "png rgba 16-bit interlaced")))
          (png (image->png src)))
-    (test-equal "PNG round trip" (image-pixels src) (image-pixels (image-decode png))))
+    (test-equal "PNG round trip"
+                (image-pixels src)
+                (image-pixels (image-decode png))))
   (let* ((src (image-decode (fixture "jpeg baseline 4:2:2")))
          (q90 (image->jpeg src 90))
          (q20 (image->jpeg src 20))
          (back (image-decode q90)))
-    (test-equal '((format . jpeg) (width . 19) (height . 13) (orientation . 1)) (image-info q90))
-    (test-assert "lower quality, smaller file" (< (bytevector-length q20) (bytevector-length q90)))
-    (test-equal "transparent becomes white" '(255 255 255 255)
-      (pixel (image-decode (image->jpeg (make-image 8 8))) 3 3))
-    (test-assert "the JPEG looks like the original" (< (mean-difference (image-pixels back) (image-pixels src)) 6))
-    (test-equal (list (image-width src) (image-height src)) (list (image-width back) (image-height back)))))
+    (test-equal '((format . jpeg)
+                  (width . 19)
+                  (height . 13)
+                  (orientation . 1))
+                (image-info q90))
+    (test-assert "lower quality, smaller file"
+                 (< (bytevector-length q20) (bytevector-length q90)))
+    (test-equal "transparent becomes white"
+                '(255 255 255 255)
+                (pixel (image-decode (image->jpeg (make-image 8 8))) 3 3))
+    (test-assert "the JPEG looks like the original"
+                 (< (mean-difference (image-pixels back) (image-pixels src))
+                    6))
+    (test-equal (list (image-width src) (image-height src))
+                (list (image-width back) (image-height back)))))
 
 (test-group "canvases"
   (let* ((img (image-of 2 1 '(10 20 30 255) '(40 50 60 128)))
@@ -188,11 +247,14 @@
 
 (test-group "bad input"
   (test-error (image-decode (string->utf8 "not an image at all")))
-  (test-error "truncated JPEG" (let ((j (fixture "jpeg baseline 4:2:2")))
-                                 (image-decode (bytevector-copy j 0 200))))
-  (test-error "truncated PNG" (let ((p (fixture "png gray 2-bit")))
-                                (image-decode (bytevector-copy p 0 40))))
-  (test-error "too many pixels" (image-decode (fixture "png gray 2-bit") '(max-pixels . 100)))
+  (test-error "truncated JPEG"
+              (let ((j (fixture "jpeg baseline 4:2:2")))
+                (image-decode (bytevector-copy j 0 200))))
+  (test-error "truncated PNG"
+              (let ((p (fixture "png gray 2-bit")))
+                (image-decode (bytevector-copy p 0 40))))
+  (test-error "too many pixels"
+              (image-decode (fixture "png gray 2-bit") '(max-pixels . 100)))
   (test-error (make-image 2 2 (make-bytevector 3 0))))
 
 (test-end "scm image")

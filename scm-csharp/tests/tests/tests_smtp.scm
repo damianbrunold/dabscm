@@ -10,24 +10,24 @@
 
 (import (scheme base)
         (scheme write)
-        (scm test)
         (srfi 13)
         (srfi 18)
-        (scm net sockets)
         (scm net email)
-        (scm net smtp))
+        (scm net smtp)
+        (scm net sockets)
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 
 (test-begin "smtp")
 
-(define (has? haystack needle)
-  (and (string-contains haystack needle) #t))
+(define (has? haystack needle) (and (string-contains haystack needle) #t))
 
 ;;; ---- Message construction (no I/O) ----
 (test-group "email-serialization"
-  (let ((s (email->string
-            (make-email "me@example.com" "you@example.com" "Hello" "This is the body."))))
+  (let
+      ((s (email->string (make-email "me@example.com" "you@example.com"
+                                     "Hello" "This is the body."))))
     (test-equal #t (has? s "From: me@example.com\r\n"))
     (test-equal #t (has? s "To: you@example.com\r\n"))
     (test-equal #t (has? s "Subject: Hello\r\n"))
@@ -39,23 +39,25 @@
     ;; blank line separates headers from body, body present
     (test-equal #t (has? s "\r\n\r\nThis is the body.")))
   ;; multiple recipients are comma-joined; Bcc never appears in the headers
-  (let ((s (email->string
-            (make-email "me@x.com"
-                        (list "a@y.com" "b@y.com")
-                        "Subj" "Body"
-                        '()              ; cc
-                        (list "secret@z.com")))))  ; bcc
+  (let ((s (email->string (make-email "me@x.com"
+                                      (list "a@y.com" "b@y.com")
+                                      "Subj"
+                                      "Body"
+                                      '() ; cc
+                                      (list "secret@z.com"))))) ; bcc
     (test-equal #t (has? s "To: a@y.com, b@y.com\r\n"))
     (test-equal #f (has? s "secret@z.com"))
     (test-equal #f (has? s "Bcc")))
   ;; Cc header rendered only when present
-  (let ((s (email->string
-            (make-email "me@x.com" "a@y.com" "S" "B" (list "c@y.com")))))
+  (let
+      ((s (email->string (make-email "me@x.com" "a@y.com" "S" "B"
+                                     (list "c@y.com")))))
     (test-equal #t (has? s "Cc: c@y.com\r\n")))
   ;; envelope recipients = To + Cc + Bcc
   (test-equal '("a@y.com" "c@y.com" "s@z.com")
-    (email-recipients
-     (make-email "me@x.com" "a@y.com" "S" "B" (list "c@y.com") (list "s@z.com"))))
+              (email-recipients (make-email "me@x.com" "a@y.com" "S" "B"
+                                            (list "c@y.com")
+                                            (list "s@z.com"))))
   ;; non-ASCII body switches to base64 transfer encoding
   (let ((s (email->string (make-email "me@x.com" "a@y.com" "S" "grüezi"))))
     (test-equal #t (has? s "Content-Transfer-Encoding: base64\r\n"))))
@@ -81,18 +83,20 @@
   (lambda ()
     (if (null? lines)
         (eof-object)
-        (let ((x (car lines))) (set! lines (cdr lines)) x))))
+        (let ((x (car lines)))
+          (set! lines (cdr lines))
+          x))))
 
 (test-group "response-parsing"
   (call-with-values
-    (lambda ()
-      (smtp-read-response-from (lines->thunk (list "250-foo" "250-bar" "250 baz"))))
+      (lambda ()
+        (smtp-read-response-from (lines->thunk
+                                  (list "250-foo" "250-bar" "250 baz"))))
     (lambda (code lines)
       (test-equal 250 code)
       (test-equal '("foo" "bar" "baz") lines)))
   (call-with-values
-    (lambda ()
-      (smtp-read-response-from (lines->thunk (list "220 ready"))))
+      (lambda () (smtp-read-response-from (lines->thunk (list "220 ready"))))
     (lambda (code lines)
       (test-equal 220 code)
       (test-equal '("ready") lines))))
@@ -114,63 +118,77 @@
 (define (start-fake-smtp listener)
   ;; listener is an already-bound tcp listener; accept one client and play a
   ;; scripted ESMTP dialogue, capturing what the client sends.
-  (make-thread
-   (lambda ()
-     (guard (e (#t #f))
-       (let* ((sock (tcp-accept listener))
-              (out  (socket-output-port sock)))
-         (define (reply line)
-           (write-string line out) (write-string "\r\n" out) (flush-output-port out))
-         (reply "220 fake ESMTP ready")
-         (let loop ()
-           (let ((line (socket-read-line sock)))
-             (if (eof-object? line)
-                 (socket-close sock)
-                 (begin
-                   (set! *srv-commands* (cons line *srv-commands*))
-                   (let ((up (string-upcase line)))
-                     (cond
-                       ((string-prefix? "EHLO" up)
-                        (reply "250-fake greets you")
-                        (reply "250-STARTTLS")
-                        (reply "250 AUTH PLAIN LOGIN")
-                        (loop))
-                       ((string-prefix? "MAIL FROM" up) (reply "250 OK") (loop))
-                       ((string-prefix? "RCPT TO" up) (reply "250 OK") (loop))
-                       ((string-prefix? "DATA" up)
-                        (reply "354 End data with <CR><LF>.<CR><LF>")
-                        (let bloop ((acc '()))
-                          (let ((bl (socket-read-line sock)))
-                            (cond
-                              ((eof-object? bl) (socket-close sock))
-                              ((string=? bl ".")
-                               (set! *srv-body*
-                                     (string-join (reverse acc) "\n"))
-                               (reply "250 OK queued as 12345")
-                               (loop))
-                              (else (bloop (cons bl acc)))))))
-                       ((string-prefix? "QUIT" up)
-                        (reply "221 Bye")
-                        (socket-close sock))
-                       (else (reply "250 OK") (loop)))))))))))))
+  (make-thread (lambda ()
+                 (guard (e (#t #f))
+                   (let* ((sock (tcp-accept listener))
+                          (out (socket-output-port sock)))
+                     (define (reply line)
+                       (write-string line out)
+                       (write-string "\r\n" out)
+                       (flush-output-port out))
+                     (reply "220 fake ESMTP ready")
+                     (let loop ()
+                       (let ((line (socket-read-line sock)))
+                         (if (eof-object? line)
+                             (socket-close sock)
+                             (begin
+                               (set! *srv-commands*
+                                     (cons line *srv-commands*))
+                               (let ((up (string-upcase line)))
+                                 (cond ((string-prefix? "EHLO" up)
+                                        (reply "250-fake greets you")
+                                        (reply "250-STARTTLS")
+                                        (reply "250 AUTH PLAIN LOGIN")
+                                        (loop))
+                                       ((string-prefix? "MAIL FROM" up)
+                                        (reply "250 OK")
+                                        (loop))
+                                       ((string-prefix? "RCPT TO" up)
+                                        (reply "250 OK")
+                                        (loop))
+                                       ((string-prefix? "DATA" up)
+                                        (reply
+                                         "354 End data with <CR><LF>.<CR><LF>")
+                                        (let bloop ((acc '()))
+                                          (let ((bl (socket-read-line sock)))
+                                            (cond
+                                             ((eof-object? bl)
+                                              (socket-close sock))
+                                             ((string=? bl ".")
+                                              (set!
+                                               *srv-body*
+                                               (string-join (reverse acc)
+                                                            "\n"))
+                                              (reply "250 OK queued as 12345")
+                                              (loop))
+                                             (else (bloop (cons bl acc)))))))
+                                       ((string-prefix? "QUIT" up)
+                                        (reply "221 Bye")
+                                        (socket-close sock))
+                                       (else (reply "250 OK")
+                                             (loop)))))))))))))
 
 (test-group "loopback-plaintext"
   (test-equal #t
-    (guard (exn (#t #f))
-      (let* ((listener (tcp-listen 18095))
-             (server   (start-fake-smtp listener)))
-        (set! *srv-commands* '())
-        (set! *srv-body* "")
-        (thread-start! server)
-        (send-email "localhost" 18095 'plaintext
-                    "me@example.com" "you@example.com"
-                    "Hello" "This is a test.")
-        (thread-join! server)
-        (socket-close listener)
-        #t)))
+              (guard (exn (#t #f))
+                (let* ((listener (tcp-listen 18095))
+                       (server (start-fake-smtp listener)))
+                  (set! *srv-commands* '())
+                  (set! *srv-body* "")
+                  (thread-start! server)
+                  (send-email "localhost" 18095
+                              'plaintext
+                              "me@example.com"
+                              "you@example.com"
+                              "Hello"
+                              "This is a test.")
+                  (thread-join! server)
+                  (socket-close listener)
+                  #t)))
   ;; The client issued the expected commands ...
   (test-equal #t (and (member "EHLO localhost" *srv-commands*) #t))
-  (test-equal #t (and (member "MAIL FROM:<me@example.com>" *srv-commands*) #t))
+  (test-equal #t
+              (and (member "MAIL FROM:<me@example.com>" *srv-commands*) #t))
   (test-equal #t (and (member "RCPT TO:<you@example.com>" *srv-commands*) #t))
   (test-equal #t (and (member "QUIT" *srv-commands*) #t))
   ;; ... and the DATA payload carried the headers and body.
@@ -182,17 +200,17 @@
 ;;; ---- Loopback: capability detection over plaintext ----
 (test-group "loopback-capabilities"
   (test-equal #t
-    (guard (exn (#t #f))
-      (let* ((listener (tcp-listen 18094))
-             (server   (start-fake-smtp listener)))
-        (set! *srv-commands* '())
-        (thread-start! server)
-        (let* ((s (smtp-open "localhost" 18094 'plaintext))
-               (has-tls (smtp-has-capability? s "STARTTLS"))
-               (has-auth (smtp-has-capability? s "AUTH")))
-          (smtp-quit s)
-          (thread-join! server)
-          (socket-close listener)
-          (and has-tls has-auth))))))
+              (guard (exn (#t #f))
+                (let* ((listener (tcp-listen 18094))
+                       (server (start-fake-smtp listener)))
+                  (set! *srv-commands* '())
+                  (thread-start! server)
+                  (let* ((s (smtp-open "localhost" 18094 'plaintext))
+                         (has-tls (smtp-has-capability? s "STARTTLS"))
+                         (has-auth (smtp-has-capability? s "AUTH")))
+                    (smtp-quit s)
+                    (thread-join! server)
+                    (socket-close listener)
+                    (and has-tls has-auth))))))
 
 (test-end "smtp")

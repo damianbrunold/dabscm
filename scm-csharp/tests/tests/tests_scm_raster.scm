@@ -1,7 +1,7 @@
 (import (scheme base)
         (scheme inexact)
-        (scm test)
-        (scm raster))
+        (scm raster)
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 
@@ -18,11 +18,13 @@
 ;; how much of the canvas is not white, in pixels (fractional coverage
 ;; counted by its darkness on a red or black fill)
 (define (ink c)
-  (let ((w (canvas-width c)) (h (canvas-height c)))
+  (let ((w (canvas-width c))
+        (h (canvas-height c)))
     (let loop ((x 0) (y 0) (sum 0.0))
       (cond ((= y h) sum)
             ((= x w) (loop 0 (+ y 1) sum))
-            (else (loop (+ x 1) y
+            (else (loop (+ x 1)
+                        y
                         (+ sum (/ (- 255 (cadr (pixel c x y))) 255.0))))))))
 
 (test-group "canvas"
@@ -40,8 +42,10 @@
   (test-equal '(2.0 . 3.0) (transform-apply (transform-scale 2 3) 1 1))
   ;; n first, then m
   (test-equal '(12.0 . 0.0)
-              (transform-apply (transform-multiply (transform-translate 10 0) (transform-scale 2))
-                               1 0))
+              (transform-apply (transform-multiply (transform-translate 10 0)
+                                                   (transform-scale 2))
+                               1
+                               0))
   (let ((p (transform-apply (transform-rotate 90) 1 0)))
     (test-assert (< (abs (car p)) 1e-9))
     (test-assert (< (abs (- (cdr p) 1)) 1e-9))))
@@ -55,18 +59,20 @@
     (test-assert (white? c 5 5))
     (test-assert (white? c 1 2))
     ;; exactly 12 pixels covered
-    (test-approximate 12.0 (let loop ((x 0) (y 0) (n 0))
-                             (cond ((= y 10) n)
-                                   ((= x 10) (loop 0 (+ y 1) n))
-                                   (else (loop (+ x 1) y (if (red? c x y) (+ n 1) n)))))
+    (test-approximate 12.0
+                      (let loop ((x 0) (y 0) (n 0))
+                        (cond ((= y 10) n)
+                              ((= x 10) (loop 0 (+ y 1) n))
+                              (else (loop (+ x 1)
+                                          y
+                                          (if (red? c x y) (+ n 1) n)))))
                       0.001)))
 
 (test-group "fill: anti-aliasing"
   ;; a rectangle covering half of each pixel in a column
   (let ((c (make-canvas 4 4 white)))
     (canvas-fill-path! c (path-rect 1.5 0 1 4) black)
-    (let ((p (pixel c 1 1)))
-      (test-assert (< 120 (car p) 135)))          ; half black
+    (let ((p (pixel c 1 1))) (test-assert (< 120 (car p) 135))) ; half black
     (test-approximate 4.0 (ink c) 0.05))
   ;; the area of a circle, within a few percent
   (let ((c (make-canvas 40 40 white)))
@@ -97,14 +103,19 @@
     (canvas-fill-path! c (path-rect 0 0 2 2) (rgba 200 100 0 0.5))
     (test-equal '(200 100 0 128) (pixel c 0 0)))
   (let ((c (make-canvas 10 10 white)))
-    (canvas-fill-path! c (path-rect 0 0 2 2) red
-                       (list (cons 'transform (transform-multiply (transform-translate 4 4)
-                                                                  (transform-scale 2)))))
+    (canvas-fill-path! c
+                       (path-rect 0 0 2 2)
+                       red
+                       (list (cons 'transform
+                                   (transform-multiply
+                                    (transform-translate 4 4)
+                                    (transform-scale 2)))))
     (test-assert (red? c 4 4))
     (test-assert (red? c 7 7))
     (test-assert (white? c 8 8)))
   (let ((c (make-canvas 4 1 white)))
-    (canvas-fill-path! c (path-rect 0 0 4 1)
+    (canvas-fill-path! c
+                       (path-rect 0 0 4 1)
                        (lambda (x y) (if (< x 2) red black)))
     (test-assert (red? c 1 0))
     (test-equal '(0 0 0 255) (pixel c 2 0))))
@@ -125,21 +136,30 @@
     (canvas-stroke-path! c '((M 1 3) (L 9 3)) red '((width . 2)))
     (test-assert (red? c 1 2))
     (test-assert (red? c 8 3))
-    (test-assert (white? c 9 3))                 ; butt cap
+    (test-assert (white? c 9 3)) ; butt cap
     (test-assert (white? c 4 1)))
   (let ((c (make-canvas 12 6 white)))
-    (canvas-stroke-path! c '((M 2 3) (L 9 3)) red '((width . 2) (cap . square)))
+    (canvas-stroke-path! c
+                         '((M 2 3) (L 9 3))
+                         red
+                         '((width . 2) (cap . square)))
     (test-assert (red? c 1 3))
     (test-assert (red? c 9 3)))
   ;; overlapping pieces of one stroke do not darken each other
   (let ((c (make-canvas 20 20 white)))
-    (canvas-stroke-path! c '((M 2 10) (L 18 10) (L 2 11)) (rgba 0 0 0 0.5) '((width . 4)))
+    (canvas-stroke-path! c
+                         '((M 2 10) (L 18 10) (L 2 11))
+                         (rgba 0 0 0 0.5)
+                         '((width . 4)))
     (test-equal '(128 128 128 255) (pixel c 10 10)))
   ;; joins: a right angle with a miter fills the corner, a bevel cuts it
   (let ((corner (lambda (join)
                   (let ((c (make-canvas 20 20 white)))
-                    (canvas-stroke-path! c '((M 4 16) (L 4 4) (L 16 4)) black
-                                         (list '(width . 4) (cons 'join join)))
+                    (canvas-stroke-path!
+                     c
+                     '((M 4 16) (L 4 4) (L 16 4))
+                     black
+                     (list '(width . 4) (cons 'join join)))
                     (pixel c 2 2)))))
     (test-equal '(0 0 0 255) (corner 'miter))
     (test-assert (> (car (corner 'bevel)) 100))
@@ -148,12 +168,15 @@
   (let ((c (make-canvas 20 20 white)))
     (canvas-stroke-path! c (path-rect 4 4 12 12) red '((width . 2)))
     (test-assert (red? c 4 10))
-    (test-assert (red? c 3 3))                   ; the closing corner is joined
+    (test-assert (red? c 3 3)) ; the closing corner is joined
     (test-assert (white? c 10 10))))
 
 (test-group "dashes"
   (let ((c (make-canvas 20 4 white)))
-    (canvas-stroke-path! c '((M 0 2) (L 20 2)) red '((width . 2) (dash . (4 2))))
+    (canvas-stroke-path! c
+                         '((M 0 2) (L 20 2))
+                         red
+                         '((width . 2) (dash . (4 2))))
     (test-assert (red? c 1 2))
     (test-assert (white? c 4 2))
     (test-assert (white? c 5 2))

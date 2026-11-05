@@ -1,22 +1,24 @@
 (define-library (scm random access)
   (import (scheme base))
-  (export open-random-access-file
+  (export call-with-random-access-file
           close-random-access-file
-          random-access-file?
+          open-random-access-file
+          random-access-file-flush
           random-access-file-read
-          random-access-file-write!
           random-access-file-size
           random-access-file-truncate!
-          random-access-file-flush
-          call-with-random-access-file)
+          random-access-file-write!
+          random-access-file?)
   (begin
     (define open-random-access-file (%primitive "open-random-access-file"))
     (define close-random-access-file (%primitive "close-random-access-file"))
     (define random-access-file? (%primitive "random-access-file?"))
     (define random-access-file-read (%primitive "random-access-file-read"))
-    (define random-access-file-write! (%primitive "random-access-file-write!"))
+    (define random-access-file-write!
+      (%primitive "random-access-file-write!"))
     (define random-access-file-size (%primitive "random-access-file-size"))
-    (define random-access-file-truncate! (%primitive "random-access-file-truncate!"))
+    (define random-access-file-truncate!
+      (%primitive "random-access-file-truncate!"))
     (define random-access-file-flush (%primitive "random-access-file-flush"))
 
     (define (call-with-random-access-file filename mode proc)

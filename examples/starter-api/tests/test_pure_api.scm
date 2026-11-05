@@ -5,23 +5,24 @@
 (import (scheme base)
         (scheme file)
         (scheme process-context)
-        (scm module)
-        (scm fs)
-        (scm log)
-        (scm string)
-        (scm test)
         (scm crypto)
         (scm crypto password)
         (scm crypto token)
+        (scm fs)
         (scm json simple)
+        (scm log)
+        (scm module)
         (scm net http request)
-        (scm net http response))
+        (scm net http response)
+        (scm string)
+        (scm test))
 
 (define root
   (directory-name (directory-name (absolute-path (car (command-line))))))
 (module-search-path! (cons (string-append root "/src") (module-search-path)))
 
-(import (app users) (app api))
+(import (app users)
+        (app api))
 
 (test-runner-factory scm-test-runner)
 (test-begin "starter-api")
@@ -46,11 +47,18 @@
 (define (send app method url token . body)
   (parameterize ((log-port (open-output-string))
                  (password-pbkdf2-iterations fast-iterations))
-    (app (make-http-request
-          method url
-          (append (if token (list (cons "Authorization" (string-append "Bearer " token))) '())
-                  (if (pair? body) '(("Content-Type" . "application/json")) '()))
-          (if (pair? body) (car body) #f)))))
+    (app (make-http-request method url
+                            (append (if
+                                     token
+                                     (list
+                                      (cons "Authorization"
+                                            (string-append "Bearer " token)))
+                                     '())
+                                    (if
+                                     (pair? body)
+                                     '(("Content-Type" . "application/json"))
+                                     '()))
+                            (if (pair? body) (car body) #f)))))
 
 (define (status r) (http-response-status r))
 (define (json r)
@@ -64,9 +72,11 @@
 
 (define (login app name password)
   (send app "POST" "/api/login" #f
-        (string-append "{\"username\":\"" name "\",\"password\":\"" password "\"}")))
+        (string-append "{\"username\":\"" name "\",\"password\":\"" password
+                       "\"}")))
 
-(define token (json-ref (json (login app "alice" "alicepassword")) "token" #f))
+(define token
+  (json-ref (json (login app "alice" "alicepassword")) "token" #f))
 
 (test-group "login"
   (test-assert (string? token))
@@ -77,39 +87,58 @@
     (test-equal "no-store" (http-response-header r "Cache-Control")))
   (test-equal "invalid_credentials" (error-code (login app "alice" "wrong")))
   (test-equal "invalid_credentials" (error-code (login app "nobody" "x")))
-  (test-equal "bad_request" (error-code (send app "POST" "/api/login" #f "[1,2]")))
-  (test-equal "bad_request" (error-code (send app "POST" "/api/login" #f "{\"username\":1}")))
-  (test-equal "bad_request" (error-code (send app "POST" "/api/login" #f "not json"))))
+  (test-equal "bad_request"
+              (error-code (send app "POST" "/api/login" #f "[1,2]")))
+  (test-equal "bad_request"
+              (error-code (send app "POST" "/api/login" #f
+                                "{\"username\":1}")))
+  (test-equal "bad_request"
+              (error-code (send app "POST" "/api/login" #f "not json"))))
 
 (test-group "tokens"
-  (test-equal "alice" (json-ref (json (send app "GET" "/api/me" token)) "username" #f))
+  (test-equal "alice"
+              (json-ref (json (send app "GET" "/api/me" token))
+                        "username"
+                        #f))
   (let ((r (send app "GET" "/api/me" #f)))
     (test-equal 401 (status r))
     (test-equal "unauthorized" (error-code r))
     (test-equal "Bearer" (http-response-header r "WWW-Authenticate")))
   (test-equal 401 (status (send app "GET" "/api/me" "garbage")))
-  (test-equal 401 (status (send app "GET" "/api/me" (string-append token "x"))))
+  (test-equal 401
+              (status (send app "GET" "/api/me" (string-append token "x"))))
   ;; Same key, other purpose: not an API token.
-  (test-equal 401 (status (send app "GET" "/api/me"
-                                (token-sign secret '((sub . "alice")) 60
-                                            '((purpose . "session")))))))
+  (test-equal 401
+              (status (send app "GET" "/api/me"
+                            (token-sign secret
+                                        '((sub . "alice"))
+                                        60
+                                        '((purpose . "session")))))))
 
 (test-group "items"
   (test-equal '#() (json (send app "GET" "/api/items" token)))
-  (let ((r (send app "POST" "/api/items" token "{\"name\":\"Cogs\",\"count\":7}")))
+  (let
+      ((r (send app "POST" "/api/items" token
+                "{\"name\":\"Cogs\",\"count\":7}")))
     (test-equal 201 (status r))
     (test-equal '(("id" . 1) ("name" . "Cogs") ("count" . 7)) (json r)))
   (send app "POST" "/api/items" token "{\"name\":\"Gears\",\"count\":2}")
   (test-equal 2 (vector-length (json (send app "GET" "/api/items" token))))
-  (test-equal "Gears" (json-ref (json (send app "GET" "/api/items/2" token)) "name" #f))
+  (test-equal "Gears"
+              (json-ref (json (send app "GET" "/api/items/2" token))
+                        "name"
+                        #f))
   (test-equal "not_found" (error-code (send app "GET" "/api/items/9" token)))
   (test-equal "not_found" (error-code (send app "GET" "/api/items/x" token)))
   (test-equal "invalid_field"
-    (error-code (send app "POST" "/api/items" token "{\"name\":\"\",\"count\":1}")))
+              (error-code (send app "POST" "/api/items" token
+                                "{\"name\":\"\",\"count\":1}")))
   (test-equal "invalid_field"
-    (error-code (send app "POST" "/api/items" token "{\"name\":\"A\",\"count\":1.5}")))
+              (error-code (send app "POST" "/api/items" token
+                                "{\"name\":\"A\",\"count\":1.5}")))
   (test-equal "invalid_field"
-    (error-code (send app "POST" "/api/items" token "{\"name\":\"A\",\"count\":-1}")))
+              (error-code (send app "POST" "/api/items" token
+                                "{\"name\":\"A\",\"count\":-1}")))
   (test-equal 204 (status (send app "DELETE" "/api/items/1" token)))
   (test-equal 404 (status (send app "DELETE" "/api/items/1" token)))
   (test-equal 401 (status (send app "DELETE" "/api/items/2" #f))))
@@ -120,15 +149,20 @@
     (test-equal 405 (status r))
     (test-equal "method_not_allowed" (error-code r))
     (test-equal "GET, HEAD, POST" (http-response-header r "Allow")))
-  (test-assert (string-contains-from
-                (http-response-header (send app "GET" "/api/me" token) "Content-Security-Policy")
-                "default-src 'none'" 0)))
+  (test-assert (string-contains-from (http-response-header
+                                      (send app "GET" "/api/me" token)
+                                      "Content-Security-Policy")
+                                     "default-src 'none'"
+                                     0)))
 
 (test-group "tokens are revoked with the password or the user"
   (parameterize ((password-pbkdf2-iterations fast-iterations))
     (save-user! users-file "alice" (password-hash "anotherpassword")))
   (test-equal 401 (status (send app "GET" "/api/me" token)))
-  (let ((fresh (json-ref (json (login app "alice" "anotherpassword")) "token" #f)))
+  (let
+      ((fresh (json-ref (json (login app "alice" "anotherpassword"))
+                        "token"
+                        #f)))
     (test-equal 200 (status (send app "GET" "/api/me" fresh)))
     (delete-user! users-file "alice")
     (test-equal 401 (status (send app "GET" "/api/me" fresh)))))
@@ -140,23 +174,32 @@
   (let* ((t (json-ref (json (login app "bob" "bobspassword")) "token" #f))
          (log (open-output-string))
          (r (parameterize ((log-port log))
-              (app (make-http-request "GET" "/api/items" 
-                                      (list (cons "Authorization" (string-append "Bearer " t)))
+              (app (make-http-request "GET" "/api/items"
+                                      (list
+                                       (cons "Authorization"
+                                             (string-append "Bearer " t)))
                                       #f)))))
     (test-equal 500 (status r))
     (test-equal "internal_error" (error-code r))
-    (test-assert (string-contains-from (get-output-string log) "ERROR [http] GET /api/items" 0))))
+    (test-assert (string-contains-from (get-output-string log)
+                                       "ERROR [http] GET /api/items"
+                                       0))))
 
 (test-group "url prefix"
   (let* ((app (app-with "/inventory"))
          (t (json-ref (json (send app "POST" "/inventory/api/login" #f
                                   "{\"username\":\"bob\",\"password\":\"bobspassword\"}"))
-                      "token" #f)))
-    (test-equal "bob" (json-ref (json (send app "GET" "/inventory/api/me" t)) "username" #f))
+                      "token"
+                      #f)))
+    (test-equal "bob"
+                (json-ref (json (send app "GET" "/inventory/api/me" t))
+                          "username"
+                          #f))
     (test-equal 404 (status (send app "GET" "/api/me" t)))
     (test-equal 200 (status (send app "GET" "/healthz" #f)))))
 
-(for-each (lambda (f) (when (file-exists? f) (delete-file f))) (list users-file items-file))
+(for-each (lambda (f) (when (file-exists? f) (delete-file f)))
+          (list users-file items-file))
 (delete-directory tmp)
 
 (test-end "starter-api")

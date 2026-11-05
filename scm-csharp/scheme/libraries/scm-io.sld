@@ -1,7 +1,7 @@
 (define-library (scm io)
-  (import (only (scm core) set-current-input-port)
-          (scheme base)
-          (scheme file))
+  (import (scheme base)
+          (scheme file)
+          (only (scm core) set-current-input-port))
   (export call-with-input-string
           call-with-output-bytevector
           call-with-output-string
@@ -26,7 +26,6 @@
     (define field-sep (%primitive "field-sep"))
     (define line-sep (%primitive "line-sep"))
 
-
     (define (read-file-string path . opts)
       "Syntax: (read-file-string path option ...)
 Library: (scm io)
@@ -49,7 +48,9 @@ Example:
                 (let ((chunk (read-chars 65536 p)))
                   (if (eof-object? chunk)
                       (get-output-string out)
-                      (begin (write-string chunk out) (loop)))))))
+                      (begin
+                        (write-string chunk out)
+                        (loop)))))))
           (lambda () (close-input-port p)))))
 
     (define (read-file-lines path . opts)
@@ -71,9 +72,7 @@ Example:
           (lambda ()
             (let loop ((acc '()))
               (let ((l (read-line p)))
-                (if (eof-object? l)
-                    (reverse acc)
-                    (loop (cons l acc))))))
+                (if (eof-object? l) (reverse acc) (loop (cons l acc))))))
           (lambda () (close-input-port p)))))
 
     (define (file->string path . opts)
@@ -88,8 +87,7 @@ Example:
   (file->string \"hello.txt\") => \"hello\\nworld\\n\"
   (file->string \"data.txt\" 'latin-1) => \"...\"
   (file->string \"missing.txt\") => #f"
-      (guard (e (#t #f))
-        (apply read-file-string path opts)))
+      (guard (e (#t #f)) (apply read-file-string path opts)))
 
     (define (file->lines path . opts)
       "Syntax: (file->lines path option ...)
@@ -103,8 +101,7 @@ Example:
   (file->lines \"hello.txt\") => (\"hello\" \"world\")
   (file->lines \"data.txt\" 'latin-1) => (\"...\")
   (file->lines \"missing.txt\") => #f"
-      (guard (e (#t #f))
-        (apply read-file-lines path opts)))
+      (guard (e (#t #f)) (apply read-file-lines path opts)))
 
     (define (call-with-output-bytevector proc)
       "Syntax: (call-with-output-bytevector proc)
@@ -118,7 +115,9 @@ Example:
       (let ((p (open-output-bytevector)))
         (dynamic-wind
           (lambda () #f)
-          (lambda () (proc p) (get-output-bytevector p))
+          (lambda ()
+            (proc p)
+            (get-output-bytevector p))
           (lambda () (close-output-port p)))))
 
     (define (call-with-output-string proc)
@@ -133,7 +132,9 @@ Example:
       (let ((p (open-output-string)))
         (dynamic-wind
           (lambda () #f)
-          (lambda () (proc p) (get-output-string p))
+          (lambda ()
+            (proc p)
+            (get-output-string p))
           (lambda () (close-output-port p)))))
 
     (define (call-with-input-string str proc)

@@ -11,9 +11,13 @@
           (scheme file)
           (scheme read)
           (scheme write)
-          (scm fs)
-          (srfi 18))
-  (export load-items find-item item->json add-item! delete-item!)
+          (srfi 18)
+          (scm fs))
+  (export add-item!
+          delete-item!
+          find-item
+          item->json
+          load-items)
   (begin
 
     (define (item-id it) (car it))
@@ -57,7 +61,9 @@ Description: The item as a JSON object alist for (scm json simple)."
                   (tmp (string-append path ".tmp")))
               (unless (directory-exists? dir) (make-directory dir))
               (call-with-output-file tmp
-                (lambda (p) (write items p) (newline p)))
+                (lambda (p)
+                  (write items p)
+                  (newline p)))
               (move-file tmp path))
             result))
         (lambda () (mutex-unlock! write-lock))))
@@ -67,20 +73,29 @@ Description: The item as a JSON object alist for (scm json simple)."
 Library: (app items)
 Description: Appends a new item with the next free id and returns it."
       (update-items! path
-        (lambda (items)
-          (let* ((next (+ 1 (let loop ((xs items) (m 0))
-                              (if (null? xs) m (loop (cdr xs) (max m (item-id (car xs))))))))
-                 (it (list next name count)))
-            (values (append items (list it)) it)))))
+                     (lambda (items)
+                       (let* ((next (+ 1
+                                       (let loop ((xs items) (m 0))
+                                         (if
+                                          (null? xs)
+                                          m
+                                          (loop
+                                           (cdr xs)
+                                           (max m (item-id (car xs))))))))
+                              (it (list next name count)))
+                         (values (append items (list it)) it)))))
 
     (define (delete-item! path id)
       "Syntax: (delete-item! path id)
 Library: (app items)
 Description: Removes the item with id. #t if there was one, else #f."
       (update-items! path
-        (lambda (items)
-          (let ((kept (let loop ((xs items))
-                        (cond ((null? xs) '())
-                              ((= (item-id (car xs)) id) (loop (cdr xs)))
-                              (else (cons (car xs) (loop (cdr xs))))))))
-            (values kept (< (length kept) (length items)))))))))
+                     (lambda (items)
+                       (let ((kept (let loop ((xs items))
+                                     (cond
+                                      ((null? xs) '())
+                                      ((= (item-id (car xs)) id)
+                                       (loop (cdr xs)))
+                                      (else
+                                       (cons (car xs) (loop (cdr xs))))))))
+                         (values kept (< (length kept) (length items)))))))))

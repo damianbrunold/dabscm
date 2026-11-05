@@ -3,22 +3,22 @@
           (scheme char)
           (srfi 1)
           (srfi 13))
-  (export na
-          na?
-          day?
-          ymd->day
-          day->ymd
-          day-number
-          day-from-number
-          day-year
-          day-month
-          day-weekday
-          string->day
+  (export column-type
           day->string
-          value-type
-          column-type
+          day->ymd
+          day-from-number
+          day-month
+          day-number
+          day-weekday
+          day-year
+          day?
+          infer-column
+          na
+          na?
           parse-cell
-          infer-column)
+          string->day
+          value-type
+          ymd->day)
   (begin
 
     ;; ================================================================
@@ -32,7 +32,9 @@
     ;; mixed (several of these) and na (nothing but NA).
     ;; ================================================================
 
-    (define-record-type <na> (make-na) na-object?)
+    (define-record-type <na>
+      (make-na)
+      na-object?)
 
     (define na (make-na))
 
@@ -48,7 +50,10 @@ Example:
 
     ;; --- dates ------------------------------------------------------
 
-    (define-record-type <day> (make-day n) day? (n day-number))
+    (define-record-type <day>
+      (make-day n)
+      day?
+      (n day-number))
 
     (define (day-from-number n)
       "Syntax: (day-from-number n)
@@ -70,7 +75,10 @@ Example:
              (yoe (- y (* era 400)))
              (mp (modulo (+ m 9) 12))
              (doy (+ (quotient (+ (* 153 mp) 2) 5) (- d 1)))
-             (doe (+ (* yoe 365) (quotient yoe 4) (- (quotient yoe 100)) doy)))
+             (doe (+ (* yoe 365)
+                     (quotient yoe 4)
+                     (- (quotient yoe 100))
+                     doy)))
         (make-day (+ (* era 146097) doe -719468))))
 
     (define (day->ymd day)
@@ -82,11 +90,14 @@ Example:
       (let* ((z (+ (day-number day) 719468))
              (era (floor-quotient z 146097))
              (doe (- z (* era 146097)))
-             (yoe (quotient (- doe (quotient doe 1460) (- (quotient doe 36524))
+             (yoe (quotient (- doe
+                               (quotient doe 1460)
+                               (- (quotient doe 36524))
                                (quotient doe 146096))
                             365))
              (y (+ yoe (* era 400)))
-             (doy (- doe (- (+ (* 365 yoe) (quotient yoe 4)) (quotient yoe 100))))
+             (doy (- doe
+                     (- (+ (* 365 yoe) (quotient yoe 4)) (quotient yoe 100))))
              (mp (quotient (+ (* 5 doy) 2) 153))
              (d (+ (- doy (quotient (+ (* 153 mp) 2) 5)) 1))
              (m (if (< mp 10) (+ mp 3) (- mp 9))))
@@ -117,23 +128,32 @@ Description: Parses an ISO date \"YYYY-MM-DD\" (also \"YYYYMMDD\" and the
 Example:
   (day->ymd (string->day \"11.03.2024\")) => (2024 3 11)"
       (define (mk y m d)
-        (and (<= 1 m 12) (<= 1 d 31)
+        (and (<= 1 m 12)
+             (<= 1 d 31)
              (let ((day (ymd->day y m d)))
                (and (equal? (day->ymd day) (list y m d)) day))))
       (define (num a b) (string->number (substring s a b)))
       (let ((n (string-length s)))
-        (cond
-         ((and (= n 10) (digits? s 0 4) (char=? (string-ref s 4) #\-)
-               (digits? s 5 7) (char=? (string-ref s 7) #\-) (digits? s 8 10))
-          (mk (num 0 4) (num 5 7) (num 8 10)))
-         ((and (= n 10) (digits? s 0 2) (char=? (string-ref s 2) #\.)
-               (digits? s 3 5) (char=? (string-ref s 5) #\.) (digits? s 6 10))
-          (mk (num 6 10) (num 3 5) (num 0 2)))
-         ((and (= n 8) (digits? s 0 8))
-          (mk (num 0 4) (num 4 6) (num 6 8)))
-         (else #f))))
+        (cond ((and (= n 10)
+                    (digits? s 0 4)
+                    (char=? (string-ref s 4) #\-)
+                    (digits? s 5 7)
+                    (char=? (string-ref s 7) #\-)
+                    (digits? s 8 10))
+               (mk (num 0 4) (num 5 7) (num 8 10)))
+              ((and (= n 10)
+                    (digits? s 0 2)
+                    (char=? (string-ref s 2) #\.)
+                    (digits? s 3 5)
+                    (char=? (string-ref s 5) #\.)
+                    (digits? s 6 10))
+               (mk (num 6 10) (num 3 5) (num 0 2)))
+              ((and (= n 8) (digits? s 0 8))
+               (mk (num 0 4) (num 4 6) (num 6 8)))
+              (else #f))))
 
-    (define (pad2 n) (if (< n 10) (string-append "0" (number->string n)) (number->string n)))
+    (define (pad2 n)
+      (if (< n 10) (string-append "0" (number->string n)) (number->string n)))
 
     (define (day->string day . style)
       "Syntax: (day->string day [style])
@@ -183,7 +203,8 @@ Example:
                     (cond ((eq? u 'na) t)
                           ((eq? t 'na) u)
                           ((eq? t u) t)
-                          ((and (memq t '(int real)) (memq u '(int real))) 'real)
+                          ((and (memq t '(int real)) (memq u '(int real)))
+                           'real)
                           (else 'mixed)))))))
 
     ;; --- parsing strings --------------------------------------------
@@ -192,13 +213,15 @@ Example:
 
     (define (parse-number s decimal)
       (let* ((t (string-trim-both s))
-             (t (if (char=? decimal #\.) t (string-map (lambda (c) (if (char=? c decimal) #\. c)) t))))
+             (t (if (char=? decimal #\.)
+                    t
+                    (string-map (lambda (c) (if (char=? c decimal) #\. c))
+                                t))))
         (and (> (string-length t) 0)
              (let ((c (string-ref t 0)))
                (or (char-numeric? c) (memv c '(#\- #\+ #\.))))
              (not (string-index t #\/))
-             (let ((n (string->number t)))
-               (and n (real? n) n)))))
+             (let ((n (string->number t))) (and n (real? n) n)))))
 
     (define (parse-cell s type . opts)
       "Syntax: (parse-cell string type [decimal-char])
@@ -210,13 +233,17 @@ Example:
   (parse-cell \"1,5\" 'real #\\,) => 1.5"
       (let ((decimal (if (pair? opts) (car opts) #\.)))
         (case type
-          ((int) (let ((n (parse-number s decimal)))
-                   (if (and n (exact-integer? n)) n na)))
-          ((real) (let ((n (parse-number s decimal)))
-                    (if n (if (exact? n) (inexact n) n) na)))
-          ((bool) (cond ((member s '("TRUE" "true" "True" "t" "1" "yes" "ja")) #t)
-                        ((member s '("FALSE" "false" "False" "f" "0" "no" "nein")) #f)
-                        (else na)))
+          ((int)
+           (let ((n (parse-number s decimal)))
+             (if (and n (exact-integer? n)) n na)))
+          ((real)
+           (let ((n (parse-number s decimal)))
+             (if n (if (exact? n) (inexact n) n) na)))
+          ((bool)
+           (cond ((member s '("TRUE" "true" "True" "t" "1" "yes" "ja")) #t)
+                 ((member s '("FALSE" "false" "False" "f" "0" "no" "nein"))
+                  #f)
+                 (else na)))
           ((date) (or (string->day (string-trim-both s)) na))
           ((symbol) (string->symbol s))
           (else s))))
@@ -233,33 +260,46 @@ Description: Guesses the type of a column of strings and converts it:
 Example:
   (infer-column (vector \"1\" \"\" \"3\")) => #(1 na 3)"
       (let* ((na-strings (if (pair? opts) (car opts) default-na-strings))
-             (decimal (if (and (pair? opts) (pair? (cdr opts))) (cadr opts) #\.))
+             (decimal (if (and (pair? opts) (pair? (cdr opts)))
+                          (cadr opts)
+                          #\.))
              (n (vector-length strings))
-             (missing? (lambda (s) (or (not (string? s)) (member s na-strings))))
+             (missing? (lambda (s)
+                         (or (not (string? s)) (member s na-strings))))
              (all? (lambda (pred)
                      (let loop ((i 0))
                        (or (= i n)
                            (let ((s (vector-ref strings i)))
-                             (and (or (missing? s) (pred s)) (loop (+ i 1))))))))
+                             (and (or (missing? s) (pred s))
+                                  (loop (+ i 1))))))))
              ;; "007", "0815": codes/IDs, not numbers -- keep the zeros
              (leading-zero? (lambda (s)
                               (let ((t (string-trim-both s)))
                                 (and (> (string-length t) 1)
                                      (char=? (string-ref t 0) #\0)
                                      (char-numeric? (string-ref t 1))))))
-             (number-ok? (lambda (s) (and (not (leading-zero? s)) (parse-number s decimal))))
-             (type (cond
-                    ((all? (lambda (s) (let ((x (number-ok? s)))
-                                         (and x (exact-integer? x)))))
-                     'int)
-                    ((all? number-ok?) 'real)
-                    ((all? (lambda (s) (member s '("TRUE" "FALSE" "true" "false" "True" "False"
-                                                   "t" "f"))))
-                     'bool)
-                    ((all? string->day) 'date)
-                    (else 'string))))
+             (number-ok? (lambda (s)
+                           (and (not (leading-zero? s))
+                                (parse-number s decimal))))
+             (type (cond ((all? (lambda (s)
+                                  (let ((x (number-ok? s)))
+                                    (and x (exact-integer? x)))))
+                          'int)
+                         ((all? number-ok?) 'real)
+                         ((all? (lambda (s)
+                                  (member
+                                   s
+                                   '("TRUE" "FALSE" "true" "false" "True"
+                                     "False" "t" "f"))))
+                          'bool)
+                         ((all? string->day) 'date)
+                         (else 'string))))
         (vector-map (lambda (s)
                       (if (missing? s)
-                          (if (and (eq? type 'string) (string? s) (not (member s na-strings))) s na)
+                          (if (and (eq? type 'string)
+                                   (string? s)
+                                   (not (member s na-strings)))
+                              s
+                              na)
                           (parse-cell s type decimal)))
                     strings)))))

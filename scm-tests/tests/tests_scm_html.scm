@@ -1,4 +1,6 @@
-(import (scheme base) (scm html) (scm test))
+(import (scheme base)
+        (scm html)
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 
@@ -25,8 +27,7 @@
   (test-equal "" (strip-html-tags ""))
   (test-equal "plain" (strip-html-tags "plain"))
   (test-equal "hello world" (strip-html-tags "<p>hello</p> <p>world</p>"))
-  (test-equal "hello world"
-              (strip-html-tags "<p>hello   <b>world</b></p>"))
+  (test-equal "hello world" (strip-html-tags "<p>hello   <b>world</b></p>"))
   ;; leading whitespace is dropped; trailing internal whitespace becomes
   ;; one space — strip-html-tags is for inline-text contexts so a dangling
   ;; trailing space is harmless

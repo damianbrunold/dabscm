@@ -1,5 +1,6 @@
 (define-library (scm math)
-  (import (scheme base) (scheme complex))
+  (import (scheme base)
+          (scheme complex))
   (export E
           PI
           factorial
@@ -10,7 +11,7 @@
     (define E (%primitive "E"))
     (define PI (%primitive "PI"))
     (define nil (%primitive "nil"))
-    
+
     (define (sign n)
       "Syntax: (sign n)
 Library: (scm math)
@@ -31,8 +32,4 @@ recursion via a named let accumulator.
 Example:
   (factorial 0) => 1
   (factorial 5) => 120"
-      (let fact ((i n) (a 1))
-        (if (= i 0)
-            a
-            (fact (- i 1) (* a i)))))
-))
+      (let fact ((i n) (a 1)) (if (= i 0) a (fact (- i 1) (* a i)))))))

@@ -1,6 +1,6 @@
 (import (scheme base)
-        (scm test)
-        (srfi 95))
+        (srfi 95)
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 
@@ -48,7 +48,8 @@
   (test-equal '(1) (sort '(1) <))
   (test-equal '(1 1 3 4 5 9) (sort '(3 1 4 1 5 9) <))
   (test-equal '(9 5 4 3 1 1) (sort '(3 1 4 1 5 9) >))
-  (test-equal '("apple" "banana" "cherry") (sort '("banana" "apple" "cherry") string<?)))
+  (test-equal '("apple" "banana" "cherry")
+              (sort '("banana" "apple" "cherry") string<?)))
 
 ;; sort - vectors
 (test-group "sort-vectors"
@@ -57,7 +58,10 @@
   (test-equal #(1 1 3 4 5) (sort #(3 1 4 1 5) <))
   (test-equal #(3 2 1) (sort #(3 1 2) >))
   ;; original not modified
-  (test-equal #(3 1 2) (let ((v #(3 1 2))) (sort v <) v)))
+  (test-equal #(3 1 2)
+              (let ((v #(3 1 2)))
+                (sort v <)
+                v)))
 
 ;; sort - strings
 (test-group "sort-strings"
@@ -69,33 +73,69 @@
 
 ;; sort - with key function
 (test-group "sort-key"
-  (test-equal '((b . 1) (a . 2) (c . 3)) (sort '((a . 2) (b . 1) (c . 3)) < cdr))
-  (test-equal #((b . 1) (a . 2) (c . 3)) (sort #((a . 2) (b . 1) (c . 3)) < cdr))
-  (test-equal '("fig" "kiwi" "apple" "banana") (sort '("banana" "fig" "apple" "kiwi") < string-length)))
+  (test-equal '((b . 1) (a . 2) (c . 3))
+              (sort '((a . 2) (b . 1) (c . 3)) < cdr))
+  (test-equal #((b . 1) (a . 2) (c . 3))
+              (sort #((a . 2) (b . 1) (c . 3)) < cdr))
+  (test-equal '("fig" "kiwi" "apple" "banana")
+              (sort '("banana" "fig" "apple" "kiwi") < string-length)))
 
 ;; sort - stability with 5+ elements
 (test-group "sort-stability"
   (test-equal '(a b c d e)
-    (map car (sort '((a . 1) (b . 1) (c . 1) (d . 1) (e . 1)) < cdr)))
+              (map car
+                   (sort '((a . 1) (b . 1) (c . 1) (d . 1) (e . 1)) < cdr)))
   (test-equal '(b d f a c e g)
-    (map car (sort '((a . 2) (b . 1) (c . 2) (d . 1) (e . 2) (f . 1) (g . 2))
-                   < cdr)))
+              (map car
+                   (sort '((a . 2)
+                           (b . 1)
+                           (c . 2)
+                           (d . 1)
+                           (e . 2)
+                           (f . 1)
+                           (g . 2))
+                         <
+                         cdr)))
   ;; 8 elements, all equal keys
   (test-equal '(a b c d e f g h)
-    (map car (sort '((a . 1) (b . 1) (c . 1) (d . 1) (e . 1) (f . 1) (g . 1) (h . 1))
-                   < cdr)))
+              (map car
+                   (sort '((a . 1)
+                           (b . 1)
+                           (c . 1)
+                           (d . 1)
+                           (e . 1)
+                           (f . 1)
+                           (g . 1)
+                           (h . 1))
+                         <
+                         cdr)))
   ;; stability with key function and 7 elements
   (test-equal '(b d g a e c f)
-    (map car (sort '((a . 2) (b . 1) (c . 3) (d . 1) (e . 2) (f . 3) (g . 1))
-                   < cdr))))
+              (map car
+                   (sort '((a . 2)
+                           (b . 1)
+                           (c . 3)
+                           (d . 1)
+                           (e . 2)
+                           (f . 3)
+                           (g . 1))
+                         <
+                         cdr))))
 
 ;; sort - vector stability with 5+ elements
 (test-group "sort-vector-stability"
   (test-equal '(b d f a c e g)
-    (vector->list
-      (vector-map car
-        (sort (vector '(a . 2) '(b . 1) '(c . 2) '(d . 1) '(e . 2) '(f . 1) '(g . 2))
-              < cdr)))))
+              (vector->list (vector-map
+                             car
+                             (sort (vector '(a . 2)
+                                           '(b . 1)
+                                           '(c . 2)
+                                           '(d . 1)
+                                           '(e . 2)
+                                           '(f . 1)
+                                           '(g . 2))
+                                   <
+                                   cdr)))))
 
 ;; sort! - lists
 (test-group "sort!-lists"
@@ -105,9 +145,18 @@
 
 ;; sort! - vectors (in-place)
 (test-group "sort!-vectors"
-  (test-equal #(1 1 3 4 5) (let ((v (vector 3 1 4 1 5))) (sort! v <) v))
-  (test-equal #(1 2 3 4 5) (let ((v (vector 5 4 3 2 1))) (sort! v <) v))
-  (test-equal #(1 2 3) (let ((v (vector 1 2 3))) (sort! v <) v)))
+  (test-equal #(1 1 3 4 5)
+              (let ((v (vector 3 1 4 1 5)))
+                (sort! v <)
+                v))
+  (test-equal #(1 2 3 4 5)
+              (let ((v (vector 5 4 3 2 1)))
+                (sort! v <)
+                v))
+  (test-equal #(1 2 3)
+              (let ((v (vector 1 2 3)))
+                (sort! v <)
+                v)))
 
 ;; sort! - strings
 (test-group "sort!-strings"
@@ -116,9 +165,12 @@
 
 ;; sort! - with key
 (test-group "sort!-key"
-  (test-equal '((b . 1) (a . 2) (c . 3)) (sort! (list '(a . 2) '(b . 1) '(c . 3)) < cdr))
+  (test-equal '((b . 1) (a . 2) (c . 3))
+              (sort! (list '(a . 2) '(b . 1) '(c . 3)) < cdr))
   (test-equal #((b . 1) (a . 2) (c . 3))
-    (let ((v (vector '(a . 2) '(b . 1) '(c . 3)))) (sort! v < cdr) v)))
+              (let ((v (vector '(a . 2) '(b . 1) '(c . 3))))
+                (sort! v < cdr)
+                v)))
 
 ;; merge
 (test-group "merge"
@@ -132,10 +184,10 @@
 ;; merge - with key
 (test-group "merge-key"
   (test-equal '((a . 1) (c . 2) (b . 3) (d . 4))
-    (merge '((a . 1) (b . 3)) '((c . 2) (d . 4)) < cdr))
+              (merge '((a . 1) (b . 3)) '((c . 2) (d . 4)) < cdr))
   ;; stability: equal keys preserve list1-before-list2 order
   (test-equal '((a . 1) (c . 1) (b . 2) (d . 2))
-    (merge '((a . 1) (b . 2)) '((c . 1) (d . 2)) < cdr)))
+              (merge '((a . 1) (b . 2)) '((c . 1) (d . 2)) < cdr)))
 
 ;; merge!
 (test-group "merge!"
@@ -148,6 +200,9 @@
 ;; merge! - with key
 (test-group "merge!-key"
   (test-equal '((a . 1) (c . 2) (b . 3) (d . 4))
-    (merge! (list '(a . 1) '(b . 3)) (list '(c . 2) '(d . 4)) < cdr)))
+              (merge! (list '(a . 1) '(b . 3))
+                      (list '(c . 2) '(d . 4))
+                      <
+                      cdr)))
 
 (test-end "srfi-95")

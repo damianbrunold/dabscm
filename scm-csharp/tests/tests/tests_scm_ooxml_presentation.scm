@@ -4,13 +4,13 @@
 
 (import (scheme base)
         (scheme file)
-        (scm test)
         (scm fs)
-        (scm string)
-        (scm zip)
-        (scm xml)
+        (scm ooxml presentation)
         (scm png)
-        (scm ooxml presentation))
+        (scm string)
+        (scm test)
+        (scm xml)
+        (scm zip))
 
 (test-runner-factory scm-test-runner)
 (test-begin "scm ooxml presentation")
@@ -19,7 +19,9 @@
 (define file (string-append dir "/t.pptx"))
 (define png (png-encode-rgb 1 1 (bytevector 0 112 180)))
 (define png-file (string-append dir "/p.png"))
-(let ((p (open-binary-output-file png-file))) (write-bytevector png p) (close-port p))
+(let ((p (open-binary-output-file png-file)))
+  (write-bytevector png p)
+  (close-port p))
 
 (define p (make-presentation))
 (presentation-set-title! p "Probe & Test")
@@ -27,37 +29,84 @@
 (define s1 (presentation-add-slide! p))
 (slide-set-background! s1 "F0F0F0")
 (define title-id
-  (slide-add-shape! s1 'text 0 0 9144000 914400
-    '((text . (((align . center)
-                (runs . (((text . "<Titel>\nzweite Zeile") (size . 40) (bold . #t) (color . "0070B4")))))
-               ((bullet . "–") (margin-left . 342900) (indent . -342900)
-                (runs . (((text . "zh.ch") (link . "https://www.zh.ch/?a=1&b=2")))))))
-      (anchor . middle)
-      (build . (1 fade)))))
-(slide-add-shape! s1 'arrow 0 1000000 2000000 1000000 '((fill . "D93C1A") (fill-alpha . 0.5) (rotation . -30)
-                                                         (build . (2 fly-left))))
-(slide-add-line! s1 0 2000000 3000000 0 '((color . "000000") (width . 12700) (flip . #t)))
-(slide-add-picture! s1 png "image/png" 0 3000000 1000000 1000000 '((key . "blue") (description . "Blau")))
+  (slide-add-shape! s1
+                    'text
+                    0
+                    0
+                    9144000
+                    914400
+                    '((text .
+                            (((align . center)
+                              (runs .
+                                    (((text . "<Titel>\nzweite Zeile")
+                                      (size . 40)
+                                      (bold . #t)
+                                      (color . "0070B4")))))
+                             ((bullet . "–")
+                              (margin-left . 342900)
+                              (indent . -342900)
+                              (runs .
+                                    (((text . "zh.ch")
+                                      (link .
+                                       "https://www.zh.ch/?a=1&b=2")))))))
+                      (anchor . middle)
+                      (build . (1 fade)))))
+(slide-add-shape! s1
+                  'arrow
+                  0
+                  1000000
+                  2000000
+                  1000000
+                  '((fill . "D93C1A")
+                    (fill-alpha . 0.5)
+                    (rotation . -30)
+                    (build . (2 fly-left))))
+(slide-add-line! s1 0 2000000 3000000 0
+                 '((color . "000000") (width . 12700) (flip . #t)))
+(slide-add-picture! s1 png "image/png" 0 3000000 1000000 1000000
+                    '((key . "blue") (description . "Blau")))
 (slide-set-notes! s1 '(((runs . (((text . "Eine Notiz")))))))
-(slide-add-shape! s1 'rect 3000000 0 2000000 1000000
-  '((fill . "EEEEEE") (insets . (12700 25400 38100 50800))
-    (text . (((runs . (((text . "(f x)") (font . "JetBrains Mono")))))))))
-(slide-add-shape! s1 'text 0 6000000 2000000 300000
-  '((text . (((runs . (((text . "Folie ")) ((text . "1") (field . slide-number)) ((text . " · "))
-                       ((text . "29.10.2026") (field . date)))))))))
+(slide-add-shape! s1
+                  'rect
+                  3000000
+                  0
+                  2000000
+                  1000000
+                  '((fill . "EEEEEE")
+                    (insets . (12700 25400 38100 50800))
+                    (text .
+                          (((runs .
+                                  (((text . "(f x)")
+                                    (font . "JetBrains Mono")))))))))
+(slide-add-shape! s1
+                  'text
+                  0
+                  6000000
+                  2000000
+                  300000
+                  '((text .
+                          (((runs .
+                                  (((text . "Folie "))
+                                   ((text . "1") (field . slide-number))
+                                   ((text . " · "))
+                                   ((text . "29.10.2026")
+                                    (field . date)))))))))
 
 (define s2 (presentation-add-slide! p))
 (slide-set-transition! s2 'fade 300)
 ;; the same image again (same key): stored once; a file source too
-(slide-add-picture! s2 png "image/png" 0 0 1000000 1000000 '((key . "blue") (crop . (0.1 0 0.1 0)) (alpha . 0.4)))
+(slide-add-picture! s2 png "image/png" 0 0 1000000 1000000
+                    '((key . "blue") (crop . (0.1 0 0.1 0)) (alpha . 0.4)))
 (slide-add-picture! s2 png-file "image/png" 0 0 1000000 1000000)
-(slide-add-video! s2 png-file png "image/png" 0 0 1000000 1000000 '((poster-key . "blue")))
+(slide-add-video! s2 png-file png "image/png" 0 0 1000000 1000000
+                  '((poster-key . "blue")))
 (define (cell str . props) `((text . (((runs . (((text . ,str))))))) ,@props))
 (define table-id
   (slide-add-table! s2 0 1000000 3000001 1000000
-    (list (list (cell "Name" '(fill . "0070B4")) (cell "Wert" '(fill . "0070B4")))
-          (list (cell "a & b" '(anchor . middle)) (cell "1")))
-    '((header . #t) (build . (1 appear)))))
+                    (list (list (cell "Name" '(fill . "0070B4"))
+                                (cell "Wert" '(fill . "0070B4")))
+                          (list (cell "a & b" '(anchor . middle)) (cell "1")))
+                    '((header . #t) (build . (1 appear)))))
 
 (presentation-save p file)
 
@@ -73,13 +122,17 @@
 (define (filter-media names)
   (let loop ((ns names) (acc '()))
     (cond ((null? ns) (reverse acc))
-          ((and (>= (string-length (car ns)) 10) (string=? (substring (car ns) 0 10) "ppt/media/"))
+          ((and (>= (string-length (car ns)) 10)
+                (string=? (substring (car ns) 0 10) "ppt/media/"))
            (loop (cdr ns) (cons (car ns) acc)))
           (else (loop (cdr ns) acc)))))
 
 (define (string-suffix? suffix s)
   (and (>= (string-length s) (string-length suffix))
-       (string=? (substring s (- (string-length s) (string-length suffix)) (string-length s)) suffix)))
+       (string=? (substring s
+                            (- (string-length s) (string-length suffix))
+                            (string-length s))
+                 suffix)))
 
 (call-with-input-zip file
   (lambda (z)
@@ -87,37 +140,53 @@
       (test-group "parts"
         (for-each (lambda (n) (test-assert n (member n names)))
                   '("[Content_Types].xml" "_rels/.rels" "ppt/presentation.xml"
-                    "ppt/_rels/presentation.xml.rels" "ppt/slides/slide1.xml" "ppt/slides/slide2.xml"
-                    "ppt/slides/_rels/slide1.xml.rels" "ppt/notesSlides/notesSlide1.xml"
-                    "ppt/slideMasters/slideMaster1.xml" "ppt/slideLayouts/slideLayout1.xml"
-                    "ppt/notesMasters/notesMaster1.xml" "ppt/theme/theme1.xml" "docProps/core.xml"))
+                    "ppt/_rels/presentation.xml.rels" "ppt/slides/slide1.xml"
+                    "ppt/slides/slide2.xml" "ppt/slides/_rels/slide1.xml.rels"
+                    "ppt/notesSlides/notesSlide1.xml"
+                    "ppt/slideMasters/slideMaster1.xml"
+                    "ppt/slideLayouts/slideLayout1.xml"
+                    "ppt/notesMasters/notesMaster1.xml" "ppt/theme/theme1.xml"
+                    "docProps/core.xml"))
         ;; blue (twice, by key, and as the poster), the file, the video
         (test-equal 3 (length (filter-media names))))
       (test-group "every XML part is well-formed"
         (for-each (lambda (n)
-                    (when (or (string-suffix? ".xml" n) (string-suffix? ".rels" n))
-                      (test-assert n (well-formed? (zip-read-entry-bytevector z n)))))
+                    (when
+                        (or (string-suffix? ".xml" n)
+                            (string-suffix? ".rels" n))
+                      (test-assert n
+                                   (well-formed?
+                                    (zip-read-entry-bytevector z n)))))
                   names))
       (test-group "content"
         (let ((s1 (part z "ppt/slides/slide1.xml"))
               (s2 (part z "ppt/slides/slide2.xml"))
               (rels (part z "ppt/slides/_rels/slide1.xml.rels")))
           (test-assert (has? s1 "&lt;Titel&gt;"))
-          (test-assert "slide number field" (has? s1 "type=\"slidenum\"><a:rPr lang=\"de-CH\" dirty=\"0\"></a:rPr><a:t>1</a:t></a:fld>"))
+          (test-assert "slide number field"
+                       (has? s1
+                             "type=\"slidenum\"><a:rPr lang=\"de-CH\" dirty=\"0\"></a:rPr><a:t>1</a:t></a:fld>"))
           (test-assert "date field" (has? s1 "type=\"datetime1\">"))
           (test-assert "line break" (has? s1 "<a:br>"))
           (test-assert (has? s1 "sz=\"4000\""))
           (test-assert (has? s1 "<a:buChar char=\"–\"/>"))
           (test-assert (has? s1 "anchor=\"ctr\""))
-          (test-assert "insets" (has? s1 "lIns=\"12700\" tIns=\"25400\" rIns=\"38100\" bIns=\"50800\""))
-          (test-assert "none by default" (has? s1 "lIns=\"0\" tIns=\"0\" rIns=\"0\" bIns=\"0\""))
-          (test-assert (has? s1 "rot=\"19800000\""))   ; -30 degrees
+          (test-assert "insets"
+                       (has? s1
+                             "lIns=\"12700\" tIns=\"25400\" rIns=\"38100\" bIns=\"50800\""))
+          (test-assert "none by default"
+                       (has? s1
+                             "lIns=\"0\" tIns=\"0\" rIns=\"0\" bIns=\"0\""))
+          (test-assert (has? s1 "rot=\"19800000\"")) ; -30 degrees
           (test-assert (has? s1 "<a:alpha val=\"50000\"/>"))
           (test-assert (has? s1 "flipV=\"1\""))
           (test-assert (has? s1 "descr=\"Blau\""))
           (test-assert "builds" (has? s1 "presetID=\"10\""))
           (test-assert (has? s1 "presetID=\"2\""))
-          (test-assert (has? s1 (string-append "<p:bldP spid=\"" (number->string title-id) "\"")))
+          (test-assert (has? s1
+                             (string-append "<p:bldP spid=\""
+                                            (number->string title-id)
+                                            "\"")))
           (test-assert (has? rels "https://www.zh.ch/?a=1&amp;b=2"))
           (test-assert (has? rels "TargetMode=\"External\""))
           (test-assert (has? rels "notesSlide1.xml"))
@@ -128,17 +197,27 @@
           (test-assert "video" (has? s2 "<a:videoFile"))
           (test-assert "table" (has? s2 "<a:tbl><a:tblPr firstRow=\"1\"/>"))
           ;; equal columns that add up to the width
-          (test-assert (has? s2 "<a:gridCol w=\"1500000\"/><a:gridCol w=\"1500001\"/>"))
+          (test-assert (has? s2
+                             "<a:gridCol w=\"1500000\"/><a:gridCol w=\"1500001\"/>"))
           (test-assert (has? s2 "<a:tr h=\"500000\">"))
           (test-assert (has? s2 "a &amp; b"))
           (test-assert (has? s2 "<a:solidFill><a:srgbClr val=\"0070B4\">"))
-          (test-assert "table build" (has? s2 (string-append "<p:spTgt spid=\"" (number->string table-id) "\"")))
-          (test-assert (has? (part z "ppt/notesSlides/notesSlide1.xml") "Eine Notiz"))
+          (test-assert "table build"
+                       (has? s2
+                             (string-append "<p:spTgt spid=\""
+                                            (number->string table-id)
+                                            "\"")))
+          (test-assert (has? (part z "ppt/notesSlides/notesSlide1.xml")
+                             "Eine Notiz"))
           (test-assert (has? (part z "docProps/core.xml") "Probe &amp; Test"))
-          (test-assert (has? (part z "ppt/presentation.xml") "<p:sldId id=\"257\""))
-          (test-equal png (zip-read-entry-bytevector z "ppt/media/media1.png")))))))
+          (test-assert (has? (part z "ppt/presentation.xml")
+                             "<p:sldId id=\"257\""))
+          (test-equal png
+                      (zip-read-entry-bytevector z
+                                                 "ppt/media/media1.png")))))))
 
-(test-assert "bytevector output" (> (bytevector-length (presentation->bytevector p)) 1000))
+(test-assert "bytevector output"
+             (> (bytevector-length (presentation->bytevector p)) 1000))
 
 (delete-file file)
 (delete-file png-file)

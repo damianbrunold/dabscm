@@ -47,8 +47,8 @@
           (scm datetime)
           (scm deb)
           (scm fs)
-          (scm system)
-          (scm string))
+          (scm string)
+          (scm system))
   (begin
 
     ;; --- spec ---------------------------------------------------------------
@@ -78,10 +78,13 @@
 
     ;; Shell scripts and units must be LF-only even from a CRLF checkout.
     (define (lf-only s)
-      (list->string (remove (lambda (c) (char=? c #\return)) (string->list s))))
+      (list->string (remove (lambda (c) (char=? c #\return))
+                            (string->list s))))
 
     (define (substitute text pairs)
-      (fold (lambda (kv acc) (string-replace-all acc (car kv) (cdr kv))) text pairs))
+      (fold (lambda (kv acc) (string-replace-all acc (car kv) (cdr kv)))
+            text
+            pairs))
 
     (define (skip-name? name)
       (or (string-suffix? "~" name)
@@ -91,22 +94,28 @@
 
     ;; Files under dir as sorted "/"-joined relative paths.
     (define (tree-files dir)
-      (sort-strings
-        (let walk ((rel ""))
-          (let ((os (if (string=? rel "") dir (join-path dir rel)))
-                (join (lambda (n) (if (string=? rel "") n (string-append rel "/" n)))))
-            (append
-              (filter-map (lambda (f) (and (not (skip-name? f)) (join f)))
-                          (directory-files os))
-              (append-map (lambda (d) (if (skip-name? d) '() (walk (join d))))
-                          (directory-directories os)))))))
+      (sort-strings (let walk ((rel ""))
+                      (let ((os (if (string=? rel "")
+                                    dir
+                                    (join-path dir rel)))
+                            (join (lambda (n)
+                                    (if (string=? rel "")
+                                        n
+                                        (string-append rel "/" n)))))
+                        (append (filter-map
+                                 (lambda (f)
+                                   (and (not (skip-name? f)) (join f)))
+                                 (directory-files os))
+                                (append-map
+                                 (lambda (d)
+                                   (if (skip-name? d) '() (walk (join d))))
+                                 (directory-directories os)))))))
 
     (define (sort-strings l) (sort l string<?))
 
     (define (git dir . args)
       (let ((r (run-program/capture (cons "git" args) `((work-dir ,dir)))))
-        (unless (and (pair? r) (eqv? (car r) 0))
-          (error "git failed" args))
+        (unless (and (pair? r) (eqv? (car r) 0)) (error "git failed" args))
         (string-trim-both (cadr r))))
 
     ;; --- version ------------------------------------------------------------
@@ -119,10 +128,15 @@ Description: The package version for a build of commit hash made at epoch
   uncommitted changes. Versions of later commits sort higher.
 Example:
   (webapp-deb-version 1792241802 \"1056360d\" #f) => \"2026.10.17.125642+g1056360d\""
-      (let* ((iso (format-iso8601 epoch))          ; YYYY-MM-DDTHH:MM:SSZ
-             (stamp (string-append (substring iso 0 4) "." (substring iso 5 7) "."
-                                   (substring iso 8 10) "."
-                                   (substring iso 11 13) (substring iso 14 16)
+      (let* ((iso (format-iso8601 epoch)) ; YYYY-MM-DDTHH:MM:SSZ
+             (stamp (string-append (substring iso 0 4)
+                                   "."
+                                   (substring iso 5 7)
+                                   "."
+                                   (substring iso 8 10)
+                                   "."
+                                   (substring iso 11 13)
+                                   (substring iso 14 16)
                                    (substring iso 17 19))))
         (string-append stamp "+g" hash (if dirty? ".dirty" ""))))
 
@@ -132,17 +146,25 @@ Example:
     (define (define-line? line name)
       (let ((t (string-trim line)))
         (and (string-prefix? (string-append "(define " name) t)
-             (let ((rest (substring t (+ 8 (string-length name)) (string-length t))))
+             (let
+                 ((rest (substring t
+                                   (+ 8 (string-length name))
+                                   (string-length t))))
                (and (> (string-length rest) 0)
                     (char-whitespace? (string-ref rest 0)))))))
 
     (define (balanced? s)
-      (let loop ((cs (string->list s)) (depth 0) (in-string? #f))
+      (let loop ((cs (string->list s))
+                 (depth 0)
+                 (in-string? #f))
         (cond ((null? cs) (= depth 0))
-              (in-string?
-               (cond ((char=? (car cs) #\\) (loop (if (pair? (cdr cs)) (cddr cs) '()) depth #t))
-                     ((char=? (car cs) #\") (loop (cdr cs) depth #f))
-                     (else (loop (cdr cs) depth #t))))
+              (in-string? (cond ((char=? (car cs) #\\)
+                                 (loop (if (pair? (cdr cs)) (cddr cs) '())
+                                       depth
+                                       #t))
+                                ((char=? (car cs) #\")
+                                 (loop (cdr cs) depth #f))
+                                (else (loop (cdr cs) depth #t))))
               ((char=? (car cs) #\;) (= depth 0))
               ((char=? (car cs) #\") (loop (cdr cs) depth #t))
               ((char=? (car cs) #\() (loop (cdr cs) (+ depth 1) #f))
@@ -163,28 +185,39 @@ Example:
     '((\"files-dir\" . \"\\\"/var/lib/myapp/files\\\"\")
       (\"secure-cookies?\" . \"#t\")))"
       (let* ((lines (string-split example "\n"))
-             (out
-               (fold
-                 (lambda (setting lines)
-                   (let ((name (car setting)) (value (cdr setting)) (found #f))
-                     (let ((new (map (lambda (l)
-                                       (cond ((and (not found) (define-line? l name))
-                                              (unless (balanced? l)
-                                                (error "config.example.scm: define spans several lines" name))
-                                              (set! found #t)
-                                              (string-append "(define " name " " value ")"))
-                                             (else l)))
-                                     lines)))
-                       (unless found
-                         (error "config.example.scm: no (define ...) for setting" name))
-                       new)))
-                 lines settings)))
-        (string-append
-          ";; Installed by the " pkg " package as /etc/" pkg "/config.scm on the first\n"
-          ";; install; never overwritten afterwards. Relative paths resolve against\n"
-          ";; /opt/" pkg "/app. The services start once no setting holds \"change-me\"\n"
-          ";; or a REPLACE_WITH_... placeholder any more.\n\n"
-          (string-join out "\n"))))
+             (out (fold (lambda (setting lines)
+                          (let ((name (car setting))
+                                (value (cdr setting))
+                                (found #f))
+                            (let ((new (map
+                                        (lambda (l)
+                                          (cond
+                                           ((and (not found)
+                                                 (define-line? l name))
+                                            (unless (balanced? l)
+                                              (error
+                                               "config.example.scm: define spans several lines"
+                                               name))
+                                            (set! found #t)
+                                            (string-append "(define " name " "
+                                                           value ")"))
+                                           (else l)))
+                                        lines)))
+                              (unless found
+                                (error
+                                 "config.example.scm: no (define ...) for setting"
+                                 name))
+                              new)))
+                        lines
+                        settings)))
+        (string-append ";; Installed by the " pkg " package as /etc/" pkg
+                       "/config.scm on the first\n"
+                       ";; install; never overwritten afterwards. Relative paths resolve against\n"
+                       ";; /opt/"
+                       pkg
+                       "/app. The services start once no setting holds \"change-me\"\n"
+                       ";; or a REPLACE_WITH_... placeholder any more.\n\n"
+                       (string-join out "\n"))))
 
     ;; --- templates ------------------------------------------------------------
 
@@ -386,16 +419,21 @@ fi
     ;; the jar was built in, when it has one).
     (define (copyright-text pkg license notes dabscm-dir dabscm-version)
       (let ((dabscm-license (join-path dabscm-dir "LICENSE")))
-        (string-append
-          license
-          (if (pair? notes)
-              (string-append "\n\nBundled third-party material:\n\n"
-                             (string-join notes "\n") "\n")
-              "")
-          "\n\nScheme runtime /opt/" pkg "/lib/scm.jar: dabscm " dabscm-version
-          (if (file-exists? dabscm-license)
-              (string-append ", under this licence:\n\n" (read-text dabscm-license))
-              ".\n"))))
+        (string-append license
+                       (if (pair? notes)
+                           (string-append
+                            "\n\nBundled third-party material:\n\n"
+                            (string-join notes "\n")
+                            "\n")
+                           "")
+                       "\n\nScheme runtime /opt/"
+                       pkg
+                       "/lib/scm.jar: dabscm "
+                       dabscm-version
+                       (if (file-exists? dabscm-license)
+                           (string-append ", under this licence:\n\n"
+                                          (read-text dabscm-license))
+                           ".\n"))))
 
     (define (shell-quote s)
       (string-append "'" (string-replace-all s "'" "'\\''") "'"))
@@ -435,134 +473,233 @@ Example:
     '(out . \"dist\"))"
       (let* ((opt (lambda (k d) (let ((e (assq k opts))) (if e (cdr e) d))))
              (pkg (spec-ref spec 'pkg))
-             (dir (normalized-path (absolute-path (spec-opt spec 'app-dir "."))))
+             (dir (normalized-path (absolute-path
+                                    (spec-opt spec 'app-dir "."))))
              (out-dir (opt 'out (join-path dir "dist")))
-             (jar (opt 'jar (join-path (directory-name dir) "dabscm" "scm-java" "scm.jar")))
+             (jar (opt 'jar
+                       (join-path (directory-name dir)
+                                  "dabscm"
+                                  "scm-java"
+                                  "scm.jar")))
              (dirty? (not (string=? (git dir "status" "--porcelain") ""))))
         (when (and dirty? (not (opt 'allow-dirty #f)))
-          (error "package-webapp-deb: uncommitted changes; commit them or allow-dirty" dir))
+          (error
+           "package-webapp-deb: uncommitted changes; commit them or allow-dirty"
+           dir))
         (unless (file-exists? jar)
-          (error "package-webapp-deb: scm.jar not found (build dabscm first)" jar))
+          (error "package-webapp-deb: scm.jar not found (build dabscm first)"
+                 jar))
         (let* ((hash (git dir "rev-parse" "--short=8" "HEAD"))
                (epoch (if dirty?
                           (exact (floor (current-second)))
-                          (string->number (git dir "log" "-1" "--format=%ct"))))
+                          (string->number
+                           (git dir "log" "-1" "--format=%ct"))))
                (version (webapp-deb-version epoch hash dirty?))
                (services (spec-ref spec 'services))
                (timers (spec-ref spec 'timers))
-               (dabscm-version
-                 (let ((f (join-path (directory-name (directory-name jar)) "VERSION")))
-                   (if (file-exists? f) (string-trim-both (read-text f)) "unknown")))
-               (subst
-                 `(("@PKG@" . ,pkg)
-                   ("@VERSION@" . ,version)
-                   ("@MAINTAINER@" . ,(spec-opt spec 'maintainer "unknown <root@localhost>"))
-                   ("@SERVICES@" . ,(string-join services " "))
-                   ("@SERVICES_REVERSED@" . ,(string-join (reverse services) " "))
-                   ("@TIMERS@" . ,(string-join timers " "))
-                   ("@DATA_SUBDIRS@" . ,(string-join (spec-opt spec 'data-subdirs '()) " "))
-                   ("@DEFAULT_PORT@" . ,(number->string (spec-opt spec 'default-port 8080)))
-                   ("@SETUP_HINTS@"
-                    . ,(apply string-append
-                         (map (lambda (l) (string-append "        echo " (shell-quote (string-append pkg ": " l)) "\n"))
-                              (spec-opt spec 'setup-hints '()))))))
+               (dabscm-version (let
+                                   ((f (join-path
+                                        (directory-name (directory-name jar))
+                                        "VERSION")))
+                                 (if (file-exists? f)
+                                     (string-trim-both (read-text f))
+                                     "unknown")))
+               (subst `(("@PKG@" . ,pkg)
+                        ("@VERSION@" . ,version)
+                        ("@MAINTAINER@"
+                         .
+                         ,(spec-opt spec
+                                    'maintainer
+                                    "unknown <root@localhost>"))
+                        ("@SERVICES@" . ,(string-join services " "))
+                        ("@SERVICES_REVERSED@"
+                         .
+                         ,(string-join (reverse services) " "))
+                        ("@TIMERS@" . ,(string-join timers " "))
+                        ("@DATA_SUBDIRS@"
+                         .
+                         ,(string-join (spec-opt spec 'data-subdirs '()) " "))
+                        ("@DEFAULT_PORT@"
+                         .
+                         ,(number->string (spec-opt spec 'default-port 8080)))
+                        ("@SETUP_HINTS@"
+                         .
+                         ,(apply string-append
+                                 (map (lambda (l)
+                                        (string-append
+                                         "        echo "
+                                         (shell-quote
+                                          (string-append pkg ": " l))
+                                         "\n"))
+                                      (spec-opt spec 'setup-hints '()))))))
                (fill (lambda (t) (lf-only (substitute t subst))))
                (opt-dir (string-append "opt/" pkg "/"))
                (app (string-append opt-dir "app/"))
                (text (lambda (name mode s) (list name mode (string->utf8 s))))
-               (from (lambda (name mode path) (list name mode (read-bytes path))))
+               (from (lambda (name mode path)
+                       (list name mode (read-bytes path))))
                (bin-exclude (spec-opt spec 'bin-exclude '("dev-server.scm")))
-               (app-files
-                 (append
-                   (filter-map
-                     (lambda (f)
-                       (and (string-suffix? ".scm" f) (not (member f bin-exclude))
-                            (from (string-append app "bin/" f) #o644 (join-path dir "bin" f))))
-                     (sort-strings (directory-files (join-path dir "bin"))))
-                   (append-map
-                     (lambda (tree)
-                       (map (lambda (f) (from (string-append app tree "/" f) #o644
+               (app-files (append (filter-map
+                                   (lambda (f)
+                                     (and
+                                      (string-suffix? ".scm" f)
+                                      (not (member f bin-exclude))
+                                      (from (string-append app "bin/" f)
+                                            #o644
+                                            (join-path dir "bin" f))))
+                                   (sort-strings
+                                    (directory-files (join-path dir "bin"))))
+                                  (append-map
+                                   (lambda (tree)
+                                     (map
+                                      (lambda (f)
+                                        (from (string-append app tree "/" f)
+                                              #o644
                                               (join-path dir tree f)))
-                            (tree-files (join-path dir tree))))
-                     (spec-opt spec 'trees '("src" "static")))
-                   (list (text (string-append app "config.scm") #o644
-                               (string-append ";; Tools under bin/ load this; the real config is\n"
-                                              "(load \"/etc/" pkg "/config.scm\")\n")))))
+                                      (tree-files (join-path dir tree))))
+                                   (spec-opt spec 'trees '("src" "static")))
+                                  (list
+                                   (text
+                                    (string-append app "config.scm")
+                                    #o644
+                                    (string-append
+                                     ";; Tools under bin/ load this; the real config is\n"
+                                     "(load \"/etc/" pkg
+                                     "/config.scm\")\n")))))
                (units-dir (join-path dir "deploy" "systemd"))
-               (unit-files
-                 (map (lambda (u)
-                        (text (string-append "usr/lib/systemd/system/" u) #o644
-                              (lf-only (read-text (join-path units-dir u)))))
-                      (filter (lambda (f) (or (string-suffix? ".service" f)
-                                              (string-suffix? ".timer" f)))
-                              (sort-strings (directory-files units-dir)))))
+               (unit-files (map (lambda (u)
+                                  (text
+                                   (string-append "usr/lib/systemd/system/" u)
+                                   #o644
+                                   (lf-only
+                                    (read-text (join-path units-dir u)))))
+                                (filter
+                                 (lambda (f)
+                                   (or (string-suffix? ".service" f)
+                                       (string-suffix? ".timer" f)))
+                                 (sort-strings (directory-files units-dir)))))
                (doc (string-append "usr/share/doc/" pkg "/"))
-               (doc-files
-                 (append
-                   (list (from (string-append doc "README.Debian") #o644
-                               (join-path dir "deploy" "debian" "README.Debian"))
-                         (text (string-append doc "copyright") #o644
-                               (copyright-text pkg (read-text (join-path dir "LICENSE"))
-                                               (spec-opt spec 'copyright-notes '())
-                                               (directory-name (directory-name jar))
-                                               dabscm-version)))
-                   (filter-map
-                     (lambda (f)
-                       (let ((p (join-path dir "deploy" f)))
-                         (and (file-exists? p) (from (string-append doc f) #o644 p))))
-                     '("nginx.conf.example" "apache.conf.example"))))
-               (runtime-files
-                 (list (from (string-append opt-dir "lib/scm.jar") #o644 jar)
-                       (text (string-append opt-dir "bin/scm") #o755 (fill scm-template))
-                       (text (string-append opt-dir "bin/healthcheck") #o755 (fill healthcheck-template))
-                       (text (string-append "usr/bin/" pkg "-admin") #o755 (fill admin-template))
-                       (text (string-append opt-dir "VERSION") #o644
-                             (string-append pkg " " version "\ncommit " hash
-                                            "\ndabscm " dabscm-version "\n"))
-                       (text (string-append "usr/share/" pkg "/config.default.scm") #o644
-                             (webapp-default-config
-                               (read-text (join-path dir "config.example.scm")) pkg
-                               (spec-opt spec 'config-settings '())))))
+               (doc-files (append (list
+                                   (from
+                                    (string-append doc "README.Debian")
+                                    #o644
+                                    (join-path dir "deploy" "debian"
+                                               "README.Debian"))
+                                   (text
+                                    (string-append doc "copyright")
+                                    #o644
+                                    (copyright-text
+                                     pkg
+                                     (read-text (join-path dir "LICENSE"))
+                                     (spec-opt spec 'copyright-notes '())
+                                     (directory-name (directory-name jar))
+                                     dabscm-version)))
+                                  (filter-map
+                                   (lambda (f)
+                                     (let ((p (join-path dir "deploy" f)))
+                                       (and
+                                        (file-exists? p)
+                                        (from (string-append doc f)
+                                              #o644
+                                              p))))
+                                   '("nginx.conf.example"
+                                     "apache.conf.example"))))
+               (runtime-files (list (from
+                                     (string-append opt-dir "lib/scm.jar")
+                                     #o644
+                                     jar)
+                                    (text (string-append opt-dir "bin/scm")
+                                          #o755
+                                          (fill scm-template))
+                                    (text
+                                     (string-append opt-dir "bin/healthcheck")
+                                     #o755
+                                     (fill healthcheck-template))
+                                    (text
+                                     (string-append "usr/bin/" pkg "-admin")
+                                     #o755
+                                     (fill admin-template))
+                                    (text
+                                     (string-append opt-dir "VERSION")
+                                     #o644
+                                     (string-append pkg " " version
+                                                    "\ncommit " hash
+                                                    "\ndabscm " dabscm-version
+                                                    "\n"))
+                                    (text
+                                     (string-append "usr/share/" pkg
+                                                    "/config.default.scm")
+                                     #o644
+                                     (webapp-default-config
+                                      (read-text
+                                       (join-path dir "config.example.scm"))
+                                      pkg
+                                      (spec-opt spec 'config-settings '())))))
                (data (append app-files unit-files doc-files runtime-files))
-               (installed-kib
-                 (+ (fold (lambda (e acc)
-                            (+ acc (quotient (+ (bytevector-length (entry-content e)) 1023) 1024)))
-                          0 data)
-                    (- (length (add-parent-dirs data)) (length data))))
-               (control
-                 (fill
-                   (substitute control-template
-                     `(("@INSTALLED_SIZE@" . ,(number->string installed-kib))
-                       ("@SUMMARY@" . ,(spec-ref spec 'summary))
-                       ("@DESCRIPTION@"
-                        . ,(string-join (map (lambda (l) (string-append " " l))
-                                             (spec-ref spec 'description))
-                                        "\n"))
-                       ("@DEPENDS@"
-                        . ,(apply string-append
-                             (map (lambda (d) (string-append ", " d))
-                                  (spec-opt spec 'depends '()))))
-                       ("@RECOMMENDS@"
-                        . ,(if (pair? (spec-opt spec 'recommends '()))
-                               (string-append "Recommends: "
-                                              (string-join (spec-opt spec 'recommends '()) ", ")
-                                              "\n")
-                               ""))))))
-               (md5sums
-                 (apply string-append
-                   (map (lambda (e)
-                          (string-append (md5-hash (entry-content e)) "  " (entry-name e) "\n"))
-                        data)))
-               (control-entries
-                 (list (text "control" #o644 control)
-                       (text "md5sums" #o644 md5sums)
-                       (text "postinst" #o755 (fill postinst-template))
-                       (text "prerm" #o755 (fill prerm-template))
-                       (text "postrm" #o755 (fill postrm-template))))
-               (deb (join-path out-dir (string-append pkg "_" version "_all.deb"))))
+               (installed-kib (+ (fold (lambda (e acc)
+                                         (+
+                                          acc
+                                          (quotient
+                                           (+
+                                            (bytevector-length
+                                             (entry-content e))
+                                            1023)
+                                           1024)))
+                                       0
+                                       data)
+                                 (- (length (add-parent-dirs data))
+                                    (length data))))
+               (control (fill (substitute
+                               control-template
+                               `(("@INSTALLED_SIZE@"
+                                  .
+                                  ,(number->string installed-kib))
+                                 ("@SUMMARY@" . ,(spec-ref spec 'summary))
+                                 ("@DESCRIPTION@"
+                                  .
+                                  ,(string-join
+                                    (map (lambda (l) (string-append " " l))
+                                         (spec-ref spec 'description))
+                                    "\n"))
+                                 ("@DEPENDS@"
+                                  .
+                                  ,(apply
+                                    string-append
+                                    (map (lambda (d) (string-append ", " d))
+                                         (spec-opt spec 'depends '()))))
+                                 ("@RECOMMENDS@"
+                                  .
+                                  ,(if (pair? (spec-opt spec 'recommends '()))
+                                       (string-append
+                                        "Recommends: "
+                                        (string-join
+                                         (spec-opt spec 'recommends '())
+                                         ", ")
+                                        "\n")
+                                       ""))))))
+               (md5sums (apply string-append
+                               (map (lambda (e)
+                                      (string-append
+                                       (md5-hash (entry-content e))
+                                       "  "
+                                       (entry-name e)
+                                       "\n"))
+                                    data)))
+               (control-entries (list (text "control" #o644 control)
+                                      (text "md5sums" #o644 md5sums)
+                                      (text "postinst" #o755
+                                            (fill postinst-template))
+                                      (text "prerm" #o755
+                                            (fill prerm-template))
+                                      (text "postrm" #o755
+                                            (fill postrm-template))))
+               (deb (join-path out-dir
+                               (string-append pkg "_" version "_all.deb"))))
           (unless (directory-exists? out-dir) (make-directory out-dir))
           (call-with-port (open-binary-output-file deb)
-            (lambda (port) (write-bytevector (deb-bytevector control-entries data epoch) port)))
+            (lambda (port)
+              (write-bytevector (deb-bytevector control-entries data epoch)
+                                port)))
           deb)))
 
     (define (webapp-deb-main spec args)
@@ -578,28 +715,37 @@ Example:
   (import (scheme base) (scheme process-context) (scm deb webapp))
   (webapp-deb-main '((pkg . \"myapp\") ...) (cdr (command-line)))"
       (let loop ((as args) (opts '()))
-        (cond
-          ((null? as)
-           (guard (e (#t (display "package-deb: ")
-                         (display (if (error-object? e) (error-object-message e) e))
-                         (when (and (error-object? e) (pair? (error-object-irritants e)))
-                           (display " ")
-                           (write (car (error-object-irritants e))))
-                         (newline)
-                         (exit 1)))
-             (let ((deb (apply package-webapp-deb spec opts)))
-               (display deb) (newline)
-               deb)))
-          ((string=? (car as) "--allow-dirty")
-           (loop (cdr as) (cons '(allow-dirty . #t) opts)))
-          ((and (member (car as) '("--out" "--jar" "--dabscm")) (pair? (cdr as)))
-           (let ((v (cadr as)))
-             (loop (cddr as)
-                   (cons (cond ((string=? (car as) "--out") (cons 'out v))
-                               ((string=? (car as) "--jar") (cons 'jar v))
-                               (else (cons 'jar (join-path v "scm-java" "scm.jar"))))
-                         opts))))
-          (else
-           (display "usage: scm package-deb.scm [--out DIR] [--jar SCM.JAR | --dabscm DIR] [--allow-dirty]")
-           (newline)
-           (exit 2)))))))
+        (cond ((null? as)
+               (guard (e (#t
+                          (display "package-deb: ")
+                          (display (if (error-object? e)
+                                       (error-object-message e)
+                                       e))
+                          (when
+                              (and (error-object? e)
+                                   (pair? (error-object-irritants e)))
+                            (display " ")
+                            (write (car (error-object-irritants e))))
+                          (newline)
+                          (exit 1)))
+                 (let ((deb (apply package-webapp-deb spec opts)))
+                   (display deb)
+                   (newline)
+                   deb)))
+              ((string=? (car as) "--allow-dirty")
+               (loop (cdr as) (cons '(allow-dirty . #t) opts)))
+              ((and (member (car as) '("--out" "--jar" "--dabscm"))
+                    (pair? (cdr as)))
+               (let ((v (cadr as)))
+                 (loop (cddr as)
+                       (cons (cond ((string=? (car as) "--out") (cons 'out v))
+                                   ((string=? (car as) "--jar") (cons 'jar v))
+                                   (else
+                                    (cons
+                                     'jar
+                                     (join-path v "scm-java" "scm.jar"))))
+                             opts))))
+              (else (display
+                     "usage: scm package-deb.scm [--out DIR] [--jar SCM.JAR | --dabscm DIR] [--allow-dirty]")
+                    (newline)
+                    (exit 2)))))))

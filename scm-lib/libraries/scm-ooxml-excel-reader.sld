@@ -7,18 +7,18 @@
           (srfi 69)
           (srfi 132)
           (scm fs)
-          (scm zip)
-          (scm xml))
+          (scm xml)
+          (scm zip))
   (export read-workbook
           read-workbook-from-bytevector
-          workbook-sheet-names
-          workbook-sheets
-          workbook-sheet
-          sheet-name
+          sheet-cells
           sheet-dimensions
+          sheet-name
           sheet-ref
           sheet-rows
-          sheet-cells)
+          workbook-sheet
+          workbook-sheet-names
+          workbook-sheets)
   (begin
 
     ;; --------------------------------------------------------------
@@ -44,9 +44,7 @@
     (define (attr r . names)
       ;; Return the first present attribute among names, or #f.
       (let loop ((ns names))
-        (if (null? ns)
-            #f
-            (or (xml-attribute r (car ns)) (loop (cdr ns))))))
+        (if (null? ns) #f (or (xml-attribute r (car ns)) (loop (cdr ns))))))
 
     (define (with-reader bv proc)
       ;; Open an XML reader over a bytevector, run proc, always close.
@@ -65,14 +63,14 @@
           (if (and (< i n) (char-alphabetic? (string-ref ref i)))
               (loop (+ i 1)
                     (+ (* col 26)
-                       (+ 1 (- (char->integer (char-upcase (string-ref ref i)))
-                               (char->integer #\A)))))
+                       (+ 1
+                          (- (char->integer (char-upcase (string-ref ref i)))
+                             (char->integer #\A)))))
               (cons (or (string->number (substring ref i n)) 0) col)))))
 
     ;; ---- date detection and conversion ---------------------------
 
-    (define excel-date-builtin-ids
-      '(14 15 16 17 18 19 20 21 22 45 46 47))
+    (define excel-date-builtin-ids '(14 15 16 17 18 19 20 21 22 45 46 47))
 
     (define (date-format-code? code)
       ;; Heuristic: a format code denotes a date/time if, after removing
@@ -83,22 +81,23 @@
           (if (>= i n)
               #f
               (let ((ch (string-ref code i)))
-                (cond
-                  ((char=? ch #\")
-                   (let skip ((j (+ i 1)))
-                     (cond ((>= j n) #f)
-                           ((char=? (string-ref code j) #\") (loop (+ j 1)))
-                           (else (skip (+ j 1))))))
-                  ((char=? ch #\[)
-                   (let skip ((j (+ i 1)))
-                     (cond ((>= j n) #f)
-                           ((char=? (string-ref code j) #\]) (loop (+ j 1)))
-                           (else (skip (+ j 1))))))
-                  ((char=? ch #\\) (loop (+ i 2)))
-                  (else
-                   (if (memv (char-downcase ch) '(#\y #\m #\d #\h #\s))
-                       #t
-                       (loop (+ i 1))))))))))
+                (cond ((char=? ch #\")
+                       (let skip ((j (+ i 1)))
+                         (cond ((>= j n) #f)
+                               ((char=? (string-ref code j) #\")
+                                (loop (+ j 1)))
+                               (else (skip (+ j 1))))))
+                      ((char=? ch #\[)
+                       (let skip ((j (+ i 1)))
+                         (cond ((>= j n) #f)
+                               ((char=? (string-ref code j) #\])
+                                (loop (+ j 1)))
+                               (else (skip (+ j 1))))))
+                      ((char=? ch #\\) (loop (+ i 2)))
+                      (else (if (memv (char-downcase ch)
+                                      '(#\y #\m #\d #\h #\s))
+                                #t
+                                (loop (+ i 1))))))))))
 
     (define (civil-from-days z0)
       ;; Howard Hinnant's days-from-civil inverse: convert a day count
@@ -111,7 +110,8 @@
                                (- (quotient doe 146096)))
                             365))
              (y (+ yoe (* era 400)))
-             (doy (- doe (+ (* 365 yoe) (quotient yoe 4) (- (quotient yoe 100)))))
+             (doy (- doe
+                     (+ (* 365 yoe) (quotient yoe 4) (- (quotient yoe 100)))))
              (mp (quotient (+ (* 5 doy) 2) 153))
              (d (+ (- doy (quotient (+ (* 153 mp) 2) 5)) 1))
              (m (if (< mp 10) (+ mp 3) (- mp 9))))
@@ -135,16 +135,17 @@
              (s (- secs (* h 3600) (* mi 60)))
              (time-str (string-append (pad2 h) ":" (pad2 mi) ":" (pad2 s))))
         (cond
-          ;; Pure time-of-day value (serial in [0,1)): no meaningful date.
-          ((and (< serial 1) (>= serial 0)) time-str)
-          (else
-           (let* ((ymd (civil-from-days (- days 25569)))
-                  (date-str (string-append (pad4 (car ymd)) "-"
-                                           (pad2 (cadr ymd)) "-"
-                                           (pad2 (caddr ymd)))))
-             (if (= secs 0)
-                 date-str
-                 (string-append date-str "T" time-str)))))))
+         ;; Pure time-of-day value (serial in [0,1)): no meaningful date.
+         ((and (< serial 1) (>= serial 0)) time-str)
+         (else (let* ((ymd (civil-from-days (- days 25569)))
+                      (date-str (string-append (pad4 (car ymd))
+                                               "-"
+                                               (pad2 (cadr ymd))
+                                               "-"
+                                               (pad2 (caddr ymd)))))
+                 (if (= secs 0)
+                     date-str
+                     (string-append date-str "T" time-str)))))))
 
     ;; ---- styles.xml: which style indexes are dates ---------------
 
@@ -160,32 +161,41 @@
               ;; single forward scan suffices.
               (let ((custom (make-hash-table)))
                 (let loop ((xfs '()) (in-cellxfs #f) (cont #t))
-                  (cond
-                    ((not cont) (list->vector (reverse xfs)))
-                    (else
-                     (case (xml-node-type r)
-                       ((element)
-                        (let ((nm (local-name (xml-name r))))
-                          (cond
-                            ((string=? nm "numFmt")
-                             (let ((id (string->number (or (attr r "numFmtId") "")))
-                                   (code (attr r "formatCode")))
-                               (when (and id code)
-                                 (hash-table-set! custom id code))
-                               (loop xfs in-cellxfs (xml-read r))))
-                            ((string=? nm "cellXfs")
-                             (loop xfs #t (xml-read r)))
-                            ((and in-cellxfs (string=? nm "xf"))
-                             (let* ((id (string->number (or (attr r "numFmtId") "0")))
-                                    (date? (and id (date-numfmt? id custom))))
-                               (loop (cons date? xfs) in-cellxfs (xml-read r))))
-                            (else (loop xfs in-cellxfs (xml-read r))))))
-                       ((end-element)
-                        (let ((nm (local-name (xml-name r))))
-                          (if (string=? nm "cellXfs")
-                              (loop xfs #f (xml-read r))
-                              (loop xfs in-cellxfs (xml-read r)))))
-                       (else (loop xfs in-cellxfs (xml-read r))))))))))))
+                  (cond ((not cont) (list->vector (reverse xfs)))
+                        (else (case (xml-node-type r)
+                                ((element)
+                                 (let ((nm (local-name (xml-name r))))
+                                   (cond
+                                    ((string=? nm "numFmt")
+                                     (let
+                                         ((id
+                                           (string->number
+                                            (or (attr r "numFmtId") "")))
+                                          (code (attr r "formatCode")))
+                                       (when (and id code)
+                                         (hash-table-set! custom id code))
+                                       (loop xfs in-cellxfs (xml-read r))))
+                                    ((string=? nm "cellXfs")
+                                     (loop xfs #t (xml-read r)))
+                                    ((and in-cellxfs (string=? nm "xf"))
+                                     (let*
+                                         ((id
+                                           (string->number
+                                            (or (attr r "numFmtId") "0")))
+                                          (date?
+                                           (and id (date-numfmt? id custom))))
+                                       (loop (cons date? xfs)
+                                             in-cellxfs
+                                             (xml-read r))))
+                                    (else
+                                     (loop xfs in-cellxfs (xml-read r))))))
+                                ((end-element)
+                                 (let ((nm (local-name (xml-name r))))
+                                   (if (string=? nm "cellXfs")
+                                       (loop xfs #f (xml-read r))
+                                       (loop xfs in-cellxfs (xml-read r)))))
+                                (else (loop xfs in-cellxfs
+                                            (xml-read r))))))))))))
 
     (define (date-numfmt? id custom)
       (or (memv id excel-date-builtin-ids)
@@ -193,9 +203,7 @@
             (and code (date-format-code? code)))))
 
     (define (style-date? styles idx)
-      (and (>= idx 0)
-           (< idx (vector-length styles))
-           (vector-ref styles idx)))
+      (and (>= idx 0) (< idx (vector-length styles)) (vector-ref styles idx)))
 
     ;; ---- sharedStrings.xml ---------------------------------------
 
@@ -207,24 +215,29 @@
           (with-reader bv
             (lambda (r)
               (let loop ((acc '()) (cur #f) (cont #t))
-                (cond
-                  ((not cont) (list->vector (reverse acc)))
-                  (else
-                   (case (xml-node-type r)
-                     ((element)
-                      (let ((nm (local-name (xml-name r))))
-                        (cond
-                          ((string=? nm "si") (loop acc "" (xml-read r)))
-                          ((string=? nm "t")
-                           (let ((txt (or (xml-value r) "")))
-                             ;; xml-value consumed the element; do not re-read.
-                             (loop acc (if cur (string-append cur txt) txt) #t)))
-                          (else (loop acc cur (xml-read r))))))
-                     ((end-element)
-                      (if (string=? (local-name (xml-name r)) "si")
-                          (loop (cons (or cur "") acc) #f (xml-read r))
-                          (loop acc cur (xml-read r))))
-                     (else (loop acc cur (xml-read r)))))))))))
+                (cond ((not cont) (list->vector (reverse acc)))
+                      (else (case (xml-node-type r)
+                              ((element)
+                               (let ((nm (local-name (xml-name r))))
+                                 (cond ((string=? nm "si")
+                                        (loop acc "" (xml-read r)))
+                                       ((string=? nm "t")
+                                        (let ((txt (or (xml-value r) "")))
+                                          ;; xml-value consumed the element; do not re-read.
+                                          (loop
+                                           acc
+                                           (if cur
+                                               (string-append cur txt)
+                                               txt)
+                                           #t)))
+                                       (else (loop acc cur (xml-read r))))))
+                              ((end-element)
+                               (if (string=? (local-name (xml-name r)) "si")
+                                   (loop (cons (or cur "") acc)
+                                         #f
+                                         (xml-read r))
+                                   (loop acc cur (xml-read r))))
+                              (else (loop acc cur (xml-read r)))))))))))
 
     ;; ---- worksheet sheetN.xml ------------------------------------
 
@@ -248,53 +261,54 @@
         (with-reader bv
           (lambda (r)
             (let loop ((cont #t))
-              (cond
-                ((not cont) #t)
-                (else
-                 (case (xml-node-type r)
-                   ((element)
-                    (let ((nm (local-name (xml-name r))))
-                      (cond
-                        ((string=? nm "c")
-                         (set! cur-ref (attr r "r"))
-                         (set! cur-style (or (string->number (or (attr r "s") "0")) 0))
-                         (set! cur-type (attr r "t"))
-                         (loop (xml-read r)))
-                        ((string=? nm "v")
-                         (let ((txt (or (xml-value r) "")))
-                           (store! (typed-value txt cur-type cur-style shared styles))
-                           (loop #t)))
-                        ((string=? nm "t")
-                         ;; Inline-string text: <c t="inlineStr"><is><t>..</t></is></c>
-                         (let ((txt (or (xml-value r) "")))
-                           (when (equal? cur-type "inlineStr") (store! txt))
-                           (loop #t)))
-                        (else (loop (xml-read r))))))
-                   ((end-element)
-                    (when (string=? (local-name (xml-name r)) "c")
-                      (set! cur-ref #f))
-                    (loop (xml-read r)))
-                   (else (loop (xml-read r)))))))))
+              (cond ((not cont) #t)
+                    (else (case (xml-node-type r)
+                            ((element)
+                             (let ((nm (local-name (xml-name r))))
+                               (cond ((string=? nm "c")
+                                      (set! cur-ref (attr r "r"))
+                                      (set!
+                                       cur-style
+                                       (or
+                                        (string->number (or (attr r "s") "0"))
+                                        0))
+                                      (set! cur-type (attr r "t"))
+                                      (loop (xml-read r)))
+                                     ((string=? nm "v")
+                                      (let ((txt (or (xml-value r) "")))
+                                        (store!
+                                         (typed-value txt cur-type cur-style
+                                                      shared styles))
+                                        (loop #t)))
+                                     ((string=? nm "t")
+                                      ;; Inline-string text: <c t="inlineStr"><is><t>..</t></is></c>
+                                      (let ((txt (or (xml-value r) "")))
+                                        (when (equal? cur-type "inlineStr")
+                                          (store! txt))
+                                        (loop #t)))
+                                     (else (loop (xml-read r))))))
+                            ((end-element)
+                             (when (string=? (local-name (xml-name r)) "c")
+                               (set! cur-ref #f))
+                             (loop (xml-read r)))
+                            (else (loop (xml-read r)))))))))
         (vector 'xlsx-sheet name cells maxrow maxcol)))
 
     (define (typed-value txt type style shared styles)
       ;; Map a raw <v> text plus its cell type/style to a Scheme value.
-      (cond
-        ((equal? type "s")
-         (let ((idx (string->number txt)))
-           (if (and idx (>= idx 0) (< idx (vector-length shared)))
-               (vector-ref shared idx)
-               "")))
-        ((equal? type "str") txt)
-        ((equal? type "inlineStr") txt)
-        ((equal? type "b") (not (equal? (string-trim-both txt) "0")))
-        ((equal? type "e") txt)              ; error value, kept as text
-        (else
-         (let ((num (string->number (string-trim-both txt))))
-           (cond
-             ((not num) txt)
-             ((style-date? styles style) (serial->iso num))
-             (else num))))))
+      (cond ((equal? type "s")
+             (let ((idx (string->number txt)))
+               (if (and idx (>= idx 0) (< idx (vector-length shared)))
+                   (vector-ref shared idx)
+                   "")))
+            ((equal? type "str") txt)
+            ((equal? type "inlineStr") txt)
+            ((equal? type "b") (not (equal? (string-trim-both txt) "0")))
+            ((equal? type "e") txt) ; error value, kept as text
+            (else (let ((num (string->number (string-trim-both txt))))
+                    (cond ((not num) txt)
+                          ((style-date? styles style) (serial->iso num))
+                          (else num))))))
 
     ;; ---- workbook plumbing ---------------------------------------
 
@@ -307,18 +321,21 @@
           (with-reader bv
             (lambda (r)
               (let loop ((acc '()) (cont #t))
-                (cond
-                  ((not cont) (reverse acc))
-                  (else
-                   (case (xml-node-type r)
-                     ((element)
-                      (if (string=? (local-name (xml-name r)) "Relationship")
-                          (let ((id (attr r "Id"))
-                                (target (attr r "Target")))
-                            (loop (if (and id target) (cons (cons id target) acc) acc)
-                                  (xml-read r)))
-                          (loop acc (xml-read r))))
-                     (else (loop acc (xml-read r)))))))))))
+                (cond ((not cont) (reverse acc))
+                      (else (case (xml-node-type r)
+                              ((element)
+                               (if (string=? (local-name (xml-name r))
+                                             "Relationship")
+                                   (let
+                                       ((id (attr r "Id"))
+                                        (target (attr r "Target")))
+                                     (loop
+                                      (if (and id target)
+                                          (cons (cons id target) acc)
+                                          acc)
+                                      (xml-read r)))
+                                   (loop acc (xml-read r))))
+                              (else (loop acc (xml-read r)))))))))))
 
     (define (parse-workbook-sheets bv)
       ;; Ordered list of (sheet-name . relationship-id) from workbook.xml.
@@ -327,24 +344,24 @@
           (with-reader bv
             (lambda (r)
               (let loop ((acc '()) (cont #t))
-                (cond
-                  ((not cont) (reverse acc))
-                  (else
-                   (case (xml-node-type r)
-                     ((element)
-                      (if (string=? (local-name (xml-name r)) "sheet")
-                          (let ((name (or (attr r "name") ""))
-                                (rid (attr r "r:id" "id")))
-                            (loop (cons (cons name rid) acc) (xml-read r)))
-                          (loop acc (xml-read r))))
-                     (else (loop acc (xml-read r)))))))))))
+                (cond ((not cont) (reverse acc))
+                      (else (case (xml-node-type r)
+                              ((element)
+                               (if (string=? (local-name (xml-name r))
+                                             "sheet")
+                                   (let
+                                       ((name (or (attr r "name") ""))
+                                        (rid (attr r "r:id" "id")))
+                                     (loop (cons (cons name rid) acc)
+                                           (xml-read r)))
+                                   (loop acc (xml-read r))))
+                              (else (loop acc (xml-read r)))))))))))
 
     (define (resolve-target t)
-      (cond
-        ((not t) #f)
-        ((and (> (string-length t) 0) (char=? (string-ref t 0) #\/))
-         (substring t 1 (string-length t)))
-        (else (string-append "xl/" t))))
+      (cond ((not t) #f)
+            ((and (> (string-length t) 0) (char=? (string-ref t 0) #\/))
+             (substring t 1 (string-length t)))
+            (else (string-append "xl/" t))))
 
     (define (zip-entry bv-zip name)
       ;; Read a zip entry as a bytevector, or #f if absent.
@@ -352,20 +369,27 @@
            (zip-read-entry-bytevector bv-zip name)))
 
     (define (read-workbook-from-zip z)
-      (let* ((shared (parse-shared-strings (zip-entry z "xl/sharedStrings.xml")))
+      (let* ((shared (parse-shared-strings
+                      (zip-entry z "xl/sharedStrings.xml")))
              (styles (parse-styles (zip-entry z "xl/styles.xml")))
              (rels (parse-rels (zip-entry z "xl/_rels/workbook.xml.rels")))
              (order (parse-workbook-sheets (zip-entry z "xl/workbook.xml"))))
         (vector 'xlsx-workbook
-                (filter-map
-                  (lambda (entry)
-                    (let* ((name (car entry))
-                           (rid (cdr entry))
-                           (target (and rid (cdr (or (assoc rid rels) '(#f . #f)))))
-                           (path (resolve-target target))
-                           (sbv (and path (zip-entry z path))))
-                      (and sbv (cons name (parse-sheet sbv name shared styles)))))
-                  order))))
+                (filter-map (lambda (entry)
+                              (let* ((name (car entry))
+                                     (rid (cdr entry))
+                                     (target
+                                      (and
+                                       rid
+                                       (cdr
+                                        (or (assoc rid rels) '(#f . #f)))))
+                                     (path (resolve-target target))
+                                     (sbv (and path (zip-entry z path))))
+                                (and sbv
+                                     (cons
+                                      name
+                                      (parse-sheet sbv name shared styles)))))
+                            order))))
 
     ;; ---- public API ----------------------------------------------
 
@@ -425,15 +449,13 @@ Example:
   (workbook-sheet wb 0)
   (workbook-sheet wb \"Data\")"
       (let ((sheets (vector-ref wb 1)))
-        (cond
-          ((string? name-or-index)
-           (let ((p (assoc name-or-index sheets)))
-             (and p (cdr p))))
-          ((and (integer? name-or-index)
-                (>= name-or-index 0)
-                (< name-or-index (length sheets)))
-           (cdr (list-ref sheets name-or-index)))
-          (else #f))))
+        (cond ((string? name-or-index)
+               (let ((p (assoc name-or-index sheets))) (and p (cdr p))))
+              ((and (integer? name-or-index)
+                    (>= name-or-index 0)
+                    (< name-or-index (length sheets)))
+               (cdr (list-ref sheets name-or-index)))
+              (else #f))))
 
     (define (sheet-name sheet)
       "Syntax: (sheet-name sheet)
@@ -477,7 +499,9 @@ Example:
             '()
             (map (lambda (row)
                    (map (lambda (col)
-                          (hash-table-ref/default cells (cell-key row col) #f))
+                          (hash-table-ref/default cells
+                                                  (cell-key row col)
+                                                  #f))
                         (iota maxcol 1)))
                  (iota maxrow 1)))))
 
@@ -493,5 +517,4 @@ Example:
                (let ((row (quotient (car p) 16384))
                      (col (remainder (car p) 16384)))
                  (cons (list row col) (cdr p))))
-             (list-sort (lambda (a b) (< (car a) (car b))) pairs))))
-))
+             (list-sort (lambda (a b) (< (car a) (car b))) pairs))))))

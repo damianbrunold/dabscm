@@ -1,6 +1,6 @@
 (import (scheme base)
-        (scm test)
-        (srfi 111))
+        (srfi 111)
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 
@@ -20,8 +20,14 @@
 (test-group "set-box!"
   (define b (box 10))
   (test-equal 10 (unbox b))
-  (test-equal 20 (begin (set-box! b 20) (unbox b)))
-  (test-equal '(a b c) (begin (set-box! b '(a b c)) (unbox b))))
+  (test-equal 20
+              (begin
+                (set-box! b 20)
+                (unbox b)))
+  (test-equal '(a b c)
+              (begin
+                (set-box! b '(a b c))
+                (unbox b))))
 
 ;; box with boolean and null
 (test-equal #t (unbox (box #t)))

@@ -1,4 +1,6 @@
-(import (scheme base) (scm net http cookies) (scm test))
+(import (scheme base)
+        (scm net http cookies)
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 
@@ -17,20 +19,19 @@
   (test-equal '(("a " . " 1") ("b" . "2"))
               (parse-cookie-header "  a = 1  ;  b=2 "))
   ;; cookie values are kept verbatim (no percent-decoding)
-  (test-equal '(("sig" . "a%2Fb"))
-              (parse-cookie-header "sig=a%2Fb"))
+  (test-equal '(("sig" . "a%2Fb")) (parse-cookie-header "sig=a%2Fb"))
   ;; entries without '=' are skipped
-  (test-equal '(("a" . "1"))
-              (parse-cookie-header "a=1; bare")))
+  (test-equal '(("a" . "1")) (parse-cookie-header "a=1; bare")))
 
 (test-group "cookie-ref"
   (define c '(("sid" . "abc") ("pref" . "dark")))
   (test-equal "abc" (cookie-ref c "sid"))
-  (test-equal #f    (cookie-ref c "missing")))
+  (test-equal #f (cookie-ref c "missing")))
 
 (test-group "format-set-cookie"
-  (test-equal "sid=abc; Path=/; Max-Age=3600; HttpOnly; SameSite=Strict; Secure"
-              (format-set-cookie "sid" "abc" 3600 "/"))
+  (test-equal
+   "sid=abc; Path=/; Max-Age=3600; HttpOnly; SameSite=Strict; Secure"
+   (format-set-cookie "sid" "abc" 3600 "/"))
   ;; max-age=#f → no Max-Age attribute (session cookie)
   (test-equal "sid=abc; Path=/; HttpOnly; SameSite=Strict; Secure"
               (format-set-cookie "sid" "abc" #f "/"))

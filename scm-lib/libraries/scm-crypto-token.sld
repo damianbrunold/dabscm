@@ -1,13 +1,13 @@
 (define-library (scm crypto token)
-  (import (scm core)
-          (scheme base)
+  (import (scheme base)
           (scheme read)
-          (scheme write)
           (scheme time)
+          (scheme write)
+          (scm core)
           (scm crypto))
-  (export token-sign
-          token-verify
-          token-secrets)
+  (export token-secrets
+          token-sign
+          token-verify)
   (begin
 
     ;; Token = <payload>.<mac>, both URL-safe base64 without padding:
@@ -29,12 +29,18 @@
                         (loop (- n 1))
                         n))))
         (string-map (lambda (c)
-                      (case c ((#\+) #\-) ((#\/) #\_) (else c)))
+                      (case c
+                        ((#\+) #\-)
+                        ((#\/) #\_)
+                        (else c)))
                     (substring s 0 end))))
 
     (define (b64url-char? c)
-      (or (char<=? #\A c #\Z) (char<=? #\a c #\z) (char<=? #\0 c #\9)
-          (char=? c #\-) (char=? c #\_)))
+      (or (char<=? #\A c #\Z)
+          (char<=? #\a c #\z)
+          (char<=? #\0 c #\9)
+          (char=? c #\-)
+          (char=? c #\_)))
 
     ;; #f unless s is well-formed URL-safe base64 (no padding).
     (define (b64url-decode s)
@@ -42,23 +48,31 @@
         (and (> n 0)
              (not (= (modulo n 4) 1))
              (let loop ((i 0))
-               (or (= i n) (and (b64url-char? (string-ref s i)) (loop (+ i 1)))))
-             (base64-decode
-              (string-append
-               (string-map (lambda (c)
-                             (case c ((#\-) #\+) ((#\_) #\/) (else c)))
-                           s)
-               (make-string (modulo (- 4 (modulo n 4)) 4) #\=))))))
+               (or (= i n)
+                   (and (b64url-char? (string-ref s i)) (loop (+ i 1)))))
+             (base64-decode (string-append
+                             (string-map
+                              (lambda (c)
+                                (case c
+                                  ((#\-) #\+)
+                                  ((#\_) #\/)
+                                  (else c)))
+                              s)
+                             (make-string (modulo (- 4 (modulo n 4)) 4)
+                                          #\=))))))
 
     ;; --- secrets --------------------------------------------------------
 
     (define (secret->bytes s)
-      (let ((bv (cond
-                  ((bytevector? s) s)
-                  ((string? s)
-                   (guard (e (#t (error "token: secret is not valid base64" s)))
-                     (base64-decode s)))
-                  (else (error "token: secret must be a bytevector or base64 string" s)))))
+      (let ((bv (cond ((bytevector? s) s)
+                      ((string? s)
+                       (guard
+                           (e (#t
+                               (error "token: secret is not valid base64" s)))
+                         (base64-decode s)))
+                      (else (error
+                             "token: secret must be a bytevector or base64 string"
+                             s)))))
         (when (< (bytevector-length bv) min-secret-bytes)
           (error "token: secret must be at least 16 bytes"))
         bv))
@@ -74,10 +88,9 @@ Description: Normalises secret to a non-empty list of key bytevectors.
   call it themselves; call it once at startup to validate a config value.
 Example:
   (token-secrets (base64-encode (random-bytes 32))) => (#u8(...))"
-      (cond
-        ((null? secret) (error "token: no secret given"))
-        ((pair? secret) (map secret->bytes secret))
-        (else (list (secret->bytes secret)))))
+      (cond ((null? secret) (error "token: no secret given"))
+            ((pair? secret) (map secret->bytes secret))
+            (else (list (secret->bytes secret)))))
 
     ;; --- sign / verify --------------------------------------------------
 
@@ -88,9 +101,10 @@ Example:
     (define (now) (exact (floor (current-second))))
 
     (define (mac key purpose payload)
-      (hmac-sha256 key (bytevector-append (string->utf8 purpose)
-                                          (bytevector 10)
-                                          payload)))
+      (hmac-sha256 key
+                   (bytevector-append (string->utf8 purpose)
+                                      (bytevector 10)
+                                      payload)))
 
     (define (token-sign secret datum max-age . opts)
       "Syntax: (token-sign secret datum max-age [opts])
@@ -108,19 +122,19 @@ Example:
   => \"KDE3NjE...\""
       (let* ((key (car (token-secrets secret)))
              (expiry (and max-age (+ (now) max-age)))
-             (payload (string->utf8
-                       (let ((p (open-output-string)))
-                         (write (cons expiry datum) p)
-                         (get-output-string p)))))
-        (string-append (b64url-encode payload) "."
-                       (b64url-encode (mac key (opt-ref opts 'purpose "") payload)))))
+             (payload (string->utf8 (let ((p (open-output-string)))
+                                      (write (cons expiry datum) p)
+                                      (get-output-string p)))))
+        (string-append (b64url-encode payload)
+                       "."
+                       (b64url-encode (mac key
+                                           (opt-ref opts 'purpose "")
+                                           payload)))))
 
     (define (read-only-datum s)
       (let* ((p (open-input-string s))
              (d (read p)))
-        (and (not (eof-object? d))
-             (eof-object? (read p))
-             d)))
+        (and (not (eof-object? d)) (eof-object? (read p)) d)))
 
     (define (token-verify secret token . opts)
       "Syntax: (token-verify secret token [opts])
@@ -143,17 +157,24 @@ Example:
                  (and dot
                       (let ((payload (b64url-decode (substring token 0 dot)))
                             (got (b64url-decode
-                                  (substring token (+ dot 1) (string-length token)))))
+                                  (substring token
+                                             (+ dot 1)
+                                             (string-length token)))))
                         (and payload got
                              (let loop ((ks keys))
-                               (cond
-                                 ((null? ks) #f)
-                                 ((constant-time-bytevector=? (mac (car ks) purpose payload) got)
-                                  (let ((d (read-only-datum (utf8->string payload))))
-                                    (and (pair? d)
-                                         (or (not (car d))
-                                             (and (exact-integer? (car d))
-                                                  (> (car d) (now))))
+                               (cond ((null? ks) #f)
+                                     ((constant-time-bytevector=?
+                                       (mac (car ks) purpose payload)
+                                       got)
+                                      (let
+                                          ((d
+                                            (read-only-datum
+                                             (utf8->string payload))))
+                                        (and
+                                         (pair? d)
+                                         (or
+                                          (not (car d))
+                                          (and (exact-integer? (car d))
+                                               (> (car d) (now))))
                                          (cdr d))))
-                                 (else (loop (cdr ks)))))))))))))
-))
+                                     (else (loop (cdr ks)))))))))))))))

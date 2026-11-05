@@ -1,5 +1,7 @@
 (define-library (scheme base)
-  (import (scm core) (scheme cxr) (scm compile))
+  (import (scheme cxr)
+          (scm compile)
+          (scm core))
   (export *
           +
           -
@@ -17,8 +19,17 @@
           assq
           assv
           begin
+          binary-port?
           boolean=?
           boolean?
+          bytevector
+          bytevector-append
+          bytevector-copy
+          bytevector-copy!
+          bytevector-length
+          bytevector-u8-ref
+          bytevector-u8-set!
+          bytevector?
           caar
           cadr
           call-with-current-continuation
@@ -32,6 +43,7 @@
           cdr
           ceiling
           char->integer
+          char-ready?
           char<=?
           char<?
           char=?
@@ -45,7 +57,6 @@
           cond
           cond-expand
           cons
-          char-ready?
           current-error-port
           current-input-port
           current-output-port
@@ -54,8 +65,8 @@
           define-syntax
           define-values
           denominator
-          dynamic-wind
           do
+          dynamic-wind
           eof-object
           eof-object?
           eq?
@@ -67,11 +78,12 @@
           error-object?
           even?
           exact
-          exact-integer?
           exact-integer-sqrt
+          exact-integer?
           exact?
           expt
           features
+          file-error?
           floor
           floor-quotient
           floor-remainder
@@ -79,11 +91,17 @@
           flush-output-port
           for-each
           gcd
+          get-output-bytevector
           get-output-string
+          guard
+          guard-aux
           if
           include
+          include-ci
           inexact
           inexact?
+          input-port-open?
+          input-port?
           integer->char
           integer?
           lambda
@@ -105,6 +123,8 @@
           list-set!
           list-tail
           list?
+          make-bytevector
+          make-list
           make-parameter
           make-string
           make-vector
@@ -123,23 +143,34 @@
           number?
           numerator
           odd?
+          open-input-bytevector
           open-input-string
+          open-output-bytevector
           open-output-string
           or
+          output-port-open?
+          output-port?
           pair?
           parameterize
           peek-char
+          peek-u8
           port?
           positive?
           procedure?
           quasiquote
           quote
           quotient
+          raise
+          raise-continuable
           rational?
           rationalize
+          read-bytevector
+          read-bytevector!
           read-char
+          read-error?
           read-line
           read-string
+          read-u8
           real?
           remainder
           reverse
@@ -147,18 +178,20 @@
           set!
           set-car!
           set-cdr!
-          symbol=?
           square
           string
           string->list
           string->number
           string->symbol
+          string->utf8
           string->vector
           string-append
           string-copy
           string-copy!
           string-fill!
+          string-for-each
           string-length
+          string-map
           string-ref
           string-set!
           string<=?
@@ -169,13 +202,17 @@
           string?
           substring
           symbol->string
+          symbol=?
           symbol?
           syntax-error
+          textual-port?
           truncate
           truncate-quotient
           truncate-remainder
           truncate/
+          u8-ready?
           unless
+          utf8->string
           values
           vector
           vector->list
@@ -191,47 +228,12 @@
           vector-set!
           vector?
           when
-          binary-port?
-          bytevector
-          bytevector-append
-          bytevector-copy
-          bytevector-copy!
-          bytevector-length
-          bytevector-u8-ref
-          bytevector-u8-set!
-          bytevector?
-          get-output-bytevector
-          input-port-open?
-          make-bytevector
-          open-input-bytevector
-          open-output-bytevector
-          output-port-open?
-          peek-u8
-          read-bytevector
-          read-bytevector!
-          read-u8
-          u8-ready?
-          string->utf8
-          textual-port?
-          utf8->string
+          with-exception-handler
           write-bytevector
           write-char
           write-string
           write-u8
-          zero?
-          file-error?
-          guard
-          guard-aux
-          raise
-          raise-continuable
-          read-error?
-          with-exception-handler
-          make-list
-          string-map
-          string-for-each
-          include-ci
-          input-port?
-          output-port?)
+          zero?)
   (begin
     (define * (%primitive "*"))
     (define + (%primitive "+"))
@@ -379,8 +381,8 @@ Example:
               (%exception-handlers-set! (cdr hs))
               (handler condition)
               (%raise-fatal (%make-error-object
-                              "raise: exception handler returned"
-                              (list condition)))))))
+                             "raise: exception handler returned"
+                             (list condition)))))))
     (define (raise-continuable condition)
       "Syntax: (raise-continuable obj)
 Library: (scheme base)
@@ -437,9 +439,10 @@ Example:
   (error 'my-proc \"invalid argument\" 'foo)"
       (if (symbol? msg)
           ;; SRFI-23: (error who message irritant ...)
-          (raise (%make-error-object
-                   (string-append (symbol->string msg) ": " (car irritants))
-                   (cdr irritants)))
+          (raise (%make-error-object (string-append (symbol->string msg)
+                                                    ": "
+                                                    (car irritants))
+                                     (cdr irritants)))
           ;; R7RS: (error message irritant ...)
           (raise (%make-error-object msg irritants))))
     (define error-object? (%primitive "error-object?"))
@@ -545,10 +548,7 @@ Example:
   (rational? 1.0)    => #t
   (rational? +inf.0) => #f
   (rational? +nan.0) => #f"
-      (and (real? x)
-           (not (= x +inf.0))
-           (not (= x -inf.0))
-           (= x x)))
+      (and (real? x) (not (= x +inf.0)) (not (= x -inf.0)) (= x x)))
 
     (define (rationalize x y)
       "Syntax: (rationalize x y)
@@ -560,26 +560,23 @@ Example:
   (rationalize (exact .3) 1/10) => 1/3
   (rationalize .3 1/10) => 0.3333333333333333"
       (define (simplest lo hi)
-        (cond
-          ((>= (floor lo) lo)
-           ;; lo is an integer — it's the simplest
-           (exact (floor lo)))
-          ((<= (ceiling lo) hi)
-           ;; there's an integer in the interval
-           (exact (ceiling lo)))
-          (else
-           ;; no integer in interval — recurse on reciprocals
-           (let ((n (floor lo)))
-             (+ n (/ 1 (simplest (/ 1 (- hi n)) (/ 1 (- lo n)))))))))
-      (let ((result
-             (if (zero? y)
-                 (exact x)
-                 (let ((lo (- (exact x) (abs (exact y))))
-                       (hi (+ (exact x) (abs (exact y)))))
-                   (cond
-                     ((<= lo 0 hi) 0)
-                     ((positive? lo) (simplest lo hi))
-                     (else (- (simplest (- hi) (- lo)))))))))
+        (cond ((>= (floor lo) lo)
+               ;; lo is an integer — it's the simplest
+               (exact (floor lo)))
+              ((<= (ceiling lo) hi)
+               ;; there's an integer in the interval
+               (exact (ceiling lo)))
+              (else
+               ;; no integer in interval — recurse on reciprocals
+               (let ((n (floor lo)))
+                 (+ n (/ 1 (simplest (/ 1 (- hi n)) (/ 1 (- lo n)))))))))
+      (let ((result (if (zero? y)
+                        (exact x)
+                        (let ((lo (- (exact x) (abs (exact y))))
+                              (hi (+ (exact x) (abs (exact y)))))
+                          (cond ((<= lo 0 hi) 0)
+                                ((positive? lo) (simplest lo hi))
+                                (else (- (simplest (- hi) (- lo)))))))))
         (if (inexact? x) (inexact result) result)))
 
     (define (procedure? obj)
@@ -591,8 +588,7 @@ Example:
   (procedure? car)       => #t
   (procedure? (lambda (x) x)) => #t
   (procedure? 42)        => #f"
-      (or (lambda? obj)
-          (primitive? obj)))
+      (or (lambda? obj) (primitive? obj)))
 
     (define list? (%primitive "list?"))
 
@@ -604,9 +600,7 @@ Example:
   (abs -7) => 7
   (abs 7)  => 7
   (abs 0)  => 0"
-      (if (< n 0)
-          (- n)
-          n))
+      (if (< n 0) (- n) n))
 
     (define (gcd . ls)
       "Syntax: (gcd n1 ...)
@@ -618,16 +612,14 @@ Example:
   (gcd)        => 0
   (gcd 32 -36 12) => 4"
       (let ((gcd2 (lambda (a b)
-		    (let loop ((a (abs a)) (b (abs b)))
-		      (cond
-		       ((= b 0) a)
-		       (else (loop b (modulo a b))))))))
+                    (let loop ((a (abs a))
+                               (b (abs b)))
+                      (cond ((= b 0) a)
+                            (else (loop b (modulo a b))))))))
         (if (= (length ls) 2)
-	    (apply gcd2 ls)
-	    (let loop ((ls ls) (g 0))
-	      (if (null? ls)
-	          g
-	          (loop (cdr ls) (gcd2 (car ls) g)))))))
+            (apply gcd2 ls)
+            (let loop ((ls ls) (g 0))
+              (if (null? ls) g (loop (cdr ls) (gcd2 (car ls) g)))))))
 
     (define (lcm . ls)
       "Syntax: (lcm n1 ...)
@@ -638,14 +630,11 @@ Example:
   (lcm 32 -36) => 288
   (lcm)        => 1
   (lcm 32 -36 12) => 288"
-      (let ((lcm2 (lambda (a b)
-		    (abs (/ (* a b) (gcd a b))))))
+      (let ((lcm2 (lambda (a b) (abs (/ (* a b) (gcd a b))))))
         (if (= (length ls) 2)
-	    (apply lcm2 ls)
-	    (let loop ((ls ls) (r 1))
-	      (if (null? ls)
-	          r
-	          (loop (cdr ls) (lcm2 (car ls) r)))))))
+            (apply lcm2 ls)
+            (let loop ((ls ls) (r 1))
+              (if (null? ls) r (loop (cdr ls) (lcm2 (car ls) r)))))))
 
     ;; multi-list map (R7RS)
     ;; map is defined in library.scm (scm core) and re-exported here.
@@ -667,11 +656,8 @@ Example:
               ((null? (car ls)) #t)
               (else (any-null? (cdr ls)))))
       (if (null? more)
-          (do ((ls ls (cdr ls)))
-              ((null? ls))
-            (f (car ls)))
-          (do ((lists (cons ls more) (map cdr lists)))
-              ((any-null? lists))
+          (do ((ls ls (cdr ls))) ((null? ls)) (f (car ls)))
+          (do ((lists (cons ls more) (map cdr lists))) ((any-null? lists))
             (apply f (map car lists)))))
 
     ;; string->list with optional start/end
@@ -688,12 +674,11 @@ Example:
   (string->list \"abc\" 1)   => (#\\b #\\c)
   (string->list \"abc\" 1 2) => (#\\b)"
       (let* ((start (if (null? args) 0 (car args)))
-             (end   (if (or (null? args) (null? (cdr args)))
-                        (string-length s)
-                        (cadr args))))
+             (end (if (or (null? args) (null? (cdr args)))
+                      (string-length s)
+                      (cadr args))))
         (do ((i (- end 1) (- i 1))
-             (ls '() (cons (string-ref s i) ls)))
-            ((< i start) ls))))
+             (ls '() (cons (string-ref s i) ls))) ((< i start) ls))))
 
     (define (list->string ls)
       "Syntax: (list->string list)
@@ -704,8 +689,7 @@ Example:
   (list->string '(#\\a #\\b #\\c)) => \"abc\"
   (list->string '())              => \"\""
       (let ((s (make-string (length ls))))
-        (do ((ls ls (cdr ls)) (i 0 (+ i 1)))
-            ((null? ls) s)
+        (do ((ls ls (cdr ls)) (i 0 (+ i 1))) ((null? ls) s)
           (string-set! s i (car ls)))))
 
     (define (string-fill! s c . args)
@@ -723,11 +707,10 @@ Example:
     (string-fill! s #\\x 1 3)
     s) => \"hxxlo\""
       (let* ((start (if (null? args) 0 (car args)))
-             (end   (if (or (null? args) (null? (cdr args)))
-                        (string-length s) (cadr args))))
-        (do ((i start (+ i 1)))
-            ((= i end))
-          (string-set! s i c))))
+             (end (if (or (null? args) (null? (cdr args)))
+                      (string-length s)
+                      (cadr args))))
+        (do ((i start (+ i 1))) ((= i end)) (string-set! s i c))))
 
     ;; string-copy with optional start/end
     (define (string-copy s . args)
@@ -765,15 +748,14 @@ Example:
     (string-copy! s 1 \"xyz\" 0 2)
     s) => \"hxylo\""
       (let* ((start (if (null? args) 0 (car args)))
-             (end   (if (or (null? args) (null? (cdr args)))
-                        (string-length from) (cadr args))))
+             (end (if (or (null? args) (null? (cdr args)))
+                      (string-length from)
+                      (cadr args))))
         (if (and (eq? to from) (> at start))
             ;; Copy backwards to handle overlap correctly
-            (do ((i (- end 1) (- i 1)))
-                ((< i start))
+            (do ((i (- end 1) (- i 1))) ((< i start))
               (string-set! to (+ at (- i start)) (string-ref from i)))
-            (do ((i start (+ i 1)))
-                ((= i end))
+            (do ((i start (+ i 1))) ((= i end))
               (string-set! to (+ at (- i start)) (string-ref from i))))))
 
     (define (vector-fill! v x . args)
@@ -791,11 +773,10 @@ Example:
     (vector-fill! v 0 1 3)
     v) => #(1 0 0 4 5)"
       (let* ((start (if (null? args) 0 (car args)))
-             (end   (if (or (null? args) (null? (cdr args)))
-                        (vector-length v) (cadr args))))
-        (do ((i start (+ i 1)))
-            ((= i end))
-          (vector-set! v i x))))
+             (end (if (or (null? args) (null? (cdr args)))
+                      (vector-length v)
+                      (cadr args))))
+        (do ((i start (+ i 1))) ((= i end)) (vector-set! v i x))))
 
     (define (list->vector ls)
       "Syntax: (list->vector list)
@@ -806,8 +787,7 @@ Example:
   (list->vector '(a b c)) => #(a b c)
   (list->vector '())      => #()"
       (let ((s (make-vector (length ls))))
-        (do ((ls ls (cdr ls)) (i 0 (+ i 1)))
-            ((null? ls) s)
+        (do ((ls ls (cdr ls)) (i 0 (+ i 1))) ((null? ls) s)
           (vector-set! s i (car ls)))))
 
     ;; vector-copy with optional start/end
@@ -823,11 +803,11 @@ Example:
   (vector-copy '#(a b c d e) 2 4) => #(c d)
   (vector-copy '#(a b c))         => #(a b c)"
       (let* ((start (if (null? args) 0 (car args)))
-             (end   (if (or (null? args) (null? (cdr args)))
-                        (vector-length v) (cadr args)))
+             (end (if (or (null? args) (null? (cdr args)))
+                      (vector-length v)
+                      (cadr args)))
              (r (make-vector (- end start))))
-        (do ((i start (+ i 1)))
-            ((= i end) r)
+        (do ((i start (+ i 1))) ((= i end) r)
           (vector-set! r (- i start) (vector-ref v i)))))
 
     ;; vector-copy!
@@ -847,15 +827,14 @@ Example:
     (vector-copy! v 1 '#(10 11 12) 1 3)
     v) => #(1 11 12 4 5)"
       (let* ((start (if (null? args) 0 (car args)))
-             (end   (if (or (null? args) (null? (cdr args)))
-                        (vector-length from) (cadr args))))
+             (end (if (or (null? args) (null? (cdr args)))
+                      (vector-length from)
+                      (cadr args))))
         (if (and (eq? to from) (> at start))
             ;; Copy backwards to handle overlap correctly
-            (do ((i (- end 1) (- i 1)))
-                ((< i start))
+            (do ((i (- end 1) (- i 1))) ((< i start))
               (vector-set! to (+ at (- i start)) (vector-ref from i)))
-            (do ((i start (+ i 1)))
-                ((= i end))
+            (do ((i start (+ i 1))) ((= i end))
               (vector-set! to (+ at (- i start)) (vector-ref from i))))))
 
     (define (numerator x)
@@ -903,22 +882,21 @@ Example:
   (exact-integer-sqrt 4) => 2 0
   (exact-integer-sqrt 5) => 2 1
   (exact-integer-sqrt 14) => 3 5"
-      (cond
-        ((negative? k) (error "exact-integer-sqrt: negative argument" k))
-        ((zero? k) (values 0 0))
-        ((<= k 4503599627370496) ;; 2^52 — safe for double precision
-         (let ((s (exact (floor (sqrt (inexact k))))))
-           (values s (- k (* s s)))))
-        (else
-         ;; Newton's method for arbitrary precision integers
-         (let* ((bit-len (let loop ((n k) (bits 0))
-                           (if (zero? n) bits (loop (quotient n 2) (+ bits 1)))))
-                (init (expt 2 (quotient (+ bit-len 1) 2))))
-           (let loop ((s init))
-             (let ((s1 (quotient (+ s (quotient k s)) 2)))
-               (if (< s1 s)
-                   (loop s1)
-                   (values s (- k (* s s))))))))))
+      (cond ((negative? k) (error "exact-integer-sqrt: negative argument" k))
+            ((zero? k) (values 0 0))
+            ((<= k 4503599627370496) ;; 2^52 — safe for double precision
+             (let ((s (exact (floor (sqrt (inexact k))))))
+               (values s (- k (* s s)))))
+            (else
+             ;; Newton's method for arbitrary precision integers
+             (let* ((bit-len (let loop ((n k) (bits 0))
+                               (if (zero? n)
+                                   bits
+                                   (loop (quotient n 2) (+ bits 1)))))
+                    (init (expt 2 (quotient (+ bit-len 1) 2))))
+               (let loop ((s init))
+                 (let ((s1 (quotient (+ s (quotient k s)) 2)))
+                   (if (< s1 s) (loop s1) (values s (- k (* s s))))))))))
 
     ;; boolean=?
     (define (boolean=? b . rest)
@@ -932,9 +910,7 @@ Example:
   (boolean=? #t #f)    => #f
   (boolean=? #t #t #t) => #t"
       (let loop ((rest rest))
-        (or (null? rest)
-            (and (eq? b (car rest))
-                 (loop (cdr rest))))))
+        (or (null? rest) (and (eq? b (car rest)) (loop (cdr rest))))))
 
     ;; exact-integer?
     (define (exact-integer? x)
@@ -1027,9 +1003,7 @@ Example:
   (list-copy '())      => ()
   (list-copy '(a b . c)) => (a b . c)"
       (let loop ((lst lst))
-        (if (pair? lst)
-            (cons (car lst) (loop (cdr lst)))
-            lst)))
+        (if (pair? lst) (cons (car lst) (loop (cdr lst))) lst)))
 
     ;; string->vector / vector->string
     (define (string->vector s . args)
@@ -1060,11 +1034,11 @@ Example:
   (vector->string #(#\\a #\\b #\\c) 1)   => \"bc\"
   (vector->string #(#\\a #\\b #\\c) 1 2) => \"b\""
       (let* ((start (if (null? args) 0 (car args)))
-             (end   (if (or (null? args) (null? (cdr args)))
-                        (vector-length v) (cadr args))))
+             (end (if (or (null? args) (null? (cdr args)))
+                      (vector-length v)
+                      (cadr args))))
         (let ((s (make-string (- end start))))
-          (do ((i start (+ i 1)))
-              ((= i end) s)
+          (do ((i start (+ i 1))) ((= i end) s)
             (string-set! s (- i start) (vector-ref v i))))))
 
     ;; vector-append
@@ -1154,9 +1128,7 @@ Description: Closes the resource associated with port, rendering the port
 Example:
   (let ((p (open-input-string \"hello\")))
     (close-port p))"
-      (if (input-port? p)
-          (close-input-port p)
-          (close-output-port p)))
+      (if (input-port? p) (close-input-port p) (close-output-port p)))
 
     ;; call-with-port
     (define (call-with-port port proc)
@@ -1176,8 +1148,7 @@ Example:
 
     ;; eof-object — create one by reading from empty string port
     (define eof-object
-      (let ((e (read-char (open-input-string ""))))
-        (lambda () e)))
+      (let ((e (read-char (open-input-string "")))) (lambda () e)))
 
     ;; make-parameter / parameterize
     (define (make-parameter init . rest)
@@ -1199,10 +1170,7 @@ Example:
   (q)      => 20"
       (let* ((convert (if (null? rest) (lambda (x) x) (car rest)))
              (p ((%primitive "%make-parameter") (convert init))))
-        (lambda args
-          (if (null? args)
-              (p)
-              (p (convert (car args)))))))
+        (lambda args (if (null? args) (p) (p (convert (car args)))))))
 
     (define-syntax parameterize
       "Syntax: (parameterize ((param val) ...) body ...)
@@ -1220,15 +1188,14 @@ Example:
     (p)) => 2
   (p) => 1"
       (syntax-rules ()
-        ((parameterize () body ...)
-         (let () body ...))
+        ((parameterize () body ...) (let () body ...))
         ((parameterize ((p v) rest ...) body ...)
          (let ((param p) (new-val v))
-           (let ((old-val (param)))
-             (dynamic-wind
-               (lambda () (param new-val))
-               (lambda () (parameterize (rest ...) body ...))
-               (lambda () (param old-val))))))))
+              (let ((old-val (param)))
+                   (dynamic-wind (lambda () (param new-val))
+                                 (lambda ()
+                                         (parameterize (rest ...) body ...))
+                                 (lambda () (param old-val))))))))
 
     ;; features
     (define features (%primitive "%features-list"))
@@ -1243,19 +1210,14 @@ Description: Internal helper macro used by guard to process the cond-like
   Clauses have the same form as in cond, including => and else support.
   Not intended for direct use."
       (syntax-rules (else =>)
-        ((guard-aux reraise (else e1 e2 ...))
-         (begin e1 e2 ...))
+        ((guard-aux reraise (else e1 e2 ...)) (begin e1 e2 ...))
         ((guard-aux reraise (test => handler))
-         (let ((t test))
-           (if t (handler t) reraise)))
+         (let ((t test)) (if t (handler t) reraise)))
         ((guard-aux reraise (test => handler) clause ...)
-         (let ((t test))
-           (if t (handler t) (guard-aux reraise clause ...))))
-        ((guard-aux reraise (test))
-         (or test reraise))
+         (let ((t test)) (if t (handler t) (guard-aux reraise clause ...))))
+        ((guard-aux reraise (test)) (or test reraise))
         ((guard-aux reraise (test) clause ...)
-         (let ((t test))
-           (if t t (guard-aux reraise clause ...))))
+         (let ((t test)) (if t t (guard-aux reraise clause ...))))
         ((guard-aux reraise (test e1 e2 ...))
          (if test (begin e1 e2 ...) reraise))
         ((guard-aux reraise (test e1 e2 ...) clause ...)
@@ -1280,23 +1242,32 @@ Example:
       ;; the body), a re-raise goes back into that of the raise.
       (syntax-rules ()
         ((guard (var clause ...) e1 e2 ...)
-         ((call/cc
-           (lambda (guard-k)
-             (with-exception-handler
-              (lambda (condition)
-                ((call/cc
-                  (lambda (handler-k)
-                    (guard-k
-                     (lambda ()
-                       (let ((var condition))
-                         (guard-aux
-                          (handler-k (lambda () (raise-continuable condition)))
-                          clause ...))))))))
-              (lambda ()
-                (call-with-values
-                 (lambda () e1 e2 ...)
-                 (lambda args
-                   (guard-k (lambda () (apply values args)))))))))))))
+         ((call/cc (lambda (guard-k)
+                           (with-exception-handler
+                            (lambda (condition)
+                                    ((call/cc
+                                      (lambda
+                                       (handler-k)
+                                       (guard-k
+                                        (lambda
+                                         ()
+                                         (let
+                                          ((var condition))
+                                          (guard-aux
+                                           (handler-k
+                                            (lambda
+                                             ()
+                                             (raise-continuable condition)))
+                                           clause
+                                           ...))))))))
+                            (lambda ()
+                                    (call-with-values
+                                     (lambda () e1 e2 ...)
+                                     (lambda
+                                      args
+                                      (guard-k
+                                       (lambda ()
+                                               (apply values args)))))))))))))
 
     ;; SRFI 11 reference implementation for let-values.
     ;; Uses helper clauses "bind" and "mktmp" to collect temporaries.
@@ -1320,22 +1291,32 @@ Example:
       (syntax-rules ()
         ((let-values (?binding ...) ?body0 ?body1 ...)
          (let-values "bind" (?binding ...) () (begin ?body0 ?body1 ...)))
-        ((let-values "bind" () ?tmps ?body)
-         (let ?tmps ?body))
+        ((let-values "bind" () ?tmps ?body) (let ?tmps ?body))
         ((let-values "bind" ((?b0 ?e0) ?binding ...) ?tmps ?body)
          (let-values "mktmp" ?b0 ?e0 () (?binding ...) ?tmps ?body))
         ((let-values "mktmp" () ?e0 ?args ?bindings ?tmps ?body)
-         (call-with-values
-           (lambda () ?e0)
-           (lambda ?args
-             (let-values "bind" ?bindings ?tmps ?body))))
-        ((let-values "mktmp" (?a . ?b) ?e0 (?arg ...) ?bindings (?tmp ...) ?body)
-         (let-values "mktmp" ?b ?e0 (?arg ... x) ?bindings (?tmp ... (?a x)) ?body))
+         (call-with-values (lambda () ?e0)
+                           (lambda ?args
+                                   (let-values "bind" ?bindings ?tmps
+                                    ?body))))
+        ((let-values "mktmp"
+                     (?a . ?b)
+                     ?e0
+                     (?arg ...)
+                     ?bindings
+                     (?tmp ...)
+                     ?body)
+         (let-values "mktmp" ?b ?e0
+                     (?arg ... x)
+                     ?bindings
+                     (?tmp ... (?a x))
+                     ?body))
         ((let-values "mktmp" ?a ?e0 (?arg ...) ?bindings (?tmp ...) ?body)
-         (call-with-values
-           (lambda () ?e0)
-           (lambda (?arg ... . x)
-             (let-values "bind" ?bindings (?tmp ... (?a x)) ?body))))))
+         (call-with-values (lambda () ?e0)
+                           (lambda (?arg ... . x)
+                                   (let-values "bind" ?bindings
+                                               (?tmp ... (?a x))
+                                               ?body))))))
 
     (define-syntax let*-values
       "Syntax: (let*-values (((var ...) expr) ...) body ...)
@@ -1349,11 +1330,10 @@ Example:
                 ((c)   (values (+ a b))))
     c) => 3"
       (syntax-rules ()
-        ((let*-values () ?body0 ?body1 ...)
-         (let () ?body0 ?body1 ...))
+        ((let*-values () ?body0 ?body1 ...) (let () ?body0 ?body1 ...))
         ((let*-values (?binding0 ?binding1 ...) ?body0 ?body1 ...)
          (let-values (?binding0)
-           (let*-values (?binding1 ...) ?body0 ?body1 ...)))))
+                     (let*-values (?binding1 ...) ?body0 ?body1 ...)))))
 
     (define-syntax define-values
       "Syntax: (define-values formals expression)
@@ -1374,15 +1354,21 @@ Example:
         ((define-values (var) expr)
          (define var (call-with-values (lambda () expr) (lambda (v) v))))
         ((define-values (var rest ...) expr)
-         (begin
-           (define var #f)
-           (define-values (rest ...) (call-with-values (lambda () expr)
-             (lambda (v . vs) (set! var v) (apply values vs))))))
+         (begin (define var #f)
+                (define-values (rest ...)
+                               (call-with-values
+                                (lambda () expr)
+                                (lambda (v . vs)
+                                        (set! var v)
+                                        (apply values vs))))))
         ((define-values (var . rest) expr)
-         (begin
-           (define var #f)
-           (define-values rest (call-with-values (lambda () expr)
-             (lambda (v . vs) (set! var v) (apply values vs))))))
+         (begin (define var #f)
+                (define-values rest
+                               (call-with-values
+                                (lambda () expr)
+                                (lambda (v . vs)
+                                        (set! var v)
+                                        (apply values vs))))))
         ((define-values var expr)
          (define var (call-with-values (lambda () expr) list)))))
 
@@ -1398,8 +1384,7 @@ Example:
   (symbol=? 'foo 'bar)      => #f
   (symbol=? 'foo 'foo 'foo) => #t"
       (or (null? rest)
-          (and (eq? s (car rest))
-               (apply symbol=? s (cdr rest)))))
+          (and (eq? s (car rest)) (apply symbol=? s (cdr rest)))))
 
     ;; make-list (R7RS base)
     (define (make-list n . args)
@@ -1433,12 +1418,15 @@ Example:
   (string-map char-upcase \"hello\" 1 3)   => \"EL\"
   (string-map (lambda (c) c) \"xyz\")      => \"xyz\""
       (if (null? more)
-          (let* ((n (string-length s)) (r (make-string n)))
+          (let* ((n (string-length s))
+                 (r (make-string n)))
             (do ((i 0 (+ i 1))) ((= i n) r)
               (string-set! r i (f (string-ref s i)))))
           (if (integer? (car more))
               (let* ((start (car more))
-                     (end (if (null? (cdr more)) (string-length s) (cadr more)))
+                     (end (if (null? (cdr more))
+                              (string-length s)
+                              (cadr more)))
                      (n (- end start))
                      (r (make-string n)))
                 (do ((i 0 (+ i 1))) ((= i n) r)
@@ -1458,19 +1446,17 @@ Example:
   (string-for-each display \"abc\") ; displays abc"
       (if (null? more)
           (let ((n (string-length s)))
-            (do ((i 0 (+ i 1))) ((= i n))
-              (f (string-ref s i))))
+            (do ((i 0 (+ i 1))) ((= i n)) (f (string-ref s i))))
           (if (integer? (car more))
               (let* ((start (car more))
-                     (end (if (null? (cdr more)) (string-length s) (cadr more))))
-                (do ((i start (+ i 1))) ((= i end))
-                  (f (string-ref s i))))
+                     (end (if (null? (cdr more))
+                              (string-length s)
+                              (cadr more))))
+                (do ((i start (+ i 1))) ((= i end)) (f (string-ref s i))))
               (apply for-each f (map string->list (cons s more))))))
-
 
     ;; include-ci — case-insensitive file loading
     (define include-ci (%primitive "include-ci"))
-
 
     ;; ---- R7RS/SRFI-9 define-record-type ----
     (define record? (%primitive "record?"))
@@ -1499,18 +1485,16 @@ Example:
   (point-y p) => 42"
       (syntax-rules ()
         ((define-record-type type
-           (constructor constructor-tag ...)
-           predicate
-           (field-tag accessor . more) ...)
-         (begin
-           (define type
-             (make-record-type 'type '(field-tag ...)))
-           (define constructor
-             (record-constructor type '(constructor-tag ...)))
-           (define predicate
-             (record-predicate type))
-           (define-record-field type field-tag accessor . more)
-           ...))))
+                             (constructor constructor-tag ...)
+                             predicate
+                             (field-tag accessor . more)
+                             ...)
+         (begin (define type (make-record-type 'type '(field-tag ...)))
+                (define constructor
+                        (record-constructor type '(constructor-tag ...)))
+                (define predicate (record-predicate type))
+                (define-record-field type field-tag accessor . more)
+                ...))))
 
     ;; An auxilliary macro for define field accessors and modifiers.
     ;; This is needed only because modifiers are optional.
@@ -1520,12 +1504,11 @@ Example:
         ((define-record-field type field-tag accessor)
          (define accessor (record-accessor type 'field-tag)))
         ((define-record-field type field-tag accessor modifier)
-         (begin
-           (define accessor (record-accessor type 'field-tag))
-           (define modifier (record-modifier type 'field-tag))))))
+         (begin (define accessor (record-accessor type 'field-tag))
+                (define modifier (record-modifier type 'field-tag))))))
 
     ;; We define the following procedures:
-    ;; 
+    ;;
     ;; (make-record-type <type-name> <field-names>)    -> <record-type>
     ;; (record-constructor <record-type> <field-names>) -> <constructor>
     ;; (record-predicate <record-type>)               -> <predicate>
@@ -1541,8 +1524,7 @@ Example:
     ;; slot of each record contains the record's type, which is itself a
     ;; record.
 
-    (define (record-type record)
-      (record-ref record 0))
+    (define (record-type record) (record-ref record 0))
 
     ;;----------------
     ;; Record types are themselves records, so we first define the type for
@@ -1555,7 +1537,7 @@ Example:
     ;; As it is, we need to define everything by hand.
 
     (define :record-type (make-record 3))
-    (record-set! :record-type 0 :record-type)	; Its type is itself.
+    (record-set! :record-type 0 :record-type) ; Its type is itself.
     (record-set! :record-type 1 ':record-type)
     (record-set! :record-type 2 '(name field-tags))
 
@@ -1571,23 +1553,19 @@ Example:
 
     ;; Accessors for record types.
 
-    (define (record-type-name record-type)
-      (record-ref record-type 1))
+    (define (record-type-name record-type) (record-ref record-type 1))
 
-    (define (record-type-field-tags record-type)
-      (record-ref record-type 2))
+    (define (record-type-field-tags record-type) (record-ref record-type 2))
 
     ;;----------------
     ;; A utility for getting the offset of a field within a record.
 
     (define (field-index type tag)
-      (let loop ((i 1) (tags (record-type-field-tags type)))
-        (cond ((null? tags)
-               (error "record type has no such field" type tag))
-              ((eq? tag (car tags))
-               i)
-              (else
-               (loop (+ i 1) (cdr tags))))))
+      (let loop ((i 1)
+                 (tags (record-type-field-tags type)))
+        (cond ((null? tags) (error "record type has no such field" type tag))
+              ((eq? tag (car tags)) i)
+              (else (loop (+ i 1) (cdr tags))))))
 
     ;;----------------
     ;; Now we are ready to define RECORD-CONSTRUCTOR and the rest of the
@@ -1598,12 +1576,14 @@ Example:
     (define %record-procedure (%primitive "%record-procedure"))
 
     (define (record-constructor type tags)
-      (%record-procedure 'constructor type
-                         (list->vector (map (lambda (tag) (field-index type tag)) tags))
+      (%record-procedure 'constructor
+                         type
+                         (list->vector (map
+                                        (lambda (tag) (field-index type tag))
+                                        tags))
                          (+ (length (record-type-field-tags type)) 1)))
 
-    (define (record-predicate type)
-      (%record-procedure 'predicate type #f #f))
+    (define (record-predicate type) (%record-procedure 'predicate type #f #f))
 
     (define (record-accessor type tag)
       (%record-procedure 'accessor type (field-index type tag) tag))
@@ -1611,5 +1591,4 @@ Example:
     (define (record-modifier type tag)
       (%record-procedure 'modifier type (field-index type tag) tag))
     ;; ---- end define-record-type ----
-
     ))

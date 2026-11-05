@@ -1,10 +1,18 @@
 ;; -*- coding: utf-8 -*-
 
-(import (scheme base) (scheme char) (scheme lazy)
-        (scheme inexact) (scheme complex) (scheme time)
-        (scheme file) (scheme read) (scheme write)
-        (scheme eval) (scheme process-context) (scheme case-lambda)
+(import (scheme base)
+        (scheme case-lambda)
+        (scheme char)
+        (scheme complex)
+        (scheme eval)
+        (scheme file)
+        (scheme inexact)
+        (scheme lazy)
+        (scheme process-context)
         (scheme r5rs)
+        (scheme read)
+        (scheme time)
+        (scheme write)
         (scm test))
 
 (test-runner-factory scm-test-runner)
@@ -51,23 +59,17 @@
 (test-equal 12 ((if #f + *) 3 4))
 
 (test-equal 8 ((lambda (x) (+ x x)) 4))
-(define reverse-subtract
-  (lambda (x y) (- y x)))
+(define reverse-subtract (lambda (x y) (- y x)))
 (test-equal 3 (reverse-subtract 7 10))
-(define add4
-  (let ((x 4))
-    (lambda (y) (+ x y))))
+(define add4 (let ((x 4)) (lambda (y) (+ x y))))
 (test-equal 10 (add4 6))
 
 (test-equal '(3 4 5 6) ((lambda x x) 3 4 5 6))
-(test-equal '(5 6) ((lambda (x y . z) z)
- 3 4 5 6))
+(test-equal '(5 6) ((lambda (x y . z) z) 3 4 5 6))
 
 (test-equal 'yes (if (> 3 2) 'yes 'no))
 (test-equal 'no (if (> 2 3) 'yes 'no))
-(test-equal 1 (if (> 3 2)
-    (- 3 2)
-    (+ 3 2)))
+(test-equal 1 (if (> 3 2) (- 3 2) (+ 3 2)))
 (let ()
   (define x 2)
   (test-equal 3 (+ x 1)))
@@ -77,37 +79,40 @@
 (test-begin "4.2 Derived expression types")
 
 (test-equal 'greater
-    (cond ((> 3 2) 'greater)
-          ((< 3 2) 'less)))
+            (cond ((> 3 2) 'greater)
+                  ((< 3 2) 'less)))
 
 (test-equal 'equal
-    (cond ((> 3 3) 'greater)
-          ((< 3 3) 'less)
-          (else 'equal)))
+            (cond ((> 3 3) 'greater)
+                  ((< 3 3) 'less)
+                  (else 'equal)))
 
 (test-equal 2
-    (cond ((assv 'b '((a 1) (b 2))) => cadr)
-          (else #f)))
+            (cond ((assv 'b '((a 1) (b 2))) => cadr)
+                  (else #f)))
 
 (test-equal 'composite
-    (case (* 2 3)
-      ((2 3 5 7) 'prime)
-      ((1 4 6 8 9) 'composite)))
+            (case (* 2 3)
+              ((2 3 5 7) 'prime)
+              ((1 4 6 8 9) 'composite)))
 
 (test-equal 'c
-    (case (car '(c d))
-      ((a e i o u) 'vowel)
-      ((w y) 'semivowel)
-      (else => (lambda (x) x))))
+            (case (car '(c d))
+              ((a e i o u) 'vowel)
+              ((w y) 'semivowel)
+              (else => (lambda (x) x))))
 
-(test-equal '((other . z) (semivowel . y) (other . x)
-        (semivowel . w) (vowel . u))
-    (map (lambda (x)
-           (case x
-             ((a e i o u) => (lambda (w) (cons 'vowel w)))
-             ((w y) (cons 'semivowel x))
-             (else => (lambda (w) (cons 'other w)))))
-         '(z y x w u)))
+(test-equal '((other . z)
+              (semivowel . y)
+              (other . x)
+              (semivowel . w)
+              (vowel . u))
+            (map (lambda (x)
+                   (case x
+                     ((a e i o u) => (lambda (w) (cons 'vowel w)))
+                     ((w y) (cons 'semivowel x))
+                     (else => (lambda (w) (cons 'other w)))))
+                 '(z y x w u)))
 
 (test-equal #t (and (= 2 2) (> 2 1)))
 (test-equal #f (and (= 2 2) (< 2 1)))
@@ -117,68 +122,47 @@
 (test-equal #t (or (= 2 2) (> 2 1)))
 (test-equal #t (or (= 2 2) (< 2 1)))
 (test-equal #f (or #f #f #f))
-(test-equal '(b c) (or (memq 'b '(a b c))
-    (/ 3 0)))
+(test-equal '(b c) (or (memq 'b '(a b c)) (/ 3 0)))
 
-(test-equal 6 (let ((x 2) (y 3))
-  (* x y)))
+(test-equal 6 (let ((x 2) (y 3)) (* x y)))
 
-(test-equal 35 (let ((x 2) (y 3))
-  (let ((x 7)
-        (z (+ x y)))
-    (* z x))))
+(test-equal 35
+            (let ((x 2) (y 3))
+              (let ((x 7)
+                    (z (+ x y)))
+                (* z x))))
 
-(test-equal 70 (let ((x 2) (y 3))
-  (let* ((x 7)
-         (z (+ x y)))
-    (* z x))))
+(test-equal 70
+            (let ((x 2) (y 3))
+              (let* ((x 7)
+                     (z (+ x y)))
+                (* z x))))
 
 (test-equal #t
-    (letrec ((even?
-              (lambda (n)
-                (if (zero? n)
-                    #t
-                    (odd? (- n 1)))))
-             (odd?
-              (lambda (n)
-                (if (zero? n)
-                    #f
-                    (even? (- n 1))))))
-      (even? 88)))
+            (letrec ((even? (lambda (n) (if (zero? n) #t (odd? (- n 1)))))
+                     (odd? (lambda (n) (if (zero? n) #f (even? (- n 1))))))
+              (even? 88)))
 
 (test-equal 5
-    (letrec* ((p
-               (lambda (x)
-                 (+ 1 (q (- x 1)))))
-              (q
-               (lambda (y)
-                 (if (zero? y)
-                     0
-                     (+ 1 (p (- y 1))))))
-              (x (p 5))
-              (y x))
-             y))
+            (letrec* ((p (lambda (x) (+ 1 (q (- x 1)))))
+                      (q (lambda (y) (if (zero? y) 0 (+ 1 (p (- y 1))))))
+                      (x (p 5))
+                      (y x))
+              y))
 
 ;; By Jussi Piitulainen <jpiitula@ling.helsinki.fi>
 ;; and John Cowan <cowan@mercury.ccil.org>:
 ;; http://lists.scheme-reports.org/pipermail/scheme-reports/2013-December/003876.html
 (define (means ton)
-  (letrec*
-     ((mean
-        (lambda (f g)
-          (f (/ (sum g ton) n))))
-      (sum
-        (lambda (g ton)
-          (if (null? ton)
-            (+)
-            (if (number? ton)
-                (g ton)
-                (+ (sum g (car ton))
-                   (sum g (cdr ton)))))))
-      (n (sum (lambda (x) 1) ton)))
-    (values (mean values values)
-            (mean exp log)
-            (mean / /))))
+  (letrec* ((mean (lambda (f g) (f (/ (sum g ton) n))))
+            (sum (lambda (g ton)
+                   (if (null? ton)
+                       (+)
+                       (if (number? ton)
+                           (g ton)
+                           (+ (sum g (car ton)) (sum g (cdr ton)))))))
+            (n (sum (lambda (x) 1) ton)))
+    (values (mean values values) (mean exp log) (mean / /))))
 (let*-values (((a b c) (means '(8 5 99 1 22))))
   (test-equal 27 a)
   (test-approximate 9.728 b)
@@ -188,102 +172,90 @@
   (test-equal 35 (* root rem)))
 
 (test-equal '(1073741824 0)
-    (let*-values (((root rem) (exact-integer-sqrt (expt 2 60))))
-      (list root rem)))
+            (let*-values (((root rem) (exact-integer-sqrt (expt 2 60))))
+              (list root rem)))
 
 (test-equal '(1518500249 3000631951)
-    (let*-values (((root rem) (exact-integer-sqrt (expt 2 61))))
-      (list root rem)))
+            (let*-values (((root rem) (exact-integer-sqrt (expt 2 61))))
+              (list root rem)))
 
 (test-equal '(815238614083298888 443242361398135744)
-    (let*-values (((root rem) (exact-integer-sqrt (expt 2 119))))
-      (list root rem)))
+            (let*-values (((root rem) (exact-integer-sqrt (expt 2 119))))
+              (list root rem)))
 
 (test-equal '(1152921504606846976 0)
-    (let*-values (((root rem) (exact-integer-sqrt (expt 2 120))))
-      (list root rem)))
+            (let*-values (((root rem) (exact-integer-sqrt (expt 2 120))))
+              (list root rem)))
 
 (test-equal '(1630477228166597776 1772969445592542976)
-    (let*-values (((root rem) (exact-integer-sqrt (expt 2 121))))
-      (list root rem)))
+            (let*-values (((root rem) (exact-integer-sqrt (expt 2 121))))
+              (list root rem)))
 
 (test-equal '(31622776601683793319 62545769258890964239)
-    (let*-values (((root rem) (exact-integer-sqrt (expt 10 39))))
-      (list root rem)))
+            (let*-values (((root rem) (exact-integer-sqrt (expt 10 39))))
+              (list root rem)))
 
 (let*-values (((root rem) (exact-integer-sqrt (expt 2 140))))
   (test-equal 0 rem)
   (test-equal (expt 2 140) (square root)))
 
-(test-equal '(x y x y) (let ((a 'a) (b 'b) (x 'x) (y 'y))
-  (let*-values (((a b) (values x y))
-                ((x y) (values a b)))
-    (list a b x y))))
+(test-equal '(x y x y)
+            (let ((a 'a) (b 'b) (x 'x) (y 'y))
+              (let*-values (((a b) (values x y))
+                            ((x y) (values a b)))
+                (list a b x y))))
 
 (test-equal 'ok (let-values () 'ok))
 
-(test-equal 1 (let ((x 1))
-	  (let*-values ()
-	    (define x 2)
-	    #f)
-	  x))
+(test-equal 1
+            (let ((x 1))
+              (let*-values ()
+                (define x 2)
+                #f)
+              x))
 
 (let ()
   (define x 0)
   (set! x 5)
   (test-equal 6 (+ x 1)))
 
-(test-equal #(0 1 2 3 4) (do ((vec (make-vector 5))
-     (i 0 (+ i 1)))
-    ((= i 5) vec)
-  (vector-set! vec i i)))
+(test-equal #(0 1 2 3 4)
+            (do ((vec (make-vector 5))
+                 (i 0 (+ i 1))) ((= i 5) vec)
+              (vector-set! vec i i)))
 
-(test-equal 25 (let ((x '(1 3 5 7 9)))
-  (do ((x x (cdr x))
-       (sum 0 (+ sum (car x))))
-      ((null? x) sum))))
+(test-equal 25
+            (let ((x '(1 3 5 7 9)))
+              (do ((x x (cdr x)) (sum 0 (+ sum (car x)))) ((null? x) sum))))
 
 (test-equal '((6 1 3) (-5 -2))
-    (let loop ((numbers '(3 -2 1 6 -5))
-               (nonneg '())
-               (neg '()))
-      (cond ((null? numbers) (list nonneg neg))
-            ((>= (car numbers) 0)
-             (loop (cdr numbers)
-                   (cons (car numbers) nonneg)
-                   neg))
-            ((< (car numbers) 0)
-             (loop (cdr numbers)
-                   nonneg
-                   (cons (car numbers) neg))))))
+            (let loop ((numbers '(3 -2 1 6 -5)) (nonneg '()) (neg '()))
+              (cond ((null? numbers) (list nonneg neg))
+                    ((>= (car numbers) 0)
+                     (loop (cdr numbers) (cons (car numbers) nonneg) neg))
+                    ((< (car numbers) 0)
+                     (loop (cdr numbers) nonneg (cons (car numbers) neg))))))
 
 (test-equal 3 (force (delay (+ 1 2))))
 
-(test-equal '(3 3)  
-    (let ((p (delay (+ 1 2))))
-      (list (force p) (force p))))
+(test-equal '(3 3) (let ((p (delay (+ 1 2)))) (list (force p) (force p))))
 
 (define integers
-  (letrec ((next
-            (lambda (n)
-              (delay (cons n (next (+ n 1)))))))
-    (next 0)))
-(define head
-  (lambda (stream) (car (force stream))))
-(define tail
-  (lambda (stream) (cdr (force stream))))
+  (letrec ((next (lambda (n) (delay (cons n (next (+ n 1))))))) (next 0)))
+(define head (lambda (stream) (car (force stream))))
+(define tail (lambda (stream) (cdr (force stream))))
 
 (test-equal 2 (head (tail (tail integers))))
 
 (define (stream-filter p? s)
   (delay-force
-   (if (null? (force s)) 
-       (delay '())
-       (let ((h (car (force s)))
-             (t (cdr (force s))))
-         (if (p? h)
-             (delay (cons h (stream-filter p? t)))
-             (stream-filter p? t))))))
+    (if (null? (force s))
+        (delay '())
+        (let ((h (car (force s)))
+              (t (cdr (force s))))
+          (if (p? h)
+              (delay (cons h (stream-filter p? t)))
+              (stream-filter p? t))))))
 
 (test-equal 5 (head (tail (tail (stream-filter odd? integers)))))
 
@@ -291,54 +263,53 @@
   (define x 5)
   (define count 0)
   (define p
-    (delay (begin (set! count (+ count 1))
-                  (if (> count x)
-                      count
-                      (force p)))))
+    (delay
+      (begin
+        (set! count (+ count 1))
+        (if (> count x) count (force p)))))
   (test-equal 6 (force p))
-  (test-equal 6 (begin (set! x 10) (force p))))
+  (test-equal 6
+              (begin
+                (set! x 10)
+                (force p))))
 
 (test-equal #t (promise? (delay (+ 2 2))))
 (test-equal #t (promise? (make-promise (+ 2 2))))
 (test-equal #t
-    (let ((x (delay (+ 2 2))))
-      (force x)
-      (promise? x)))
+            (let ((x (delay (+ 2 2))))
+              (force x)
+              (promise? x)))
 (test-equal #t
-    (let ((x (make-promise (+ 2 2))))
-      (force x)
-      (promise? x)))
+            (let ((x (make-promise (+ 2 2))))
+              (force x)
+              (promise? x)))
 (test-equal 4 (force (make-promise (+ 2 2))))
 (test-equal 4 (force (make-promise (make-promise (+ 2 2)))))
 
 (define radix
-  (make-parameter
-   10
-   (lambda (x)
-     (if (and (integer? x) (<= 2 x 16))
-         x
-         (error "invalid radix")))))
+  (make-parameter 10
+                  (lambda (x)
+                    (if (and (integer? x) (<= 2 x 16))
+                        x
+                        (error "invalid radix")))))
 (define (f n) (number->string n (radix)))
 (test-equal "12" (f 12))
-(test-equal "1100" (parameterize ((radix 2))
-  (f 12)))
+(test-equal "1100" (parameterize ((radix 2)) (f 12)))
 (test-equal "12" (f 12))
 
 (test-equal '(list 3 4) `(list ,(+ 1 2) 4))
 (let ((name 'a)) (test-equal '(list a (quote a)) `(list ,name ',name)))
 (test-equal '(a 3 4 5 6 b) `(a ,(+ 1 2) ,@(map abs '(4 -5 6)) b))
-(test-equal #(10 5 4 16 9 8)
-    `#(10 5 ,(square 2) ,@(map square '(4 3)) 8))
+(test-equal #(10 5 4 16 9 8) `#(10 5 ,(square 2) ,@(map square '(4 3)) 8))
 (test-equal '(a `(b ,(+ 1 2) ,(foo 4 d) e) f)
-    `(a `(b ,(+ 1 2) ,(foo ,(+ 1 3) d) e) f) )
-(let ((name1 'x)
-      (name2 'y))
-   (test-equal '(a `(b ,x ,'y d) e) `(a `(b ,,name1 ,',name2 d) e)))
-(test-equal '(list 3 4) (quasiquote (list (unquote (+ 1 2)) 4)) )
+            `(a `(b ,(+ 1 2) ,(foo ,(+ 1 3) d) e) f))
+(let ((name1 'x) (name2 'y))
+  (test-equal '(a `(b ,x ,'y d) e) `(a `(b ,,name1 ,',name2 d) e)))
+(test-equal '(list 3 4) (quasiquote (list (unquote (+ 1 2)) 4)))
 (test-equal `(list ,(+ 1 2) 4) (quasiquote (list (unquote (+ 1 2)) 4)))
 
 (define any-arity
-  (case-lambda 
+  (case-lambda
     (() 'zero)
     ((x) x)
     ((x y) (cons x y))
@@ -352,7 +323,7 @@
 (test-equal '(many 1 2 3 4) (any-arity 1 2 3 4))
 
 (define rest-arity
-  (case-lambda 
+  (case-lambda
     (() '(zero))
     ((x) (list 'one x))
     ((x y) (list 'two x y))
@@ -378,82 +349,68 @@
 
 (test-begin "4.3 Macros")
 
-(test-equal 'now (let-syntax
-               ((when (syntax-rules ()
-                        ((when test stmt1 stmt2 ...)
-                         (if test
-                             (begin stmt1
-                                    stmt2 ...))))))
-             (let ((if #t))
-               (when if (set! if 'now))
-               if)))
+(test-equal 'now
+            (let-syntax
+                ((when (syntax-rules ()
+                         ((when test stmt1 stmt2 ...)
+                          (if test (begin stmt1 stmt2 ...))))))
+              (let ((if #t))
+                (when if (set! if 'now))
+                if)))
 
-(test-equal 'outer (let ((x 'outer))
-  (let-syntax ((m (syntax-rules () ((m) x))))
-    (let ((x 'inner))
-      (m)))))
+(test-equal 'outer
+            (let ((x 'outer))
+              (let-syntax ((m (syntax-rules () ((m) x))))
+                (let ((x 'inner)) (m)))))
 
-(test-equal 7 (letrec-syntax
-  ((my-or (syntax-rules ()
-            ((my-or) #f)
-            ((my-or e) e)
-            ((my-or e1 e2 ...)
-             (let ((temp e1))
-               (if temp
-                   temp
-                   (my-or e2 ...)))))))
-  (let ((x #f)
-        (y 7)
-        (temp 8)
-        (let odd?)
-        (if even?))
-    (my-or x
-           (let temp)
-           (if y)
-           y))))
+(test-equal 7
+            (letrec-syntax ((my-or (syntax-rules ()
+                                     ((my-or) #f)
+                                     ((my-or e) e)
+                                     ((my-or e1 e2 ...)
+                                      (let ((temp e1))
+                                           (if temp temp (my-or e2 ...)))))))
+              (let ((x #f) (y 7) (temp 8) (let odd?) (if even?))
+                (my-or x (let temp) (if y) y))))
 
 ;; macro-generating-macro with ellipsis escape and custom ellipsis
 (begin
-(define-syntax be-like-begin1
-  (syntax-rules ()
-    ((be-like-begin1 name)
-     (define-syntax name
-       (syntax-rules ()
-         ((name expr (... ...))
-          (begin expr (... ...))))))))
-(be-like-begin1 sequence1)
-(test-equal 3 (sequence1 0 1 2 3))
+  (define-syntax be-like-begin1
+    (syntax-rules ()
+      ((be-like-begin1 name)
+       (define-syntax name
+                      (syntax-rules ()
+                                    ((name expr (... ...))
+                                     (begin expr (... ...))))))))
+  (be-like-begin1 sequence1)
+  (test-equal 3 (sequence1 0 1 2 3))
 
-(define-syntax be-like-begin2
-  (syntax-rules ()
-    ((be-like-begin2 name)
-     (define-syntax name
-       (... (syntax-rules ()
-              ((name expr ...)
-               (begin expr ...))))))))
-(be-like-begin2 sequence2)
-(test-equal 4 (sequence2 1 2 3 4))
+  (define-syntax be-like-begin2
+    (syntax-rules ()
+      ((be-like-begin2 name)
+       (define-syntax name
+                      (... (syntax-rules
+                            ()
+                            ((name expr ...) (begin expr ...))))))))
+  (be-like-begin2 sequence2)
+  (test-equal 4 (sequence2 1 2 3 4))
 
-(define-syntax be-like-begin3
-  (syntax-rules ()
-    ((be-like-begin3 name)
-     (define-syntax name
-       (syntax-rules dots ()
-         ((name expr dots)
-          (begin expr dots)))))))
-(be-like-begin3 sequence3)
-(test-equal 5 (sequence3 2 3 4 5))
-)
+  (define-syntax be-like-begin3
+    (syntax-rules ()
+      ((be-like-begin3 name)
+       (define-syntax name
+                      (syntax-rules dots
+                                    ()
+                                    ((name expr dots) (begin expr dots)))))))
+  (be-like-begin3 sequence3)
+  (test-equal 5 (sequence3 2 3 4 5)))
 
 ;; ellipsis escape
 (define-syntax elli-esc-1
   (syntax-rules ()
-    ((_)
-     '(... ...))
-    ((_ x)
-     '(... (x ...)))
-    ((_ x y)
-     '(... (... x y)))))
+    ((_) '(... ...))
+    ((_ x) '(... (x ...)))
+    ((_ x y) '(... (... x y)))))
 
 (test-equal '... (elli-esc-1))
 (test-equal '(100 ...) (elli-esc-1 100))
@@ -466,30 +423,36 @@
      (vector (list a b) (list m ...) (list n ...) (list x y)))
     ((_ . rest) 'error)))
 (test-equal '#((10 43) (31 41 51) (32 42 52) (63 77))
-    (part-2 10 (+ 21 22) (31 32) (41 42) (51 52) (+ 61 2) 77))
+            (part-2 10 (+ 21 22) (31 32) (41 42) (51 52) (+ 61 2) 77))
 (begin
-(define-syntax part-2x
-  (syntax-rules ()
-    ((_ (a b (m n) ... x y . rest))
-     (vector (list a b) (list m ...) (list n ...) (list x y)
-             (cons "rest:" 'rest)))
-    ((_ . rest) 'error)))
-(test-equal '#((10 43) (31 41 51) (32 42 52) (63 77) ("rest:"))
-    (part-2x (10 (+ 21 22) (31 32) (41 42) (51 52) (+ 61 2) 77)))
-(test-equal '#((10 43) (31 41 51) (32 42 52) (63 77) ("rest:" . "tail"))
-    (part-2x (10 (+ 21 22) (31 32) (41 42) (51 52) (+ 61 2) 77 . "tail")))
-)
+  (define-syntax part-2x
+    (syntax-rules ()
+      ((_ (a b (m n) ... x y . rest))
+       (vector (list a b)
+               (list m ...)
+               (list n ...)
+               (list x y)
+               (cons "rest:" 'rest)))
+      ((_ . rest) 'error)))
+  (test-equal '#((10 43) (31 41 51) (32 42 52) (63 77) ("rest:"))
+              (part-2x (10 (+ 21 22) (31 32) (41 42) (51 52) (+ 61 2) 77)))
+  (test-equal '#((10 43) (31 41 51) (32 42 52) (63 77) ("rest:" . "tail"))
+              (part-2x (10
+                        (+ 21 22)
+                        (31 32)
+                        (41 42)
+                        (51 52)
+                        (+ 61 2)
+                        77
+                        .
+                        "tail"))))
 
 ;; underscore
-(define-syntax underscore
-  (syntax-rules ()
-    ((foo _) '_)))
+(define-syntax underscore (syntax-rules () ((foo _) '_)))
 (test-equal '_ (underscore foo))
 
 (let ()
-  (define-syntax underscore2
-    (syntax-rules ()
-      ((underscore2 (a _) ...) 42)))
+  (define-syntax underscore2 (syntax-rules () ((underscore2 (a _) ...) 42)))
   (test-equal 42 (underscore2 (1 2))))
 
 (define-syntax count-to-2
@@ -499,7 +462,7 @@
     ((_ _ _) 2)
     ((_ . _) 'many)))
 (test-equal '(2 0 many)
-    (list (count-to-2 a b) (count-to-2) (count-to-2 a b c d)))
+            (list (count-to-2 a b) (count-to-2) (count-to-2 a b c d)))
 
 ;; _ as literal identifier in syntax-rules
 (define-syntax count-to-2_
@@ -509,17 +472,16 @@
     ((_ _ _) 2)
     ((x . y) 'fail)))
 (test-equal '(2 0 fail fail)
-    (list (count-to-2_ _ _) (count-to-2_)
-          (count-to-2_ a b) (count-to-2_ a b c d)))
+            (list (count-to-2_ _ _)
+                  (count-to-2_)
+                  (count-to-2_ a b)
+                  (count-to-2_ a b c d)))
 
 (define-syntax jabberwocky
   (syntax-rules ()
     ((_ hatter)
-     (begin
-       (define march-hare 42)
-       (define-syntax hatter
-         (syntax-rules ()
-           ((_) march-hare)))))))
+     (begin (define march-hare 42)
+            (define-syntax hatter (syntax-rules () ((_) march-hare)))))))
 (jabberwocky mad-hatter)
 (test-equal 42 (mad-hatter))
 
@@ -534,58 +496,44 @@
   (test-equal 1 x))
 
 (let ()
- (define-syntax foo
-   (syntax-rules ()
-     ((foo bar y)
-      (define-syntax bar
-        (syntax-rules ()
-          ((bar x) 'y))))))
- (foo bar x)
- (test-equal 'x (bar 1)))
+  (define-syntax foo
+    (syntax-rules ()
+      ((foo bar y) (define-syntax bar (syntax-rules () ((bar x) 'y))))))
+  (foo bar x)
+  (test-equal 'x (bar 1)))
 
 (begin
   (define-syntax ffoo
     (syntax-rules ()
-      ((ffoo ff)
-       (begin
-         (define (ff x)
-           (gg x))
-         (define (gg x)
-           (* x x))))))
+      ((ffoo ff) (begin (define (ff x) (gg x)) (define (gg x) (* x x))))))
   (ffoo ff)
   (test-equal 100 (ff 10)))
 
-(let-syntax ((vector-lit
-               (syntax-rules ()
-                 ((vector-lit)
-                  '#(b)))))
+(let-syntax ((vector-lit (syntax-rules () ((vector-lit) '#(b)))))
   (test-equal '#(b) (vector-lit)))
 
 (let ()
   ;; forward hygienic refs
-  (define-syntax foo399
-    (syntax-rules () ((foo399) (bar399))))
-  (define (quux399)
-    (foo399))
-  (define (bar399)
-    42)
+  (define-syntax foo399 (syntax-rules () ((foo399) (bar399))))
+  (define (quux399) (foo399))
+  (define (bar399) 42)
   (test-equal 42 (quux399)))
 
 (let-syntax
     ((m (syntax-rules ()
-          ((m x) (let-syntax
-                     ((n (syntax-rules (k)
-                           ((n x) 'bound-identifier=?)
-                           ((n y) 'free-identifier=?))))
-                   (n z))))))
+          ((m x)
+           (let-syntax ((n (syntax-rules (k)
+                                         ((n x) 'bound-identifier=?)
+                                         ((n y) 'free-identifier=?))))
+                       (n z))))))
   (test-equal 'bound-identifier=? (m k)))
 
 ;; ellipsis as literal identifier in syntax-rules
 (let ()
   (define-syntax elli-lit-1
-    (syntax-rules ... (...)
-      ((_ x)
-       '(x ...))))
+    (syntax-rules ...
+      (...)
+      ((_ x) '(x ...))))
   (test-equal '(100 ...) (elli-lit-1 100)))
 
 ;; bad ellipsis
@@ -613,51 +561,49 @@
 
 (test-begin "5 Program structure")
 
-(define add3
-  (lambda (x) (+ x 3)))
+(define add3 (lambda (x) (+ x 3)))
 (test-equal 6 (add3 3))
 (define first car)
 (test-equal 1 (first '(1 2)))
 
-(test-equal 45 (let ((x 5))
-  (define foo (lambda (y) (bar x y)))
-  (define bar (lambda (a b) (+ (* a b) a)))
-  (foo (+ x 3))))
+(test-equal 45
+            (let ((x 5))
+              (define foo (lambda (y) (bar x y)))
+              (define bar (lambda (a b) (+ (* a b) a)))
+              (foo (+ x 3))))
 
 (test-equal 'ok
-    (let ()
-      (define-values () (values))
-      'ok))
+            (let ()
+              (define-values () (values))
+              'ok))
 (test-equal 1
-    (let ()
-      (define-values (x) (values 1))
-      x))
+            (let ()
+              (define-values (x) (values 1))
+              x))
 (test-equal 3
-    (let ()
-      (define-values x (values 1 2))
-      (apply + x)))
+            (let ()
+              (define-values x (values 1 2))
+              (apply + x)))
 (test-equal 3
-    (let ()
-      (define-values (x y) (values 1 2))
-      (+ x y)))
+            (let ()
+              (define-values (x y) (values 1 2))
+              (+ x y)))
 (test-equal 6
-    (let ()
-      (define-values (x y z) (values 1 2 3))
-      (+ x y z)))
+            (let ()
+              (define-values (x y z) (values 1 2 3))
+              (+ x y z)))
 (test-equal 10
-    (let ()
-      (define-values (x y . z) (values 1 2 3 4))
-      (+ x y (car z) (cadr z))))
+            (let ()
+              (define-values (x y . z) (values 1 2 3 4))
+              (+ x y (car z) (cadr z))))
 
-(test-equal '(2 1) (let ((x 1) (y 2))
-  (define-syntax swap!
-    (syntax-rules ()
-      ((swap! a b)
-       (let ((tmp a))
-         (set! a b)
-         (set! b tmp)))))
-  (swap! x y)
-  (list x y)))
+(test-equal '(2 1)
+            (let ((x 1) (y 2))
+              (define-syntax swap!
+                (syntax-rules ()
+                  ((swap! a b) (let ((tmp a)) (set! a b) (set! b tmp)))))
+              (swap! x y)
+              (list x y)))
 
 ;; Records
 
@@ -671,9 +617,10 @@
 (test-equal #f (pare? (cons 1 2)))
 (test-equal 1 (kar (kons 1 2)))
 (test-equal 2 (kdr (kons 1 2)))
-(test-equal 3 (let ((k (kons 1 2)))
-          (set-kar! k 3)
-          (kar k)))
+(test-equal 3
+            (let ((k (kons 1 2)))
+              (set-kar! k 3)
+              (kar k)))
 
 (test-end)
 
@@ -688,55 +635,45 @@
 (test-equal #t (eqv? '() '()))
 (test-equal #t (eqv? 100000000 100000000))
 (test-equal #f (eqv? (cons 1 2) (cons 1 2)))
-(test-equal #f (eqv? (lambda () 1)
-               (lambda () 2)))
+(test-equal #f (eqv? (lambda () 1) (lambda () 2)))
 (test-equal #f (eqv? #f 'nil))
 
 (define gen-counter
   (lambda ()
     (let ((n 0))
-      (lambda () (set! n (+ n 1)) n))))
-(test-equal #t
-    (let ((g (gen-counter)))
-      (eqv? g g)))
+      (lambda ()
+        (set! n (+ n 1))
+        n))))
+(test-equal #t (let ((g (gen-counter))) (eqv? g g)))
 (test-equal #f (eqv? (gen-counter) (gen-counter)))
 (define gen-loser
   (lambda ()
     (let ((n 0))
-      (lambda () (set! n (+ n 1)) 27))))
-(test-equal #t (let ((g (gen-loser)))
-  (eqv? g g)))
+      (lambda ()
+        (set! n (+ n 1))
+        27))))
+(test-equal #t (let ((g (gen-loser))) (eqv? g g)))
 
 (test-equal #f
-(letrec ((f (lambda () (if (eqv? f g) 'f 'both)))
-         (g (lambda () (if (eqv? f g) 'g 'both))))
-   (eqv? f g)))
+            (letrec ((f (lambda () (if (eqv? f g) 'f 'both)))
+                     (g (lambda () (if (eqv? f g) 'g 'both))))
+              (eqv? f g)))
 
-(test-equal #t
-    (let ((x '(a)))
-      (eqv? x x)))
+(test-equal #t (let ((x '(a))) (eqv? x x)))
 
 (test-equal #t (eq? 'a 'a))
 (test-equal #f (eq? (list 'a) (list 'a)))
 (test-equal #t (eq? '() '()))
-(test-equal #t
-    (let ((x '(a)))
-      (eq? x x)))
-(test-equal #t
-    (let ((x '#()))
-      (eq? x x)))
-(test-equal #t
-    (let ((p (lambda (x) x)))
-      (eq? p p)))
+(test-equal #t (let ((x '(a))) (eq? x x)))
+(test-equal #t (let ((x '#())) (eq? x x)))
+(test-equal #t (let ((p (lambda (x) x))) (eq? p p)))
 
 (test-equal #t (equal? 'a 'a))
 (test-equal #t (equal? '(a) '(a)))
-(test-equal #t (equal? '(a (b) c)
-                 '(a (b) c)))
+(test-equal #t (equal? '(a (b) c) '(a (b) c)))
 (test-equal #t (equal? "abc" "abc"))
 (test-equal #t (equal? 2 2))
-(test-equal #t (equal? (make-vector 5 'a)
-                 (make-vector 5 'a)))
+(test-equal #t (equal? (make-vector 5 'a) (make-vector 5 'a)))
 
 (test-end)
 
@@ -811,9 +748,7 @@
 (let ((a (- (expt 2 1000) 1))
       (b (inexact (expt 2 1000))) ; assuming > single-float-epsilon
       (c (+ (expt 2 1000) 1)))
-  (test-equal #t (if (and (= a b) (= b c))
-               (= a c)
-               #t)))
+  (test-equal #t (if (and (= a b) (= b c)) (= a c) #t)))
 
 ;; From CLtL 12.3. Comparisons on Numbers:
 ;;
@@ -824,14 +759,11 @@
 
 ;; Transliteration from Jussi Piitulainen
 (define single-float-epsilon
-  (do ((eps 1.0 (* eps 2.0)))
-      ((= eps (+ eps 1.0)) eps)))
+  (do ((eps 1.0 (* eps 2.0))) ((= eps (+ eps 1.0)) eps)))
 
 (let* ((a (/ 10.0 single-float-epsilon))
        (j (exact a)))
-  (test-equal #t (if (and (<= a j) (< j (+ j 1)))
-               (not (<= (+ j 1) a))
-               #t)))
+  (test-equal #t (if (and (<= a j) (< j (+ j 1))) (not (<= (+ j 1) a)) #t)))
 
 (test-equal #t (zero? 0))
 (test-equal #t (zero? 0.0))
@@ -1095,7 +1027,10 @@
 (test-equal #t (list? '(a b c)))
 (test-equal #t (list? '()))
 (test-equal #f (list? '(a . b)))
-(test-equal #f (let ((x (list 'a))) (set-cdr! x x) (list? x)))
+(test-equal #f
+            (let ((x (list 'a)))
+              (set-cdr! x x)
+              (list? x)))
 
 (test-equal '(3 3) (make-list 2 3))
 
@@ -1119,13 +1054,12 @@
 (test-equal '(d e) (list-tail '(a b c d e) 3))
 
 (test-equal 'c (list-ref '(a b c d) 2))
-(test-equal 'c (list-ref '(a b c d)
-          (exact (round 1.8))))
+(test-equal 'c (list-ref '(a b c d) (exact (round 1.8))))
 
 (test-equal '(0 ("Sue" "Sue") "Anna")
-    (let ((lst (list 0 '(2 2 2 2) "Anna")))
-      (list-set! lst 1 '("Sue" "Sue"))
-      lst))
+            (let ((lst (list 0 '(2 2 2 2) "Anna")))
+              (list-set! lst 1 '("Sue" "Sue"))
+              lst))
 
 (test-equal '(a b c) (memq 'a '(a b c)))
 (test-equal '(b c) (memq 'b '(a b c)))
@@ -1149,7 +1083,8 @@
 (test-equal #f (assv 1 '()))
 (test-equal #f (assoc "a" '()))
 (test-equal '(100000000000000000000 . big)
-            (assv 100000000000000000000 '((1 . one) (100000000000000000000 . big))))
+            (assv 100000000000000000000
+                  '((1 . one) (100000000000000000000 . big))))
 (test-equal '("b" . 2) (assoc "b" '(("a" . 1) ("b" . 2))))
 (test-equal '(b . first) (assq 'b '((a . 0) (b . first) (b . second))))
 (test-equal '(2 3) (member 2 '(1 2 3)))
@@ -1183,16 +1118,16 @@
 (test-equal #t (symbol=? 'a 'a 'a))
 (test-equal #f (symbol=? 'a 'a 'A))
 
-(test-equal "flying-fish"     
-(symbol->string 'flying-fish))
+(test-equal "flying-fish" (symbol->string 'flying-fish))
 (test-equal "Martin" (symbol->string 'Martin))
 (test-equal "Malvina" (symbol->string (string->symbol "Malvina")))
 
 (test-equal 'mISSISSIppi (string->symbol "mISSISSIppi"))
 (test-equal #t (eq? 'bitBlt (string->symbol "bitBlt")))
 (test-equal #t (eq? 'LollyPop (string->symbol (symbol->string 'LollyPop))))
-(test-equal #t (string=? "K. Harper, M.D."
-                   (symbol->string (string->symbol "K. Harper, M.D."))))
+(test-equal #t
+            (string=? "K. Harper, M.D."
+                      (symbol->string (string->symbol "K. Harper, M.D."))))
 
 (test-end)
 
@@ -1310,12 +1245,15 @@
 (test-equal #\b (string-ref "abc" 1))
 (test-equal #\c (string-ref "abc" 2))
 
-(test-equal "a-c" (let ((str (string #\a #\b #\c))) (string-set! str 1 #\-) str))
+(test-equal "a-c"
+            (let ((str (string #\a #\b #\c)))
+              (string-set! str 1 #\-)
+              str))
 
 (test-equal (string #\a #\x1F700 #\c)
-    (let ((s (string #\a #\b #\c)))
-      (string-set! s 1 #\x1F700)
-      s))
+            (let ((s (string #\a #\b #\c)))
+              (string-set! s 1 #\x1F700)
+              s))
 
 (test-equal #t (string=? "" ""))
 (test-equal #t (string=? "abc" "abc" "abc"))
@@ -1410,9 +1348,10 @@
 (test-equal "ΜΈΛΟΣ" (string-upcase "μέλος"))
 (test-equal #t (and (member (string-downcase "ΜΈΛΟΣ") '("μέλος" "μέλοσ")) #t))
 (test-equal "μέλοσ" (string-foldcase "ΜΈΛΟΣ"))
-(test-equal #t (and (member (string-downcase "ΜΈΛΟΣ ΕΝΌΣ")
-                      '("μέλος ενός" "μέλοσ ενόσ"))
-              #t))
+(test-equal #t
+            (and (member (string-downcase "ΜΈΛΟΣ ΕΝΌΣ")
+                         '("μέλος ενός" "μέλοσ ενόσ"))
+                 #t))
 
 (test-equal "" (substring "" 0 0))
 (test-equal "" (substring "a" 0 0))
@@ -1447,28 +1386,48 @@
 (test-equal "bc" (string-copy "abc" 1 3))
 
 (test-equal "-----"
-    (let ((str (make-string 5 #\x))) (string-fill! str #\-) str))
+            (let ((str (make-string 5 #\x)))
+              (string-fill! str #\-)
+              str))
 (test-equal "xx---"
-    (let ((str (make-string 5 #\x))) (string-fill! str #\- 2) str))
+            (let ((str (make-string 5 #\x)))
+              (string-fill! str #\- 2)
+              str))
 (test-equal "xx-xx"
-    (let ((str (make-string 5 #\x))) (string-fill! str #\- 2 3) str))
+            (let ((str (make-string 5 #\x)))
+              (string-fill! str #\- 2 3)
+              str))
 
 (test-equal "a12de"
-    (let ((str (string-copy "abcde"))) (string-copy! str 1 "12345" 0 2) str))
+            (let ((str (string-copy "abcde")))
+              (string-copy! str 1 "12345" 0 2)
+              str))
 (test-equal "-----"
-    (let ((str (make-string 5 #\x))) (string-copy! str 0 "-----") str))
+            (let ((str (make-string 5 #\x)))
+              (string-copy! str 0 "-----")
+              str))
 (test-equal "---xx"
-    (let ((str (make-string 5 #\x))) (string-copy! str 0 "-----" 2) str))
+            (let ((str (make-string 5 #\x)))
+              (string-copy! str 0 "-----" 2)
+              str))
 (test-equal "xx---"
-    (let ((str (make-string 5 #\x))) (string-copy! str 2 "-----" 0 3) str))
+            (let ((str (make-string 5 #\x)))
+              (string-copy! str 2 "-----" 0 3)
+              str))
 (test-equal "xx-xx"
-    (let ((str (make-string 5 #\x))) (string-copy! str 2 "-----" 2 3) str))
+            (let ((str (make-string 5 #\x)))
+              (string-copy! str 2 "-----" 2 3)
+              str))
 
 ;; same source and dest
 (test-equal "aabde"
-    (let ((str (string-copy "abcde"))) (string-copy! str 1 str 0 2) str))
+            (let ((str (string-copy "abcde")))
+              (string-copy! str 1 str 0 2)
+              str))
 (test-equal "abcab"
-    (let ((str (string-copy "abcde"))) (string-copy! str 3 str 0 2) str))
+            (let ((str (string-copy "abcde")))
+              (string-copy! str 3 str 0 2)
+              str))
 
 (test-end)
 
@@ -1486,15 +1445,15 @@
 (test-equal #(a b c) (vector 'a 'b 'c))
 
 (test-equal 8 (vector-ref '#(1 1 2 3 5 8 13 21) 5))
-(test-equal 13 (vector-ref '#(1 1 2 3 5 8 13 21)
-            (let ((i (round (* 2 (acos -1)))))
-              (if (inexact? i)
-                  (exact i)
-                  i))))
+(test-equal 13
+            (vector-ref '#(1 1 2 3 5 8 13 21)
+                        (let ((i (round (* 2 (acos -1)))))
+                          (if (inexact? i) (exact i) i))))
 
-(test-equal #(0 ("Sue" "Sue") "Anna") (let ((vec (vector 0 '(2 2 2 2) "Anna")))
-  (vector-set! vec 1 '("Sue" "Sue"))
-  vec))
+(test-equal #(0 ("Sue" "Sue") "Anna")
+            (let ((vec (vector 0 '(2 2 2 2) "Anna")))
+              (vector-set! vec 1 '("Sue" "Sue"))
+              vec))
 
 (test-equal '(dah dah didah) (vector->list '#(dah dah didah)))
 (test-equal '(dah didah) (vector->list '#(dah dah didah) 1))
@@ -1524,30 +1483,52 @@
 (test-equal #(a b c d e f) (vector-append #(a b c) #(d e) #(f)))
 
 (test-equal #(1 2 smash smash 5)
-    (let ((vec (vector 1 2 3 4 5))) (vector-fill! vec 'smash 2 4) vec))
+            (let ((vec (vector 1 2 3 4 5)))
+              (vector-fill! vec 'smash 2 4)
+              vec))
 (test-equal #(x x x x x)
-    (let ((vec (vector 1 2 3 4 5))) (vector-fill! vec 'x) vec))
+            (let ((vec (vector 1 2 3 4 5)))
+              (vector-fill! vec 'x)
+              vec))
 (test-equal #(1 2 x x x)
-    (let ((vec (vector 1 2 3 4 5))) (vector-fill! vec 'x 2) vec))
+            (let ((vec (vector 1 2 3 4 5)))
+              (vector-fill! vec 'x 2)
+              vec))
 (test-equal #(1 2 x 4 5)
-    (let ((vec (vector 1 2 3 4 5))) (vector-fill! vec 'x 2 3) vec))
+            (let ((vec (vector 1 2 3 4 5)))
+              (vector-fill! vec 'x 2 3)
+              vec))
 
 (test-equal #(1 a b 4 5)
-    (let ((vec (vector 1 2 3 4 5))) (vector-copy! vec 1 #(a b c d e) 0 2) vec))
+            (let ((vec (vector 1 2 3 4 5)))
+              (vector-copy! vec 1 #(a b c d e) 0 2)
+              vec))
 (test-equal #(a b c d e)
-    (let ((vec (vector 1 2 3 4 5))) (vector-copy! vec 0 #(a b c d e)) vec))
+            (let ((vec (vector 1 2 3 4 5)))
+              (vector-copy! vec 0 #(a b c d e))
+              vec))
 (test-equal #(c d e 4 5)
-    (let ((vec (vector 1 2 3 4 5))) (vector-copy! vec 0 #(a b c d e) 2) vec))
+            (let ((vec (vector 1 2 3 4 5)))
+              (vector-copy! vec 0 #(a b c d e) 2)
+              vec))
 (test-equal #(1 2 a b c)
-    (let ((vec (vector 1 2 3 4 5))) (vector-copy! vec 2 #(a b c d e) 0 3) vec))
+            (let ((vec (vector 1 2 3 4 5)))
+              (vector-copy! vec 2 #(a b c d e) 0 3)
+              vec))
 (test-equal #(1 2 c 4 5)
-    (let ((vec (vector 1 2 3 4 5))) (vector-copy! vec 2 #(a b c d e) 2 3) vec))
+            (let ((vec (vector 1 2 3 4 5)))
+              (vector-copy! vec 2 #(a b c d e) 2 3)
+              vec))
 
 ;; same source and dest
 (test-equal #(1 1 2 4 5)
-    (let ((vec (vector 1 2 3 4 5))) (vector-copy! vec 1 vec 0 2) vec))
+            (let ((vec (vector 1 2 3 4 5)))
+              (vector-copy! vec 1 vec 0 2)
+              vec))
 (test-equal #(1 2 3 1 2)
-    (let ((vec (vector 1 2 3 4 5))) (vector-copy! vec 3 vec 0 2) vec))
+            (let ((vec (vector 1 2 3 4 5)))
+              (vector-copy! vec 3 vec 0 2)
+              vec))
 
 (test-end)
 
@@ -1571,7 +1552,9 @@
 (test-equal 2 (bytevector-u8-ref (bytevector 0 1 2) 2))
 
 (test-equal #u8(0 255 2)
-    (let ((bv (bytevector 0 1 2))) (bytevector-u8-set! bv 1 255) bv))
+            (let ((bv (bytevector 0 1 2)))
+              (bytevector-u8-set! bv 1 255)
+              bv))
 
 (test-equal #u8() (bytevector-copy #u8()))
 (test-equal #u8(0 1 2) (bytevector-copy #u8(0 1 2)))
@@ -1579,35 +1562,35 @@
 (test-equal #u8(1) (bytevector-copy #u8(0 1 2) 1 2))
 
 (test-equal #u8(1 6 7 4 5)
-    (let ((bv (bytevector 1 2 3 4 5)))
-      (bytevector-copy! bv 1 #u8(6 7 8 9 10) 0 2)
-      bv))
+            (let ((bv (bytevector 1 2 3 4 5)))
+              (bytevector-copy! bv 1 #u8(6 7 8 9 10) 0 2)
+              bv))
 (test-equal #u8(6 7 8 9 10)
-    (let ((bv (bytevector 1 2 3 4 5)))
-      (bytevector-copy! bv 0 #u8(6 7 8 9 10))
-      bv))
+            (let ((bv (bytevector 1 2 3 4 5)))
+              (bytevector-copy! bv 0 #u8(6 7 8 9 10))
+              bv))
 (test-equal #u8(8 9 10 4 5)
-    (let ((bv (bytevector 1 2 3 4 5)))
-      (bytevector-copy! bv 0 #u8(6 7 8 9 10) 2)
-      bv))
+            (let ((bv (bytevector 1 2 3 4 5)))
+              (bytevector-copy! bv 0 #u8(6 7 8 9 10) 2)
+              bv))
 (test-equal #u8(1 2 6 7 8)
-    (let ((bv (bytevector 1 2 3 4 5)))
-      (bytevector-copy! bv 2 #u8(6 7 8 9 10) 0 3)
-      bv))
+            (let ((bv (bytevector 1 2 3 4 5)))
+              (bytevector-copy! bv 2 #u8(6 7 8 9 10) 0 3)
+              bv))
 (test-equal #u8(1 2 8 4 5)
-    (let ((bv (bytevector 1 2 3 4 5)))
-      (bytevector-copy! bv 2 #u8(6 7 8 9 10) 2 3)
-      bv))
+            (let ((bv (bytevector 1 2 3 4 5)))
+              (bytevector-copy! bv 2 #u8(6 7 8 9 10) 2 3)
+              bv))
 
 ;; same source and dest
 (test-equal #u8(1 1 2 4 5)
-    (let ((bv (bytevector 1 2 3 4 5)))
-      (bytevector-copy! bv 1 bv 0 2)
-      bv))
+            (let ((bv (bytevector 1 2 3 4 5)))
+              (bytevector-copy! bv 1 bv 0 2)
+              bv))
 (test-equal #u8(1 2 3 1 2)
-    (let ((bv (bytevector 1 2 3 4 5)))
-      (bytevector-copy! bv 3 bv 0 2)
-      bv))
+            (let ((bv (bytevector 1 2 3 4 5)))
+              (bytevector-copy! bv 3 bv 0 2)
+              bv))
 
 (test-equal #u8() (bytevector-append #u8()))
 (test-equal #u8() (bytevector-append #u8() #u8()))
@@ -1618,7 +1601,7 @@
 
 (test-equal "ABC" (utf8->string #u8(#x41 #x42 #x43)))
 (test-equal "ABC" (utf8->string #u8(0 #x41 #x42 #x43) 1))
-(test-equal "ABC" (utf8->string #u8(0 #x41  #x42 #x43 0) 1 4))
+(test-equal "ABC" (utf8->string #u8(0 #x41 #x42 #x43 0) 1 4))
 (test-equal "λ" (utf8->string #u8(0 #xCE #xBB 0) 1 3))
 (test-equal #u8(#x41 #x42 #x43) (string->utf8 "ABC"))
 (test-equal #u8(#x42 #x43) (string->utf8 "ABC" 1))
@@ -1642,14 +1625,11 @@
 (test-error (apply + 3 4)) ;; final arg not a list
 (test-error (apply + '(2 3 . 4))) ;; final arg is improper
 
-
-(define compose
-  (lambda (f g)
-    (lambda args
-      (f (apply g args)))))
+(define compose (lambda (f g) (lambda args (f (apply g args)))))
 (test-equal '(30 0)
-    (call-with-values (lambda () ((compose exact-integer-sqrt *) 12 75))
-      list))
+            (call-with-values
+                (lambda () ((compose exact-integer-sqrt *) 12 75))
+              list))
 
 (test-equal '(b e h) (map cadr '((a b) (d e) (g h))))
 
@@ -1658,172 +1638,153 @@
 (test-equal '(5 7 9) (map + '(1 2 3) '(4 5 6 7)))
 
 (test-equal #t
-    (let ((res (let ((count 0))
-                 (map (lambda (ignored)
-                        (set! count (+ count 1))
-                        count)
-                      '(a b)))))
-      (or (equal? res '(1 2))
-          (equal? res '(2 1)))))
+            (let ((res (let ((count 0))
+                         (map (lambda (ignored)
+                                (set! count (+ count 1))
+                                count)
+                              '(a b)))))
+              (or (equal? res '(1 2)) (equal? res '(2 1)))))
 
 ;; Disabled: map with circular list — requires detecting shortest list termination.
 ;; To be re-enabled after implementing circular list support in map.
-#;
-(test-equal '(10 200 3000 40 500 6000)
-    (let ((ls1 (list 10 100 1000))
-          (ls2 (list 1 2 3 4 5 6)))
-      (set-cdr! (cddr ls1) ls1)
-      (map * ls1 ls2)))
+#;(test-equal '(10 200 3000 40 500 6000)
+              (let ((ls1 (list 10 100 1000))
+                    (ls2 (list 1 2 3 4 5 6)))
+                (set-cdr! (cddr ls1) ls1)
+                (map * ls1 ls2)))
 
 (test-equal "abdegh" (string-map char-foldcase "AbdEgH"))
 
-(test-equal "IBM" (string-map
- (lambda (c)
-   (integer->char (+ 1 (char->integer c))))
- "HAL"))
+(test-equal "IBM"
+            (string-map (lambda (c) (integer->char (+ 1 (char->integer c))))
+                        "HAL"))
 
 (test-equal "StUdLyCaPs"
-    (string-map
-     (lambda (c k) (if (eqv? k #\u) (char-upcase c) (char-downcase c)))
-     "studlycaps xxx"
-     "ululululul"))
+            (string-map (lambda (c k)
+                          (if (eqv? k #\u) (char-upcase c) (char-downcase c)))
+                        "studlycaps xxx"
+                        "ululululul"))
 
 (test-equal #(b e h) (vector-map cadr '#((a b) (d e) (g h))))
 
 (test-equal #(1 4 27 256 3125)
-    (vector-map (lambda (n) (expt n n))
-                '#(1 2 3 4 5)))
+            (vector-map (lambda (n) (expt n n)) '#(1 2 3 4 5)))
 
 (test-equal #(5 7 9) (vector-map + '#(1 2 3) '#(4 5 6 7)))
 
 (test-equal #t
-    (let ((res (let ((count 0))
-                 (vector-map
-                  (lambda (ignored)
-                    (set! count (+ count 1))
-                    count)
-                  '#(a b)))))
-      (or (equal? res #(1 2))
-          (equal? res #(2 1)))))
+            (let ((res (let ((count 0))
+                         (vector-map (lambda (ignored)
+                                       (set! count (+ count 1))
+                                       count)
+                                     '#(a b)))))
+              (or (equal? res #(1 2)) (equal? res #(2 1)))))
 
 (test-equal #(0 1 4 9 16)
-    (let ((v (make-vector 5)))
-      (for-each (lambda (i)
-                  (vector-set! v i (* i i)))
-                '(0 1 2 3 4))
-      v))
+            (let ((v (make-vector 5)))
+              (for-each (lambda (i) (vector-set! v i (* i i))) '(0 1 2 3 4))
+              v))
 
 ;; Disabled: for-each with circular list — requires detecting shortest list termination.
 ;; To be re-enabled after implementing circular list support in for-each.
-#;
-(test-equal 9750
-    (let ((ls1 (list 10 100 1000))
-          (ls2 (list 1 2 3 4 5 6))
-          (count 0))
-      (set-cdr! (cddr ls1) ls1)
-      (for-each (lambda (x y) (set! count (+ count (* x y)))) ls2 ls1)
-      count))
+#;(test-equal 9750
+              (let ((ls1 (list 10 100 1000))
+                    (ls2 (list 1 2 3 4 5 6))
+                    (count 0))
+                (set-cdr! (cddr ls1) ls1)
+                (for-each (lambda (x y) (set! count (+ count (* x y))))
+                          ls2
+                          ls1)
+                count))
 
 (test-equal '(101 100 99 98 97)
-    (let ((v '()))
-      (string-for-each
-       (lambda (c) (set! v (cons (char->integer c) v)))
-       "abcde")
-      v))
+            (let ((v '()))
+              (string-for-each (lambda (c)
+                                 (set! v (cons (char->integer c) v)))
+                               "abcde")
+              v))
 
-(test-equal '(0 1 4 9 16) (let ((v (make-list 5)))
-  (vector-for-each
-   (lambda (i) (list-set! v i (* i i)))
-   '#(0 1 2 3 4))
-  v))
+(test-equal '(0 1 4 9 16)
+            (let ((v (make-list 5)))
+              (vector-for-each (lambda (i) (list-set! v i (* i i)))
+                               '#(0 1 2 3 4))
+              v))
 
-(test-equal -3 (call-with-current-continuation
-  (lambda (exit)
-    (for-each (lambda (x)
-                (if (negative? x)
-                    (exit x)))
-              '(54 0 37 -3 245 19))
-    #t)))
+(test-equal -3
+            (call-with-current-continuation
+              (lambda (exit)
+                (for-each (lambda (x) (if (negative? x) (exit x)))
+                          '(54 0 37 -3 245 19))
+                #t)))
 (define list-length
   (lambda (obj)
     (call-with-current-continuation
       (lambda (return)
-        (letrec ((r
-                  (lambda (obj)
-                    (cond ((null? obj) 0)
-                          ((pair? obj)
-                           (+ (r (cdr obj)) 1))
-                          (else (return #f))))))
+        (letrec ((r (lambda (obj)
+                      (cond ((null? obj) 0)
+                            ((pair? obj) (+ (r (cdr obj)) 1))
+                            (else (return #f))))))
           (r obj))))))
 
 (test-equal 4 (list-length '(1 2 3 4)))
 
 (test-equal #f (list-length '(a b . c)))
 
-(test-equal 5
-    (call-with-values (lambda () (values 4 5))
-      (lambda (a b) b)))
+(test-equal 5 (call-with-values (lambda () (values 4 5)) (lambda (a b) b)))
 
 (test-equal -1 (call-with-values * -))
 
-(test-equal '(connect talk1 disconnect
-        connect talk2 disconnect)
-    (let ((path '())
-          (c #f))
-      (let ((add (lambda (s)
-                   (set! path (cons s path)))))
-        (dynamic-wind
-          (lambda () (add 'connect))
-          (lambda ()
-            (add (call-with-current-continuation
-                  (lambda (c0)
-                    (set! c c0)
-                    'talk1))))
-          (lambda () (add 'disconnect)))
-        (if (< (length path) 4)
-            (c 'talk2)
-            (reverse path)))))
+(test-equal '(connect talk1 disconnect connect talk2 disconnect)
+            (let ((path '()) (c #f))
+              (let ((add (lambda (s) (set! path (cons s path)))))
+                (dynamic-wind
+                  (lambda () (add 'connect))
+                  (lambda ()
+                    (add (call-with-current-continuation
+                           (lambda (c0)
+                             (set! c c0)
+                             'talk1))))
+                  (lambda () (add 'disconnect)))
+                (if (< (length path) 4) (c 'talk2) (reverse path)))))
 
 (test-end)
 
 (test-begin "6.11 Exceptions")
 
 (test-equal 65
-    (with-exception-handler
-     (lambda (con) 42)
-     (lambda ()
-       (+ (raise-continuable "should be a number")
-          23))))
+            (with-exception-handler (lambda (con) 42)
+              (lambda () (+ (raise-continuable "should be a number") 23))))
 
-(test-equal #t
-    (error-object? (guard (exn (else exn)) (error "BOOM!" 1 2 3))))
+(test-equal #t (error-object? (guard (exn (else exn)) (error "BOOM!" 1 2 3))))
 (test-equal "BOOM!"
-    (error-object-message (guard (exn (else exn)) (error "BOOM!" 1 2 3))))
+            (error-object-message (guard (exn (else exn))
+                                    (error "BOOM!" 1 2 3))))
 (test-equal '(1 2 3)
-    (error-object-irritants (guard (exn (else exn)) (error "BOOM!" 1 2 3))))
+            (error-object-irritants (guard (exn (else exn))
+                                      (error "BOOM!" 1 2 3))))
 
-(test-equal #f
-    (file-error? (guard (exn (else exn)) (error "BOOM!"))))
+(test-equal #f (file-error? (guard (exn (else exn)) (error "BOOM!"))))
 (test-equal #t
-    (file-error? (guard (exn (else exn)) (open-input-file " no such file "))))
+            (file-error? (guard (exn (else exn))
+                           (open-input-file " no such file "))))
 
-(test-equal #f
-    (read-error? (guard (exn (else exn)) (error "BOOM!"))))
+(test-equal #f (read-error? (guard (exn (else exn)) (error "BOOM!"))))
 (test-equal #t
-    (read-error? (guard (exn (else exn)) (read (open-input-string ")")))))
+            (read-error? (guard (exn (else exn))
+                           (read (open-input-string ")")))))
 (test-equal #t
-    (read-error? (guard (exn (else exn)) (read (open-input-string "\"")))))
+            (read-error? (guard (exn (else exn))
+                           (read (open-input-string "\"")))))
 
 (define something-went-wrong #f)
 (define (test-exception-handler-1 v)
   (call-with-current-continuation
-   (lambda (k)
-     (with-exception-handler
-      (lambda (x)
-        (set! something-went-wrong (list "condition: " x))
-        (k 'exception))
-      (lambda ()
-        (+ 1 (if (> v 0) (+ v 100) (raise 'an-error))))))))
+    (lambda (k)
+      (with-exception-handler (lambda (x)
+                                (set! something-went-wrong
+                                      (list "condition: " x))
+                                (k 'exception))
+        (lambda () (+ 1 (if (> v 0) (+ v 100) (raise 'an-error))))))))
 (test-equal 106 (test-exception-handler-1 5))
 (test-equal #f something-went-wrong)
 (test-equal 'exception (test-exception-handler-1 -1))
@@ -1832,12 +1793,10 @@
 (set! something-went-wrong #f)
 (define (test-exception-handler-2 v)
   (guard (ex (else 'caught-another-exception))
-    (with-exception-handler
-     (lambda (x)
-       (set! something-went-wrong #t)
-       (list "exception:" x))
-     (lambda ()
-       (+ 1 (if (> v 0) (+ v 100) (raise 'an-error)))))))
+    (with-exception-handler (lambda (x)
+                              (set! something-went-wrong #t)
+                              (list "exception:" x))
+      (lambda () (+ 1 (if (> v 0) (+ v 100) (raise 'an-error)))))))
 (test-equal 106 (test-exception-handler-2 5))
 (test-equal #f something-went-wrong)
 (test-equal 'caught-another-exception (test-exception-handler-2 -1))
@@ -1846,32 +1805,27 @@
 ;; Based on an example from R6RS-lib section 7.1 Exceptions.
 ;; R7RS section 6.11 Exceptions has a simplified version.
 (let* ((out (open-output-string))
-       (value (with-exception-handler
-               (lambda (con)
-                 (cond
-                  ((not (list? con))
-                   (raise con))
-                  ((list? con)
-                   (display (car con) out))
-                  (else
-                   (display "a warning has been issued" out)))
-                 42)
-               (lambda ()
-                 (+ (raise-continuable
-                     (list "should be a number"))
-                    23)))))
+       (value (with-exception-handler (lambda (con)
+                                        (cond
+                                         ((not (list? con)) (raise con))
+                                         ((list? con) (display (car con) out))
+                                         (else
+                                          (display "a warning has been issued"
+                                                   out)))
+                                        42)
+                (lambda ()
+                  (+ (raise-continuable (list "should be a number")) 23)))))
   (test-equal "should be a number" (get-output-string out))
   (test-equal 65 value))
 
 ;; From SRFI-34 "Examples" section - #3
 (define (test-exception-handler-3 v out)
-  (guard (condition
-          (else
-           (display "condition: " out)
-           (write condition out)
-           (display #\! out)
-           'exception))
-         (+ 1 (if (= v 0) (raise 'an-error) (/ 10 v)))))
+  (guard
+      (condition (else (display "condition: " out)
+                       (write condition out)
+                       (display #\! out)
+                       'exception))
+    (+ 1 (if (= v 0) (raise 'an-error) (/ 10 v)))))
 (let* ((out (open-output-string))
        (value (test-exception-handler-3 0 out)))
   (test-equal 'exception value)
@@ -1879,19 +1833,16 @@
 
 (define (test-exception-handler-4 v out)
   (call-with-current-continuation
-   (lambda (k)
-     (with-exception-handler
-      (lambda (x)
-        (display "reraised " out)
-        (write x out) (display #\! out)
-        (k 'zero))
-      (lambda ()
-        (guard (condition
-                ((positive? condition)
-                 'positive)
-                ((negative? condition)
-                 'negative))
-          (raise v)))))))
+    (lambda (k)
+      (with-exception-handler (lambda (x)
+                                (display "reraised " out)
+                                (write x out)
+                                (display #\! out)
+                                (k 'zero))
+        (lambda ()
+          (guard (condition ((positive? condition) 'positive)
+                            ((negative? condition) 'negative))
+            (raise v)))))))
 
 ;; From SRFI-34 "Examples" section - #5
 (let* ((out (open-output-string))
@@ -1911,28 +1862,23 @@
 
 ;; From SRFI-34 "Examples" section - #8
 (test-equal 42
-    (guard (condition
-            ((assq 'a condition) => cdr)
-            ((assq 'b condition)))
-      (raise (list (cons 'a 42)))))
+            (guard (condition ((assq 'a condition) => cdr)
+                              ((assq 'b condition)))
+              (raise (list (cons 'a 42)))))
 
 ;; From SRFI-34 "Examples" section - #9
 (test-equal '(b . 23)
-    (guard (condition
-            ((assq 'a condition) => cdr)
-            ((assq 'b condition)))
-      (raise (list (cons 'b 23)))))
+            (guard (condition ((assq 'a condition) => cdr)
+                              ((assq 'b condition)))
+              (raise (list (cons 'b 23)))))
 
 (test-equal 'caught-d
-    (guard (condition
-            ((assq 'c condition) 'caught-c)
-            ((assq 'd condition) 'caught-d))
-      (list
-       (sqrt 8)
-       (guard (condition
-               ((assq 'a condition) => cdr)
-               ((assq 'b condition)))
-         (raise (list (cons 'd 24)))))))
+            (guard (condition ((assq 'c condition) 'caught-c)
+                              ((assq 'd condition) 'caught-d))
+              (list (sqrt 8)
+                    (guard (condition ((assq 'a condition) => cdr)
+                                      ((assq 'b condition)))
+                      (raise (list (cons 'd 24)))))))
 
 (test-end)
 
@@ -1941,15 +1887,16 @@
 ;; (test-equal 21 (eval '(* 7 3) (scheme-report-environment 5)))
 
 (test-equal 20
-    (let ((f (eval '(lambda (f x) (f x x)) (null-environment 5))))
-      (f + 10)))
+            (let ((f (eval '(lambda (f x) (f x x)) (null-environment 5))))
+              (f + 10)))
 
 (test-equal 1024 (eval '(expt 2 10) (environment '(scheme base))))
 ;; (sin 0) may return exact number
 (test-equal 0.0 (inexact (eval '(sin 0) (environment '(scheme inexact)))))
 ;; ditto
-(test-equal 1024.0 (eval '(+ (expt 2 10) (inexact (sin 0)))
-                   (environment '(scheme base) '(scheme inexact))))
+(test-equal 1024.0
+            (eval '(+ (expt 2 10) (inexact (sin 0)))
+                  (environment '(scheme base) '(scheme inexact))))
 
 (test-end)
 
@@ -1971,29 +1918,29 @@
 (test-equal #t (output-port-open? (open-output-string)))
 
 (test-equal #f
-    (let ((in (open-input-string "abc")))
-      (close-input-port in)
-      (input-port-open? in)))
+            (let ((in (open-input-string "abc")))
+              (close-input-port in)
+              (input-port-open? in)))
 
 (test-equal #f
-    (let ((out (open-output-string)))
-      (close-output-port out)
-      (output-port-open? out)))
+            (let ((out (open-output-string)))
+              (close-output-port out)
+              (output-port-open? out)))
 
 (test-equal #f
-    (let ((out (open-output-string)))
-      (close-port out)
-      (output-port-open? out)))
+            (let ((out (open-output-string)))
+              (close-port out)
+              (output-port-open? out)))
 
 (test-equal 'error
-    (let ((in (open-input-string "abc")))
-      (close-input-port in)
-      (guard (exn (else 'error)) (read-char in))))
+            (let ((in (open-input-string "abc")))
+              (close-input-port in)
+              (guard (exn (else 'error)) (read-char in))))
 
 (test-equal 'error
-    (let ((out (open-output-string)))
-      (close-output-port out)
-      (guard (exn (else 'error)) (write-char #\c out))))
+            (let ((out (open-output-string)))
+              (close-output-port out)
+              (guard (exn (else 'error)) (write-char #\c out))))
 
 (test-equal #t (eof-object? (eof-object)))
 (test-equal #t (eof-object? (read (open-input-string ""))))
@@ -2022,138 +1969,151 @@
     (test-equal #\x10F702 c3)))
 
 (test-equal (string #\x10F700)
-    (let ((out (open-output-string)))
-      (write-char #\x10F700 out)
-      (get-output-string out)))
+            (let ((out (open-output-string)))
+              (write-char #\x10F700 out)
+              (get-output-string out)))
 
 (test-equal "abc"
-    (let ((out (open-output-string)))
-      (write 'abc out)
-      (get-output-string out)))
+            (let ((out (open-output-string)))
+              (write 'abc out)
+              (get-output-string out)))
 
 (test-equal "abc def"
-    (let ((out (open-output-string)))
-      (display "abc def" out)
-      (get-output-string out)))
+            (let ((out (open-output-string)))
+              (display "abc def" out)
+              (get-output-string out)))
 
 (test-equal "abc"
-    (let ((out (open-output-string)))
-      (display #\a out)
-      (display "b" out)
-      (display #\c out)
-      (get-output-string out)))
+            (let ((out (open-output-string)))
+              (display #\a out)
+              (display "b" out)
+              (display #\c out)
+              (get-output-string out)))
 
 (test-equal #t
-      (let* ((out (open-output-string))
-             (r (begin (newline out) (get-output-string out))))
-        (or (equal? r "\n") (equal? r "\r\n"))))
+            (let* ((out (open-output-string))
+                   (r (begin
+                        (newline out)
+                        (get-output-string out))))
+              (or (equal? r "\n") (equal? r "\r\n"))))
 
 (test-equal "abc def"
-    (let ((out (open-output-string)))
-      (write-string "abc def" out)
-      (get-output-string out)))
+            (let ((out (open-output-string)))
+              (write-string "abc def" out)
+              (get-output-string out)))
 
 (test-equal "def"
-    (let ((out (open-output-string)))
-      (write-string "abc def" out 4)
-      (get-output-string out)))
+            (let ((out (open-output-string)))
+              (write-string "abc def" out 4)
+              (get-output-string out)))
 
 (test-equal "c d"
-    (let ((out (open-output-string)))
-      (write-string "abc def" out 2 5)
-      (get-output-string out)))
+            (let ((out (open-output-string)))
+              (write-string "abc def" out 2 5)
+              (get-output-string out)))
 
 (test-equal ""
-  (let ((out (open-output-string)))
-    (flush-output-port out)
-    (get-output-string out)))
+            (let ((out (open-output-string)))
+              (flush-output-port out)
+              (get-output-string out)))
 
 (test-equal #t (eof-object? (read-u8 (open-input-bytevector #u8()))))
 (test-equal 1 (read-u8 (open-input-bytevector #u8(1 2 3))))
 
-(test-equal #t (eof-object? (read-bytevector 3 (open-input-bytevector #u8()))))
+(test-equal #t
+            (eof-object? (read-bytevector 3 (open-input-bytevector #u8()))))
 (test-equal #t (u8-ready? (open-input-bytevector #u8(1))))
 (test-equal #u8(1) (read-bytevector 3 (open-input-bytevector #u8(1))))
 (test-equal #u8(1 2) (read-bytevector 3 (open-input-bytevector #u8(1 2))))
 (test-equal #u8(1 2 3) (read-bytevector 3 (open-input-bytevector #u8(1 2 3))))
-(test-equal #u8(1 2 3) (read-bytevector 3 (open-input-bytevector #u8(1 2 3 4))))
+(test-equal #u8(1 2 3)
+            (read-bytevector 3 (open-input-bytevector #u8(1 2 3 4))))
 
 (test-equal #t
-    (let ((bv (bytevector 1 2 3 4 5)))
-      (eof-object? (read-bytevector! bv (open-input-bytevector #u8())))))
+            (let ((bv (bytevector 1 2 3 4 5)))
+              (eof-object? (read-bytevector! bv
+                                             (open-input-bytevector #u8())))))
 
 (test-equal #u8(6 7 8 9 10)
-  (let ((bv (bytevector 1 2 3 4 5)))
-    (read-bytevector! bv (open-input-bytevector #u8(6 7 8 9 10)) 0 5)
-    bv))
+            (let ((bv (bytevector 1 2 3 4 5)))
+              (read-bytevector! bv
+                                (open-input-bytevector #u8(6 7 8 9 10))
+                                0
+                                5)
+              bv))
 
 (test-equal #u8(6 7 8 4 5)
-  (let ((bv (bytevector 1 2 3 4 5)))
-    (read-bytevector! bv (open-input-bytevector #u8(6 7 8 9 10)) 0 3)
-    bv))
+            (let ((bv (bytevector 1 2 3 4 5)))
+              (read-bytevector! bv
+                                (open-input-bytevector #u8(6 7 8 9 10))
+                                0
+                                3)
+              bv))
 
 (test-equal #u8(1 2 3 6 5)
-  (let ((bv (bytevector 1 2 3 4 5)))
-    (read-bytevector! bv (open-input-bytevector #u8(6 7 8 9 10)) 3 4)
-    bv))
+            (let ((bv (bytevector 1 2 3 4 5)))
+              (read-bytevector! bv
+                                (open-input-bytevector #u8(6 7 8 9 10))
+                                3
+                                4)
+              bv))
 
 (test-equal #u8(1 2 3)
-  (let ((out (open-output-bytevector)))
-    (write-u8 1 out)
-    (write-u8 2 out)
-    (write-u8 3 out)
-    (get-output-bytevector out)))
+            (let ((out (open-output-bytevector)))
+              (write-u8 1 out)
+              (write-u8 2 out)
+              (write-u8 3 out)
+              (get-output-bytevector out)))
 
 (test-equal #u8(1 2 3 4 5)
-  (let ((out (open-output-bytevector)))
-    (write-bytevector #u8(1 2 3 4 5) out)
-    (get-output-bytevector out)))
+            (let ((out (open-output-bytevector)))
+              (write-bytevector #u8(1 2 3 4 5) out)
+              (get-output-bytevector out)))
 
 (test-equal #u8(3 4 5)
-  (let ((out (open-output-bytevector)))
-    (write-bytevector #u8(1 2 3 4 5) out 2)
-    (get-output-bytevector out)))
+            (let ((out (open-output-bytevector)))
+              (write-bytevector #u8(1 2 3 4 5) out 2)
+              (get-output-bytevector out)))
 
 (test-equal #u8(3 4)
-  (let ((out (open-output-bytevector)))
-    (write-bytevector #u8(1 2 3 4 5) out 2 4)
-    (get-output-bytevector out)))
+            (let ((out (open-output-bytevector)))
+              (write-bytevector #u8(1 2 3 4 5) out 2 4)
+              (get-output-bytevector out)))
 
 (test-equal #u8()
-  (let ((out (open-output-bytevector)))
-    (flush-output-port out)
-    (get-output-bytevector out)))
+            (let ((out (open-output-bytevector)))
+              (flush-output-port out)
+              (get-output-bytevector out)))
 
 (test-equal #t
-    (and (member
-          (let ((out (open-output-string))
-                (x (list 1)))
-            (set-cdr! x x)
-            (write x out)
-            (get-output-string out))
-          ;; labels not guaranteed to be 0 indexed, spacing may differ
-          '("#0=(1 . #0#)" "#1=(1 . #1#)"))
-         #t))
+            (and (member (let ((out (open-output-string))
+                               (x (list 1)))
+                           (set-cdr! x x)
+                           (write x out)
+                           (get-output-string out))
+                         ;; labels not guaranteed to be 0 indexed, spacing may differ
+                         '("#0=(1 . #0#)" "#1=(1 . #1#)"))
+                 #t))
 
 (test-equal "((1 2 3) (1 2 3))"
-    (let ((out (open-output-string))
-          (x (list 1 2 3)))
-      (write (list x x) out)
-      (get-output-string out)))
+            (let ((out (open-output-string))
+                  (x (list 1 2 3)))
+              (write (list x x) out)
+              (get-output-string out)))
 
 (test-equal "((1 2 3) (1 2 3))"
-    (let ((out (open-output-string))
-          (x (list 1 2 3)))
-      (write-simple (list x x) out)
-      (get-output-string out)))
+            (let ((out (open-output-string))
+                  (x (list 1 2 3)))
+              (write-simple (list x x) out)
+              (get-output-string out)))
 
 (test-equal #t
-    (and (member (let ((out (open-output-string))
-                       (x (list 1 2 3)))
-                   (write-shared (list x x) out)
-                   (get-output-string out))
-                 '("(#0=(1 2 3) #0#)" "(#1=(1 2 3) #1#)"))
-         #t))
+            (and (member (let ((out (open-output-string))
+                               (x (list 1 2 3)))
+                           (write-shared (list x x) out)
+                           (get-output-string out))
+                         '("(#0=(1 2 3) #0#)" "(#1=(1 2 3) #1#)"))
+                 #t))
 
 (test-begin "Read syntax")
 
@@ -2163,7 +2123,8 @@
 (test-equal #f (read (open-input-string "#f")))
 (test-equal #f (read (open-input-string "#false")))
 (define (read2 port)
-  (let* ((o1 (read port)) (o2 (read port)))
+  (let* ((o1 (read port))
+         (o2 (read port)))
     (cons o1 o2)))
 ;; check reading boolean followed by delimiter
 (test-equal '(#t . (5)) (read2 (open-input-string "#t(5)")))
@@ -2181,8 +2142,10 @@
 
 (test-equal '(quote (1 2)) (read (open-input-string "'(1 2)")))
 (test-equal '(quote (1 (unquote 2))) (read (open-input-string "'(1 ,2)")))
-(test-equal '(quote (1 (unquote-splicing 2))) (read (open-input-string "'(1 ,@2)")))
-(test-equal '(quasiquote (1 (unquote 2))) (read (open-input-string "`(1 ,2)")))
+(test-equal '(quote (1 (unquote-splicing 2)))
+            (read (open-input-string "'(1 ,@2)")))
+(test-equal '(quasiquote (1 (unquote 2)))
+            (read (open-input-string "`(1 ,2)")))
 
 (test-equal #() (read (open-input-string "#()")))
 (test-equal #(a b) (read (open-input-string "#(a b)")))
@@ -2211,9 +2174,9 @@
 
 (define (test-read-error str)
   (test-assert str
-      (guard (exn (else #t))
-        (read (open-input-string str))
-        #f)))
+               (guard (exn (else #t))
+                 (read (open-input-string str))
+                 #f)))
 
 (test-read-error "(#;a . b)")
 (test-read-error "(a . #;b)")
@@ -2239,27 +2202,50 @@
 (test-equal "abc" (read (open-input-string "\"abc\" \"def\"")))
 (test-equal "ABC" (read (open-input-string "\"ABC\"")))
 (test-equal "Hello" (read (open-input-string "\"H\\x65;llo\"")))
-(test-equal 7 (char->integer (string-ref (read (open-input-string "\"\\a\"")) 0)))
-(test-equal 8 (char->integer (string-ref (read (open-input-string "\"\\b\"")) 0)))
-(test-equal 9 (char->integer (string-ref (read (open-input-string "\"\\t\"")) 0)))
-(test-equal 10 (char->integer (string-ref (read (open-input-string "\"\\n\"")) 0)))
-(test-equal 13 (char->integer (string-ref (read (open-input-string "\"\\r\"")) 0)))
-(test-equal #x22 (char->integer (string-ref (read (open-input-string "\"\\\"\"")) 0)))
-(test-equal #x7C (char->integer (string-ref (read (open-input-string "\"\\|\"")) 0)))
-(test-equal "line 1\nline 2\n" (read (open-input-string "\"line 1\nline 2\n\"")))
-(test-equal "line 1continued\n" (read (open-input-string "\"line 1\\\ncontinued\n\"")))
-(test-equal "line 1continued\n" (read (open-input-string "\"line 1\\ \ncontinued\n\"")))
-(test-equal "line 1continued\n" (read (open-input-string "\"line 1\\\n continued\n\"")))
-(test-equal "line 1continued\n" (read (open-input-string "\"line 1\\ \t \n \t continued\n\"")))
-(test-equal "line 1\n\nline 3\n" (read (open-input-string "\"line 1\\ \t \n \t \n\nline 3\n\"")))
-(test-equal #x03BB (char->integer (string-ref (read (open-input-string "\"\\x03BB;\"")) 0)))
+(test-equal 7
+            (char->integer (string-ref (read (open-input-string "\"\\a\""))
+                                       0)))
+(test-equal 8
+            (char->integer (string-ref (read (open-input-string "\"\\b\""))
+                                       0)))
+(test-equal 9
+            (char->integer (string-ref (read (open-input-string "\"\\t\""))
+                                       0)))
+(test-equal 10
+            (char->integer (string-ref (read (open-input-string "\"\\n\""))
+                                       0)))
+(test-equal 13
+            (char->integer (string-ref (read (open-input-string "\"\\r\""))
+                                       0)))
+(test-equal #x22
+            (char->integer (string-ref (read (open-input-string "\"\\\"\""))
+                                       0)))
+(test-equal #x7C
+            (char->integer (string-ref (read (open-input-string "\"\\|\""))
+                                       0)))
+(test-equal "line 1\nline 2\n"
+            (read (open-input-string "\"line 1\nline 2\n\"")))
+(test-equal "line 1continued\n"
+            (read (open-input-string "\"line 1\\\ncontinued\n\"")))
+(test-equal "line 1continued\n"
+            (read (open-input-string "\"line 1\\ \ncontinued\n\"")))
+(test-equal "line 1continued\n"
+            (read (open-input-string "\"line 1\\\n continued\n\"")))
+(test-equal "line 1continued\n"
+            (read (open-input-string "\"line 1\\ \t \n \t continued\n\"")))
+(test-equal "line 1\n\nline 3\n"
+            (read (open-input-string "\"line 1\\ \t \n \t \n\nline 3\n\"")))
+(test-equal #x03BB
+            (char->integer (string-ref (read
+                                        (open-input-string "\"\\x03BB;\""))
+                                       0)))
 
 (define-syntax test-write-syntax
   (syntax-rules ()
     ((test-write-syntax expect-str obj-expr)
      (let ((out (open-output-string)))
-       (write obj-expr out)
-       (test-equal expect-str (get-output-string out))))))
+          (write obj-expr out)
+          (test-equal expect-str (get-output-string out))))))
 
 (test-write-syntax "|.|" '|.|)
 (test-write-syntax "|a b|" '|a b|)
@@ -2299,8 +2285,8 @@
      (let* ((z (read (open-input-string str)))
             (out (open-output-string))
             (z-str (begin (write z out) (get-output-string out))))
-       (test-equal str expect (values z))
-       (test-equal str #t (and (member z-str '(str strs ...)) #t))))))
+           (test-equal str expect (values z))
+           (test-equal str #t (and (member z-str '(str strs ...)) #t))))))
 
 ;; Each test is of the form:
 ;;
@@ -2379,28 +2365,67 @@
 (test-numeric-syntax "+2i" (make-rectangular 0 2) "2i" "+2i" "0+2i")
 (test-numeric-syntax "-2i" (make-rectangular 0 -2) "-2i" "0-2i")
 ;; Decimal-notation complex numbers (rectangular notation)
-(test-numeric-syntax "1.0+2i" (make-rectangular 1.0 2) "1.0+2.0i" "1.0+2i" "1.+2i" "1.+2.i")
-(test-numeric-syntax "1+2.0i" (make-rectangular 1 2.0) "1.0+2.0i" "1+2.0i" "1.+2.i" "1+2.i")
-(test-numeric-syntax "1e2+1.0i" (make-rectangular 100.0 1.0) "100.0+1.0i" "100.+1.i")
-(test-numeric-syntax "1s2+1.0i" (make-rectangular 100.0 1.0) "100.0+1.0i" "100.+1.i")
-(test-numeric-syntax "1.0+1e2i" (make-rectangular 1.0 100.0) "1.0+100.0i" "1.+100.i")
-(test-numeric-syntax "1.0+1s2i" (make-rectangular 1.0 100.0) "1.0+100.0i" "1.+100.i")
+(test-numeric-syntax "1.0+2i"
+                     (make-rectangular 1.0 2)
+                     "1.0+2.0i"
+                     "1.0+2i"
+                     "1.+2i"
+                     "1.+2.i")
+(test-numeric-syntax "1+2.0i"
+                     (make-rectangular 1 2.0)
+                     "1.0+2.0i"
+                     "1+2.0i"
+                     "1.+2.i"
+                     "1+2.i")
+(test-numeric-syntax "1e2+1.0i"
+                     (make-rectangular 100.0 1.0)
+                     "100.0+1.0i"
+                     "100.+1.i")
+(test-numeric-syntax "1s2+1.0i"
+                     (make-rectangular 100.0 1.0)
+                     "100.0+1.0i"
+                     "100.+1.i")
+(test-numeric-syntax "1.0+1e2i"
+                     (make-rectangular 1.0 100.0)
+                     "1.0+100.0i"
+                     "1.+100.i")
+(test-numeric-syntax "1.0+1s2i"
+                     (make-rectangular 1.0 100.0)
+                     "1.0+100.0i"
+                     "1.+100.i")
 ;; Fractional complex numbers (rectangular notation)
 (test-numeric-syntax "1/2+3/4i" (make-rectangular (/ 1 2) (/ 3 4)))
 ;; Mixed fractional/decimal notation complex numbers (rectangular notation)
-(test-numeric-syntax "0.5+3/4i" (make-rectangular 0.5 (/ 3 4))
-  "0.5+0.75i" ".5+.75i" "0.5+3/4i" ".5+3/4i" "500.0e-3+750.0e-3i")
+(test-numeric-syntax "0.5+3/4i"
+                     (make-rectangular 0.5 (/ 3 4))
+                     "0.5+0.75i"
+                     ".5+.75i"
+                     "0.5+3/4i"
+                     ".5+3/4i"
+                     "500.0e-3+750.0e-3i")
 ;; Complex NaN, Inf (rectangular notation)
 ;; TODO
-#;(test-numeric-syntax "+nan.0+nan.0i" (make-rectangular the-nan the-nan) "+NaN.0+NaN.0i")
-(test-numeric-syntax "+inf.0+inf.0i" (make-rectangular +inf.0 +inf.0) "+Inf.0+Inf.0i")
-(test-numeric-syntax "-inf.0+inf.0i" (make-rectangular -inf.0 +inf.0) "-Inf.0+Inf.0i")
-(test-numeric-syntax "-inf.0-inf.0i" (make-rectangular -inf.0 -inf.0) "-Inf.0-Inf.0i")
-(test-numeric-syntax "+inf.0-inf.0i" (make-rectangular +inf.0 -inf.0) "+Inf.0-Inf.0i")
+#;(test-numeric-syntax "+nan.0+nan.0i"
+                       (make-rectangular the-nan the-nan)
+                       "+NaN.0+NaN.0i")
+(test-numeric-syntax "+inf.0+inf.0i"
+                     (make-rectangular +inf.0 +inf.0)
+                     "+Inf.0+Inf.0i")
+(test-numeric-syntax "-inf.0+inf.0i"
+                     (make-rectangular -inf.0 +inf.0)
+                     "-Inf.0+Inf.0i")
+(test-numeric-syntax "-inf.0-inf.0i"
+                     (make-rectangular -inf.0 -inf.0)
+                     "-Inf.0-Inf.0i")
+(test-numeric-syntax "+inf.0-inf.0i"
+                     (make-rectangular +inf.0 -inf.0)
+                     "+Inf.0-Inf.0i")
 ;; Complex numbers (polar notation)
 ;; Need to account for imprecision in write output.
-;; TODO 
-#;(test-numeric-syntax "write precision" -0.4161468365471424+0.9092974268256817i "-0.4161468365471424+0.909297426825682i")
+;; TODO
+#;(test-numeric-syntax "write precision"
+                       -0.4161468365471424+0.9092974268256817i
+                       "-0.4161468365471424+0.909297426825682i")
 ;; Base prefixes
 (test-numeric-syntax "#x11" 17 "17")
 (test-numeric-syntax "#X11" 17 "17")
@@ -2437,12 +2462,18 @@
 (test-numeric-syntax "#b11/10" (/ 3 2) "3/2")
 ;; Complex numbers with prefixes
 ;;(test-numeric-syntax "#x10+11i" (make-rectangular 16 17) "16+17i") ;; TODO: non-decimal radix complex
-(test-numeric-syntax "#d1.0+1.0i" (make-rectangular 1.0 1.0) "1.0+1.0i" "1.+1.i")
+(test-numeric-syntax "#d1.0+1.0i"
+                     (make-rectangular 1.0 1.0)
+                     "1.0+1.0i"
+                     "1.+1.i")
 (test-numeric-syntax "#d10+11i" (make-rectangular 10 11) "10+11i")
 ;;(test-numeric-syntax "#o10+11i" (make-rectangular 8 9) "8+9i") ;; TODO: non-decimal radix complex
 ;;(test-numeric-syntax "#b10+11i" (make-rectangular 2 3) "2+3i") ;; TODO: non-decimal radix complex
 ;;(test-numeric-syntax "#e1.0+1.0i" (make-rectangular 1 1) "1+1i" "1+i") ;; TODO: exactness prefix on complex
-(test-numeric-syntax "#i1.0+1.0i" (make-rectangular 1.0 1.0) "1.0+1.0i" "1.+1.i")
+(test-numeric-syntax "#i1.0+1.0i"
+                     (make-rectangular 1.0 1.0)
+                     "1.0+1.0i"
+                     "1.+1.i")
 
 (define-syntax test-precision
   (syntax-rules ()
@@ -2451,24 +2482,30 @@
             (str2 (number->string n))
             (accepted (list str alt ...))
             (ls (member str2 accepted)))
-       (test-assert (string-append "(member? " str2 " "
-                                   (let ((out (open-output-string)))
-                                     (write accepted out)
-                                     (get-output-string out))
-                                   ")")
-         (pair? ls))
-       (when (pair? ls)
-         (test-assert (string-append "(eqv?: " str " " str2 ")")
-           (eqv? n (string->number (car ls)))))))))
+           (test-assert (string-append "(member? " str2 " "
+                                       (let ((out (open-output-string)))
+                                            (write accepted out)
+                                            (get-output-string out))
+                                       ")")
+                        (pair? ls))
+           (when (pair? ls)
+                 (test-assert (string-append "(eqv?: " str " " str2 ")")
+                              (eqv? n (string->number (car ls)))))))))
 
 (test-precision "-1.7976931348623157e+308" "-inf.0")
-(test-precision "4.940656458412465e-324" "4.94065645841247e-324" "5.0e-324" "4.9e-324" "0.0")
-(test-precision "9.881312916824931e-324" "9.88131291682493e-324" "1.0e-323" "9.9e-324" "0.0")
+(test-precision "4.940656458412465e-324" "4.94065645841247e-324" "5.0e-324"
+                "4.9e-324" "0.0")
+(test-precision "9.881312916824931e-324" "9.88131291682493e-324" "1.0e-323"
+                "9.9e-324" "0.0")
 (test-precision "1.48219693752374e-323" "1.5e-323" "0.0")
-(test-precision "1.976262583364986e-323" "1.97626258336499e-323" "2.0e-323" "0.0")
-(test-precision "2.470328229206233e-323" "2.47032822920623e-323" "2.5e-323" "0.0")
-(test-precision "2.420921664622108e-322" "2.42092166462211e-322" "2.4e-322" "0.0")
-(test-precision "2.420921664622108e-320" "2.42092166462211e-320" "2.421e-320" "0.0")
+(test-precision "1.976262583364986e-323" "1.97626258336499e-323" "2.0e-323"
+                "0.0")
+(test-precision "2.470328229206233e-323" "2.47032822920623e-323" "2.5e-323"
+                "0.0")
+(test-precision "2.420921664622108e-322" "2.42092166462211e-322" "2.4e-322"
+                "0.0")
+(test-precision "2.420921664622108e-320" "2.42092166462211e-320" "2.421e-320"
+                "0.0")
 (test-precision "1.4489974452386991" "1.4489975")
 (test-precision "0.14285714285714282" "0.14285714285714288" "0.14285715")
 (test-precision "1.7976931348623157e+308" "+inf.0")
@@ -2488,8 +2525,7 @@
 ;; (test-equal '(("USER" . "root") ("HOME" . "/")) (get-environment-variables))
 
 (let ((env (get-environment-variables)))
-  (define (env-pair? x)
-    (and (pair? x) (string? (car x)) (string? (cdr x))))
+  (define (env-pair? x) (and (pair? x) (string? (car x)) (string? (cdr x))))
   (define (all? pred ls)
     (or (null? ls) (and (pred (car ls)) (all? pred (cdr ls)))))
   (test-equal #t (list? env))
@@ -2508,9 +2544,9 @@
 ;; (test-equal #t (file-exists? "."))  ;; commented out: we return #f for directories
 (test-equal #f (file-exists? " no such file "))
 
-(test-equal #t (file-error?
-          (guard (exn (else exn))
-            (delete-file " no such file "))))
+(test-equal #t
+            (file-error? (guard (exn (else exn))
+                           (delete-file " no such file "))))
 
 (test-end)
 

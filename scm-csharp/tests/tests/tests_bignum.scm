@@ -1,4 +1,6 @@
-(import (scheme base) (scm test) (srfi 151))
+(import (scheme base)
+        (srfi 151)
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 
@@ -53,7 +55,8 @@
 ;; Bitwise
 (test-equal (expt 2 100) (arithmetic-shift 1 100))
 (test-equal (expt 2 100) (bitwise-and (expt 2 100) (- (expt 2 101) 1)))
-(test-equal (+ (expt 2 100) (expt 2 50)) (bitwise-ior (expt 2 100) (expt 2 50)))
+(test-equal (+ (expt 2 100) (expt 2 50))
+            (bitwise-ior (expt 2 100) (expt 2 50)))
 (test-equal 0 (bitwise-xor (expt 2 100) (expt 2 100)))
 (test-equal (expt 2 50) (arithmetic-shift (expt 2 100) -50))
 
@@ -73,7 +76,8 @@
   (test-assert (> (fact 50) (fact 49))))
 
 ;; Parsing big literals
-(test-equal 99999999999999999999999 (string->number "99999999999999999999999"))
+(test-equal 99999999999999999999999
+            (string->number "99999999999999999999999"))
 (test-equal 18446744073709551616 (string->number "18446744073709551616"))
 (test-equal 99999999999999999999999 99999999999999999999999)
 

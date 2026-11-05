@@ -1,26 +1,26 @@
 (define-library (scm geiser)
   (import (scheme base)
-          (scheme read)
-          (scheme write)
           (scheme eval)
           (scheme load)
-          (scm module)
-          (scm repl)
+          (scheme read)
+          (scheme write)
+          (only (scm core) set-current-output-port)
           (scm doc)
           (scm macro)
-          (only (scm core) set-current-output-port))
-  (export geiser:eval
-          geiser:completions
-          geiser:module-completions
+          (scm module)
+          (scm repl))
+  (export geiser:add-to-load-path
           geiser:autodoc
-          geiser:no-values
-          geiser:newline
+          geiser:completions
+          geiser:eval
           geiser:load-file
-          geiser:add-to-load-path
           geiser:macroexpand
-          geiser:symbol-location
+          geiser:module-completions
+          geiser:module-exports
           geiser:module-location
-          geiser:module-exports)
+          geiser:newline
+          geiser:no-values
+          geiser:symbol-location)
   (begin
 
     ;; ---------- helpers ----------
@@ -72,15 +72,16 @@
             (saved (current-output-port))
             (failed #f)
             (message #f))
-        (let ((value
-               (dynamic-wind
-                 (lambda () (set-current-output-port out))
-                 (lambda ()
-                   (guard (err (#t (set! failed #t)
+        (let ((value (dynamic-wind
+                       (lambda () (set-current-output-port out))
+                       (lambda ()
+                         (guard
+                             (err (#t
+                                   (set! failed #t)
                                    (set! message (condition->string err))
                                    #f))
-                     (thunk)))
-                 (lambda () (set-current-output-port saved)))))
+                           (thunk)))
+                       (lambda () (set-current-output-port saved)))))
           (if failed
               (list (list 'result message)
                     (cons 'output
@@ -134,13 +135,13 @@ list of loaded module names (as written strings) starting with prefix.
 Example:
   (geiser:module-completions \"(scheme\") => (\"(scheme base)\" ...)"
       (let ((p (->string prefix)))
-        (let loop ((ms (modules)) (acc '()))
+        (let loop ((ms (modules))
+                   (acc '()))
           (cond ((null? ms) (reverse acc))
-                (else
-                 (let ((name (write-to-string (car ms))))
-                   (if (str-prefix? p name)
-                       (loop (cdr ms) (cons name acc))
-                       (loop (cdr ms) acc))))))))
+                (else (let ((name (write-to-string (car ms))))
+                        (if (str-prefix? p name)
+                            (loop (cdr ms) (cons name acc))
+                            (loop (cdr ms) acc))))))))
 
     ;; ---------- autodoc ----------
 
@@ -151,24 +152,28 @@ Example:
       (guard (e (#t (list id '())))
         (let ((form (read (open-input-string sig))))
           (if (pair? form)
-              (let loop ((args (cdr form)) (req '()) (opt '()))
+              (let loop ((args (cdr form))
+                         (req '())
+                         (opt '()))
                 (cond ((null? args)
-                       (list id (list "args"
-                                      (list (cons "required" (reverse req))
-                                            (cons "optional" (reverse opt))
-                                            (list "key")
-                                            (list "module" #f)))))
+                       (list id
+                             (list "args"
+                                   (list (cons "required" (reverse req))
+                                         (cons "optional" (reverse opt))
+                                         (list "key")
+                                         (list "module" #f)))))
                       ((symbol? args) ; dotted rest argument
-                       (list id (list "args"
-                                      (list (cons "required" (reverse req))
-                                            (cons "optional"
-                                                  (reverse (cons "..." opt)))
-                                            (list "key")
-                                            (list "module" #f)))))
+                       (list id
+                             (list "args"
+                                   (list
+                                    (cons "required" (reverse req))
+                                    (cons "optional"
+                                          (reverse (cons "..." opt)))
+                                    (list "key")
+                                    (list "module" #f)))))
                       ((eq? (car args) '...)
                        (loop (cdr args) req (cons "..." opt)))
-                      (else
-                       (loop (cdr args) (cons (car args) req) opt))))
+                      (else (loop (cdr args) (cons (car args) req) opt))))
               (list id '())))))
 
     (define (operator-arglist id)
@@ -252,6 +257,4 @@ Returns an unspecified value."
 Library: (scm geiser)
 Description: Geiser protocol entry point. Writes a newline to the current output
 port."
-      (newline))
-
-    ))
+      (newline))))

@@ -1,13 +1,13 @@
 (import (scheme base)
         (scheme file)
         (scheme write)
+        (srfi 1)
+        (srfi 132)
+        (scm archive)
         (scm fs)
         (scm fs-find)
-        (scm archive)
         (scm system)
-        (scm test)
-        (srfi 1)
-        (srfi 132))
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 
@@ -40,17 +40,15 @@
     (lambda (p) (display "world\n" p)))
 
   (test-group "tar roundtrip"
-    (cond
-      ((which "tar")
-       (let ((tgz (string-append base "/archive.tar.gz")))
-         (test-equal #t (tar-create tgz (list src)))
-         (test-equal #t (>= (length (tar-list tgz)) 2))
-         (let ((out (string-append base "/out")))
-           (make-directory out)
-           (test-equal #t (tar-extract tgz `(work-dir . ,out)))
-           (test-equal 2 (length (find-file out '(type . file)))))))
-      (else
-       (test-equal #t #t))))
+    (cond ((which "tar")
+           (let ((tgz (string-append base "/archive.tar.gz")))
+             (test-equal #t (tar-create tgz (list src)))
+             (test-equal #t (>= (length (tar-list tgz)) 2))
+             (let ((out (string-append base "/out")))
+               (make-directory out)
+               (test-equal #t (tar-extract tgz `(work-dir . ,out)))
+               (test-equal 2 (length (find-file out '(type . file)))))))
+          (else (test-equal #t #t))))
 
   ;; The 'pure option forces the built-in pure-Scheme USTAR implementation,
   ;; so these run regardless of whether a native tar is present.
@@ -78,7 +76,9 @@
     ;; bzip2/xz require native tar even in pure mode
     (test-equal 'errored
                 (guard (e (#t 'errored))
-                  (tar-create (string-append base "/x.tar.bz2") (list src) 'pure)))
+                  (tar-create (string-append base "/x.tar.bz2")
+                              (list src)
+                              'pure)))
     ;; cross-compatibility with native tar when it is available
     (when (which "tar")
       (let ((from-pure (string-append base "/cross-pure.tar.gz"))
@@ -91,18 +91,16 @@
         (test-equal #t (>= (length (tar-list from-native 'pure)) 2)))))
 
   (test-group "gzip / gunzip"
-    (cond
-      ((windows?)
-       ;; Native gzip on Windows behaves inconsistently across distributions
-       ;; (Git-for-Windows, MSYS, etc.) — skip rather than gate on which.
-       (test-equal #t #t))
-      (else
-       (let ((f (string-append base "/big")))
-         (call-with-port (open-output-file f)
-           (lambda (p) (display "abcabcabc" p)))
-         (test-equal #t (gzip f 'keep))
-         (test-equal #t (file-exists? (string-append f ".gz")))
-         (test-equal #t (file-exists? f)))))))
+    (cond ((windows?)
+           ;; Native gzip on Windows behaves inconsistently across distributions
+           ;; (Git-for-Windows, MSYS, etc.) — skip rather than gate on which.
+           (test-equal #t #t))
+          (else (let ((f (string-append base "/big")))
+                  (call-with-port (open-output-file f)
+                    (lambda (p) (display "abcabcabc" p)))
+                  (test-equal #t (gzip f 'keep))
+                  (test-equal #t (file-exists? (string-append f ".gz")))
+                  (test-equal #t (file-exists? f)))))))
 
 (rm base 'recursive)
 

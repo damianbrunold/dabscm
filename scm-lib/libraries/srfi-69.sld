@@ -1,29 +1,30 @@
 (define-library (srfi 69)
-  (import (scheme base) (scheme char))
-  (export make-hash-table
-          hash-table?
-          hash-table-set!
-          hash-table-ref
-          hash-table-ref/default
-          hash-table-delete!
-          hash-table-exists?
-          hash-table-size
-          hash-table-keys
-          hash-table-values
+  (import (scheme base)
+          (scheme char))
+  (export hash
+          hash-by-identity
           hash-table->alist
           hash-table-copy
-          hash-table-walk
+          hash-table-delete!
+          hash-table-exists?
           hash-table-fold
+          hash-table-keys
           hash-table-merge!
+          hash-table-ref
+          hash-table-ref/default
+          hash-table-set!
+          hash-table-size
           hash-table-update!
           hash-table-update!/default
+          hash-table-values
+          hash-table-walk
           hash-table/get
           hash-table/put!
           hash-table/remove!
-          hash
-          string-hash
+          hash-table?
+          make-hash-table
           string-ci-hash
-          hash-by-identity)
+          string-hash)
   (begin
     (define make-hash-table (%primitive "make-hash-table"))
     (define hash-table? (%primitive "hash-table?"))
@@ -58,11 +59,11 @@ Example:
   (define ht (make-hash-table equal?))
   (hash-table-set! ht 'a 1)
   (hash-table-fold ht (lambda (k v acc) (+ v acc)) 0) => 1"
-      (let loop ((alist (hash-table->alist ht)) (acc init))
+      (let loop ((alist (hash-table->alist ht))
+                 (acc init))
         (if (null? alist)
             acc
-            (loop (cdr alist)
-                  (f (caar alist) (cdar alist) acc)))))
+            (loop (cdr alist) (f (caar alist) (cdar alist) acc)))))
 
     (define (hash-table-merge! ht1 ht2)
       "Syntax: (hash-table-merge! ht1 ht2)
@@ -176,24 +177,30 @@ Example:
   (= (hash \"abc\") (hash \"abc\")) => #t
   (< (hash 'foo 100) 100) => #t"
       (let ((bound (if (null? rest) (expt 2 32) (car rest))))
-        (modulo
-         (cond
-           ((string? obj) (let loop ((i 0) (h 0))
-                            (if (= i (string-length obj)) h
-                                (loop (+ i 1)
-                                      (+ (* h 31) (char->integer (string-ref obj i)))))))
-           ((symbol? obj) (let ((s (symbol->string obj)))
-                            (let loop ((i 0) (h 0))
-                              (if (= i (string-length s)) h
-                                  (loop (+ i 1)
-                                        (+ (* h 31) (char->integer (string-ref s i))))))))
-           ((number? obj) (exact (floor obj)))
-           ((char? obj) (char->integer obj))
-           ((boolean? obj) (if obj 1 0))
-           ((null? obj) 0)
-           ((pair? obj) (+ (* 31 (hash (car obj) bound)) (hash (cdr obj) bound)))
-           (else 0))
-         bound)))
+        (modulo (cond ((string? obj)
+                       (let loop ((i 0) (h 0))
+                         (if (= i (string-length obj))
+                             h
+                             (loop (+ i 1)
+                                   (+ (* h 31)
+                                      (char->integer (string-ref obj i)))))))
+                      ((symbol? obj)
+                       (let ((s (symbol->string obj)))
+                         (let loop ((i 0) (h 0))
+                           (if (= i (string-length s))
+                               h
+                               (loop (+ i 1)
+                                     (+ (* h 31)
+                                        (char->integer (string-ref s i))))))))
+                      ((number? obj) (exact (floor obj)))
+                      ((char? obj) (char->integer obj))
+                      ((boolean? obj) (if obj 1 0))
+                      ((null? obj) 0)
+                      ((pair? obj)
+                       (+ (* 31 (hash (car obj) bound))
+                          (hash (cdr obj) bound)))
+                      (else 0))
+                bound)))
 
     (define (hash-by-identity obj . rest)
       "Syntax: (hash-by-identity obj [bound])

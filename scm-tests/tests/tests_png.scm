@@ -1,7 +1,7 @@
 (import (scheme base)
         (scheme write)
-        (scm test)
-        (scm png))
+        (scm png)
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 
@@ -35,7 +35,7 @@
       (test-equal 0 (bytevector-u8-ref bv (- len 12)))
       (test-equal 0 (bytevector-u8-ref bv (- len 11)))
       (test-equal 0 (bytevector-u8-ref bv (- len 10)))
-      (test-equal 0 (bytevector-u8-ref bv (- len  9)))
+      (test-equal 0 (bytevector-u8-ref bv (- len 9)))
       (test-equal (char->integer #\I) (bytevector-u8-ref bv (- len 8)))
       (test-equal (char->integer #\E) (bytevector-u8-ref bv (- len 7)))
       (test-equal (char->integer #\N) (bytevector-u8-ref bv (- len 6)))

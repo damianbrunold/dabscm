@@ -1,7 +1,7 @@
 (import (scheme base)
         (scheme write)
-        (scm test)
-        (srfi 48))
+        (srfi 48)
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 
@@ -145,9 +145,10 @@
 (test-group "mixed"
   (test-equal "1 + 2 = 3" (format "~a + ~a = ~d" 1 2 3))
   (test-equal "char Z, int 42, hex 2a"
-    (format "char ~c, int ~d, hex ~x" #\Z 42 42))
+              (format "char ~c, int ~d, hex ~x" #\Z 42 42))
   (test-equal "10 in hex is a, in octal is 12, in binary is 1010"
-    (format "~d in hex is ~x, in octal is ~o, in binary is ~b" 10 10 10 10)))
+              (format "~d in hex is ~x, in octal is ~o, in binary is ~b" 10 10
+                      10 10)))
 
 ;; Port output
 (test-group "port-output"

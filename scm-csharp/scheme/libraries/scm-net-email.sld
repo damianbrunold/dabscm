@@ -1,38 +1,42 @@
 (define-library (scm net email)
-  (import (scm core) (scheme base) (scm crypto) (srfi 19))
-  (export make-email
-          email?
-          email-from
-          email-to
-          email-cc
+  (import (scheme base)
+          (srfi 19)
+          (scm core)
+          (scm crypto))
+  (export email->string
           email-bcc
-          email-subject
           email-body
+          email-cc
+          email-from
           email-headers
           email-recipients
-          email->string
+          email-subject
+          email-to
+          email?
+          make-email
           ;; Helpers (also useful standalone and exercised by tests)
           email-ascii?
-          rfc5322-date
-          rfc2047-encode-header)
+          rfc2047-encode-header
+          rfc5322-date)
   (begin
 
     (define-record-type email
       (%make-email from to cc bcc subject body headers)
       email?
-      (from    email-from)
-      (to      email-to)
-      (cc      email-cc)
-      (bcc     email-bcc)
+      (from email-from)
+      (to email-to)
+      (cc email-cc)
+      (bcc email-bcc)
       (subject email-subject)
-      (body    email-body)
+      (body email-body)
       (headers email-headers))
 
     (define (%as-address-list x)
       ;; Accept either a single address string or a list of address strings.
       (cond ((string? x) (list x))
             ((list? x) x)
-            (else (error "email: address must be a string or list of strings" x))))
+            (else (error "email: address must be a string or list of strings"
+                         x))))
 
     (define (make-email from to subject body . opt)
       "Syntax: (make-email from to subject body)
@@ -47,7 +51,7 @@ Description: Builds a plain-text email message object. from is a single address
 Example:
   (make-email \"me@example.com\" \"you@example.com\" \"Hi\" \"Hello there\")
   (make-email \"me@x.com\" (list \"a@y.com\" \"b@y.com\") \"Subj\" \"Body\")"
-      (let ((cc  (if (pair? opt) (%as-address-list (car opt)) '()))
+      (let ((cc (if (pair? opt) (%as-address-list (car opt)) '()))
             (bcc (if (and (pair? opt) (pair? (cdr opt)))
                      (%as-address-list (cadr opt))
                      '())))
@@ -82,20 +86,21 @@ Example:
     (define (%strip-cr s)
       ;; Remove all carriage returns so we can re-introduce canonical CRLF.
       (let ((out (open-output-string)))
-        (string-for-each
-         (lambda (c) (unless (char=? c #\return) (write-char c out)))
-         s)
+        (string-for-each (lambda (c)
+                           (unless (char=? c #\return) (write-char c out)))
+                         s)
         (get-output-string out)))
 
     (define (%normalize-crlf s)
       ;; Convert any line ending (LF or CRLF) to canonical CRLF.
       (let ((out (open-output-string)))
-        (string-for-each
-         (lambda (c)
-           (if (char=? c #\newline)
-               (begin (write-char #\return out) (write-char #\newline out))
-               (write-char c out)))
-         (%strip-cr s))
+        (string-for-each (lambda (c)
+                           (if (char=? c #\newline)
+                               (begin
+                                 (write-char #\return out)
+                                 (write-char #\newline out))
+                               (write-char c out)))
+                         (%strip-cr s))
         (get-output-string out)))
 
     (define (%wrap-base64 s width)
@@ -103,13 +108,11 @@ Example:
       (let ((n (string-length s))
             (out (open-output-string)))
         (let loop ((i 0))
-          (cond
-            ((>= i n) (get-output-string out))
-            (else
-             (let ((end (min n (+ i width))))
-               (write-string (substring s i end) out)
-               (when (< end n) (write-string "\r\n" out))
-               (loop end)))))))
+          (cond ((>= i n) (get-output-string out))
+                (else (let ((end (min n (+ i width))))
+                        (write-string (substring s i end) out)
+                        (when (< end n) (write-string "\r\n" out))
+                        (loop end)))))))
 
     (define (rfc2047-encode-header s)
       "Syntax: (rfc2047-encode-header s)
@@ -132,37 +135,41 @@ Description: Returns the current date and time as an RFC 5322 date string in
   UTC, e.g. \"Sat, 20 Jun 2026 12:30:45 +0000\", suitable for a Date: header.
 Example:
   (rfc5322-date) ; => \"Sat, 20 Jun 2026 12:30:45 +0000\""
-      (string-append
-       (date->string (current-date 0) "~a, ~d ~b ~Y ~H:~M:~S")
-       " +0000"))
+      (string-append (date->string (current-date 0) "~a, ~d ~b ~Y ~H:~M:~S")
+                     " +0000"))
 
     (define (%domain-of addr)
       ;; Extract the domain part of an address (after the last @), stripping any
       ;; surrounding angle brackets; defaults to "localhost".
       (let* ((n (string-length addr)))
         (let loop ((i (- n 1)))
-          (cond
-            ((< i 0) "localhost")
-            ((char=? (string-ref addr i) #\@)
-             (let ((dom (substring addr (+ i 1) n)))
-               (let ((dom (if (and (> (string-length dom) 0)
-                                   (char=? (string-ref dom (- (string-length dom) 1))
-                                           #\>))
-                              (substring dom 0 (- (string-length dom) 1))
-                              dom)))
-                 (if (= (string-length dom) 0) "localhost" dom))))
-            (else (loop (- i 1)))))))
+          (cond ((< i 0) "localhost")
+                ((char=? (string-ref addr i) #\@)
+                 (let ((dom (substring addr (+ i 1) n)))
+                   (let
+                       ((dom (if (and (> (string-length dom) 0)
+                                      (char=?
+                                       (string-ref dom
+                                                   (- (string-length dom) 1))
+                                       #\>))
+                                 (substring dom 0 (- (string-length dom) 1))
+                                 dom)))
+                     (if (= (string-length dom) 0) "localhost" dom))))
+                (else (loop (- i 1)))))))
 
     (define (%message-id from)
       (string-append "<"
                      (random-string "abcdefghijklmnopqrstuvwxyz0123456789" 24)
-                     "@" (%domain-of from) ">"))
+                     "@"
+                     (%domain-of from)
+                     ">"))
 
     (define (%join-addresses lst)
-      (cond
-        ((null? lst) "")
-        ((null? (cdr lst)) (car lst))
-        (else (string-append (car lst) ", " (%join-addresses (cdr lst))))))
+      (cond ((null? lst) "")
+            ((null? (cdr lst)) (car lst))
+            (else (string-append (car lst)
+                                 ", "
+                                 (%join-addresses (cdr lst))))))
 
     (define (%header out name value)
       (write-string name out)
@@ -192,14 +199,16 @@ Example:
         (%header out "Date" (rfc5322-date))
         (%header out "Message-ID" (%message-id (email-from e)))
         ;; Any user-supplied extra headers (alist of name . value).
-        (for-each (lambda (h) (%header out (car h) (cdr h))) (email-headers e))
+        (for-each (lambda (h) (%header out (car h) (cdr h)))
+                  (email-headers e))
         (%header out "MIME-Version" "1.0")
         (%header out "Content-Type" "text/plain; charset=utf-8")
         (%header out "Content-Transfer-Encoding" (if ascii? "7bit" "base64"))
         (write-string "\r\n" out)
         (if ascii?
             (write-string (%normalize-crlf (email-body e)) out)
-            (write-string (%wrap-base64 (base64-encode (string->utf8 (email-body e))) 76)
+            (write-string (%wrap-base64
+                           (base64-encode (string->utf8 (email-body e)))
+                           76)
                           out))
-        (get-output-string out)))
-))
+        (get-output-string out)))))

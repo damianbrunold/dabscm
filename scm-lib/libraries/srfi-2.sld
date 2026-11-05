@@ -11,13 +11,10 @@ Example:
   (and-let* ((x 5) (y (* x 2))) y) => 10
   (and-let* ((x #f) (y 1)) y) => #f"
       (syntax-rules ()
-        ((and-let* () body ...)
-         (begin body ...))
+        ((and-let* () body ...) (begin body ...))
         ((and-let* ((var expr) rest ...) body ...)
-         (let ((var expr))
-           (if var (and-let* (rest ...) body ...) #f)))
+         (let ((var expr)) (if var (and-let* (rest ...) body ...) #f)))
         ((and-let* ((expr) rest ...) body ...)
-         (let ((t expr))
-           (if t (and-let* (rest ...) body ...) #f)))
+         (let ((t expr)) (if t (and-let* (rest ...) body ...) #f)))
         ((and-let* (var rest ...) body ...)
          (if var (and-let* (rest ...) body ...) #f))))))

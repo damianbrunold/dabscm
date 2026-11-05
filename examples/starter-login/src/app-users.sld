@@ -15,15 +15,15 @@
           (scheme read)
           (scheme time)
           (scheme write)
-          (scm fs)
-          (srfi 18))
-  (export load-users
+          (srfi 18)
+          (scm fs))
+  (export delete-user!
           find-user
-          user-name
-          user-hash
-          user-created
+          load-users
           save-user!
-          delete-user!
+          user-created
+          user-hash
+          user-name
           valid-username?)
   (begin
 
@@ -57,7 +57,9 @@ Description: The (username hash created) entry for name, or #f."
                 (tmp (string-append path ".tmp")))
             (unless (directory-exists? dir) (make-directory dir))
             (call-with-output-file tmp
-              (lambda (p) (write (proc (load-users path)) p) (newline p)))
+              (lambda (p)
+                (write (proc (load-users path)) p)
+                (newline p)))
             (move-file tmp path)))
         (lambda () (mutex-unlock! write-lock))))
 
@@ -67,25 +69,28 @@ Library: (app users)
 Description: Stores hash for name: replaces the entry (keeping its created
   time) or appends a new one."
       (update-users! path
-        (lambda (users)
-          (let loop ((us users))
-            (cond
-              ((null? us)
-               (list (list name hash (exact (floor (current-second))))))
-              ((string=? (user-name (car us)) name)
-               (cons (list name hash (user-created (car us))) (cdr us)))
-              (else (cons (car us) (loop (cdr us)))))))))
+                     (lambda (users)
+                       (let loop ((us users))
+                         (cond ((null? us)
+                                (list (list
+                                       name
+                                       hash
+                                       (exact (floor (current-second))))))
+                               ((string=? (user-name (car us)) name)
+                                (cons (list name hash (user-created (car us)))
+                                      (cdr us)))
+                               (else (cons (car us) (loop (cdr us)))))))))
 
     (define (delete-user! path name)
       "Syntax: (delete-user! path name)
 Library: (app users)
 Description: Removes name's entry, if there is one."
       (update-users! path
-        (lambda (users)
-          (let loop ((us users))
-            (cond ((null? us) '())
-                  ((string=? (user-name (car us)) name) (cdr us))
-                  (else (cons (car us) (loop (cdr us)))))))))
+                     (lambda (users)
+                       (let loop ((us users))
+                         (cond ((null? us) '())
+                               ((string=? (user-name (car us)) name) (cdr us))
+                               (else (cons (car us) (loop (cdr us)))))))))
 
     (define (valid-username? s)
       "Syntax: (valid-username? s)
@@ -96,6 +101,7 @@ Description: True if s is 1-64 characters of letters, digits and . _ -"
            (let loop ((i 0))
              (or (= i (string-length s))
                  (let ((c (string-ref s i)))
-                   (and (or (char-alphabetic? c) (char-numeric? c)
+                   (and (or (char-alphabetic? c)
+                            (char-numeric? c)
                             (memv c '(#\. #\_ #\-)))
                         (loop (+ i 1))))))))))

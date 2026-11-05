@@ -1,7 +1,8 @@
 (define-library (scm html)
-  (import (scm core) (scheme base))
-  (export html-escape
-          html-attr-escape
+  (import (scheme base)
+          (scm core))
+  (export html-attr-escape
+          html-escape
           strip-html-tags)
   (begin
 
@@ -22,28 +23,25 @@ Description: Removes anything that looks like an HTML tag (text from < to >)
 Example:
   (strip-html-tags \"<p>hello   <b>world</b></p>\") => \"hello world\"
   (strip-html-tags \"plain\") => \"plain\""
-      (let* ((n   (string-length s))
+      (let* ((n (string-length s))
              (out (open-output-string)))
         (let loop ((i 0) (in-tag? #f) (in-ws? #f) (any-out? #f))
-          (cond
-            ((= i n) (get-output-string out))
-            (else
-             (let ((c (string-ref s i)))
-               (cond
-                 (in-tag?
-                  (cond
-                    ((char=? c #\>) (loop (+ i 1) #f in-ws? any-out?))
-                    (else           (loop (+ i 1) #t in-ws? any-out?))))
-                 ((char=? c #\<)
-                  (loop (+ i 1) #t in-ws? any-out?))
-                 ((or (char=? c #\space) (char=? c #\tab)
-                      (char=? c #\newline) (char=? c #\return))
-                  (cond
-                    ((not any-out?) (loop (+ i 1) #f #f #f))
-                    (in-ws?         (loop (+ i 1) #f #t any-out?))
-                    (else (write-char #\space out)
-                          (loop (+ i 1) #f #t any-out?))))
-                 (else
-                  (write-char c out)
-                  (loop (+ i 1) #f #f #t)))))))))
-))
+          (cond ((= i n) (get-output-string out))
+                (else (let ((c (string-ref s i)))
+                        (cond (in-tag? (cond
+                                        ((char=? c #\>)
+                                         (loop (+ i 1) #f in-ws? any-out?))
+                                        (else
+                                         (loop (+ i 1) #t in-ws? any-out?))))
+                              ((char=? c #\<)
+                               (loop (+ i 1) #t in-ws? any-out?))
+                              ((or (char=? c #\space)
+                                   (char=? c #\tab)
+                                   (char=? c #\newline)
+                                   (char=? c #\return))
+                               (cond ((not any-out?) (loop (+ i 1) #f #f #f))
+                                     (in-ws? (loop (+ i 1) #f #t any-out?))
+                                     (else (write-char #\space out)
+                                           (loop (+ i 1) #f #t any-out?))))
+                              (else (write-char c out)
+                                    (loop (+ i 1) #f #f #t)))))))))))

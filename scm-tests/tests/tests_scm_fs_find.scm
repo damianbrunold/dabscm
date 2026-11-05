@@ -1,9 +1,9 @@
 (import (scheme base)
+        (srfi 1)
+        (srfi 132)
         (scm fs)
         (scm fs-find)
-        (scm test)
-        (srfi 1)
-        (srfi 132))
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 
@@ -16,8 +16,7 @@
 (touch (string-append base "/sub/c.txt"))
 (touch (string-append base "/sub/d.log"))
 
-(define (basenames paths)
-  (list-sort string<? (map base-name paths)))
+(define (basenames paths) (list-sort string<? (map base-name paths)))
 
 (test-group "find name pattern"
   (test-equal '("a.txt" "c.txt")
@@ -35,14 +34,18 @@
   ;; All files exist, so the predicate must accept everything.
   (test-equal 4
               (length (find-file base
-                            '(type . file)
-                            `(predicate . ,(lambda (p) (file-exists? p)))))))
+                                 '(type . file)
+                                 `(predicate
+                                   .
+                                   ,(lambda (p) (file-exists? p)))))))
 
 (test-group "find with action"
   (let ((collected '()))
     (find-file base
-          '(type . file)
-          `(action . ,(lambda (p) (set! collected (cons (base-name p) collected)))))
+               '(type . file)
+               `(action .
+                        ,(lambda (p)
+                           (set! collected (cons (base-name p) collected)))))
     (test-equal '("a.txt" "b.log" "c.txt" "d.log")
                 (list-sort string<? collected))))
 
@@ -52,9 +55,8 @@
 
 (test-group "xargs"
   (test-equal '(1 2 3) (xargs (lambda (x) x) '(1 2 3)))
-  (test-equal '(2 2 1) (xargs (lambda (b) (length b))
-                              '(a b c d e)
-                              '(batch-size . 2))))
+  (test-equal '(2 2 1)
+              (xargs (lambda (b) (length b)) '(a b c d e) '(batch-size . 2))))
 
 (rm base 'recursive)
 

@@ -1,4 +1,6 @@
-(import (scheme base) (scm uri) (scm test))
+(import (scheme base)
+        (scm test)
+        (scm uri))
 
 (test-runner-factory scm-test-runner)
 
@@ -31,8 +33,7 @@
 
 (test-group "percent-roundtrip"
   (test-equal "hello world" (percent-decode (percent-encode "hello world")))
-  (test-equal "a/b?c=d&e=f"
-              (percent-decode (percent-encode "a/b?c=d&e=f")))
+  (test-equal "a/b?c=d&e=f" (percent-decode (percent-encode "a/b?c=d&e=f")))
   (test-equal "Grüße" (percent-decode (percent-encode "Grüße"))))
 
 (test-end "scm-uri")

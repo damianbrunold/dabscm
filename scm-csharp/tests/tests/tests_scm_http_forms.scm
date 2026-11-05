@@ -1,4 +1,7 @@
-(import (scheme base) (scm net http forms) (scm net http request) (scm test))
+(import (scheme base)
+        (scm net http forms)
+        (scm net http request)
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 
@@ -14,17 +17,15 @@
   ;; percent and '+' decoding applies to keys and values
   (test-equal '(("name" . "Ada Lovelace"))
               (parse-www-form "name=Ada+Lovelace"))
-  (test-equal '(("name" . "a/b"))
-              (parse-www-form "name=a%2Fb"))
+  (test-equal '(("name" . "a/b")) (parse-www-form "name=a%2Fb"))
   ;; '=' inside a value is preserved
-  (test-equal '(("eq" . "1=2"))
-              (parse-www-form "eq=1=2")))
+  (test-equal '(("eq" . "1=2")) (parse-www-form "eq=1=2")))
 
 (test-group "form-ref"
   (define f '(("name" . "Ada") ("age" . "37")))
   (test-equal "Ada" (form-ref f "name"))
-  (test-equal "37"  (form-ref f "age"))
-  (test-equal #f    (form-ref f "missing"))
+  (test-equal "37" (form-ref f "age"))
+  (test-equal #f (form-ref f "missing"))
   (test-equal "default" (form-ref f "missing" "default")))
 
 (test-group "form-refs-by-prefix"
@@ -37,8 +38,9 @@
 
 (test-group "http-request-form"
   (test-equal '(("user" . "Ada L") ("pw" . "x=y"))
-              (http-request-form
-                (make-http-request "POST" "/login" '() "user=Ada+L&pw=x%3Dy")))
+              (http-request-form (make-http-request "POST" "/login"
+                                                    '()
+                                                    "user=Ada+L&pw=x%3Dy")))
   (test-equal '() (http-request-form (make-http-request "POST" "/" '() #f))))
 
 (test-end "scm-http-forms")

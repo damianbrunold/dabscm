@@ -6,20 +6,21 @@
 
 (import (scheme base)
         (scheme process-context)
-        (scm module)
+        (scm crypto)
         (scm fs)
         (scm log)
-        (scm string)
-        (scm test)
-        (scm crypto)
+        (scm module)
         (scm net http request)
-        (scm net http response))
+        (scm net http response)
+        (scm string)
+        (scm test))
 
 (define root
   (directory-name (directory-name (absolute-path (car (command-line))))))
 (module-search-path! (cons (string-append root "/src") (module-search-path)))
 
-(import (app db) (app web))
+(import (app db)
+        (app web))
 
 (test-runner-factory scm-test-runner)
 (test-begin "starter-admin web (no database)")
@@ -41,8 +42,7 @@
 (define (status r) (http-response-status r))
 (define (location r) (http-response-header r "Location"))
 (define (body r)
-  (let ((b (http-response-body r)))
-    (if (bytevector? b) (utf8->string b) b)))
+  (let ((b (http-response-body r))) (if (bytevector? b) (utf8->string b) b)))
 (define (has? s part) (and (string? s) (string-contains-from s part 0) #t))
 
 (define app (app-with ""))
@@ -51,21 +51,25 @@
   (test-equal "/login" (location (send app "GET" "/" #f)))
   (test-equal "/login" (location (send app "GET" "/admin" #f)))
   (test-equal "/login" (location (send app "POST" "/admin/users" #f)))
-  (test-equal "/login" (location (send app "GET" "/admin" "starter_admin_session=forged.x")))
+  (test-equal "/login"
+              (location (send app "GET" "/admin"
+                              "starter_admin_session=forged.x")))
   (test-equal 200 (status (send app "GET" "/login" #f)))
   (test-equal "ok\n" (body (send app "GET" "/healthz" #f)))
   (test-equal 200 (status (send app "GET" "/static/css/app.css" #f))))
 
 (test-group "strict CSP holds"
   (let ((r (send app "GET" "/login" #f)))
-    (test-assert (has? (http-response-header r "Content-Security-Policy") "style-src 'self'"))
+    (test-assert (has? (http-response-header r "Content-Security-Policy")
+                       "style-src 'self'"))
     (test-assert "no inline script" (not (has? (body r) "<script>")))
     (test-assert "no style attribute" (not (has? (body r) " style=")))))
 
 (test-group "url prefix"
   (let ((app (app-with "/team")))
     (test-equal "/team/login" (location (send app "GET" "/team/admin" #f)))
-    (test-assert (has? (body (send app "GET" "/team/login" #f)) "action=\"/team/login\""))
+    (test-assert (has? (body (send app "GET" "/team/login" #f))
+                       "action=\"/team/login\""))
     (test-equal 404 (status (send app "GET" "/login" #f)))))
 
 (test-end "starter-admin web (no database)")

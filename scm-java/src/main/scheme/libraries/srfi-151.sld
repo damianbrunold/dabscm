@@ -1,18 +1,44 @@
 (define-library (srfi 151)
   (import (scheme base))
-  (export bitwise-not bitwise-and bitwise-ior bitwise-xor bitwise-eqv
-          bitwise-nand bitwise-nor bitwise-andc1 bitwise-andc2
-          bitwise-orc1 bitwise-orc2
-          arithmetic-shift bit-count integer-length bitwise-if
-          bit-set? copy-bit bit-swap any-bit-set? every-bit-set?
+  (export any-bit-set?
+          arithmetic-shift
+          bit-count
+          bit-field
+          bit-field-any?
+          bit-field-clear
+          bit-field-every?
+          bit-field-replace
+          bit-field-replace-same
+          bit-field-reverse
+          bit-field-rotate
+          bit-field-set
+          bit-set?
+          bit-swap
+          bits
+          bits->list
+          bits->vector
+          bitwise-and
+          bitwise-andc1
+          bitwise-andc2
+          bitwise-eqv
+          bitwise-fold
+          bitwise-for-each
+          bitwise-if
+          bitwise-ior
+          bitwise-nand
+          bitwise-nor
+          bitwise-not
+          bitwise-orc1
+          bitwise-orc2
+          bitwise-unfold
+          bitwise-xor
+          copy-bit
+          every-bit-set?
           first-set-bit
-          bit-field bit-field-any? bit-field-every?
-          bit-field-clear bit-field-set
-          bit-field-replace bit-field-replace-same
-          bit-field-rotate bit-field-reverse
-          bits->list list->bits bits->vector vector->bits bits
-          bitwise-fold bitwise-for-each bitwise-unfold
-          make-bitwise-generator)
+          integer-length
+          list->bits
+          make-bitwise-generator
+          vector->bits)
   (begin
     ;;; Core primitives
     (define bitwise-not (%primitive "bitwise-not"))
@@ -24,31 +50,23 @@
     (define integer-length (%primitive "integer-length"))
 
     ;;; Derived logic operations
-    (define (bitwise-eqv . args)
-      (bitwise-not (apply bitwise-xor args)))
+    (define (bitwise-eqv . args) (bitwise-not (apply bitwise-xor args)))
 
-    (define (bitwise-nand i j)
-      (bitwise-not (bitwise-and i j)))
+    (define (bitwise-nand i j) (bitwise-not (bitwise-and i j)))
 
-    (define (bitwise-nor i j)
-      (bitwise-not (bitwise-ior i j)))
+    (define (bitwise-nor i j) (bitwise-not (bitwise-ior i j)))
 
-    (define (bitwise-andc1 i j)
-      (bitwise-and (bitwise-not i) j))
+    (define (bitwise-andc1 i j) (bitwise-and (bitwise-not i) j))
 
-    (define (bitwise-andc2 i j)
-      (bitwise-and i (bitwise-not j)))
+    (define (bitwise-andc2 i j) (bitwise-and i (bitwise-not j)))
 
-    (define (bitwise-orc1 i j)
-      (bitwise-ior (bitwise-not i) j))
+    (define (bitwise-orc1 i j) (bitwise-ior (bitwise-not i) j))
 
-    (define (bitwise-orc2 i j)
-      (bitwise-ior i (bitwise-not j)))
+    (define (bitwise-orc2 i j) (bitwise-ior i (bitwise-not j)))
 
     ;;; Bitwise if (merge)
     (define (bitwise-if mask i j)
-      (bitwise-ior (bitwise-and mask i)
-                   (bitwise-and (bitwise-not mask) j)))
+      (bitwise-ior (bitwise-and mask i) (bitwise-and (bitwise-not mask) j)))
 
     ;;; Single-bit operations
     (define (bit-set? index i)
@@ -91,8 +109,7 @@
       (not (zero? (bitwise-and i (bit-field-mask start end)))))
 
     (define (bit-field-every? i start end)
-      (let ((mask (bit-field-mask start end)))
-        (= mask (bitwise-and i mask))))
+      (let ((mask (bit-field-mask start end))) (= mask (bitwise-and i mask))))
 
     (define (bit-field-clear i start end)
       (bitwise-and i (bitwise-not (bit-field-mask start end))))
@@ -114,14 +131,17 @@
       (let* ((width (- end start))
              (field (bit-field i start end))
              (c (modulo count width))
-             (rotated (bitwise-ior
-                       (bitwise-and (arithmetic-shift field c)
+             (rotated (bitwise-ior (bitwise-and
+                                    (arithmetic-shift field c)
                                     (bitwise-not (arithmetic-shift -1 width)))
-                       (arithmetic-shift field (- c width)))))
+                                   (arithmetic-shift field (- c width)))))
         (bit-field-replace i rotated start end)))
 
     (define (bit-field-reverse i start end)
-      (let loop ((n start) (result (bit-field-clear i start end)) (field (bit-field i start end)) (width (- end start)))
+      (let loop ((n start)
+                 (result (bit-field-clear i start end))
+                 (field (bit-field i start end))
+                 (width (- end start)))
         (if (zero? width)
             result
             (loop (+ n 1)
@@ -134,37 +154,29 @@
     ;;; Conversion
     (define (bits->list i . args)
       (let ((len (if (null? args) (integer-length i) (car args))))
-        (let loop ((n (- len 1)) (acc '()))
-          (if (< n 0)
-              acc
-              (loop (- n 1) (cons (bit-set? n i) acc))))))
+        (let loop ((n (- len 1))
+                   (acc '()))
+          (if (< n 0) acc (loop (- n 1) (cons (bit-set? n i) acc))))))
 
     (define (list->bits bools)
       (let loop ((bs bools) (result 0) (index 0))
         (if (null? bs)
             result
             (loop (cdr bs)
-                  (if (car bs)
-                      (copy-bit index result #t)
-                      result)
+                  (if (car bs) (copy-bit index result #t) result)
                   (+ index 1)))))
 
-    (define (bits->vector i . args)
-      (list->vector (apply bits->list i args)))
+    (define (bits->vector i . args) (list->vector (apply bits->list i args)))
 
-    (define (vector->bits v)
-      (list->bits (vector->list v)))
+    (define (vector->bits v) (list->bits (vector->list v)))
 
-    (define (bits . bools)
-      (list->bits bools))
+    (define (bits . bools) (list->bits bools))
 
     ;;; Fold, for-each, unfold
     (define (bitwise-fold proc seed i)
       (let ((len (integer-length i)))
         (let loop ((n 0) (acc seed))
-          (if (>= n len)
-              acc
-              (loop (+ n 1) (proc (bit-set? n i) acc))))))
+          (if (>= n len) acc (loop (+ n 1) (proc (bit-set? n i) acc))))))
 
     (define (bitwise-for-each proc i)
       (let ((len (integer-length i)))
@@ -179,9 +191,7 @@
             result
             (loop (successor state)
                   (+ index 1)
-                  (if (mapper state)
-                      (copy-bit index result #t)
-                      result)))))
+                  (if (mapper state) (copy-bit index result #t) result)))))
 
     (define (make-bitwise-generator i)
       (let ((n i))

@@ -1,4 +1,6 @@
-(import (scheme base) (scm database postgres) (scm test))
+(import (scheme base)
+        (scm database postgres)
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 
@@ -23,31 +25,29 @@
   (test-equal "'a\nb'" (pg-quote-literal "a\nb")))
 
 (test-group "pg-quote-int"
-  (test-equal "42"   (pg-quote-int 42))
-  (test-equal "0"    (pg-quote-int 0))
-  (test-equal "-7"   (pg-quote-int -7))
+  (test-equal "42" (pg-quote-int 42))
+  (test-equal "0" (pg-quote-int 0))
+  (test-equal "-7" (pg-quote-int -7))
   ;; Numeric strings are accepted and normalised.
-  (test-equal "42"   (pg-quote-int "42"))
-  (test-equal "-7"   (pg-quote-int "-7"))
+  (test-equal "42" (pg-quote-int "42"))
+  (test-equal "-7" (pg-quote-int "-7"))
   ;; Non-integer string is rejected (would otherwise enable injection).
   (test-equal #t
-    (guard (exn (#t #t))
-      (pg-quote-int "1; DROP TABLE users--")
-      #f))
+              (guard (exn (#t #t))
+                (pg-quote-int "1; DROP TABLE users--")
+                #f))
   (test-equal #t
-    (guard (exn (#t #t))
-      (pg-quote-int "1.5")
-      #f))
+              (guard (exn (#t #t))
+                (pg-quote-int "1.5")
+                #f))
   (test-equal #t
-    (guard (exn (#t #t))
-      (pg-quote-int 'symbol)
-      #f)))
+              (guard (exn (#t #t))
+                (pg-quote-int 'symbol)
+                #f)))
 
 (test-group "pg-format-sql: value→literal conversion"
-  (test-equal "WHERE x = 42"
-              (pg-format-sql "WHERE x = $1" '(42)))
-  (test-equal "WHERE x = -7"
-              (pg-format-sql "WHERE x = $1" '(-7)))
+  (test-equal "WHERE x = 42" (pg-format-sql "WHERE x = $1" '(42)))
+  (test-equal "WHERE x = -7" (pg-format-sql "WHERE x = $1" '(-7)))
   ;; Strings are quoted; embedded single quotes doubled.
   (test-equal "WHERE name = 'O''Brien'"
               (pg-format-sql "WHERE name = $1" '("O'Brien")))
@@ -81,31 +81,25 @@
               (pg-format-sql "WHERE name IN $1" '(("a" "O'Brien"))))
   ;; Mixed types, including NULL via 'null. (#f would now mean boolean
   ;; FALSE, not SQL NULL — see the encoding rules in %pg-sql-literal.)
-  (test-equal "(1, NULL, 'x')"
-              (pg-format-sql "$1" '((1 null "x"))))
+  (test-equal "(1, NULL, 'x')" (pg-format-sql "$1" '((1 null "x"))))
   ;; Empty list → (NULL) so `x IN $1` is always false rather than a
   ;; SQL syntax error.
-  (test-equal "WHERE id IN (NULL)"
-              (pg-format-sql "WHERE id IN $1" '(())))
+  (test-equal "WHERE id IN (NULL)" (pg-format-sql "WHERE id IN $1" '(())))
   ;; List works as one positional param among others.
   (test-equal "a = 'x' AND b IN (1, 2)"
               (pg-format-sql "a = $1 AND b IN $2" '("x" (1 2))))
   ;; Vectors are accepted with the same semantics.
   (test-equal "WHERE id IN (1, 2, 3)"
               (pg-format-sql "WHERE id IN $1" '(#(1 2 3))))
-  (test-equal "WHERE id IN (NULL)"
-              (pg-format-sql "WHERE id IN $1" '(#()))))
+  (test-equal "WHERE id IN (NULL)" (pg-format-sql "WHERE id IN $1" '(#()))))
 
 (test-group "pg-format-sql: multiple params, reuse, ordering"
   (test-equal "a = 'foo' AND b = 'bar' AND a = 'foo'"
-              (pg-format-sql "a = $1 AND b = $2 AND a = $1"
-                             '("foo" "bar")))
-  (test-equal "10 + 20 = 30"
-              (pg-format-sql "$1 + $2 = $3" '(10 20 30)))
+              (pg-format-sql "a = $1 AND b = $2 AND a = $1" '("foo" "bar")))
+  (test-equal "10 + 20 = 30" (pg-format-sql "$1 + $2 = $3" '(10 20 30)))
   ;; Multi-digit placeholder numbers.
   (test-equal "x=10, y=11"
-              (pg-format-sql "x=$10, y=$11"
-                             '(0 0 0 0 0 0 0 0 0 10 11))))
+              (pg-format-sql "x=$10, y=$11" '(0 0 0 0 0 0 0 0 0 10 11))))
 
 (test-group "pg-format-sql: substitution skipped inside strings/idents"
   ;; A '$1' inside a single-quoted SQL literal is verbatim, not a placeholder.
@@ -119,12 +113,10 @@
               (pg-format-sql "SELECT \"col $1\" FROM t" '("unused")))
   ;; Inside line comment, then real substitution on next line.
   (test-equal "-- $1 ignored\nWHERE x = 42"
-              (pg-format-sql "-- $1 ignored\nWHERE x = $2"
-                             '("unused" 42)))
+              (pg-format-sql "-- $1 ignored\nWHERE x = $2" '("unused" 42)))
   ;; Inside block comment.
   (test-equal "/* $1 */ WHERE x = 'y'"
-              (pg-format-sql "/* $1 */ WHERE x = $2"
-                             '("unused" "y")))
+              (pg-format-sql "/* $1 */ WHERE x = $2" '("unused" "y")))
   ;; Inside dollar-quoted string (the seed format used by the migrations).
   (test-equal "INSERT $seed$body has $1 in it$seed$ HERE 'y'"
               (pg-format-sql "INSERT $seed$body has $1 in it$seed$ HERE $1"
@@ -154,8 +146,7 @@
   ;; No placeholders, no params.
   (test-equal "SELECT 1" (pg-format-sql "SELECT 1" '()))
   ;; Lone $ not followed by digit/letter passes through.
-  (test-equal "money=$ value"
-              (pg-format-sql "money=$ value" '()))
+  (test-equal "money=$ value" (pg-format-sql "money=$ value" '()))
   ;; Empty template.
   (test-equal "" (pg-format-sql "" '())))
 

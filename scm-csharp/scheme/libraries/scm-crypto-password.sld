@@ -1,12 +1,12 @@
 (define-library (scm crypto password)
-  (import (scm core)
-          (scheme base)
-          (scm string)
-          (scm crypto))
+  (import (scheme base)
+          (scm core)
+          (scm crypto)
+          (scm string))
   (export password-hash
-          password-verify
           password-needs-rehash?
-          password-pbkdf2-iterations)
+          password-pbkdf2-iterations
+          password-verify)
   (begin
 
     ;; Stored form of new hashes (self-describing, so the cost can be
@@ -25,8 +25,7 @@
     (define salt-bytes 16)
     (define key-bytes 32)
 
-    (define password-pbkdf2-iterations
-      (make-parameter 600000))
+    (define password-pbkdf2-iterations (make-parameter 600000))
 
     (define (password-hash plain)
       "Syntax: (password-hash plain)
@@ -40,15 +39,21 @@ Example:
   (password-hash \"correct horse\") => \"pbkdf2$600000$3HBY...$j+N/...\""
       (let* ((iterations (password-pbkdf2-iterations))
              (salt (random-bytes salt-bytes))
-             (dk (pbkdf2-sha256 (string->utf8 plain) salt iterations key-bytes)))
-        (string-append "pbkdf2$" (number->string iterations) "$"
-                       (base64-encode salt) "$" (base64-encode dk))))
+             (dk (pbkdf2-sha256 (string->utf8 plain)
+                                salt
+                                iterations
+                                key-bytes)))
+        (string-append "pbkdf2$"
+                       (number->string iterations)
+                       "$"
+                       (base64-encode salt)
+                       "$"
+                       (base64-encode dk))))
 
     ;; --- parsing: each returns the matcher's arguments, or #f ---
 
     (define (positive-integer s)
-      (let ((n (string->number s)))
-        (and n (exact-integer? n) (> n 0) n)))
+      (let ((n (string->number s))) (and n (exact-integer? n) (> n 0) n)))
 
     ;; native: (iterations salt digest)
     (define (parse-native parts)
@@ -89,23 +94,30 @@ Example:
 
     (define (pbkdf2-matches? plain iterations salt digest)
       (and (> (bytevector-length digest) 0)
-           (constant-time-bytevector=?
-            (pbkdf2-sha256 (string->utf8 plain) salt iterations
-                           (bytevector-length digest))
-            digest)))
+           (constant-time-bytevector=? (pbkdf2-sha256
+                                        (string->utf8 plain)
+                                        salt
+                                        iterations
+                                        (bytevector-length digest))
+                                       digest)))
 
     (define (scrypt-matches? plain n r p salt digest)
       (and (> (bytevector-length digest) 0)
-           (constant-time-bytevector=?
-            (scrypt (string->utf8 plain) salt n r p (bytevector-length digest))
-            digest)))
+           (constant-time-bytevector=? (scrypt (string->utf8 plain)
+                                               salt
+                                               n
+                                               r
+                                               p
+                                               (bytevector-length digest))
+                                       digest)))
 
     ;; Spends the cost of one real verification, so a login for an
     ;; unknown user takes as long as one with a wrong password.
     (define (dummy-work plain)
       (pbkdf2-sha256 (string->utf8 (if (string? plain) plain ""))
                      (make-bytevector salt-bytes 0)
-                     (password-pbkdf2-iterations) key-bytes)
+                     (password-pbkdf2-iterations)
+                     key-bytes)
       #f)
 
     (define (password-verify plain stored)
@@ -121,19 +133,18 @@ Description: Returns #t if the password string plain matches stored, else
 Example:
   (password-verify \"correct horse\" (password-hash \"correct horse\")) => #t
   (password-verify \"guess\" #f) => #f"
-      (cond
-        ((not (and (string? plain) (string? stored))) (dummy-work plain))
-        (else
-         (guard (e (#t #f))
-           (let* ((parts (string-split-char stored #\$))
-                  (native (parse-native parts)))
-             (cond
-               (native (apply pbkdf2-matches? plain native))
-               ((parse-werkzeug-pbkdf2 parts)
-                => (lambda (w) (apply pbkdf2-matches? plain w)))
-               ((parse-werkzeug-scrypt parts)
-                => (lambda (w) (apply scrypt-matches? plain w)))
-               (else (dummy-work plain))))))))
+      (cond ((not (and (string? plain) (string? stored))) (dummy-work plain))
+            (else (guard (e (#t #f))
+                    (let* ((parts (string-split-char stored #\$))
+                           (native (parse-native parts)))
+                      (cond (native (apply pbkdf2-matches? plain native))
+                            ((parse-werkzeug-pbkdf2 parts)
+                             =>
+                             (lambda (w) (apply pbkdf2-matches? plain w)))
+                            ((parse-werkzeug-scrypt parts)
+                             =>
+                             (lambda (w) (apply scrypt-matches? plain w)))
+                            (else (dummy-work plain))))))))
 
     (define (password-needs-rehash? stored)
       "Syntax: (password-needs-rehash? stored)
@@ -147,7 +158,8 @@ Example:
   (password-needs-rehash? \"pbkdf2$200000$c2FsdA==$aGFzaA==\") => #t"
       (not (and (string? stored)
                 (guard (e (#t #f))
-                  (let ((native (parse-native (string-split-char stored #\$))))
+                  (let
+                      ((native (parse-native (string-split-char stored #\$))))
                     (and native
-                         (>= (car native) (password-pbkdf2-iterations))))))))
-))
+                         (>= (car native)
+                             (password-pbkdf2-iterations))))))))))

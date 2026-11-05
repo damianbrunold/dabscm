@@ -1,22 +1,23 @@
 (define-library (srfi 14)
-  (import (scheme base) (scheme char))
-  (export char-set?
-          char-set
+  (import (scheme base)
+          (scheme char))
+  (export char-set
+          char-set?
           ;; Canonical names
           char-set-contains?
-          char-set=
           char-set<=
+          char-set=
           ;; Compat aliases
           char-set-member?
-          char-set=?
           char-set<=?
+          char-set=?
           ;; Set operations
           char-set-complement
-          char-set-union
-          char-set-intersection
-          char-set-difference
-          char-set-xor
           char-set-diff+intersection
+          char-set-difference
+          char-set-intersection
+          char-set-union
+          char-set-xor
           ;; Adjoin/delete
           char-set-adjoin
           char-set-delete
@@ -28,26 +29,26 @@
           char-set-filter
           char-set-filter!
           ;; Count/predicates
-          char-set-count
-          char-set-size
-          char-set-every
           char-set-any
+          char-set-count
+          char-set-every
+          char-set-size
           ;; Copy
           char-set-copy
           ;; Hash
           char-set-hash
           ;; Cursors
           char-set-cursor
-          char-set-ref
           char-set-cursor-next
+          char-set-ref
           end-of-char-set?
           ;; Conversion
+          char-set->list
+          char-set->string
           list->char-set
           list->char-set!
           string->char-set
           string->char-set!
-          char-set->list
-          char-set->string
           ;; Coercion
           ->char-set
           ;; Unfold
@@ -58,31 +59,31 @@
           ucs-range->char-set!
           ;; Mutable aliases (immutable implementation — alias to pure ops)
           char-set-adjoin!
-          char-set-delete!
           char-set-complement!
-          char-set-union!
-          char-set-intersection!
-          char-set-difference!
-          char-set-xor!
+          char-set-delete!
           char-set-diff+intersection!
+          char-set-difference!
+          char-set-intersection!
+          char-set-union!
+          char-set-xor!
           ;; Predefined sets
-          char-set:letter
-          char-set:digit
-          char-set:whitespace
-          char-set:upper-case
-          char-set:lower-case
-          char-set:letter+digit
-          char-set:punctuation
-          char-set:symbol
-          char-set:graphic
-          char-set:printing
-          char-set:blank
           char-set:ascii
+          char-set:blank
+          char-set:digit
           char-set:empty
           char-set:full
+          char-set:graphic
           char-set:hex-digit
           char-set:iso-control
-          char-set:title-case)
+          char-set:letter
+          char-set:letter+digit
+          char-set:lower-case
+          char-set:printing
+          char-set:punctuation
+          char-set:symbol
+          char-set:title-case
+          char-set:upper-case
+          char-set:whitespace)
   (begin
     (define-record-type <char-set>
       (%make-char-set pred)
@@ -98,6 +99,7 @@ Example:
   (char-set-contains? (char-set #\a #\b) #\a) => #t
   (char-set-contains? (char-set #\a #\b) #\c) => #f
 END
+
       (%make-char-set (lambda (c) (member c chars))))
 
     ;; --- Internal helpers ---
@@ -128,6 +130,7 @@ Example:
   (char-set-contains? char-set:digit #\5) => #t
   (char-set-contains? char-set:digit #\a) => #f
 END
+
       (if ((%char-set-pred cs) ch) #t #f))
 
     ;; Canonical name alias
@@ -144,9 +147,11 @@ Example:
   (char-set= (char-set #\a #\b) (char-set #\b #\a)) => #t
   (char-set= (char-set #\a) (char-set #\b)) => #f
 END
+
       (if (or (null? sets) (null? (cdr sets)))
           #t
-          (let ((s1 (car sets)) (s2 (cadr sets)))
+          (let ((s1 (car sets))
+                (s2 (cadr sets)))
             (and (%all (lambda (c)
                          (eq? (if ((%char-set-pred s1) c) #t #f)
                               (if ((%char-set-pred s2) c) #t #f)))
@@ -165,9 +170,11 @@ Example:
   (char-set<= (char-set #\a) (char-set #\a #\b)) => #t
   (char-set<= (char-set #\a #\b) (char-set #\a)) => #f
 END
+
       (if (or (null? sets) (null? (cdr sets)))
           #t
-          (let ((s1 (car sets)) (s2 (cadr sets)))
+          (let ((s1 (car sets))
+                (s2 (cadr sets)))
             (and (%all (lambda (c)
                          (or (not ((%char-set-pred s1) c))
                              ((%char-set-pred s2) c)))
@@ -187,6 +194,7 @@ Example:
   (char-set-contains? (char-set-complement char-set:digit) #\a) => #t
   (char-set-contains? (char-set-complement char-set:digit) #\5) => #f
 END
+
       (%make-char-set (lambda (c) (not ((%char-set-pred cs) c)))))
 
     (define (char-set-union . sets)
@@ -199,7 +207,9 @@ Example:
   (char-set-contains? (char-set-union (char-set #\a) (char-set #\b)) #\b) => #t
   (char-set-contains? (char-set-union (char-set #\a) (char-set #\b)) #\c) => #f
 END
-      (%make-char-set (lambda (c) (%any (lambda (s) ((%char-set-pred s) c)) sets))))
+
+      (%make-char-set (lambda (c)
+                        (%any (lambda (s) ((%char-set-pred s) c)) sets))))
 
     (define (char-set-intersection . sets)
       #<<END
@@ -210,7 +220,9 @@ Example:
   (char-set-contains? (char-set-intersection (char-set #\a #\b) (char-set #\b #\c)) #\b) => #t
   (char-set-contains? (char-set-intersection (char-set #\a #\b) (char-set #\b #\c)) #\a) => #f
 END
-      (%make-char-set (lambda (c) (%all (lambda (s) ((%char-set-pred s) c)) sets))))
+
+      (%make-char-set (lambda (c)
+                        (%all (lambda (s) ((%char-set-pred s) c)) sets))))
 
     (define (char-set-difference cs . rest)
       #<<END
@@ -222,10 +234,11 @@ Example:
   (char-set-contains? (char-set-difference (char-set #\a #\b #\c) (char-set #\b)) #\a) => #t
   (char-set-contains? (char-set-difference (char-set #\a #\b #\c) (char-set #\b)) #\b) => #f
 END
-      (%make-char-set
-       (lambda (c)
-         (and ((%char-set-pred cs) c)
-              (%all (lambda (s) (not ((%char-set-pred s) c))) rest)))))
+
+      (%make-char-set (lambda (c)
+                        (and ((%char-set-pred cs) c)
+                             (%all (lambda (s) (not ((%char-set-pred s) c)))
+                                   rest)))))
 
     (define (char-set-xor . sets)
       #<<END
@@ -238,9 +251,11 @@ Example:
   (char-set-contains? (char-set-xor (char-set #\a #\b) (char-set #\b #\c)) #\b) => #f
   (char-set-contains? (char-set-xor (char-set #\a #\b) (char-set #\b #\c)) #\c) => #t
 END
+
       (if (null? sets)
           char-set:empty
-          (let loop ((acc (car sets)) (rest (cdr sets)))
+          (let loop ((acc (car sets))
+                     (rest (cdr sets)))
             (if (null? rest)
                 acc
                 (loop (char-set-difference
@@ -260,6 +275,7 @@ Example:
   (char-set->list d) => (#\a)
   (char-set->list i) => (#\b #\c)
 END
+
       (values (apply char-set-difference cs1 rest)
               (apply char-set-intersection cs1 rest)))
 
@@ -274,7 +290,9 @@ Example:
   (char-set-contains? (char-set-adjoin char-set:digit #\a) #\a) => #t
   (char-set-contains? (char-set-adjoin char-set:digit #\a) #\5) => #t
 END
-      (%make-char-set (lambda (c) (or ((%char-set-pred cs) c) (member c chars)))))
+
+      (%make-char-set (lambda (c)
+                        (or ((%char-set-pred cs) c) (member c chars)))))
 
     (define (char-set-delete cs . chars)
       #<<END
@@ -285,7 +303,10 @@ Example:
   (char-set-contains? (char-set-delete (char-set #\a #\b #\c) #\b) #\a) => #t
   (char-set-contains? (char-set-delete (char-set #\a #\b #\c) #\b) #\b) => #f
 END
-      (%make-char-set (lambda (c) (and ((%char-set-pred cs) c) (not (member c chars))))))
+
+      (%make-char-set (lambda (c)
+                        (and ((%char-set-pred cs) c)
+                             (not (member c chars))))))
 
     ;; --- Fold / Iteration ---
 
@@ -299,7 +320,9 @@ Example:
   (char-set-fold (lambda (c acc) (cons c acc)) '() (char-set #\a #\b)) => (#\a #\b) or (#\b #\a)
   (char-set-fold (lambda (c acc) (+ acc 1)) 0 (char-set #\a #\b)) => 2
 END
-      (let loop ((chars (%ascii-chars)) (acc knil))
+
+      (let loop ((chars (%ascii-chars))
+                 (acc knil))
         (cond ((null? chars) acc)
               (((%char-set-pred cs) (car chars))
                (loop (cdr chars) (kons (car chars) acc)))
@@ -314,6 +337,7 @@ is not specified. Returns an unspecified value.
 Example:
   (char-set-for-each display (char-set #\a #\b #\c))
 END
+
       (char-set-fold (lambda (c _) (proc c)) #f cs)
       (if #f #f))
 
@@ -327,9 +351,12 @@ Example:
   (char-set-contains? (char-set-map char-upcase char-set:lower-case) #\A) => #t
   (char-set-contains? (char-set-map char-upcase char-set:lower-case) #\a) => #f
 END
-      (%make-char-set
-       (lambda (c)
-         (char-set-fold (lambda (mapped acc) (or acc (char=? c (proc mapped)))) #f cs))))
+
+      (%make-char-set (lambda (c)
+                        (char-set-fold (lambda (mapped acc)
+                                         (or acc (char=? c (proc mapped))))
+                                       #f
+                                       cs))))
 
     ;; --- Filter ---
 
@@ -343,10 +370,11 @@ Example:
   (char-set->list (char-set-filter char-upper-case? char-set:letter)) => (#\A ... #\Z)
   (char-set-contains? (char-set-filter odd? (char-set #\a #\b)) #\a) => depends on char code
 END
+
       (let ((base-cs (if (null? rest) char-set:empty (car rest))))
-        (%make-char-set
-         (lambda (c) (or ((%char-set-pred base-cs) c)
-                         (and ((%char-set-pred cs) c) (pred c)))))))
+        (%make-char-set (lambda (c)
+                          (or ((%char-set-pred base-cs) c)
+                              (and ((%char-set-pred cs) c) (pred c)))))))
 
     (define char-set-filter! char-set-filter)
 
@@ -361,6 +389,7 @@ Example:
   (char-set-count char-upper-case? char-set:letter) => 26
   (char-set-count char-numeric? (char-set #\1 #\a #\2)) => 2
 END
+
       (char-set-fold (lambda (c acc) (if (pred c) (+ acc 1) acc)) 0 cs))
 
     (define (char-set-size cs)
@@ -372,6 +401,7 @@ Example:
   (char-set-size (char-set #\a #\b #\c)) => 3
   (char-set-size char-set:empty) => 0
 END
+
       (char-set-fold (lambda (c acc) (+ acc 1)) 0 cs))
 
     (define (char-set-every pred cs)
@@ -384,11 +414,10 @@ Example:
   (char-set-every char-alphabetic? char-set:letter) => #t
   (char-set-every char-upper-case? char-set:letter) => #f
 END
+
       (call-with-current-continuation
         (lambda (return)
-          (char-set-fold (lambda (c acc)
-                           (or (pred c) (return #f)))
-                         #t cs))))
+          (char-set-fold (lambda (c acc) (or (pred c) (return #f))) #t cs))))
 
     (define (char-set-any pred cs)
       #<<END
@@ -400,13 +429,12 @@ Example:
   (char-set-any char-upper-case? char-set:letter) => #t
   (char-set-any char-upper-case? char-set:digit) => #f
 END
+
       (call-with-current-continuation
         (lambda (return)
-          (char-set-for-each
-           (lambda (c)
-             (let ((v (pred c)))
-               (when v (return v))))
-           cs)
+          (char-set-for-each (lambda (c)
+                               (let ((v (pred c))) (when v (return v))))
+                             cs)
           #f)))
 
     ;; --- Copy ---
@@ -420,6 +448,7 @@ immutable, so this returns a new char-set with the same membership predicate.
 Example:
   (char-set= (char-set-copy (char-set #\a #\b)) (char-set #\a #\b)) => #t
 END
+
       (%make-char-set (%char-set-pred cs)))
 
     ;; --- Hash ---
@@ -434,8 +463,12 @@ Example:
   (integer? (char-set-hash char-set:digit)) => #t
   (< (char-set-hash char-set:letter 100) 100) => #t
 END
+
       (let ((bound (if (null? rest) (expt 2 32) (car rest))))
-        (modulo (char-set-fold (lambda (c acc) (+ (* acc 31) (char->integer c))) 0 cs)
+        (modulo (char-set-fold (lambda (c acc)
+                                 (+ (* acc 31) (char->integer c)))
+                               0
+                               cs)
                 bound)))
 
     ;; --- Cursors ---
@@ -450,6 +483,7 @@ Example:
   (let ((cur (char-set-cursor (char-set #\a #\b))))
     (char-set-ref (char-set #\a #\b) cur)) => #\a
 END
+
       (char-set->list cs))
 
     (define (char-set-ref cs cursor)
@@ -460,6 +494,7 @@ Description: Returns the character at the current position of cursor within cs.
 Example:
   (char-set-ref (char-set #\a) (char-set-cursor (char-set #\a))) => #\a
 END
+
       (car cursor))
 
     (define (char-set-cursor-next cs cursor)
@@ -474,6 +509,7 @@ Example:
          (cur2 (char-set-cursor-next cs cur)))
     (end-of-char-set? cur2)) => #f
 END
+
       (cdr cursor))
 
     (define (end-of-char-set? cursor)
@@ -486,6 +522,7 @@ Example:
   (end-of-char-set? (char-set-cursor char-set:empty)) => #t
   (end-of-char-set? (char-set-cursor (char-set #\a))) => #f
 END
+
       (null? cursor))
 
     ;; --- Conversion ---
@@ -499,7 +536,9 @@ Example:
   (char-set->list (char-set #\a #\b #\c)) => (#\a #\b #\c)
   (char-set->list char-set:empty) => ()
 END
-      (let loop ((chars (%ascii-chars)) (result '()))
+
+      (let loop ((chars (%ascii-chars))
+                 (result '()))
         (cond ((null? chars) (reverse result))
               (((%char-set-pred cs) (car chars))
                (loop (cdr chars) (cons (car chars) result)))
@@ -514,6 +553,7 @@ Example:
   (char-set->string (char-set #\a #\b #\c)) => "abc"
   (string-length (char-set->string char-set:digit)) => 10
 END
+
       (list->string (char-set->list cs)))
 
     (define (list->char-set chars . rest)
@@ -526,6 +566,7 @@ Example:
   (char-set-contains? (list->char-set '(#\a #\b #\c)) #\b) => #t
   (char-set-contains? (list->char-set '(#\a) (char-set #\b)) #\b) => #t
 END
+
       (let ((base-cs (if (null? rest) #f (car rest))))
         (if base-cs
             (apply char-set-adjoin base-cs chars)
@@ -543,6 +584,7 @@ Example:
   (char-set-contains? (string->char-set "hello") #\e) => #t
   (char-set-contains? (string->char-set "abc" (char-set #\d)) #\d) => #t
 END
+
       (apply list->char-set (string->list s) rest))
 
     (define string->char-set! string->char-set)
@@ -561,6 +603,7 @@ Example:
   (char-set-contains? (->char-set #\a) #\a) => #t
   (char-set? (->char-set char-set:digit)) => #t
 END
+
       (cond ((char-set? x) x)
             ((string? x) (string->char-set x))
             ((char? x) (char-set x))
@@ -579,24 +622,22 @@ Example:
   (char-set->list (char-set-unfold (lambda (i) (= i 3)) integer->char (lambda (i) (+ i 1)) 0))
     => (#\nul #\x1 #\x2)
 END
-      ;; p=termination pred, f=seed->char, g=seed->next-seed
+ ;; p=termination pred, f=seed->char, g=seed->next-seed
       (let ((base-cs (if (null? rest) char-set:empty (car rest))))
         (let loop ((seed seed) (cs base-cs))
-          (if (p seed)
-              cs
-              (loop (g seed) (char-set-adjoin cs (f seed)))))))
+          (if (p seed) cs (loop (g seed) (char-set-adjoin cs (f seed)))))))
 
     (define char-set-unfold! char-set-unfold)
 
     ;; Mutable aliases (strings are immutable in this implementation)
 
-    (define char-set-adjoin!      char-set-adjoin)
-    (define char-set-delete!      char-set-delete)
-    (define char-set-complement!  char-set-complement)
-    (define char-set-union!       char-set-union)
+    (define char-set-adjoin! char-set-adjoin)
+    (define char-set-delete! char-set-delete)
+    (define char-set-complement! char-set-complement)
+    (define char-set-union! char-set-union)
     (define char-set-intersection! char-set-intersection)
-    (define char-set-difference!  char-set-difference)
-    (define char-set-xor!         char-set-xor)
+    (define char-set-difference! char-set-difference)
+    (define char-set-xor! char-set-xor)
     (define char-set-diff+intersection! char-set-diff+intersection)
 
     ;; --- UCS range ---
@@ -614,11 +655,13 @@ Example:
   (char-set-contains? (ucs-range->char-set 65 91) #\a) => #f
   (char-set-size (ucs-range->char-set 48 58)) => 10
 END
-      ;; error? and base-cs args are optional; clamp to ASCII 0-127
-      (let ((base-cs (if (or (null? rest) (null? (cdr rest)))
-                         char-set:empty
-                         (cadr rest))))
-        (let loop ((i (max 0 lower)) (cs base-cs))
+ ;; error? and base-cs args are optional; clamp to ASCII 0-127
+      (let
+          ((base-cs (if (or (null? rest) (null? (cdr rest)))
+                        char-set:empty
+                        (cadr rest))))
+        (let loop ((i (max 0 lower))
+                   (cs base-cs))
           (if (>= i (min upper 128))
               cs
               (loop (+ i 1) (char-set-adjoin cs (integer->char i)))))))
@@ -627,111 +670,95 @@ END
 
     ;; --- Predefined character sets ---
 
-    (define char-set:letter
-      (%make-char-set char-alphabetic?))
+    (define char-set:letter (%make-char-set char-alphabetic?))
 
-    (define char-set:digit
-      (%make-char-set char-numeric?))
+    (define char-set:digit (%make-char-set char-numeric?))
 
-    (define char-set:whitespace
-      (%make-char-set char-whitespace?))
+    (define char-set:whitespace (%make-char-set char-whitespace?))
 
-    (define char-set:upper-case
-      (%make-char-set char-upper-case?))
+    (define char-set:upper-case (%make-char-set char-upper-case?))
 
-    (define char-set:lower-case
-      (%make-char-set char-lower-case?))
+    (define char-set:lower-case (%make-char-set char-lower-case?))
 
     (define char-set:letter+digit
-      (%make-char-set (lambda (c) (or (char-alphabetic? c) (char-numeric? c)))))
+      (%make-char-set (lambda (c)
+                        (or (char-alphabetic? c) (char-numeric? c)))))
 
     ;; ASCII punctuation: ! " # % & ' ( ) * , - . / : ; ? @ [ \ ] _ ` { }
     (define char-set:punctuation
-      (%make-char-set
-       (lambda (c)
-         (let ((n (char->integer c)))
-           (or (= n 33)                          ; !
-               (= n 34)                          ; "
-               (= n 35)                          ; #
-               (= n 37)                          ; %
-               (= n 38)                          ; &
-               (= n 39)                          ; '
-               (= n 40)                          ; (
-               (= n 41)                          ; )
-               (= n 42)                          ; *
-               (= n 44)                          ; ,
-               (= n 45)                          ; -
-               (= n 46)                          ; .
-               (= n 47)                          ; /
-               (= n 58)                          ; :
-               (= n 59)                          ; ;
-               (= n 63)                          ; ?
-               (= n 64)                          ; @
-               (= n 91)                          ; [
-               (= n 92)                          ; \
-               (= n 93)                          ; ]
-               (= n 95)                          ; _
-               (= n 96)                          ; `
-               (= n 123)                         ; {
-               (= n 125))))))                    ; }
+      (%make-char-set (lambda (c)
+                        (let ((n (char->integer c)))
+                          (or (= n 33) ; !
+                              (= n 34) ; "
+                              (= n 35) ; #
+                              (= n 37) ; %
+                              (= n 38) ; &
+                              (= n 39) ; '
+                              (= n 40) ; (
+                              (= n 41) ; )
+                              (= n 42) ; *
+                              (= n 44) ; ,
+                              (= n 45) ; -
+                              (= n 46) ; .
+                              (= n 47) ; /
+                              (= n 58) ; :
+                              (= n 59) ; ;
+                              (= n 63) ; ?
+                              (= n 64) ; @
+                              (= n 91) ; [
+                              (= n 92) ; \
+                              (= n 93) ; ]
+                              (= n 95) ; _
+                              (= n 96) ; `
+                              (= n 123) ; {
+                              (= n 125)))))) ; }
 
     ;; ASCII symbols: $ + < = > ^ | ~
     (define char-set:symbol
-      (%make-char-set
-       (lambda (c)
-         (let ((n (char->integer c)))
-           (or (= n 36)                          ; $
-               (= n 43)                          ; +
-               (= n 60)                          ; <
-               (= n 61)                          ; =
-               (= n 62)                          ; >
-               (= n 94)                          ; ^
-               (= n 124)                         ; |
-               (= n 126))))))                    ; ~
+      (%make-char-set (lambda (c)
+                        (let ((n (char->integer c)))
+                          (or (= n 36) ; $
+                              (= n 43) ; +
+                              (= n 60) ; <
+                              (= n 61) ; =
+                              (= n 62) ; >
+                              (= n 94) ; ^
+                              (= n 124) ; |
+                              (= n 126)))))) ; ~
 
     ;; Graphic = visible characters: letters, digits, punctuation, symbols.
     ;; Built compositionally (rather than a hardcoded ASCII range) so it stays
     ;; consistent with the Unicode-aware char-set:letter/char-set:digit; e.g. a
     ;; Latin-1 letter such as #\ü is a letter and therefore also graphic.
     (define char-set:graphic
-      (char-set-union char-set:letter char-set:digit
-                      char-set:punctuation char-set:symbol))
+      (char-set-union char-set:letter char-set:digit char-set:punctuation
+                      char-set:symbol))
 
     ;; Printing = graphic characters plus whitespace.
     (define char-set:printing
       (char-set-union char-set:graphic char-set:whitespace))
 
     (define char-set:blank
-      (%make-char-set
-       (lambda (c) (or (char=? c #\space) (char=? c #\tab)))))
+      (%make-char-set (lambda (c) (or (char=? c #\space) (char=? c #\tab)))))
 
     (define char-set:ascii
-      (%make-char-set
-       (lambda (c) (< (char->integer c) 128))))
+      (%make-char-set (lambda (c) (< (char->integer c) 128))))
 
-    (define char-set:empty
-      (%make-char-set (lambda (c) #f)))
+    (define char-set:empty (%make-char-set (lambda (c) #f)))
 
-    (define char-set:full
-      (%make-char-set (lambda (c) #t)))
+    (define char-set:full (%make-char-set (lambda (c) #t)))
 
     (define char-set:hex-digit
-      (%make-char-set
-       (lambda (c)
-         (let ((n (char->integer c)))
-           (or (and (>= n 48) (<= n 57))         ; 0-9
-               (and (>= n 65) (<= n 70))         ; A-F
-               (and (>= n 97) (<= n 102)))))))   ; a-f
+      (%make-char-set (lambda (c)
+                        (let ((n (char->integer c)))
+                          (or (and (>= n 48) (<= n 57)) ; 0-9
+                              (and (>= n 65) (<= n 70)) ; A-F
+                              (and (>= n 97) (<= n 102))))))) ; a-f
 
     (define char-set:iso-control
-      (%make-char-set
-       (lambda (c)
-         (let ((n (char->integer c)))
-           (or (and (>= n 0) (<= n 31))
-               (= n 127))))))
+      (%make-char-set (lambda (c)
+                        (let ((n (char->integer c)))
+                          (or (and (>= n 0) (<= n 31)) (= n 127))))))
 
     ;; No title-case chars in ASCII
-    (define char-set:title-case
-      (%make-char-set (lambda (c) #f)))
-
-    ))
+    (define char-set:title-case (%make-char-set (lambda (c) #f)))))

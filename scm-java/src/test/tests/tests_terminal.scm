@@ -1,9 +1,9 @@
 (import (scheme base)
         (scheme write)
-        (scm test)
-        (scm io)
         (scm core) ;; TODO required?!
-        (scm terminal))
+        (scm io)
+        (scm terminal)
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 
@@ -14,7 +14,9 @@
         (old (current-output-port)))
     (dynamic-wind
       (lambda () (set-current-output-port p))
-      (lambda () (thunk) (get-output-string p))
+      (lambda ()
+        (thunk)
+        (get-output-string p))
       (lambda () (set-current-output-port old)))))
 
 (test-begin "terminal")
@@ -82,7 +84,8 @@
   (test-equal "\x1b;[2B" (capture-output (lambda () (cursor-down 2))))
   (test-equal "\x1b;[5C" (capture-output (lambda () (cursor-forward 5))))
   (test-equal "\x1b;[1D" (capture-output (lambda () (cursor-back 1))))
-  (test-equal "\x1b;[10;20H" (capture-output (lambda () (cursor-position 10 20))))
+  (test-equal "\x1b;[10;20H"
+              (capture-output (lambda () (cursor-position 10 20))))
   (test-equal "\x1b;7" (capture-output (lambda () (cursor-save))))
   (test-equal "\x1b;8" (capture-output (lambda () (cursor-restore))))
   (test-equal "\x1b;[?25l" (capture-output (lambda () (cursor-hide))))
@@ -92,18 +95,15 @@
 ;; === Screen control output ===
 
 (test-group "screen control"
-  (test-equal "\x1b;[2J\x1b;[H"
-      (capture-output (lambda () (clear-screen))))
-  (test-equal "\x1b;[2K"
-      (capture-output (lambda () (clear-line))))
-  (test-equal "\x1b;[0K"
-      (capture-output (lambda () (clear-to-end-of-line))))
+  (test-equal "\x1b;[2J\x1b;[H" (capture-output (lambda () (clear-screen))))
+  (test-equal "\x1b;[2K" (capture-output (lambda () (clear-line))))
+  (test-equal "\x1b;[0K" (capture-output (lambda () (clear-to-end-of-line))))
   (test-equal "\x1b;[0J"
-      (capture-output (lambda () (clear-to-end-of-screen))))
+              (capture-output (lambda () (clear-to-end-of-screen))))
   (test-equal "\x1b;[?1049h"
-      (capture-output (lambda () (alternate-screen-enable))))
+              (capture-output (lambda () (alternate-screen-enable))))
   (test-equal "\x1b;[?1049l"
-      (capture-output (lambda () (alternate-screen-disable)))))
+              (capture-output (lambda () (alternate-screen-disable)))))
 
 ;; === terminal-enable-ansi! ===
 

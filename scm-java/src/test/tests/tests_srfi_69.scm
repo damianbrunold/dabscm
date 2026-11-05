@@ -1,6 +1,6 @@
 (import (scheme base)
-        (scm test)
-        (srfi 69))
+        (srfi 69)
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 

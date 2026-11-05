@@ -6,25 +6,25 @@
           (srfi 132)
           (scm data core)
           (scm data frame))
-  (export sum
-          mean
-          weighted-mean
-          median
-          quantile
-          var
-          sd
-          iqr
-          value-range
-          cumsum
-          ranks
-          zscore
+  (export cor
           cov
-          cor
-          pct-change
-          freq
           crosstab
+          cumsum
+          freq
           histogram-bins
-          lm-simple)
+          iqr
+          lm-simple
+          mean
+          median
+          pct-change
+          quantile
+          ranks
+          sd
+          sum
+          value-range
+          var
+          weighted-mean
+          zscore)
   (begin
 
     ;; ================================================================
@@ -68,10 +68,15 @@ Example:
   (weighted-mean '(1 3) '(3 1)) => 1.5"
       (let loop ((xs (if (vector? xs) (vector->list xs) xs))
                  (ws (if (vector? ws) (vector->list ws) ws))
-                 (s 0) (w 0))
+                 (s 0)
+                 (w 0))
         (cond ((or (null? xs) (null? ws)) (if (zero? w) na (inexact (/ s w))))
-              ((or (na? (car xs)) (na? (car ws))) (loop (cdr xs) (cdr ws) s w))
-              (else (loop (cdr xs) (cdr ws) (+ s (* (car xs) (car ws))) (+ w (car ws)))))))
+              ((or (na? (car xs)) (na? (car ws)))
+               (loop (cdr xs) (cdr ws) s w))
+              (else (loop (cdr xs)
+                          (cdr ws)
+                          (+ s (* (car xs) (car ws)))
+                          (+ w (car ws)))))))
 
     (define (quantile xs p)
       "Syntax: (quantile xs p)
@@ -107,11 +112,13 @@ Description: The sample variance (divided by n-1); na for fewer than 2
   values.
 Example:
   (var '(1 2 3 4)) => 1.6666666666666667"
-      (let* ((l (nums xs)) (n (length l)))
+      (let* ((l (nums xs))
+             (n (length l)))
         (if (< n 2)
             na
             (let ((m (/ (fold + 0 l) n)))
-              (inexact (/ (fold (lambda (x s) (+ s (* (- x m) (- x m)))) 0 l) (- n 1)))))))
+              (inexact (/ (fold (lambda (x s) (+ s (* (- x m) (- x m)))) 0 l)
+                          (- n 1)))))))
 
     (define (sd xs)
       "Syntax: (sd xs)
@@ -145,10 +152,13 @@ Library: (scm data stats)
 Description: The running sums, as a list; na stays na and is skipped.
 Example:
   (cumsum (list 1 2 na 3)) => (1 3 na 6)"
-      (let loop ((l (if (vector? xs) (vector->list xs) xs)) (s 0) (acc '()))
+      (let loop ((l (if (vector? xs) (vector->list xs) xs))
+                 (s 0)
+                 (acc '()))
         (cond ((null? l) (reverse acc))
               ((na? (car l)) (loop (cdr l) s (cons na acc)))
-              (else (let ((s (+ s (car l)))) (loop (cdr l) s (cons s acc)))))))
+              (else (let ((s (+ s (car l))))
+                      (loop (cdr l) s (cons s acc)))))))
 
     (define (ranks xs . ties)
       "Syntax: (ranks xs [ties])
@@ -160,8 +170,10 @@ Example:
       (let* ((method (if (pair? ties) (car ties) 'average))
              (v (if (vector? xs) xs (list->vector xs)))
              (n (vector-length v))
-             (idx (list-sort (lambda (i j) (< (vector-ref v i) (vector-ref v j)))
-                             (filter (lambda (i) (not (na? (vector-ref v i)))) (iota n))))
+             (idx (list-sort (lambda (i j)
+                               (< (vector-ref v i) (vector-ref v j)))
+                             (filter (lambda (i) (not (na? (vector-ref v i))))
+                                     (iota n))))
              (out (make-vector n na)))
         (let loop ((is idx) (pos 1) (dense 1))
           (unless (null? is)
@@ -175,7 +187,8 @@ Example:
                    (r (case method
                         ((min) pos)
                         ((dense) dense)
-                        (else (let ((a (/ (+ pos (+ pos k -1)) 2))) (if (integer? a) a (inexact a)))))))
+                        (else (let ((a (/ (+ pos (+ pos k -1)) 2)))
+                                (if (integer? a) a (inexact a)))))))
               (for-each (lambda (i) (vector-set! out i r)) run)
               (loop (list-tail is k) (+ pos k) (+ dense 1)))))
         (vector->list out)))
@@ -186,7 +199,8 @@ Library: (scm data stats)
 Description: The standardised values (x - mean) / sd, as a list.
 Example:
   (zscore '(1 2 3)) => (-1.0 0.0 1.0)"
-      (let ((m (mean xs)) (s (sd xs)))
+      (let ((m (mean xs))
+            (s (sd xs)))
         (map (lambda (x) (if (or (na? x) (na? s) (zero? s)) na (/ (- x m) s)))
              (if (vector? xs) (vector->list xs) xs))))
 
@@ -197,8 +211,11 @@ Example:
                  (acc '()))
         (if (or (null? xs) (null? ys))
             (reverse acc)
-            (loop (cdr xs) (cdr ys)
-                  (if (or (na? (car xs)) (na? (car ys))) acc (cons (cons (car xs) (car ys)) acc))))))
+            (loop (cdr xs)
+                  (cdr ys)
+                  (if (or (na? (car xs)) (na? (car ys)))
+                      acc
+                      (cons (cons (car xs) (car ys)) acc))))))
 
     (define (cov xs ys)
       "Syntax: (cov xs ys)
@@ -207,12 +224,16 @@ Description: The sample covariance of two equally long lists (pairs with
   a na are skipped).
 Example:
   (cov '(1 2 3) '(2 4 6)) => 2.0"
-      (let* ((ps (pairs xs ys)) (n (length ps)))
+      (let* ((ps (pairs xs ys))
+             (n (length ps)))
         (if (< n 2)
             na
             (let ((mx (/ (fold + 0 (map car ps)) n))
                   (my (/ (fold + 0 (map cdr ps)) n)))
-              (inexact (/ (fold (lambda (p s) (+ s (* (- (car p) mx) (- (cdr p) my)))) 0 ps)
+              (inexact (/ (fold (lambda (p s)
+                                  (+ s (* (- (car p) mx) (- (cdr p) my))))
+                                0
+                                ps)
                           (- n 1)))))))
 
     (define (cor xs ys . method)
@@ -223,10 +244,13 @@ Description: The correlation coefficient; method pearson (default) or
 Example:
   (cor '(1 2 3 4) '(1 3 2 4)) => 0.8"
       (let* ((ps (pairs xs ys))
-             (x (map car ps)) (y (map cdr ps)))
+             (x (map car ps))
+             (y (map cdr ps)))
         (if (and (pair? method) (eq? (car method) 'spearman))
             (cor (ranks x) (ranks y))
-            (let ((c (cov x y)) (sx (sd x)) (sy (sd y)))
+            (let ((c (cov x y))
+                  (sx (sd x))
+                  (sy (sd y)))
               (if (or (na? c) (zero? sx) (zero? sy)) na (/ c (* sx sy)))))))
 
     (define (pct-change from to)
@@ -236,7 +260,9 @@ Description: The relative change (to - from) / from as a fraction; na if
   from is 0 or a value is na.
 Example:
   (pct-change 200 250) => 0.25"
-      (if (or (na? from) (na? to) (zero? from)) na (inexact (- (/ to from) 1))))
+      (if (or (na? from) (na? to) (zero? from))
+          na
+          (inexact (- (/ to from) 1))))
 
     (define (freq xs . opts)
       "Syntax: (freq xs [sort])
@@ -250,22 +276,32 @@ Example:
              (h (make-hash-table equal?))
              (order '()))
         (for-each (lambda (x)
-                    (unless (hash-table-exists? h x) (set! order (cons x order)))
+                    (unless (hash-table-exists? h x)
+                      (set! order (cons x order)))
                     (hash-table-update!/default h x (lambda (n) (+ n 1)) 0))
                   l)
         (let* ((keys (reverse order))
                (keys (if (and (pair? opts) (eq? (car opts) 'by-count))
-                         (list-stable-sort (lambda (a b) (> (hash-table-ref h a) (hash-table-ref h b))) keys)
+                         (list-stable-sort
+                          (lambda (a b)
+                            (> (hash-table-ref h a) (hash-table-ref h b)))
+                          keys)
                          (list-sort generic<? keys)))
                (total (length l)))
           (make-df (list (cons 'value keys)
-                         (cons 'n (map (lambda (k) (hash-table-ref h k)) keys))
-                         (cons 'share (map (lambda (k) (inexact (/ (hash-table-ref h k) total))) keys)))))))
+                         (cons 'n
+                               (map (lambda (k) (hash-table-ref h k)) keys))
+                         (cons 'share
+                               (map (lambda (k)
+                                      (inexact
+                                       (/ (hash-table-ref h k) total)))
+                                    keys)))))))
 
     (define (generic<? a b)
       (cond ((and (real? a) (real? b)) (< a b))
             ((and (string? a) (string? b)) (string<? a b))
-            ((and (symbol? a) (symbol? b)) (string<? (symbol->string a) (symbol->string b)))
+            ((and (symbol? a) (symbol? b))
+             (string<? (symbol->string a) (symbol->string b)))
             ((na? a) #f)
             ((na? b) #t)
             ((real? a) #t)
@@ -296,20 +332,41 @@ Example:
              (ck (list-sort generic<? (delete-duplicates cl)))
              (h (make-hash-table equal?))
              (margins? (and (pair? opts) (car opts))))
-        (for-each (lambda (r c) (hash-table-update!/default h (cons r c) (lambda (n) (+ n 1)) 0)) rl cl)
+        (for-each (lambda (r c)
+                    (hash-table-update!/default h
+                                                (cons r c)
+                                                (lambda (n) (+ n 1))
+                                                0))
+                  rl
+                  cl)
         (let* ((cell (lambda (r c) (hash-table-ref/default h (cons r c) 0)))
-               (cols (map (lambda (c) (cons (string->symbol (to-name c)) (map (lambda (r) (cell r c)) rk))) ck))
+               (cols (map (lambda (c)
+                            (cons (string->symbol (to-name c))
+                                  (map (lambda (r) (cell r c)) rk)))
+                          ck))
                (df (make-df (cons (cons 'row rk) cols))))
           (if (not margins?)
               df
-              (let* ((tot (map (lambda (r) (fold + 0 (map (lambda (c) (cell r c)) ck))) rk))
+              (let* ((tot (map (lambda (r)
+                                 (fold + 0 (map (lambda (c) (cell r c)) ck)))
+                               rk))
                      (df (df-with-column df 'total tot))
-                     (bottom (cons "total" (append (map (lambda (c) (fold + 0 (map (lambda (r) (cell r c)) rk))) ck)
-                                                   (list (length rl))))))
+                     (bottom (cons "total"
+                                   (append
+                                    (map
+                                     (lambda (c)
+                                       (fold
+                                        +
+                                        0
+                                        (map (lambda (r) (cell r c)) rk)))
+                                     ck)
+                                    (list (length rl))))))
                 (make-df (map (lambda (name v extra)
-                                (cons name (append (vector->list v) (list extra))))
+                                (cons name
+                                      (append (vector->list v) (list extra))))
                               (df-names df)
-                              (map (lambda (n) (df-column df n)) (df-names df))
+                              (map (lambda (n) (df-column df n))
+                                   (df-names df))
                               bottom)))))))
 
     (define (histogram-bins xs . opts)
@@ -324,24 +381,37 @@ Example:
       (let ((l (nums xs)))
         (if (null? l)
             (make-df '((from) (to) (n)))
-            (let* ((lo (apply min l)) (hi (apply max l))
+            (let* ((lo (apply min l))
+                   (hi (apply max l))
                    (width? (and (pair? opts) (eq? (car opts) 'width)))
                    (k (cond (width? #f)
                             ((pair? opts) (car opts))
-                            (else (+ 1 (exact (ceiling (/ (log (length l)) (log 2))))))))
+                            (else (+ 1
+                                     (exact
+                                      (ceiling
+                                       (/ (log (length l)) (log 2))))))))
                    (w (cond (width? (cadr opts))
                             ((= hi lo) 1)
                             (else (/ (- hi lo) k))))
                    (start (if width? (* w (exact (floor (/ lo w)))) lo))
-                   (k (if width? (max 1 (exact (ceiling (/ (- hi start) w)))) k))
+                   (k (if width?
+                          (max 1 (exact (ceiling (/ (- hi start) w))))
+                          k))
                    (k (if (and width? (= (+ start (* k w)) hi)) (+ k 1) k))
                    (counts (make-vector k 0)))
               (for-each (lambda (x)
-                          (let ((b (min (- k 1) (exact (floor (/ (- x start) w))))))
-                            (vector-set! counts b (+ 1 (vector-ref counts b)))))
+                          (let
+                              ((b (min (- k 1)
+                                       (exact (floor (/ (- x start) w))))))
+                            (vector-set! counts b
+                                         (+ 1 (vector-ref counts b)))))
                         l)
-              (make-df (list (cons 'from (map (lambda (i) (+ start (* i w))) (iota k)))
-                             (cons 'to (map (lambda (i) (+ start (* (+ i 1) w))) (iota k)))
+              (make-df (list (cons 'from
+                                   (map (lambda (i) (+ start (* i w)))
+                                        (iota k)))
+                             (cons 'to
+                                   (map (lambda (i) (+ start (* (+ i 1) w)))
+                                        (iota k)))
                              (cons 'n (vector->list counts))))))))
 
     (define (lm-simple xs ys)
@@ -351,16 +421,27 @@ Description: Least-squares line y = intercept + slope * x; returns an
   alist ((intercept . a) (slope . b) (r2 . r²) (n . pairs)).
 Example:
   (lm-simple '(1 2 3) '(2 4 6)) => ((intercept . 0.0) (slope . 2.0) (r2 . 1.0) (n . 3))"
-      (let* ((ps (pairs xs ys)) (n (length ps)))
+      (let* ((ps (pairs xs ys))
+             (n (length ps)))
         (if (< n 2)
-            (list (cons 'intercept na) (cons 'slope na) (cons 'r2 na) (cons 'n n))
-            (let* ((x (map car ps)) (y (map cdr ps))
-                   (mx (/ (fold + 0 x) n)) (my (/ (fold + 0 y) n))
-                   (sxy (fold + 0 (map (lambda (a b) (* (- a mx) (- b my))) x y)))
+            (list (cons 'intercept na)
+                  (cons 'slope na)
+                  (cons 'r2 na)
+                  (cons 'n n))
+            (let* ((x (map car ps))
+                   (y (map cdr ps))
+                   (mx (/ (fold + 0 x) n))
+                   (my (/ (fold + 0 y) n))
+                   (sxy (fold + 0
+                              (map (lambda (a b) (* (- a mx) (- b my))) x y)))
                    (sxx (fold + 0 (map (lambda (a) (* (- a mx) (- a mx))) x)))
                    (syy (fold + 0 (map (lambda (b) (* (- b my) (- b my))) y)))
                    (slope (if (zero? sxx) na (/ sxy sxx))))
-              (list (cons 'intercept (if (na? slope) na (inexact (- my (* slope mx)))))
+              (list (cons 'intercept
+                          (if (na? slope) na (inexact (- my (* slope mx)))))
                     (cons 'slope (if (na? slope) na (inexact slope)))
-                    (cons 'r2 (if (or (zero? sxx) (zero? syy)) na (inexact (/ (* sxy sxy) (* sxx syy)))))
+                    (cons 'r2
+                          (if (or (zero? sxx) (zero? syy))
+                              na
+                              (inexact (/ (* sxy sxy) (* sxx syy)))))
                     (cons 'n n))))))))

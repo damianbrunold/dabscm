@@ -1,4 +1,7 @@
-(import (scheme base) (scm data core) (scm data format) (scm test))
+(import (scheme base)
+        (scm data core)
+        (scm data format)
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 
@@ -44,7 +47,6 @@
   (test-equal "BEW8" (fmt-value 'BEW8))
   (test-equal "(a 1)" (fmt-value '(a 1)))
   (test-equal "NA" (fmt-value na))
-  (parameterize ((na-string ""))
-    (test-equal "" (fmt-value na))))
+  (parameterize ((na-string "")) (test-equal "" (fmt-value na))))
 
 (test-end "scm-data-format")

@@ -15,10 +15,10 @@
           (scm fs)
           (scm io)
           (scm string))
-  (export load-config
-          read-config
+  (export config-ref
           create-config!
-          config-ref
+          load-config
+          read-config
           resolve-path)
   (begin
 
@@ -36,13 +36,17 @@ Description: Reads the (define name expression) forms in path and returns
           (lambda (port)
             (let loop ((acc '()))
               (let ((form (read port)))
-                (cond
-                  ((eof-object? form) (reverse acc))
-                  ((and (pair? form) (eq? (car form) 'define)
-                        (pair? (cdr form)) (symbol? (cadr form))
-                        (pair? (cddr form)) (null? (cdddr form)))
-                   (loop (cons (cons (cadr form) (eval (caddr form) env)) acc)))
-                  (else (error "config: expected (define name value)" form)))))))))
+                (cond ((eof-object? form) (reverse acc))
+                      ((and (pair? form)
+                            (eq? (car form) 'define)
+                            (pair? (cdr form))
+                            (symbol? (cadr form))
+                            (pair? (cddr form))
+                            (null? (cdddr form)))
+                       (loop (cons (cons (cadr form) (eval (caddr form) env))
+                                   acc)))
+                      (else (error "config: expected (define name value)"
+                                   form)))))))))
 
     (define (create-config! example target)
       "Syntax: (create-config! example target)
@@ -50,13 +54,12 @@ Library: (app config)
 Description: Writes target as a copy of example, with each secret
   placeholder replaced by a fresh base64 key, readable by the owner only.
   Refuses to overwrite an existing file."
-      (when (file-exists? target)
-        (error "config already exists" target))
-      (let ((text (string-replace-all (read-file-string example)
-                                      secret-placeholder
-                                      (base64-encode (random-bytes 32)))))
-        (call-with-output-file target
-          (lambda (p) (write-string text p)))
+      (when (file-exists? target) (error "config already exists" target))
+      (let
+          ((text (string-replace-all (read-file-string example)
+                                     secret-placeholder
+                                     (base64-encode (random-bytes 32)))))
+        (call-with-output-file target (lambda (p) (write-string text p)))
         (chmod target "600")))
 
     (define (load-config root args)
@@ -70,15 +73,15 @@ Description: Reads the config named by the first command-line argument in
           (let ((path (string-append root "/config.scm")))
             (unless (file-exists? path)
               (create-config! (string-append root "/config.example.scm") path)
-              (display (string-append "created " path "\n") (current-error-port)))
+              (display (string-append "created " path "\n")
+                       (current-error-port)))
             (read-config path))))
 
     (define (config-ref cfg name default)
       "Syntax: (config-ref cfg name default)
 Library: (app config)
 Description: The value of name in cfg, or default if the file has none."
-      (let ((p (assq name cfg)))
-        (if p (cdr p) default)))
+      (let ((p (assq name cfg))) (if p (cdr p) default)))
 
     (define (resolve-path root path)
       "Syntax: (resolve-path root path)

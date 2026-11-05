@@ -5,14 +5,14 @@
           (srfi 13)
           (scm data core))
   (export data-locale
-          na-string
-          fmt-num
+          fmt-date
           fmt-int
+          fmt-num
           fmt-pct
           fmt-pct-change
           fmt-si
-          fmt-date
-          fmt-value)
+          fmt-value
+          na-string)
   (begin
 
     ;; ================================================================
@@ -25,22 +25,22 @@
     ;; na formats as (na-string), default "NA".
     ;; ================================================================
 
-    (define data-locale
-      (make-parameter '((thousands . "'") (decimal . "."))))
+    (define data-locale (make-parameter '((thousands . "'") (decimal . "."))))
 
     (define na-string (make-parameter "NA"))
 
-    (define (loc key)
-      (let ((p (assq key (data-locale)))) (if p (cdr p) "")))
+    (define (loc key) (let ((p (assq key (data-locale)))) (if p (cdr p) "")))
 
     ;; digits of the exact integer n (>= 0) grouped by threes
     (define (group-thousands digits sep)
       (let ((n (string-length digits)))
         (if (or (<= n 3) (string=? sep ""))
             digits
-            (let loop ((i (- n 3)) (acc (list (substring digits (- n 3) n))))
+            (let loop ((i (- n 3))
+                       (acc (list (substring digits (- n 3) n))))
               (if (<= i 3)
-                  (apply string-append (substring digits 0 i)
+                  (apply string-append
+                         (substring digits 0 i)
                          (map (lambda (s) (string-append sep s)) acc))
                   (loop (- i 3) (cons (substring digits (- i 3) i) acc)))))))
 
@@ -54,27 +54,34 @@ Example:
   (fmt-num 24973.25 1) => \"24'973.3\"
   (fmt-num -0.04 1)    => \"0.0\""
       (let ((decimals (if (pair? opts) (car opts) 0))
-            (thousands? (if (and (pair? opts) (pair? (cdr opts))) (cadr opts) #t)))
-        (cond
-         ((na? x) (na-string))
-         ((not (real? x)) (error "fmt-num: not a number" x))
-         ((and (inexact? x) (not (= x x))) "NaN")
-         ((and (inexact? x) (or (= x +inf.0) (= x -inf.0))) (if (> x 0) "Inf" "-Inf"))
-         (else
-          (let* ((scale (expt 10 decimals))
-                 (e (exact x))
-                 (neg (< e 0))
-                 (r (floor (+ (* (abs e) scale) 1/2)))
-                 (int-part (quotient r scale))
-                 (frac-part (remainder r scale))
-                 (int-str (group-thousands (number->string int-part)
-                                           (if thousands? (loc 'thousands) "")))
-                 (frac-str (if (= decimals 0)
-                               ""
-                               (string-append (loc 'decimal)
-                                              (string-pad (number->string frac-part)
-                                                          decimals #\0)))))
-            (string-append (if (and neg (> r 0)) "-" "") int-str frac-str))))))
+            (thousands? (if (and (pair? opts) (pair? (cdr opts)))
+                            (cadr opts)
+                            #t)))
+        (cond ((na? x) (na-string))
+              ((not (real? x)) (error "fmt-num: not a number" x))
+              ((and (inexact? x) (not (= x x))) "NaN")
+              ((and (inexact? x) (or (= x +inf.0) (= x -inf.0)))
+               (if (> x 0) "Inf" "-Inf"))
+              (else (let* ((scale (expt 10 decimals))
+                           (e (exact x))
+                           (neg (< e 0))
+                           (r (floor (+ (* (abs e) scale) 1/2)))
+                           (int-part (quotient r scale))
+                           (frac-part (remainder r scale))
+                           (int-str (group-thousands
+                                     (number->string int-part)
+                                     (if thousands? (loc 'thousands) "")))
+                           (frac-str (if
+                                      (= decimals 0)
+                                      ""
+                                      (string-append
+                                       (loc 'decimal)
+                                       (string-pad (number->string frac-part)
+                                                   decimals
+                                                   #\0)))))
+                      (string-append (if (and neg (> r 0)) "-" "")
+                                     int-str
+                                     frac-str))))))
 
     (define (fmt-int x)
       "Syntax: (fmt-int x)
@@ -93,7 +100,8 @@ Example:
   (fmt-pct 0.2345) => \"23.5 %\""
       (if (na? x)
           (na-string)
-          (string-append (fmt-num (* 100 x) (if (pair? opts) (car opts) 1)) " %")))
+          (string-append (fmt-num (* 100 x) (if (pair? opts) (car opts) 1))
+                         " %")))
 
     (define (fmt-pct-change a b . opts)
       "Syntax: (fmt-pct-change from to [decimals])
@@ -103,16 +111,19 @@ Description: The relative change from a to b as a signed percent (default
 Example:
   (fmt-pct-change 20316 24973) => \"+23 %\""
       (let ((decimals (if (pair? opts) (car opts) 0)))
-        (cond
-         ((or (na? a) (na? b)) (na-string))
-         ((zero? a) (if (zero? b) (string-append (fmt-num 0 decimals) " %") "n/a"))
-         (else
-          (let* ((p (* 100 (- (/ b a) 1)))
-                 (s (fmt-num p decimals))
-                 (zero (fmt-num 0 decimals)))
-            (string-append (if (and (> p 0) (not (string=? s zero))) "+" "")
-                           (if (string=? s (string-append "-" zero)) zero s)
-                           " %"))))))
+        (cond ((or (na? a) (na? b)) (na-string))
+              ((zero? a)
+               (if (zero? b) (string-append (fmt-num 0 decimals) " %") "n/a"))
+              (else (let* ((p (* 100 (- (/ b a) 1)))
+                           (s (fmt-num p decimals))
+                           (zero (fmt-num 0 decimals)))
+                      (string-append (if (and (> p 0) (not (string=? s zero)))
+                                         "+"
+                                         "")
+                                     (if (string=? s (string-append "-" zero))
+                                         zero
+                                         s)
+                                     " %"))))))
 
     (define (fmt-si x . opts)
       "Syntax: (fmt-si x [decimals])
@@ -143,7 +154,9 @@ Example:
              (dec (loc 'decimal)))
         (if (string-index s (string-ref dec 0))
             (let* ((t (string-trim-right s #\0)))
-              (if (string-suffix? dec t) (substring t 0 (- (string-length t) (string-length dec))) t))
+              (if (string-suffix? dec t)
+                  (substring t 0 (- (string-length t) (string-length dec)))
+                  t))
             s)))
 
     (define (fmt-value x)
@@ -158,18 +171,40 @@ Example:
             ((string? x) x)
             ((exact-integer? x) (number->string x))
             ((and (real? x) (inexact? x) (not (= x x))) "NaN")
-            ((real? x) (if (or (= x +inf.0) (= x -inf.0)) (if (> x 0) "Inf" "-Inf") (short-real x)))
+            ((real? x)
+             (if (or (= x +inf.0) (= x -inf.0))
+                 (if (> x 0) "Inf" "-Inf")
+                 (short-real x)))
             ((boolean? x) (if x "TRUE" "FALSE"))
             ((day? x) (day->string x))
             ((symbol? x) (symbol->string x))
             ;; a geometry of (scm geo): its type and size, not its coordinates
-            ((and (pair? x) (memq (car x) '(polygon polyline multipoint)) (list? (cdr x)) (every vector? (cdr x)))
+            ((and (pair? x)
+                  (memq (car x) '(polygon polyline multipoint))
+                  (list? (cdr x))
+                  (every vector? (cdr x)))
              (let ((parts (length (cdr x)))
-                   (points (fold (lambda (v n) (+ n (if (eq? (car x) 'multipoint) 1 (quotient (vector-length v) 2)))) 0 (cdr x))))
-               (string-append "<" (symbol->string (car x)) " "
+                   (points (fold (lambda (v n)
+                                   (+ n
+                                      (if (eq? (car x) 'multipoint)
+                                          1
+                                          (quotient (vector-length v) 2))))
+                                 0
+                                 (cdr x))))
+               (string-append "<"
+                              (symbol->string (car x))
+                              " "
                               (if (eq? (car x) 'multipoint)
-                                  (string-append (number->string points) " pt")
-                                  (string-append (number->string parts) (if (eq? (car x) 'polygon) " rings " " paths ")
-                                                 (number->string points) " pt"))
+                                  (string-append (number->string points)
+                                                 " pt")
+                                  (string-append
+                                   (number->string parts)
+                                   (if (eq? (car x) 'polygon)
+                                       " rings "
+                                       " paths ")
+                                   (number->string points)
+                                   " pt"))
                               ">")))
-            (else (let ((p (open-output-string))) (write x p) (get-output-string p)))))))
+            (else (let ((p (open-output-string)))
+                    (write x p)
+                    (get-output-string p)))))))

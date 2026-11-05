@@ -1,4 +1,10 @@
-(import (scheme base) (scheme file) (srfi 1) (srfi 13) (scm fs) (scm data) (scm test))
+(import (scheme base)
+        (scheme file)
+        (srfi 1)
+        (srfi 13)
+        (scm data)
+        (scm fs)
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 
@@ -9,15 +15,26 @@
 (define gain (fmt-pct-change 8169.5 10688))
 
 (define doc
-  (report (title "MFZO") (subtitle "v1 vs v2") (date "2026-10-30")
+  (report (title "MFZO")
+          (subtitle "v1 vs v2")
+          (date "2026-10-30")
           (h2 "Points")
-          (p "Totals rise by " (b ,gain) ", see " (link "https://example.org" "here") ".")
+          (p "Totals rise by "
+             (b ,gain)
+             ", see "
+             (link "https://example.org" "here")
+             ".")
           (table ,(mutate pts (d (/ (- v2 v1) v1)))
                  (columns (splg "SPLG") (v1 "v1" num) (v2 "v2") (d "Δ" pct))
-                 (total-row) (caption "ZH"))
+                 (total-row)
+                 (caption "ZH"))
           (figure ,plot (caption "Points"))
-          (h2 "Notes") (ul "a" (li "b " (i "c"))) (ol "x")
-          (note "careful") (pre "code") (hr)
+          (h2 "Notes")
+          (ul "a" (li "b " (i "c")))
+          (ol "x")
+          (note "careful")
+          (pre "code")
+          (hr)
           (h2 "End")))
 
 (define (has? s sub) (and (string-contains s sub) #t))
@@ -33,7 +50,8 @@
     (test-assert (has? h "<th class=\"num\">v1</th>"))
     (test-assert (has? h "<td class=\"num\">1&#39;729</td>"))
     (test-assert (has? h "<td class=\"num\">35 %</td>"))
-    (test-assert (has? h "<tr class=\"total\"><td class=\"txt\">Total</td><td class=\"num\">8&#39;170</td><td class=\"num\">10&#39;688</td><td class=\"num\"></td></tr>"))
+    (test-assert (has? h
+                       "<tr class=\"total\"><td class=\"txt\">Total</td><td class=\"num\">8&#39;170</td><td class=\"num\">10&#39;688</td><td class=\"num\"></td></tr>"))
     ;; inline chart, caption, table of contents (3 h2), dark mode css
     (test-assert (has? h "<svg"))
     (test-assert (has? h "Figure 1: "))
@@ -44,10 +62,17 @@
     (test-assert (not (has? (report->html doc #f) "<nav class=\"toc\">")))))
 
 (test-group "markdown"
-  (let ((m (report->markdown doc (lambda (p n) (string-append "fig" (number->string n) ".png")))))
+  (let
+      ((m (report->markdown doc
+                            (lambda (p n)
+                              (string-append "fig"
+                                             (number->string n)
+                                             ".png")))))
     (test-assert (string-prefix? "# MFZO\n\n*v1 vs v2*\n\n2026-10-30\n" m))
-    (test-assert (has? m "Totals rise by **+31 %**, see [here](https://example.org)."))
-    (test-assert (has? m "| SPLG | v1 | v2 | Δ |\n|---|---:|---:|---:|\n| BEW8 | 6'441 | 8'694 | 35 % |"))
+    (test-assert (has? m
+                       "Totals rise by **+31 %**, see [here](https://example.org)."))
+    (test-assert (has? m
+                       "| SPLG | v1 | v2 | Δ |\n|---|---:|---:|---:|\n| BEW8 | 6'441 | 8'694 | 35 % |"))
     (test-assert (has? m "| **Total** | **8'170** | **10'688** |  |"))
     (test-assert (has? m "![Points](fig1.png)"))
     (test-assert (has? m "- b *c*"))
@@ -57,7 +82,8 @@
   (test-assert (has? (report->markdown (report (p "a*b_c|d"))) "a\\*b\\_c|d"))
   ;; spliced blocks
   (let ((extra '((p "one") (p "two"))))
-    (test-assert (has? (report->markdown (report (h2 "x") ,@extra)) "one\n\ntwo"))))
+    (test-assert (has? (report->markdown (report (h2 "x") ,@extra))
+                       "one\n\ntwo"))))
 
 (test-group "write-report"
   (let ((dir (mktempdir)))
@@ -72,17 +98,38 @@
     (test-error (write-report doc (join-path dir "r.docx")))))
 
 (test-group "umbrella helpers"
-  (define spec '((years . (2024 2025)) (out . "report") (regroup . #f) (n . 5) (mode . v1)))
+  (define spec
+    '((years . (2024 2025))
+      (out . "report")
+      (regroup . #f)
+      (n . 5)
+      (mode . v1)))
   (test-equal spec (script-args spec #f '()))
-  (test-equal '((years 2023 2024) (out . "x") (regroup . #t) (n . 7) (mode . v2))
-              (script-args spec #f '("years=2023,2024" "out=x" "regroup=yes" "n=7" "mode=v2")))
+  (test-equal '((years 2023 2024)
+                (out . "x")
+                (regroup . #t)
+                (n . 7)
+                (mode . v2))
+              (script-args spec #f
+                           '("years=2023,2024" "out=x" "regroup=yes" "n=7"
+                             "mode=v2")))
   (test-error (script-args spec #f '("n=abc")))
   (test-equal '((out . #f) (keys . ()) (on . #t))
-              (script-args '((out string #f) (keys list-symbol ()) (on bool #t)) #f '()))
+              (script-args '((out string #f)
+                             (keys list-symbol ())
+                             (on bool #t))
+                           #f
+                           '()))
   (test-equal '((out . "x") (keys a b) (on . #f))
-              (script-args '((out string #f) (keys list-symbol ()) (on bool #t)) #f '("out=x" "keys=a,b" "on=no")))
+              (script-args '((out string #f)
+                             (keys list-symbol ())
+                             (on bool #t))
+                           #f
+                           '("out=x" "keys=a,b" "on=no")))
   (let ((p (open-output-string)))
-    (test-equal 42 (parameterize ((current-output-port p)) (with-timing "answer" (lambda () 42))))
+    (test-equal 42
+                (parameterize ((current-output-port p))
+                  (with-timing "answer" (lambda () 42))))
     (test-assert (string-prefix? "answer: " (get-output-string p)))))
 
 ;; PDF: the bytes as a Latin-1 string, to look for structure
@@ -93,8 +140,7 @@
 
 (define (count-matches s pat)
   (let loop ((i 0) (n 0))
-    (let ((j (string-contains s pat i)))
-      (if j (loop (+ j 1) (+ n 1)) n))))
+    (let ((j (string-contains s pat i))) (if j (loop (+ j 1) (+ n 1)) n))))
 
 (test-group "pdf"
   (let* ((bv (report->pdf doc))
@@ -102,10 +148,12 @@
     (test-assert (string-prefix? "%PDF-" s))
     (test-assert (<= 1 (count-matches s "/Type /Page ") 3))
     (test-assert (string-contains s "/Outlines"))
-    (test-assert (string-contains s "(Points)"))          ; an h2 as a bookmark
+    (test-assert (string-contains s "(Points)")) ; an h2 as a bookmark
     (test-assert (string-contains s "/Title (MFZO)")))
   ;; a long table goes over several pages
-  (let* ((big (make-df (list (cons 'i (list->vector (list-tabulate 120 (lambda (i) i)))))))
+  (let* ((big (make-df (list (cons 'i
+                                   (list->vector
+                                    (list-tabulate 120 (lambda (i) i)))))))
          (s (pdf-text (report->pdf (report (title "Long") (table ,big))))))
     (test-assert (>= (count-matches s "/Type /Page ") 3)))
   (let* ((s (pdf-text (plot->pdf plot))))

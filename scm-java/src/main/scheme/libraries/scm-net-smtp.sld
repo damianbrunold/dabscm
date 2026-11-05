@@ -1,37 +1,41 @@
 (define-library (scm net smtp)
-  (import (scm core) (scheme base) (scheme char)
-          (scm net sockets) (scm crypto) (scm net email))
-  (export smtp-open
-          smtp-session?
-          smtp-session-socket
+  (import (scheme base)
+          (scheme char)
+          (scm core)
+          (scm crypto)
+          (scm net email)
+          (scm net sockets))
+  (export send-email
+          smtp-auth
+          smtp-close
+          smtp-command
+          smtp-data
+          smtp-ehlo
+          smtp-encode-plain
+          smtp-has-capability?
+          smtp-mail-from
+          smtp-open
+          smtp-quit
+          smtp-rcpt-to
+          smtp-read-response
+          smtp-read-response-from
+          smtp-session-capabilities
           smtp-session-host
           smtp-session-port
           smtp-session-security
-          smtp-session-capabilities
-          smtp-read-response
-          smtp-read-response-from
-          smtp-command
-          smtp-ehlo
-          smtp-has-capability?
+          smtp-session-socket
+          smtp-session?
           smtp-starttls!
-          smtp-auth
-          smtp-encode-plain
-          smtp-mail-from
-          smtp-rcpt-to
-          smtp-stuff-dots
-          smtp-data
-          smtp-quit
-          smtp-close
-          send-email)
+          smtp-stuff-dots)
   (begin
 
     (define-record-type smtp-session
       (%make-smtp-session socket host port security capabilities)
       smtp-session?
-      (socket       smtp-session-socket)
-      (host         smtp-session-host)
-      (port         smtp-session-port)
-      (security     smtp-session-security)
+      (socket smtp-session-socket)
+      (host smtp-session-host)
+      (port smtp-session-port)
+      (security smtp-session-security)
       (capabilities smtp-session-capabilities smtp-session-capabilities-set!))
 
     (define %nul (string (integer->char 0)))
@@ -58,13 +62,11 @@ Example:
           (when (eof-object? line)
             (error "smtp: connection closed while reading response"))
           (let ((len (string-length line)))
-            (when (< len 3)
-              (error "smtp: malformed response line" line))
+            (when (< len 3) (error "smtp: malformed response line" line))
             (let ((code (string->number (substring line 0 3)))
                   (text (if (> len 4) (substring line 4 len) ""))
                   (more (and (> len 3) (char=? (string-ref line 3) #\-))))
-              (when (not code)
-                (error "smtp: malformed response code" line))
+              (when (not code) (error "smtp: malformed response code" line))
               (if more
                   (loop (cons text acc))
                   (values code (reverse (cons text acc)))))))))
@@ -84,12 +86,15 @@ Example:
     (define (%join-lines lines)
       (cond ((null? lines) "")
             ((null? (cdr lines)) (car lines))
-            (else (string-append (car lines) " / " (%join-lines (cdr lines))))))
+            (else (string-append (car lines)
+                                 " / "
+                                 (%join-lines (cdr lines))))))
 
     (define (%expect code ok-codes lines context)
       (unless (memv code ok-codes)
         (error (string-append "smtp: " context " failed")
-               code (%join-lines lines)))
+               code
+               (%join-lines lines)))
       code)
 
     (define (smtp-command session line)
@@ -118,12 +123,15 @@ Example:
     (define (%tokens s)
       (let ((n (string-length s)))
         (let loop ((i 0) (start 0) (acc '()))
-          (cond
-            ((= i n) (reverse (if (> i start) (cons (substring s start i) acc) acc)))
-            ((char=? (string-ref s i) #\space)
-             (loop (+ i 1) (+ i 1)
-                   (if (> i start) (cons (substring s start i) acc) acc)))
-            (else (loop (+ i 1) start acc))))))
+          (cond ((= i n)
+                 (reverse (if (> i start)
+                              (cons (substring s start i) acc)
+                              acc)))
+                ((char=? (string-ref s i) #\space)
+                 (loop (+ i 1)
+                       (+ i 1)
+                       (if (> i start) (cons (substring s start i) acc) acc)))
+                (else (loop (+ i 1) start acc))))))
 
     (define (smtp-has-capability? session name)
       "Syntax: (smtp-has-capability? session name)
@@ -143,7 +151,8 @@ Example:
     (define (%auth-line session)
       (let loop ((caps (smtp-session-capabilities session)))
         (cond ((null? caps) #f)
-              ((string=? (string-upcase (%first-token (car caps))) "AUTH") (car caps))
+              ((string=? (string-upcase (%first-token (car caps))) "AUTH")
+               (car caps))
               (else (loop (cdr caps))))))
 
     (define (%mechanism? auth-line mech)
@@ -160,8 +169,9 @@ Description: Sends EHLO and parses the reply, storing the advertised capability
   STARTTLS upgrade.
 Example:
   (smtp-ehlo s) ; => (\"STARTTLS\" \"AUTH LOGIN PLAIN\" \"SIZE 35882577\")"
-      (let-values (((code lines)
-                    (smtp-command session (string-append "EHLO " %ehlo-name))))
+      (let-values
+          (((code lines)
+            (smtp-command session (string-append "EHLO " %ehlo-name))))
         (%expect code '(250) lines "EHLO")
         (let ((caps (if (pair? lines) (cdr lines) '())))
           (smtp-session-capabilities-set! session caps)
@@ -204,20 +214,23 @@ Example:
       (base64-encode (string->utf8 (string-append %nul user %nul pass))))
 
     (define (%auth-plain session user pass)
-      (let-values (((code lines)
-                    (smtp-command session
-                                  (string-append "AUTH PLAIN "
-                                                 (smtp-encode-plain user pass)))))
+      (let-values
+          (((code lines)
+            (smtp-command session
+                          (string-append "AUTH PLAIN "
+                                         (smtp-encode-plain user pass)))))
         (%expect code '(235) lines "AUTH PLAIN")))
 
     (define (%auth-login session user pass)
       (let-values (((code lines) (smtp-command session "AUTH LOGIN")))
         (%expect code '(334) lines "AUTH LOGIN"))
-      (let-values (((code lines)
-                    (smtp-command session (base64-encode (string->utf8 user)))))
+      (let-values
+          (((code lines)
+            (smtp-command session (base64-encode (string->utf8 user)))))
         (%expect code '(334) lines "AUTH LOGIN (username)"))
-      (let-values (((code lines)
-                    (smtp-command session (base64-encode (string->utf8 pass)))))
+      (let-values
+          (((code lines)
+            (smtp-command session (base64-encode (string->utf8 pass)))))
         (%expect code '(235) lines "AUTH LOGIN (password)")))
 
     (define (smtp-auth session user pass)
@@ -231,12 +244,12 @@ Description: Authenticates to the server using the advertised AUTH mechanism,
 Example:
   (smtp-auth s \"me@example.com\" \"app-password\")"
       (let ((auth (%auth-line session)))
-        (unless auth
-          (error "smtp: server does not advertise AUTH"))
-        (cond
-          ((%mechanism? auth "PLAIN") (%auth-plain session user pass))
-          ((%mechanism? auth "LOGIN") (%auth-login session user pass))
-          (else (error "smtp: no supported AUTH mechanism (need PLAIN or LOGIN)" auth))))
+        (unless auth (error "smtp: server does not advertise AUTH"))
+        (cond ((%mechanism? auth "PLAIN") (%auth-plain session user pass))
+              ((%mechanism? auth "LOGIN") (%auth-login session user pass))
+              (else (error
+                     "smtp: no supported AUTH mechanism (need PLAIN or LOGIN)"
+                     auth))))
       session)
 
     ;; ---- envelope + data ------------------------------------------------
@@ -254,8 +267,10 @@ Description: Sends MAIL FROM for the envelope sender addr (bare addresses are
   replies 250. Returns the session.
 Example:
   (smtp-mail-from s \"me@example.com\")"
-      (let-values (((code lines)
-                    (smtp-command session (string-append "MAIL FROM:" (%angle addr)))))
+      (let-values
+          (((code lines)
+            (smtp-command session
+                          (string-append "MAIL FROM:" (%angle addr)))))
         (%expect code '(250) lines "MAIL FROM"))
       session)
 
@@ -267,8 +282,9 @@ Description: Sends RCPT TO for one recipient address addr (bare addresses are
   an error otherwise. Call once per recipient. Returns the session.
 Example:
   (smtp-rcpt-to s \"you@example.com\")"
-      (let-values (((code lines)
-                    (smtp-command session (string-append "RCPT TO:" (%angle addr)))))
+      (let-values
+          (((code lines)
+            (smtp-command session (string-append "RCPT TO:" (%angle addr)))))
         (%expect code '(250 251) lines "RCPT TO"))
       session)
 
@@ -291,19 +307,23 @@ Example:
       ;; either LF or CRLF line endings in the input.
       (let ((n (string-length data)))
         (let loop ((i 0) (start 0))
-          (cond
-            ((>= i n)
-             (when (> i start)
-               (write-string (smtp-stuff-dots (substring data start i)) out)
-               (write-string "\r\n" out)))
-            ((char=? (string-ref data i) #\newline)
-             (let ((end (if (and (> i start)
-                                 (char=? (string-ref data (- i 1)) #\return))
-                            (- i 1) i)))
-               (write-string (smtp-stuff-dots (substring data start end)) out)
-               (write-string "\r\n" out))
-             (loop (+ i 1) (+ i 1)))
-            (else (loop (+ i 1) start))))))
+          (cond ((>= i n)
+                 (when (> i start)
+                   (write-string (smtp-stuff-dots (substring data start i))
+                                 out)
+                   (write-string "\r\n" out)))
+                ((char=? (string-ref data i) #\newline)
+                 (let
+                     ((end (if (and (> i start)
+                                    (char=? (string-ref data (- i 1))
+                                            #\return))
+                               (- i 1)
+                               i)))
+                   (write-string (smtp-stuff-dots (substring data start end))
+                                 out)
+                   (write-string "\r\n" out))
+                 (loop (+ i 1) (+ i 1)))
+                (else (loop (+ i 1) start))))))
 
     (define (smtp-data session data)
       "Syntax: (smtp-data session data)
@@ -332,8 +352,7 @@ Description: Closes the session's socket without sending QUIT, ignoring any
   a graceful shutdown. Returns #t.
 Example:
   (smtp-close s)"
-      (guard (e (#t #f))
-        (socket-close (smtp-session-socket session)))
+      (guard (e (#t #f)) (socket-close (smtp-session-socket session)))
       #t)
 
     (define (smtp-quit session)
@@ -345,8 +364,7 @@ Description: Sends QUIT for a graceful shutdown and then closes the socket.
 Example:
   (smtp-quit s)"
       (guard (e (#t #f))
-        (let-values (((code lines) (smtp-command session "QUIT")))
-          code))
+        (let-values (((code lines) (smtp-command session "QUIT"))) code))
       (smtp-close session))
 
     ;; ---- session open + high-level send ---------------------------------
@@ -370,8 +388,7 @@ Example:
         (let-values (((code lines) (smtp-read-response session)))
           (%expect code '(220) lines "greeting"))
         (smtp-ehlo session)
-        (when (eq? security 'starttls)
-          (smtp-starttls! session verify))
+        (when (eq? security 'starttls) (smtp-starttls! session verify))
         session))
 
     (define (send-email host port security from recipients subject body . opt)
@@ -400,9 +417,9 @@ Example:
           (lambda ()
             (when (and user pass) (smtp-auth session user pass))
             (smtp-mail-from session from)
-            (for-each (lambda (r) (smtp-rcpt-to session r)) (email-recipients msg))
+            (for-each (lambda (r) (smtp-rcpt-to session r))
+                      (email-recipients msg))
             (smtp-data session data)
             (smtp-quit session)
             #t)
-          (lambda () (smtp-close session)))))
-))
+          (lambda () (smtp-close session)))))))

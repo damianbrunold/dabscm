@@ -1,5 +1,6 @@
 (define-library (scm fs)
-  (import (scm core) (scheme base))
+  (import (scheme base)
+          (scm core))
   (export absolute-path
           base-name
           cd
@@ -23,22 +24,22 @@
           file-size
           file-symlink?
           file-unlock
-          make-symlink
-          path-exists?
-          read-symlink
-          set-file-modification-time!
           join-path
           ln
           make-directory
+          make-symlink
           mktemp
           mktempdir
           move-directory
           move-file
           mv
           normalized-path
+          path-exists?
           path-sep
+          read-symlink
           readlink
           rm
+          set-file-modification-time!
           special-folder-application-data
           special-folder-documents
           special-folder-temp
@@ -65,19 +66,22 @@
     (define file-exists? (%primitive "file-exists?"))
     (define file-lock (%primitive "file-lock"))
     (define file-modification-date (%primitive "file-modification-date"))
-    (define file-modification-timestamp (%primitive "file-modification-timestamp"))
+    (define file-modification-timestamp
+      (%primitive "file-modification-timestamp"))
     (define file-size (%primitive "file-size"))
     (define file-symlink? (%primitive "file-symlink?"))
     (define file-unlock (%primitive "file-unlock"))
     (define make-symlink (%primitive "make-symlink"))
     (define path-exists? (%primitive "path-exists?"))
     (define read-symlink (%primitive "read-symlink"))
-    (define set-file-modification-time! (%primitive "set-file-modification-time!"))
+    (define set-file-modification-time!
+      (%primitive "set-file-modification-time!"))
     (define make-directory (%primitive "make-directory"))
     (define move-directory (%primitive "move-directory"))
     (define move-file (%primitive "move-file"))
     (define normalized-path (%primitive "normalized-path"))
-    (define special-folder-application-data (%primitive "special-folder-application-data"))
+    (define special-folder-application-data
+      (%primitive "special-folder-application-data"))
     (define special-folder-documents (%primitive "special-folder-documents"))
     (define special-folder-temp (%primitive "special-folder-temp"))
     (define special-folder-user-home (%primitive "special-folder-user-home"))
@@ -147,17 +151,14 @@ Description: Creates path as an empty file if it does not exist. When path
 Example:
   (touch \"/tmp/foo\")"
       (let ((exists? (file-exists? path)))
-        (cond
-          ((and (not exists?) (%has-flag? opts 'no-create)) #f)
-          ((not exists?)
-           (let ((p (%open-output-file path)))
-             (%close-output-port p))
-           #t)
-          (else
-           (let ((native (which "touch")))
-             (if native
-                 (zero? (%run-program (list native path)))
-                 #t))))))
+        (cond ((and (not exists?) (%has-flag? opts 'no-create)) #f)
+              ((not exists?)
+               (let ((p (%open-output-file path))) (%close-output-port p))
+               #t)
+              (else (let ((native (which "touch")))
+                      (if native
+                          (zero? (%run-program (list native path)))
+                          #t))))))
 
     (define (chmod path mode . opts)
       "Syntax: (chmod path mode [option ...])
@@ -171,13 +172,14 @@ Example:
   (chmod \"dir\" \"700\" 'recursive)"
       (let ((native (which "chmod")))
         (if native
-            (let* ((mode-str (if (string? mode) mode (%number->string mode 8)))
+            (let* ((mode-str (if (string? mode)
+                                 mode
+                                 (%number->string mode 8)))
                    (args (if (%has-flag? opts 'recursive)
                              (list native "-R" mode-str path)
                              (list native mode-str path))))
               (zero? (%run-program args)))
-            (if (%windows?) #f
-                (error "chmod: native chmod not found")))))
+            (if (%windows?) #f (error "chmod: native chmod not found")))))
 
     (define (chown path owner . opts)
       "Syntax: (chown path owner [option ...])
@@ -189,12 +191,12 @@ Example:
   (chown \"file\" \"alice:staff\")"
       (let ((native (which "chown")))
         (if native
-            (let ((args (if (%has-flag? opts 'recursive)
-                            (list native "-R" owner path)
-                            (list native owner path))))
+            (let
+                ((args (if (%has-flag? opts 'recursive)
+                           (list native "-R" owner path)
+                           (list native owner path))))
               (zero? (%run-program args)))
-            (if (%windows?) #f
-                (error "chown: native chown not found")))))
+            (if (%windows?) #f (error "chown: native chown not found")))))
 
     (define (ln target name . opts)
       "Syntax: (ln target name [option ...])
@@ -207,16 +209,21 @@ Example:
       (let ((native (which "ln")))
         (if native
             (let* ((args (list native))
-                   (args (if (%has-flag? opts 'symbolic) (append args '("-s")) args))
-                   (args (if (%has-flag? opts 'force)    (append args '("-f")) args))
+                   (args (if (%has-flag? opts 'symbolic)
+                             (append args '("-s"))
+                             args))
+                   (args (if (%has-flag? opts 'force)
+                             (append args '("-f"))
+                             args))
                    (args (append args (list target name))))
               (zero? (%run-program args)))
             (if (%windows?)
                 (let ((sym? (%has-flag? opts 'symbolic)))
-                  (zero? (%run-program
-                          (if sym?
-                              (list "cmd" "/c" "mklink" name target)
-                              (list "cmd" "/c" "mklink" "/H" name target)))))
+                  (zero? (%run-program (if
+                                        sym?
+                                        (list "cmd" "/c" "mklink" name target)
+                                        (list "cmd" "/c" "mklink" "/H" name
+                                              target)))))
                 (error "ln: native ln not found")))))
 
     (define (readlink path)
@@ -253,8 +260,9 @@ Example:
                          (let ((r (%run-capture (list s "-c" "%a" path))))
                            (if (and (pair? r) (zero? (car r)))
                                (%strip-newline (cadr r))
-                               (let ((r2 (%run-capture
-                                          (list s "-f" "%Lp" path))))
+                               (let
+                                   ((r2
+                                     (%run-capture (list s "-f" "%Lp" path))))
                                  (if (and (pair? r2) (zero? (car r2)))
                                      (%strip-newline (cadr r2))
                                      #f))))
@@ -268,8 +276,9 @@ Example:
     (define (%temp-name prefix)
       (let* ((dir (special-folder-temp))
              (uniq (%string-append prefix "-"
-                                  (%number->string (%jiffy) 16) "-"
-                                  (%number->string (%next-counter) 16))))
+                                   (%number->string (%jiffy) 16)
+                                   "-"
+                                   (%number->string (%next-counter) 16))))
         (%string-append dir path-sep uniq)))
 
     (define (mktemp . opts)
@@ -282,8 +291,7 @@ Example:
   (mktemp) => \"/tmp/tmp-12345-1aff3...\""
       (let* ((prefix (%opt-value opts 'prefix "tmp"))
              (path (%temp-name prefix)))
-        (let ((p (%open-output-file path)))
-          (%close-output-port p))
+        (let ((p (%open-output-file path))) (%close-output-port p))
         path))
 
     (define (mktempdir . opts)
@@ -308,15 +316,15 @@ Example:
   (rm \"build\" 'recursive 'force)"
       (let ((force? (%has-flag? opts 'force))
             (recursive? (%has-flag? opts 'recursive)))
-        (cond
-          ((directory-exists? path)
-           (if recursive?
-               (delete-directory path)
-               (if force? #f (error "rm: is a directory (use 'recursive)" path))))
-          ((file-exists? path)
-           (delete-file path))
-          (force? #f)
-          (else (error "rm: no such file or directory" path)))))
+        (cond ((directory-exists? path)
+               (if recursive?
+                   (delete-directory path)
+                   (if force?
+                       #f
+                       (error "rm: is a directory (use 'recursive)" path))))
+              ((file-exists? path) (delete-file path))
+              (force? #f)
+              (else (error "rm: no such file or directory" path)))))
 
     (define (cp src dst . opts)
       "Syntax: (cp src dst [option ...])
@@ -327,13 +335,12 @@ Example:
   (cp \"a.txt\" \"b.txt\")
   (cp \"src/\" \"dst/\" 'recursive)"
       (let ((recursive? (%has-flag? opts 'recursive)))
-        (cond
-          ((directory-exists? src)
-           (if recursive?
-               (copy-directory src dst)
-               (error "cp: source is a directory (use 'recursive)" src)))
-          ((file-exists? src) (copy-file src dst))
-          (else (error "cp: no such file or directory" src)))))
+        (cond ((directory-exists? src)
+               (if recursive?
+                   (copy-directory src dst)
+                   (error "cp: source is a directory (use 'recursive)" src)))
+              ((file-exists? src) (copy-file src dst))
+              (else (error "cp: no such file or directory" src)))))
 
     (define (mv src dst . opts)
       "Syntax: (mv src dst [option ...])
@@ -342,7 +349,6 @@ Description: Moves/renames src to dst. Works on files and directories.
 Example:
   (mv \"old.txt\" \"new.txt\")"
       opts
-      (cond
-        ((directory-exists? src) (move-directory src dst))
-        ((file-exists? src) (move-file src dst))
-        (else (error "mv: no such file or directory" src))))))
+      (cond ((directory-exists? src) (move-directory src dst))
+            ((file-exists? src) (move-file src dst))
+            (else (error "mv: no such file or directory" src))))))

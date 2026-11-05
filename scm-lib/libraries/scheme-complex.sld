@@ -1,7 +1,12 @@
 (define-library (scheme complex)
   (import (scheme base)
           (scheme inexact))
-  (export angle imag-part magnitude make-polar make-rectangular real-part)
+  (export angle
+          imag-part
+          magnitude
+          make-polar
+          make-rectangular
+          real-part)
   (begin
 
     (define (real-part z)
@@ -12,9 +17,7 @@ Description: Returns the real part of the complex number z. For real numbers,
 Example:
   (real-part 3.0)  => 3.0
   (real-part 1+2i) => 1"
-      (if (real? z)
-          z
-          ((%primitive "complex-real-part") z)))
+      (if (real? z) z ((%primitive "complex-real-part") z)))
 
     (define (imag-part z)
       "Syntax: (imag-part z)
@@ -36,9 +39,7 @@ Description: Returns the magnitude of the complex number z.
 Example:
   (magnitude -3.0) => 3.0
   (magnitude 3+4i) => 5.0"
-      (if (real? z)
-          (abs z)
-          ((%primitive "complex-magnitude") z)))
+      (if (real? z) (abs z) ((%primitive "complex-magnitude") z)))
 
     (define (angle z)
       "Syntax: (angle z)

@@ -10,14 +10,14 @@
 
 (define-library (app web)
   (import (scheme base)
+          (scm html builder)
           (scm io)
           (scm json simple)
-          (scm html builder)
+          (scm net http middleware)
           (scm net http request)
           (scm net http response)
           (scm net http route)
-          (scm net http static)
-          (scm net http middleware))
+          (scm net http static))
   (export make-app)
   (begin
 
@@ -36,13 +36,12 @@
 
     ;; "" or "/" -> ""; "inventory/" -> "/inventory"
     (define (normalize-prefix p)
-      (let* ((s (if (and (> (string-length p) 0) (char=? (string-ref p 0) #\/))
+      (let* ((s (if (and (> (string-length p) 0)
+                         (char=? (string-ref p 0) #\/))
                     p
                     (string-append "/" p)))
              (n (string-length s)))
-        (if (char=? (string-ref s (- n 1)) #\/)
-            (substring s 0 (- n 1))
-            s)))
+        (if (char=? (string-ref s (- n 1)) #\/) (substring s 0 (- n 1)) s)))
 
     (define (url path) (string-append (site-prefix (current-site)) path))
 
@@ -67,44 +66,57 @@
             "<svg class=\"i-moon\" viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><path d=\"M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z\"/></svg>")))
 
     (define (page title body)
-      (string-append
-       (html->string
-        (html5
-         '(@ (lang "en"))
-         `(head
-           (meta (@ (charset "utf-8")))
-           (meta (@ (name "viewport") (content "width=device-width, initial-scale=1")))
-           (title ,title)
-           (link (@ (rel "icon") (href ,(asset "favicon.svg"))))
-           (link (@ (rel "stylesheet") (href ,(asset "css/app.css"))))
-           ;; Not deferred: applies a remembered theme before first paint.
-           (script (@ (src ,(asset "js/theme-init.js"))))
-           (script (@ (src ,(asset "js/theme-toggle.js")) (defer #t))))
-         `(body
-           (header (@ (class "app-header"))
-             (h1 (a (@ (href ,(url "/"))) "Inventory"))
-             (button (@ (class "icon-btn js-theme-toggle") (type "button")
-                        (aria-label "Toggle dark mode"))
-               ,theme-icons))
-           (main ,body))))
-       "\n"))
+      (string-append (html->string (html5
+                                    '(@ (lang "en"))
+                                    `(head
+                                      (meta (@ (charset "utf-8")))
+                                      (meta
+                                       (@
+                                        (name "viewport")
+                                        (content
+                                         "width=device-width, initial-scale=1")))
+                                      (title ,title)
+                                      (link
+                                       (@ (rel "icon")
+                                          (href ,(asset "favicon.svg"))))
+                                      (link
+                                       (@ (rel "stylesheet")
+                                          (href ,(asset "css/app.css"))))
+                                      ;; Not deferred: applies a remembered theme before first paint.
+                                      (script
+                                       (@ (src ,(asset "js/theme-init.js"))))
+                                      (script
+                                       (@ (src ,(asset "js/theme-toggle.js"))
+                                          (defer #t))))
+                                    `(body
+                                      (header
+                                       (@ (class "app-header"))
+                                       (h1
+                                        (a (@ (href ,(url "/"))) "Inventory"))
+                                       (button
+                                        (@ (class "icon-btn js-theme-toggle")
+                                           (type "button")
+                                           (aria-label "Toggle dark mode"))
+                                        ,theme-icons))
+                                      (main ,body))))
+                     "\n"))
 
     ;; Values go through the auto-escaping builder: data can never inject
     ;; markup.
     (define (items-table items)
       `(table (@ (class "data"))
-         (thead (tr (th "Name") (th (@ (class "num")) "Count")))
-         (tbody
-          ,@(map (lambda (it)
-                   `(tr (td ,(json-ref it "name" ""))
-                        (td (@ (class "num"))
-                            ,(number->string (json-ref it "count" 0)))))
-                 items))))
+              (thead (tr (th "Name") (th (@ (class "num")) "Count")))
+              (tbody ,@(map (lambda (it)
+                              `(tr (td ,(json-ref it "name" ""))
+                                   (td (@ (class "num"))
+                                       ,(number->string
+                                         (json-ref it "count" 0)))))
+                            items))))
 
     (define (error-page req)
-      (html-response
-       (page "Error" '(section (h2 "Something went wrong")
-                               (p "The error has been logged.")))))
+      (html-response (page "Error"
+                           '(section (h2 "Something went wrong")
+                                     (p "The error has been logged.")))))
 
     ;; --- app ----------------------------------------------------------
 
@@ -122,27 +134,34 @@ Description: Builds the app's request handler. settings is an alist with
              (static-dir (setting settings 'static-dir))
              (data-file (setting settings 'data-file))
              (site (make-site prefix
-                              (make-static-url static-dir
-                                               (string-append prefix "/static"))))
+                              (make-static-url
+                               static-dir
+                               (string-append prefix "/static"))))
              (router (make-router)))
 
-        (router-add! router "GET" (string-append prefix "/")
-          (lambda (req params)
-            (html-response (page "Inventory" (items-table (load-items data-file))))))
+        (router-add! router "GET"
+                     (string-append prefix "/")
+                     (lambda (req params)
+                       (html-response (page
+                                       "Inventory"
+                                       (items-table
+                                        (load-items data-file))))))
 
-        (router-add! router "GET" (string-append prefix "/static/*")
-          (make-static-handler static-dir))
+        (router-add! router "GET"
+                     (string-append prefix "/static/*")
+                     (make-static-handler static-dir))
 
         ;; Outside the prefix: the health probe talks to the app directly.
         (router-add! router "GET" "/healthz"
-          (lambda (req params) (text-response "ok\n")))
+                     (lambda (req params) (text-response "ok\n")))
 
         ;; Outermost first: log every request, add the security headers,
         ;; make the site current for url/asset, and turn errors into a
         ;; logged 500 page.
-        (let ((handler (with-error-handler (router->handler router) error-page)))
+        (let
+            ((handler (with-error-handler (router->handler router)
+                        error-page)))
           (with-access-log
-           (with-security-headers
-            (lambda (req)
-              (parameterize ((current-site site))
-                (handler req))))))))))
+              (with-security-headers
+                  (lambda (req)
+                    (parameterize ((current-site site)) (handler req))))))))))

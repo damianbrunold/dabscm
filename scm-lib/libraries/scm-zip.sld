@@ -23,15 +23,18 @@
           zip-read-entry-bytevector)
   (begin
     (define open-output-zip-file (%primitive "open-output-zip-file"))
-    (define open-output-zip-bytevector (%primitive "open-output-zip-bytevector"))
+    (define open-output-zip-bytevector
+      (%primitive "open-output-zip-bytevector"))
     (define close-output-zip (%primitive "close-output-zip"))
-    (define get-output-zip-bytevector (%primitive "get-output-zip-bytevector"))
+    (define get-output-zip-bytevector
+      (%primitive "get-output-zip-bytevector"))
     (define zip-add-binary-entry (%primitive "zip-add-binary-entry"))
     (define zip-add-stored-entry (%primitive "zip-add-stored-entry"))
     (define zip-add-text-entry (%primitive "zip-add-text-entry"))
     (define open-input-zip-file (%primitive "open-input-zip-file"))
     (define zip-entry-names (%primitive "zip-entry-names"))
-    (define zip-read-entry-bytevector (%primitive "zip-read-entry-bytevector"))
+    (define zip-read-entry-bytevector
+      (%primitive "zip-read-entry-bytevector"))
     (define zip-entry-size (%primitive "zip-entry-size"))
     (define zip-extract-entry (%primitive "zip-extract-entry"))
     (define zip-add-file-entry (%primitive "zip-add-file-entry"))
@@ -67,9 +70,9 @@ Example:
                     (names2 (list-sort string<? (zip-entry-names z2))))
                 (and (equal? names1 names2)
                      (every (lambda (name)
-                                (equal? (zip-read-entry-bytevector z1 name)
-                                        (zip-read-entry-bytevector z2 name)))
-                              names1))))))))
+                              (equal? (zip-read-entry-bytevector z1 name)
+                                      (zip-read-entry-bytevector z2 name)))
+                            names1))))))))
 
     (define (call-with-output-zip filename proc)
       "Syntax: (call-with-output-zip filename proc)
@@ -104,8 +107,7 @@ Example:
             (close-output-zip z)
             (set! closed #t)
             (get-output-zip-bytevector z))
-          (lambda ()
-            (unless closed (close-output-zip z))))))
+          (lambda () (unless closed (close-output-zip z))))))
 
     (define (call-with-output-zip-entry zip entry-name proc . rest)
       "Syntax: (call-with-output-zip-entry zip entry-name proc [time])

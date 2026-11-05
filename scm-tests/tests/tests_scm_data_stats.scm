@@ -1,4 +1,8 @@
-(import (scheme base) (scm data core) (scm data frame) (scm data stats) (scm test))
+(import (scheme base)
+        (scm data core)
+        (scm data frame)
+        (scm data stats)
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 
@@ -15,17 +19,17 @@
   (test-assert (na? (mean '())))
   (test-equal 9/2 (median xs))
   (test-equal 1.75 (quantile '(1 2 3 4) 0.25))
-  (test-equal '(4 11/2) (quantile xs '(1/4 3/4)))   ; R: 4.0 5.5
-  (test-approximate 4.571429 (var xs) 1e-6)          ; R: var(x)
-  (test-approximate 2.13809 (sd xs) 1e-5)            ; R: sd(x)
-  (test-equal 3/2 (iqr xs))                          ; R: IQR(x) = 1.5
+  (test-equal '(4 11/2) (quantile xs '(1/4 3/4))) ; R: 4.0 5.5
+  (test-approximate 4.571429 (var xs) 1e-6) ; R: var(x)
+  (test-approximate 2.13809 (sd xs) 1e-5) ; R: sd(x)
+  (test-equal 3/2 (iqr xs)) ; R: IQR(x) = 1.5
   (test-equal '(1 7) (value-range (list 3 na 1 7)))
   (test-assert (na? (var '(1))))
   (test-equal 1.5 (weighted-mean '(1 3) '(3 1))))
 
 (test-group "transformations"
-  (test-equal '(1 3 na 6) (map (lambda (x) (if (na? x) 'na x)) (cumsum (list 1 2 na 3)))
-              )
+  (test-equal '(1 3 na 6)
+              (map (lambda (x) (if (na? x) 'na x)) (cumsum (list 1 2 na 3))))
   (test-equal '(1.5 3 1.5 4) (ranks '(10 20 10 30)))
   (test-equal '(1 3 1 4) (ranks '(10 20 10 30) 'min))
   (test-equal '(1 2 1 3) (ranks '(10 20 10 30) 'dense))
@@ -43,7 +47,9 @@
     (test-equal 1.0 (cdr (assq 'intercept m)))
     (test-equal 1.0 (cdr (assq 'r2 m))))
   ;; R: summary(lm(y ~ x))$r.squared for x=1:5, y=c(2,4,5,4,5) = 0.6
-  (test-approximate 0.6 (cdr (assq 'r2 (lm-simple '(1 2 3 4 5) '(2 4 5 4 5)))) 1e-9))
+  (test-approximate 0.6
+                    (cdr (assq 'r2 (lm-simple '(1 2 3 4 5) '(2 4 5 4 5))))
+                    1e-9))
 
 (test-group "tables"
   (let ((f (freq '(b a b c b))))

@@ -1,40 +1,65 @@
 (define-library (srfi 133)
-  (import (scheme base) (scheme cxr))
+  (import (scheme base)
+          (scheme cxr))
   (export
-    ;; Constructors
-    make-vector vector vector-unfold vector-unfold-right
-    vector-copy vector-reverse-copy
-    vector-append vector-concatenate vector-append-subvectors
-    ;; Predicates
-    vector? vector-empty? vector=
-    ;; Selectors
-    vector-ref vector-length
-    ;; Iteration
-    vector-fold vector-fold-right
-    vector-map vector-map! vector-for-each
-    vector-count vector-cumulate
-    ;; Searching
-    vector-index vector-index-right
-    vector-skip vector-skip-right
-    vector-binary-search
-    vector-any vector-every
-    vector-partition
-    ;; Mutators
-    vector-set! vector-swap!
-    vector-fill! vector-reverse!
-    vector-copy! vector-reverse-copy!
-    vector-unfold! vector-unfold-right!
-    ;; Conversion
-    vector->list reverse-vector->list
-    list->vector reverse-list->vector
-    vector->string string->vector)
+   ;; Constructors
+   make-vector
+   vector
+   vector-append
+   vector-append-subvectors
+   vector-concatenate
+   vector-copy
+   vector-reverse-copy
+   vector-unfold
+   vector-unfold-right
+   ;; Predicates
+   vector-empty?
+   vector=
+   vector?
+   ;; Selectors
+   vector-length
+   vector-ref
+   ;; Iteration
+   vector-count
+   vector-cumulate
+   vector-fold
+   vector-fold-right
+   vector-for-each
+   vector-map
+   vector-map!
+   ;; Searching
+   vector-any
+   vector-binary-search
+   vector-every
+   vector-index
+   vector-index-right
+   vector-partition
+   vector-skip
+   vector-skip-right
+   ;; Mutators
+   vector-copy!
+   vector-fill!
+   vector-reverse!
+   vector-reverse-copy!
+   vector-set!
+   vector-swap!
+   vector-unfold!
+   vector-unfold-right!
+   ;; Conversion
+   list->vector
+   reverse-list->vector
+   reverse-vector->list
+   string->vector
+   vector->list
+   vector->string)
   (begin
 
     ;;; Internal helper: parse optional start/end arguments
     (define (%start-end v args)
       (let ((start (if (null? args) 0 (car args)))
             (end (if (or (null? args) (null? (cdr args)))
-                     (vector-length v) (cadr args))))
+                     (vector-length v)
+                     (cadr args))))
         (values start end)))
 
     ;;; --- Constructors ---
@@ -50,9 +75,9 @@ Example:
   (vector-unfold (lambda (i x) (values x (+ x 1))) 5 0) => #(0 1 2 3 4)"
       (let ((v (make-vector length)))
         (let loop ((i 0) (seeds seeds))
-          (if (= i length) v
-              (call-with-values
-                (lambda () (apply f i seeds))
+          (if (= i length)
+              v
+              (call-with-values (lambda () (apply f i seeds))
                 (lambda (value . new-seeds)
                   (vector-set! v i value)
                   (loop (+ i 1) new-seeds)))))))
@@ -66,10 +91,11 @@ Example:
   (vector-unfold-right (lambda (i x) (values x (+ x 1))) 5 0)
     => #(4 3 2 1 0)"
       (let ((v (make-vector length)))
-        (let loop ((i (- length 1)) (seeds seeds))
-          (if (< i 0) v
-              (call-with-values
-                (lambda () (apply f i seeds))
+        (let loop ((i (- length 1))
+                   (seeds seeds))
+          (if (< i 0)
+              v
+              (call-with-values (lambda () (apply f i seeds))
                 (lambda (value . new-seeds)
                   (vector-set! v i value)
                   (loop (- i 1) new-seeds)))))))
@@ -95,8 +121,7 @@ Example:
              (len (- end start))
              (result (make-vector len fill)))
         (let ((copy-end (min end (vector-length v))))
-          (do ((i start (+ i 1)))
-              ((= i copy-end) result)
+          (do ((i start (+ i 1))) ((= i copy-end) result)
             (vector-set! result (- i start) (vector-ref v i))))))
 
     (define (vector-reverse-copy v . args)
@@ -113,8 +138,7 @@ Example:
           (let* ((len (- end start))
                  (result (make-vector len)))
             (do ((i start (+ i 1))
-                 (j (- len 1) (- j 1)))
-                ((= i end) result)
+                 (j (- len 1) (- j 1))) ((= i end) result)
               (vector-set! result j (vector-ref v i)))))))
 
     (define (vector-concatenate vecs)
@@ -141,8 +165,7 @@ Example:
             (let ((v (car args))
                   (start (cadr args))
                   (end (caddr args)))
-              (loop (cdddr args)
-                    (cons (vector-copy v start end) vecs))))))
+              (loop (cdddr args) (cons (vector-copy v start end) vecs))))))
 
     ;;; --- Predicates ---
 
@@ -164,10 +187,12 @@ Description: Compares vectors element-wise using elt= as the element
 Example:
   (vector= eq? '#(a b c) '#(a b c)) => #t
   (vector= eq? '#(a b) '#(a b c)) => #f"
-      (or (null? vecs) (null? (cdr vecs))
+      (or (null? vecs)
+          (null? (cdr vecs))
           (let loop ((vecs vecs))
             (or (null? (cdr vecs))
-                (let ((v1 (car vecs)) (v2 (cadr vecs)))
+                (let ((v1 (car vecs))
+                      (v2 (cadr vecs)))
                   (and (= (vector-length v1) (vector-length v2))
                        (let iloop ((i 0))
                          (or (= i (vector-length v1))
@@ -187,7 +212,8 @@ Example:
   (vector-fold (lambda (sum x) (+ sum x)) 0 '#(1 2 3)) => 6"
       (let ((len (apply min (map vector-length vecs))))
         (let loop ((i 0) (state knil))
-          (if (= i len) state
+          (if (= i len)
+              state
               (loop (+ i 1)
                     (apply kons state
                            (map (lambda (v) (vector-ref v i)) vecs)))))))
@@ -202,8 +228,10 @@ Example:
   (vector-fold-right (lambda (tail x) (cons x tail)) '() '#(a b c))
     => (a b c)"
       (let ((len (apply min (map vector-length vecs))))
-        (let loop ((i (- len 1)) (state knil))
-          (if (< i 0) state
+        (let loop ((i (- len 1))
+                   (state knil))
+          (if (< i 0)
+              state
               (loop (- i 1)
                     (apply kons state
                            (map (lambda (v) (vector-ref v i)) vecs)))))))
@@ -219,8 +247,7 @@ Example:
     v) => #(1 4 9)"
       (let ((len (apply min (map vector-length vecs)))
             (target (car vecs)))
-        (do ((i 0 (+ i 1)))
-            ((= i len))
+        (do ((i 0 (+ i 1))) ((= i len))
           (vector-set! target i
                        (apply f (map (lambda (v) (vector-ref v i)) vecs))))))
 
@@ -233,10 +260,12 @@ Example:
   (vector-count even? '#(1 2 3 4 5)) => 2"
       (let ((len (apply min (map vector-length vecs))))
         (let loop ((i 0) (count 0))
-          (if (= i len) count
+          (if (= i len)
+              count
               (loop (+ i 1)
                     (if (apply pred (map (lambda (v) (vector-ref v i)) vecs))
-                        (+ count 1) count))))))
+                        (+ count 1)
+                        count))))))
 
     (define (vector-cumulate f knil v)
       "Syntax: (vector-cumulate f knil vec)
@@ -249,7 +278,8 @@ Example:
       (let* ((len (vector-length v))
              (result (make-vector len)))
         (let loop ((i 0) (state knil))
-          (if (= i len) result
+          (if (= i len)
+              result
               (let ((new-state (f state (vector-ref v i))))
                 (vector-set! result i new-state)
                 (loop (+ i 1) new-state))))))
@@ -310,8 +340,10 @@ Description: Performs binary search on a sorted vector. cmp is a procedure
 Example:
   (vector-binary-search '#(1 3 5 7 9) 5
     (lambda (a b) (- a b))) => 2"
-      (let loop ((lo 0) (hi (- (vector-length v) 1)))
-        (if (> lo hi) #f
+      (let loop ((lo 0)
+                 (hi (- (vector-length v) 1)))
+        (if (> lo hi)
+            #f
             (let* ((mid (+ lo (quotient (- hi lo) 2)))
                    (c (cmp (vector-ref v mid) value)))
               (cond ((= c 0) mid)
@@ -344,10 +376,10 @@ Example:
       (let ((len (apply min (map vector-length vecs))))
         (or (= len 0)
             (let loop ((i 0))
-              (let ((result (apply pred (map (lambda (v) (vector-ref v i)) vecs))))
-                (if (= i (- len 1))
-                    result
-                    (and result (loop (+ i 1)))))))))
+              (let
+                  ((result (apply pred
+                                  (map (lambda (v) (vector-ref v i)) vecs))))
+                (if (= i (- len 1)) result (and result (loop (+ i 1)))))))))
 
     (define (vector-partition pred v)
       "Syntax: (vector-partition pred vec)
@@ -358,14 +390,13 @@ Example:
   (call-with-values (lambda () (vector-partition even? '#(1 2 3 4 5)))
     list) => (#(2 4) #(1 3 5))"
       (let* ((len (vector-length v))
-             (yes '()) (no '()))
-        (do ((i (- len 1) (- i 1)))
-            ((< i 0))
+             (yes '())
+             (no '()))
+        (do ((i (- len 1) (- i 1))) ((< i 0))
           (if (pred (vector-ref v i))
               (set! yes (cons (vector-ref v i) yes))
               (set! no (cons (vector-ref v i) no))))
-        (values (list->vector yes)
-                (list->vector no))))
+        (values (list->vector yes) (list->vector no))))
 
     ;;; --- Mutators ---
 
@@ -395,9 +426,7 @@ Example:
     v) => #(1 0 0 0 5)"
       (call-with-values (lambda () (%start-end v args))
         (lambda (start end)
-          (do ((i start (+ i 1)))
-              ((= i end))
-            (vector-set! v i x)))))
+          (do ((i start (+ i 1))) ((= i end)) (vector-set! v i x)))))
 
     (define (vector-reverse! v . args)
       "Syntax: (vector-reverse! vec)
@@ -411,7 +440,8 @@ Example:
     v) => #(1 4 3 2 5)"
       (call-with-values (lambda () (%start-end v args))
         (lambda (start end)
-          (let loop ((lo start) (hi (- end 1)))
+          (let loop ((lo start)
+                     (hi (- end 1)))
             (when (< lo hi)
               (vector-swap! v lo hi)
               (loop (+ lo 1) (- hi 1)))))))
@@ -431,8 +461,7 @@ Example:
         (lambda (start end)
           (let ((len (- end start)))
             (do ((i start (+ i 1))
-                 (j (+ at (- len 1)) (- j 1)))
-                ((= i end))
+                 (j (+ at (- len 1)) (- j 1))) ((= i end))
               (vector-set! to j (vector-ref from i)))))))
 
     (define (vector-unfold! f v start end . seeds)
@@ -446,8 +475,7 @@ Example:
     v) => #(0 1 4 9 0)"
       (let loop ((i start) (seeds seeds))
         (when (< i end)
-          (call-with-values
-            (lambda () (apply f i seeds))
+          (call-with-values (lambda () (apply f i seeds))
             (lambda (value . new-seeds)
               (vector-set! v i value)
               (loop (+ i 1) new-seeds))))))
@@ -461,10 +489,10 @@ Example:
   (let ((v (make-vector 5 0)))
     (vector-unfold-right! (lambda (i) (* i i)) v 1 4)
     v) => #(0 1 4 9 0)"
-      (let loop ((i (- end 1)) (seeds seeds))
+      (let loop ((i (- end 1))
+                 (seeds seeds))
         (when (>= i start)
-          (call-with-values
-            (lambda () (apply f i seeds))
+          (call-with-values (lambda () (apply f i seeds))
             (lambda (value . new-seeds)
               (vector-set! v i value)
               (loop (- i 1) new-seeds))))))
@@ -483,8 +511,7 @@ Example:
       (call-with-values (lambda () (%start-end v args))
         (lambda (start end)
           (let loop ((i start) (acc '()))
-            (if (= i end) acc
-                (loop (+ i 1) (cons (vector-ref v i) acc)))))))
+            (if (= i end) acc (loop (+ i 1) (cons (vector-ref v i) acc)))))))
 
     (define (reverse-list->vector lst)
       "Syntax: (reverse-list->vector list)
@@ -493,6 +520,4 @@ Description: Returns a newly allocated vector whose elements are the
   elements of list in reverse order.
 Example:
   (reverse-list->vector '(a b c)) => #(c b a)"
-      (list->vector (reverse lst)))
-
-))
+      (list->vector (reverse lst)))))

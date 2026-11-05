@@ -1,54 +1,56 @@
 (define-library (scm crypto)
-  (import (scm core) (scheme base) (srfi 151))
-  (export sha1-hash
-          sha256-file
-          md5-hash
-          sha256-hash
-          hmac-sha256
-          pbkdf2-sha256
-          scrypt
-          base64-encode
-          base64-decode
-          random-bytes
-          xor-key
+  (import (scheme base)
+          (srfi 151)
+          (scm core))
+  (export aes-cbc-decrypt
           aes-cbc-encrypt
-          aes-cbc-decrypt
-          aes-gcm-encrypt
-          aes-gcm-decrypt
-          aes-ecb-encrypt
           aes-ecb-decrypt
-          chacha20poly1305-encrypt
-          chacha20poly1305-decrypt
-          rsa-generate-keypair
-          rsa-encrypt
-          rsa-decrypt
+          aes-ecb-encrypt
+          aes-gcm-decrypt
+          aes-gcm-encrypt
+          base64-decode
+          base64-encode
           bytevector->hex
-          hex->bytevector
+          chacha20poly1305-decrypt
+          chacha20poly1305-encrypt
           constant-time-bytevector=?
-          random-string)
+          hex->bytevector
+          hmac-sha256
+          md5-hash
+          pbkdf2-sha256
+          random-bytes
+          random-string
+          rsa-decrypt
+          rsa-encrypt
+          rsa-generate-keypair
+          scrypt
+          sha1-hash
+          sha256-file
+          sha256-hash
+          xor-key)
   (begin
-    (define sha1-hash              (%primitive "sha1-hash"))
-    (define md5-hash               (%primitive "md5-hash"))
-    (define sha256-hash            (%primitive "sha256-hash"))
-    (define sha256-file            (%primitive "sha256-file"))
-    (define hmac-sha256            (%primitive "hmac-sha256"))
-    (define pbkdf2-sha256          (%primitive "pbkdf2-sha256"))
-    (define scrypt                 (%primitive "scrypt"))
-    (define base64-encode          (%primitive "base64-encode"))
-    (define base64-decode          (%primitive "base64-decode"))
-    (define random-bytes           (%primitive "random-bytes"))
-    (define xor-key                (%primitive "xor-key"))
-    (define aes-cbc-encrypt        (%primitive "aes-cbc-encrypt"))
-    (define aes-cbc-decrypt        (%primitive "aes-cbc-decrypt"))
-    (define aes-gcm-encrypt        (%primitive "aes-gcm-encrypt"))
-    (define aes-gcm-decrypt        (%primitive "aes-gcm-decrypt"))
-    (define aes-ecb-encrypt        (%primitive "aes-ecb-encrypt"))
-    (define aes-ecb-decrypt        (%primitive "aes-ecb-decrypt"))
+    (define sha1-hash (%primitive "sha1-hash"))
+    (define md5-hash (%primitive "md5-hash"))
+    (define sha256-hash (%primitive "sha256-hash"))
+    (define sha256-file (%primitive "sha256-file"))
+    (define hmac-sha256 (%primitive "hmac-sha256"))
+    (define pbkdf2-sha256 (%primitive "pbkdf2-sha256"))
+    (define scrypt (%primitive "scrypt"))
+    (define base64-encode (%primitive "base64-encode"))
+    (define base64-decode (%primitive "base64-decode"))
+    (define random-bytes (%primitive "random-bytes"))
+    (define xor-key (%primitive "xor-key"))
+    (define aes-cbc-encrypt (%primitive "aes-cbc-encrypt"))
+    (define aes-cbc-decrypt (%primitive "aes-cbc-decrypt"))
+    (define aes-gcm-encrypt (%primitive "aes-gcm-encrypt"))
+    (define aes-gcm-decrypt (%primitive "aes-gcm-decrypt"))
+    (define aes-ecb-encrypt (%primitive "aes-ecb-encrypt"))
+    (define aes-ecb-decrypt (%primitive "aes-ecb-decrypt"))
     (define chacha20poly1305-encrypt (%primitive "chacha20poly1305-encrypt"))
     (define chacha20poly1305-decrypt (%primitive "chacha20poly1305-decrypt"))
-    (define rsa-generate-keypair   (%primitive "rsa-generate-keypair"))
-    (define rsa-encrypt            (%primitive "rsa-encrypt"))
-    (define rsa-decrypt            (%primitive "rsa-decrypt"))
+    (define rsa-generate-keypair (%primitive "rsa-generate-keypair"))
+    (define rsa-encrypt (%primitive "rsa-encrypt"))
+    (define rsa-decrypt (%primitive "rsa-decrypt"))
 
     (define hex-digits "0123456789abcdef")
 
@@ -62,13 +64,12 @@ Example:
       (let* ((n (bytevector-length bv))
              (out (open-output-string)))
         (let loop ((i 0))
-          (cond
-            ((= i n) (get-output-string out))
-            (else
-             (let ((b (bytevector-u8-ref bv i)))
-               (write-char (string-ref hex-digits (quotient b 16)) out)
-               (write-char (string-ref hex-digits (modulo b 16)) out)
-               (loop (+ i 1))))))))
+          (cond ((= i n) (get-output-string out))
+                (else (let ((b (bytevector-u8-ref bv i)))
+                        (write-char (string-ref hex-digits (quotient b 16))
+                                    out)
+                        (write-char (string-ref hex-digits (modulo b 16)) out)
+                        (loop (+ i 1))))))))
 
     (define (hex-value c)
       (cond ((and (char>=? c #\0) (char<=? c #\9))
@@ -91,13 +92,13 @@ Example:
              (bv (make-bytevector (quotient n 2) 0)))
         (when (odd? n) (error "hex->bytevector: odd-length hex string"))
         (let loop ((i 0) (j 0))
-          (cond
-            ((= i n) bv)
-            (else
-             (bytevector-u8-set! bv j
-               (+ (* 16 (hex-value (string-ref s i)))
-                  (hex-value (string-ref s (+ i 1)))))
-             (loop (+ i 2) (+ j 1)))))))
+          (cond ((= i n) bv)
+                (else (bytevector-u8-set!
+                       bv
+                       j
+                       (+ (* 16 (hex-value (string-ref s i)))
+                          (hex-value (string-ref s (+ i 1)))))
+                      (loop (+ i 2) (+ j 1)))))))
 
     (define (constant-time-bytevector=? a b)
       "Syntax: (constant-time-bytevector=? a b)
@@ -109,18 +110,17 @@ Description: Compares two bytevectors in constant time relative to their
 Example:
   (constant-time-bytevector=? #u8(1 2 3) #u8(1 2 3)) => #t
   (constant-time-bytevector=? #u8(1 2 3) #u8(1 2 4)) => #f"
-      (cond
-        ((not (= (bytevector-length a) (bytevector-length b))) #f)
-        (else
-         (let ((n (bytevector-length a)))
-           (let loop ((i 0) (acc 0))
-             (cond
-               ((= i n) (= acc 0))
-               (else
-                (loop (+ i 1)
-                      (bitwise-ior acc
-                                   (bitwise-xor (bytevector-u8-ref a i)
-                                                (bytevector-u8-ref b i)))))))))))
+      (cond ((not (= (bytevector-length a) (bytevector-length b))) #f)
+            (else (let ((n (bytevector-length a)))
+                    (let loop ((i 0) (acc 0))
+                      (cond ((= i n) (= acc 0))
+                            (else (loop
+                                   (+ i 1)
+                                   (bitwise-ior
+                                    acc
+                                    (bitwise-xor
+                                     (bytevector-u8-ref a i)
+                                     (bytevector-u8-ref b i)))))))))))
 
     (define (random-string charset length)
       "Syntax: (random-string charset length)
@@ -134,16 +134,13 @@ Example:
   (random-string \"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789\" 6) ; e.g. \"K3Z9PA\"
   (random-string \"0123456789abcdef\" 32) ; 128 random bits as hex"
       (let* ((cs-len (string-length charset))
-             (bv     (random-bytes length))
-             (out    (open-output-string)))
-        (when (= cs-len 0)
-          (error "random-string: empty charset"))
+             (bv (random-bytes length))
+             (out (open-output-string)))
+        (when (= cs-len 0) (error "random-string: empty charset"))
         (let loop ((i 0))
-          (cond
-            ((= i length) (get-output-string out))
-            (else
-             (write-char (string-ref charset
-                                     (modulo (bytevector-u8-ref bv i) cs-len))
-                         out)
-             (loop (+ i 1)))))))
-))
+          (cond ((= i length) (get-output-string out))
+                (else (write-char (string-ref
+                                   charset
+                                   (modulo (bytevector-u8-ref bv i) cs-len))
+                                  out)
+                      (loop (+ i 1)))))))))

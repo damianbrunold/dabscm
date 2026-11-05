@@ -1,4 +1,6 @@
-(import (scheme base) (scm fs) (scm test))
+(import (scheme base)
+        (scm fs)
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 
@@ -8,10 +10,10 @@
   (let* ((dir (mktempdir '(prefix . "lock-test")))
          (path (join-path dir "x.lock")))
     (let ((h1 (file-lock path)))
-      (test-assert h1)                       ;; acquired
-      (test-equal #f (file-lock path))       ;; same lock held -> #f
-      (test-equal #t (file-unlock h1))       ;; release succeeds
-      (let ((h2 (file-lock path)))           ;; re-acquire after release
+      (test-assert h1) ;; acquired
+      (test-equal #f (file-lock path)) ;; same lock held -> #f
+      (test-equal #t (file-unlock h1)) ;; release succeeds
+      (let ((h2 (file-lock path))) ;; re-acquire after release
         (test-assert h2)
         (test-equal #t (file-unlock h2))))))
 

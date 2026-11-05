@@ -1,23 +1,36 @@
 (define-library (srfi 132)
   (import (scheme base))
-  (export
-    list-sorted? vector-sorted?
-    list-sort list-stable-sort list-sort! list-stable-sort!
-    vector-sort vector-stable-sort vector-sort! vector-stable-sort!
-    list-merge list-merge!
-    vector-merge vector-merge!
-    list-delete-neighbor-dups list-delete-neighbor-dups!
-    vector-delete-neighbor-dups vector-delete-neighbor-dups!
-    vector-find-median vector-find-median!
-    vector-select! vector-separate!)
+  (export list-delete-neighbor-dups
+          list-delete-neighbor-dups!
+          list-merge
+          list-merge!
+          list-sort
+          list-sort!
+          list-sorted?
+          list-stable-sort
+          list-stable-sort!
+          vector-delete-neighbor-dups
+          vector-delete-neighbor-dups!
+          vector-find-median
+          vector-find-median!
+          vector-merge
+          vector-merge!
+          vector-select!
+          vector-separate!
+          vector-sort
+          vector-sort!
+          vector-sorted?
+          vector-stable-sort
+          vector-stable-sort!)
   (begin
 
     ;; ---- Internal helpers ----
 
     (define (%start-end v args)
       (let ((start (if (null? args) 0 (car args)))
-            (end   (if (or (null? args) (null? (cdr args)))
-                       (vector-length v) (cadr args))))
+            (end (if (or (null? args) (null? (cdr args)))
+                     (vector-length v)
+                     (cadr args))))
         (values start end)))
 
     (define (%vector-swap! v i j)
@@ -39,11 +52,11 @@ Example:
   (list-sorted? < '()) => #t"
       (or (null? lis)
           (null? (cdr lis))
-          (let loop ((prev (car lis)) (rest (cdr lis)))
+          (let loop ((prev (car lis))
+                     (rest (cdr lis)))
             (or (null? rest)
                 (let ((cur (car rest)))
-                  (and (not (< cur prev))
-                       (loop cur (cdr rest))))))))
+                  (and (not (< cur prev)) (loop cur (cdr rest))))))))
 
     (define (vector-sorted? < v . args)
       "Syntax: (vector-sorted? < v)
@@ -71,10 +84,8 @@ Example:
       (let loop ((l1 l1) (l2 l2) (acc '()))
         (cond ((null? l1) (%append-reverse acc l2))
               ((null? l2) (%append-reverse acc l1))
-              ((< (car l2) (car l1))
-               (loop l1 (cdr l2) (cons (car l2) acc)))
-              (else
-               (loop (cdr l1) l2 (cons (car l1) acc))))))
+              ((< (car l2) (car l1)) (loop l1 (cdr l2) (cons (car l2) acc)))
+              (else (loop (cdr l1) l2 (cons (car l1) acc))))))
 
     (define (%append-reverse rev-head tail)
       (if (null? rev-head)
@@ -92,10 +103,14 @@ Example:
           (let collect-runs ((rest lst) (runs '()))
             (if (null? rest)
                 (%merge-runs < (reverse runs))
-                (let run-loop ((prev (car rest)) (tail (cdr rest)) (run (list (car rest))))
+                (let run-loop ((prev (car rest))
+                               (tail (cdr rest))
+                               (run (list (car rest))))
                   (if (or (null? tail) (< (car tail) prev))
                       (collect-runs tail (cons (reverse run) runs))
-                      (run-loop (car tail) (cdr tail) (cons (car tail) run))))))))
+                      (run-loop (car tail)
+                                (cdr tail)
+                                (cons (car tail) run))))))))
 
     ;; Destructive natural merge sort: reuses cons cells via set-cdr!.
     (define (%list-sort! < lst)
@@ -105,7 +120,8 @@ Example:
           (let collect-runs ((rest lst) (runs '()))
             (if (null? rest)
                 (%merge-runs! < (reverse runs))
-                (let run-loop ((prev rest) (cur (cdr rest)))
+                (let run-loop ((prev rest)
+                               (cur (cdr rest)))
                   (if (or (null? cur) (< (car cur) (car prev)))
                       (let ((run-start rest))
                         (set-cdr! prev '())
@@ -203,23 +219,18 @@ Example:
   (list-merge! < (list 1 3 5) (list 2 4 6)) => (1 2 3 4 5 6)"
       (cond ((null? lis1) lis2)
             ((null? lis2) lis1)
-            (else
-             (let ((head (if (< (car lis2) (car lis1)) lis2 lis1))
-                   (other (if (< (car lis2) (car lis1)) lis1 lis2)))
-               (let loop ((tail head)
-                          (a (cdr head))
-                          (b other))
-                 (cond ((null? a)
-                        (set-cdr! tail b))
-                       ((null? b)
-                        (set-cdr! tail a))
-                       ((< (car b) (car a))
-                        (set-cdr! tail b)
-                        (loop b a (cdr b)))
-                       (else
-                        (set-cdr! tail a)
-                        (loop a (cdr a) b))))
-               head))))
+            (else (let ((head (if (< (car lis2) (car lis1)) lis2 lis1))
+                        (other (if (< (car lis2) (car lis1)) lis1 lis2)))
+                    (let loop ((tail head)
+                               (a (cdr head))
+                               (b other))
+                      (cond ((null? a) (set-cdr! tail b))
+                            ((null? b) (set-cdr! tail a))
+                            ((< (car b) (car a))
+                             (set-cdr! tail b)
+                             (loop b a (cdr b)))
+                            (else (set-cdr! tail a) (loop a (cdr a) b))))
+                    head))))
 
     ;; ---- Vector sort ----
 
@@ -236,32 +247,38 @@ Example:
               (if (>= i n)
                   (%vector-merge-runs! < v start aux (reverse runs) n)
                   (let ((run-start i))
-                    (cond
-                      ((>= (+ i 1) n)
-                       ;; Single element run
-                       (detect-runs n (cons (cons i n) runs)))
-                      ((< (vector-ref v (+ start i 1)) (vector-ref v (+ start i)))
-                       ;; Strictly descending run - find extent then reverse
-                       (let desc-loop ((j (+ i 2)))
-                         (if (and (> n j)
-                                  (< (vector-ref v (+ start j))
-                                     (vector-ref v (+ start j -1))))
-                             (desc-loop (+ j 1))
-                             (begin
-                               (%vector-reverse! v (+ start i) (+ start j))
-                               (detect-runs j (cons (cons i j) runs))))))
-                      (else
-                       ;; Ascending run (non-strictly: equal elements stay)
-                       (let asc-loop ((j (+ i 2)))
-                         (if (and (> n j)
-                                  (not (< (vector-ref v (+ start j))
+                    (cond ((>= (+ i 1) n)
+                           ;; Single element run
+                           (detect-runs n (cons (cons i n) runs)))
+                          ((< (vector-ref v (+ start i 1))
+                              (vector-ref v (+ start i)))
+                           ;; Strictly descending run - find extent then reverse
+                           (let desc-loop ((j (+ i 2)))
+                             (if (and (> n j)
+                                      (< (vector-ref v (+ start j))
+                                         (vector-ref v (+ start j -1))))
+                                 (desc-loop (+ j 1))
+                                 (begin
+                                   (%vector-reverse! v
+                                                     (+ start i)
+                                                     (+ start j))
+                                   (detect-runs j (cons (cons i j) runs))))))
+                          (else
+                           ;; Ascending run (non-strictly: equal elements stay)
+                           (let asc-loop ((j (+ i 2)))
+                             (if (and (> n j)
+                                      (not
+                                       (< (vector-ref v (+ start j))
                                           (vector-ref v (+ start j -1)))))
-                             (asc-loop (+ j 1))
-                             (detect-runs j (cons (cons i j) runs)))))))))))))
+                                 (asc-loop (+ j 1))
+                                 (detect-runs
+                                  j
+                                  (cons (cons i j) runs)))))))))))))
 
     ;; Reverse a subrange of vector v in-place.
     (define (%vector-reverse! v lo hi)
-      (let loop ((i lo) (j (- hi 1)))
+      (let loop ((i lo)
+                 (j (- hi 1)))
         (when (< i j)
           (%vector-swap! v i j)
           (loop (+ i 1) (- j 1)))))
@@ -273,49 +290,54 @@ Example:
           ;; Single run - data is already in v, nothing to do
           (values)
           ;; Merge pairs: from v into aux, then from aux back into v, etc.
-          (let pass ((runs runs) (from v) (from-off vstart) (to aux) (to-off 0))
+          (let pass
+              ((runs runs) (from v) (from-off vstart) (to aux) (to-off 0))
             (let merge-pairs ((in runs) (out '()))
-              (cond
-                ((null? in)
-                 ;; End of pass
-                 (let ((new-runs (reverse out)))
-                   (if (null? (cdr new-runs))
-                       ;; Done - if result is in aux, copy back to v
-                       (when (eq? to aux)
-                         (vector-copy! v vstart aux 0 n))
-                       ;; More passes needed
-                       (pass new-runs to to-off from from-off))))
-                ((null? (cdr in))
-                 ;; Odd run: copy to destination
-                 (let ((r (car in)))
-                   (vector-copy! to (+ to-off (car r))
-                                 from (+ from-off (car r))
-                                 (+ from-off (cdr r)))
-                   (merge-pairs '() (cons r out))))
-                (else
-                 ;; Merge first two runs into destination
-                 (let ((r1 (car in)) (r2 (cadr in)))
-                   (%do-vector-merge-range!
-                    < to (+ to-off (car r1))
-                    from (+ from-off (car r1)) (+ from-off (cdr r1))
-                    from (+ from-off (car r2)) (+ from-off (cdr r2)))
-                   (merge-pairs (cddr in)
-                                (cons (cons (car r1) (cdr r2)) out)))))))))
+              (cond ((null? in)
+                     ;; End of pass
+                     (let ((new-runs (reverse out)))
+                       (if (null? (cdr new-runs))
+                           ;; Done - if result is in aux, copy back to v
+                           (when (eq? to aux) (vector-copy! v vstart aux 0 n))
+                           ;; More passes needed
+                           (pass new-runs to to-off from from-off))))
+                    ((null? (cdr in))
+                     ;; Odd run: copy to destination
+                     (let ((r (car in)))
+                       (vector-copy! to
+                                     (+ to-off (car r))
+                                     from
+                                     (+ from-off (car r))
+                                     (+ from-off (cdr r)))
+                       (merge-pairs '() (cons r out))))
+                    (else
+                     ;; Merge first two runs into destination
+                     (let ((r1 (car in))
+                           (r2 (cadr in)))
+                       (%do-vector-merge-range! < to
+                                                (+ to-off (car r1))
+                                                from
+                                                (+ from-off (car r1))
+                                                (+ from-off (cdr r1))
+                                                from
+                                                (+ from-off (car r2))
+                                                (+ from-off (cdr r2)))
+                       (merge-pairs (cddr in)
+                                    (cons (cons (car r1) (cdr r2))
+                                          out)))))))))
 
     ;; Merge two adjacent ranges from source vectors into destination.
-    (define (%do-vector-merge-range! < to to-start from1 start1 end1 from2 start2 end2)
+    (define
+        (%do-vector-merge-range! < to to-start from1 start1 end1 from2 start2
+                                 end2)
       (let loop ((i start1) (j start2) (k to-start))
-        (cond
-          ((>= i end1)
-           (vector-copy! to k from2 j end2))
-          ((>= j end2)
-           (vector-copy! to k from1 i end1))
-          ((< (vector-ref from2 j) (vector-ref from1 i))
-           (vector-set! to k (vector-ref from2 j))
-           (loop i (+ j 1) (+ k 1)))
-          (else
-           (vector-set! to k (vector-ref from1 i))
-           (loop (+ i 1) j (+ k 1))))))
+        (cond ((>= i end1) (vector-copy! to k from2 j end2))
+              ((>= j end2) (vector-copy! to k from1 i end1))
+              ((< (vector-ref from2 j) (vector-ref from1 i))
+               (vector-set! to k (vector-ref from2 j))
+               (loop i (+ j 1) (+ k 1)))
+              (else (vector-set! to k (vector-ref from1 i))
+                    (loop (+ i 1) j (+ k 1))))))
 
     (define (vector-sort! < v . args)
       "Syntax: (vector-sort! < v)
@@ -329,8 +351,7 @@ to the length of v.
 Example:
   (let ((v (vector 3 1 4 1 5))) (vector-sort! < v) v) => #(1 1 3 4 5)"
       (call-with-values (lambda () (%start-end v args))
-        (lambda (start end)
-          (%vector-merge-sort! < v start end))))
+        (lambda (start end) (%vector-merge-sort! < v start end))))
 
     (define (vector-stable-sort! < v . args)
       "Syntax: (vector-stable-sort! < v)
@@ -344,8 +365,7 @@ value. Equivalent to vector-sort!.
 Example:
   (let ((v (vector 3 1 4 1 5))) (vector-stable-sort! < v) v) => #(1 1 3 4 5)"
       (call-with-values (lambda () (%start-end v args))
-        (lambda (start end)
-          (%vector-merge-sort! < v start end))))
+        (lambda (start end) (%vector-merge-sort! < v start end))))
 
     (define (vector-sort < v . args)
       "Syntax: (vector-sort < v)
@@ -445,21 +465,18 @@ Example:
     v) => #(1 2 3 4 5 6)"
       (call-with-values (lambda () (%vmerge!-args to from1 from2 args))
         (lambda (start start1 end1 start2 end2)
-          (%do-vector-merge! < to start from1 start1 end1 from2 start2 end2))))
+          (%do-vector-merge! < to start from1 start1 end1 from2 start2
+                             end2))))
 
     (define (%do-vector-merge! < to to-start v1 start1 end1 v2 start2 end2)
       (let loop ((i start1) (j start2) (k to-start))
-        (cond
-          ((>= i end1)
-           (vector-copy! to k v2 j end2))
-          ((>= j end2)
-           (vector-copy! to k v1 i end1))
-          ((< (vector-ref v2 j) (vector-ref v1 i))
-           (vector-set! to k (vector-ref v2 j))
-           (loop i (+ j 1) (+ k 1)))
-          (else
-           (vector-set! to k (vector-ref v1 i))
-           (loop (+ i 1) j (+ k 1))))))
+        (cond ((>= i end1) (vector-copy! to k v2 j end2))
+              ((>= j end2) (vector-copy! to k v1 i end1))
+              ((< (vector-ref v2 j) (vector-ref v1 i))
+               (vector-set! to k (vector-ref v2 j))
+               (loop i (+ j 1) (+ k 1)))
+              (else (vector-set! to k (vector-ref v1 i))
+                    (loop (+ i 1) j (+ k 1))))))
 
     ;; ---- Duplicate deletion ----
 
@@ -485,9 +502,7 @@ Example:
                         (else (cons x (list-delete-neighbor-dups = rest)))))
                 ;; No duplicate here; recurse on tail and share structure if unchanged
                 (let ((new-tail (list-delete-neighbor-dups = tail)))
-                  (if (eq? new-tail tail)
-                      lis
-                      (cons x new-tail)))))))
+                  (if (eq? new-tail tail) lis (cons x new-tail)))))))
 
     (define (list-delete-neighbor-dups! = lis)
       "Syntax: (list-delete-neighbor-dups! = lis)
@@ -497,14 +512,15 @@ relinking cons cells with set-cdr!. Elements are compared using =. The first
 element of each run of equal elements is retained. Returns the modified list.
 Example:
   (list-delete-neighbor-dups! = (list 1 1 2 3 3 3 4)) => (1 2 3 4)"
-      (if (null? lis) lis
-          (let loop ((prev lis) (rest (cdr lis)))
+      (if (null? lis)
+          lis
+          (let loop ((prev lis)
+                     (rest (cdr lis)))
             (cond ((null? rest) lis)
                   ((= (car prev) (car rest))
                    (set-cdr! prev (cdr rest))
                    (loop prev (cdr rest)))
-                  (else
-                   (loop rest (cdr rest)))))))
+                  (else (loop rest (cdr rest)))))))
 
     (define (vector-delete-neighbor-dups = v . args)
       "Syntax: (vector-delete-neighbor-dups = v)
@@ -522,21 +538,23 @@ Example:
           (if (>= start end)
               (vector)
               ;; First pass: count unique elements
-              (let ((count (let loop ((i (+ start 1)) (c 1))
+              (let ((count (let loop ((i (+ start 1))
+                                      (c 1))
                              (cond ((>= i end) c)
-                                   ((= (vector-ref v (- i 1)) (vector-ref v i))
+                                   ((= (vector-ref v (- i 1))
+                                       (vector-ref v i))
                                     (loop (+ i 1) c))
                                    (else (loop (+ i 1) (+ c 1)))))))
                 ;; Second pass: fill result
                 (let ((result (make-vector count)))
                   (vector-set! result 0 (vector-ref v start))
-                  (let loop ((i (+ start 1)) (j 1))
+                  (let loop ((i (+ start 1))
+                             (j 1))
                     (cond ((>= i end) result)
                           ((= (vector-ref v (- i 1)) (vector-ref v i))
                            (loop (+ i 1) j))
-                          (else
-                           (vector-set! result j (vector-ref v i))
-                           (loop (+ i 1) (+ j 1)))))))))))
+                          (else (vector-set! result j (vector-ref v i))
+                                (loop (+ i 1) (+ j 1)))))))))))
 
     (define (vector-delete-neighbor-dups! = v . args)
       "Syntax: (vector-delete-neighbor-dups! = v)
@@ -552,14 +570,15 @@ Example:
     (vector-delete-neighbor-dups! = v)) => 4"
       (call-with-values (lambda () (%start-end v args))
         (lambda (start end)
-          (if (>= start end) start
-              (let loop ((i (+ start 1)) (j (+ start 1)))
+          (if (>= start end)
+              start
+              (let loop ((i (+ start 1))
+                         (j (+ start 1)))
                 (cond ((>= i end) j)
                       ((= (vector-ref v (- j 1)) (vector-ref v i))
                        (loop (+ i 1) j))
-                      (else
-                       (vector-set! v j (vector-ref v i))
-                       (loop (+ i 1) (+ j 1)))))))))
+                      (else (vector-set! v j (vector-ref v i))
+                            (loop (+ i 1) (+ j 1)))))))))
 
     ;; ---- Selection ----
 
@@ -578,8 +597,7 @@ Example:
   (vector-select! < (vector 3 1 4 1 5) 2) => 3
   (vector-select! < (vector 3 1 4 1 5) 4) => 5"
       (call-with-values (lambda () (%start-end v args))
-        (lambda (start end)
-          (%quickselect! < v (+ start k) start end))))
+        (lambda (start end) (%quickselect! < v (+ start k) start end))))
 
     ;; Insertion sort for small ranges, used as fallback.
     (define (%insertion-sort! < v lo hi)
@@ -588,8 +606,9 @@ Example:
           (let ((x (vector-ref v i)))
             (let inner ((j i))
               (if (and (> j lo) (< x (vector-ref v (- j 1))))
-                  (begin (vector-set! v j (vector-ref v (- j 1)))
-                         (inner (- j 1)))
+                  (begin
+                    (vector-set! v j (vector-ref v (- j 1)))
+                    (inner (- j 1)))
                   (vector-set! v j x))))
           (outer (+ i 1)))))
 
@@ -597,15 +616,13 @@ Example:
       ;; Select element that would be at index k if v[lo..hi) were sorted.
       ;; Falls back to insertion sort for small ranges.
       (if (<= (- hi lo) 15)
-          (begin (%insertion-sort! < v lo hi)
-                 (vector-ref v k))
+          (begin
+            (%insertion-sort! < v lo hi)
+            (vector-ref v k))
           (let ((pivot-idx (%partition! < v lo hi)))
-            (cond ((= k pivot-idx)
-                   (vector-ref v k))
-                  ((< k pivot-idx)
-                   (%quickselect! < v k lo pivot-idx))
-                  (else
-                   (%quickselect! < v k (+ pivot-idx 1) hi))))))
+            (cond ((= k pivot-idx) (vector-ref v k))
+                  ((< k pivot-idx) (%quickselect! < v k lo pivot-idx))
+                  (else (%quickselect! < v k (+ pivot-idx 1) hi))))))
 
     (define (%partition! < v lo hi)
       ;; Median-of-three pivot selection + Hoare partition
@@ -625,15 +642,23 @@ Example:
             (begin
               (%vector-swap! v mid (- last 1))
               (let ((pivot (vector-ref v (- last 1))))
-                (let loop ((i lo) (j (- last 1)))
+                (let loop ((i lo)
+                           (j (- last 1)))
                   (let ((i (let iloop ((i (+ i 1)))
-                             (if (< (vector-ref v i) pivot) (iloop (+ i 1)) i)))
+                             (if (< (vector-ref v i) pivot)
+                                 (iloop (+ i 1))
+                                 i)))
                         (j (let jloop ((j (- j 1)))
-                             (if (< pivot (vector-ref v j)) (jloop (- j 1)) j))))
+                             (if (< pivot (vector-ref v j))
+                                 (jloop (- j 1))
+                                 j))))
                     (if (>= i j)
-                        (begin (%vector-swap! v i (- last 1)) i)
-                        (begin (%vector-swap! v i j)
-                               (loop i j))))))))))
+                        (begin
+                          (%vector-swap! v i (- last 1))
+                          i)
+                        (begin
+                          (%vector-swap! v i j)
+                          (loop i j))))))))))
 
     (define (vector-separate! < v k . args)
       "Syntax: (vector-separate! < v k)
@@ -671,14 +696,14 @@ Example:
       (let ((mean (if (null? args) #f (car args)))
             (n (vector-length v)))
         (cond ((= n 0) knil)
-              (else
-               (vector-sort! < v)
-               (let ((mid (quotient n 2)))
-                 (if (odd? n)
-                     (vector-ref v mid)
-                     (if mean
-                         (mean (vector-ref v (- mid 1)) (vector-ref v mid))
-                         (vector-ref v (- mid 1)))))))))
+              (else (vector-sort! < v)
+                    (let ((mid (quotient n 2)))
+                      (if (odd? n)
+                          (vector-ref v mid)
+                          (if mean
+                              (mean (vector-ref v (- mid 1))
+                                    (vector-ref v mid))
+                              (vector-ref v (- mid 1)))))))))
 
     (define (vector-find-median < v knil . args)
       "Syntax: (vector-find-median < v knil)
@@ -692,6 +717,4 @@ returns the lower of the two. The original vector is not modified.
 Example:
   (vector-find-median < #(3 1 4 1 5) 0) => 3
   (vector-find-median < #(3 1 4 5) 0 (lambda (a b) (/ (+ a b) 2))) => 7/2"
-      (apply vector-find-median! < (vector-copy v) knil args))
-
-    ))
+      (apply vector-find-median! < (vector-copy v) knil args))))

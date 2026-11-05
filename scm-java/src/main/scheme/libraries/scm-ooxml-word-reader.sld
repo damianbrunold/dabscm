@@ -5,17 +5,17 @@
           (srfi 1)
           (srfi 13)
           (scm fs)
-          (scm zip)
-          (scm xml))
-  (export read-document
-          read-document-from-bytevector
+          (scm xml)
+          (scm zip))
+  (export document-headings
           document-paragraphs
           document-text
-          document-headings
-          paragraph-text
-          paragraph-style
           paragraph-heading-level
-          paragraph-in-table?)
+          paragraph-in-table?
+          paragraph-style
+          paragraph-text
+          read-document
+          read-document-from-bytevector)
   (begin
 
     ;; --------------------------------------------------------------
@@ -37,9 +37,7 @@
 
     (define (attr r . names)
       (let loop ((ns names))
-        (if (null? ns)
-            #f
-            (or (xml-attribute r (car ns)) (loop (cdr ns))))))
+        (if (null? ns) #f (or (xml-attribute r (car ns)) (loop (cdr ns))))))
 
     (define (heading-level-from-style style)
       ;; "Heading1" -> 1, "Heading2" -> 2, ...; #f otherwise. Matches the
@@ -67,14 +65,13 @@
                          (string->number rest)))))))
 
     (define (style-map-ref style-map style)
-      (and style
-           (let ((p (assoc style style-map)))
-             (and p (cdr p)))))
+      (and style (let ((p (assoc style style-map))) (and p (cdr p)))))
 
     (define (make-paragraph text style outline in-table? style-map)
-      (let ((level (or (heading-level-from-style style)
-                       (style-map-ref style-map style)
-                       outline)))
+      (let
+          ((level (or (heading-level-from-style style)
+                      (style-map-ref style-map style)
+                      outline)))
         (list (cons "text" text)
               (cons "style" style)
               (cons "level" level)
@@ -94,103 +91,121 @@
                 (r (open-xml-bytevector bv)))
             (guard (exn (#t (close-xml r) (raise exn)))
               (let loop ((cont #t))
-                (cond
-                  ((not cont) #t)
-                  (else
-                   (case (xml-node-type r)
-                     ((element)
-                      (let ((nm (local-name (xml-name r))))
-                        (cond
-                          ((string=? nm "style")
-                           (set! cur-id (attr r "w:styleId" "styleId"))
-                           (set! cur-name #f)
-                           (set! cur-outline #f)
-                           (loop (xml-read r)))
-                          ((and cur-id (string=? nm "name"))
-                           (set! cur-name (attr r "w:val" "val"))
-                           (loop (xml-read r)))
-                          ((and cur-id (string=? nm "outlineLvl"))
-                           (let ((v (string->number (or (attr r "w:val" "val") ""))))
-                             (when v (set! cur-outline (+ v 1))))
-                           (loop (xml-read r)))
-                          (else (loop (xml-read r))))))
-                     ((end-element)
-                      (when (string=? (local-name (xml-name r)) "style")
-                        (let ((level (or (heading-name->level cur-name) cur-outline)))
-                          (when (and cur-id level)
-                            (set! result (cons (cons cur-id level) result))))
-                        (set! cur-id #f))
-                      (loop (xml-read r)))
-                     (else (loop (xml-read r)))))))
+                (cond ((not cont) #t)
+                      (else (case (xml-node-type r)
+                              ((element)
+                               (let ((nm (local-name (xml-name r))))
+                                 (cond ((string=? nm "style")
+                                        (set! cur-id
+                                              (attr r "w:styleId" "styleId"))
+                                        (set! cur-name #f)
+                                        (set! cur-outline #f)
+                                        (loop (xml-read r)))
+                                       ((and cur-id (string=? nm "name"))
+                                        (set! cur-name (attr r "w:val" "val"))
+                                        (loop (xml-read r)))
+                                       ((and cur-id
+                                             (string=? nm "outlineLvl"))
+                                        (let
+                                            ((v
+                                              (string->number
+                                               (or (attr r "w:val" "val")
+                                                   ""))))
+                                          (when v (set! cur-outline (+ v 1))))
+                                        (loop (xml-read r)))
+                                       (else (loop (xml-read r))))))
+                              ((end-element)
+                               (when
+                                   (string=? (local-name (xml-name r))
+                                             "style")
+                                 (let
+                                     ((level
+                                       (or (heading-name->level cur-name)
+                                           cur-outline)))
+                                   (when (and cur-id level)
+                                     (set!
+                                      result
+                                      (cons (cons cur-id level) result))))
+                                 (set! cur-id #f))
+                               (loop (xml-read r)))
+                              (else (loop (xml-read r)))))))
               (close-xml r))
             (reverse result))))
 
     (define (parse-body bv style-map)
       ;; Walk word/document.xml and return a list of paragraph records.
-      (let ((paragraphs '())
-            (table-depth 0)
-            (in-p #f)
-            (cur-text "")
-            (cur-style #f)
-            (cur-outline #f)
-            (cur-in-table #f))
+      (let
+          ((paragraphs '())
+           (table-depth 0)
+           (in-p #f)
+           (cur-text "")
+           (cur-style #f)
+           (cur-outline #f)
+           (cur-in-table #f))
         (define (append-text! s) (set! cur-text (string-append cur-text s)))
         (define (push!)
           (set! paragraphs
-                (cons (make-paragraph cur-text cur-style cur-outline cur-in-table style-map)
+                (cons (make-paragraph cur-text cur-style cur-outline
+                                      cur-in-table style-map)
                       paragraphs)))
         (let ((r (open-xml-bytevector bv)))
           (guard (exn (#t (close-xml r) (raise exn)))
             (let loop ((cont #t))
-              (cond
-                ((not cont) #t)
-                (else
-                 (case (xml-node-type r)
-                   ((element)
-                    (let ((nm (local-name (xml-name r))))
-                      (cond
-                        ((string=? nm "tbl")
-                         (set! table-depth (+ table-depth 1))
-                         (loop (xml-read r)))
-                        ((string=? nm "p")
-                         (set! in-p #t)
-                         (set! cur-text "")
-                         (set! cur-style #f)
-                         (set! cur-outline #f)
-                         (set! cur-in-table (> table-depth 0))
-                         (loop (xml-read r)))
-                        ((and in-p (string=? nm "pStyle"))
-                         (set! cur-style (attr r "w:val" "val"))
-                         (loop (xml-read r)))
-                        ((and in-p (string=? nm "outlineLvl"))
-                         (let ((v (string->number (or (attr r "w:val" "val") ""))))
-                           (when v (set! cur-outline (+ v 1))))
-                         (loop (xml-read r)))
-                        ((and in-p (string=? nm "t"))
-                         (append-text! (or (xml-value r) ""))
-                         ;; xml-value consumed the element; do not re-read.
-                         (loop #t))
-                        ((and in-p (string=? nm "tab")
-                              ;; A run tab <w:tab/> has no attributes; the
-                              ;; tab-stop definitions in <w:tabs> carry w:val.
-                              (not (attr r "w:val" "val")))
-                         (append-text! "\t")
-                         (loop (xml-read r)))
-                        ((and in-p (or (string=? nm "br") (string=? nm "cr")))
-                         (append-text! "\n")
-                         (loop (xml-read r)))
-                        (else (loop (xml-read r))))))
-                   ((end-element)
-                    (let ((nm (local-name (xml-name r))))
-                      (cond
-                        ((string=? nm "p")
-                         (when in-p (push!) (set! in-p #f))
-                         (loop (xml-read r)))
-                        ((string=? nm "tbl")
-                         (set! table-depth (max 0 (- table-depth 1)))
-                         (loop (xml-read r)))
-                        (else (loop (xml-read r))))))
-                   (else (loop (xml-read r)))))))
+              (cond ((not cont) #t)
+                    (else (case (xml-node-type r)
+                            ((element)
+                             (let ((nm (local-name (xml-name r))))
+                               (cond ((string=? nm "tbl")
+                                      (set! table-depth (+ table-depth 1))
+                                      (loop (xml-read r)))
+                                     ((string=? nm "p")
+                                      (set! in-p #t)
+                                      (set! cur-text "")
+                                      (set! cur-style #f)
+                                      (set! cur-outline #f)
+                                      (set! cur-in-table (> table-depth 0))
+                                      (loop (xml-read r)))
+                                     ((and in-p (string=? nm "pStyle"))
+                                      (set! cur-style (attr r "w:val" "val"))
+                                      (loop (xml-read r)))
+                                     ((and in-p (string=? nm "outlineLvl"))
+                                      (let
+                                          ((v
+                                            (string->number
+                                             (or (attr r "w:val" "val") ""))))
+                                        (when v (set! cur-outline (+ v 1))))
+                                      (loop (xml-read r)))
+                                     ((and in-p (string=? nm "t"))
+                                      (append-text! (or (xml-value r) ""))
+                                      ;; xml-value consumed the element; do not re-read.
+                                      (loop #t))
+                                     ((and in-p
+                                           (string=? nm "tab")
+                                           ;; A run tab <w:tab/> has no attributes; the
+                                           ;; tab-stop definitions in <w:tabs> carry w:val.
+                                           (not (attr r "w:val" "val")))
+                                      (append-text! "\t")
+                                      (loop (xml-read r)))
+                                     ((and
+                                       in-p
+                                       (or (string=? nm "br")
+                                           (string=? nm "cr")))
+                                      (append-text! "\n")
+                                      (loop (xml-read r)))
+                                     (else (loop (xml-read r))))))
+                            ((end-element)
+                             (let ((nm (local-name (xml-name r))))
+                               (cond ((string=? nm "p")
+                                      (when in-p
+                                        (push!)
+                                        (set! in-p #f))
+                                      (loop (xml-read r)))
+                                     ((string=? nm "tbl")
+                                      (set! table-depth
+                                            (max 0 (- table-depth 1)))
+                                      (loop (xml-read r)))
+                                     (else (loop (xml-read r))))))
+                            (else (loop (xml-read r)))))))
             (close-xml r)))
         ;; Drop empty paragraphs (no text and not a heading). This removes the
         ;; structural trailing <w:p/> that DOCX requires and keeps the result
@@ -204,8 +219,9 @@
     (define (read-document-from-zip z)
       (let* ((names (zip-entry-names z))
              (style-map (parse-style-map
-                          (and (member "word/styles.xml" names)
-                               (zip-read-entry-bytevector z "word/styles.xml"))))
+                         (and (member "word/styles.xml" names)
+                              (zip-read-entry-bytevector z
+                                                         "word/styles.xml"))))
              (bv (and (member "word/document.xml" names)
                       (zip-read-entry-bytevector z "word/document.xml"))))
         (vector 'docx-document (if bv (parse-body bv style-map) '()))))
@@ -307,5 +323,4 @@ Library: (scm ooxml word-reader)
 Description: Returns #t if the paragraph was extracted from a table cell.
 Example:
   (paragraph-in-table? p) => #f"
-      (cdr (assoc "in-table" p)))
-))
+      (cdr (assoc "in-table" p)))))

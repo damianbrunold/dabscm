@@ -13,13 +13,13 @@
           (scm net http session)
           (app db)
           (app users))
-  (export make-auth
-          sign-in
-          session-user
-          start-session
+  (export change-password!
           end-session
-          change-password!
-          min-password-length)
+          make-auth
+          min-password-length
+          session-user
+          sign-in
+          start-session)
   (begin
 
     (define min-password-length 8)
@@ -38,7 +38,9 @@ Description: Ties a (scm net http session) config to the database."
 
     ;; Changes whenever the password (and so the hash) changes.
     (define (password-stamp hash)
-      (base64-encode (bytevector-copy (sha256-hash (string->utf8 hash)) 0 12)))
+      (base64-encode (bytevector-copy (sha256-hash (string->utf8 hash))
+                                      0
+                                      12)))
 
     (define (sign-in auth username password)
       "Syntax: (sign-in auth username password)
@@ -47,12 +49,15 @@ Description: The user row if password is right for username, else #f.
   Upgrades an outdated password hash on success."
       (let* ((db (auth-db auth))
              (user (find-user-by-name db username)))
-        (cond
-          ((not (password-verify password (and user (col user "pass_hash")))) #f)
-          ((password-needs-rehash? (col user "pass_hash"))
-           (set-password-hash! db (col user "id") (password-hash password))
-           (load-user db (col user "id")))
-          (else user))))
+        (cond ((not (password-verify password
+                                     (and user (col user "pass_hash"))))
+               #f)
+              ((password-needs-rehash? (col user "pass_hash"))
+               (set-password-hash! db
+                                   (col user "id")
+                                   (password-hash password))
+               (load-user db (col user "id")))
+              (else user))))
 
     (define (session-user auth req)
       "Syntax: (session-user auth req)
@@ -65,7 +70,8 @@ Description: The signed-in user's row, or #f if there is no valid session
                     (stamp (assq 'stamp s))
                     (user (and uid (load-user (auth-db auth) (cdr uid)))))
                (and user stamp
-                    (equal? (cdr stamp) (password-stamp (col user "pass_hash")))
+                    (equal? (cdr stamp)
+                            (password-stamp (col user "pass_hash")))
                     user)))))
 
     (define (start-session auth user)
@@ -74,7 +80,9 @@ Library: (app auth)
 Description: The Set-Cookie header pair that signs user in."
       (session-set-cookie (auth-session auth)
                           `((uid . ,(col user "id"))
-                            (stamp . ,(password-stamp (col user "pass_hash"))))))
+                            (stamp .
+                                   ,(password-stamp
+                                     (col user "pass_hash"))))))
 
     (define (end-session auth)
       "Syntax: (end-session auth)
@@ -87,5 +95,7 @@ Description: The Set-Cookie header pair that signs out."
 Library: (app auth)
 Description: Stores a new hash for user and returns the updated row. Other
   sessions of the user end; start a new one for this browser."
-      (set-password-hash! (auth-db auth) (col user "id") (password-hash new-password))
+      (set-password-hash! (auth-db auth)
+                          (col user "id")
+                          (password-hash new-password))
       (load-user (auth-db auth) (col user "id")))))

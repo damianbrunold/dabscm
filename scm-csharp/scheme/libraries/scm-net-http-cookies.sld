@@ -1,22 +1,22 @@
 (define-library (scm net http cookies)
-  (import (scm core) (scheme base) (srfi 13))
-  (export parse-cookie-header
-          cookie-ref
-          format-set-cookie)
+  (import (scheme base)
+          (srfi 13)
+          (scm core))
+  (export cookie-ref
+          format-set-cookie
+          parse-cookie-header)
   (begin
 
     (define (split-on-char s ch)
       (let* ((n (string-length s))
              (acc '()))
         (let loop ((i 0) (start 0))
-          (cond
-            ((= i n)
-             (reverse (cons (substring s start n) acc)))
-            ((char=? (string-ref s i) ch)
-             (let ((part (substring s start i)))
-               (set! acc (cons part acc))
-               (loop (+ i 1) (+ i 1))))
-            (else (loop (+ i 1) start))))))
+          (cond ((= i n) (reverse (cons (substring s start n) acc)))
+                ((char=? (string-ref s i) ch)
+                 (let ((part (substring s start i)))
+                   (set! acc (cons part acc))
+                   (loop (+ i 1) (+ i 1))))
+                (else (loop (+ i 1) start))))))
 
     (define (parse-cookie-header header)
       "Syntax: (parse-cookie-header header)
@@ -28,25 +28,26 @@ Description: Parses an HTTP Cookie header value into an alist. Whitespace
 Example:
   (parse-cookie-header \"sid=abc; pref=dark\")
   => ((\"sid\" . \"abc\") (\"pref\" . \"dark\"))"
-      (cond
-        ((or (not header) (string=? header "")) '())
-        (else
-         (let ((parts (split-on-char header #\;)))
-           (let loop ((ps parts) (acc '()))
-             (cond
-               ((null? ps) (reverse acc))
-               (else
-                (let* ((raw (car ps))
-                       (s   (string-trim-both raw))
-                       (eq-idx (string-index s #\=)))
-                  (cond
-                    (eq-idx
-                     (loop (cdr ps)
-                           (cons (cons (substring s 0 eq-idx)
-                                       (substring s (+ eq-idx 1)
-                                                  (string-length s)))
-                                 acc)))
-                    (else (loop (cdr ps) acc)))))))))))
+      (cond ((or (not header) (string=? header "")) '())
+            (else (let ((parts (split-on-char header #\;)))
+                    (let loop ((ps parts) (acc '()))
+                      (cond ((null? ps) (reverse acc))
+                            (else (let*
+                                      ((raw (car ps))
+                                       (s (string-trim-both raw))
+                                       (eq-idx (string-index s #\=)))
+                                    (cond
+                                     (eq-idx
+                                      (loop
+                                       (cdr ps)
+                                       (cons
+                                        (cons
+                                         (substring s 0 eq-idx)
+                                         (substring s
+                                                    (+ eq-idx 1)
+                                                    (string-length s)))
+                                        acc)))
+                                     (else (loop (cdr ps) acc)))))))))))
 
     (define (cookie-ref cookies name)
       "Syntax: (cookie-ref cookies name)
@@ -55,8 +56,7 @@ Description: Returns the value of the named cookie in cookies (an alist from
   parse-cookie-header), or #f if missing.
 Example:
   (cookie-ref '((\"sid\" . \"abc\")) \"sid\") => \"abc\""
-      (let ((p (assoc name cookies)))
-        (if p (cdr p) #f)))
+      (let ((p (assoc name cookies))) (if p (cdr p) #f)))
 
     (define (format-set-cookie name value max-age path . opt)
       "Syntax: (format-set-cookie name value max-age path [flag ...])
@@ -89,7 +89,5 @@ Example:
                           "; HttpOnly; SameSite=Lax"
                           "; HttpOnly; SameSite=Strict")
                       out)
-        (when (not (memv 'no-secure opt))
-          (write-string "; Secure" out))
-        (get-output-string out)))
-))
+        (when (not (memv 'no-secure opt)) (write-string "; Secure" out))
+        (get-output-string out)))))

@@ -1,10 +1,15 @@
-(import (scheme base) (srfi 13) (scm data core) (scm data frame) (scm test))
+(import (scheme base)
+        (srfi 13)
+        (scm data core)
+        (scm data frame)
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 
 (test-begin "scm-data-frame")
 
-(define df (tibble (splg 'BEW8 'GYN2 'URO1.1.1) (pts 6441.0 1728.5 na) (n 10 20 30)))
+(define df
+  (tibble (splg 'BEW8 'GYN2 'URO1.1.1) (pts 6441.0 1728.5 na) (n 10 20 30)))
 
 (test-group "construction"
   (test-equal 3 (df-nrow df))
@@ -43,8 +48,12 @@
   (test-equal #(30 10) (df-column (df-take df #(2 0)) 'n))
   (test-equal '(splg) (df-groups (df-set-groups df '(splg))))
   ;; grouping survives column changes, renames follow
-  (test-equal '(x) (df-groups (df-rename-columns (df-set-groups df '(splg)) '((splg . x)))))
-  (test-equal '() (df-groups (df-drop-columns (df-set-groups df '(splg)) '(splg)))))
+  (test-equal '(x)
+              (df-groups (df-rename-columns (df-set-groups df '(splg))
+                                            '((splg . x)))))
+  (test-equal '()
+              (df-groups (df-drop-columns (df-set-groups df '(splg))
+                                          '(splg)))))
 
 (test-group "printing"
   (let ((s (df->string df)))
@@ -52,6 +61,7 @@
     (test-assert (string-contains s "3 × 3"))
     (test-assert (string-contains s "<dbl>"))
     (test-assert (string-contains s "1728.5")))
-  (test-assert (string-contains (df->string (tibble (a 1 2 3)) 2) "1 more rows")))
+  (test-assert (string-contains (df->string (tibble (a 1 2 3)) 2)
+                                "1 more rows")))
 
 (test-end "scm-data-frame")

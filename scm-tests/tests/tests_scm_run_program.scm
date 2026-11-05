@@ -28,15 +28,16 @@
   (test-equal "exit code" 3 (run-program (exit-argv 3)))
   (test-equal "work-dir only" 0 (run-program (exit-argv 0) '((work-dir "."))))
   (test-equal "env without work-dir" 0
-    (run-program (check-x-argv) '((env (("X" "1"))))))
+              (run-program (check-x-argv) '((env (("X" "1"))))))
   (test-equal "env value reaches child" 1
-    (run-program (check-x-argv) '((env (("X" "2"))))))
+              (run-program (check-x-argv) '((env (("X" "2"))))))
   (test-equal "env with work-dir" 0
-    (run-program (check-x-argv) '((work-dir ".") (env (("X" "1")))))))
+              (run-program (check-x-argv)
+                           '((work-dir ".") (env (("X" "1")))))))
 
 (test-group "run-program/capture options"
   (test-equal "env without work-dir" 0
-    (car (run-program/capture (check-x-argv) '((env (("X" "1")))))))
+              (car (run-program/capture (check-x-argv) '((env (("X" "1")))))))
   (test-equal "no options" 0 (car (run-program/capture (exit-argv 0)))))
 
 (test-end "scm-run-program")

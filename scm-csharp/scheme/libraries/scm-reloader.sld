@@ -11,11 +11,11 @@
   ;; webapp, jobs worker, and sibling projects share one implementation.
   (import (scheme base)
           (scheme write)
+          (srfi 18)
           (scm fs)
-          (scm system)
-          (srfi 18))
-  (export supervise
-          files-with-suffix)
+          (scm system))
+  (export files-with-suffix
+          supervise)
   (begin
 
     (define (files-with-suffix dir suffix)
@@ -27,56 +27,50 @@ Description: Returns the immediate (non-recursive) entries of dir whose
 Example:
   (files-with-suffix \"src\" \".sld\") => (\"src/a.sld\" \"src/b.sld\")"
       (let ((slen (string-length suffix)))
-        (let loop ((entries (directory-files dir)) (acc '()))
-          (cond
-            ((null? entries) (reverse acc))
-            (else
-             (let* ((name (car entries))
-                    (n (string-length name)))
-               (loop (cdr entries)
-                     (if (and (>= n slen)
-                              (string=? (substring name (- n slen) n) suffix))
-                         (cons (string-append dir "/" name) acc)
-                         acc))))))))
+        (let loop ((entries (directory-files dir))
+                   (acc '()))
+          (cond ((null? entries) (reverse acc))
+                (else (let* ((name (car entries))
+                             (n (string-length name)))
+                        (loop (cdr entries)
+                              (if (and (>= n slen)
+                                       (string=? (substring name (- n slen) n)
+                                                 suffix))
+                                  (cons (string-append dir "/" name) acc)
+                                  acc))))))))
 
     ;; --- options ---------------------------------------------------------
 
     (define (opt opts key default)
-      (let ((cell (assq key opts)))
-        (if cell (cdr cell) default)))
+      (let ((cell (assq key opts))) (if cell (cdr cell) default)))
 
     ;; --- file snapshots --------------------------------------------------
 
     (define (snapshot files)
       (map (lambda (f)
-             (cons f (if (file-exists? f)
-                         (file-modification-timestamp f)
-                         0)))
+             (cons f (if (file-exists? f) (file-modification-timestamp f) 0)))
            files))
 
     (define (changed? before after)
       (let loop ((a before) (b after))
-        (cond
-          ((or (null? a) (null? b)) (not (and (null? a) (null? b))))
-          ((not (= (cdr (car a)) (cdr (car b)))) #t)
-          (else (loop (cdr a) (cdr b))))))
+        (cond ((or (null? a) (null? b)) (not (and (null? a) (null? b))))
+              ((not (= (cdr (car a)) (cdr (car b)))) #t)
+              (else (loop (cdr a) (cdr b))))))
 
     (define (changed-paths before after)
       (let loop ((a before) (b after) (acc '()))
-        (cond
-          ((or (null? a) (null? b)) (reverse acc))
-          ((= (cdr (car a)) (cdr (car b)))
-           (loop (cdr a) (cdr b) acc))
-          (else
-           (loop (cdr a) (cdr b) (cons (car (car a)) acc))))))
+        (cond ((or (null? a) (null? b)) (reverse acc))
+              ((= (cdr (car a)) (cdr (car b))) (loop (cdr a) (cdr b) acc))
+              (else (loop (cdr a) (cdr b) (cons (car (car a)) acc))))))
 
     ;; --- formatting helpers ---------------------------------------------
 
     (define (join-with sep parts)
-      (cond
-        ((null? parts) "")
-        ((null? (cdr parts)) (car parts))
-        (else (string-append (car parts) sep (join-with sep (cdr parts))))))
+      (cond ((null? parts) "")
+            ((null? (cdr parts)) (car parts))
+            (else (string-append (car parts)
+                                 sep
+                                 (join-with sep (cdr parts))))))
 
     (define (relative-to root path)
       (if (not root)
@@ -84,7 +78,8 @@ Example:
           (let ((prefix (string-append root "/"))
                 (n (string-length path)))
             (if (and (>= n (string-length prefix))
-                     (string=? (substring path 0 (string-length prefix)) prefix))
+                     (string=? (substring path 0 (string-length prefix))
+                               prefix))
                 (substring path (string-length prefix) n)
                 path))))
 
@@ -125,13 +120,17 @@ Example:
              (healthy-ticks (opt opts 'healthy-ticks 10)))
 
         (define (log msg)
-          (display "[") (display label) (display "] ")
-          (display msg) (newline))
+          (display "[")
+          (display label)
+          (display "] ")
+          (display msg)
+          (newline))
 
         (define (start-child)
           (let* ((argv (resolve-command command))
                  (proc (begin
-                         (log (string-append "starting: " (join-with " " argv)))
+                         (log (string-append "starting: "
+                                             (join-with " " argv)))
                          (if work-dir
                              (start-program argv `((work-dir ,work-dir)))
                              (start-program argv '())))))
@@ -143,8 +142,7 @@ Example:
             proc))
 
         (define (stop-child proc)
-          (when (process-alive? proc)
-            (process-kill proc #t))
+          (when (process-alive? proc) (process-kill proc #t))
           (process-wait proc))
 
         ;; After a change is first detected, wait until mtimes stop moving
@@ -162,7 +160,8 @@ Example:
         (log (string-append "watching "
                             (number->string (length (watch)))
                             " files; poll every "
-                            (number->string poll-interval) "s"))
+                            (number->string poll-interval)
+                            "s"))
         ;; Loop state:
         ;;   proc   — current child (may be dead)
         ;;   snap   — last settled snapshot of watched files
@@ -179,40 +178,45 @@ Example:
           (let* ((new-snap (snapshot (watch)))
                  (alive (process-alive? proc)))
             (cond
-              ;; A file changed: always restart immediately, clearing backoff.
-              ((changed? snap new-snap)
-               (let* ((settled (settle new-snap))
-                      (changes (changed-paths snap settled)))
-                 (log (string-append "change detected ("
-                                     (number->string (length changes))
-                                     "): "
-                                     (join-with ", "
-                                       (map (lambda (p) (relative-to root p))
-                                            changes))))
-                 (when alive (stop-child proc))
-                 (log (if alive "restarting child" "child not running; starting"))
-                 (loop (start-child) settled 0 'live 0)))
-              ;; Child believed running.
-              ((eq? wait 'live)
-               (cond
-                 (alive
-                  ;; Stable for healthy-ticks ⇒ forgive earlier crashes.
-                  (let ((up (+ uptime 1)))
-                    (loop proc snap (if (>= up healthy-ticks) 0 fails) 'live up)))
-                 (else
-                  ;; Crashed on its own; reap it and schedule a backoff retry.
-                  (process-wait proc)
-                  (let* ((nfails (+ fails 1))
-                         (ticks (backoff-ticks nfails)))
-                    (log (string-append "child exited; retry "
-                                        (number->string nfails)
-                                        " in "
-                                        (number->string (* ticks poll-interval))
-                                        "s"))
-                    (loop proc new-snap nfails ticks 0)))))
-              ;; Child dead, counting down to the next retry.
-              ((<= wait 1)
-               (log "retrying child")
-               (loop (start-child) new-snap fails 'live 0))
-              (else
-               (loop proc new-snap fails (- wait 1) 0)))))))))
+             ;; A file changed: always restart immediately, clearing backoff.
+             ((changed? snap new-snap)
+              (let* ((settled (settle new-snap))
+                     (changes (changed-paths snap settled)))
+                (log (string-append "change detected ("
+                                    (number->string (length changes))
+                                    "): "
+                                    (join-with
+                                     ", "
+                                     (map (lambda (p) (relative-to root p))
+                                          changes))))
+                (when alive (stop-child proc))
+                (log (if alive
+                         "restarting child"
+                         "child not running; starting"))
+                (loop (start-child) settled 0 'live 0)))
+             ;; Child believed running.
+             ((eq? wait 'live)
+              (cond (alive
+                     ;; Stable for healthy-ticks ⇒ forgive earlier crashes.
+                     (let ((up (+ uptime 1)))
+                       (loop proc snap
+                             (if (>= up healthy-ticks) 0 fails)
+                             'live
+                             up)))
+                    (else
+                     ;; Crashed on its own; reap it and schedule a backoff retry.
+                     (process-wait proc)
+                     (let* ((nfails (+ fails 1))
+                            (ticks (backoff-ticks nfails)))
+                       (log (string-append
+                             "child exited; retry "
+                             (number->string nfails)
+                             " in "
+                             (number->string (* ticks poll-interval))
+                             "s"))
+                       (loop proc new-snap nfails ticks 0)))))
+             ;; Child dead, counting down to the next retry.
+             ((<= wait 1)
+              (log "retrying child")
+              (loop (start-child) new-snap fails 'live 0))
+             (else (loop proc new-snap fails (- wait 1) 0)))))))))

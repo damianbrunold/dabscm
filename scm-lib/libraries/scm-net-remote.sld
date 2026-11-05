@@ -30,7 +30,9 @@
 
     (define (%require-native name)
       (let ((p (which name)))
-        (or p (error (string-append name ": native command not found on PATH")))))
+        (or p
+            (error (string-append name
+                                  ": native command not found on PATH")))))
 
     (define (%strip-newline s)
       (let ((n (string-length s)))
@@ -54,16 +56,15 @@ Example:
       (let* ((native (%require-native "ssh"))
              (user (%opt-value opts 'user #f))
              (port (%opt-value opts 'port #f))
-             (key  (%opt-value opts 'key  #f))
+             (key (%opt-value opts 'key #f))
              (stdin (%opt-value opts 'stdin #f))
              (extra (%opt-value opts 'extra-args '()))
              (target (if user (string-append user "@" host) host))
-             (args (append
-                     (list native)
-                     (if port (list "-p" (number->string port)) '())
-                     (if key (list "-i" key) '())
-                     extra
-                     (list target command)))
+             (args (append (list native)
+                           (if port (list "-p" (number->string port)) '())
+                           (if key (list "-i" key) '())
+                           extra
+                           (list target command)))
              (run-opts (if stdin (list (list 'stdin stdin)) '())))
         (run-program/capture args run-opts)))
 
@@ -82,15 +83,14 @@ Example:
   (scp \"build.tar.gz\" \"deploy@web1:/srv/releases/\" '(port . 2222))"
       (let* ((native (%require-native "scp"))
              (port (%opt-value opts 'port #f))
-             (key  (%opt-value opts 'key  #f))
-             (args (append
-                     (list native)
-                     (if (%has-flag? opts 'recursive) (list "-r") '())
-                     (if (%has-flag? opts 'preserve)  (list "-p") '())
-                     (if (%has-flag? opts 'quiet)     (list "-q") '())
-                     (if port (list "-P" (number->string port)) '())
-                     (if key  (list "-i" key) '())
-                     (list src dst))))
+             (key (%opt-value opts 'key #f))
+             (args (append (list native)
+                           (if (%has-flag? opts 'recursive) (list "-r") '())
+                           (if (%has-flag? opts 'preserve) (list "-p") '())
+                           (if (%has-flag? opts 'quiet) (list "-q") '())
+                           (if port (list "-P" (number->string port)) '())
+                           (if key (list "-i" key) '())
+                           (list src dst))))
         (zero? (run-program args))))
 
     (define (rsync src dst . opts)
@@ -110,18 +110,20 @@ Example:
   (rsync \"build/\" \"deploy@web1:/srv/app/\" 'archive 'delete 'verbose)"
       (let* ((native (%require-native "rsync"))
              (excludes (%opt-value opts 'exclude '()))
-             (rsh      (%opt-value opts 'rsh #f))
-             (args (append
-                     (list native)
-                     (if (%has-flag? opts 'archive)    (list "-a") '())
-                     (if (%has-flag? opts 'recursive) (list "-r") '())
-                     (if (%has-flag? opts 'verbose)   (list "-v") '())
-                     (if (%has-flag? opts 'dry-run)   (list "-n") '())
-                     (if (%has-flag? opts 'compress)  (list "-z") '())
-                     (if (%has-flag? opts 'delete)    (list "--delete") '())
-                     (if rsh (list "-e" rsh) '())
-                     (append-map (lambda (p) (list "--exclude" p)) excludes)
-                     (list src dst))))
+             (rsh (%opt-value opts 'rsh #f))
+             (args (append (list native)
+                           (if (%has-flag? opts 'archive) (list "-a") '())
+                           (if (%has-flag? opts 'recursive) (list "-r") '())
+                           (if (%has-flag? opts 'verbose) (list "-v") '())
+                           (if (%has-flag? opts 'dry-run) (list "-n") '())
+                           (if (%has-flag? opts 'compress) (list "-z") '())
+                           (if (%has-flag? opts 'delete)
+                               (list "--delete")
+                               '())
+                           (if rsh (list "-e" rsh) '())
+                           (append-map (lambda (p) (list "--exclude" p))
+                                       excludes)
+                           (list src dst))))
         (zero? (run-program args))))
 
     (define (curl url . opts)
@@ -148,81 +150,92 @@ Example:
         'silent)"
       (let* ((pure? (%has-flag? opts 'pure))
              (native (and (not pure?) (which "curl"))))
-        (if native
-            (curl/native native url opts)
-            (curl/scheme url opts))))
+        (if native (curl/native native url opts) (curl/scheme url opts))))
 
     (define (curl/native native url opts)
-      (let* ((method  (%opt-value opts 'method  #f))
+      (let* ((method (%opt-value opts 'method #f))
              (headers (%opt-value opts 'headers '()))
-             (data    (%opt-value opts 'data    #f))
-             (output  (%opt-value opts 'output  #f))
+             (data (%opt-value opts 'data #f))
+             (output (%opt-value opts 'output #f))
              (timeout (%opt-value opts 'timeout #f))
              (include-status? (%has-flag? opts 'include-status))
-             (args (append
-                     (list native)
-                     (if (%has-flag? opts 'silent)            (list "-s") '())
-                     (if (%has-flag? opts 'follow-redirects)  (list "-L") '())
-                     (if (%has-flag? opts 'fail-on-error)     (list "-f") '())
-                     (if timeout (list "--max-time" (number->string timeout)) '())
-                     (if method  (list "-X" method) '())
-                     (append-map (lambda (h) (list "-H" h)) headers)
-                     (if data    (list "--data-binary" data) '())
-                     (if include-status?
-                         (list "-w" "\n__CURL_STATUS__:%{http_code}")
-                         '())
-                     (if output (list "-o" output) '())
-                     (list url)))
+             (args (append (list native)
+                           (if (%has-flag? opts 'silent) (list "-s") '())
+                           (if (%has-flag? opts 'follow-redirects)
+                               (list "-L")
+                               '())
+                           (if (%has-flag? opts 'fail-on-error)
+                               (list "-f")
+                               '())
+                           (if timeout
+                               (list "--max-time" (number->string timeout))
+                               '())
+                           (if method (list "-X" method) '())
+                           (append-map (lambda (h) (list "-H" h)) headers)
+                           (if data (list "--data-binary" data) '())
+                           (if include-status?
+                               (list "-w" "\n__CURL_STATUS__:%{http_code}")
+                               '())
+                           (if output (list "-o" output) '())
+                           (list url)))
              (r (run-program/capture args)))
-        (cond
-          ((not (pair? r)) (if output #f ""))
-          (output (zero? (car r)))
-          (include-status?
-           (let* ((out (cadr r))
-                  (marker "\n__CURL_STATUS__:")
-                  (mlen (string-length marker))
-                  (n (string-length out))
-                  (idx (let loop ((i 0))
-                         (cond
-                           ((> (+ i mlen) n) #f)
-                           ((string=? (substring out i (+ i mlen)) marker) i)
-                           (else (loop (+ i 1)))))))
-             (if idx
-                 (let* ((body (substring out 0 idx))
-                        (code-str (%strip-newline
-                                    (substring out (+ idx mlen) n)))
-                        (code (or (string->number code-str) 0)))
-                   (cons code body))
-                 (cons 0 out))))
-          (else (cadr r)))))
+        (cond ((not (pair? r)) (if output #f ""))
+              (output (zero? (car r)))
+              (include-status? (let* ((out (cadr r))
+                                      (marker "\n__CURL_STATUS__:")
+                                      (mlen (string-length marker))
+                                      (n (string-length out))
+                                      (idx
+                                       (let loop ((i 0))
+                                         (cond
+                                          ((> (+ i mlen) n) #f)
+                                          ((string=?
+                                            (substring out i (+ i mlen))
+                                            marker)
+                                           i)
+                                          (else (loop (+ i 1)))))))
+                                 (if idx
+                                     (let*
+                                         ((body (substring out 0 idx))
+                                          (code-str
+                                           (%strip-newline
+                                            (substring out (+ idx mlen) n)))
+                                          (code
+                                           (or (string->number code-str) 0)))
+                                       (cons code body))
+                                     (cons 0 out))))
+              (else (cadr r)))))
 
     (define (%parse-header-string s)
       ;; \"Name: value\" -> (\"Name\" . \"value\")
       (let* ((n (string-length s))
              (idx (let loop ((i 0))
-                    (cond
-                      ((>= i n) #f)
-                      ((char=? (string-ref s i) #\:) i)
-                      (else (loop (+ i 1)))))))
+                    (cond ((>= i n) #f)
+                          ((char=? (string-ref s i) #\:) i)
+                          (else (loop (+ i 1)))))))
         (if idx
             (let* ((name (substring s 0 idx))
                    (rest (substring s (+ idx 1) n))
                    ;; trim leading spaces of value
                    (rn (string-length rest))
                    (v-start (let loop ((i 0))
-                              (cond
-                                ((>= i rn) rn)
-                                ((char=? (string-ref rest i) #\space)
-                                 (loop (+ i 1)))
-                                (else i)))))
+                              (cond ((>= i rn) rn)
+                                    ((char=? (string-ref rest i) #\space)
+                                     (loop (+ i 1)))
+                                    (else i)))))
               (cons name (substring rest v-start rn)))
             (cons s ""))))
 
     (define (curl/scheme url opts)
-      (let* ((method  (%opt-value opts 'method  (if (%opt-value opts 'data #f) "POST" "GET")))
-             (headers (map %parse-header-string (%opt-value opts 'headers '())))
-             (data    (%opt-value opts 'data    #f))
-             (output  (%opt-value opts 'output  #f))
+      (let* ((method (%opt-value opts
+                                 'method
+                                 (if (%opt-value opts 'data #f)
+                                     "POST"
+                                     "GET")))
+             (headers (map %parse-header-string
+                           (%opt-value opts 'headers '())))
+             (data (%opt-value opts 'data #f))
+             (output (%opt-value opts 'output #f))
              (include-status? (%has-flag? opts 'include-status))
              (req (make-http-request method url headers (or data "")))
              (resp (http-send req))
@@ -232,18 +245,17 @@ Example:
                              ((bytevector? body) (utf8->string body))
                              (else ""))))
         (cond
-          ;; a body that is not text arrives as a bytevector and is
-          ;; written as it is, so an image or an archive stays intact
-          ((and output (bytevector? body))
-           (call-with-port (open-binary-output-file output)
-             (lambda (p) (write-bytevector body p)))
-           (and (>= status 200) (< status 400)))
-          (output
-           (call-with-port (open-output-file output)
-             (lambda (p) (write-string body-str p)))
-           (and (>= status 200) (< status 400)))
-          (include-status? (cons status body-str))
-          (else body-str))))
+         ;; a body that is not text arrives as a bytevector and is
+         ;; written as it is, so an image or an archive stays intact
+         ((and output (bytevector? body))
+          (call-with-port (open-binary-output-file output)
+            (lambda (p) (write-bytevector body p)))
+          (and (>= status 200) (< status 400)))
+         (output (call-with-port (open-output-file output)
+                   (lambda (p) (write-string body-str p)))
+                 (and (>= status 200) (< status 400)))
+         (include-status? (cons status body-str))
+         (else body-str))))
 
     (define (wget url . opts)
       "Syntax: (wget url [option ...])
@@ -263,17 +275,22 @@ Example:
              (output (%opt-value opts 'output #f))
              (timeout (%opt-value opts 'timeout #f)))
         (if (not native)
-            (and (curl/scheme url (if output (list (cons 'output output)) '())) #t)
+            (and (curl/scheme url
+                              (if output (list (cons 'output output)) '()))
+                 #t)
             (wget/native native url opts output timeout))))
 
     (define (wget/native native url opts output timeout)
       (let* ((dummy #f)
-             (args (append
-                     (list native)
-                     (if (%has-flag? opts 'quiet)         (list "-q") '())
-                     (if (%has-flag? opts 'continue)      (list "-c") '())
-                     (if (%has-flag? opts 'no-check-cert) (list "--no-check-certificate") '())
-                     (if timeout (list "--timeout" (number->string timeout)) '())
-                     (if output  (list "-O" output) '())
-                     (list url))))
+             (args (append (list native)
+                           (if (%has-flag? opts 'quiet) (list "-q") '())
+                           (if (%has-flag? opts 'continue) (list "-c") '())
+                           (if (%has-flag? opts 'no-check-cert)
+                               (list "--no-check-certificate")
+                               '())
+                           (if timeout
+                               (list "--timeout" (number->string timeout))
+                               '())
+                           (if output (list "-O" output) '())
+                           (list url))))
         (zero? (run-program args))))))

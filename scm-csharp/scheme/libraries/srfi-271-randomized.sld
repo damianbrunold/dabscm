@@ -7,7 +7,8 @@
 
 (define-library (srfi 271 randomized)
   (import (scheme base))
-  (export make-random-port random-port?)
+  (export make-random-port
+          random-port?)
   (begin
 
     (define %make-secure-random-port (%primitive "make-secure-random-port"))

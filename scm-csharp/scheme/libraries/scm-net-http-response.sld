@@ -1,37 +1,41 @@
 (define-library (scm net http response)
-  (import (scm core) (scheme base) (scheme char))
-  (export make-http-response
-          make-http-file-response
-          make-http-stream-response
-          http-websocket-upgrade
-          http-response-with-headers
-          http-response-status
-          http-response-headers
-          http-response-body
-          http-response?
-          http-response-header
-          http-ok
-          http-not-found
+  (import (scheme base)
+          (scheme char)
+          (scm core))
+  (export html-response
           http-bad-request
           http-forbidden
-          http-unauthorized
           http-internal-error
-          http-redirect
-          http-see-other
+          http-not-found
+          http-ok
           http-permanent-redirect
-          html-response
+          http-redirect
+          http-response-body
+          http-response-header
+          http-response-headers
+          http-response-status
+          http-response-with-headers
+          http-response?
+          http-see-other
+          http-unauthorized
+          http-websocket-upgrade
           json-response
+          make-http-file-response
+          make-http-response
+          make-http-stream-response
           text-response)
   (begin
-    (define make-http-response   (%primitive "make-http-response"))
+    (define make-http-response (%primitive "make-http-response"))
     (define make-http-file-response (%primitive "make-http-file-response"))
-    (define make-http-stream-response (%primitive "make-http-stream-response"))
+    (define make-http-stream-response
+      (%primitive "make-http-stream-response"))
     (define http-websocket-upgrade (%primitive "http-websocket-upgrade"))
-    (define http-response-with-headers (%primitive "http-response-with-headers"))
-    (define http-response-status  (%primitive "http-response-status"))
+    (define http-response-with-headers
+      (%primitive "http-response-with-headers"))
+    (define http-response-status (%primitive "http-response-status"))
     (define http-response-headers (%primitive "http-response-headers"))
-    (define http-response-body    (%primitive "http-response-body"))
-    (define http-response?        (%primitive "http-response?"))
+    (define http-response-body (%primitive "http-response-body"))
+    (define http-response? (%primitive "http-response?"))
 
     (define (http-response-header resp name)
       "Syntax: (http-response-header resp name)
@@ -41,12 +45,11 @@ Description: Returns the value of the named header in resp, or #f if not present
 Example:
   (http-response-header resp \"Content-Type\") => \"text/html\""
       (let loop ((headers (http-response-headers resp)))
-        (cond
-          ((null? headers) #f)
-          ((string=? (string-downcase (car (car headers)))
-                     (string-downcase name))
-           (cdr (car headers)))
-          (else (loop (cdr headers))))))
+        (cond ((null? headers) #f)
+              ((string=? (string-downcase (car (car headers)))
+                         (string-downcase name))
+               (cdr (car headers)))
+              (else (loop (cdr headers))))))
 
     (define (http-ok body)
       "Syntax: (http-ok body)
@@ -87,8 +90,7 @@ Description: Creates a 403 Forbidden HTTP response. msg defaults to \"Forbidden\
 Example:
   (http-forbidden)
   (http-forbidden \"Admin only\")"
-      (make-http-response 403 '()
-                          (if (null? opt) "Forbidden" (car opt))))
+      (make-http-response 403 '() (if (null? opt) "Forbidden" (car opt))))
 
     (define (http-unauthorized . opt)
       "Syntax: (http-unauthorized [msg])
@@ -96,8 +98,7 @@ Library: (scm net http response)
 Description: Creates a 401 Unauthorized HTTP response. msg defaults to \"Unauthorized\".
 Example:
   (http-unauthorized)"
-      (make-http-response 401 '()
-                          (if (null? opt) "Unauthorized" (car opt))))
+      (make-http-response 401 '() (if (null? opt) "Unauthorized" (car opt))))
 
     (define (http-redirect location)
       "Syntax: (http-redirect location)
@@ -106,9 +107,7 @@ Description: Creates a 302 Found HTTP response with the given Location header.
   Use for temporary redirects from GET requests.
 Example:
   (http-redirect \"/login\")"
-      (make-http-response 302
-                          (list (cons "Location" location))
-                          ""))
+      (make-http-response 302 (list (cons "Location" location)) ""))
 
     (define (http-see-other location)
       "Syntax: (http-see-other location)
@@ -117,9 +116,7 @@ Description: Creates a 303 See Other HTTP response with the given Location heade
   Use after a successful POST to redirect to a GET (POST/Redirect/GET pattern).
 Example:
   (http-see-other \"/items/42\")"
-      (make-http-response 303
-                          (list (cons "Location" location))
-                          ""))
+      (make-http-response 303 (list (cons "Location" location)) ""))
 
     (define (http-permanent-redirect location)
       "Syntax: (http-permanent-redirect location)
@@ -127,9 +124,7 @@ Library: (scm net http response)
 Description: Creates a 301 Moved Permanently HTTP response with the given Location header.
 Example:
   (http-permanent-redirect \"https://example.com/new\")"
-      (make-http-response 301
-                          (list (cons "Location" location))
-                          ""))
+      (make-http-response 301 (list (cons "Location" location)) ""))
 
     (define (html-response body)
       "Syntax: (html-response body)
@@ -149,7 +144,8 @@ Description: Creates a 200 OK response with Content-Type application/json; chars
 Example:
   (json-response \"{\\\"ok\\\":true}\")"
       (make-http-response 200
-                          '(("Content-Type" . "application/json; charset=utf-8"))
+                          '(("Content-Type" .
+                             "application/json; charset=utf-8"))
                           body))
 
     (define (text-response body)

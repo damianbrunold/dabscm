@@ -1,5 +1,6 @@
 (define-library (srfi 98)
-  (export get-environment-variable get-environment-variables)
+  (export get-environment-variable
+          get-environment-variables)
   (begin
     (define (get-environment-variable name)
       "Syntax: (get-environment-variable name)

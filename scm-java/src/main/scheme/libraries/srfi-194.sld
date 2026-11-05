@@ -14,43 +14,47 @@
 (define-library (srfi 194)
   (import (scheme base)
           (scheme case-lambda)
-          (scheme inexact)
           (scheme complex)
-          (only (srfi 133) vector-fold vector-every)
+          (scheme inexact)
           (srfi 27)
+          (only (srfi 133) vector-fold vector-every)
           (only (srfi 158) generator->string))
   (export clamp-real-number
 
           current-random-source
-          with-random-source
+          gsampling
 
-          make-random-integer-generator
-          make-random-u1-generator
-          make-random-u8-generator make-random-s8-generator
-          make-random-u16-generator make-random-s16-generator
-          make-random-u32-generator make-random-s32-generator
-          make-random-u64-generator make-random-s64-generator
-          make-random-boolean-generator
-          make-random-char-generator
-          make-random-string-generator
-          make-random-real-generator
-          make-random-rectangular-generator
-          make-random-polar-generator
-
+          make-ball-generator
           make-bernoulli-generator
           make-binomial-generator
           make-categorical-generator
-          make-normal-generator
+          make-ellipsoid-generator
           make-exponential-generator
           make-geometric-generator
+          make-normal-generator
           make-poisson-generator
-          make-zipf-generator
-          make-sphere-generator
-          make-ellipsoid-generator
-          make-ball-generator
+          make-random-boolean-generator
+          make-random-char-generator
+          make-random-integer-generator
+          make-random-polar-generator
+          make-random-real-generator
+          make-random-rectangular-generator
+          make-random-s16-generator
 
+          make-random-s32-generator
+          make-random-s64-generator
+          make-random-s8-generator
           make-random-source-generator
-          gsampling)
+          make-random-string-generator
+          make-random-u1-generator
+          make-random-u16-generator
+          make-random-u32-generator
+          make-random-u64-generator
+          make-random-u8-generator
+          make-sphere-generator
+
+          make-zipf-generator
+          with-random-source)
   (begin
 
     (define PI (* 4 (atan 1.0)))
@@ -73,8 +77,7 @@ Example:
       (lambda () ((make-random-integer-generator 0 10)))))  => 0..9"
       (unless (random-source? random-source)
         (error "with-random-source: expected random source" random-source))
-      (parameterize ((current-random-source random-source))
-        (thunk)))
+      (parameterize ((current-random-source random-source)) (thunk)))
 
     ;; Consecutive substreams of the s'th SRFI 27 stream; see L'Ecuyer,
     ;; Simard, Chen, Kelton, Operations Research 50 (2002), 1073-1075.
@@ -89,7 +92,9 @@ Example:
   (let ((g (make-random-source-generator 0)))
     (random-source? (g))) => #t"
       (if (not (and (exact-integer? s) (not (negative? s))))
-          (error "make-random-source-generator: expected non-negative exact integer" s)
+          (error
+           "make-random-source-generator: expected non-negative exact integer"
+           s)
           (let ((substream 0))
             (lambda ()
               (let ((new-source (make-random-source)))
@@ -110,16 +115,21 @@ Description: Returns a generator of exact integers uniformly distributed in
 Example:
   (<= 1 ((make-random-integer-generator 1 7)) 6) => #t"
       (unless (exact-integer? low-bound)
-        (error "make-random-integer-generator: expected exact integer for lower bound" low-bound))
+        (error
+         "make-random-integer-generator: expected exact integer for lower bound"
+         low-bound))
       (unless (exact-integer? up-bound)
-        (error "make-random-integer-generator: expected exact integer for upper bound" up-bound))
+        (error
+         "make-random-integer-generator: expected exact integer for upper bound"
+         up-bound))
       (unless (< low-bound up-bound)
-        (error "make-random-integer-generator: upper bound should be greater than lower bound"
-               low-bound up-bound))
-      (let ((rand-int-proc (random-source-make-integers (current-random-source)))
+        (error
+         "make-random-integer-generator: upper bound should be greater than lower bound"
+         low-bound up-bound))
+      (let ((rand-int-proc (random-source-make-integers
+                            (current-random-source)))
             (range (- up-bound low-bound)))
-        (lambda ()
-          (+ low-bound (rand-int-proc range)))))
+        (lambda () (+ low-bound (rand-int-proc range)))))
 
     (define (make-random-u1-generator)
       "Syntax: (make-random-u1-generator)
@@ -210,9 +220,11 @@ Description: Returns value clamped to the closed interval
 Example:
   (clamp-real-number 0.0 1.0 1.5) => 1.0"
       (cond ((not (real? lower-bound))
-             (error "clamp-real-number: expected real number for lower bound" lower-bound))
+             (error "clamp-real-number: expected real number for lower bound"
+                    lower-bound))
             ((not (real? upper-bound))
-             (error "clamp-real-number: expected real number for upper bound" upper-bound))
+             (error "clamp-real-number: expected real number for upper bound"
+                    upper-bound))
             ((not (<= lower-bound upper-bound))
              (error "clamp-real-number: lower bound must be <= upper bound"
                     lower-bound upper-bound))
@@ -229,22 +241,27 @@ Description: Returns a generator of inexact reals uniformly distributed in
 Example:
   (<= 1.0 ((make-random-real-generator 1.0 2.0)) 2.0) => #t"
       (unless (and (real? low-bound) (finite? low-bound))
-        (error "make-random-real-generator: expected finite real number for lower bound" low-bound))
+        (error
+         "make-random-real-generator: expected finite real number for lower bound"
+         low-bound))
       (unless (and (real? up-bound) (finite? up-bound))
-        (error "make-random-real-generator: expected finite real number for upper bound" up-bound))
+        (error
+         "make-random-real-generator: expected finite real number for upper bound"
+         up-bound))
       (unless (< low-bound up-bound)
         (error "make-random-real-generator: lower bound must be < upper bound"
                low-bound up-bound))
-      (let ((rand-real-proc (random-source-make-reals (current-random-source))))
+      (let
+          ((rand-real-proc (random-source-make-reals
+                            (current-random-source))))
         (lambda ()
           (let ((t (rand-real-proc)))
             ;; Unlike low + t*(up - low), this cannot round out of range.
-            (+ (* t low-bound)
-               (* (- 1.0 t) up-bound))))))
+            (+ (* t low-bound) (* (- 1.0 t) up-bound))))))
 
-    (define (make-random-rectangular-generator
-             real-lower-bound real-upper-bound
-             imag-lower-bound imag-upper-bound)
+    (define
+        (make-random-rectangular-generator real-lower-bound real-upper-bound
+                                           imag-lower-bound imag-upper-bound)
       "Syntax: (make-random-rectangular-generator real-lower-bound real-upper-bound
                                            imag-lower-bound imag-upper-bound)
 Library: (srfi 194)
@@ -254,23 +271,31 @@ Description: Returns a generator of inexact complex numbers uniformly
 Example:
   (let ((z ((make-random-rectangular-generator -1.0 1.0 -1.0 1.0))))
     (<= -1.0 (imag-part z) 1.0)) => #t"
-      (let ((real-gen (make-random-real-generator real-lower-bound real-upper-bound))
-            (imag-gen (make-random-real-generator imag-lower-bound imag-upper-bound)))
-        (lambda ()
-          (make-rectangular (real-gen) (imag-gen)))))
+      (let ((real-gen (make-random-real-generator real-lower-bound
+                                                  real-upper-bound))
+            (imag-gen (make-random-real-generator imag-lower-bound
+                                                  imag-upper-bound)))
+        (lambda () (make-rectangular (real-gen) (imag-gen)))))
 
     (define make-random-polar-generator
       (case-lambda
         ((magnitude-lower-bound magnitude-upper-bound)
-         (make-random-polar-generator 0 magnitude-lower-bound magnitude-upper-bound
-                                      0 (* 2 PI)))
+         (make-random-polar-generator 0 magnitude-lower-bound
+                                      magnitude-upper-bound
+                                      0
+                                      (* 2 PI)))
         ((origin magnitude-lower-bound magnitude-upper-bound)
-         (make-random-polar-generator origin magnitude-lower-bound magnitude-upper-bound
-                                      0 (* 2 PI)))
-        ((magnitude-lower-bound magnitude-upper-bound angle-lower-bound angle-upper-bound)
-         (make-random-polar-generator 0 magnitude-lower-bound magnitude-upper-bound
-                                      angle-lower-bound angle-upper-bound))
-        ((origin magnitude-lower-bound magnitude-upper-bound angle-lower-bound angle-upper-bound)
+         (make-random-polar-generator origin magnitude-lower-bound
+                                      magnitude-upper-bound
+                                      0
+                                      (* 2 PI)))
+        ((magnitude-lower-bound magnitude-upper-bound angle-lower-bound
+                                angle-upper-bound)
+         (make-random-polar-generator 0 magnitude-lower-bound
+                                      magnitude-upper-bound angle-lower-bound
+                                      angle-upper-bound))
+        ((origin magnitude-lower-bound magnitude-upper-bound angle-lower-bound
+                 angle-upper-bound)
          "Syntax: (make-random-polar-generator mag-lo mag-hi)
        (make-random-polar-generator origin mag-lo mag-hi)
        (make-random-polar-generator mag-lo mag-hi angle-lo angle-hi)
@@ -283,23 +308,31 @@ Description: Returns a generator of inexact complex numbers uniformly
 Example:
   (<= (magnitude ((make-random-polar-generator 0.0 1.0))) 1.0) => #t"
          (unless (complex? origin)
-           (error "make-random-polar-generator: origin should be complex number" origin))
-         (unless (and (real? magnitude-lower-bound)
-                      (real? magnitude-upper-bound)
-                      (real? angle-lower-bound)
-                      (real? angle-upper-bound))
-           (error "make-random-polar-generator: magnitude and angle bounds should be real numbers"))
-         (unless (and (<= 0 magnitude-lower-bound)
-                      (<= 0 magnitude-upper-bound))
-           (error "make-random-polar-generator: magnitude bounds should be positive"))
+           (error
+            "make-random-polar-generator: origin should be complex number"
+            origin))
+         (unless
+             (and (real? magnitude-lower-bound)
+                  (real? magnitude-upper-bound)
+                  (real? angle-lower-bound)
+                  (real? angle-upper-bound))
+           (error
+            "make-random-polar-generator: magnitude and angle bounds should be real numbers"))
+         (unless
+             (and (<= 0 magnitude-lower-bound) (<= 0 magnitude-upper-bound))
+           (error
+            "make-random-polar-generator: magnitude bounds should be positive"))
          (unless (< magnitude-lower-bound magnitude-upper-bound)
-           (error "make-random-polar-generator: magnitude lower bound should be less than upper bound"))
+           (error
+            "make-random-polar-generator: magnitude lower bound should be less than upper bound"))
          (when (= angle-lower-bound angle-upper-bound)
-           (error "make-random-polar-generator: angle bounds shouldn't be equal"))
+           (error
+            "make-random-polar-generator: angle bounds shouldn't be equal"))
          (let* ((b (square magnitude-lower-bound))
                 (m (- (square magnitude-upper-bound) b))
                 (t-gen (make-random-real-generator 0. 1.))
-                (phi-gen (make-random-real-generator angle-lower-bound angle-upper-bound)))
+                (phi-gen (make-random-real-generator angle-lower-bound
+                                                     angle-upper-bound)))
            (lambda ()
              (let* ((t (t-gen))
                     (phi (phi-gen))
@@ -312,9 +345,7 @@ Library: (srfi 194)
 Description: Returns a generator of #t and #f with equal probability.
 Example:
   (boolean? ((make-random-boolean-generator))) => #t"
-      (let ((u1 (make-random-u1-generator)))
-        (lambda ()
-          (zero? (u1)))))
+      (let ((u1 (make-random-u1-generator))) (lambda () (zero? (u1)))))
 
     (define (make-random-char-generator str)
       "Syntax: (make-random-char-generator string)
@@ -329,8 +360,7 @@ Example:
       (unless (> (string-length str) 0)
         (error "make-random-char-generator: given string is of length 0"))
       (let ((int-gen (make-random-integer-generator 0 (string-length str))))
-        (lambda ()
-          (string-ref str (int-gen)))))
+        (lambda () (string-ref str (int-gen)))))
 
     (define (make-random-string-generator k str)
       "Syntax: (make-random-string-generator k string)
@@ -341,8 +371,7 @@ Example:
   (< (string-length ((make-random-string-generator 5 \"ab\"))) 5) => #t"
       (let ((char-gen (make-random-char-generator str))
             (int-gen (make-random-integer-generator 0 k)))
-        (lambda ()
-          (generator->string char-gen (int-gen)))))
+        (lambda () (generator->string char-gen (int-gen)))))
 
     ;;; ============================================================
     ;;; Non-uniform distributions
@@ -359,9 +388,10 @@ Example:
         (error "make-bernoulli-generator: expected p to be real" p))
       (unless (<= 0 p 1)
         (error "make-bernoulli-generator: expected 0 <= p <= 1" p))
-      (let ((rand-real-proc (random-source-make-reals (current-random-source))))
-        (lambda ()
-          (if (<= (rand-real-proc) p) 1 0))))
+      (let
+          ((rand-real-proc (random-source-make-reals
+                            (current-random-source))))
+        (lambda () (if (<= (rand-real-proc) p) 1 0))))
 
     (define (make-categorical-generator weights-vec)
       "Syntax: (make-categorical-generator weights-vector)
@@ -372,14 +402,14 @@ Description: Returns a generator of exact integers in [0, n), where n is
 Example:
   ((make-categorical-generator #(0.0001 1000))) => 1"
       (define weight-sum
-        (vector-fold
-         (lambda (sum p)
-           (unless (and (number? p) (> p 0))
-             (error "make-categorical-generator: parameter must be a vector of positive numbers"
-                    weights-vec))
-           (+ sum p))
-         0
-         weights-vec))
+        (vector-fold (lambda (sum p)
+                       (unless (and (number? p) (> p 0))
+                         (error
+                          "make-categorical-generator: parameter must be a vector of positive numbers"
+                          weights-vec))
+                       (+ sum p))
+                     0
+                     weights-vec))
       (define length (vector-length weights-vec))
       (let ((real-gen (make-random-real-generator 0 weight-sum)))
         (lambda ()
@@ -396,10 +426,8 @@ Example:
     ;; second is cached.
     (define make-normal-generator
       (case-lambda
-        (()
-         (make-normal-generator 0.0 1.0))
-        ((mean)
-         (make-normal-generator mean 1.0))
+        (() (make-normal-generator 0.0 1.0))
+        ((mean) (make-normal-generator mean 1.0))
         ((mean deviation)
          "Syntax: (make-normal-generator)
        (make-normal-generator mean)
@@ -410,13 +438,17 @@ Description: Returns a generator of inexact reals with a normal (Gaussian)
   (default 1.0).
 Example:
   (real? ((make-normal-generator 10.0 2.0))) => #t"
-         (let ((rand-real-proc (random-source-make-reals (current-random-source)))
+         (let ((rand-real-proc (random-source-make-reals
+                                (current-random-source)))
                (state #f))
            (unless (and (real? mean) (finite? mean))
-             (error "make-normal-generator: expected mean to be finite real number" mean))
+             (error
+              "make-normal-generator: expected mean to be finite real number"
+              mean))
            (unless (and (real? deviation) (finite? deviation) (> deviation 0))
-             (error "make-normal-generator: expected deviation to be positive finite real number"
-                    deviation))
+             (error
+              "make-normal-generator: expected deviation to be positive finite real number"
+              deviation))
            (lambda ()
              (if state
                  (let ((result state))
@@ -435,11 +467,13 @@ Description: Returns a generator of inexact reals with an exponential
 Example:
   (positive? ((make-exponential-generator 2.0))) => #t"
       (unless (and (real? mean) (finite? mean) (positive? mean))
-        (error "make-exponential-generator: expected mean to be finite positive real number"
-               mean))
-      (let ((rand-real-proc (random-source-make-reals (current-random-source))))
-        (lambda ()
-          (- (* mean (log (rand-real-proc)))))))
+        (error
+         "make-exponential-generator: expected mean to be finite positive real number"
+         mean))
+      (let
+          ((rand-real-proc (random-source-make-reals
+                            (current-random-source))))
+        (lambda () (- (* mean (log (rand-real-proc)))))))
 
     (define (make-geometric-generator p)
       "Syntax: (make-geometric-generator p)
@@ -449,19 +483,21 @@ Description: Returns a generator of exact positive integers with a geometric
   first success, 0 < p <= 1.  The mean is 1/p.
 Example:
   ((make-geometric-generator 1)) => 1"
-      (define (log1p x)                 ; adapted from SRFI 144
+      (define (log1p x) ; adapted from SRFI 144
         (let ((u (+ 1.0 x)))
           (cond ((= u 1.0) x)
                 ((= u x) (log u))
                 (else (* (log u) (/ x (- u 1.0)))))))
       (unless (and (real? p) (> p 0) (<= p 1))
-        (error "make-geometric-generator: expected p to be real number, 0 < p <= 1" p))
+        (error
+         "make-geometric-generator: expected p to be real number, 0 < p <= 1"
+         p))
       (if (zero? (- p 1.))
           (lambda () 1)
           (let ((c (/ (log1p (- p))))
-                (rand-real-proc (random-source-make-reals (current-random-source))))
-            (lambda ()
-              (exact (ceiling (* c (log (rand-real-proc)))))))))
+                (rand-real-proc (random-source-make-reals
+                                 (current-random-source))))
+            (lambda () (exact (ceiling (* c (log (rand-real-proc)))))))))
 
     ;; Small L: Knuth's method.  Large L: rejection method by Atkinson,
     ;; "The Computer Generation of Poisson Random Variables", J. Royal
@@ -474,8 +510,12 @@ Description: Returns a generator of exact non-negative integers with a
 Example:
   (exact-integer? ((make-poisson-generator 4.5))) => #t"
       (unless (and (real? L) (finite? L) (> L 0))
-        (error "make-poisson-generator: expected L to be finite positive real number" L))
-      (let ((rand-real-proc (random-source-make-reals (current-random-source))))
+        (error
+         "make-poisson-generator: expected L to be finite positive real number"
+         L))
+      (let
+          ((rand-real-proc (random-source-make-reals
+                            (current-random-source))))
         (if (< L 30)
             (make-poisson/small rand-real-proc L)
             (make-poisson/large rand-real-proc L))))
@@ -484,8 +524,7 @@ Example:
       (lambda ()
         (do ((exp-L (exp (- L)))
              (k 0 (+ k 1))
-             (p 1.0 (* p (rand-real-proc))))
-            ((<= p exp-L) (- k 1)))))
+             (p 1.0 (* p (rand-real-proc)))) ((<= p exp-L) (- k 1)))))
 
     (define (make-poisson/large rand-real-proc L)
       (let* ((c (- 0.767 (/ 3.36 L)))
@@ -503,30 +542,26 @@ Example:
                        (t (+ 1.0 (exp y)))
                        (lhs (+ y (log (/ v (* t t)))))
                        (rhs (+ k (* n (log L)) (- (log-of-fact n)))))
-                  (if (<= lhs rhs)
-                      n
-                      (loop))))))
+                  (if (<= lhs rhs) n (loop))))))
         loop))
 
     ;; log(n!) for n = 1..256; index i holds log((i+1)!).
     (define log-fact-table
       (let ((table (make-vector 256)))
         (vector-set! table 0 0)
-        (do ((i 1 (+ i 1)))
-            ((> i 255) table)
-          (vector-set! table i (+ (vector-ref table (- i 1))
-                                  (log (+ i 1)))))))
+        (do ((i 1 (+ i 1))) ((> i 255) table)
+          (vector-set! table i
+                       (+ (vector-ref table (- i 1)) (log (+ i 1)))))))
 
     ;; https://www.johndcook.com/blog/2010/08/16/how-to-compute-log-factorial/
     (define (log-of-fact n)
-      (cond
-       ((<= n 1) 0)
-       ((<= n 256) (vector-ref log-fact-table (- n 1)))
-       (else (let ((x (+ n 1)))
-               (+ (* (- x 0.5) (log x))
-                  (- x)
-                  (* 0.5 (log (* 2 PI)))
-                  (/ 1.0 (* x 12.0)))))))
+      (cond ((<= n 1) 0)
+            ((<= n 256) (vector-ref log-fact-table (- n 1)))
+            (else (let ((x (+ n 1)))
+                    (+ (* (- x 0.5) (log x))
+                       (- x)
+                       (* 0.5 (log (* 2 PI)))
+                       (/ 1.0 (* x 12.0)))))))
 
     ;;; Binomial random variables, by Brad Lucier.
     ;;;
@@ -539,34 +574,23 @@ Example:
 
     (define (stirling-tail k)
       ;; log(k!) - [log(sqrt(2 pi)) + (k + 1/2) log(k+1) - (k+1)]
-      (let ((small-k-table
-             '#(.08106146679532726
-                .0413406959554093
-                .02767792568499834
-                .020790672103765093
-                .016644691189821193
-                .013876128823070748
-                .01189670994589177
-                .010411265261972096
-                .009255462182712733
-                .00833056343336287
-                .007573675487951841
-                .00694284010720953
-                .006408994188004207
-                .0059513701127588475
-                .005554733551962801
-                .0052076559196096404
-                .004901395948434738
-                .004629153749334028
-                .004385560249232324
-                .004166319691996922)))
+      (let
+          ((small-k-table '#(.08106146679532726 .0413406959554093
+                             .02767792568499834 .020790672103765093
+                             .016644691189821193 .013876128823070748
+                             .01189670994589177 .010411265261972096
+                             .009255462182712733 .00833056343336287
+                             .007573675487951841 .00694284010720953
+                             .006408994188004207 .0059513701127588475
+                             .005554733551962801 .0052076559196096404
+                             .004901395948434738 .004629153749334028
+                             .004385560249232324 .004166319691996922)))
         (if (< k 20)
             (vector-ref small-k-table k)
             (let* ((inexact-k+1 (inexact (+ k 1)))
                    (inexact-k+1^2 (square inexact-k+1)))
               (/ (- (/ 1.0 12.0)
-                    (/ (- (/ 1.0 360.0)
-                          (/ (/ 1.0 1260.0) inexact-k+1^2))
+                    (/ (- (/ 1.0 360.0) (/ (/ 1.0 1260.0) inexact-k+1^2))
                        inexact-k+1^2))
                  inexact-k+1)))))
 
@@ -578,29 +602,20 @@ Description: Returns a generator of exact integers in [0, n] with a binomial
   be a positive exact integer and 0 <= p <= 1.
 Example:
   ((make-binomial-generator 10 1)) => 10"
-      (if (not (and (real? p)
-                    (<= 0 p 1)
-                    (exact-integer? n)
-                    (positive? n)))
+      (if (not (and (real? p) (<= 0 p 1) (exact-integer? n) (positive? n)))
           (error "make-binomial-generator: bad parameters" n p)
           (cond ((< 1/2 p)
                  (let ((complement (make-binomial-generator n (- 1 p))))
-                   (lambda ()
-                     (- n (complement)))))
-                ((zero? p)
-                 (lambda () 0))
-                ((< (* n p) 10)
-                 (binomial-geometric n p))
-                (else
-                 (binomial-rejection n p)))))
+                   (lambda () (- n (complement)))))
+                ((zero? p) (lambda () 0))
+                ((< (* n p) 10) (binomial-geometric n p))
+                (else (binomial-rejection n p)))))
 
     (define (binomial-geometric n p)
       (let ((geom (make-geometric-generator p)))
         (lambda ()
           (let loop ((X -1) (sum 0))
-            (if (< n sum)
-                X
-                (loop (+ X 1) (+ sum (geom))))))))
+            (if (< n sum) X (loop (+ X 1) (+ sum (geom))))))))
 
     (define (binomial-rejection n p)
       ;; call when p <= 1/2 and np >= 10
@@ -614,7 +629,8 @@ Example:
              (alpha (* (+ 2.83 (/ 5.1 b)) spq))
              (lpq (log (/ p (- 1 p))))
              (m (exact (floor (* (+ n 1) p))))
-             (rand-real-proc (random-source-make-reals (current-random-source))))
+             (rand-real-proc (random-source-make-reals
+                              (current-random-source))))
         (lambda ()
           (let loop ()
             (let* ((u (rand-real-proc))
@@ -622,10 +638,8 @@ Example:
                    (u (- u 0.5))
                    (us (- 0.5 (abs u)))
                    (k (exact (floor (+ (* (+ (* 2. (/ a us)) b) u) c)))))
-              (cond ((or (< k 0) (< n k))
-                     (loop))
-                    ((and (<= 0.07 us) (<= v v_r))
-                     k)
+              (cond ((or (< k 0) (< n k)) (loop))
+                    ((and (<= 0.07 us) (<= v v_r)) k)
                     (else
                      ;; BTRS lacks this logarithm (see BTRD, step 3.2)
                      (let ((v (log (* v (/ alpha (+ (/ a (square us)) b))))))
@@ -670,8 +684,7 @@ Example:
         (define kflt (floor (+ x 0.5)))
         (define k (exact kflt))
         (if (and (< 0 k)
-                 (or (<= (- k x) cut)
-                     (>= u (- (big-h (+ k 0.5)) (hat k)))))
+                 (or (<= (- k x) cut) (>= u (- (big-h (+ k 0.5)) (hat k)))))
             k
             #f))
       (define (loop-until)
@@ -706,8 +719,7 @@ Example:
         (define kflt (floor (+ x 0.5)))
         (define k (exact kflt))
         (if (and (< 0 k)
-                 (or (<= (- k x) cut)
-                     (>= u (- (big-h (+ k 0.5)) (hat k)))))
+                 (or (<= (- k x) cut) (>= u (- (big-h (+ k 0.5)) (hat k)))))
             k
             #f))
       (define (loop-until)
@@ -717,10 +729,8 @@ Example:
 
     (define make-zipf-generator
       (case-lambda
-        ((n)
-         (make-zipf-generator n 1.0 0.0))
-        ((n s)
-         (make-zipf-generator n s 0.0))
+        ((n) (make-zipf-generator n 1.0 0.0))
+        ((n s) (make-zipf-generator n s 0.0))
         ((n s q)
          "Syntax: (make-zipf-generator n)
        (make-zipf-generator n s)
@@ -753,7 +763,9 @@ Example:
   (vector-length ((make-sphere-generator 2))) => 3"
       (if (and (exact-integer? arg) (positive? arg))
           (make-ellipsoid-generator* (make-vector (+ 1 arg) 1.0))
-          (error "make-sphere-generator: the argument must be a positive exact integer" arg)))
+          (error
+           "make-sphere-generator: the argument must be a positive exact integer"
+           arg)))
 
     (define (make-ellipsoid-generator arg)
       "Syntax: (make-ellipsoid-generator axes)
@@ -764,8 +776,9 @@ Description: Returns a generator of points uniformly distributed on the
 Example:
   (vector-length ((make-ellipsoid-generator #(1.0 2.0 3.0)))) => 3"
       (define (return-error)
-        (error "make-ellipsoid-generator: the argument must be a vector of positive finite real numbers"
-               arg))
+        (error
+         "make-ellipsoid-generator: the argument must be a vector of positive finite real numbers"
+         arg))
       (if (and (vector? arg) (vector-every real? arg))
           (let ((inexact-arg (vector-map inexact arg)))
             (if (vector-every (lambda (x) (and (positive? x) (finite? x)))
@@ -783,21 +796,22 @@ Example:
             (min-axis (vector-fold min +inf.0 axes)))
         (define (sphere)
           (let* ((point (vector-map (lambda (_) (gauss)) axes))
-                 (norm-inverse
-                  (/ (sqrt (vector-fold (lambda (sum x) (+ sum (square x)))
-                                        0.
-                                        point)))))
+                 (norm-inverse (/ (sqrt
+                                   (vector-fold
+                                    (lambda (sum x) (+ sum (square x)))
+                                    0.
+                                    point)))))
             (vector-map (lambda (x) (* x norm-inverse)) point)))
         (define (ellipsoid-distance ray)
           (sqrt (vector-fold (lambda (sum x a) (+ sum (square (/ x a))))
-                             0. ray axes)))
+                             0.
+                             ray
+                             axes)))
         (define (keep point)
           (< (uniform) (* min-axis (ellipsoid-distance point))))
         (define (sample)
-          (let ((point (sphere)))
-            (if (keep point) point (sample))))
-        (lambda ()
-          (vector-map * (sample) axes))))
+          (let ((point (sphere))) (if (keep point) point (sample))))
+        (lambda () (vector-map * (sample) axes))))
 
     ;; Harman-Lacko-Voelker dropped coordinate method, see Dezert and
     ;; Musso, "An Efficient Method for Generating Points Uniformly
@@ -813,8 +827,9 @@ Description: Returns a generator of points uniformly distributed inside an
 Example:
   (vector-length ((make-ball-generator 2))) => 2"
       (define (return-error)
-        (error "make-ball-generator: the argument must be a positive exact integer or a vector of positive finite real numbers"
-               arg))
+        (error
+         "make-ball-generator: the argument must be a positive exact integer or a vector of positive finite real numbers"
+         arg))
       (cond ((and (exact-integer? arg) (positive? arg))
              (make-ball-generator* (make-vector arg 1.0)))
             ((and (vector? arg) (vector-every real? arg))
@@ -850,11 +865,11 @@ Description: Returns a generator that, on each call, picks one of the given
 Example:
   (length (generator->list (gsampling (generator 1 2) (generator 3)))) => 3"
       (let ((gen-vec (list->vector generators-lst))
-            (rand-int-proc (random-source-make-integers (current-random-source))))
+            (rand-int-proc (random-source-make-integers
+                            (current-random-source))))
         (define (remove-gen index)
           (let ((new-vec (make-vector (- (vector-length gen-vec) 1))))
-            (when (> index 0)
-              (vector-copy! new-vec 0 gen-vec 0 index))
+            (when (> index 0) (vector-copy! new-vec 0 gen-vec 0 index))
             (when (< index (- (vector-length gen-vec) 1))
               (vector-copy! new-vec index gen-vec (+ 1 index)))
             (set! gen-vec new-vec)))
@@ -865,11 +880,6 @@ Example:
             (if (eof-object? value)
                 (begin
                   (remove-gen index)
-                  (if (= (vector-length gen-vec) 0)
-                      (eof-object)
-                      (pick)))
+                  (if (= (vector-length gen-vec) 0) (eof-object) (pick)))
                 value)))
-        (lambda ()
-          (if (= 0 (vector-length gen-vec))
-              (eof-object)
-              (pick)))))))
+        (lambda () (if (= 0 (vector-length gen-vec)) (eof-object) (pick)))))))

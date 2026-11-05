@@ -1,4 +1,6 @@
-(import (scheme base) (scm markdown) (scm test))
+(import (scheme base)
+        (scm markdown)
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 
@@ -45,8 +47,7 @@
   (test-equal '((paragraph "use " (code "(scm toml)") " here"))
               (parse-markdown "use `(scm toml)` here"))
   ;; double-backtick span can contain a backtick
-  (test-equal '((paragraph (code "a ` b")))
-              (parse-markdown "``a ` b``")))
+  (test-equal '((paragraph (code "a ` b"))) (parse-markdown "``a ` b``")))
 
 (test-group "parse-markdown: links and escapes"
   (test-equal '((paragraph "see " (link ("docs") "http://x/y")))
@@ -67,29 +68,27 @@
               (parse-markdown "* a\n+ b"))
   (test-equal '((ordered-list 1 (item "a") (item "b")))
               (parse-markdown "1. a\n2. b"))
-  (test-equal '((ordered-list 3 (item "x")))
-              (parse-markdown "3. x")))
+  (test-equal '((ordered-list 3 (item "x"))) (parse-markdown "3. x")))
 
 (test-group "parse-markdown: nested lists"
   ;; a deeper-indented bullet starts a sub-list under the item above it
-  (test-equal '((bullet-list
-                  (item "a" (bullet-list (item "b") (item "c")))
-                  (item "d")))
+  (test-equal '((bullet-list (item "a" (bullet-list (item "b") (item "c")))
+                             (item "d")))
               (parse-markdown "- a\n  - b\n  - c\n- d"))
   ;; an ordered sub-list nested under a bullet item
-  (test-equal '((bullet-list
-                  (item "a" (ordered-list 1 (item "x") (item "y")))))
+  (test-equal '((bullet-list (item "a"
+                                   (ordered-list 1 (item "x") (item "y")))))
               (parse-markdown "- a\n  1. x\n  2. y"))
   ;; three levels deep
-  (test-equal '((bullet-list
-                  (item "a" (bullet-list (item "b" (bullet-list (item "c")))))))
+  (test-equal '((bullet-list (item "a"
+                                   (bullet-list
+                                    (item "b" (bullet-list (item "c")))))))
               (parse-markdown "- a\n  - b\n    - c")))
 
 (test-group "parse-markdown: fenced code"
   (test-equal '((code-block "scheme" "(+ 1 2)"))
               (parse-markdown "```scheme\n(+ 1 2)\n```"))
-  (test-equal '((code-block #f "plain"))
-              (parse-markdown "```\nplain\n```"))
+  (test-equal '((code-block #f "plain")) (parse-markdown "```\nplain\n```"))
   ;; markdown-looking content inside a fence is literal
   (test-equal '((code-block #f "# not a heading"))
               (parse-markdown "```\n# not a heading\n```")))
@@ -97,8 +96,7 @@
 (test-group "parse-markdown: blockquotes"
   (test-equal '((blockquote (paragraph "quoted more")))
               (parse-markdown "> quoted\n> more"))
-  (test-equal '((blockquote (heading 1 "Q")))
-              (parse-markdown "> # Q")))
+  (test-equal '((blockquote (heading 1 "Q"))) (parse-markdown "> # Q")))
 
 (test-group "markdown->html: blocks"
   (test-equal "<h1>Title</h1>" (markdown->html "# Title"))
@@ -108,12 +106,11 @@
               (markdown->html "```scheme\n(+ 1 2)\n```"))
   (test-equal "<ul>\n<li>a</li>\n<li>b</li>\n</ul>"
               (markdown->html "- a\n- b"))
-  (test-equal "<ol start=\"2\">\n<li>x</li>\n</ol>"
-              (markdown->html "2. x"))
+  (test-equal "<ol start=\"2\">\n<li>x</li>\n</ol>" (markdown->html "2. x"))
   ;; a nested sub-list is rendered inside its parent <li>
   (test-equal
-    "<ul>\n<li>a\n<ul>\n<li>b</li>\n<li>c</li>\n</ul>\n</li>\n<li>d</li>\n</ul>"
-    (markdown->html "- a\n  - b\n  - c\n- d")))
+   "<ul>\n<li>a\n<ul>\n<li>b</li>\n<li>c</li>\n</ul>\n</li>\n<li>d</li>\n</ul>"
+   (markdown->html "- a\n  - b\n  - c\n- d")))
 
 (test-group "markdown->html: unsafe links dropped"
   ;; javascript:/data: schemes are stripped; only the text survives
@@ -135,7 +132,8 @@
   (test-equal "<p>a <strong>b</strong> c</p>" (markdown->html "a **b** c"))
   (test-equal "<p>a <em>b</em></p>" (markdown->html "a *b*"))
   (test-equal "<p><code>x</code></p>" (markdown->html "`x`"))
-  (test-equal "<p><a href=\"http://x\">t</a></p>" (markdown->html "[t](http://x)")))
+  (test-equal "<p><a href=\"http://x\">t</a></p>"
+              (markdown->html "[t](http://x)")))
 
 (test-group "markdown->html: escaping"
   ;; angle brackets and ampersands in text are escaped

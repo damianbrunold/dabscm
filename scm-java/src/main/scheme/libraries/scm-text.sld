@@ -40,22 +40,18 @@
     (define (%read-all-lines port)
       (let loop ((acc '()))
         (let ((l (read-line port)))
-          (if (eof-object? l)
-              (reverse acc)
-              (loop (cons l acc))))))
+          (if (eof-object? l) (reverse acc) (loop (cons l acc))))))
 
     (define (%lines-from src)
       "Coerce src to a list of lines.
 src may be a list of strings, a string filename, or an input port."
-      (cond
-        ((list? src) src)
-        ((input-port? src) (%read-all-lines src))
-        ((string? src)
-         (call-with-port (open-input-file src) %read-all-lines))
-        (else (error "scm text: cannot read lines from" src))))
+      (cond ((list? src) src)
+            ((input-port? src) (%read-all-lines src))
+            ((string? src)
+             (call-with-port (open-input-file src) %read-all-lines))
+            (else (error "scm text: cannot read lines from" src))))
 
-    (define (%lower-string s)
-      (string-downcase s))
+    (define (%lower-string s) (string-downcase s))
 
     (define (%line-matches? line pat ci? fixed?)
       (let ((l (if ci? (%lower-string line) line))
@@ -85,36 +81,40 @@ Example:
             (grep/scheme pattern src opts))))
 
     (define (grep/scheme pattern src opts)
-      (let* ((ci?     (%has-flag? opts 'ignore-case))
+      (let* ((ci? (%has-flag? opts 'ignore-case))
              (invert? (%has-flag? opts 'invert-match))
-             (nums?   (%has-flag? opts 'line-number))
-             (count?  (%has-flag? opts 'count))
-             (fixed?  (or (%has-flag? opts 'fixed-strings) #t))
-             (lines   (%lines-from src))
-             (matched
-              (let loop ((ls lines) (i 1) (acc '()))
-                (cond
-                  ((null? ls) (reverse acc))
-                  (else
-                   (let* ((line (car ls))
-                          (m? (%line-matches? line pattern ci? fixed?))
-                          (keep? (if invert? (not m?) m?)))
-                     (loop (cdr ls) (+ i 1)
-                           (if keep?
-                               (cons (if nums? (list i line) line) acc)
-                               acc))))))))
+             (nums? (%has-flag? opts 'line-number))
+             (count? (%has-flag? opts 'count))
+             (fixed? (or (%has-flag? opts 'fixed-strings) #t))
+             (lines (%lines-from src))
+             (matched (let loop ((ls lines) (i 1) (acc '()))
+                        (cond ((null? ls) (reverse acc))
+                              (else (let*
+                                        ((line (car ls))
+                                         (m?
+                                          (%line-matches? line pattern ci?
+                                                          fixed?))
+                                         (keep? (if invert? (not m?) m?)))
+                                      (loop
+                                       (cdr ls)
+                                       (+ i 1)
+                                       (if
+                                        keep?
+                                        (cons (if nums? (list i line) line)
+                                              acc)
+                                        acc))))))))
         (if count? (length matched) matched)))
 
     (define (grep/native native pattern file opts)
-      (let* ((ci?     (%has-flag? opts 'ignore-case))
+      (let* ((ci? (%has-flag? opts 'ignore-case))
              (invert? (%has-flag? opts 'invert-match))
-             (nums?   (%has-flag? opts 'line-number))
-             (count?  (%has-flag? opts 'count))
-             (fixed?  (%has-flag? opts 'fixed-strings))
-             (args    (list native)))
-        (let* ((args (if ci?     (append args '("-i")) args))
+             (nums? (%has-flag? opts 'line-number))
+             (count? (%has-flag? opts 'count))
+             (fixed? (%has-flag? opts 'fixed-strings))
+             (args (list native)))
+        (let* ((args (if ci? (append args '("-i")) args))
                (args (if invert? (append args '("-v")) args))
-               (args (if fixed?  (append args '("-F")) args))
+               (args (if fixed? (append args '("-F")) args))
                (args (if (or nums? count?) (append args '("-n")) args))
                (args (append args (list "--" pattern file)))
                (r (run-program/capture args)))
@@ -130,17 +130,19 @@ Example:
                                          (string=? (last all) ""))
                                     (drop-right all 1)
                                     all)))))
-                (cond
-                  (count? (length lns))
-                  (nums?
-                   (map (lambda (l)
-                          (let ((sep (string-index l #\:)))
-                            (if sep
-                                (list (string->number (substring l 0 sep))
-                                      (substring l (+ sep 1) (string-length l)))
-                                (list 0 l))))
-                        lns))
-                  (else lns)))))))
+                (cond (count? (length lns))
+                      (nums? (map (lambda (l)
+                                    (let ((sep (string-index l #\:)))
+                                      (if
+                                       sep
+                                       (list
+                                        (string->number (substring l 0 sep))
+                                        (substring l
+                                                   (+ sep 1)
+                                                   (string-length l)))
+                                       (list 0 l))))
+                                  lns))
+                      (else lns)))))))
 
     (define (sed pattern replacement src . opts)
       "Syntax: (sed pattern replacement src [option ...])
@@ -158,8 +160,7 @@ Example:
             (sed/native native pattern replacement src opts)
             (sed/scheme pattern replacement src opts))))
 
-    (define (%escape-sed-delim s)
-      (string-replace-all s "|" "\\|"))
+    (define (%escape-sed-delim s) (string-replace-all s "|" "\\|"))
 
     (define (string-replace-all s from to)
       (let* ((flen (string-length from))
@@ -167,30 +168,29 @@ Example:
         (if (zero? flen)
             s
             (let loop ((i 0) (out '()))
-              (cond
-                ((> (+ i flen) slen)
-                 (apply string-append (reverse (cons (substring s i slen) out))))
-                ((string=? (substring s i (+ i flen)) from)
-                 (loop (+ i flen) (cons to out)))
-                (else
-                 (loop (+ i 1)
-                       (cons (string (string-ref s i)) out))))))))
+              (cond ((> (+ i flen) slen)
+                     (apply string-append
+                            (reverse (cons (substring s i slen) out))))
+                    ((string=? (substring s i (+ i flen)) from)
+                     (loop (+ i flen) (cons to out)))
+                    (else (loop (+ i 1)
+                                (cons (string (string-ref s i)) out))))))))
 
     (define (sed/native native pattern replacement file opts)
       (let* ((global? (%has-flag? opts 'global))
-             (ci?     (%has-flag? opts 'ignore-case))
-             (flags   (string-append (if global? "g" "") (if ci? "i" "")))
-             (expr    (string-append "s|"
-                                     (%escape-sed-delim pattern)
-                                     "|"
-                                     (%escape-sed-delim replacement)
-                                     "|" flags))
+             (ci? (%has-flag? opts 'ignore-case))
+             (flags (string-append (if global? "g" "") (if ci? "i" "")))
+             (expr (string-append "s|"
+                                  (%escape-sed-delim pattern)
+                                  "|"
+                                  (%escape-sed-delim replacement)
+                                  "|"
+                                  flags))
              (r (run-program/capture (list native expr file))))
         (if (and (pair? r) (zero? (car r)))
             (let* ((out (cadr r))
                    (lns (string-split out "\n")))
-              (if (and (not (null? lns))
-                       (string=? (last lns) ""))
+              (if (and (not (null? lns)) (string=? (last lns) ""))
                   (drop-right lns 1)
                   lns))
             (error "sed: native sed failed" r))))
@@ -203,11 +203,12 @@ Example:
                    (string-replace-all l pattern replacement)
                    (let ((i (string-contains l pattern)))
                      (if i
-                         (string-append (substring l 0 i)
-                                        replacement
-                                        (substring l
-                                                   (+ i (string-length pattern))
-                                                   (string-length l)))
+                         (string-append
+                          (substring l 0 i)
+                          replacement
+                          (substring l
+                                     (+ i (string-length pattern))
+                                     (string-length l)))
                          l))))
              lines)))
 
@@ -244,18 +245,19 @@ Example:
   (wc \"log.txt\") => ((lines . 1234) (words . 9876) (chars . 54321))"
       (let* ((lines (%lines-from src))
              (line-count (length lines))
-             (word-count
-              (apply + (map (lambda (l) (length (string-split l " ")))
-                            lines)))
-             (char-count
-              (apply + (map (lambda (l) (+ 1 (string-length l))) lines))))
-        (cond
-          ((%has-flag? opts 'lines-only) line-count)
-          ((%has-flag? opts 'words-only) word-count)
-          ((%has-flag? opts 'chars-only) char-count)
-          (else (list (cons 'lines line-count)
-                      (cons 'words word-count)
-                      (cons 'chars char-count))))))
+             (word-count (apply +
+                                (map (lambda (l)
+                                       (length (string-split l " ")))
+                                     lines)))
+             (char-count (apply +
+                                (map (lambda (l) (+ 1 (string-length l)))
+                                     lines))))
+        (cond ((%has-flag? opts 'lines-only) line-count)
+              ((%has-flag? opts 'words-only) word-count)
+              ((%has-flag? opts 'chars-only) char-count)
+              (else (list (cons 'lines line-count)
+                          (cons 'words word-count)
+                          (cons 'chars char-count))))))
 
     (define (cat . srcs)
       "Syntax: (cat src ...)
@@ -265,9 +267,7 @@ Description: Returns the concatenated contents of all src arguments as a
   or list of strings.
 Example:
   (cat \"a.txt\" \"b.txt\")"
-      (string-join
-        (apply append (map %lines-from srcs))
-        "\n"))
+      (string-join (apply append (map %lines-from srcs)) "\n"))
 
     (define (cut src . opts)
       "Syntax: (cut src [option ...])
@@ -278,19 +278,18 @@ Description: Selects fields from each line of src. Options:
 Example:
   (cut \"/etc/passwd\" '(fields . (1 3)) '(delimiter . \":\"))"
       (let* ((fields (%opt-value opts 'fields '()))
-             (delim  (%opt-value opts 'delimiter "\t"))
-             (lines  (%lines-from src)))
+             (delim (%opt-value opts 'delimiter "\t"))
+             (lines (%lines-from src)))
         (map (lambda (l)
                (let* ((parts (string-split l delim))
                       (n (length parts)))
-                 (string-join
-                  (filter-map
-                   (lambda (i)
-                     (if (and (>= i 1) (<= i n))
-                         (list-ref parts (- i 1))
-                         #f))
-                   fields)
-                  delim)))
+                 (string-join (filter-map
+                               (lambda (i)
+                                 (if (and (>= i 1) (<= i n))
+                                     (list-ref parts (- i 1))
+                                     #f))
+                               fields)
+                              delim)))
              lines)))
 
     (define (sort-lines src . opts)
@@ -304,7 +303,7 @@ Example:
       (let* ((lines (%lines-from src))
              (numeric? (%has-flag? opts 'numeric))
              (reverse? (%has-flag? opts 'reverse))
-             (unique?  (%has-flag? opts 'unique))
+             (unique? (%has-flag? opts 'unique))
              (cmp (if numeric?
                       (lambda (a b)
                         (let ((na (string->number a))
@@ -326,17 +325,17 @@ Description: Returns lines with consecutive duplicates collapsed to a
   be sorted first).
 Example:
   (uniq '(\"a\" \"a\" \"b\" \"a\")) => (\"a\" \"b\" \"a\")"
-      (cond
-        ((null? lines) '())
-        ((null? (cdr lines)) lines)
-        (else
-         (let loop ((prev (car lines)) (rest (cdr lines)) (acc (list (car lines))))
-           (cond
-             ((null? rest) (reverse acc))
-             ((string=? (car rest) prev)
-              (loop prev (cdr rest) acc))
-             (else
-              (loop (car rest) (cdr rest) (cons (car rest) acc))))))))
+      (cond ((null? lines) '())
+            ((null? (cdr lines)) lines)
+            (else (let loop ((prev (car lines))
+                             (rest (cdr lines))
+                             (acc (list (car lines))))
+                    (cond ((null? rest) (reverse acc))
+                          ((string=? (car rest) prev)
+                           (loop prev (cdr rest) acc))
+                          (else (loop (car rest)
+                                      (cdr rest)
+                                      (cons (car rest) acc))))))))
 
     (define (tr from to . opts)
       "Syntax: (tr from to [option ...])
@@ -349,28 +348,24 @@ Example:
   ((tr \"abc\" \"xyz\") \"banana\") => \"yxnxnx\""
       (let ((delete? (%has-flag? opts 'delete))
             (from-len (string-length from))
-            (to-len   (string-length to)))
+            (to-len (string-length to)))
         (lambda (s)
           (let* ((n (string-length s))
                  (out (make-string n)))
             (let loop ((i 0) (j 0))
-              (cond
-                ((= i n) (substring out 0 j))
-                (else
-                 (let* ((ch (string-ref s i))
-                        (k (string-index from ch)))
-                   (cond
-                     ((and k delete?)
-                      (loop (+ i 1) j))
-                     (k
-                      (let ((rep (if (< k to-len)
-                                     (string-ref to k)
-                                     (string-ref to (- to-len 1)))))
-                        (string-set! out j rep)
-                        (loop (+ i 1) (+ j 1))))
-                     (else
-                      (string-set! out j ch)
-                      (loop (+ i 1) (+ j 1))))))))))))
+              (cond ((= i n) (substring out 0 j))
+                    (else (let* ((ch (string-ref s i))
+                                 (k (string-index from ch)))
+                            (cond ((and k delete?) (loop (+ i 1) j))
+                                  (k (let
+                                         ((rep
+                                           (if (< k to-len)
+                                               (string-ref to k)
+                                               (string-ref to (- to-len 1)))))
+                                       (string-set! out j rep)
+                                       (loop (+ i 1) (+ j 1))))
+                                  (else (string-set! out j ch)
+                                        (loop (+ i 1) (+ j 1))))))))))))
 
     (define (hexdump bv . opts)
       "Syntax: (hexdump bv [option ...])
@@ -382,21 +377,24 @@ Description: Formats a bytevector as a canonical hex+ASCII dump (similar
     'no-ascii       — omit the trailing ASCII gutter
 Example:
   (display (hexdump (string->utf8 \"hello world\")))"
-      (let* ((width    (%opt-value opts 'width 16))
-             (offset   (%opt-value opts 'offset 0))
+      (let* ((width (%opt-value opts 'width 16))
+             (offset (%opt-value opts 'offset 0))
              (no-ascii (%has-flag? opts 'no-ascii))
-             (n        (bytevector-length bv))
-             (hex      "0123456789abcdef")
-             (out      (open-output-string)))
+             (n (bytevector-length bv))
+             (hex "0123456789abcdef")
+             (out (open-output-string)))
         (define (hex2 b)
           (write-char (string-ref hex (quotient b 16)) out)
           (write-char (string-ref hex (modulo b 16)) out))
         (define (addr a)
           (let loop ((shift 28))
             (when (>= shift 0)
-              (write-char
-                (string-ref hex (modulo (quotient a (expt 16 (quotient shift 4))) 16))
-                out)
+              (write-char (string-ref hex
+                                      (modulo
+                                       (quotient a
+                                                 (expt 16 (quotient shift 4)))
+                                       16))
+                          out)
               (loop (- shift 4)))))
         (let row ((i 0))
           (when (< i n)
@@ -405,14 +403,12 @@ Example:
             (write-char #\space out)
             (let pad ((j 0))
               (when (< j width)
-                (cond
-                  ((< (+ i j) n)
-                   (hex2 (bytevector-u8-ref bv (+ i j)))
-                   (write-char #\space out))
-                  (else
-                   (write-char #\space out)
-                   (write-char #\space out)
-                   (write-char #\space out)))
+                (cond ((< (+ i j) n)
+                       (hex2 (bytevector-u8-ref bv (+ i j)))
+                       (write-char #\space out))
+                      (else (write-char #\space out)
+                            (write-char #\space out)
+                            (write-char #\space out)))
                 (pad (+ j 1))))
             (unless no-ascii
               (write-char #\| out)
@@ -452,41 +448,39 @@ Example:
        `(filter . ,(lambda (fs n l)
                      (and (> (length fs) 6)
                           (string=? (list-ref fs 6) \"/bin/bash\")))))"
-      (let* ((delim  (%opt-value opts 'delimiter #f))
-             (filter (%opt-value opts 'filter
-                                 (lambda (fs n l) #t)))
-             (lines  (%lines-from src))
-             (split  (if delim
-                         (lambda (l) (string-split l delim))
-                         awk-whitespace-split)))
+      (let* ((delim (%opt-value opts 'delimiter #f))
+             (filter (%opt-value opts 'filter (lambda (fs n l) #t)))
+             (lines (%lines-from src))
+             (split (if delim
+                        (lambda (l) (string-split l delim))
+                        awk-whitespace-split)))
         (let loop ((ls lines) (n 1) (acc '()))
-          (cond
-            ((null? ls) (reverse acc))
-            (else
-             (let* ((line (car ls))
-                    (fs (split line))
-                    (keep? (filter fs n line)))
-               (loop (cdr ls) (+ n 1)
-                     (if keep?
-                         (let ((r (action fs n line)))
-                           (if r (cons r acc) acc))
-                         acc))))))))
+          (cond ((null? ls) (reverse acc))
+                (else (let* ((line (car ls))
+                             (fs (split line))
+                             (keep? (filter fs n line)))
+                        (loop (cdr ls)
+                              (+ n 1)
+                              (if keep?
+                                  (let ((r (action fs n line)))
+                                    (if r (cons r acc) acc))
+                                  acc))))))))
 
     (define (awk-whitespace-split s)
       ;; Split on runs of spaces or tabs; mirror awk's default behavior:
       ;; leading whitespace is consumed (no empty leading field).
       (let ((n (string-length s)))
         (let loop ((i 0) (start -1) (acc '()))
-          (cond
-            ((>= i n)
-             (reverse (if (>= start 0) (cons (substring s start i) acc) acc)))
-            ((or (char=? (string-ref s i) #\space)
-                 (char=? (string-ref s i) #\tab))
-             (if (>= start 0)
-                 (loop (+ i 1) -1 (cons (substring s start i) acc))
-                 (loop (+ i 1) -1 acc)))
-            (else
-             (loop (+ i 1) (if (>= start 0) start i) acc))))))
+          (cond ((>= i n)
+                 (reverse (if (>= start 0)
+                              (cons (substring s start i) acc)
+                              acc)))
+                ((or (char=? (string-ref s i) #\space)
+                     (char=? (string-ref s i) #\tab))
+                 (if (>= start 0)
+                     (loop (+ i 1) -1 (cons (substring s start i) acc))
+                     (loop (+ i 1) -1 acc)))
+                (else (loop (+ i 1) (if (>= start 0) start i) acc))))))
 
     (define (tee text . files)
       "Syntax: (tee text file ...)
@@ -496,14 +490,11 @@ Description: Writes text (a string, or a list of strings joined by
   stdin and writing to multiple destinations.
 Example:
   (tee \"hello\\n\" \"/tmp/a\" \"/tmp/b\")"
-      (let ((content (if (string? text)
-                         text
-                         (string-join text "\n"))))
-        (for-each
-          (lambda (f)
-            (call-with-port (open-output-file f)
-              (lambda (p) (write-string content p))))
-          files)
+      (let ((content (if (string? text) text (string-join text "\n"))))
+        (for-each (lambda (f)
+                    (call-with-port (open-output-file f)
+                      (lambda (p) (write-string content p))))
+                  files)
         content))
 
     (define (diff a b . opts)
@@ -533,42 +524,38 @@ Example:
             (diff/scheme (%lines-from a) (%lines-from b) opts))))
 
     (define (diff/native native a b opts)
-      (let* ((brief?  (%has-flag? opts 'brief))
-             (ci?     (%has-flag? opts 'ignore-case))
-             (iw?     (%has-flag? opts 'ignore-whitespace))
-             (ctx     (%opt-value opts 'context-lines 3))
-             (args (append
-                     (list native)
-                     (if brief? (list "-q")
-                         (list (string-append "-U" (number->string ctx))))
-                     (if ci? (list "-i") '())
-                     (if iw? (list "-w") '())
-                     (list a b)))
+      (let* ((brief? (%has-flag? opts 'brief))
+             (ci? (%has-flag? opts 'ignore-case))
+             (iw? (%has-flag? opts 'ignore-whitespace))
+             (ctx (%opt-value opts 'context-lines 3))
+             (args (append (list native)
+                           (if brief?
+                               (list "-q")
+                               (list (string-append "-U"
+                                                    (number->string ctx))))
+                           (if ci? (list "-i") '())
+                           (if iw? (list "-w") '())
+                           (list a b)))
              (r (run-program/capture args)))
-        (cond
-          ((not (pair? r)) (if brief? #f ""))
-          (brief? (zero? (car r)))
-          (else (cadr r)))))
+        (cond ((not (pair? r)) (if brief? #f ""))
+              (brief? (zero? (car r)))
+              (else (cadr r)))))
 
     (define (diff/scheme a-lines b-lines opts)
       (let* ((brief? (%has-flag? opts 'brief))
-             (ci?    (%has-flag? opts 'ignore-case))
-             (ctx    (%opt-value opts 'context-lines 3))
-             (la     (%opt-value opts 'label-a "a"))
-             (lb     (%opt-value opts 'label-b "b"))
-             (norm   (if ci?
-                         (lambda (s) (string-downcase s))
-                         (lambda (s) s)))
-             (a-key  (list->vector (map norm a-lines)))
-             (b-key  (list->vector (map norm b-lines)))
-             (a-vec  (list->vector a-lines))
-             (b-vec  (list->vector b-lines))
-             (edits  (diff-lcs-edits a-key b-key a-vec b-vec)))
-        (cond
-          (brief?
-           (not (any (lambda (e) (not (eq? (car e) 'eq))) edits)))
-          ((null? (filter (lambda (e) (not (eq? (car e) 'eq))) edits)) "")
-          (else (diff-format-unified edits ctx la lb)))))
+             (ci? (%has-flag? opts 'ignore-case))
+             (ctx (%opt-value opts 'context-lines 3))
+             (la (%opt-value opts 'label-a "a"))
+             (lb (%opt-value opts 'label-b "b"))
+             (norm (if ci? (lambda (s) (string-downcase s)) (lambda (s) s)))
+             (a-key (list->vector (map norm a-lines)))
+             (b-key (list->vector (map norm b-lines)))
+             (a-vec (list->vector a-lines))
+             (b-vec (list->vector b-lines))
+             (edits (diff-lcs-edits a-key b-key a-vec b-vec)))
+        (cond (brief? (not (any (lambda (e) (not (eq? (car e) 'eq))) edits)))
+              ((null? (filter (lambda (e) (not (eq? (car e) 'eq))) edits)) "")
+              (else (diff-format-unified edits ctx la lb)))))
 
     (define (diff-lcs-edits a-key b-key a-vec b-vec)
       ;; Returns a list of edit entries (op . line) where op is 'eq 'del 'add.
@@ -585,47 +572,55 @@ Example:
           (when (< i m)
             (let inner ((j 0))
               (when (< j n)
-                (vector-set!
-                  (vector-ref dp (+ i 1)) (+ j 1)
-                  (if (string=? (vector-ref a-key i) (vector-ref b-key j))
-                      (+ 1 (vector-ref (vector-ref dp i) j))
-                      (let ((up   (vector-ref (vector-ref dp i) (+ j 1)))
-                            (left (vector-ref (vector-ref dp (+ i 1)) j)))
-                        (if (>= up left) up left))))
+                (vector-set! (vector-ref dp (+ i 1))
+                             (+ j 1)
+                             (if (string=? (vector-ref a-key i)
+                                           (vector-ref b-key j))
+                                 (+ 1 (vector-ref (vector-ref dp i) j))
+                                 (let ((up
+                                        (vector-ref (vector-ref dp i)
+                                                    (+ j 1)))
+                                       (left
+                                        (vector-ref (vector-ref dp (+ i 1))
+                                                    j)))
+                                   (if (>= up left) up left))))
                 (inner (+ j 1))))
             (outer (+ i 1))))
         ;; Backtrack
         (let walk ((i m) (j n) (acc '()))
-          (cond
-            ((and (> i 0) (> j 0)
-                  (string=? (vector-ref a-key (- i 1)) (vector-ref b-key (- j 1))))
-             (walk (- i 1) (- j 1)
-                   (cons (cons 'eq (vector-ref a-vec (- i 1))) acc)))
-            ((and (> j 0)
-                  (or (= i 0)
-                      (>= (vector-ref (vector-ref dp i) (- j 1))
-                          (vector-ref (vector-ref dp (- i 1)) j))))
-             (walk i (- j 1)
-                   (cons (cons 'add (vector-ref b-vec (- j 1))) acc)))
-            ((> i 0)
-             (walk (- i 1) j
-                   (cons (cons 'del (vector-ref a-vec (- i 1))) acc)))
-            (else acc)))))
+          (cond ((and (> i 0)
+                      (> j 0)
+                      (string=? (vector-ref a-key (- i 1))
+                                (vector-ref b-key (- j 1))))
+                 (walk (- i 1)
+                       (- j 1)
+                       (cons (cons 'eq (vector-ref a-vec (- i 1))) acc)))
+                ((and (> j 0)
+                      (or (= i 0)
+                          (>= (vector-ref (vector-ref dp i) (- j 1))
+                              (vector-ref (vector-ref dp (- i 1)) j))))
+                 (walk i
+                       (- j 1)
+                       (cons (cons 'add (vector-ref b-vec (- j 1))) acc)))
+                ((> i 0)
+                 (walk (- i 1)
+                       j
+                       (cons (cons 'del (vector-ref a-vec (- i 1))) acc)))
+                (else acc)))))
 
     (define (diff-format-unified edits ctx la lb)
       ;; Tag each edit with its 1-based position in a and b.
-      (let* ((tagged
-              (let walk ((es edits) (ai 1) (bi 1) (acc '()))
-                (cond
-                  ((null? es) (reverse acc))
-                  (else
-                   (let* ((e (car es))
-                          (op (car e))
-                          (line (cdr e)))
-                     (walk (cdr es)
-                           (if (eq? op 'add) ai (+ ai 1))
-                           (if (eq? op 'del) bi (+ bi 1))
-                           (cons (list op line ai bi) acc)))))))
+      (let* ((tagged (let walk ((es edits) (ai 1) (bi 1) (acc '()))
+                       (cond ((null? es) (reverse acc))
+                             (else (let*
+                                       ((e (car es))
+                                        (op (car e))
+                                        (line (cdr e)))
+                                     (walk
+                                      (cdr es)
+                                      (if (eq? op 'add) ai (+ ai 1))
+                                      (if (eq? op 'del) bi (+ bi 1))
+                                      (cons (list op line ai bi) acc)))))))
              (tv (list->vector tagged))
              (n (vector-length tv)))
         ;; Find change indices.
@@ -633,20 +628,22 @@ Example:
           (and (< i n) (not (eq? (car (vector-ref tv i)) 'eq))))
         ;; Build hunks.
         (let build ((i 0) (hunks '()))
-          (cond
-            ((>= i n) (diff-emit-hunks (reverse hunks) la lb))
-            ((not (change-at? i)) (build (+ i 1) hunks))
-            (else
-             (let* ((hstart (max 0 (- i ctx)))
-                    ;; Find end: extend while changes appear within 2*ctx
-                    (hend (let extend ((k i) (last-change i))
-                            (cond
-                              ((>= k n) (min (- n 1) (+ last-change ctx)))
-                              ((change-at? k) (extend (+ k 1) k))
-                              ((<= (- k last-change) ctx) (extend (+ k 1) last-change))
-                              (else (min (- n 1) (+ last-change ctx)))))))
-               (build (+ hend 1)
-                      (cons (diff-make-hunk tv hstart hend) hunks))))))))
+          (cond ((>= i n) (diff-emit-hunks (reverse hunks) la lb))
+                ((not (change-at? i)) (build (+ i 1) hunks))
+                (else (let* ((hstart (max 0 (- i ctx)))
+                             ;; Find end: extend while changes appear within 2*ctx
+                             (hend (let extend ((k i) (last-change i))
+                                     (cond
+                                      ((>= k n)
+                                       (min (- n 1) (+ last-change ctx)))
+                                      ((change-at? k) (extend (+ k 1) k))
+                                      ((<= (- k last-change) ctx)
+                                       (extend (+ k 1) last-change))
+                                      (else
+                                       (min (- n 1) (+ last-change ctx)))))))
+                        (build (+ hend 1)
+                               (cons (diff-make-hunk tv hstart hend)
+                                     hunks))))))))
 
     (define (diff-make-hunk tv hstart hend)
       ;; Return list of tagged edits in [hstart, hend].
@@ -657,41 +654,42 @@ Example:
 
     (define (diff-emit-hunks hunks la lb)
       (let ((header (string-append "--- " la "\n+++ " lb "\n")))
-        (string-append
-          header
-          (apply string-append
-                 (map diff-emit-hunk hunks)))))
+        (string-append header
+                       (apply string-append (map diff-emit-hunk hunks)))))
 
     (define (diff-emit-hunk hunk)
       ;; hunk = list of (op line ai bi)
       (let* ((a-first (let loop ((h hunk))
-                       (cond ((null? h) 1)
-                             ((eq? (car (car h)) 'add) (loop (cdr h)))
-                             (else (list-ref (car h) 2)))))
+                        (cond ((null? h) 1)
+                              ((eq? (car (car h)) 'add) (loop (cdr h)))
+                              (else (list-ref (car h) 2)))))
              (b-first (let loop ((h hunk))
-                       (cond ((null? h) 1)
-                             ((eq? (car (car h)) 'del) (loop (cdr h)))
-                             (else (list-ref (car h) 3)))))
-             (a-count (length (filter (lambda (e)
-                                        (not (eq? (car e) 'add)))
+                        (cond ((null? h) 1)
+                              ((eq? (car (car h)) 'del) (loop (cdr h)))
+                              (else (list-ref (car h) 3)))))
+             (a-count (length (filter (lambda (e) (not (eq? (car e) 'add)))
                                       hunk)))
-             (b-count (length (filter (lambda (e)
-                                        (not (eq? (car e) 'del)))
+             (b-count (length (filter (lambda (e) (not (eq? (car e) 'del)))
                                       hunk)))
-             (head (string-append
-                     "@@ -" (number->string a-first) "," (number->string a-count)
-                     " +" (number->string b-first) "," (number->string b-count)
-                     " @@\n")))
-        (string-append
-          head
-          (apply string-append
-                 (map (lambda (e)
-                        (let ((op (car e))
-                              (line (cadr e)))
-                          (string-append
-                            (cond ((eq? op 'eq)  " ")
-                                  ((eq? op 'del) "-")
-                                  (else          "+"))
-                            line
-                            "\n")))
-                      hunk)))))))
+             (head (string-append "@@ -"
+                                  (number->string a-first)
+                                  ","
+                                  (number->string a-count)
+                                  " +"
+                                  (number->string b-first)
+                                  ","
+                                  (number->string b-count)
+                                  " @@\n")))
+        (string-append head
+                       (apply string-append
+                              (map (lambda (e)
+                                     (let
+                                         ((op (car e))
+                                          (line (cadr e)))
+                                       (string-append
+                                        (cond ((eq? op 'eq) " ")
+                                              ((eq? op 'del) "-")
+                                              (else "+"))
+                                        line
+                                        "\n")))
+                                   hunk)))))))

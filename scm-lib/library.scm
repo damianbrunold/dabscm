@@ -35,7 +35,8 @@
 (define symbol->string (%primitive "symbol->string"))
 (define apply (%primitive "apply"))
 (define gensym (%primitive "gensym"))
-(define call-with-current-continuation (%primitive "call-with-current-continuation"))
+(define call-with-current-continuation
+  (%primitive "call-with-current-continuation"))
 (define call-with-values (%primitive "call-with-values"))
 (define values (%primitive "values"))
 (define read (%primitive "read"))
@@ -60,7 +61,6 @@
 (define bound-identifier=? (%primitive "bound-identifier=?"))
 (define generate-temporaries (%primitive "generate-temporaries"))
 
-
 (define cdar (%primitive "cdar"))
 (define cddr (%primitive "cddr"))
 (define caddr (%primitive "caddr"))
@@ -76,7 +76,6 @@ Example:
 ;; R7RS auxiliary syntax — must be bound before macros that use them as literals.
 ;; Their values are irrelevant; only the binding identity matters for
 
-
 (define-syntax and
   "Syntax: (and expr ...)
 Library: (scheme base)
@@ -88,8 +87,7 @@ Example:
   (syntax-rules ()
     ((and) #t)
     ((and e) e)
-    ((and e1 e2 ...)
-     (if e1 (and e2 ...) #f))))
+    ((and e1 e2 ...) (if e1 (and e2 ...) #f))))
 
 (define-syntax or
   "Syntax: (or expr ...)
@@ -102,9 +100,7 @@ Example:
   (syntax-rules ()
     ((or) #f)
     ((or e) e)
-    ((or e1 e2 ...)
-     (let ((t e1))
-       (if t t (or e2 ...))))))
+    ((or e1 e2 ...) (let ((t e1)) (if t t (or e2 ...))))))
 
 (define (constant? obj)
   "Syntax: (constant? obj)
@@ -115,11 +111,10 @@ Example:
   (constant? 'x) => #f
   (constant? '(quote foo)) => #t"
   (or (number? obj)
-      (boolean?  obj)
+      (boolean? obj)
       (char? obj)
       (string? obj)
-      (and (pair? obj)
-	   (eq? (car obj) 'quote))))
+      (and (pair? obj) (eq? (car obj) 'quote))))
 
 (define-syntax cond
   "Syntax: (cond (test expr ...) ... (else expr ...))
@@ -129,17 +124,13 @@ Example:
   (cond ((= 1 2) 'no) ((= 1 1) 'yes) (else 'other)) => yes
   (cond ((assv 2 '((1 a) (2 b))) => cdr) (else #f)) => (b)"
   (syntax-rules (else =>)
-    ((cond (else e1 e2 ...))
-     (begin e1 e2 ...))
+    ((cond (else e1 e2 ...)) (begin e1 e2 ...))
     ((cond (test => proc) rest ...)
-     (let ((tmp test))
-       (if tmp (proc tmp) (cond rest ...))))
-    ((cond (test) rest ...)
-     (or test (cond rest ...)))
+     (let ((tmp test)) (if tmp (proc tmp) (cond rest ...))))
+    ((cond (test) rest ...) (or test (cond rest ...)))
     ((cond (test e1 e2 ...) rest ...)
      (if test (begin e1 e2 ...) (cond rest ...)))
-    ((cond)
-     (if #f #f))))
+    ((cond) (if #f #f))))
 
 (define assq (%primitive "assq"))
 
@@ -170,13 +161,12 @@ Example:
   (vector->list #(a b c)) => (a b c)
   (vector->list #(a b c d) 1 3) => (b c)"
   (let ((start (if (null? args) 0 (car args)))
-        (end   (if (or (null? args) (null? (cdr args)))
-                   (vector-length v) (cadr args))))
-    (let loop ((n (- end 1)) (r '()))
-      (if (< n start)
-          r
-          (loop (- n 1) (cons (vector-ref v n) r))))))
-
+        (end (if (or (null? args) (null? (cdr args)))
+                 (vector-length v)
+                 (cadr args))))
+    (let loop ((n (- end 1))
+               (r '()))
+      (if (< n start) r (loop (- n 1) (cons (vector-ref v n) r))))))
 
 (define reverse (%primitive "reverse"))
 
@@ -192,18 +182,14 @@ Example:
     ((2 3 5 7) 'prime)
     ((1 4 6 8 9) 'composite)) => composite"
   (syntax-rules (else =>)
-    ((case expr (else => proc))
-     (let ((t expr)) (proc t)))
-    ((case expr (else body ...))
-     (begin expr body ...))
+    ((case expr (else => proc)) (let ((t expr)) (proc t)))
+    ((case expr (else body ...)) (begin expr body ...))
     ((case expr ((datum ...) => proc) rest ...)
-     (let ((t expr))
-       (if (memv t '(datum ...)) (proc t) (case t rest ...))))
+     (let ((t expr)) (if (memv t '(datum ...)) (proc t) (case t rest ...))))
     ((case expr ((datum ...) body ...) rest ...)
      (let ((t expr))
-       (if (memv t '(datum ...)) (begin body ...) (case t rest ...))))
-    ((case expr)
-     (if #f #f))))
+          (if (memv t '(datum ...)) (begin body ...) (case t rest ...))))
+    ((case expr) (if #f #f))))
 
 (define-syntax do
   "Syntax: (do ((var init step) ...) (test result ...) body ...)
@@ -214,10 +200,11 @@ Example:
       ((= i 5) s)) => 10"
   (syntax-rules ()
     ((do ((var init step ...) ...) (test result ...) body ...)
-     (let loop ((var init) ...)
-       (if test
-           (begin (if #f #f) result ...)
-           (begin body ... (loop (do-step var step ...) ...)))))))
+     (let loop
+          ((var init) ...)
+          (if test
+              (begin (if #f #f) result ...)
+              (begin body ... (loop (do-step var step ...) ...)))))))
 
 (define-syntax do-step
   (syntax-rules ()
@@ -251,12 +238,11 @@ Example:
           (else (any-null? (cdr ls)))))
   (if (null? more)
       (let loop ((lst lst))
-        (if (null? lst) '()
-            (cons (f (car lst)) (loop (cdr lst)))))
+        (if (null? lst) '() (cons (f (car lst)) (loop (cdr lst)))))
       (let loop ((lists (cons lst more)))
-        (if (any-null? lists) '()
-            (cons (apply f (map car lists))
-                  (loop (map cdr lists)))))))
+        (if (any-null? lists)
+            '()
+            (cons (apply f (map car lists)) (loop (map cdr lists)))))))
 
 (define-syntax unless
   "Syntax: (unless test body ...)
@@ -265,9 +251,7 @@ Description: Evaluates test. If the result is #f, evaluates each body expression
 Example:
   (unless #f (display \"yes\")) => yes
   (unless #t (display \"no\"))  => (nothing printed)"
-  (syntax-rules ()
-    ((unless test body ...)
-     (if (not test) (begin body ...)))))
+  (syntax-rules () ((unless test body ...) (if (not test) (begin body ...)))))
 
 (define-syntax when
   "Syntax: (when test body ...)
@@ -276,9 +260,7 @@ Description: Evaluates test. If the result is true, evaluates each body expressi
 Example:
   (when #t (display \"yes\")) => yes
   (when #f (display \"no\"))  => (nothing printed)"
-  (syntax-rules ()
-    ((when test body ...)
-     (if test (begin body ...)))))
+  (syntax-rules () ((when test body ...) (if test (begin body ...)))))
 
 (define (min . ls)
   "Syntax: (min x ...)
@@ -287,12 +269,11 @@ Description: Returns the smallest of the given real numbers. Requires at least o
 Example:
   (min 3 1 4 1 5) => 1
   (min 0.5 1/2) => 0.5"
-  (let loop ((ls ls) (m (car ls)))
+  (let loop ((ls ls)
+             (m (car ls)))
     (cond ((null? ls) m)
-	  ((< (car ls) m)
-	   (loop (cdr ls) (car ls)))
-	  (else
-	   (loop (cdr ls) m)))))
+          ((< (car ls) m) (loop (cdr ls) (car ls)))
+          (else (loop (cdr ls) m)))))
 
 (define (max . ls)
   "Syntax: (max x ...)
@@ -301,12 +282,11 @@ Description: Returns the largest of the given real numbers. Requires at least on
 Example:
   (max 3 1 4 1 5) => 5
   (max -1 -2 -3) => -1"
-  (let loop ((ls ls) (m (car ls)))
+  (let loop ((ls ls)
+             (m (car ls)))
     (cond ((null? ls) m)
-	  ((> (car ls) m)
-	   (loop (cdr ls) (car ls)))
-	  (else
-	   (loop (cdr ls) m)))))
+          ((> (car ls) m) (loop (cdr ls) (car ls)))
+          (else (loop (cdr ls) m)))))
 
 (define (even? n)
   "Syntax: (even? n)
@@ -333,10 +313,7 @@ Description: Returns the sublist of list obtained by omitting the first k elemen
 Example:
   (list-tail '(a b c d) 2) => (c d)
   (list-tail '(a b c) 0) => (a b c)"
-  (if (= n 0)
-      ls
-      (list-tail (cdr ls) (- n 1))))
-
+  (if (= n 0) ls (list-tail (cdr ls) (- n 1))))
 
 (define (filter proc lst)
   "Syntax: (filter pred list)
@@ -346,8 +323,8 @@ Example:
   (filter odd? '(1 2 3 4 5)) => (1 3 5)
   (filter string? '(1 \"a\" #t \"b\")) => (a b)"
   (cond ((null? lst) '())
-	((proc (car lst)) (cons (car lst) (filter proc (cdr lst))))
-	(else (filter proc (cdr lst)))))
+        ((proc (car lst)) (cons (car lst) (filter proc (cdr lst))))
+        (else (filter proc (cdr lst)))))
 
 (define syntax-error error)
 
@@ -379,9 +356,7 @@ Description: Returns the current default input port. Read operations that do not
 Example:
   (current-input-port) => #<input-port>
   (parameterize ((current-input-port p)) ...)"
-  (if (pair? new)
-      (set! *input-port* (car new))
-      *input-port*))
+  (if (pair? new) (set! *input-port* (car new)) *input-port*))
 
 (define (current-output-port . new)
   "Syntax: (current-output-port)
@@ -391,9 +366,7 @@ Description: Returns the current default output port. Write and display operatio
 Example:
   (current-output-port) => #<output-port>
   (parameterize ((current-output-port p)) ...)"
-  (if (pair? new)
-      (set! *output-port* (car new))
-      *output-port*))
+  (if (pair? new) (set! *output-port* (car new)) *output-port*))
 
 (define (current-error-port . new)
   "Syntax: (current-error-port)
@@ -403,9 +376,7 @@ Description: Returns the current default error output port. Error messages are w
 Example:
   (current-error-port) => #<output-port>
   (parameterize ((current-error-port p)) ...)"
-  (if (pair? new)
-      (set! *error-port* (car new))
-      *error-port*))
+  (if (pair? new) (set! *error-port* (car new)) *error-port*))
 
 (define (set-current-input-port port)
   "Syntax: (set-current-input-port port)
@@ -443,7 +414,8 @@ Example:
 (define %exception-handlers-set! (%primitive "%exception-handlers-set!"))
 
 (define (%common-tail x y)
-  (let ((lx (length x)) (ly (length y)))
+  (let ((lx (length x))
+        (ly (length y)))
     (let loop ((x (if (> lx ly) (list-tail x (- lx ly)) x))
                (y (if (> ly lx) (list-tail y (- ly lx)) y)))
       (if (eq? x y) x (loop (cdr x) (cdr y))))))
@@ -470,40 +442,85 @@ Example:
     (lambda (f)
       ((if (escape-only? f) ec c)
        (lambda (k)
-           (f (let ((save-winders (%winders-get))
-                    (save-handlers (%exception-handlers-get)))
-                (lambda x
-                  (if (not (eq? save-winders (%winders-get))) (%do-wind save-winders))
-                  (%exception-handlers-set! save-handlers)
-                  (apply k x)))))))))
+         (f (let ((save-winders (%winders-get))
+                  (save-handlers (%exception-handlers-get)))
+              (lambda x
+                (if (not (eq? save-winders (%winders-get)))
+                    (%do-wind save-winders))
+                (%exception-handlers-set! save-handlers)
+                (apply k x)))))))))
 
 ;; Export public API from (scm core)
 ;; Primitives declared above are NOT exported — they are internal to scm core.
 ;; Libraries should use (%primitive "name") or import from their primary library.
 (%module-export-bindings '(scm core)
-  ;; Core syntax forms
-  'quote 'quasiquote 'if 'set! 'begin
-  'lambda 'define 'define-syntax
-  'let 'let* 'letrec 'letrec*
-  'let-syntax 'letrec-syntax 'cond-expand
-  ;; Macros / special forms
-  'and 'or 'cond 'case
-  'do 'when 'unless 'with-values
-  'import
-  ;; Macro support primitives
-  'syntax->datum 'datum->syntax 'identifier?
-  'free-identifier=? 'bound-identifier=? 'generate-temporaries
-  ;; Functions
-  'list
-  'cdar 'cddr 'caddr 'third 'constant? 'syntax-error 'call/cc
-  'length 'map 'reverse 'filter
-  'assq 'assv 'assoc 'vector->list
-  'min 'max 'even? 'odd? 'list-tail
-  ;; Source location
-  'current-source-location
-  ;; Module/system
-  'module-search-path 'module-search-path! 'modules
-  'current-input-port 'current-output-port 'current-error-port
-  'set-current-input-port 'set-current-output-port 'set-current-error-port
-  ;; Internal primitives
-  '%load-module '%primitive)
+                         ;; Core syntax forms
+                         'quote
+                         'quasiquote
+                         'if
+                         'set!
+                         'begin
+                         'lambda
+                         'define
+                         'define-syntax
+                         'let
+                         'let*
+                         'letrec
+                         'letrec*
+                         'let-syntax
+                         'letrec-syntax
+                         'cond-expand
+                         ;; Macros / special forms
+                         'and
+                         'or
+                         'cond
+                         'case
+                         'do
+                         'when
+                         'unless
+                         'with-values
+                         'import
+                         ;; Macro support primitives
+                         'syntax->datum
+                         'datum->syntax
+                         'identifier?
+                         'free-identifier=?
+                         'bound-identifier=?
+                         'generate-temporaries
+                         ;; Functions
+                         'list
+                         'cdar
+                         'cddr
+                         'caddr
+                         'third
+                         'constant?
+                         'syntax-error
+                         'call/cc
+                         'length
+                         'map
+                         'reverse
+                         'filter
+                         'assq
+                         'assv
+                         'assoc
+                         'vector->list
+                         'min
+                         'max
+                         'even?
+                         'odd?
+                         'list-tail
+                         ;; Source location
+                         'current-source-location
+                         ;; Module/system
+                         'module-search-path
+                         'module-search-path!
+                         'modules
+                         'current-input-port
+                         'current-output-port
+                         'current-error-port
+                         'set-current-input-port
+                         'set-current-output-port
+                         'set-current-error-port
+                         ;; Internal primitives
+                         '%load-module
+                         '%primitive)

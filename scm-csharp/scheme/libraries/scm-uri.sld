@@ -1,7 +1,8 @@
 (define-library (scm uri)
-  (import (scm core) (scheme base))
-  (export percent-encode
-          percent-decode)
+  (import (scheme base)
+          (scm core))
+  (export percent-decode
+          percent-encode)
   (begin
 
     (define (hex-digit? c)
@@ -22,7 +23,10 @@
       (or (and (char>=? c #\a) (char<=? c #\z))
           (and (char>=? c #\A) (char<=? c #\Z))
           (and (char>=? c #\0) (char<=? c #\9))
-          (char=? c #\-) (char=? c #\_) (char=? c #\.) (char=? c #\~)))
+          (char=? c #\-)
+          (char=? c #\_)
+          (char=? c #\.)
+          (char=? c #\~)))
 
     (define hex-digits "0123456789ABCDEF")
 
@@ -41,17 +45,16 @@ Example:
   (percent-encode \"a b/c\") => \"a%20b%2Fc\"
   (percent-encode \"hello\") => \"hello\""
       (let* ((bv (string->utf8 s))
-             (n  (bytevector-length bv))
+             (n (bytevector-length bv))
              (out (open-output-string)))
         (let loop ((i 0))
-          (cond
-            ((= i n) (get-output-string out))
-            (else
-             (let* ((b (bytevector-u8-ref bv i))
-                    (c (integer->char b)))
-               (cond ((and (< b 128) (unreserved? c)) (write-char c out))
-                     (else (write-hex-byte b out)))
-               (loop (+ i 1))))))))
+          (cond ((= i n) (get-output-string out))
+                (else (let* ((b (bytevector-u8-ref bv i))
+                             (c (integer->char b)))
+                        (cond ((and (< b 128) (unreserved? c))
+                               (write-char c out))
+                              (else (write-hex-byte b out)))
+                        (loop (+ i 1))))))))
 
     (define (percent-decode s . opt)
       "Syntax: (percent-decode s [plus-as-space?])
@@ -68,30 +71,32 @@ Example:
              (n (string-length s))
              (bv (make-bytevector n 0)))
         (let loop ((i 0) (j 0))
-          (cond
-            ((= i n) (utf8->string bv 0 j))
-            ((and (char=? (string-ref s i) #\%)
-                  (< (+ i 2) n)
-                  (hex-digit? (string-ref s (+ i 1)))
-                  (hex-digit? (string-ref s (+ i 2))))
-             (bytevector-u8-set! bv j
-               (+ (* 16 (hex-value (string-ref s (+ i 1))))
-                  (hex-value (string-ref s (+ i 2)))))
-             (loop (+ i 3) (+ j 1)))
-            ((and plus-as-space? (char=? (string-ref s i) #\+))
-             (bytevector-u8-set! bv j 32)
-             (loop (+ i 1) (+ j 1)))
-            (else
-             (let ((c (string-ref s i)))
-               (cond ((< (char->integer c) 128)
-                      (bytevector-u8-set! bv j (char->integer c))
-                      (loop (+ i 1) (+ j 1)))
-                     (else
-                      (let ((cb (string->utf8 (string c))))
-                        (let copy ((k 0) (j j))
-                          (cond
-                            ((= k (bytevector-length cb)) (loop (+ i 1) j))
-                            (else
-                             (bytevector-u8-set! bv j (bytevector-u8-ref cb k))
-                             (copy (+ k 1) (+ j 1))))))))))))))
-))
+          (cond ((= i n) (utf8->string bv 0 j))
+                ((and (char=? (string-ref s i) #\%)
+                      (< (+ i 2) n)
+                      (hex-digit? (string-ref s (+ i 1)))
+                      (hex-digit? (string-ref s (+ i 2))))
+                 (bytevector-u8-set! bv j
+                                     (+
+                                      (* 16
+                                         (hex-value (string-ref s (+ i 1))))
+                                      (hex-value (string-ref s (+ i 2)))))
+                 (loop (+ i 3) (+ j 1)))
+                ((and plus-as-space? (char=? (string-ref s i) #\+))
+                 (bytevector-u8-set! bv j 32)
+                 (loop (+ i 1) (+ j 1)))
+                (else (let ((c (string-ref s i)))
+                        (cond ((< (char->integer c) 128)
+                               (bytevector-u8-set! bv j (char->integer c))
+                               (loop (+ i 1) (+ j 1)))
+                              (else (let ((cb (string->utf8 (string c))))
+                                      (let copy ((k 0) (j j))
+                                        (cond
+                                         ((= k (bytevector-length cb))
+                                          (loop (+ i 1) j))
+                                         (else
+                                          (bytevector-u8-set!
+                                           bv
+                                           j
+                                           (bytevector-u8-ref cb k))
+                                          (copy (+ k 1) (+ j 1))))))))))))))))

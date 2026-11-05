@@ -1,11 +1,11 @@
 (import (scheme base)
         (scheme read)
         (scheme write)
-        (scm test)
         (prefix (srfi 271) r:)
-        (prefix (srfi 271 randomized) rr:)
         (prefix (srfi 271 determinized) d:)
-        (prefix (srfi 271 determinized chacha20) c:))
+        (prefix (srfi 271 determinized chacha20) c:)
+        (prefix (srfi 271 randomized) rr:)
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 
@@ -44,7 +44,8 @@
         (do ((i 0 (+ i 1))) ((= i 100000))
           (vector-set! seen (bytevector-u8-ref bv i) #t))
         (test-assert (let loop ((i 0))
-                       (or (= i 256) (and (vector-ref seen i) (loop (+ i 1))))))))
+                       (or (= i 256)
+                           (and (vector-ref seen i) (loop (+ i 1))))))))
     (test-assert (exact-integer? (read-u8 p)))
     (test-assert (exact-integer? (peek-u8 p)))
     (test-assert (u8-ready? p))
@@ -64,16 +65,17 @@
   (let ((p (d:make-random-port (key-port (make-bytevector 32 7)))))
     (test-equal 244 (read-u8 p))
     (read-bytevector 59 p)
-    (test-equal #u8(116 238 223 107 55 132 41 12 96 107) (read-bytevector 10 p)))
+    (test-equal #u8(116 238 223 107 55 132 41 12 96 107)
+                (read-bytevector 10 p)))
   ;; RFC 8439 A.1 test vectors #1 and #2 (all-zero key, blocks 0 and 1);
   ;; an all-zero key is rejected by make-random-port, so use the primitive
   (let ((p ((%primitive "make-chacha20-port") (make-bytevector 32 0) 0 0)))
-    (test-equal #u8(#x76 #xb8 #xe0 #xad #xa0 #xf1 #x3d #x90
-                    #x40 #x5d #x6a #xe5 #x53 #x86 #xbd #x28)
+    (test-equal #u8(#x76 #xb8 #xe0 #xad #xa0 #xf1 #x3d #x90 #x40 #x5d #x6a
+                    #xe5 #x53 #x86 #xbd #x28)
                 (read-bytevector 16 p))
     (read-bytevector 48 p)
-    (test-equal #u8(#x9f #x07 #xe7 #xbe #x55 #x51 #x38 #x7a
-                    #x98 #xba #x97 #x7c #x73 #x2d #x08 #x0d)
+    (test-equal #u8(#x9f #x07 #xe7 #xbe #x55 #x51 #x38 #x7a #x98 #xba #x97
+                    #x7c #x73 #x2d #x08 #x0d)
                 (read-bytevector 16 p))))
 
 (test-group "determinized ports"
@@ -85,7 +87,8 @@
   ;; same initializer data, same bytes and equal states
   (let ((p (d:make-random-port (key-port (bytevector-range 0 32))))
         (q (d:make-random-port (key-port (bytevector-range 0 32)))))
-    (test-assert (d:random-port-state=? (d:random-port-state p) (d:random-port-state q)))
+    (test-assert (d:random-port-state=? (d:random-port-state p)
+                                        (d:random-port-state q)))
     (test-equal (read-bytevector 1000 p) (read-bytevector 1000 q)))
   ;; the initializer may be an endless port (only 32 bytes are used)
   (let ((p (d:make-random-port (r:make-random-port))))
@@ -111,13 +114,15 @@
     (read-u8 p)
     (test-equal 1 (vector-ref (d:random-port-state p) 3))
     (read-bytevector 100 p)
-    (test-equal '(1 37) (list (vector-ref (d:random-port-state p) 2)
-                              (vector-ref (d:random-port-state p) 3)))
+    (test-equal '(1 37)
+                (list (vector-ref (d:random-port-state p) 2)
+                      (vector-ref (d:random-port-state p) 3)))
     ;; resume from a state
     (let* ((s (d:random-port-state p))
            (q (d:make-random-port s)))
       (test-equal (read-bytevector 500 p) (read-bytevector 500 q))
-      (test-assert (d:random-port-state=? (d:random-port-state p) (d:random-port-state q))))
+      (test-assert (d:random-port-state=? (d:random-port-state p)
+                                          (d:random-port-state q))))
     ;; states survive write/read
     (let* ((s (d:random-port-state p))
            (s2 (write->read s)))
@@ -149,15 +154,24 @@
       (test-equal '(0 63) (list (vector-ref s 2) (vector-ref s 3)))
       (test-equal b (read-u8 (d:make-random-port s)))))
   ;; state predicate and equality
-  (test-assert (not (d:random-port-state? (vector 'chacha20 (make-bytevector 32 0) 0 0))))
-  (test-assert (not (d:random-port-state? (vector 'chacha20 (make-bytevector 31 1) 0 0))))
-  (test-assert (not (d:random-port-state? (vector 'chacha20 (make-bytevector 32 1) -1 0))))
-  (test-assert (not (d:random-port-state? (vector 'chacha20 (make-bytevector 32 1) 0 64))))
-  (test-assert (not (d:random-port-state? (vector 'other (make-bytevector 32 1) 0 0))))
+  (test-assert (not (d:random-port-state?
+                     (vector 'chacha20 (make-bytevector 32 0) 0 0))))
+  (test-assert (not (d:random-port-state?
+                     (vector 'chacha20 (make-bytevector 31 1) 0 0))))
+  (test-assert (not (d:random-port-state?
+                     (vector 'chacha20 (make-bytevector 32 1) -1 0))))
+  (test-assert (not (d:random-port-state?
+                     (vector 'chacha20 (make-bytevector 32 1) 0 64))))
+  (test-assert (not (d:random-port-state?
+                     (vector 'other (make-bytevector 32 1) 0 0))))
   (test-assert (not (d:random-port-state? 'x)))
-  (test-assert (d:random-port-state=? (vector 'chacha20 (make-bytevector 32 1) 0 0)))
-  (test-assert (not (d:random-port-state=? (vector 'chacha20 (make-bytevector 32 1) 0 0)
-                                           (vector 'chacha20 (make-bytevector 32 1) 0 1))))
+  (test-assert (d:random-port-state=? (vector 'chacha20
+                                              (make-bytevector 32 1)
+                                              0
+                                              0)))
+  (test-assert (not (d:random-port-state=?
+                     (vector 'chacha20 (make-bytevector 32 1) 0 0)
+                     (vector 'chacha20 (make-bytevector 32 1) 0 1))))
   (test-error (d:random-port-state=? 'x 'y))
   (test-error (d:random-port-state (r:make-random-port)))
   (test-error (d:random-port-state (open-input-bytevector #u8(1 2)))))
@@ -170,10 +184,12 @@
                  (d:make-random-port (open-input-bytevector #u8()))
                  #f))
   (test-assert (guard (e ((d:random-port-initialization-error? e) #t))
-                 (d:make-random-port (open-input-bytevector (make-bytevector 32 0)))
+                 (d:make-random-port (open-input-bytevector
+                                      (make-bytevector 32 0)))
                  #f))
   (test-assert (not (d:random-port-initialization-error? 'x)))
-  (test-assert (guard (e ((d:random-port-initialization-error? e) #f) (#t #t))
+  (test-assert (guard (e ((d:random-port-initialization-error? e) #f)
+                         (#t #t))
                  (d:make-random-port 42))))
 
 (test-end "srfi-271")

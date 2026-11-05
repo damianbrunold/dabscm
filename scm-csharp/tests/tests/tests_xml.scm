@@ -1,4 +1,7 @@
-(import (scheme base) (srfi 13) (scm xml) (scm test))
+(import (scheme base)
+        (srfi 13)
+        (scm test)
+        (scm xml))
 
 (test-runner-factory scm-test-runner)
 
@@ -12,10 +15,10 @@
   (let ((r (open-xml-string "<root><a>1</a><b>two</b></root>")))
     (test-equal #t (xml-read-to r "root"))
     (test-equal 'element (xml-node-type r))
-    (test-equal "root"   (xml-name r))
+    (test-equal "root" (xml-name r))
     (test-equal #t (xml-read-to r "a"))
-    (test-equal "a"      (xml-name r))
-    (test-equal "1"      (xml-value r))
+    (test-equal "a" (xml-name r))
+    (test-equal "1" (xml-value r))
     (close-xml r)))
 
 (test-group "open-xml-string with prolog"
@@ -25,12 +28,13 @@
     (close-xml r)))
 
 (test-group "open-xml-bytevector"
-  (let ((r (open-xml-bytevector
-            (string->utf8 "<?xml version=\"1.0\"?><root><x>hi</x></root>"))))
+  (let
+      ((r (open-xml-bytevector (string->utf8
+                                "<?xml version=\"1.0\"?><root><x>hi</x></root>"))))
     (test-equal #t (xml-read-to r "root"))
     (test-equal "root" (xml-name r))
     (test-equal #t (xml-read-to r "x"))
-    (test-equal "hi"   (xml-value r))
+    (test-equal "hi" (xml-value r))
     (close-xml r)))
 
 (test-group "open-xml-bytevector simple"
@@ -47,18 +51,23 @@
         (let loop ((acc '()))
           (if (xml-read r)
               (loop (cons (guard (e (#t #f)) (xml-value r)) acc))
-              (begin (close-xml r) acc))))))
+              (begin
+                (close-xml r)
+                acc))))))
   (define (expanded? v needle)
     (and (pair? v)
          (let loop ((xs v))
            (cond ((null? xs) #f)
-                 ((and (string? (car xs)) (string-contains (car xs) needle)) #t)
+                 ((and (string? (car xs)) (string-contains (car xs) needle))
+                  #t)
                  (else (loop (cdr xs)))))))
   (test-equal "external entity not expanded" #f
-              (expanded? (values-of "<?xml version=\"1.0\"?><!DOCTYPE r [<!ENTITY e SYSTEM \"file:///etc/passwd\">]><r>&e;</r>")
+              (expanded? (values-of
+                          "<?xml version=\"1.0\"?><!DOCTYPE r [<!ENTITY e SYSTEM \"file:///etc/passwd\">]><r>&e;</r>")
                          "root"))
   (test-equal "internal entity not expanded" #f
-              (expanded? (values-of "<?xml version=\"1.0\"?><!DOCTYPE r [<!ENTITY a \"zzzzz\">]><r>&a;&a;</r>")
+              (expanded? (values-of
+                          "<?xml version=\"1.0\"?><!DOCTYPE r [<!ENTITY a \"zzzzz\">]><r>&a;&a;</r>")
                          "zzzzz"))
   ;; predefined entities still work
   (let ((r (open-xml-string "<r>a &amp; b &lt;c&gt;</r>")))

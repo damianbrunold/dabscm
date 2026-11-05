@@ -1,7 +1,7 @@
 (import (scheme base)
         (scheme write)
-        (scm test)
-        (srfi 151))
+        (srfi 151)
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 
@@ -130,19 +130,21 @@
 (test-group "bitwise-fold and bitwise-for-each"
   (define result '())
   ;; count set bits via fold
-  (test-equal 2 (bitwise-fold (lambda (b count) (if b (+ count 1) count)) 0 10))
+  (test-equal 2
+              (bitwise-fold (lambda (b count) (if b (+ count 1) count)) 0 10))
   (test-equal '(#f #t #f #t)
-    (begin
-      (bitwise-for-each (lambda (b) (set! result (cons b result))) 10)
-      (reverse result))))
+              (begin
+                (bitwise-for-each (lambda (b) (set! result (cons b result)))
+                                  10)
+                (reverse result))))
 
 (test-group "bitwise-unfold"
   ;; unfold: build integer from predicate
   (test-equal 10
-    (bitwise-unfold (lambda (s) (= s 0))
-                    (lambda (s) (odd? s))
-                    (lambda (s) (quotient s 2))
-                    10)))
+              (bitwise-unfold (lambda (s) (= s 0))
+                              (lambda (s) (odd? s))
+                              (lambda (s) (quotient s 2))
+                              10)))
 
 ;; Generator
 (test-group "make-bitwise-generator"

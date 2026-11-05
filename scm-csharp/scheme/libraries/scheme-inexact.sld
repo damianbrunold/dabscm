@@ -54,8 +54,7 @@ Example:
       (if (real? x)
           (not (= x x))
           (if (complex? x)
-              (or (nan? (complex-real-part x))
-                  (nan? (complex-imag-part x)))
+              (or (nan? (complex-real-part x)) (nan? (complex-imag-part x)))
               #f)))
 
     (define (infinite? x)

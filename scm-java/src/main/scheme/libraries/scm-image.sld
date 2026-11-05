@@ -17,23 +17,27 @@
           (scheme cxr)
           (scheme file)
           (scm png)
-          (only (scm raster) make-canvas canvas-width canvas-height canvas-pixels))
-  (export make-image
-          image?
-          image-width
-          image-height
-          image-pixels
-          image-info
-          image-decode
-          image-read
-          image-orient
-          image-resize
-          image-fit
-          image-crop
-          image->png
-          image->jpeg
+          (only (scm raster)
+                make-canvas
+                canvas-width
+                canvas-height
+                canvas-pixels))
+  (export canvas->image
           image->canvas
-          canvas->image)
+          image->jpeg
+          image->png
+          image-crop
+          image-decode
+          image-fit
+          image-height
+          image-info
+          image-orient
+          image-pixels
+          image-read
+          image-resize
+          image-width
+          image?
+          make-image)
   (begin
 
     (define image-decode-rgba (%primitive "image-decode-rgba"))
@@ -57,11 +61,19 @@ Description: An image of width x height pixels: pixels is a bytevector
   the parts; the pixels are shared, not copied.
 Example:
   (image-width (make-image 3 2)) => 3"
-      (let ((px (if (pair? pixels) (car pixels) (make-bytevector (* width height 4) 0))))
-        (unless (and (exact-integer? width) (exact-integer? height) (> width 0) (> height 0))
+      (let
+          ((px (if (pair? pixels)
+                   (car pixels)
+                   (make-bytevector (* width height 4) 0))))
+        (unless
+            (and (exact-integer? width)
+                 (exact-integer? height)
+                 (> width 0)
+                 (> height 0))
           (error "make-image: bad size" width height))
         (unless (= (bytevector-length px) (* width height 4))
-          (error "make-image: pixels must be width * height * 4 bytes" (bytevector-length px)))
+          (error "make-image: pixels must be width * height * 4 bytes"
+                 (bytevector-length px)))
         (%make-image width height px)))
 
     ;; --- headers ------------------------------------------------------
@@ -74,18 +86,25 @@ Example:
 
     (define (png? bv)
       (and (>= (bytevector-length bv) 24)
-           (= (u8 bv 0) #x89) (= (u8 bv 1) 80) (= (u8 bv 2) 78) (= (u8 bv 3) 71)))
+           (= (u8 bv 0) #x89)
+           (= (u8 bv 1) 80)
+           (= (u8 bv 2) 78)
+           (= (u8 bv 3) 71)))
 
     (define (jpeg? bv)
-      (and (>= (bytevector-length bv) 4) (= (u8 bv 0) #xFF) (= (u8 bv 1) #xD8)))
+      (and (>= (bytevector-length bv) 4)
+           (= (u8 bv 0) #xFF)
+           (= (u8 bv 1) #xD8)))
 
     ;; The EXIF orientation (1-8) in an APP1 segment from start to end, or #f.
     (define (exif-orientation bv start end)
       (and (>= (- end start) 14)
-           (= (u8 bv start) 69) (= (u8 bv (+ start 1)) 120)         ; "Ex"
-           (= (u8 bv (+ start 2)) 105) (= (u8 bv (+ start 3)) 102)   ; "if"
+           (= (u8 bv start) 69)
+           (= (u8 bv (+ start 1)) 120) ; "Ex"
+           (= (u8 bv (+ start 2)) 105)
+           (= (u8 bv (+ start 3)) 102) ; "if"
            (let* ((tiff (+ start 6))
-                  (le? (= (u8 bv tiff) 73))                          ; "II"
+                  (le? (= (u8 bv tiff) 73)) ; "II"
                   (r16 (lambda (i) (if le? (u16le bv i) (u16be bv i))))
                   (r32 (lambda (i) (if le? (u32le bv i) (u32be bv i))))
                   (ifd (+ tiff (r32 (+ tiff 4)))))
@@ -104,24 +123,33 @@ Example:
     (define (jpeg-header bv)
       (let ((n (bytevector-length bv)))
         (let loop ((i 2) (orientation 1))
-          (cond
-            ((>= (+ i 4) n) #f)
-            ((not (= (u8 bv i) #xFF)) (loop (+ i 1) orientation))
-            (else
-             (let ((m (u8 bv (+ i 1))))
-               (cond
-                 ((or (= m #xFF) (= m #x01) (<= #xD0 m #xD7)) (loop (+ i 1) orientation))
-                 ((or (= m #xD9) (= m #xDA)) #f)
-                 (else
-                  (let ((len (u16be bv (+ i 2))))
-                    (cond
-                      ((and (<= #xC0 m #xCF) (not (memv m '(#xC4 #xC8 #xCC))))
-                       (and (< (+ i 8) n)
-                            (list (u16be bv (+ i 7)) (u16be bv (+ i 5)) orientation)))
-                      ((= m #xE1)
-                       (loop (+ i 2 len)
-                             (or (exif-orientation bv (+ i 4) (min n (+ i 2 len))) orientation)))
-                      (else (loop (+ i 2 len) orientation))))))))))))
+          (cond ((>= (+ i 4) n) #f)
+                ((not (= (u8 bv i) #xFF)) (loop (+ i 1) orientation))
+                (else (let ((m (u8 bv (+ i 1))))
+                        (cond ((or (= m #xFF) (= m #x01) (<= #xD0 m #xD7))
+                               (loop (+ i 1) orientation))
+                              ((or (= m #xD9) (= m #xDA)) #f)
+                              (else (let ((len (u16be bv (+ i 2))))
+                                      (cond
+                                       ((and (<= #xC0 m #xCF)
+                                             (not (memv m '(#xC4 #xC8 #xCC))))
+                                        (and
+                                         (< (+ i 8) n)
+                                         (list (u16be bv (+ i 7))
+                                               (u16be bv (+ i 5))
+                                               orientation)))
+                                       ((= m #xE1)
+                                        (loop
+                                         (+ i 2 len)
+                                         (or
+                                          (exif-orientation
+                                           bv
+                                           (+ i 4)
+                                           (min n (+ i 2 len)))
+                                          orientation)))
+                                       (else
+                                        (loop (+ i 2 len)
+                                              orientation))))))))))))
 
     (define (image-info bv)
       "Syntax: (image-info bytevector)
@@ -133,14 +161,19 @@ Description: What the headers of an image file say, without decoding
 Example:
   (image-info (image->png (make-image 3 2)))
   => ((format . png) (width . 3) (height . 2) (orientation . 1))"
-      (cond
-        ((png? bv)
-         `((format . png) (width . ,(u32be bv 16)) (height . ,(u32be bv 20)) (orientation . 1)))
-        ((jpeg? bv)
-         (let ((h (jpeg-header bv)))
-           (and h `((format . jpeg) (width . ,(car h)) (height . ,(cadr h))
-                    (orientation . ,(caddr h))))))
-        (else #f)))
+      (cond ((png? bv)
+             `((format . png)
+               (width . ,(u32be bv 16))
+               (height . ,(u32be bv 20))
+               (orientation . 1)))
+            ((jpeg? bv)
+             (let ((h (jpeg-header bv)))
+               (and h
+                    `((format . jpeg)
+                      (width . ,(car h))
+                      (height . ,(cadr h))
+                      (orientation . ,(caddr h))))))
+            (else #f)))
 
     ;; --- decoding -----------------------------------------------------
 
@@ -199,7 +232,11 @@ Example:
   (image-width (image-orient (make-image 3 2) 6)) => 2"
       (if (= orientation 1)
           img
-          (let ((px (image-orient-rgba (image-pixels img) (image-width img) (image-height img) orientation)))
+          (let
+              ((px (image-orient-rgba (image-pixels img)
+                                      (image-width img)
+                                      (image-height img)
+                                      orientation)))
             (if (>= orientation 5)
                 (%make-image (image-height img) (image-width img) px)
                 (%make-image (image-width img) (image-height img) px)))))
@@ -214,16 +251,28 @@ Description: The image scaled to width x height pixels. method is 'box
   Transparent pixels do not darken their neighbours.
 Example:
   (image-height (image-resize (make-image 400 300) 200 150)) => 150"
-      (unless (and (exact-integer? width) (exact-integer? height) (> width 0) (> height 0))
+      (unless
+          (and (exact-integer? width)
+               (exact-integer? height)
+               (> width 0)
+               (> height 0))
         (error "image-resize: bad size" width height))
-      (let ((m (if (pair? method)
-                   (car method)
-                   (if (and (<= width (image-width img)) (<= height (image-height img))) 'box 'bilinear))))
+      (let
+          ((m (if (pair? method)
+                  (car method)
+                  (if (and (<= width (image-width img))
+                           (<= height (image-height img)))
+                      'box
+                      'bilinear))))
         (if (and (= width (image-width img)) (= height (image-height img)))
             img
             (%make-image width height
-                         (image-resize-rgba (image-pixels img) (image-width img) (image-height img)
-                                            width height m)))))
+                         (image-resize-rgba (image-pixels img)
+                                            (image-width img)
+                                            (image-height img)
+                                            width
+                                            height
+                                            m)))))
 
     (define (image-fit img max-width max-height)
       "Syntax: (image-fit image max-width max-height)
@@ -235,13 +284,16 @@ Description: The image shrunk to fit into max-width x max-height,
 Example:
   (let ((t (image-fit (make-image 4000 3000) 400 400)))
     (list (image-width t) (image-height t)))  => (400 300)"
-      (let ((w (image-width img)) (h (image-height img)))
+      (let ((w (image-width img))
+            (h (image-height img)))
         (if (and (<= w max-width) (<= h max-height))
             img
             (let ((s (min (/ max-width w) (/ max-height h))))
               (image-resize img
                             (max 1 (min max-width (exact (round (* w s)))))
-                            (max 1 (min max-height (exact (round (* h s))))))))))
+                            (max 1
+                                 (min max-height
+                                      (exact (round (* h s))))))))))
 
     (define (image-crop img x y width height)
       "Syntax: (image-crop image x y width height)
@@ -250,10 +302,19 @@ Description: The width x height part of the image whose top-left pixel
   is at column x, row y. The part must lie within the image.
 Example:
   (image-width (image-crop (make-image 10 10) 2 2 5 3)) => 5"
-      (unless (and (exact-integer? x) (exact-integer? y) (exact-integer? width) (exact-integer? height)
-                   (>= x 0) (>= y 0) (> width 0) (> height 0)
-                   (<= (+ x width) (image-width img)) (<= (+ y height) (image-height img)))
-        (error "image-crop: the part is not within the image" x y width height))
+      (unless
+          (and (exact-integer? x)
+               (exact-integer? y)
+               (exact-integer? width)
+               (exact-integer? height)
+               (>= x 0)
+               (>= y 0)
+               (> width 0)
+               (> height 0)
+               (<= (+ x width) (image-width img))
+               (<= (+ y height) (image-height img)))
+        (error "image-crop: the part is not within the image" x y width
+               height))
       (let ((src (image-pixels img))
             (dst (make-bytevector (* width height 4)))
             (stride (* 4 (image-width img))))
@@ -270,7 +331,9 @@ Library: (scm image)
 Description: The image as a PNG file (bytevector, RGBA).
 Example:
   (bytevector-u8-ref (image->png (make-image 1 1)) 1) => 80"
-      (png-encode-rgba (image-width img) (image-height img) (image-pixels img)))
+      (png-encode-rgba (image-width img)
+                       (image-height img)
+                       (image-pixels img)))
 
     (define (image->jpeg img . quality)
       "Syntax: (image->jpeg image [quality])
@@ -279,7 +342,9 @@ Description: The image as a baseline JPEG file (bytevector) at quality 1
   to 100 (default 85); transparent parts become white.
 Example:
   (bytevector-u8-ref (image->jpeg (make-image 8 8)) 0) => 255"
-      (rgba->jpeg (image-pixels img) (image-width img) (image-height img)
+      (rgba->jpeg (image-pixels img)
+                  (image-width img)
+                  (image-height img)
                   (if (pair? quality) (car quality) 85)))
 
     (define (image->canvas img)
@@ -299,5 +364,6 @@ Library: (scm image)
 Description: An image with a copy of a (scm raster) canvas's pixels.
 Example:
   (image-height (canvas->image (make-canvas 3 2))) => 2"
-      (%make-image (canvas-width canvas) (canvas-height canvas)
+      (%make-image (canvas-width canvas)
+                   (canvas-height canvas)
                    (bytevector-copy (canvas-pixels canvas))))))

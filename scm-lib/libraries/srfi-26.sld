@@ -1,6 +1,8 @@
 (define-library (srfi 26)
-  (import (scm core) (scheme base))
-  (export cut cute)
+  (import (scheme base)
+          (scm core))
+  (export cut
+          cute)
   (begin
     ;; cut: specialize a procedure by replacing some arguments with slots.
     ;; <> marks a slot (becomes a lambda parameter in left-to-right order).
@@ -22,14 +24,12 @@ Example:
   (define cons-star (cut cons <> '()))
   (cons-star 1) => (1)"
       (syntax-rules ()
-        ((cut . slots-or-exprs)
-         (cut-aux () () . slots-or-exprs))))
+        ((cut . slots-or-exprs) (cut-aux () () . slots-or-exprs))))
 
     (define-syntax cut-aux
       (syntax-rules (<> <...>)
         ;; No more arguments — build the lambda
-        ((cut-aux (params ...) (args ...))
-         (lambda (params ...) (args ...)))
+        ((cut-aux (params ...) (args ...)) (lambda (params ...) (args ...)))
         ;; Rest slot <...> — must be last
         ((cut-aux (params ...) (args ...) <...>)
          (lambda (params ... . rest-slot) (apply args ... rest-slot)))
@@ -51,8 +51,7 @@ Example:
   (define add-n (cute + <> (begin (display \"eval\") 5)))
   (add-n 3) => 8   ; \"eval\" is printed only once"
       (syntax-rules ()
-        ((cute . slots-or-exprs)
-         (cute-aux () () () . slots-or-exprs))))
+        ((cute . slots-or-exprs) (cute-aux () () () . slots-or-exprs))))
 
     (define-syntax cute-aux
       (syntax-rules (<> <...>)
@@ -61,7 +60,8 @@ Example:
          (let (binds ...) (lambda (params ...) (args ...))))
         ;; Rest slot <...> — must be last
         ((cute-aux (binds ...) (params ...) (args ...) <...>)
-         (let (binds ...) (lambda (params ... . rest-slot) (apply args ... rest-slot))))
+         (let (binds ...)
+              (lambda (params ... . rest-slot) (apply args ... rest-slot))))
         ;; Slot <> — generate a fresh parameter (no let binding needed)
         ((cute-aux (binds ...) (params ...) (args ...) <> . rest)
          (cute-aux (binds ...) (params ... x) (args ... x) . rest))

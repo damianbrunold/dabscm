@@ -2,8 +2,8 @@
   (import (scheme base))
   (export box
           box?
-          unbox
-          set-box!)
+          set-box!
+          unbox)
   (begin
     (define-record-type <box>
       (box value)

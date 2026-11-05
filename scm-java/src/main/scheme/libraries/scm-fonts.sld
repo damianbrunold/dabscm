@@ -26,24 +26,24 @@
 ;; files; this library is for everything else.
 
 (define-library (scm fonts)
-  (export font-search-path
-          font-search-path!
-          font-families
-          font-faces
-          find-font
+  (export find-font
           find-font-file
-          font-license)
+          font-faces
+          font-families
+          font-license
+          font-search-path
+          font-search-path!)
   (import (scheme base)
           (scheme char)
           (scheme cxr)
           (scheme file)
-          (scheme read)
           (scheme process-context)
+          (scheme read)
           (scm fs)
           (scm string)
           (only (scm system) sys-platform)
-          (scm zip)
-          (scm truetype))
+          (scm truetype)
+          (scm zip))
   (begin
 
     ;; --- search path ----------------------------------------------------
@@ -53,21 +53,28 @@
     (define (default-search-path)
       (let* ((env (get-environment-variable "SCM_FONT_PATH"))
              (from-env (if (and env (not (string=? env "")))
-                           (filter-list (lambda (s) (not (string=? s "")))
-                                        (string-split-char env (if (windows?) #\; #\:)))
+                           (filter-list
+                            (lambda (s) (not (string=? s "")))
+                            (string-split-char env (if (windows?) #\; #\:)))
                            '()))
              (home (get-environment-variable "HOME"))
              (data-home (get-environment-variable "XDG_DATA_HOME")))
-        (append
-         from-env
-         (if (windows?)
-             (list (join-path (special-folder-application-data) "dabscm" "fonts"))
-             (append
-              (cond ((and data-home (not (string=? data-home "")))
-                     (list (join-path data-home "dabscm" "fonts")))
-                    (home (list (join-path home ".local" "share" "dabscm" "fonts")))
-                    (else '()))
-              (list "/usr/local/share/dabscm/fonts" "/usr/share/dabscm/fonts"))))))
+        (append from-env
+                (if (windows?)
+                    (list (join-path (special-folder-application-data)
+                                     "dabscm"
+                                     "fonts"))
+                    (append (cond ((and data-home
+                                        (not (string=? data-home "")))
+                                   (list
+                                    (join-path data-home "dabscm" "fonts")))
+                                  (home
+                                   (list
+                                    (join-path home ".local" "share" "dabscm"
+                                               "fonts")))
+                                  (else '()))
+                            (list "/usr/local/share/dabscm/fonts"
+                                  "/usr/share/dabscm/fonts"))))))
 
     ;; The path, the faces found along it (#f until first asked for) and
     ;; the fonts read. Each is replaced as a whole, never changed in
@@ -130,14 +137,22 @@ Example:
     ;; The bytes of file in source.
     (define (source-bytes source zip? file)
       (if zip?
-          (call-with-input-zip source (lambda (z) (zip-read-entry-bytevector z file)))
+          (call-with-input-zip source
+            (lambda (z) (zip-read-entry-bytevector z file)))
           (read-file (join-path source file))))
 
     (define (index->faces source zip? entries)
       (map (lambda (e)
-             (let ((get (lambda (k d) (let ((p (assq k e))) (if p (cdr p) d)))))
-               (make-face (get 'family "") (get 'weight 400) (get 'italic #f)
-                          source zip? (get 'file "") (get 'license #f))))
+             (let
+                 ((get (lambda (k d)
+                         (let ((p (assq k e))) (if p (cdr p) d)))))
+               (make-face (get 'family "")
+                          (get 'weight 400)
+                          (get 'italic #f)
+                          source
+                          zip?
+                          (get 'file "")
+                          (get 'license #f))))
            entries))
 
     ;; A licence beside a font: a file in the same directory whose name
@@ -148,7 +163,8 @@ Example:
           (cond ((null? ns) #f)
                 ((and (string=? (directory-part (car ns)) dir)
                       (let ((b (string-upcase (base-part (car ns)))))
-                        (or (string-prefix? "LICENSE" b) (string-prefix? "OFL" b)
+                        (or (string-prefix? "LICENSE" b)
+                            (string-prefix? "OFL" b)
                             (string-prefix? "COPYING" b))))
                  (car ns))
                 (else (loop (cdr ns)))))))
@@ -161,7 +177,9 @@ Example:
 
     (define (base-part name)
       (let ((d (directory-part name)))
-        (if (string=? d "") name (substring name (+ (string-length d) 1) (string-length name)))))
+        (if (string=? d "")
+            name
+            (substring name (+ (string-length d) 1) (string-length name)))))
 
     (define (string-prefix? p s)
       (and (>= (string-length s) (string-length p))
@@ -169,54 +187,70 @@ Example:
 
     ;; Opens each font of names (relative, "/"-separated) and asks it.
     (define (scan->faces source zip? names read-bytes)
-      (filter-map-list
-       (lambda (n)
-         (and (ttf-name? n)
-              (guard (e (#t #f))           ; not a TrueType font: skip it
-                (let ((info (truetype-info (read-bytes n))))
-                  (make-face (cdr (assq 'family info)) (cdr (assq 'weight info))
-                             (cdr (assq 'italic info)) source zip? n
-                             (license-near names n))))))
-       names))
+      (filter-map-list (lambda (n)
+                         (and (ttf-name? n)
+                              (guard (e (#t #f)) ; not a TrueType font: skip it
+                                (let ((info (truetype-info (read-bytes n))))
+                                  (make-face (cdr (assq 'family info))
+                                             (cdr (assq 'weight info))
+                                             (cdr (assq 'italic info))
+                                             source
+                                             zip?
+                                             n
+                                             (license-near names n))))))
+                       names))
 
-    (define (read-index bv)
-      (read (open-input-string (utf8->string bv))))
+    (define (read-index bv) (read (open-input-string (utf8->string bv))))
 
     (define (directory-faces dir)
       (let ((index (join-path dir "fonts-index.scm")))
         (if (file-exists? index)
             (index->faces dir #f (read-index (read-file index)))
-            (let ((names (append
-                          (directory-files dir)
-                          (apply append
-                                 (map (lambda (sub)
-                                        (map (lambda (f) (string-append sub "/" f))
-                                             (directory-files (join-path dir sub))))
-                                      (directory-directories dir))))))
-              (scan->faces dir #f names (lambda (n) (read-file (join-path dir n))))))))
+            (let
+                ((names (append (directory-files dir)
+                                (apply append
+                                       (map
+                                        (lambda (sub)
+                                          (map
+                                           (lambda (f)
+                                             (string-append sub "/" f))
+                                           (directory-files
+                                            (join-path dir sub))))
+                                        (directory-directories dir))))))
+              (scan->faces dir #f names
+                           (lambda (n) (read-file (join-path dir n))))))))
 
     (define (zip-faces path)
       (call-with-input-zip path
         (lambda (z)
           (let ((names (zip-entry-names z)))
             (if (member "fonts-index.scm" names)
-                (index->faces path #t (read-index (zip-read-entry-bytevector z "fonts-index.scm")))
-                (scan->faces path #t names (lambda (n) (zip-read-entry-bytevector z n))))))))
+                (index->faces path #t
+                              (read-index
+                               (zip-read-entry-bytevector z
+                                                          "fonts-index.scm")))
+                (scan->faces path #t names
+                             (lambda (n)
+                               (zip-read-entry-bytevector z n))))))))
 
     ;; Every face along the path, in path order.
     (define (all-faces)
       (or faces-cache
           (let ((faces (apply append
                               (map (lambda (p)
-                                     (cond ((and (zip-path? p) (file-exists? p)) (zip-faces p))
-                                           ((directory-exists? p) (directory-faces p))
-                                           (else '())))
+                                     (cond
+                                      ((and (zip-path? p) (file-exists? p))
+                                       (zip-faces p))
+                                      ((directory-exists? p)
+                                       (directory-faces p))
+                                      (else '())))
                                    (font-search-path)))))
             (set! faces-cache faces)
             faces)))
 
     (define (family-faces family)
-      (filter-map-list (lambda (f) (and (string-ci=? (face-family f) family) f))
+      (filter-map-list (lambda (f)
+                         (and (string-ci=? (face-family f) family) f))
                        (all-faces)))
 
     (define (font-families)
@@ -226,11 +260,14 @@ Description: The names of the font families found along the search
   path, sorted.
 Example:
   (font-families) => (\"IBM Plex Mono\" \"IBM Plex Sans\" \"Inter\" \"JetBrains Mono\" ...)"
-      (sort-strings
-       (let loop ((fs (all-faces)) (acc '()))
-         (cond ((null? fs) acc)
-               ((member (face-family (car fs)) acc) (loop (cdr fs) acc))
-               (else (loop (cdr fs) (cons (face-family (car fs)) acc)))))))
+      (sort-strings (let loop ((fs (all-faces))
+                               (acc '()))
+                      (cond ((null? fs) acc)
+                            ((member (face-family (car fs)) acc)
+                             (loop (cdr fs) acc))
+                            (else (loop
+                                   (cdr fs)
+                                   (cons (face-family (car fs)) acc)))))))
 
     (define (font-faces family)
       "Syntax: (font-faces family)
@@ -239,7 +276,9 @@ Description: The faces of family as (weight italic?) lists, upright
   before italic, lighter first; () when the family is not found.
 Example:
   (font-faces \"JetBrains Mono\") => ((400 #f) (700 #f) (400 #t) (700 #t))"
-      (let ((fs (map (lambda (f) (list (face-weight f) (face-italic? f))) (family-faces family))))
+      (let
+          ((fs (map (lambda (f) (list (face-weight f) (face-italic? f)))
+                    (family-faces family))))
         (let sort ((xs fs) (out '()))
           (if (null? xs)
               out
@@ -258,8 +297,16 @@ Example:
     ;; --- choosing a face --------------------------------------------------
 
     (define weight-names
-      '((thin . 100) (extra-light . 200) (light . 300) (regular . 400) (normal . 400)
-        (medium . 500) (semi-bold . 600) (bold . 700) (extra-bold . 800) (black . 900)))
+      '((thin . 100)
+        (extra-light . 200)
+        (light . 300)
+        (regular . 400)
+        (normal . 400)
+        (medium . 500)
+        (semi-bold . 600)
+        (bold . 700)
+        (extra-bold . 800)
+        (black . 900)))
 
     (define (weight-value w)
       (cond ((and (integer? w) (exact? w)) w)
@@ -275,15 +322,21 @@ Example:
             ((and (= wanted 500) (= w 400)) 1)
             ((<= wanted 500)
              (if (< w wanted) (+ 2 (- wanted w)) (+ 1000 (- w wanted))))
-            (else
-             (if (> w wanted) (+ 2 (- w wanted)) (+ 1000 (- wanted w))))))
+            (else (if (> w wanted)
+                      (+ 2 (- w wanted))
+                      (+ 1000 (- wanted w))))))
 
     (define (choose family weight italic?)
       (let* ((faces (family-faces family))
-             (styled (let ((same (filter-map-list (lambda (f) (and (eq? (face-italic? f) italic?) f)) faces)))
+             (styled (let
+                         ((same (filter-map-list
+                                 (lambda (f)
+                                   (and (eq? (face-italic? f) italic?) f))
+                                 faces)))
                        (if (null? same) faces same))))
         (and (pair? styled)
-             (let loop ((fs (cdr styled)) (best (car styled)))
+             (let loop ((fs (cdr styled))
+                        (best (car styled)))
                (cond ((null? fs) best)
                      ((< (weight-rank weight (face-weight (car fs)))
                          (weight-rank weight (face-weight best)))
@@ -293,10 +346,18 @@ Example:
     (define (parse-args who args)
       ;; [weight [style [options]]] -> (weight italic? options)
       (let* ((weight (if (pair? args) (weight-value (car args)) 400))
-             (style (if (and (pair? args) (pair? (cdr args))) (cadr args) 'normal))
-             (options (if (and (pair? args) (pair? (cdr args)) (pair? (cddr args))) (caddr args) '())))
+             (style (if (and (pair? args) (pair? (cdr args)))
+                        (cadr args)
+                        'normal))
+             (options (if (and (pair? args)
+                               (pair? (cdr args))
+                               (pair? (cddr args)))
+                          (caddr args)
+                          '())))
         (unless (memq style '(normal italic))
-          (error (string-append (symbol->string who) ": style is normal or italic") style))
+          (error (string-append (symbol->string who)
+                                ": style is normal or italic")
+                 style))
         (list weight (eq? style 'italic) options)))
 
     (define (find-font family . args)
@@ -317,8 +378,12 @@ Example:
                     (hit (assoc key fonts-cache)))
                (if hit
                    (cdr hit)
-                   (let ((font (read-truetype (source-bytes (face-source f) (face-zip? f) (face-file f))
-                                              (caddr a))))
+                   (let
+                       ((font (read-truetype
+                               (source-bytes (face-source f)
+                                             (face-zip? f)
+                                             (face-file f))
+                               (caddr a))))
                      (set! fonts-cache (cons (cons key font) fonts-cache))
                      font))))))
 
@@ -345,7 +410,10 @@ Example:
                  (cond ((null? fs) #f)
                        ((face-license (car fs)) (car fs))
                        (else (loop (cdr fs)))))))
-        (and f (utf8->string (source-bytes (face-source f) (face-zip? f) (face-license f))))))
+        (and f
+             (utf8->string (source-bytes (face-source f)
+                                         (face-zip? f)
+                                         (face-license f))))))
 
     ;; --- helpers ----------------------------------------------------------
 

@@ -1,8 +1,8 @@
 (import (scheme base)
         (scheme char)
-        (scm test)
         (srfi 13)
-        (srfi 14))
+        (srfi 14)
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 
@@ -59,7 +59,8 @@
 
 ;; Fold and map
 (test-group "fold-and-map"
-  (test-equal '(#\c #\b #\a) (string-fold (lambda (c acc) (cons c acc)) '() "abc"))
+  (test-equal '(#\c #\b #\a)
+              (string-fold (lambda (c acc) (cons c acc)) '() "abc"))
   (test-equal '(#\a #\b #\c) (string-fold-right cons '() "abc"))
   (test-equal 2 (string-count "Hello, World!" char-upper-case?))
   (test-equal "HELLO" (string-map char-upcase "hello"))
@@ -68,21 +69,26 @@
 ;; for-each
 (test-group "for-each"
   (test-equal '(#\c #\b #\a)
-    (let ((result '()))
-      (string-for-each (lambda (c) (set! result (cons c result))) "abc")
-      result))
+              (let ((result '()))
+                (string-for-each (lambda (c) (set! result (cons c result)))
+                                 "abc")
+                result))
   (test-equal '(2 1 0)
-    (let ((result '()))
-      (string-for-each-index (lambda (i) (set! result (cons i result))) "abc")
-      result)))
+              (let ((result '()))
+                (string-for-each-index (lambda (i)
+                                         (set! result (cons i result)))
+                                       "abc")
+                result)))
 
 ;; Constructors
 (test-group "constructors"
-  (test-equal "abcde" (string-tabulate (lambda (i) (integer->char (+ i 97))) 5))
-  (test-equal "abcde" (string-unfold (lambda (x) (> x 5))
-                   (lambda (x) (integer->char (+ x 96)))
-                   (lambda (x) (+ x 1))
-                   1))
+  (test-equal "abcde"
+              (string-tabulate (lambda (i) (integer->char (+ i 97))) 5))
+  (test-equal "abcde"
+              (string-unfold (lambda (x) (> x 5))
+                             (lambda (x) (integer->char (+ x 96)))
+                             (lambda (x) (+ x 1))
+                             1))
   (test-equal "abc" (reverse-list->string '(#\c #\b #\a)))
   (test-equal "World!" (substring/shared "Hello, World!" 7))
   (test-equal "World" (substring/shared "Hello, World!" 7 12)))
@@ -96,8 +102,10 @@
 
 ;; Concatenate
 (test-group "concatenate"
-  (test-equal "Hello, World!" (string-concatenate '("Hello" ", " "World" "!")))
-  (test-equal "Hello, World!" (string-concatenate-reverse '("World!" " " "Hello,"))))
+  (test-equal "Hello, World!"
+              (string-concatenate '("Hello" ", " "World" "!")))
+  (test-equal "Hello, World!"
+              (string-concatenate-reverse '("World!" " " "Hello,"))))
 
 ;; Case
 (test-group "case"
@@ -117,15 +125,29 @@
 
 ;; Compare
 (test-group "compare"
-  (test-equal 'less (string-compare "abc" "abd" (lambda (i) 'less) (lambda (i) 'equal) (lambda (i) 'greater)))
-  (test-equal 'equal (string-compare "abc" "abc" (lambda (i) 'less) (lambda (i) 'equal) (lambda (i) 'greater)))
-  (test-equal 'greater (string-compare "abd" "abc" (lambda (i) 'less) (lambda (i) 'equal) (lambda (i) 'greater))))
+  (test-equal 'less
+              (string-compare "abc" "abd"
+                              (lambda (i) 'less)
+                              (lambda (i) 'equal)
+                              (lambda (i) 'greater)))
+  (test-equal 'equal
+              (string-compare "abc" "abc"
+                              (lambda (i) 'less)
+                              (lambda (i) 'equal)
+                              (lambda (i) 'greater)))
+  (test-equal 'greater
+              (string-compare "abd" "abc"
+                              (lambda (i) 'less)
+                              (lambda (i) 'equal)
+                              (lambda (i) 'greater))))
 
 ;; Hash
 (test-group "hash"
   (test-equal #t (integer? (string-hash "hello")))
   (test-equal #t (integer? (string-hash-ci "HELLO")))
-  (test-equal #t (= (string-hash "hello" (expt 2 32)) (string-hash-ci "HELLO" (expt 2 32)))))
+  (test-equal #t
+              (= (string-hash "hello" (expt 2 32))
+                 (string-hash-ci "HELLO" (expt 2 32)))))
 
 ;; SRFI-13 comparison procedures
 (test-group "comparison-procedures"
@@ -160,9 +182,9 @@
   (test-equal "ELLO" (string-map char-upcase "hello" 1))
   ;; string-for-each with start/end
   (test-equal '(#\l #\e)
-    (let ((r '()))
-      (string-for-each (lambda (c) (set! r (cons c r))) "hello" 1 3)
-      r)))
+              (let ((r '()))
+                (string-for-each (lambda (c) (set! r (cons c r))) "hello" 1 3)
+                r)))
 
 ;; string-upcase / string-downcase with start/end
 (test-group "upcase-downcase-start-end"
@@ -197,49 +219,71 @@
 
 ;; string-unfold with base string (base is leftmost)
 (test-group "string-unfold-base"
-  (test-equal "Zabc" (string-unfold (lambda (x) (> x 3))
-                   (lambda (x) (integer->char (+ x 96)))
-                   (lambda (x) (+ x 1))
-                   1 "Z"))
-  (test-equal "(abc)" (string-unfold (lambda (x) (> x 3))
-                       (lambda (x) (integer->char (+ x 96)))
-                       (lambda (x) (+ x 1))
-                       1 "(" (lambda (x) ")")))
+  (test-equal "Zabc"
+              (string-unfold (lambda (x) (> x 3))
+                             (lambda (x) (integer->char (+ x 96)))
+                             (lambda (x) (+ x 1))
+                             1
+                             "Z"))
+  (test-equal "(abc)"
+              (string-unfold (lambda (x) (> x 3))
+                             (lambda (x) (integer->char (+ x 96)))
+                             (lambda (x) (+ x 1))
+                             1
+                             "("
+                             (lambda (x) ")")))
   ;; string-unfold-right with base string (base is rightmost)
-  (test-equal "cbaZ" (string-unfold-right (lambda (x) (> x 3))
-                         (lambda (x) (integer->char (+ x 96)))
-                         (lambda (x) (+ x 1))
-                         1 "Z"))
-  (test-equal "(cba)" (string-unfold-right (lambda (x) (> x 3))
-                         (lambda (x) (integer->char (+ x 96)))
-                         (lambda (x) (+ x 1))
-                         1 ")" (lambda (x) "("))))
+  (test-equal "cbaZ"
+              (string-unfold-right (lambda (x) (> x 3))
+                                   (lambda (x) (integer->char (+ x 96)))
+                                   (lambda (x) (+ x 1))
+                                   1
+                                   "Z"))
+  (test-equal "(cba)"
+              (string-unfold-right (lambda (x) (> x 3))
+                                   (lambda (x) (integer->char (+ x 96)))
+                                   (lambda (x) (+ x 1))
+                                   1
+                                   ")"
+                                   (lambda (x) "("))))
 
 ;; string-every returns last predicate value
 (test-group "string-every-return-value"
-  (test-equal #\o (string-every (lambda (c) (if (char-alphabetic? c) c #f)) "hello"))
+  (test-equal #\o
+              (string-every (lambda (c) (if (char-alphabetic? c) c #f))
+                            "hello"))
   (test-equal #t (string-every char-alphabetic? ""))
   (test-equal #f (string-every char-alphabetic? "hello1")))
 
 ;; string-compare-ci with start/end preserves original indices
 (test-group "string-compare-ci-start-end"
-  (test-equal '(less 4) (string-compare-ci "xxABC" "yyABD"
-      (lambda (i) (list 'less i))
-      (lambda (i) (list 'equal i))
-      (lambda (i) (list 'greater i))
-      2 5 2 5))
-  (test-equal '(equal 5) (string-compare-ci "xxABC" "yyABC"
-      (lambda (i) (list 'less i))
-      (lambda (i) (list 'equal i))
-      (lambda (i) (list 'greater i))
-      2 5 2 5)))
+  (test-equal '(less 4)
+              (string-compare-ci "xxABC" "yyABD"
+                                 (lambda (i) (list 'less i))
+                                 (lambda (i) (list 'equal i))
+                                 (lambda (i) (list 'greater i))
+                                 2
+                                 5
+                                 2
+                                 5))
+  (test-equal '(equal 5)
+              (string-compare-ci "xxABC" "yyABC"
+                                 (lambda (i) (list 'less i))
+                                 (lambda (i) (list 'equal i))
+                                 (lambda (i) (list 'greater i))
+                                 2
+                                 5
+                                 2
+                                 5)))
 
 ;; kmp-step with i=-1 does not crash
 (test-group "kmp-step"
-  (test-equal -1 (let ((rv (make-kmp-restart-vector "abc")))
-      (kmp-step "abc" rv #\x -1 char=? 0)))
-  (test-equal 1 (let ((rv (make-kmp-restart-vector "abc")))
-      (kmp-step "abc" rv #\a -1 char=? 0))))
+  (test-equal -1
+              (let ((rv (make-kmp-restart-vector "abc")))
+                (kmp-step "abc" rv #\x -1 char=? 0)))
+  (test-equal 1
+              (let ((rv (make-kmp-restart-vector "abc")))
+                (kmp-step "abc" rv #\a -1 char=? 0))))
 
 ;; string-contains-ci with start2/end2
 (test-group "string-contains-ci-start-end"
@@ -249,17 +293,24 @@
 ;; string-parse-start+end returns 3 values
 (test-group "string-parse-start-end"
   (test-equal '((extra) 1 4)
-    (call-with-values
-      (lambda () (string-parse-start+end 'test "hello" '(1 4 extra)))
-      (lambda (rest start end) (list rest start end))))
+              (call-with-values
+                  (lambda ()
+                    (string-parse-start+end 'test "hello" '(1 4 extra)))
+                (lambda (rest start end) (list rest start end))))
   ;; let-string-start+end 3-binding form
   (test-equal '(1 4 (extra))
-    (let-string-start+end (start end rest) 'test "hello" '(1 4 extra)
-      (list start end rest)))
+              (let-string-start+end (start end rest)
+                                    'test
+                                    "hello"
+                                    '(1 4 extra)
+                                    (list start end rest)))
   ;; let-string-start+end 2-binding form
   (test-equal '(1 4)
-    (let-string-start+end (start end) 'test "hello" '(1 4)
-      (list start end))))
+              (let-string-start+end (start end)
+                                    'test
+                                    "hello"
+                                    '(1 4)
+                                    (list start end))))
 
 ;; fast paths without start/end (native char search, pad via string-append)
 (test-group "index-pad-fast-paths"
@@ -271,7 +322,9 @@
   (test-equal 3 (string-index "hello" #\l 3))
   (test-equal #f (string-index "hello" #\h 1 4))
   (test-equal 1 (string-index "hello" (char-set #\e #\o)))
-  (test-assert (guard (e (#t #t)) (string-index 'hello #\h) #f))
+  (test-assert (guard (e (#t #t))
+                 (string-index 'hello #\h)
+                 #f))
   (test-equal "20240101000000" (string-pad-right "20240101" 14 #\0))
   (test-equal "007" (string-pad "7" 3 #\0))
   (test-equal "hel" (string-pad-right "hello" 3))
@@ -282,7 +335,9 @@
   (test-equal "  " (string-pad "" 2))
   (test-equal "ell  " (string-pad-right "hello" 5 #\space 1 4))
   (test-equal "**ell" (string-pad "hello" 5 #\* 1 4))
-  (test-assert (guard (e (#t #t)) (string-pad 5 3) #f))
+  (test-assert (guard (e (#t #t))
+                 (string-pad 5 3)
+                 #f))
   (let ((s (string-pad-right "ab" 4)))
     (string-set! s 3 #\x)
     (test-equal "ab x" s)))

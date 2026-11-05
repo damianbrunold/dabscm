@@ -1,4 +1,6 @@
-(import (scheme base) (scm datetime) (scm test))
+(import (scheme base)
+        (scm datetime)
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 
@@ -48,12 +50,11 @@
   (test-equal "2024-05-16T00:00:00Z" (format-iso8601 1715817600)))
 
 (test-group "iso-roundtrip"
-  (test-equal 1715862896
-              (parse-iso8601 (format-iso8601 1715862896)))
+  (test-equal 1715862896 (parse-iso8601 (format-iso8601 1715862896)))
   ;; rfc822 → iso → unix → iso
   (test-equal "2024-05-16T12:34:56Z"
-              (format-iso8601
-                (parse-rfc822 "Thu, 16 May 2024 12:34:56 GMT"))))
+              (format-iso8601 (parse-rfc822
+                               "Thu, 16 May 2024 12:34:56 GMT"))))
 
 (test-group "today"
   (let ((iso (today)))
@@ -61,8 +62,7 @@
     (test-equal 10 (string-length iso))
     (test-equal #\- (string-ref iso 4))
     (test-equal #\- (string-ref iso 7)))
-  (let ((short (today 'short)))
-    (test-equal 8 (string-length short)))
+  (let ((short (today 'short))) (test-equal 8 (string-length short)))
   (let ((dmy (today 'dmy)))
     (test-equal 10 (string-length dmy))
     (test-equal #\. (string-ref dmy 2))
@@ -88,7 +88,6 @@
     (test-assert (string? iso))
     (test-equal 5 (string-length iso))
     (test-equal #\: (string-ref iso 2)))
-  (let ((short (time 'short)))
-    (test-equal 4 (string-length short))))
+  (let ((short (time 'short))) (test-equal 4 (string-length short))))
 
 (test-end "scm-datetime")

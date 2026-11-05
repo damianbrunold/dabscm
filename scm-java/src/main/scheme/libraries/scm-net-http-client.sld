@@ -1,17 +1,18 @@
 (define-library (scm net http client)
-  (import (scm core) (scheme base)
+  (import (scheme base)
+          (scm core)
           (scm net http request)
           (scm net http response))
-  (export http-get
+  (export http-delete
+          http-get
           http-get-bytevector
-          http-post
-          http-send
-          http-put
-          http-delete
           http-get-json
-          http-post-json)
+          http-post
+          http-post-json
+          http-put
+          http-send)
   (begin
-    (define http-get  (%primitive "http-get"))
+    (define http-get (%primitive "http-get"))
     (define http-get-bytevector (%primitive "http-get-bytevector"))
     (define http-post (%primitive "http-post"))
     (define http-send (%primitive "http-send"))
@@ -48,5 +49,6 @@ Description: Performs an HTTP POST with Content-Type: application/json. body sho
   be a JSON string. Returns an http-response.
 Example:
   (http-post-json \"http://example.com/api\" \"{\\\"x\\\":1}\")"
-      (http-post url body '(("Content-Type" . "application/json")
-                            ("Accept" . "application/json"))))))
+      (http-post url body
+                 '(("Content-Type" . "application/json")
+                   ("Accept" . "application/json"))))))

@@ -3,12 +3,12 @@
           (scheme char)
           (scheme cxr)
           (scheme write)
-          (scm module)
-          (scm doc))
+          (scm doc)
+          (scm module))
   (export repl-completions
-          repl-syntax-info
+          repl-core-form-names
           repl-info-line
-          repl-core-form-names)
+          repl-syntax-info)
   (begin
 
     ;; ---------- helpers ----------
@@ -16,10 +16,9 @@
     (define (->str x)
       (cond ((string? x) x)
             ((symbol? x) (symbol->string x))
-            (else
-             (let ((p (open-output-string)))
-               (write x p)
-               (get-output-string p)))))
+            (else (let ((p (open-output-string)))
+                    (write x p)
+                    (get-output-string p)))))
 
     (define (str-prefix? prefix s)
       (let ((np (string-length prefix))
@@ -34,11 +33,9 @@
     (define (split-lines s)
       (let ((n (string-length s)))
         (let loop ((i 0) (start 0) (acc '()))
-          (cond ((= i n)
-                 (reverse (cons (substring s start n) acc)))
+          (cond ((= i n) (reverse (cons (substring s start n) acc)))
                 ((char=? (string-ref s i) #\newline)
-                 (loop (+ i 1) (+ i 1)
-                       (cons (substring s start i) acc)))
+                 (loop (+ i 1) (+ i 1) (cons (substring s start i) acc)))
                 (else (loop (+ i 1) start acc))))))
 
     (define (trim s)
@@ -46,12 +43,11 @@
         (let scan-l ((i 0))
           (cond ((= i n) "")
                 ((char-whitespace? (string-ref s i)) (scan-l (+ i 1)))
-                (else
-                 (let scan-r ((j n))
-                   (cond ((<= j i) (substring s i j))
-                         ((char-whitespace? (string-ref s (- j 1)))
-                          (scan-r (- j 1)))
-                         (else (substring s i j)))))))))
+                (else (let scan-r ((j n))
+                        (cond ((<= j i) (substring s i j))
+                              ((char-whitespace? (string-ref s (- j 1)))
+                               (scan-r (- j 1)))
+                              (else (substring s i j)))))))))
 
     (define (drop-prefix s p)
       (substring s (string-length p) (string-length s)))
@@ -66,28 +62,22 @@
               ((string=? x (car sorted)) sorted)
               (else (cons (car sorted) (insert x (cdr sorted))))))
       (let loop ((in lst) (out '()))
-        (if (null? in) out
-            (loop (cdr in) (insert (car in) out)))))
+        (if (null? in) out (loop (cdr in) (insert (car in) out)))))
 
     ;; ---------- core form names ----------
 
     (define repl-core-form-names
-      '("quote" "quasiquote" "unquote" "unquote-splicing"
-        "if" "set!" "begin" "lambda" "case-lambda"
-        "define" "define-values" "define-syntax" "define-record-type"
-        "let" "let*" "letrec" "letrec*"
-        "let-values" "let*-values"
-        "let-syntax" "letrec-syntax"
-        "and" "or" "when" "unless" "cond" "case" "do"
-        "delay" "delay-force" "make-promise" "parameterize"
-        "guard" "syntax-rules" "syntax-case"
-        "include" "include-ci" "cond-expand"
-        "define-library" "import" "export"))
+      '("quote" "quasiquote" "unquote" "unquote-splicing" "if" "set!" "begin"
+        "lambda" "case-lambda" "define" "define-values" "define-syntax"
+        "define-record-type" "let" "let*" "letrec" "letrec*" "let-values"
+        "let*-values" "let-syntax" "letrec-syntax" "and" "or" "when" "unless"
+        "cond" "case" "do" "delay" "delay-force" "make-promise" "parameterize"
+        "guard" "syntax-rules" "syntax-case" "include" "include-ci"
+        "cond-expand" "define-library" "import" "export"))
 
     ;; ---------- visible-names + completions ----------
 
-    (define (defined-names)
-      (map ->str (%module-bindings (current-module))))
+    (define (defined-names) (map ->str (%module-bindings (current-module))))
 
     (define (visible-names)
       (str-sort (append (defined-names) repl-core-form-names)))
@@ -110,30 +100,33 @@
                (sym (string->symbol name-str)))
           (if (not (member sym (%module-bindings mod)))
               #f
-              (let ((val (%module-ref mod sym)))
-                (procedure-doc val))))))
+              (let ((val (%module-ref mod sym))) (procedure-doc val))))))
 
     (define (extract-syntax doc)
       (if (not (string? doc))
           #f
-          (let loop ((ls (split-lines doc)) (acc '()))
+          (let loop ((ls (split-lines doc))
+                     (acc '()))
             (cond ((null? ls)
-                   (if (null? acc) #f (apply string-append-with-sep " | " (reverse acc))))
+                   (if (null? acc)
+                       #f
+                       (apply string-append-with-sep " | " (reverse acc))))
                   ((str-prefix? "Syntax:" (car ls))
                    (loop (cdr ls)
                          (cons (trim (drop-prefix (car ls) "Syntax:")) acc)))
-                  ((null? acc)
-                   (loop (cdr ls) acc))
-                  (else
-                   (apply string-append-with-sep " | " (reverse acc)))))))
+                  ((null? acc) (loop (cdr ls) acc))
+                  (else (apply string-append-with-sep " | "
+                               (reverse acc)))))))
 
     (define (string-append-with-sep sep . parts)
       (cond ((null? parts) "")
             ((null? (cdr parts)) (car parts))
-            (else
-             (let loop ((rest (cdr parts)) (out (car parts)))
-               (if (null? rest) out
-                   (loop (cdr rest) (string-append out sep (car rest))))))))
+            (else (let loop ((rest (cdr parts))
+                             (out (car parts)))
+                    (if (null? rest)
+                        out
+                        (loop (cdr rest)
+                              (string-append out sep (car rest))))))))
 
     (define (first-meaningful-line doc)
       (let loop ((ls (split-lines doc)))
@@ -151,23 +144,19 @@
              (doc (lookup-doc name)))
         (cond ((not doc) #f)
               ((not (string? doc)) (list name "" ""))
-              (else
-               (let ((sig (or (extract-syntax doc) ""))
-                     (fl (first-meaningful-line doc)))
-                 (list name sig fl))))))
+              (else (let ((sig (or (extract-syntax doc) ""))
+                          (fl (first-meaningful-line doc)))
+                      (list name sig fl))))))
 
     (define (repl-info-line name)
       (let ((info (repl-syntax-info name)))
-        (if (not info) ""
+        (if (not info)
+            ""
             (let ((n (car info))
                   (sig (cadr info))
                   (fl (caddr info)))
               (cond ((and (> (string-length sig) 0) (> (string-length fl) 0))
                      (string-append n " : " sig " -- " fl))
-                    ((> (string-length sig) 0)
-                     (string-append n " : " sig))
-                    ((> (string-length fl) 0)
-                     (string-append n " -- " fl))
-                    (else n))))))
-
-    ))
+                    ((> (string-length sig) 0) (string-append n " : " sig))
+                    ((> (string-length fl) 0) (string-append n " -- " fl))
+                    (else n))))))))

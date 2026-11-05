@@ -1,70 +1,74 @@
 (define-library (scm terminal)
-  (import (scheme base) (scheme write) (scheme char) (scheme cxr) (scheme time)
+  (import (scheme base)
+          (scheme char)
+          (scheme cxr)
+          (scheme time)
+          (scheme write)
           (srfi 151))
   (export
-    ;; Primitives
-    terminal?
-    terminal-size
-    terminal-raw!
-    terminal-read-byte
-    terminal-byte-ready?
-    terminal-enable-ansi!
-    console-echo!
-    console-read-password
+   ;; Primitives
+   console-echo!
+   console-read-password
+   terminal-byte-ready?
+   terminal-enable-ansi!
+   terminal-raw!
+   terminal-read-byte
+   terminal-size
+   terminal?
 
-    ;; Raw mode convenience
-    with-terminal-raw
+   ;; Raw mode convenience
+   with-terminal-raw
 
-    ;; Echo / password convenience
-    with-console-echo-off
-    read-password
+   ;; Echo / password convenience
+   read-password
+   with-console-echo-off
 
-    ;; Key reading
-    terminal-read-key
+   ;; Key reading
+   terminal-read-key
 
-    ;; Cursor control
-    cursor-up
-    cursor-down
-    cursor-forward
-    cursor-back
-    cursor-position
-    cursor-save
-    cursor-restore
-    cursor-hide
-    cursor-show
-    cursor-home
+   ;; Cursor control
+   cursor-back
+   cursor-down
+   cursor-forward
+   cursor-hide
+   cursor-home
+   cursor-position
+   cursor-restore
+   cursor-save
+   cursor-show
+   cursor-up
 
-    ;; Screen control
-    clear-screen
-    clear-line
-    clear-to-end-of-line
-    clear-to-end-of-screen
-    alternate-screen-enable
-    alternate-screen-disable
-    with-alternate-screen
+   ;; Screen control
+   alternate-screen-disable
+   alternate-screen-enable
+   clear-line
+   clear-screen
+   clear-to-end-of-line
+   clear-to-end-of-screen
+   with-alternate-screen
 
-    ;; Text attributes
-    sgr-reset
-    sgr-bold
-    sgr-dim
-    sgr-italic
-    sgr-underline
-    sgr-blink
-    sgr-reverse
-    sgr-hidden
-    sgr-strikethrough
-    sgr-fg
-    sgr-bg)
+   ;; Text attributes
+   sgr-bg
+   sgr-blink
+   sgr-bold
+   sgr-dim
+   sgr-fg
+   sgr-hidden
+   sgr-italic
+   sgr-reset
+   sgr-reverse
+   sgr-strikethrough
+   sgr-underline)
   (begin
     ;; === Primitive bindings ===
 
-    (define terminal?            (%primitive "terminal?"))
-    (define terminal-size        (%primitive "terminal-size"))
-    (define terminal-raw!        (%primitive "terminal-raw!"))
-    (define terminal-read-byte   (%primitive "terminal-read-byte"))
+    (define terminal? (%primitive "terminal?"))
+    (define terminal-size (%primitive "terminal-size"))
+    (define terminal-raw! (%primitive "terminal-raw!"))
+    (define terminal-read-byte (%primitive "terminal-read-byte"))
     (define terminal-byte-ready? (%primitive "terminal-byte-ready?"))
     (define terminal-enable-ansi! (%primitive "terminal-enable-ansi!"))
-    (define console-echo!         (%primitive "console-echo!"))
+    (define console-echo! (%primitive "console-echo!"))
     (define console-read-password (%primitive "console-read-password"))
 
     ;; === Constants ===
@@ -123,10 +127,9 @@ newline), or the eof-object if input is closed. Works on Linux,
 macOS, and Windows for both the C# and Java implementations.
 Example:
   (read-password \"Password: \")"
-      (cond
-        ((null? args)        (console-read-password))
-        ((null? (cdr args))  (console-read-password (car args)))
-        (else (error "read-password: expected 0 or 1 arguments"))))
+      (cond ((null? args) (console-read-password))
+            ((null? (cdr args)) (console-read-password (car args)))
+            (else (error "read-password: expected 0 or 1 arguments"))))
 
     ;; === Cursor control ===
 
@@ -365,23 +368,23 @@ Example:
 
     (define (%color-name->code name offset)
       (case name
-        ((black)   (+ offset 0))
-        ((red)     (+ offset 1))
-        ((green)   (+ offset 2))
-        ((yellow)  (+ offset 3))
-        ((blue)    (+ offset 4))
+        ((black) (+ offset 0))
+        ((red) (+ offset 1))
+        ((green) (+ offset 2))
+        ((yellow) (+ offset 3))
+        ((blue) (+ offset 4))
         ((magenta) (+ offset 5))
-        ((cyan)    (+ offset 6))
-        ((white)   (+ offset 7))
+        ((cyan) (+ offset 6))
+        ((white) (+ offset 7))
         ((default) (+ offset 9))
-        ((bright-black)   (+ offset 60))
-        ((bright-red)     (+ offset 61))
-        ((bright-green)   (+ offset 62))
-        ((bright-yellow)  (+ offset 63))
-        ((bright-blue)    (+ offset 64))
+        ((bright-black) (+ offset 60))
+        ((bright-red) (+ offset 61))
+        ((bright-green) (+ offset 62))
+        ((bright-yellow) (+ offset 63))
+        ((bright-blue) (+ offset 64))
         ((bright-magenta) (+ offset 65))
-        ((bright-cyan)    (+ offset 66))
-        ((bright-white)   (+ offset 67))
+        ((bright-cyan) (+ offset 66))
+        ((bright-white) (+ offset 67))
         (else #f)))
 
     (define (sgr-fg . args)
@@ -399,24 +402,26 @@ Example:
   (display (string-append (sgr-fg 'red) \"error\" (sgr-reset)))
   (display (string-append (sgr-fg 196) \"red\" (sgr-reset)))
   (display (string-append (sgr-fg 255 128 0) \"orange\" (sgr-reset)))"
-      (cond
-        ((= (length args) 1)
-         (let ((arg (car args)))
-           (cond
-             ((symbol? arg)
-              (let ((code (%color-name->code arg 30)))
-                (if code
-                    (string-append %csi (number->string code) "m")
-                    (error "sgr-fg: unknown color name" arg))))
-             ((integer? arg)
-              (string-append %csi "38;5;" (number->string arg) "m"))
-             (else (error "sgr-fg: expected symbol or integer" arg)))))
-        ((= (length args) 3)
-         (string-append %csi "38;2;"
-                        (number->string (car args)) ";"
-                        (number->string (cadr args)) ";"
-                        (number->string (caddr args)) "m"))
-        (else (error "sgr-fg: expected 1 or 3 arguments"))))
+      (cond ((= (length args) 1)
+             (let ((arg (car args)))
+               (cond ((symbol? arg)
+                      (let ((code (%color-name->code arg 30)))
+                        (if code
+                            (string-append %csi (number->string code) "m")
+                            (error "sgr-fg: unknown color name" arg))))
+                     ((integer? arg)
+                      (string-append %csi "38;5;" (number->string arg) "m"))
+                     (else (error "sgr-fg: expected symbol or integer"
+                                  arg)))))
+            ((= (length args) 3)
+             (string-append %csi "38;2;"
+                            (number->string (car args))
+                            ";"
+                            (number->string (cadr args))
+                            ";"
+                            (number->string (caddr args))
+                            "m"))
+            (else (error "sgr-fg: expected 1 or 3 arguments"))))
 
     (define (sgr-bg . args)
       "Syntax: (sgr-bg color-name)
@@ -430,24 +435,26 @@ Example:
   (display (string-append (sgr-bg 'blue) \"info\" (sgr-reset)))
   (display (string-append (sgr-bg 21) \"blue\" (sgr-reset)))
   (display (string-append (sgr-bg 0 0 128) \"navy\" (sgr-reset)))"
-      (cond
-        ((= (length args) 1)
-         (let ((arg (car args)))
-           (cond
-             ((symbol? arg)
-              (let ((code (%color-name->code arg 40)))
-                (if code
-                    (string-append %csi (number->string code) "m")
-                    (error "sgr-bg: unknown color name" arg))))
-             ((integer? arg)
-              (string-append %csi "48;5;" (number->string arg) "m"))
-             (else (error "sgr-bg: expected symbol or integer" arg)))))
-        ((= (length args) 3)
-         (string-append %csi "48;2;"
-                        (number->string (car args)) ";"
-                        (number->string (cadr args)) ";"
-                        (number->string (caddr args)) "m"))
-        (else (error "sgr-bg: expected 1 or 3 arguments"))))
+      (cond ((= (length args) 1)
+             (let ((arg (car args)))
+               (cond ((symbol? arg)
+                      (let ((code (%color-name->code arg 40)))
+                        (if code
+                            (string-append %csi (number->string code) "m")
+                            (error "sgr-bg: unknown color name" arg))))
+                     ((integer? arg)
+                      (string-append %csi "48;5;" (number->string arg) "m"))
+                     (else (error "sgr-bg: expected symbol or integer"
+                                  arg)))))
+            ((= (length args) 3)
+             (string-append %csi "48;2;"
+                            (number->string (car args))
+                            ";"
+                            (number->string (cadr args))
+                            ";"
+                            (number->string (caddr args))
+                            "m"))
+            (else (error "sgr-bg: expected 1 or 3 arguments"))))
 
     ;; === Key reading ===
 
@@ -456,10 +463,9 @@ Example:
       ;; Returns #t if a byte is ready, #f if timeout expired.
       (let ((deadline (+ (current-jiffy) timeout-us)))
         (let loop ()
-          (cond
-            ((terminal-byte-ready?) #t)
-            ((>= (current-jiffy) deadline) #f)
-            (else (loop))))))
+          (cond ((terminal-byte-ready?) #t)
+                ((>= (current-jiffy) deadline) #f)
+                (else (loop))))))
 
     (define (%read-csi-sequence)
       ;; Read a CSI sequence after ESC [ has been consumed.
@@ -483,26 +489,26 @@ Example:
       ;; bit 0 = shift, bit 1 = alt, bit 2 = ctrl
       (let ((m (- mod-num 1)))
         (let ((shift (> (bitwise-and m 1) 0))
-              (alt   (> (bitwise-and m 2) 0))
-              (ctrl  (> (bitwise-and m 4) 0)))
+              (alt (> (bitwise-and m 2) 0))
+              (ctrl (> (bitwise-and m 4) 0)))
           (list shift alt ctrl))))
 
     (define (%modifier-prefix shift alt ctrl)
       ;; Build a modifier prefix string like "ctrl-alt-shift-"
-      (string-append
-        (if ctrl  "ctrl-"  "")
-        (if alt   "alt-"   "")
-        (if shift "shift-" "")))
+      (string-append (if ctrl "ctrl-" "")
+                     (if alt "alt-" "")
+                     (if shift "shift-" "")))
 
     (define (%make-modified-key base-name mod-num)
       ;; Create a modified key symbol from base name and modifier number.
       (if (or (not mod-num) (= mod-num 1))
           (string->symbol base-name)
           (let ((mods (%decode-modifier mod-num)))
-            (string->symbol
-              (string-append
-                (%modifier-prefix (car mods) (cadr mods) (caddr mods))
-                base-name)))))
+            (string->symbol (string-append
+                             (%modifier-prefix (car mods)
+                                               (cadr mods)
+                                               (caddr mods))
+                             base-name)))))
 
     (define (%parse-csi-params param-str)
       ;; Parse CSI parameters like "1;5" into a list of integers.
@@ -513,7 +519,8 @@ Example:
             (if (string=? s "")
                 (reverse (cons (if (null? current)
                                    0
-                                   (string->number (list->string (reverse current))))
+                                   (string->number
+                                    (list->string (reverse current))))
                                result))
                 (let ((ch (string-ref s 0))
                       (rest (substring s 1 (string-length s))))
@@ -522,46 +529,65 @@ Example:
                             '()
                             (cons (if (null? current)
                                       0
-                                      (string->number (list->string (reverse current))))
+                                      (string->number
+                                       (list->string (reverse current))))
                                   result))
                       (loop rest (cons ch current) result)))))))
 
     (define (%decode-csi-key param-str final-byte)
       ;; Decode a CSI sequence into a key symbol.
       (if (not final-byte)
-          'escape  ;; Incomplete sequence
+          'escape ;; Incomplete sequence
           (let ((params (%parse-csi-params param-str)))
             (case final-byte
               ;; Arrow keys
-              ((#\A) (%make-modified-key "up"    (and (>= (length params) 2) (cadr params))))
-              ((#\B) (%make-modified-key "down"  (and (>= (length params) 2) (cadr params))))
-              ((#\C) (%make-modified-key "right" (and (>= (length params) 2) (cadr params))))
-              ((#\D) (%make-modified-key "left"  (and (>= (length params) 2) (cadr params))))
-              ((#\H) (%make-modified-key "home"  (and (>= (length params) 2) (cadr params))))
-              ((#\F) (%make-modified-key "end"   (and (>= (length params) 2) (cadr params))))
+              ((#\A)
+               (%make-modified-key "up"
+                                   (and (>= (length params) 2)
+                                        (cadr params))))
+              ((#\B)
+               (%make-modified-key "down"
+                                   (and (>= (length params) 2)
+                                        (cadr params))))
+              ((#\C)
+               (%make-modified-key "right"
+                                   (and (>= (length params) 2)
+                                        (cadr params))))
+              ((#\D)
+               (%make-modified-key "left"
+                                   (and (>= (length params) 2)
+                                        (cadr params))))
+              ((#\H)
+               (%make-modified-key "home"
+                                   (and (>= (length params) 2)
+                                        (cadr params))))
+              ((#\F)
+               (%make-modified-key "end"
+                                   (and (>= (length params) 2)
+                                        (cadr params))))
               ;; Tilde sequences
               ((#\~)
                (let ((code (if (null? params) 0 (car params)))
-                     (mod  (if (>= (length params) 2) (cadr params) #f)))
+                     (mod (if (>= (length params) 2) (cadr params) #f)))
                  (case code
-                   ((1)  (%make-modified-key "home"      mod))
-                   ((2)  (%make-modified-key "insert"    mod))
-                   ((3)  (%make-modified-key "delete"    mod))
-                   ((4)  (%make-modified-key "end"       mod))
-                   ((5)  (%make-modified-key "page-up"   mod))
-                   ((6)  (%make-modified-key "page-down" mod))
-                   ((11) (%make-modified-key "f1"        mod))
-                   ((12) (%make-modified-key "f2"        mod))
-                   ((13) (%make-modified-key "f3"        mod))
-                   ((14) (%make-modified-key "f4"        mod))
-                   ((15) (%make-modified-key "f5"        mod))
-                   ((17) (%make-modified-key "f6"        mod))
-                   ((18) (%make-modified-key "f7"        mod))
-                   ((19) (%make-modified-key "f8"        mod))
-                   ((20) (%make-modified-key "f9"        mod))
-                   ((21) (%make-modified-key "f10"       mod))
-                   ((23) (%make-modified-key "f11"       mod))
-                   ((24) (%make-modified-key "f12"       mod))
+                   ((1) (%make-modified-key "home" mod))
+                   ((2) (%make-modified-key "insert" mod))
+                   ((3) (%make-modified-key "delete" mod))
+                   ((4) (%make-modified-key "end" mod))
+                   ((5) (%make-modified-key "page-up" mod))
+                   ((6) (%make-modified-key "page-down" mod))
+                   ((11) (%make-modified-key "f1" mod))
+                   ((12) (%make-modified-key "f2" mod))
+                   ((13) (%make-modified-key "f3" mod))
+                   ((14) (%make-modified-key "f4" mod))
+                   ((15) (%make-modified-key "f5" mod))
+                   ((17) (%make-modified-key "f6" mod))
+                   ((18) (%make-modified-key "f7" mod))
+                   ((19) (%make-modified-key "f8" mod))
+                   ((20) (%make-modified-key "f9" mod))
+                   ((21) (%make-modified-key "f10" mod))
+                   ((23) (%make-modified-key "f11" mod))
+                   ((24) (%make-modified-key "f12" mod))
                    (else 'unknown))))
               ;; Bracketed paste
               ((#\Z) 'shift-tab)
@@ -583,36 +609,34 @@ Example:
         ((#\S) 'f4)
         ((#\H) 'home)
         ((#\F) 'end)
-        (else  'unknown)))
+        (else 'unknown)))
 
     (define (%read-utf8-char first-byte)
       ;; Decode a UTF-8 character from the first byte and continuation bytes.
       (define (read-continuation)
         (if (%wait-for-byte 10000)
             (let ((b (terminal-read-byte)))
-              (if (eof-object? b) 0
-                  (bitwise-and b #x3F)))
+              (if (eof-object? b) 0 (bitwise-and b #x3F)))
             0))
-      (cond
-        ((< first-byte #xC0) (integer->char first-byte))  ;; Should not happen
-        ((< first-byte #xE0)
-         ;; 2-byte sequence
-         (let ((b1 (bitwise-and first-byte #x1F))
-               (b2 (read-continuation)))
-           (integer->char (+ (* b1 64) b2))))
-        ((< first-byte #xF0)
-         ;; 3-byte sequence
-         (let ((b1 (bitwise-and first-byte #x0F))
-               (b2 (read-continuation))
-               (b3 (read-continuation)))
-           (integer->char (+ (* b1 4096) (* b2 64) b3))))
-        (else
-         ;; 4-byte sequence
-         (let ((b1 (bitwise-and first-byte #x07))
-               (b2 (read-continuation))
-               (b3 (read-continuation))
-               (b4 (read-continuation)))
-           (integer->char (+ (* b1 262144) (* b2 4096) (* b3 64) b4))))))
+      (cond ((< first-byte #xC0) (integer->char first-byte)) ;; Should not happen
+            ((< first-byte #xE0)
+             ;; 2-byte sequence
+             (let ((b1 (bitwise-and first-byte #x1F))
+                   (b2 (read-continuation)))
+               (integer->char (+ (* b1 64) b2))))
+            ((< first-byte #xF0)
+             ;; 3-byte sequence
+             (let ((b1 (bitwise-and first-byte #x0F))
+                   (b2 (read-continuation))
+                   (b3 (read-continuation)))
+               (integer->char (+ (* b1 4096) (* b2 64) b3))))
+            (else
+             ;; 4-byte sequence
+             (let ((b1 (bitwise-and first-byte #x07))
+                   (b2 (read-continuation))
+                   (b3 (read-continuation))
+                   (b4 (read-continuation)))
+               (integer->char (+ (* b1 262144) (* b2 4096) (* b3 64) b4))))))
 
     (define (terminal-read-key)
       "Syntax: (terminal-read-key)
@@ -639,56 +663,56 @@ Example:
             ((char? key) (display key) (loop))
             (else (display key) (display \" \") (loop)))))))"
       (let ((b (terminal-read-byte)))
-        (cond
-          ((eof-object? b) b)
+        (cond ((eof-object? b) b)
 
-          ;; ESC
-          ((= b 27)
-           (if (not (%wait-for-byte 50000))
-               'escape
-               (let ((b2 (terminal-read-byte)))
-                 (cond
-                   ((eof-object? b2) 'escape)
-                   ;; CSI sequence: ESC [
-                   ((= b2 91)  ;; [
-                    (let ((seq (%read-csi-sequence)))
-                      (%decode-csi-key (car seq) (cadr seq))))
-                   ;; SS3 sequence: ESC O
-                   ((= b2 79)  ;; O
-                    (if (%wait-for-byte 50000)
-                        (let ((b3 (terminal-read-byte)))
-                          (if (eof-object? b3) 'escape
-                              (%decode-ss3-key b3)))
-                        'escape))
-                   ;; Alt+key
-                   ((and (>= b2 32) (<= b2 126))
-                    (string->symbol
-                      (string-append "alt-" (string (integer->char b2)))))
-                   ;; Alt+ctrl-key
-                   ((and (>= b2 1) (<= b2 26))
-                    (string->symbol
-                      (string-append "alt-ctrl-"
-                                     (string (integer->char (+ b2 96))))))
-                   (else 'escape)))))
+              ;; ESC
+              ((= b 27)
+               (if (not (%wait-for-byte 50000))
+                   'escape
+                   (let ((b2 (terminal-read-byte)))
+                     (cond ((eof-object? b2) 'escape)
+                           ;; CSI sequence: ESC [
+                           ((= b2 91) ;; [
+                            (let ((seq (%read-csi-sequence)))
+                              (%decode-csi-key (car seq) (cadr seq))))
+                           ;; SS3 sequence: ESC O
+                           ((= b2 79) ;; O
+                            (if (%wait-for-byte 50000)
+                                (let ((b3 (terminal-read-byte)))
+                                  (if (eof-object? b3)
+                                      'escape
+                                      (%decode-ss3-key b3)))
+                                'escape))
+                           ;; Alt+key
+                           ((and (>= b2 32) (<= b2 126))
+                            (string->symbol
+                             (string-append "alt-"
+                                            (string (integer->char b2)))))
+                           ;; Alt+ctrl-key
+                           ((and (>= b2 1) (<= b2 26))
+                            (string->symbol
+                             (string-append
+                              "alt-ctrl-"
+                              (string (integer->char (+ b2 96))))))
+                           (else 'escape)))))
 
-          ;; Ctrl+letter (1-26, except 9=tab, 10=newline, 13=return)
-          ((= b 9) 'tab)
-          ((= b 10) 'enter)
-          ((= b 13) 'enter)
-          ((and (>= b 1) (<= b 26))
-           (string->symbol
-             (string-append "ctrl-" (string (integer->char (+ b 96))))))
+              ;; Ctrl+letter (1-26, except 9=tab, 10=newline, 13=return)
+              ((= b 9) 'tab)
+              ((= b 10) 'enter)
+              ((= b 13) 'enter)
+              ((and (>= b 1) (<= b 26))
+               (string->symbol (string-append
+                                "ctrl-"
+                                (string (integer->char (+ b 96))))))
 
-          ;; Backspace
-          ((= b 127) 'backspace)
+              ;; Backspace
+              ((= b 127) 'backspace)
 
-          ;; Printable ASCII
-          ((and (>= b 32) (<= b 126))
-           (integer->char b))
+              ;; Printable ASCII
+              ((and (>= b 32) (<= b 126)) (integer->char b))
 
-          ;; UTF-8 multi-byte
-          ((>= b 128)
-           (%read-utf8-char b))
+              ;; UTF-8 multi-byte
+              ((>= b 128) (%read-utf8-char b))
 
-          ;; Other control characters
-          (else b))))))
+              ;; Other control characters
+              (else b))))))

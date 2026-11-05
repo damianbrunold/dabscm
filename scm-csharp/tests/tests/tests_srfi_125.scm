@@ -1,8 +1,8 @@
 (import (scheme base)
         (scheme cxr)
-        (scm test)
         (srfi 125)
-        (srfi 128))
+        (srfi 128)
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 
@@ -30,18 +30,20 @@
 
 ;; alist->hash-table (first association wins)
 (test-group "alist->hash-table"
-  (define ht (alist->hash-table '((a . 1) (b . 2) (a . 99)) (make-default-comparator)))
+  (define ht
+    (alist->hash-table '((a . 1) (b . 2) (a . 99)) (make-default-comparator)))
   (test-equal 1 (hash-table-ref ht 'a))
   (test-equal 2 (hash-table-ref ht 'b))
   (test-equal 2 (hash-table-size ht)))
 
 ;; hash-table-unfold
 (test-group "hash-table-unfold"
-  (define ht (hash-table-unfold (lambda (s) (> s 3))
-                                (lambda (s) (values s (* s 10)))
-                                (lambda (s) (+ s 1))
-                                1
-                                (make-default-comparator)))
+  (define ht
+    (hash-table-unfold (lambda (s) (> s 3))
+                       (lambda (s) (values s (* s 10)))
+                       (lambda (s) (+ s 1))
+                       1
+                       (make-default-comparator)))
   (test-equal 10 (hash-table-ref ht 1))
   (test-equal 20 (hash-table-ref ht 2))
   (test-equal 30 (hash-table-ref ht 3))
@@ -55,8 +57,12 @@
 
 ;; hash-table-empty?
 (test-group "hash-table-empty?"
-  (test-equal #t (hash-table-empty? (make-hash-table (make-default-comparator))))
-  (test-equal #f (hash-table-empty? (hash-table (make-default-comparator) 'a 1))))
+  (test-equal #t
+              (hash-table-empty? (make-hash-table (make-default-comparator))))
+  (test-equal #f
+              (hash-table-empty? (hash-table (make-default-comparator)
+                                             'a
+                                             1))))
 
 ;; hash-table=?
 (test-group "hash-table=?"
@@ -68,7 +74,9 @@
 
 ;; hash-table-mutable?
 (test-group "hash-table-mutable?"
-  (test-equal #t (hash-table-mutable? (make-hash-table (make-default-comparator)))))
+  (test-equal #t
+              (hash-table-mutable? (make-hash-table
+                                    (make-default-comparator)))))
 
 ;; hash-table-ref with failure and success thunks
 (test-group "hash-table-ref with thunks"
@@ -104,9 +112,8 @@
 (test-group "hash-table-pop!"
   (define ht (hash-table (make-default-comparator) 'a 1 'b 2))
   (test-equal #t
-    (let-values (((k v) (hash-table-pop! ht)))
-      (and (or (eq? k 'a) (eq? k 'b))
-           (or (= v 1) (= v 2)))))
+              (let-values (((k v) (hash-table-pop! ht)))
+                (and (or (eq? k 'a) (eq? k 'b)) (or (= v 1) (= v 2)))))
   (test-equal 1 (hash-table-size ht)))
 
 ;; hash-table-clear!
@@ -120,14 +127,20 @@
 (test-group "hash-table-entries"
   (define ht (hash-table (make-default-comparator) 'a 1 'b 2))
   (test-equal #t
-    (let-values (((keys vals) (hash-table-entries ht)))
-      (and (= (length keys) 2) (= (length vals) 2)))))
+              (let-values (((keys vals) (hash-table-entries ht)))
+                (and (= (length keys) 2) (= (length vals) 2)))))
 
 ;; hash-table-find
 (test-group "hash-table-find"
   (define ht (hash-table (make-default-comparator) 'a 1 'b 2 'c 3))
-  (test-equal 3 (hash-table-find (lambda (k v) (and (> v 2) v)) ht (lambda () #f)))
-  (test-equal 'nope (hash-table-find (lambda (k v) (and (> v 10) v)) ht (lambda () 'nope))))
+  (test-equal 3
+              (hash-table-find (lambda (k v) (and (> v 2) v))
+                               ht
+                               (lambda () #f)))
+  (test-equal 'nope
+              (hash-table-find (lambda (k v) (and (> v 10) v))
+                               ht
+                               (lambda () 'nope))))
 
 ;; hash-table-count
 (test-group "hash-table-count"
@@ -139,7 +152,8 @@
 ;; hash-table-map
 (test-group "hash-table-map"
   (define ht (hash-table (make-default-comparator) 'a 1 'b 2))
-  (define ht2 (hash-table-map (lambda (v) (* v 10)) (make-default-comparator) ht))
+  (define ht2
+    (hash-table-map (lambda (v) (* v 10)) (make-default-comparator) ht))
   (test-equal 10 (hash-table-ref ht2 'a))
   (test-equal 20 (hash-table-ref ht2 'b)))
 

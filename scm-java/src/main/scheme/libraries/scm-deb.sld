@@ -12,12 +12,14 @@
 ;; bytevector (#f for a directory).
 
 (define-library (scm deb)
-  (export tar-bytevector
+  (export add-parent-dirs
           ar-bytevector
           deb-bytevector
-          add-parent-dirs
+          entry-content
+          entry-mode
+          entry-name
           sort-entries
-          entry-name entry-mode entry-content)
+          tar-bytevector)
   (import (scheme base)
           (scheme char)
           (srfi 1)
@@ -48,7 +50,7 @@ Description: The bytes of a package entry, or #f for a directory.
 Example:
   (entry-content (list \"opt/app/\" #o755 #f)) => #f"
       (list-ref e 2))
-    (define (dir-entry? e)    (string-suffix? "/" (entry-name e)))
+    (define (dir-entry? e) (string-suffix? "/" (entry-name e)))
 
     ;; --- low-level byte helpers ---------------------------------------------
 
@@ -92,20 +94,19 @@ Example:
         (if (<= (bytevector-length (string->utf8 name)) 100)
             (poke-string! bv 0 name)
             (let ((split (ustar-split name)))
-              (unless split
-                (error "tar: path too long for USTAR" name))
+              (unless split (error "tar: path too long for USTAR" name))
               (poke-string! bv 345 (car split))
               (poke-string! bv 0 (cdr split))))
         (octal-field! bv 100 8 mode)
-        (octal-field! bv 108 8 0)             ; uid
-        (octal-field! bv 116 8 0)             ; gid
+        (octal-field! bv 108 8 0) ; uid
+        (octal-field! bv 116 8 0) ; gid
         (octal-field! bv 124 12 size)
         (octal-field! bv 136 12 mtime)
         (bytevector-u8-set! bv 156 (char->integer typeflag))
-        (poke-string! bv 257 "ustar")         ; magic "ustar\0"
-        (poke-string! bv 263 "00")            ; version
-        (poke-string! bv 265 "root")          ; uname
-        (poke-string! bv 297 "root")          ; gname
+        (poke-string! bv 257 "ustar") ; magic "ustar\0"
+        (poke-string! bv 263 "00") ; version
+        (poke-string! bv 265 "root") ; uname
+        (poke-string! bv 297 "root") ; gname
         ;; checksum: sum of all bytes with the field as spaces, written as
         ;; 6 octal digits + NUL + space.
         (bytevector-copy! bv 148 (make-bytevector 8 32))
@@ -132,19 +133,24 @@ Example:
   => 2560"
       (let ((port (open-output-bytevector)))
         (write-bytevector (tar-header "./" #o755 0 mtime #\5) port)
-        (for-each
-          (lambda (e)
-            (let ((name (string-append "./" (entry-name e))))
-              (if (dir-entry? e)
-                  (write-bytevector (tar-header name (entry-mode e) 0 mtime #\5) port)
-                  (let* ((bytes (entry-content e))
-                         (size (bytevector-length bytes))
-                         (rem (modulo size 512)))
-                    (write-bytevector (tar-header name (entry-mode e) size mtime #\0) port)
-                    (write-bytevector bytes port)
-                    (when (> rem 0)
-                      (write-bytevector (make-bytevector (- 512 rem) 0) port))))))
-          entries)
+        (for-each (lambda (e)
+                    (let ((name (string-append "./" (entry-name e))))
+                      (if (dir-entry? e)
+                          (write-bytevector
+                           (tar-header name (entry-mode e) 0 mtime #\5)
+                           port)
+                          (let* ((bytes (entry-content e))
+                                 (size (bytevector-length bytes))
+                                 (rem (modulo size 512)))
+                            (write-bytevector
+                             (tar-header name (entry-mode e) size mtime #\0)
+                             port)
+                            (write-bytevector bytes port)
+                            (when (> rem 0)
+                              (write-bytevector
+                               (make-bytevector (- 512 rem) 0)
+                               port))))))
+                  entries)
         (write-bytevector (make-bytevector 1024 0) port) ; end-of-archive
         (get-output-bytevector port)))
 
@@ -162,35 +168,36 @@ Example:
   (ar-bytevector (list (list \"debian-binary\" (string->utf8 \"2.0\\n\"))) 0)"
       (let ((port (open-output-bytevector)))
         (write-bytevector (string->utf8 "!<arch>\n") port)
-        (for-each
-          (lambda (m)
-            (let* ((name (car m))
-                   (data (cadr m))
-                   (size (bytevector-length data)))
-              (when (> (string-length name) 15)
-                (error "ar: member name too long" name))
-              (write-bytevector
-                (string->utf8
-                  (string-append (pad-right (string-append name "/") 16)
-                                 (pad-right (number->string mtime) 12)
-                                 (pad-right "0" 6)          ; uid
-                                 (pad-right "0" 6)          ; gid
-                                 (pad-right "100644" 8)     ; mode (octal)
-                                 (pad-right (number->string size) 10)
-                                 "`\n"))
-                port)
-              (write-bytevector data port)
-              (when (odd? size) (write-bytevector (bytevector 10) port))))
-          members)
+        (for-each (lambda (m)
+                    (let* ((name (car m))
+                           (data (cadr m))
+                           (size (bytevector-length data)))
+                      (when (> (string-length name) 15)
+                        (error "ar: member name too long" name))
+                      (write-bytevector
+                       (string->utf8 (string-append
+                                      (pad-right (string-append name "/") 16)
+                                      (pad-right (number->string mtime) 12)
+                                      (pad-right "0" 6) ; uid
+                                      (pad-right "0" 6) ; gid
+                                      (pad-right "100644" 8) ; mode (octal)
+                                      (pad-right (number->string size) 10)
+                                      "`\n"))
+                       port)
+                      (write-bytevector data port)
+                      (when (odd? size)
+                        (write-bytevector (bytevector 10) port))))
+                  members)
         (get-output-bytevector port)))
 
     ;; --- entries ------------------------------------------------------------
 
     (define (parent-dirs name)
       ;; "a/b/c" or "a/b/c/" -> ("a/" "a/b/")
-      (let* ((trimmed (if (string-suffix? "/" name)
-                          (substring name 0 (- (string-length name) 1))
-                          name)))
+      (let*
+          ((trimmed (if (string-suffix? "/" name)
+                        (substring name 0 (- (string-length name) 1))
+                        name)))
         (let loop ((i 0) (acc '()))
           (cond ((>= i (string-length trimmed)) (reverse acc))
                 ((char=? (string-ref trimmed i) #\/)
@@ -207,8 +214,10 @@ Example:
   (map entry-name (add-parent-dirs (list (list \"a/b/c\" #o644 (bytevector)))))
   => (\"a/\" \"a/b/\" \"a/b/c\")"
       (let* ((have (map entry-name entries))
-             (dirs (delete-duplicates
-                     (append-map (lambda (e) (parent-dirs (entry-name e))) entries)))
+             (dirs (delete-duplicates (append-map
+                                       (lambda (e)
+                                         (parent-dirs (entry-name e)))
+                                       entries)))
              (missing (remove (lambda (d) (member d have)) dirs)))
         (append (map (lambda (d) (list d #o755 #f)) missing) entries)))
 
@@ -238,9 +247,10 @@ Example:
                   (list (list \"usr/bin/hello\" #o755 script-bytes))
                   1700000000)"
       (let ((control (tar-bytevector (sort-entries control-entries) mtime))
-            (data (tar-bytevector (sort-entries (add-parent-dirs data-entries)) mtime)))
-        (ar-bytevector
-          (list (list "debian-binary" (string->utf8 "2.0\n"))
-                (list "control.tar.gz" (gzip-compress control))
-                (list "data.tar.gz" (gzip-compress data)))
-          mtime)))))
+            (data (tar-bytevector (sort-entries
+                                   (add-parent-dirs data-entries))
+                                  mtime)))
+        (ar-bytevector (list (list "debian-binary" (string->utf8 "2.0\n"))
+                             (list "control.tar.gz" (gzip-compress control))
+                             (list "data.tar.gz" (gzip-compress data)))
+                       mtime)))))

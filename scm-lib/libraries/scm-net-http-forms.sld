@@ -1,9 +1,13 @@
 (define-library (scm net http forms)
-  (import (scm core) (scheme base) (scm uri) (scm string) (scm net http request))
-  (export parse-www-form
-          form-ref
+  (import (scheme base)
+          (scm core)
+          (scm net http request)
+          (scm string)
+          (scm uri))
+  (export form-ref
           form-refs-by-prefix
-          http-request-form)
+          http-request-form
+          parse-www-form)
   (begin
 
     (define (parse-www-form body)
@@ -15,28 +19,31 @@ Description: Parses an application/x-www-form-urlencoded body or query
 Example:
   (parse-www-form \"name=Ada&age=37\") => ((\"name\" . \"Ada\") (\"age\" . \"37\"))
   (parse-www-form \"\") => ()"
-      (cond
-        ((or (not body) (string=? body "")) '())
-        (else
-         (map (lambda (pair)
-                (let ((parts (string-split-char pair #\=)))
-                  (cond
-                    ((null? (cdr parts))
-                     (cons (percent-decode (car parts)) ""))
-                    (else
-                     ;; Re-join any extra '=' into the value, so values that
-                     ;; happen to contain unencoded '=' don't get truncated.
-                     (let* ((k (percent-decode (car parts)))
-                            (v-raw (let join ((xs (cdr parts)) (acc ""))
-                                     (cond
-                                       ((null? xs) acc)
-                                       ((string=? acc "")
-                                        (join (cdr xs) (car xs)))
-                                       (else
-                                        (join (cdr xs)
-                                              (string-append acc "=" (car xs))))))))
-                       (cons k (percent-decode v-raw)))))))
-              (string-split-char body #\&)))))
+      (cond ((or (not body) (string=? body "")) '())
+            (else (map (lambda (pair)
+                         (let ((parts (string-split-char pair #\=)))
+                           (cond ((null? (cdr parts))
+                                  (cons (percent-decode (car parts)) ""))
+                                 (else
+                                  ;; Re-join any extra '=' into the value, so values that
+                                  ;; happen to contain unencoded '=' don't get truncated.
+                                  (let*
+                                      ((k (percent-decode (car parts)))
+                                       (v-raw
+                                        (let join
+                                            ((xs (cdr parts))
+                                             (acc ""))
+                                          (cond
+                                           ((null? xs) acc)
+                                           ((string=? acc "")
+                                            (join (cdr xs) (car xs)))
+                                           (else
+                                            (join
+                                             (cdr xs)
+                                             (string-append acc "="
+                                                            (car xs))))))))
+                                    (cons k (percent-decode v-raw)))))))
+                       (string-split-char body #\&)))))
 
     (define (form-ref form key . default)
       "Syntax: (form-ref form key [default])
@@ -61,16 +68,13 @@ Example:
   => ((\"opt-a\" . \"1\") (\"opt-b\" . \"2\"))"
       (let ((plen (string-length prefix)))
         (let loop ((ps form) (acc '()))
-          (cond
-            ((null? ps) (reverse acc))
-            (else
-             (let* ((p (car ps))
-                    (k (car p)))
-               (cond
-                 ((and (>= (string-length k) plen)
-                       (string=? (substring k 0 plen) prefix))
-                  (loop (cdr ps) (cons p acc)))
-                 (else (loop (cdr ps) acc)))))))))
+          (cond ((null? ps) (reverse acc))
+                (else (let* ((p (car ps))
+                             (k (car p)))
+                        (cond ((and (>= (string-length k) plen)
+                                    (string=? (substring k 0 plen) prefix))
+                               (loop (cdr ps) (cons p acc)))
+                              (else (loop (cdr ps) acc)))))))))
 
     (define (http-request-form req)
       "Syntax: (http-request-form req)
@@ -81,5 +85,4 @@ Description: Parses the application/x-www-form-urlencoded body of req (a
 Example:
   (form-ref (http-request-form req) \"username\" \"\") => \"alice\""
       (let ((body (http-request-body req)))
-        (if (string? body) (parse-www-form body) '())))
-))
+        (if (string? body) (parse-www-form body) '())))))

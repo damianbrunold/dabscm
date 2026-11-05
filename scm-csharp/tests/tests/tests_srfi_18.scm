@@ -1,7 +1,7 @@
 (import (scheme base)
         (scheme write)
-        (scm test)
-        (srfi 18))
+        (srfi 18)
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 
@@ -12,61 +12,76 @@
   (test-equal "make-thread" #t (thread? (make-thread (lambda () 1))))
   (test-equal "num is no thread" #f (thread? 42))
   (test-equal "str is no thread" #f (thread? "hello"))
-  (test-equal "with thread-name" "worker" (thread-name (make-thread (lambda () 1) "worker")))
+  (test-equal "with thread-name" "worker"
+              (thread-name (make-thread (lambda () 1) "worker")))
   (test-equal "w/o thread-name" #f (thread-name (make-thread (lambda () 1))))
   (test-equal "current-thread is thread" #t (thread? (current-thread)))
-  (test-equal "current-thread is primordial" 'primordial (thread-name (current-thread))))
+  (test-equal "current-thread is primordial"
+              'primordial
+              (thread-name (current-thread))))
 
 ;;; ---- Thread specific data ----
 (test-group "thread specific data"
   (test-equal 'my-data
-    (let ((t (make-thread (lambda () 1))))
-      (thread-specific-set! t 'my-data)
-      (thread-specific t)))
+              (let ((t (make-thread (lambda () 1))))
+                (thread-specific-set! t 'my-data)
+                (thread-specific t)))
   (test-equal '()
-    (let ((t (make-thread (lambda () 1))))
-      (thread-specific t))))
+              (let ((t (make-thread (lambda () 1)))) (thread-specific t))))
 
 ;;; ---- Thread start/join basic ----
 (test-group "thread start/join basic"
-  (test-equal 3 (thread-join! (thread-start! (make-thread (lambda () (+ 1 2))))))
-  (test-equal 42 (thread-join! (thread-start! (make-thread (lambda () (* 6 7))))))
-  (test-equal "hello" (thread-join! (thread-start! (make-thread (lambda () "hello"))))))
+  (test-equal 3
+              (thread-join! (thread-start!
+                             (make-thread (lambda () (+ 1 2))))))
+  (test-equal 42
+              (thread-join! (thread-start!
+                             (make-thread (lambda () (* 6 7))))))
+  (test-equal "hello"
+              (thread-join! (thread-start!
+                             (make-thread (lambda () "hello"))))))
 
 ;;; ---- Thread join with timeout ----
 (test-group "thread join with timeout"
   ;; Join a thread that completes quickly - should get result
-  (test-equal 99 (thread-join! (thread-start! (make-thread (lambda () 99))) 5))
+  (test-equal 99
+              (thread-join! (thread-start! (make-thread (lambda () 99))) 5))
   ;; Join with timeout-val when thread takes too long
   (test-equal 'timed-out
-    (let ((t (make-thread (lambda () (thread-sleep! 10) 'late))))
-      (thread-start! t)
-      (thread-join! t 0.01 'timed-out))))
+              (let ((t (make-thread (lambda ()
+                                      (thread-sleep! 10)
+                                      'late))))
+                (thread-start! t)
+                (thread-join! t 0.01 'timed-out))))
 
 ;;; ---- Thread join timeout exception ----
 (test-group "thread join timeout exception"
   (test-equal 'timeout
-    (guard (e ((join-timeout-exception? e) 'timeout))
-      (let ((t (make-thread (lambda () (thread-sleep! 10)))))
-        (thread-start! t)
-        (thread-join! t 0.01)))))
+              (guard (e ((join-timeout-exception? e) 'timeout))
+                (let ((t (make-thread (lambda () (thread-sleep! 10)))))
+                  (thread-start! t)
+                  (thread-join! t 0.01)))))
 
 ;;; ---- Uncaught exception ----
 (test-group "uncaught exception"
   (test-equal 'caught
-    (guard (e ((uncaught-exception? e) 'caught))
-      (thread-join! (thread-start! (make-thread (lambda () (error "boom"))))))))
+              (guard (e ((uncaught-exception? e) 'caught))
+                (thread-join! (thread-start!
+                               (make-thread (lambda () (error "boom"))))))))
 
 ;;; ---- Thread yield (no error) ----
 (test-group "thread yield"
-  (test-equal 'ok (begin (thread-yield!) 'ok)))
+  (test-equal 'ok
+              (begin
+                (thread-yield!)
+                'ok)))
 
 ;;; ---- Thread sleep ----
 (test-group "thread sleep"
   (test-equal #t
-    (let ((start (time->seconds (current-time))))
-      (thread-sleep! 0.05)
-      (>= (- (time->seconds (current-time)) start) 0.04))))
+              (let ((start (time->seconds (current-time))))
+                (thread-sleep! 0.05)
+                (>= (- (time->seconds (current-time)) start) 0.04))))
 
 ;;; ---- Mutex basics ----
 (test-group "mutex basics"
@@ -79,49 +94,48 @@
 ;;; ---- Mutex specific data ----
 (test-group "mutex specific data"
   (test-equal 'data
-    (let ((m (make-mutex)))
-      (mutex-specific-set! m 'data)
-      (mutex-specific m))))
+              (let ((m (make-mutex)))
+                (mutex-specific-set! m 'data)
+                (mutex-specific m))))
 
 ;;; ---- Mutex lock/unlock and state ----
 (test-group "mutex lock/unlock and state"
   (test-equal #t
-    (let ((m (make-mutex)))
-      (mutex-lock! m)
-      (let ((s (mutex-state m)))
-        (mutex-unlock! m)
-        (thread? s))))
+              (let ((m (make-mutex)))
+                (mutex-lock! m)
+                (let ((s (mutex-state m)))
+                  (mutex-unlock! m)
+                  (thread? s))))
   (test-equal 'not-abandoned
-    (let ((m (make-mutex)))
-      (mutex-lock! m)
-      (mutex-unlock! m)
-      (mutex-state m))))
+              (let ((m (make-mutex)))
+                (mutex-lock! m)
+                (mutex-unlock! m)
+                (mutex-state m))))
 
 ;;; ---- Mutex lock with timeout ----
 (test-group "mutex lock with timeout"
   (test-equal #f
-    (let ((m (make-mutex)))
-      (mutex-lock! m)  ; lock it
-      ;; Try to lock from a thread with timeout - should fail
-      (let ((t (make-thread (lambda () (mutex-lock! m 0.01)))))
-        (thread-start! t)
-        (let ((result (thread-join! t)))
-          (mutex-unlock! m)
-          result)))))
+              (let ((m (make-mutex)))
+                (mutex-lock! m) ; lock it
+                ;; Try to lock from a thread with timeout - should fail
+                (let ((t (make-thread (lambda () (mutex-lock! m 0.01)))))
+                  (thread-start! t)
+                  (let ((result (thread-join! t)))
+                    (mutex-unlock! m)
+                    result)))))
 
 ;;; ---- Mutex protects shared state ----
 (test-group "mutex protects shared state"
   (test-equal 1
-    (let ((m (make-mutex))
-          (result 0))
-      (let ((t (make-thread
-                 (lambda ()
-                   (mutex-lock! m)
-                   (set! result (+ result 1))
-                   (mutex-unlock! m)))))
-        (thread-start! t)
-        (thread-join! t)
-        result))))
+              (let ((m (make-mutex))
+                    (result 0))
+                (let ((t (make-thread (lambda ()
+                                        (mutex-lock! m)
+                                        (set! result (+ result 1))
+                                        (mutex-unlock! m)))))
+                  (thread-start! t)
+                  (thread-join! t)
+                  result))))
 
 ;;; ---- Condition variable basics ----
 (test-group "condition variable basics"
@@ -133,28 +147,28 @@
 ;;; ---- Condition variable specific ----
 (test-group "condition variable specific"
   (test-equal 'info
-    (let ((cv (make-condition-variable)))
-      (condition-variable-specific-set! cv 'info)
-      (condition-variable-specific cv))))
+              (let ((cv (make-condition-variable)))
+                (condition-variable-specific-set! cv 'info)
+                (condition-variable-specific cv))))
 
 ;;; ---- Condition variable signal ----
 (test-group "condition variable signal"
   ;; Producer/consumer with condition variable
   (test-equal 'ready
-    (let ((m (make-mutex))
-          (cv (make-condition-variable))
-          (data #f))
-      (let ((consumer (make-thread
-                        (lambda ()
-                          (mutex-lock! m)
-                          (mutex-unlock! m cv)
-                          ;; After being signaled, data should be set
-                          data))))
-        (thread-start! consumer)
-        (thread-sleep! 0.05)  ; let consumer start waiting
-        (set! data 'ready)
-        (condition-variable-signal! cv)
-        (thread-join! consumer 2)))))
+              (let ((m (make-mutex))
+                    (cv (make-condition-variable))
+                    (data #f))
+                (let ((consumer (make-thread
+                                 (lambda ()
+                                   (mutex-lock! m)
+                                   (mutex-unlock! m cv)
+                                   ;; After being signaled, data should be set
+                                   data))))
+                  (thread-start! consumer)
+                  (thread-sleep! 0.05) ; let consumer start waiting
+                  (set! data 'ready)
+                  (condition-variable-signal! cv)
+                  (thread-join! consumer 2)))))
 
 ;;; ---- Time basics ----
 (test-group "time basics"
@@ -188,35 +202,40 @@
 (test-group "shared top-level set! visible across threads"
   ;; Worker mutates a top-level binding; primordial thread observes it.
   (test-equal 'observed
-    (begin
-      (set! shared-flag #f)
-      (let ((t (make-thread (lambda () (set! shared-flag 'observed)))))
-        (thread-start! t)
-        (thread-join! t)
-        shared-flag))))
+              (begin
+                (set! shared-flag #f)
+                (let
+                    ((t (make-thread (lambda ()
+                                       (set! shared-flag 'observed)))))
+                  (thread-start! t)
+                  (thread-join! t)
+                  shared-flag))))
 
 (test-group "shared counter under mutex"
   ;; 4 workers each increment a shared top-level counter 250 times under
   ;; a mutex. Final value must be 1000. Pre-fix this returned 0 because
   ;; each thread had its own clone of the binding.
   (test-equal 1000
-    (let ((m (make-mutex)))
-      (set! shared-counter 0)
-      (let ((ts (map (lambda (_)
-                       (let ((t (make-thread
-                                  (lambda ()
-                                    (let loop ((k 0))
-                                      (cond ((< k 250)
-                                             (mutex-lock! m)
-                                             (set! shared-counter
-                                                   (+ shared-counter 1))
-                                             (mutex-unlock! m)
-                                             (loop (+ k 1)))))))))
-                         (thread-start! t)
-                         t))
-                     '(0 1 2 3))))
-        (for-each thread-join! ts)
-        shared-counter))))
+              (let ((m (make-mutex)))
+                (set! shared-counter 0)
+                (let ((ts (map (lambda (_)
+                                 (let
+                                     ((t
+                                       (make-thread
+                                        (lambda ()
+                                          (let loop ((k 0))
+                                            (cond
+                                             ((< k 250)
+                                              (mutex-lock! m)
+                                              (set! shared-counter
+                                                    (+ shared-counter 1))
+                                              (mutex-unlock! m)
+                                              (loop (+ k 1)))))))))
+                                   (thread-start! t)
+                                   t))
+                               '(0 1 2 3))))
+                  (for-each thread-join! ts)
+                  shared-counter))))
 
 ;;; ---- Contention ----
 ;; A contended mutex: each unlock wakes one waiter. Before 2.20.0 it woke
@@ -225,31 +244,39 @@
   (let loop ((i 0) (ts '()))
     (if (= i n)
         ts
-        (loop (+ i 1) (cons (thread-start! (make-thread (lambda () (body i)))) ts)))))
+        (loop (+ i 1)
+              (cons (thread-start! (make-thread (lambda () (body i)))) ts)))))
 
 (test-group "contended mutex"
   (test-equal "64 threads, no update lost" 12800
-    (let* ((m (make-mutex)) (count 0)
-           (ts (run-threads 64 (lambda (i)
-                                 (do ((k 0 (+ k 1))) ((= k 200))
-                                   (mutex-lock! m)
-                                   (set! count (+ count 1))
-                                   (mutex-unlock! m))))))
-      (for-each (lambda (t) (thread-join! t 60 #f)) ts)
-      count))
+              (let* ((m (make-mutex))
+                     (count 0)
+                     (ts (run-threads 64
+                                      (lambda (i)
+                                        (do ((k 0 (+ k 1))) ((= k 200))
+                                          (mutex-lock! m)
+                                          (set! count (+ count 1))
+                                          (mutex-unlock! m))))))
+                (for-each (lambda (t) (thread-join! t 60 #f)) ts)
+                count))
   ;; waiters that give up (a timeout) must not leave a free mutex unnoticed
   ;; by the others, which now are woken one at a time
   (test-equal "with timeouts" 3200
-    (let* ((m (make-mutex)) (count 0)
-           (ts (run-threads 16 (lambda (i)
-                                 (do ((k 0 (+ k 1))) ((= k 200))
-                                   (if (even? i)
-                                       (let retry () (unless (mutex-lock! m 0.0005) (retry)))
-                                       (mutex-lock! m))
-                                   (set! count (+ count 1))
-                                   (mutex-unlock! m))))))
-      (for-each (lambda (t) (thread-join! t 60 #f)) ts)
-      count)))
+              (let* ((m (make-mutex))
+                     (count 0)
+                     (ts (run-threads 16
+                                      (lambda (i)
+                                        (do ((k 0 (+ k 1))) ((= k 200))
+                                          (if
+                                           (even? i)
+                                           (let retry ()
+                                             (unless (mutex-lock! m 0.0005)
+                                               (retry)))
+                                           (mutex-lock! m))
+                                          (set! count (+ count 1))
+                                          (mutex-unlock! m))))))
+                (for-each (lambda (t) (thread-join! t 60 #f)) ts)
+                count)))
 
 ;;; ---- Condition variables: no lost wake-up ----
 ;; (mutex-unlock! m cv) unlocks and starts waiting in one atomic step. Before
@@ -257,22 +284,27 @@
 ;; waiting without a timeout, hung.
 (test-group "condition variable hand-off"
   (test-equal 'done
-    (let* ((m (make-mutex)) (cv (make-condition-variable)) (turn 0)
-           (player (lambda (me)
-                     (lambda ()
-                       (let loop ((i 0))
-                         (when (< i 3000)
-                           (mutex-lock! m)
-                           (let wait ()
-                             (unless (= turn me) (mutex-unlock! m cv) (mutex-lock! m) (wait)))
-                           (set! turn (- 1 me))
-                           (condition-variable-broadcast! cv)
-                           (mutex-unlock! m)
-                           (loop (+ i 1))))
-                       'done)))
-           (a (thread-start! (make-thread (player 0))))
-           (b (thread-start! (make-thread (player 1)))))
-      (and (eq? (thread-join! a 30 'hung) 'done)
-           (thread-join! b 30 'hung)))))
+              (let* ((m (make-mutex))
+                     (cv (make-condition-variable))
+                     (turn 0)
+                     (player (lambda (me)
+                               (lambda ()
+                                 (let loop ((i 0))
+                                   (when (< i 3000)
+                                     (mutex-lock! m)
+                                     (let wait ()
+                                       (unless (= turn me)
+                                         (mutex-unlock! m cv)
+                                         (mutex-lock! m)
+                                         (wait)))
+                                     (set! turn (- 1 me))
+                                     (condition-variable-broadcast! cv)
+                                     (mutex-unlock! m)
+                                     (loop (+ i 1))))
+                                 'done)))
+                     (a (thread-start! (make-thread (player 0))))
+                     (b (thread-start! (make-thread (player 1)))))
+                (and (eq? (thread-join! a 30 'hung) 'done)
+                     (thread-join! b 30 'hung)))))
 
 (test-end "srfi-18")

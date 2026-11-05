@@ -1,10 +1,10 @@
 (define-library (scm markdown)
-  (import (scm core)
-          (scheme base)
+  (import (scheme base)
           (scheme char)
-          (srfi 13))
-  (export parse-markdown
-          markdown->html)
+          (srfi 13)
+          (scm core))
+  (export markdown->html
+          parse-markdown)
   (begin
 
     ;; ================================================================
@@ -84,10 +84,10 @@
         (let loop ((i 0) (col 0))
           (if (< i n)
               (let ((c (string-ref line i)))
-                (cond
-                  ((char=? c #\space) (loop (+ i 1) (+ col 1)))
-                  ((char=? c #\tab) (loop (+ i 1) (+ col (- 4 (modulo col 4)))))
-                  (else col)))
+                (cond ((char=? c #\space) (loop (+ i 1) (+ col 1)))
+                      ((char=? c #\tab)
+                       (loop (+ i 1) (+ col (- 4 (modulo col 4)))))
+                      (else col)))
               col))))
 
     (define (blank-line? line)
@@ -102,18 +102,17 @@
           (set! out (cons (get-output-string cur) out))
           (set! cur (open-output-string)))
         (let loop ((i 0))
-          (cond
-            ((>= i n) (flush!) (reverse out))
-            (else
-             (let ((c (string-ref s i)))
-               (cond
-                 ((char=? c #\newline) (flush!) (loop (+ i 1)))
-                 ((char=? c #\return)
-                  (flush!)
-                  (if (and (< (+ i 1) n) (char=? (string-ref s (+ i 1)) #\newline))
-                      (loop (+ i 2))
-                      (loop (+ i 1))))
-                 (else (write-char c cur) (loop (+ i 1))))))))))
+          (cond ((>= i n) (flush!) (reverse out))
+                (else (let ((c (string-ref s i)))
+                        (cond ((char=? c #\newline) (flush!) (loop (+ i 1)))
+                              ((char=? c #\return)
+                               (flush!)
+                               (if (and
+                                    (< (+ i 1) n)
+                                    (char=? (string-ref s (+ i 1)) #\newline))
+                                   (loop (+ i 2))
+                                   (loop (+ i 1))))
+                              (else (write-char c cur) (loop (+ i 1))))))))))
 
     ;; ---- inline parsing --------------------------------------------
 
@@ -125,30 +124,34 @@
           (if (>= i n)
               (reverse (flush))
               (let ((c (string-ref s i)))
-                (cond
-                  ((char=? c #\\)
-                   (if (< (+ i 1) n)
-                       (loop (+ i 2) (cons (string-ref s (+ i 1)) buf) acc)
-                       (loop (+ i 1) (cons c buf) acc)))
-                  ((char=? c #\`)
-                   (let ((res (scan-code s i n)))
-                     (if res
-                         (loop (cdr res) '() (cons (car res) (flush)))
-                         (loop (+ i 1) (cons c buf) acc))))
-                  ((char=? c #\[)
-                   (let ((res (scan-link s i n)))
-                     (if res
-                         (loop (cdr res) '() (cons (car res) (flush)))
-                         (loop (+ i 1) (cons c buf) acc))))
-                  ((or (char=? c #\*) (char=? c #\_))
-                   (let ((res (scan-emph s i n)))
-                     (if res
-                         (loop (cdr res) '() (cons (car res) (flush)))
-                         (loop (+ i 1) (cons c buf) acc))))
-                  (else (loop (+ i 1) (cons c buf) acc))))))))
+                (cond ((char=? c #\\)
+                       (if (< (+ i 1) n)
+                           (loop (+ i 2)
+                                 (cons (string-ref s (+ i 1)) buf)
+                                 acc)
+                           (loop (+ i 1) (cons c buf) acc)))
+                      ((char=? c #\`)
+                       (let ((res (scan-code s i n)))
+                         (if res
+                             (loop (cdr res) '() (cons (car res) (flush)))
+                             (loop (+ i 1) (cons c buf) acc))))
+                      ((char=? c #\[)
+                       (let ((res (scan-link s i n)))
+                         (if res
+                             (loop (cdr res) '() (cons (car res) (flush)))
+                             (loop (+ i 1) (cons c buf) acc))))
+                      ((or (char=? c #\*) (char=? c #\_))
+                       (let ((res (scan-emph s i n)))
+                         (if res
+                             (loop (cdr res) '() (cons (car res) (flush)))
+                             (loop (+ i 1) (cons c buf) acc))))
+                      (else (loop (+ i 1) (cons c buf) acc))))))))
 
     (define (delim-run-len s i n d)
-      (let loop ((k i)) (if (and (< k n) (char=? (string-ref s k) d)) (loop (+ k 1)) (- k i))))
+      (let loop ((k i))
+        (if (and (< k n) (char=? (string-ref s k) d))
+            (loop (+ k 1))
+            (- k i))))
 
     (define (non-all-space? s)
       (string-any (lambda (c) (not (char=? c #\space))) s))
@@ -167,38 +170,39 @@
       (let* ((open-len (delim-run-len s i n #\`))
              (content-start (+ i open-len)))
         (let find ((j content-start))
-          (cond
-            ((>= j n) #f)
-            ((char=? (string-ref s j) #\`)
-             (let ((run (delim-run-len s j n #\`)))
-               (if (= run open-len)
-                   (cons (list 'code (code-trim (substring s content-start j)))
-                         (+ j open-len))
-                   (find (+ j run)))))
-            (else (find (+ j 1)))))))
+          (cond ((>= j n) #f)
+                ((char=? (string-ref s j) #\`)
+                 (let ((run (delim-run-len s j n #\`)))
+                   (if (= run open-len)
+                       (cons (list 'code
+                                   (code-trim (substring s content-start j)))
+                             (+ j open-len))
+                       (find (+ j run)))))
+                (else (find (+ j 1)))))))
 
     (define (scan-link s i n)
       ;; i points at '['
-      (let find-close ((j (+ i 1)) (depth 1))
-        (cond
-          ((>= j n) #f)
-          ((char=? (string-ref s j) #\\) (find-close (+ j 2) depth))
-          ((char=? (string-ref s j) #\[) (find-close (+ j 1) (+ depth 1)))
-          ((char=? (string-ref s j) #\])
-           (if (> depth 1)
-               (find-close (+ j 1) (- depth 1))
-               (if (and (< (+ j 1) n) (char=? (string-ref s (+ j 1)) #\())
-                   (let url-find ((k (+ j 2)))
-                     (cond
-                       ((>= k n) #f)
-                       ((char=? (string-ref s k) #\))
-                        (cons (list 'link
-                                    (parse-inlines (substring s (+ i 1) j))
-                                    (string-trim-both (substring s (+ j 2) k)))
-                              (+ k 1)))
-                       (else (url-find (+ k 1)))))
-                   #f)))
-          (else (find-close (+ j 1) depth)))))
+      (let find-close ((j (+ i 1))
+                       (depth 1))
+        (cond ((>= j n) #f)
+              ((char=? (string-ref s j) #\\) (find-close (+ j 2) depth))
+              ((char=? (string-ref s j) #\[) (find-close (+ j 1) (+ depth 1)))
+              ((char=? (string-ref s j) #\])
+               (if (> depth 1)
+                   (find-close (+ j 1) (- depth 1))
+                   (if (and (< (+ j 1) n) (char=? (string-ref s (+ j 1)) #\())
+                       (let url-find ((k (+ j 2)))
+                         (cond ((>= k n) #f)
+                               ((char=? (string-ref s k) #\))
+                                (cons (list
+                                       'link
+                                       (parse-inlines (substring s (+ i 1) j))
+                                       (string-trim-both
+                                        (substring s (+ j 2) k)))
+                                      (+ k 1)))
+                               (else (url-find (+ k 1)))))
+                       #f)))
+              (else (find-close (+ j 1) depth)))))
 
     (define (scan-emph s i n)
       ;; i points at '*' or '_'
@@ -206,32 +210,41 @@
              (strong (and (< (+ i 1) n) (char=? (string-ref s (+ i 1)) d)))
              (dl (if strong 2 1))
              (open-end (+ i dl)))
-        (cond
-          ((>= open-end n) #f)
-          ;; opening must not be followed by a space
-          ((char-whitespace? (string-ref s open-end)) #f)
-          ;; intraword underscore: leave as literal
-          ((and (char=? d #\_) (> i 0) (ascii-alnum? (string-ref s (- i 1)))) #f)
-          (else
-           (let find ((j open-end))
-             (cond
-               ((>= j n) #f)
-               ((and (char=? (string-ref s j) d)
-                     (>= (delim-run-len s j n d) dl)
-                     (> j open-end)
-                     ;; closing must not be preceded by a space
-                     (not (char-whitespace? (string-ref s (- j 1))))
-                     ;; for single emph, don't treat the start of a longer run as the closer
-                     (or (= dl 2)
-                         (not (and (< (+ j 1) n) (char=? (string-ref s (+ j 1)) d))))
-                     ;; intraword underscore closing guard
-                     (or (not (char=? d #\_))
-                         (let ((after (+ j dl)))
-                           (or (>= after n) (not (ascii-alnum? (string-ref s after)))))))
-                (cons (cons (if strong 'strong 'emph)
-                            (parse-inlines (substring s open-end j)))
-                      (+ j dl)))
-               (else (find (+ j 1)))))))))
+        (cond ((>= open-end n) #f)
+              ;; opening must not be followed by a space
+              ((char-whitespace? (string-ref s open-end)) #f)
+              ;; intraword underscore: leave as literal
+              ((and (char=? d #\_)
+                    (> i 0)
+                    (ascii-alnum? (string-ref s (- i 1))))
+               #f)
+              (else (let find ((j open-end))
+                      (cond ((>= j n) #f)
+                            ((and (char=? (string-ref s j) d)
+                                  (>= (delim-run-len s j n d) dl)
+                                  (> j open-end)
+                                  ;; closing must not be preceded by a space
+                                  (not (char-whitespace?
+                                        (string-ref s (- j 1))))
+                                  ;; for single emph, don't treat the start of a longer run as the closer
+                                  (or (= dl 2)
+                                      (not
+                                       (and
+                                        (< (+ j 1) n)
+                                        (char=? (string-ref s (+ j 1)) d))))
+                                  ;; intraword underscore closing guard
+                                  (or (not (char=? d #\_))
+                                      (let ((after (+ j dl)))
+                                        (or
+                                         (>= after n)
+                                         (not
+                                          (ascii-alnum?
+                                           (string-ref s after)))))))
+                             (cons (cons
+                                    (if strong 'strong 'emph)
+                                    (parse-inlines (substring s open-end j)))
+                                   (+ j dl)))
+                            (else (find (+ j 1)))))))))
 
     ;; ---- block parsing ---------------------------------------------
 
@@ -242,8 +255,7 @@
         (let count ((i 0))
           (if (and (< i n) (< i 6) (char=? (string-ref l i) #\#))
               (count (+ i 1))
-              (if (and (> i 0)
-                       (or (= i n) (char=? (string-ref l i) #\space)))
+              (if (and (> i 0) (or (= i n) (char=? (string-ref l i) #\space)))
                   (let* ((rest (string-trim-both (substring l i n)))
                          ;; strip a trailing run of #'s (closing sequence)
                          (rest (string-trim-right rest #\#))
@@ -256,7 +268,9 @@
         (and (>= (string-length l) 3)
              (let ((c (string-ref l 0)))
                (and (or (char=? c #\-) (char=? c #\*) (char=? c #\_))
-                    (string-every (lambda (ch) (or (char=? ch c) (char=? ch #\space))) l)
+                    (string-every (lambda (ch)
+                                    (or (char=? ch c) (char=? ch #\space)))
+                                  l)
                     (>= (string-count l (lambda (ch) (char=? ch c))) 3))))))
 
     (define (fence-marker line)
@@ -307,7 +321,8 @@
               (count (+ i 1))
               (and (> i 0)
                    (< i n)
-                   (or (char=? (string-ref l i) #\.) (char=? (string-ref l i) #\)))
+                   (or (char=? (string-ref l i) #\.)
+                       (char=? (string-ref l i) #\)))
                    (< (+ i 1) n)
                    (char=? (string-ref l (+ i 1)) #\space)
                    (cons (string->number (substring l 0 i))
@@ -348,45 +363,53 @@ Example:
           (if (>= i n)
               (reverse acc)
               (let ((line (ln i)))
-                (cond
-                  ((blank-line? line) (loop (+ i 1) acc))
-                  ((thematic-break? line) (loop (+ i 1) (cons '(thematic-break) acc)))
-                  ((atx-heading line)
-                   => (lambda (h)
-                        (loop (+ i 1)
-                              (cons (cons 'heading (cons (car h) (parse-inlines (cdr h)))) acc))))
-                  ((fence-marker line)
-                   => (lambda (f)
-                        (let ((res (collect-fence lines n i (car f) (cdr f))))
-                          (loop (cdr res) (cons (car res) acc)))))
-                  ((blockquote-line? line)
-                   (let ((res (collect-blockquote lines n i)))
-                     (loop (cdr res) (cons (car res) acc))))
-                  ((or (bullet-content line) (ordered-content line))
-                   (let ((res (collect-list lines n i)))
-                     (loop (cdr res) (cons (car res) acc))))
-                  (else
-                   (let ((res (collect-paragraph lines n i)))
-                     (loop (cdr res) (cons (car res) acc))))))))))
+                (cond ((blank-line? line) (loop (+ i 1) acc))
+                      ((thematic-break? line)
+                       (loop (+ i 1) (cons '(thematic-break) acc)))
+                      ((atx-heading line)
+                       =>
+                       (lambda (h)
+                         (loop (+ i 1)
+                               (cons (cons
+                                      'heading
+                                      (cons (car h) (parse-inlines (cdr h))))
+                                     acc))))
+                      ((fence-marker line)
+                       =>
+                       (lambda (f)
+                         (let
+                             ((res (collect-fence lines n i (car f) (cdr f))))
+                           (loop (cdr res) (cons (car res) acc)))))
+                      ((blockquote-line? line)
+                       (let ((res (collect-blockquote lines n i)))
+                         (loop (cdr res) (cons (car res) acc))))
+                      ((or (bullet-content line) (ordered-content line))
+                       (let ((res (collect-list lines n i)))
+                         (loop (cdr res) (cons (car res) acc))))
+                      (else (let ((res (collect-paragraph lines n i)))
+                              (loop (cdr res) (cons (car res) acc))))))))))
 
     (define (collect-fence lines n start fence-char info)
-      (let loop ((i (+ start 1)) (body '()))
-        (cond
-          ((>= i n)
-           (cons (list 'code-block (if (string=? info "") #f info)
-                       (string-join (reverse body) "\n"))
-                 i))
-          ((fence-close? (vector-ref lines i) fence-char)
-           (cons (list 'code-block (if (string=? info "") #f info)
-                       (string-join (reverse body) "\n"))
-                 (+ i 1)))
-          (else (loop (+ i 1) (cons (vector-ref lines i) body))))))
+      (let loop ((i (+ start 1))
+                 (body '()))
+        (cond ((>= i n)
+               (cons (list 'code-block
+                           (if (string=? info "") #f info)
+                           (string-join (reverse body) "\n"))
+                     i))
+              ((fence-close? (vector-ref lines i) fence-char)
+               (cons (list 'code-block
+                           (if (string=? info "") #f info)
+                           (string-join (reverse body) "\n"))
+                     (+ i 1)))
+              (else (loop (+ i 1) (cons (vector-ref lines i) body))))))
 
     (define (collect-blockquote lines n start)
       (let loop ((i start) (body '()))
         (if (and (< i n) (blockquote-line? (vector-ref lines i)))
             (loop (+ i 1) (cons (blockquote-strip (vector-ref lines i)) body))
-            (cons (cons 'blockquote (parse-markdown (string-join (reverse body) "\n")))
+            (cons (cons 'blockquote
+                        (parse-markdown (string-join (reverse body) "\n")))
                   i))))
 
     (define (collect-list lines n start)
@@ -406,15 +429,17 @@ Example:
                 ;; deeper-indented lines that follow as nested child lists.
                 (let ((content (cadr it))
                       (num (caddr it)))
-                  (let gather ((j (+ i 1)) (children '()))
+                  (let gather ((j (+ i 1))
+                               (children '()))
                     (let ((nx (and (< j n) (list-item (vector-ref lines j)))))
                       (if (and nx (> (list-ref nx 3) level))
                           (let ((sub (collect-list lines n j)))
                             (gather (cdr sub) (cons (car sub) children)))
                           (loop j
-                                (cons (cons 'item
-                                            (append (parse-inlines content)
-                                                    (reverse children)))
+                                (cons (cons
+                                       'item
+                                       (append (parse-inlines content)
+                                               (reverse children)))
                                       items)
                                 (or start-num num))))))
                 (cons (finish-list ordered (reverse items) start-num) i))))))
@@ -439,11 +464,12 @@ Example:
       ;; The content of a hard-break line, with its trailing backslash marker
       ;; removed (trailing spaces are dropped by the trim).
       (let ((r (string-trim-right raw)))
-        (string-trim-both
-          (if (and (> (string-length r) 0)
-                   (char=? (string-ref r (- (string-length r) 1)) #\\))
-              (substring r 0 (- (string-length r) 1))
-              r))))
+        (string-trim-both (if (and (> (string-length r) 0)
+                                   (char=?
+                                    (string-ref r (- (string-length r) 1))
+                                    #\\))
+                              (substring r 0 (- (string-length r) 1))
+                              r))))
 
     (define (paragraph-inlines raw-lines)
       ;; Group a paragraph's raw lines into segments separated by hard line
@@ -452,54 +478,49 @@ Example:
       ;; nodes. A trailing marker on the final line has no following line and
       ;; is ignored.
       (let loop ((lines raw-lines) (seg '()) (acc '()))
-        (cond
-          ((null? lines)
-           (if (null? seg)
-               acc
-               (append acc (parse-inlines (string-join (reverse seg) " ")))))
-          ((and (pair? (cdr lines)) (hard-break-line? (car lines)))
-           (let ((seg (cons (strip-hard-break (car lines)) seg)))
-             (loop (cdr lines) '()
+        (cond ((null? lines)
+               (if (null? seg)
+                   acc
                    (append acc
-                           (parse-inlines (string-join (reverse seg) " "))
-                           (list '(break))))))
-          (else
-           (loop (cdr lines)
-                 (cons (string-trim-both (car lines)) seg)
-                 acc)))))
+                           (parse-inlines (string-join (reverse seg) " ")))))
+              ((and (pair? (cdr lines)) (hard-break-line? (car lines)))
+               (let ((seg (cons (strip-hard-break (car lines)) seg)))
+                 (loop (cdr lines)
+                       '()
+                       (append acc
+                               (parse-inlines (string-join (reverse seg) " "))
+                               (list '(break))))))
+              (else (loop (cdr lines)
+                          (cons (string-trim-both (car lines)) seg)
+                          acc)))))
 
     (define (collect-paragraph lines n start)
       (let loop ((i start) (body '()))
         (if (and (< i n) (not (block-start? (vector-ref lines i))))
             (loop (+ i 1) (cons (vector-ref lines i) body))
-            (cons (cons 'paragraph (paragraph-inlines (reverse body)))
-                  i))))
+            (cons (cons 'paragraph (paragraph-inlines (reverse body))) i))))
 
     ;; ---- HTML rendering --------------------------------------------
 
     (define (esc-text s)
       (let ((out (open-output-string)))
-        (string-for-each
-          (lambda (c)
-            (cond
-              ((char=? c #\&) (write-string "&amp;" out))
-              ((char=? c #\<) (write-string "&lt;" out))
-              ((char=? c #\>) (write-string "&gt;" out))
-              (else (write-char c out))))
-          s)
+        (string-for-each (lambda (c)
+                           (cond ((char=? c #\&) (write-string "&amp;" out))
+                                 ((char=? c #\<) (write-string "&lt;" out))
+                                 ((char=? c #\>) (write-string "&gt;" out))
+                                 (else (write-char c out))))
+                         s)
         (get-output-string out)))
 
     (define (esc-attr s)
       (let ((out (open-output-string)))
-        (string-for-each
-          (lambda (c)
-            (cond
-              ((char=? c #\&) (write-string "&amp;" out))
-              ((char=? c #\<) (write-string "&lt;" out))
-              ((char=? c #\>) (write-string "&gt;" out))
-              ((char=? c #\") (write-string "&quot;" out))
-              (else (write-char c out))))
-          s)
+        (string-for-each (lambda (c)
+                           (cond ((char=? c #\&) (write-string "&amp;" out))
+                                 ((char=? c #\<) (write-string "&lt;" out))
+                                 ((char=? c #\>) (write-string "&gt;" out))
+                                 ((char=? c #\") (write-string "&quot;" out))
+                                 (else (write-char c out))))
+                         s)
         (get-output-string out)))
 
     (define (url-has-foreign-scheme? u)
@@ -509,10 +530,9 @@ Example:
         (let loop ((i 0))
           (and (< i n)
                (let ((c (string-ref u i)))
-                 (cond
-                   ((char=? c #\:) #t)
-                   ((or (char=? c #\/) (char=? c #\?) (char=? c #\#)) #f)
-                   (else (loop (+ i 1)))))))))
+                 (cond ((char=? c #\:) #t)
+                       ((or (char=? c #\/) (char=? c #\?) (char=? c #\#)) #f)
+                       (else (loop (+ i 1)))))))))
 
     (define (safe-url? raw)
       ;; Allow http(s), mailto, tel, ftp and scheme-less (relative) URLs.
@@ -529,23 +549,30 @@ Example:
                  (not (url-has-foreign-scheme? u))))))
 
     (define (render-inline node)
-      (cond
-        ((string? node) (esc-text node))
-        ((pair? node)
-         (case (car node)
-           ((strong) (string-append "<strong>" (render-inlines (cdr node)) "</strong>"))
-           ((emph)   (string-append "<em>" (render-inlines (cdr node)) "</em>"))
-           ((code)   (string-append "<code>" (esc-text (cadr node)) "</code>"))
-           ((break)  "<br>")
-           ((link)
-            (let ((url (caddr node)))
-              (if (safe-url? url)
-                  (string-append "<a href=\"" (esc-attr url) "\">"
-                                 (render-inlines (cadr node)) "</a>")
-                  ;; Unsafe scheme: drop the anchor, keep the text.
-                  (render-inlines (cadr node)))))
-           (else "")))
-        (else "")))
+      (cond ((string? node) (esc-text node))
+            ((pair? node)
+             (case (car node)
+               ((strong)
+                (string-append "<strong>"
+                               (render-inlines (cdr node))
+                               "</strong>"))
+               ((emph)
+                (string-append "<em>" (render-inlines (cdr node)) "</em>"))
+               ((code)
+                (string-append "<code>" (esc-text (cadr node)) "</code>"))
+               ((break) "<br>")
+               ((link)
+                (let ((url (caddr node)))
+                  (if (safe-url? url)
+                      (string-append "<a href=\""
+                                     (esc-attr url)
+                                     "\">"
+                                     (render-inlines (cadr node))
+                                     "</a>")
+                      ;; Unsafe scheme: drop the anchor, keep the text.
+                      (render-inlines (cadr node)))))
+               (else "")))
+            (else "")))
 
     (define (render-inlines nodes)
       (apply string-append (map render-inline nodes)))
@@ -554,27 +581,40 @@ Example:
       (case (car node)
         ((heading)
          (let ((level (number->string (cadr node))))
-           (string-append "<h" level ">" (render-inlines (cddr node)) "</h" level ">")))
-        ((paragraph)
-         (string-append "<p>" (render-inlines (cdr node)) "</p>"))
+           (string-append "<h" level ">"
+                          (render-inlines (cddr node))
+                          "</h"
+                          level
+                          ">")))
+        ((paragraph) (string-append "<p>" (render-inlines (cdr node)) "</p>"))
         ((code-block)
          (let ((info (cadr node)))
            (string-append "<pre><code"
                           (if info
-                              (string-append " class=\"language-" (esc-attr info) "\"")
+                              (string-append " class=\"language-"
+                                             (esc-attr info)
+                                             "\"")
                               "")
-                          ">" (esc-text (caddr node)) "</code></pre>")))
+                          ">"
+                          (esc-text (caddr node))
+                          "</code></pre>")))
         ((blockquote)
-         (string-append "<blockquote>\n" (render-blocks (cdr node)) "\n</blockquote>"))
+         (string-append "<blockquote>\n"
+                        (render-blocks (cdr node))
+                        "\n</blockquote>"))
         ((bullet-list)
          (string-append "<ul>\n" (render-items (cdr node)) "</ul>"))
         ((ordered-list)
          (let ((start (cadr node)))
            (string-append "<ol"
                           (if (and (number? start) (not (= start 1)))
-                              (string-append " start=\"" (number->string start) "\"")
+                              (string-append " start=\""
+                                             (number->string start)
+                                             "\"")
                               "")
-                          ">\n" (render-items (cddr node)) "</ol>")))
+                          ">\n"
+                          (render-items (cddr node))
+                          "</ol>")))
         ((thematic-break) "<hr>")
         (else "")))
 
@@ -594,15 +634,17 @@ Example:
       (apply string-append
              (map (lambda (it)
                     (call-with-values
-                      (lambda () (split-leading-inlines (cdr it)))
+                        (lambda () (split-leading-inlines (cdr it)))
                       (lambda (inlines blocks)
-                        (string-append
-                          "<li>"
-                          (render-inlines inlines)
-                          (if (null? blocks)
-                              ""
-                              (string-append "\n" (render-blocks blocks) "\n"))
-                          "</li>\n"))))
+                        (string-append "<li>"
+                                       (render-inlines inlines)
+                                       (if
+                                        (null? blocks)
+                                        ""
+                                        (string-append "\n"
+                                                       (render-blocks blocks)
+                                                       "\n"))
+                                       "</li>\n"))))
                   items)))
 
     (define (render-blocks blocks)
@@ -617,5 +659,4 @@ Description: Renders the Markdown text in string s to an HTML fragment (no
 Example:
   (markdown->html \"# Hi\\n\\nA *para*.\")
     => \"<h1>Hi</h1>\\n<p>A <em>para</em>.</p>\""
-      (render-blocks (parse-markdown s)))
-))
+      (render-blocks (parse-markdown s)))))

@@ -1,14 +1,14 @@
 (define-library (scm json simple)
-  (import (scm core)
-          (scheme base))
-  (export json-parse
-          json-read
+  (import (scheme base)
+          (scm core))
+  (export json->pretty-string
           json->string
-          json->pretty-string
-          json-write
-          json-write-pretty
           json-null?
-          json-ref)
+          json-parse
+          json-read
+          json-ref
+          json-write
+          json-write-pretty)
   (begin
 
     ;; ================================================================
@@ -49,7 +49,9 @@ Example:
           (let ((c (read-char port)))
             (if (eof-object? c)
                 (if any (json-parse (get-output-string out)) (eof-object))
-                (begin (write-char c out) (loop #t)))))))
+                (begin
+                  (write-char c out)
+                  (loop #t)))))))
 
     ;; json->string and json->pretty-string are native primitives (see
     ;; PrimitiveJsonSimpleToString / PrimitiveJsonSimpleToPrettyString); their
@@ -100,5 +102,4 @@ Example:
       (let ((p (and (pair? obj) (assoc key obj))))
         (cond (p (cdr p))
               ((pair? default) (car default))
-              (else #f))))
-))
+              (else #f))))))

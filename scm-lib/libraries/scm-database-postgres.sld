@@ -1,29 +1,34 @@
 (define-library (scm database postgres)
-  (import (scm core) (scheme base) (scheme inexact) (scm crypto) (scm net sockets) (srfi 18))
-  (export pg-connect
-          pg-close
-          pg-query
+  (import (scheme base)
+          (scheme inexact)
+          (srfi 18)
+          (scm core)
+          (scm crypto)
+          (scm net sockets))
+  (export pg-close
+          pg-connect
+          pg-cursor-close
+          pg-cursor-columns
+          pg-cursor-fetch
+          pg-cursor-for-each
+          pg-cursor-open
           pg-exec
+          pg-format-sql
+          pg-query
+          pg-quote-int
+          pg-quote-literal
+          pg-result->alist-list
           pg-result-columns
           pg-result-rows
-          pg-result->alist-list
-          pg-cursor-open
-          pg-cursor-fetch
-          pg-cursor-columns
-          pg-cursor-close
-          pg-cursor-for-each
           with-pg-connection
           with-pg-query
           with-pg-transaction
-          pg-quote-literal
-          pg-quote-int
-          pg-format-sql
           ;; Connection pool
           make-pg-pool
-          pg-pool?
-          pg-pool-checkout
           pg-pool-checkin
+          pg-pool-checkout
           pg-pool-close-all!
+          pg-pool?
           with-pg-pool-connection)
   (begin
 
@@ -62,9 +67,7 @@ Description: Reads a 32-bit signed integer from a binary input port in big-endia
 Example:
   (pg-read-i32! in) => -1"
       (let ((u (pg-read-u32! port)))
-        (if (>= u #x80000000)
-            (- u #x100000000)
-            u)))
+        (if (>= u #x80000000) (- u #x100000000) u)))
 
     ;; Read big-endian 16-bit unsigned integer from binary input port
     (define (pg-read-u16! port)
@@ -146,7 +149,7 @@ Description: Reads one framed PostgreSQL backend message. Returns a pair
 Example:
   (pg-read-message! in) => (90 . #u8())"
       (let* ((type (read-u8 in))
-             (len  (pg-read-u32! in))
+             (len (pg-read-u32! in))
              (body (pg-read-bytes! (- len 4) in)))
         (cons type body)))
 
@@ -160,12 +163,12 @@ Description: Sends the PostgreSQL startup message (protocol 3.0) with the given 
 Example:
   (pg-send-startup! out \"alice\" \"mydb\")"
       (let ((bv (open-output-bytevector)))
-        (pg-write-u32! #x00030000 bv)       ; protocol version 3.0
+        (pg-write-u32! #x00030000 bv) ; protocol version 3.0
         (pg-write-string! "user" bv)
         (pg-write-string! user bv)
         (pg-write-string! "database" bv)
         (pg-write-string! database bv)
-        (write-u8 0 bv)                     ; parameter list terminator
+        (write-u8 0 bv) ; parameter list terminator
         (let* ((payload (get-output-bytevector bv))
                (len (+ 4 (bytevector-length payload))))
           (pg-write-u32! len out)
@@ -185,13 +188,11 @@ Example:
       (let ((bv-in (open-input-bytevector body)))
         (let loop ((msg ""))
           (let ((code (read-u8 bv-in)))
-            (cond
-              ((or (eof-object? code) (= code 0)) msg)
-              ((= code 77)                         ; 'M' = human-readable message
-               (loop (pg-read-string! bv-in)))
-              (else
-               (pg-read-string! bv-in)             ; discard field value
-               (loop msg)))))))
+            (cond ((or (eof-object? code) (= code 0)) msg)
+                  ((= code 77) ; 'M' = human-readable message
+                   (loop (pg-read-string! bv-in)))
+                  (else (pg-read-string! bv-in) ; discard field value
+                        (loop msg)))))))
 
     ;; --- Wait for ReadyForQuery ---
 
@@ -206,11 +207,10 @@ Example:
       (let loop ()
         (let* ((msg (pg-read-message! in))
                (type (car msg)))
-          (cond
-            ((= type 90) #t)                       ; Z = ReadyForQuery
-            ((= type 69)                           ; E = ErrorResponse
-             (error "pg: backend error" (pg-parse-error (cdr msg))))
-            (else (loop))))))
+          (cond ((= type 90) #t) ; Z = ReadyForQuery
+                ((= type 69) ; E = ErrorResponse
+                 (error "pg: backend error" (pg-parse-error (cdr msg))))
+                (else (loop))))))
 
     ;; --- MD5 password authentication ---
 
@@ -238,13 +238,11 @@ Description: Splits a string on comma characters and returns a list of substring
 Example:
   (pg-scram-split \"r=nonce,s=salt,i=4096\") => (\"r=nonce\" \"s=salt\" \"i=4096\")"
       (let loop ((i 0) (start 0) (acc '()))
-        (cond
-          ((= i (string-length s))
-           (reverse (cons (substring s start i) acc)))
-          ((char=? (string-ref s i) #\,)
-           (loop (+ i 1) (+ i 1) (cons (substring s start i) acc)))
-          (else
-           (loop (+ i 1) start acc)))))
+        (cond ((= i (string-length s))
+               (reverse (cons (substring s start i) acc)))
+              ((char=? (string-ref s i) #\,)
+               (loop (+ i 1) (+ i 1) (cons (substring s start i) acc)))
+              (else (loop (+ i 1) start acc)))))
 
     ;; Find "key=value" in a list of strings and return the value
     (define (pg-scram-field parts key)
@@ -256,12 +254,16 @@ Example:
   (pg-scram-field '(\"r=nonce\" \"s=salt\" \"i=4096\") \"s\") => \"salt\""
       (let ((prefix (string-append key "=")))
         (let loop ((parts parts))
-          (cond
-            ((null? parts) (error "pg: SCRAM missing field" key))
-            ((and (>= (string-length (car parts)) (string-length prefix))
-                  (string=? (substring (car parts) 0 (string-length prefix)) prefix))
-             (substring (car parts) (string-length prefix) (string-length (car parts))))
-            (else (loop (cdr parts)))))))
+          (cond ((null? parts) (error "pg: SCRAM missing field" key))
+                ((and (>= (string-length (car parts)) (string-length prefix))
+                      (string=? (substring (car parts)
+                                           0
+                                           (string-length prefix))
+                                prefix))
+                 (substring (car parts)
+                            (string-length prefix)
+                            (string-length (car parts))))
+                (else (loop (cdr parts)))))))
 
     ;; Perform SCRAM-SHA-256 exchange (called after AuthenticationSASL is received)
     (define (pg-do-scram! in out user password)
@@ -272,63 +274,72 @@ Description: Performs the full SCRAM-SHA-256 authentication exchange on the give
   server signature, and expects AuthenticationOk at the end.
 Example:
   (pg-do-scram! in out \"alice\" \"secret\")"
-      (let* ((cnonce    (base64-encode (random-bytes 18)))
-             (cfm-bare  (string-append "n=" user ",r=" cnonce))
-             (cfm       (string-append "n,," cfm-bare))
-             (cfm-bv    (string->utf8 cfm))
-             (payload   (open-output-bytevector)))
+      (let* ((cnonce (base64-encode (random-bytes 18)))
+             (cfm-bare (string-append "n=" user ",r=" cnonce))
+             (cfm (string-append "n,," cfm-bare))
+             (cfm-bv (string->utf8 cfm))
+             (payload (open-output-bytevector)))
         ;; Send SASLInitialResponse
         (write-bytevector (string->utf8 "SCRAM-SHA-256") payload)
         (write-u8 0 payload)
         (pg-write-u32! (bytevector-length cfm-bv) payload)
         (write-bytevector cfm-bv payload)
-        (pg-send-message! out 112 (get-output-bytevector payload))   ; 'p'
+        (pg-send-message! out 112 (get-output-bytevector payload)) ; 'p'
 
         ;; Read AuthenticationSASLContinue (body[0..3]=11, body[4..]=server-first-message)
-        (let* ((msg       (pg-read-message! in))
-               (body      (cdr msg))
+        (let* ((msg (pg-read-message! in))
+               (body (cdr msg))
                (_ (if (= (car msg) 69)
-                      (error "pg: SCRAM authentication failed" (pg-parse-error body))))
-               (sfm       (utf8->string (bytevector-copy body 4 (bytevector-length body))))
-               (parts     (pg-scram-split sfm))
+                      (error "pg: SCRAM authentication failed"
+                             (pg-parse-error body))))
+               (sfm (utf8->string (bytevector-copy body 4
+                                                   (bytevector-length body))))
+               (parts (pg-scram-split sfm))
                (full-nonce (pg-scram-field parts "r"))
-               (b64-salt  (pg-scram-field parts "s"))
+               (b64-salt (pg-scram-field parts "s"))
                (iterations (string->number (pg-scram-field parts "i")))
-               (salt      (base64-decode b64-salt)))
+               (salt (base64-decode b64-salt)))
 
           ;; Derive keys
-          (let* ((salted-pw   (pbkdf2-sha256 password salt iterations 32))
-                 (client-key  (hmac-sha256 salted-pw (string->utf8 "Client Key")))
-                 (stored-key  (sha256-hash client-key))
+          (let* ((salted-pw (pbkdf2-sha256 password salt iterations 32))
+                 (client-key (hmac-sha256 salted-pw
+                                          (string->utf8 "Client Key")))
+                 (stored-key (sha256-hash client-key))
                  (cfm-no-proof (string-append "c=biws,r=" full-nonce))
-                 (auth-msg    (string-append cfm-bare "," sfm "," cfm-no-proof))
-                 (client-sig  (hmac-sha256 stored-key (string->utf8 auth-msg)))
+                 (auth-msg (string-append cfm-bare "," sfm "," cfm-no-proof))
+                 (client-sig (hmac-sha256 stored-key (string->utf8 auth-msg)))
                  (client-proof (xor-key client-key client-sig))
-                 (cfm-final   (string-append cfm-no-proof ",p=" (base64-encode client-proof)))
+                 (cfm-final (string-append cfm-no-proof ",p="
+                                           (base64-encode client-proof)))
                  ;; Server signature for verification
-                 (server-key  (hmac-sha256 salted-pw (string->utf8 "Server Key")))
-                 (server-sig  (hmac-sha256 server-key (string->utf8 auth-msg)))
+                 (server-key (hmac-sha256 salted-pw
+                                          (string->utf8 "Server Key")))
+                 (server-sig (hmac-sha256 server-key (string->utf8 auth-msg)))
                  (b64-server-sig (base64-encode server-sig))
-                 (resp        (open-output-bytevector)))
+                 (resp (open-output-bytevector)))
 
             ;; Send SASLResponse
             (write-bytevector (string->utf8 cfm-final) resp)
-            (pg-send-message! out 112 (get-output-bytevector resp))   ; 'p'
+            (pg-send-message! out 112 (get-output-bytevector resp)) ; 'p'
 
             ;; Read AuthenticationSASLFinal (body[0..3]=12, body[4..]=server-final-message)
-            (let* ((final-msg  (pg-read-message! in))
+            (let* ((final-msg (pg-read-message! in))
                    (final-body (cdr final-msg))
                    (_ (if (= (car final-msg) 69)
-                          (error "pg: SCRAM authentication failed" (pg-parse-error final-body))))
-                   (final-str  (utf8->string (bytevector-copy final-body 4
-                                                              (bytevector-length final-body))))
-                   (fparts     (pg-scram-split final-str))
-                   (server-v   (pg-scram-field fparts "v")))
+                          (error "pg: SCRAM authentication failed"
+                                 (pg-parse-error final-body))))
+                   (final-str (utf8->string
+                               (bytevector-copy
+                                final-body
+                                4
+                                (bytevector-length final-body))))
+                   (fparts (pg-scram-split final-str))
+                   (server-v (pg-scram-field fparts "v")))
               (if (not (string=? server-v b64-server-sig))
                   (error "pg: SCRAM server signature mismatch"))
 
               ;; Read AuthenticationOk
-              (let* ((ok-msg  (pg-read-message! in))
+              (let* ((ok-msg (pg-read-message! in))
                      (ok-auth (pg-bv-u32 (cdr ok-msg) 0)))
                 (if (not (= ok-auth 0))
                     (error "pg: SCRAM expected AuthenticationOk"))
@@ -345,32 +356,31 @@ Description: Handles the authentication phase after the startup message. Dispatc
   for unsupported authentication types.
 Example:
   (pg-handle-auth! in out \"alice\" \"secret\")"
-      (let* ((msg  (pg-read-message! in))
+      (let* ((msg (pg-read-message! in))
              (type (car msg))
              (body (cdr msg)))
-        (if (not (= type 82))                         ; R = AuthenticationRequest
+        (if (not (= type 82)) ; R = AuthenticationRequest
             (error "pg: expected authentication message, got" type)
             (let ((auth-type (pg-bv-u32 body 0)))
-              (cond
-                ((= auth-type 0)                      ; AuthenticationOk (trust)
-                 #t)
-                ((= auth-type 5)                      ; AuthenticationMD5Password
-                 (let* ((salt (bytevector-copy body 4 8))
-                        (pw   (pg-md5-password password user salt))
-                        (bv   (open-output-bytevector)))
-                   (pg-write-string! pw bv)
-                   (pg-send-message! out 112 (get-output-bytevector bv)))    ; 'p'
-                 ;; Read AuthenticationOk
-                 (let* ((msg2  (pg-read-message! in))
-                        (auth2 (pg-bv-u32 (cdr msg2) 0)))
-                   (if (not (= auth2 0))
-                       (error "pg: MD5 authentication failed")))
-                 #t)
-                ((= auth-type 10)                     ; AuthenticationSASL (SCRAM)
-                 (pg-do-scram! in out user password)
-                 #t)
-                (else
-                 (error "pg: unsupported authentication type" auth-type)))))))
+              (cond ((= auth-type 0) ; AuthenticationOk (trust)
+                     #t)
+                    ((= auth-type 5) ; AuthenticationMD5Password
+                     (let* ((salt (bytevector-copy body 4 8))
+                            (pw (pg-md5-password password user salt))
+                            (bv (open-output-bytevector)))
+                       (pg-write-string! pw bv)
+                       (pg-send-message! out 112 (get-output-bytevector bv))) ; 'p'
+                     ;; Read AuthenticationOk
+                     (let* ((msg2 (pg-read-message! in))
+                            (auth2 (pg-bv-u32 (cdr msg2) 0)))
+                       (if (not (= auth2 0))
+                           (error "pg: MD5 authentication failed")))
+                     #t)
+                    ((= auth-type 10) ; AuthenticationSASL (SCRAM)
+                     (pg-do-scram! in out user password)
+                     #t)
+                    (else (error "pg: unsupported authentication type"
+                                 auth-type)))))))
 
     ;; --- Connection lifecycle ---
 
@@ -383,8 +393,8 @@ Description: Opens a TCP connection to a PostgreSQL server and performs authenti
 Example:
   (define conn (pg-connect \"localhost\" 5432 \"alice\" \"secret\" \"mydb\"))"
       (let* ((sock (tcp-connect host port))
-             (in   (socket-binary-input-port sock))
-             (out  (socket-binary-output-port sock)))
+             (in (socket-binary-input-port sock))
+             (out (socket-binary-output-port sock)))
         (pg-send-startup! out user database)
         (pg-handle-auth! in out user password)
         (pg-wait-ready! in)
@@ -414,7 +424,7 @@ Example:
           (if (= i ncols)
               (list->vector (reverse names))
               (let* ((name (pg-read-string! bv-in))
-                     (_    (pg-read-bytes! 18 bv-in)))   ; skip: tableOID(4) colNum(2) typeOID(4) typeSize(2) typeMod(4) format(2)
+                     (_ (pg-read-bytes! 18 bv-in))) ; skip: tableOID(4) colNum(2) typeOID(4) typeSize(2) typeMod(4) format(2)
                 (loop (+ i 1) (cons name names)))))))
 
     ;; Parse a DataRow body; returns a vector of string values (or #f for NULL).
@@ -443,25 +453,24 @@ Description: Reads backend messages until ReadyForQuery, collecting RowDescripti
 Example:
   (pg-read-result! in) => #(#(\"id\" \"name\") (#(\"1\" \"alice\")))"
       (let loop ((cols #f) (rows '()))
-        (let* ((msg  (pg-read-message! in))
+        (let* ((msg (pg-read-message! in))
                (type (car msg))
                (body (cdr msg)))
-          (cond
-            ((= type 84)                             ; T = RowDescription
-             (loop (pg-parse-rowdesc body) rows))
-            ((= type 68)                             ; D = DataRow
-             (loop cols (cons (pg-parse-datarow cols body) rows)))
-            ((= type 67)                             ; C = CommandComplete
-             (loop cols rows))
-            ((= type 73)                             ; I = EmptyQueryResponse
-             (loop cols rows))
-            ((= type 78)                             ; N = NoticeResponse
-             (loop cols rows))
-            ((= type 90)                             ; Z = ReadyForQuery
-             (vector (or cols (vector)) (reverse rows)))
-            ((= type 69)                             ; E = ErrorResponse
-             (error "pg: query error" (pg-parse-error body)))
-            (else (loop cols rows))))))
+          (cond ((= type 84) ; T = RowDescription
+                 (loop (pg-parse-rowdesc body) rows))
+                ((= type 68) ; D = DataRow
+                 (loop cols (cons (pg-parse-datarow cols body) rows)))
+                ((= type 67) ; C = CommandComplete
+                 (loop cols rows))
+                ((= type 73) ; I = EmptyQueryResponse
+                 (loop cols rows))
+                ((= type 78) ; N = NoticeResponse
+                 (loop cols rows))
+                ((= type 90) ; Z = ReadyForQuery
+                 (vector (or cols (vector)) (reverse rows)))
+                ((= type 69) ; E = ErrorResponse
+                 (error "pg: query error" (pg-parse-error body)))
+                (else (loop cols rows))))))
 
     ;; --- Query execution ---
 
@@ -484,11 +493,11 @@ Example:
             \"Ada\" 30)"
       (let* ((sql (cond ((null? params) sql)
                         (else (pg-format-sql sql params))))
-             (in  (vector-ref conn 0))
+             (in (vector-ref conn 0))
              (out (vector-ref conn 1))
-             (bv  (open-output-bytevector)))
+             (bv (open-output-bytevector)))
         (pg-write-string! sql bv)
-        (pg-send-message! out 81 (get-output-bytevector bv))   ; 'Q'
+        (pg-send-message! out 81 (get-output-bytevector bv)) ; 'Q'
         (pg-read-result! in)))
 
     ;; Execute a statement and discard the result (for DDL/DML)
@@ -507,19 +516,18 @@ Example:
            \"Ada\" 36)"
       (let* ((sql (cond ((null? params) sql)
                         (else (pg-format-sql sql params))))
-             (in  (vector-ref conn 0))
+             (in (vector-ref conn 0))
              (out (vector-ref conn 1))
-             (bv  (open-output-bytevector)))
+             (bv (open-output-bytevector)))
         (pg-write-string! sql bv)
-        (pg-send-message! out 81 (get-output-bytevector bv))   ; 'Q'
+        (pg-send-message! out 81 (get-output-bytevector bv)) ; 'Q'
         (let loop ()
-          (let* ((msg  (pg-read-message! in))
+          (let* ((msg (pg-read-message! in))
                  (type (car msg)))
-            (cond
-              ((= type 90) #t)                       ; Z = ReadyForQuery
-              ((= type 69)                           ; E = ErrorResponse
-               (error "pg: exec error" (pg-parse-error (cdr msg))))
-              (else (loop)))))))
+            (cond ((= type 90) #t) ; Z = ReadyForQuery
+                  ((= type 69) ; E = ErrorResponse
+                   (error "pg: exec error" (pg-parse-error (cdr msg))))
+                  (else (loop)))))))
 
     ;; --- Public result accessors ---
 
@@ -584,10 +592,13 @@ Example:
   (define cur (pg-cursor-open conn \"SELECT id, name FROM users ORDER BY id\"))"
       (let ((name (pg-cursor-next-name!)))
         (pg-exec conn "BEGIN")
-        (guard (exn (#t
-                     (guard (e (#t #f)) (pg-exec conn "ROLLBACK"))
-                     (raise exn)))
-          (pg-exec conn (string-append "DECLARE " name " NO SCROLL CURSOR FOR " sql)))
+        (guard
+            (exn (#t
+                  (guard (e (#t #f)) (pg-exec conn "ROLLBACK"))
+                  (raise exn)))
+          (pg-exec conn
+                   (string-append "DECLARE " name " NO SCROLL CURSOR FOR "
+                                  sql)))
         (vector conn name #f #f)))
 
     (define (pg-cursor-fetch cursor . rest)
@@ -599,20 +610,26 @@ Example:
   (pg-cursor-fetch cur 100)"
       (if (vector-ref cursor 3)
           '()
-          (let* ((n    (if (null? rest) 1 (car rest)))
+          (let* ((n (if (null? rest) 1 (car rest)))
                  (conn (vector-ref cursor 0))
                  (name (vector-ref cursor 1)))
-            (guard (exn (#t
-                         (vector-set! cursor 3 #t)
-                         (guard (e (#t #f)) (pg-exec conn "ROLLBACK"))
-                         (raise exn)))
-              (let* ((result (pg-query conn (string-append "FETCH " (number->string n) " FROM " name)))
-                     (cols   (pg-result-columns result))
-                     (rows   (pg-result-rows result)))
-                (if (not (vector-ref cursor 2))
-                    (vector-set! cursor 2 cols))
+            (guard
+                (exn (#t
+                      (vector-set! cursor 3 #t)
+                      (guard (e (#t #f)) (pg-exec conn "ROLLBACK"))
+                      (raise exn)))
+              (let* ((result (pg-query conn
+                                       (string-append "FETCH "
+                                                      (number->string n)
+                                                      " FROM "
+                                                      name)))
+                     (cols (pg-result-columns result))
+                     (rows (pg-result-rows result)))
+                (if (not (vector-ref cursor 2)) (vector-set! cursor 2 cols))
                 (if (null? rows)
-                    (begin (vector-set! cursor 3 #t) '())
+                    (begin
+                      (vector-set! cursor 3 #t)
+                      '())
                     rows))))))
 
     (define (pg-cursor-columns cursor)
@@ -686,8 +703,10 @@ Example:
           (pg-exec c \"UPDATE accounts SET n = n - 1 WHERE id = 1\")
           (pg-exec c \"UPDATE accounts SET n = n + 1 WHERE id = 2\")))))"
       (pg-exec conn "BEGIN")
-      (guard (exn (#t (guard (e2 (#t #f)) (pg-exec conn "ROLLBACK"))
-                      (raise exn)))
+      (guard
+          (exn (#t
+                (guard (e2 (#t #f)) (pg-exec conn "ROLLBACK"))
+                (raise exn)))
         (let ((result (proc conn)))
           (pg-exec conn "COMMIT")
           result)))
@@ -700,7 +719,11 @@ Description: Opens a connection and cursor, calls (proc conn cursor), and closes
 Example:
   (with-pg-query \"localhost\" 5432 \"user\" \"pass\" \"db\" \"SELECT * FROM t\"
     (lambda (conn cursor) (pg-cursor-for-each cursor display)))"
-      (with-pg-connection host port user password database
+      (with-pg-connection host
+        port
+        user
+        password
+        database
         (lambda (conn)
           (let ((cursor (pg-cursor-open conn sql)))
             (guard (exn (#t (pg-cursor-close cursor) (raise exn)))
@@ -734,13 +757,12 @@ Example:
   (pg-quote-int 42)   => \"42\"
   (pg-quote-int \"42\") => \"42\"
   (pg-quote-int \"x\") raises an error"
-      (cond
-        ((integer? n) (number->string n))
-        ((string? n)
-         (let ((parsed (string->number n)))
-           (cond ((and parsed (integer? parsed)) (number->string parsed))
-                 (else (error "pg-quote-int: not an integer string" n)))))
-        (else (error "pg-quote-int: not an integer" n))))
+      (cond ((integer? n) (number->string n))
+            ((string? n)
+             (let ((parsed (string->number n)))
+               (cond ((and parsed (integer? parsed)) (number->string parsed))
+                     (else (error "pg-quote-int: not an integer string" n)))))
+            (else (error "pg-quote-int: not an integer" n))))
 
     ;; ============================================================
     ;; Parameterized SQL — library-side substitution
@@ -768,38 +790,34 @@ Example:
 
     (define (%pg-hex-nibble n)
       (cond ((< n 10) (integer->char (+ (char->integer #\0) n)))
-            (else    (integer->char (+ (char->integer #\a) (- n 10))))))
+            (else (integer->char (+ (char->integer #\a) (- n 10))))))
 
     (define (%pg-bytea-literal bv)
       (let* ((n (bytevector-length bv))
              (out (open-output-string)))
         (write-string "'\\x" out)
         (let loop ((i 0))
-          (cond
-            ((= i n) (write-string "'::bytea" out) (get-output-string out))
-            (else
-             (let* ((b  (bytevector-u8-ref bv i))
-                    (hi (quotient b 16))
-                    (lo (modulo b 16)))
-               (write-char (%pg-hex-nibble hi) out)
-               (write-char (%pg-hex-nibble lo) out)
-               (loop (+ i 1))))))))
+          (cond ((= i n)
+                 (write-string "'::bytea" out)
+                 (get-output-string out))
+                (else (let* ((b (bytevector-u8-ref bv i))
+                             (hi (quotient b 16))
+                             (lo (modulo b 16)))
+                        (write-char (%pg-hex-nibble hi) out)
+                        (write-char (%pg-hex-nibble lo) out)
+                        (loop (+ i 1))))))))
 
     (define (%pg-in-list-from-generator! n get out)
       ;; Writes (e1, e2, ..., en) to `out` using (get i) for each element.
       ;; n=0 emits (NULL) so `x IN $1` stays always-false rather than a
       ;; SQL syntax error.
-      (cond
-        ((= n 0) (write-string "(NULL)" out))
-        (else
-         (write-char #\( out)
-         (let loop ((i 0))
-           (cond
-             ((= i n) (write-char #\) out))
-             (else
-              (when (> i 0) (write-string ", " out))
-              (write-string (%pg-sql-literal (get i)) out)
-              (loop (+ i 1))))))))
+      (cond ((= n 0) (write-string "(NULL)" out))
+            (else (write-char #\( out)
+                  (let loop ((i 0))
+                    (cond ((= i n) (write-char #\) out))
+                          (else (when (> i 0) (write-string ", " out))
+                                (write-string (%pg-sql-literal (get i)) out)
+                                (loop (+ i 1))))))))
 
     (define (%pg-sql-literal v)
       ;; Returns the SQL literal text for a Scheme value, or raises.
@@ -818,31 +836,28 @@ Example:
       ;;   bytevector      → bytea literal
       ;;   (a b …)         → (a, b, …)    (IN-list)
       ;;   #(a b …)        → (a, b, …)    (IN-list)
-      (cond
-        ((eq? v #t)         "TRUE")
-        ((eq? v #f)         "FALSE")
-        ((eq? v 'null)      "NULL")
-        ((null? v)          "(NULL)")
-        ((string? v)        (pg-quote-literal v))
-        ((integer? v)       (number->string v))
-        ((real? v)          (number->string (inexact v)))
-        ((bytevector? v)    (%pg-bytea-literal v))
-        ((pair? v)
-         (let ((out (open-output-string))
-               (vec (list->vector v)))
-           (%pg-in-list-from-generator!
-             (vector-length vec)
-             (lambda (i) (vector-ref vec i))
-             out)
-           (get-output-string out)))
-        ((vector? v)
-         (let ((out (open-output-string)))
-           (%pg-in-list-from-generator!
-             (vector-length v)
-             (lambda (i) (vector-ref v i))
-             out)
-           (get-output-string out)))
-        (else (error "pg-format-sql: cannot encode as SQL literal" v))))
+      (cond ((eq? v #t) "TRUE")
+            ((eq? v #f) "FALSE")
+            ((eq? v 'null) "NULL")
+            ((null? v) "(NULL)")
+            ((string? v) (pg-quote-literal v))
+            ((integer? v) (number->string v))
+            ((real? v) (number->string (inexact v)))
+            ((bytevector? v) (%pg-bytea-literal v))
+            ((pair? v)
+             (let ((out (open-output-string))
+                   (vec (list->vector v)))
+               (%pg-in-list-from-generator! (vector-length vec)
+                                            (lambda (i) (vector-ref vec i))
+                                            out)
+               (get-output-string out)))
+            ((vector? v)
+             (let ((out (open-output-string)))
+               (%pg-in-list-from-generator! (vector-length v)
+                                            (lambda (i) (vector-ref v i))
+                                            out)
+               (get-output-string out)))
+            (else (error "pg-format-sql: cannot encode as SQL literal" v))))
 
     (define (pg-format-sql sql params)
       "Syntax: (pg-format-sql sql params)
@@ -856,16 +871,15 @@ Description: Returns sql with $1, $2, ... placeholders substituted by
 Example:
   (pg-format-sql \"WHERE slug = $1 AND age > $2\" '(\"a'b\" 18))
   => \"WHERE slug = 'a''b' AND age > 18\""
-      (let* ((n         (string-length sql))
+      (let* ((n (string-length sql))
              (params-vec (list->vector params))
-             (n-params  (vector-length params-vec))
-             (out       (open-output-string)))
+             (n-params (vector-length params-vec))
+             (out (open-output-string)))
         (define (at i) (string-ref sql i))
         (define (eq-at? i ch) (and (< i n) (char=? (at i) ch)))
         (define (digit-at? i)
           (and (< i n)
-               (let ((c (at i)))
-                 (and (char>=? c #\0) (char<=? c #\9)))))
+               (let ((c (at i))) (and (char>=? c #\0) (char<=? c #\9)))))
         (define (ident-start-at? i)
           (and (< i n)
                (let ((c (at i)))
@@ -880,133 +894,129 @@ Example:
                      (and (char>=? c #\0) (char<=? c #\9))
                      (char=? c #\_)))))
         (define (write-param! idx)
-          (cond
-            ((or (< idx 1) (> idx n-params))
-             (error (string-append "pg-format-sql: $"
-                                   (number->string idx)
-                                   " but only "
-                                   (number->string n-params)
-                                   " param(s) supplied")))
-            (else
-             (write-string (%pg-sql-literal (vector-ref params-vec (- idx 1)))
-                           out))))
+          (cond ((or (< idx 1) (> idx n-params))
+                 (error (string-append "pg-format-sql: $"
+                                       (number->string idx)
+                                       " but only "
+                                       (number->string n-params)
+                                       " param(s) supplied")))
+                (else (write-string (%pg-sql-literal
+                                     (vector-ref params-vec (- idx 1)))
+                                    out))))
         (define (read-int! i)
           ;; Reads consecutive digits at i. Returns (values num next-i).
           ;; Caller has verified digit-at? i is #t.
           (let loop ((i i) (acc 0))
-            (cond
-              ((digit-at? i)
-               (loop (+ i 1)
-                     (+ (* acc 10)
-                        (- (char->integer (at i)) (char->integer #\0)))))
-              (else (values acc i)))))
+            (cond ((digit-at? i)
+                   (loop (+ i 1)
+                         (+ (* acc 10)
+                            (- (char->integer (at i)) (char->integer #\0)))))
+                  (else (values acc i)))))
         (define (read-dollar-tag! i)
           ;; i is the position of `$`. Try to read `$tag$` or `$$`.
           ;; On success: (values "$tag$" next-i). On failure: (values #f i).
-          (cond
-            ((eq-at? (+ i 1) #\$)
-             (values "$$" (+ i 2)))
-            ((ident-start-at? (+ i 1))
-             (let loop ((j (+ i 2)))
-               (cond
-                 ((>= j n) (values #f i))
-                 ((char=? (at j) #\$)
-                  (values (substring sql i (+ j 1)) (+ j 1)))
-                 ((ident-char-at? j) (loop (+ j 1)))
-                 (else (values #f i)))))
-            (else (values #f i))))
+          (cond ((eq-at? (+ i 1) #\$) (values "$$" (+ i 2)))
+                ((ident-start-at? (+ i 1))
+                 (let loop ((j (+ i 2)))
+                   (cond ((>= j n) (values #f i))
+                         ((char=? (at j) #\$)
+                          (values (substring sql i (+ j 1)) (+ j 1)))
+                         ((ident-char-at? j) (loop (+ j 1)))
+                         (else (values #f i)))))
+                (else (values #f i))))
         (let loop ((i 0) (state 'default) (dollar-tag #f))
-          (cond
-            ((>= i n)
-             (cond
-               ((or (eq? state 'default)
-                    (eq? state 'in-line-comment))
-                (get-output-string out))
-               (else
-                (error (string-append "pg-format-sql: unterminated "
-                                      (symbol->string state))))))
-            ((eq? state 'default)
-             (let ((c (at i)))
-               (cond
-                 ((char=? c #\')
-                  (write-char c out) (loop (+ i 1) 'in-single-quote #f))
-                 ((char=? c #\")
-                  (write-char c out) (loop (+ i 1) 'in-double-quote #f))
-                 ((and (char=? c #\-) (eq-at? (+ i 1) #\-))
-                  (write-char #\- out) (write-char #\- out)
-                  (loop (+ i 2) 'in-line-comment #f))
-                 ((and (char=? c #\/) (eq-at? (+ i 1) #\*))
-                  (write-char #\/ out) (write-char #\* out)
-                  (loop (+ i 2) 'in-block-comment #f))
-                 ((char=? c #\$)
-                  (cond
-                    ((digit-at? (+ i 1))
-                     (call-with-values
-                       (lambda () (read-int! (+ i 1)))
-                       (lambda (num next-i)
-                         (cond
-                           ((zero? num)
-                            (error "pg-format-sql: $0 is not a valid placeholder"))
-                           (else
-                            (write-param! num)
-                            (loop next-i 'default #f))))))
-                    (else
-                     (call-with-values
-                       (lambda () (read-dollar-tag! i))
-                       (lambda (tag next-i)
-                         (cond
-                           (tag
-                            (write-string tag out)
-                            (loop next-i 'in-dollar tag))
-                           (else
-                            (write-char #\$ out)
-                            (loop (+ i 1) 'default #f))))))))
-                 (else
-                  (write-char c out)
-                  (loop (+ i 1) 'default #f)))))
-            ((eq? state 'in-single-quote)
-             (let ((c (at i)))
-               (cond
-                 ((and (char=? c #\') (eq-at? (+ i 1) #\'))
-                  (write-char #\' out) (write-char #\' out)
-                  (loop (+ i 2) 'in-single-quote #f))
-                 ((char=? c #\')
-                  (write-char #\' out) (loop (+ i 1) 'default #f))
-                 (else (write-char c out) (loop (+ i 1) 'in-single-quote #f)))))
-            ((eq? state 'in-double-quote)
-             (let ((c (at i)))
-               (cond
-                 ((and (char=? c #\") (eq-at? (+ i 1) #\"))
-                  (write-char #\" out) (write-char #\" out)
-                  (loop (+ i 2) 'in-double-quote #f))
-                 ((char=? c #\")
-                  (write-char #\" out) (loop (+ i 1) 'default #f))
-                 (else (write-char c out) (loop (+ i 1) 'in-double-quote #f)))))
-            ((eq? state 'in-line-comment)
-             (let ((c (at i)))
-               (cond
-                 ((char=? c #\newline)
-                  (write-char c out) (loop (+ i 1) 'default #f))
-                 (else (write-char c out) (loop (+ i 1) 'in-line-comment #f)))))
-            ((eq? state 'in-block-comment)
-             (let ((c (at i)))
-               (cond
-                 ((and (char=? c #\*) (eq-at? (+ i 1) #\/))
-                  (write-char #\* out) (write-char #\/ out)
-                  (loop (+ i 2) 'default #f))
-                 (else (write-char c out) (loop (+ i 1) 'in-block-comment #f)))))
-            ((eq? state 'in-dollar)
-             (let ((tag-len (string-length dollar-tag)))
-               (cond
-                 ((and (char=? (at i) #\$)
-                       (<= (+ i tag-len) n)
-                       (string=? (substring sql i (+ i tag-len)) dollar-tag))
-                  (write-string dollar-tag out)
-                  (loop (+ i tag-len) 'default #f))
-                 (else (write-char (at i) out)
-                       (loop (+ i 1) 'in-dollar dollar-tag)))))
-            (else
-             (error "pg-format-sql: internal state error" state))))))
+          (cond ((>= i n)
+                 (cond ((or (eq? state 'default) (eq? state 'in-line-comment))
+                        (get-output-string out))
+                       (else (error (string-append
+                                     "pg-format-sql: unterminated "
+                                     (symbol->string state))))))
+                ((eq? state 'default)
+                 (let ((c (at i)))
+                   (cond ((char=? c #\')
+                          (write-char c out)
+                          (loop (+ i 1) 'in-single-quote #f))
+                         ((char=? c #\")
+                          (write-char c out)
+                          (loop (+ i 1) 'in-double-quote #f))
+                         ((and (char=? c #\-) (eq-at? (+ i 1) #\-))
+                          (write-char #\- out)
+                          (write-char #\- out)
+                          (loop (+ i 2) 'in-line-comment #f))
+                         ((and (char=? c #\/) (eq-at? (+ i 1) #\*))
+                          (write-char #\/ out)
+                          (write-char #\* out)
+                          (loop (+ i 2) 'in-block-comment #f))
+                         ((char=? c #\$)
+                          (cond ((digit-at? (+ i 1))
+                                 (call-with-values
+                                     (lambda () (read-int! (+ i 1)))
+                                   (lambda (num next-i)
+                                     (cond
+                                      ((zero? num)
+                                       (error
+                                        "pg-format-sql: $0 is not a valid placeholder"))
+                                      (else (write-param! num)
+                                            (loop next-i 'default #f))))))
+                                (else (call-with-values
+                                          (lambda () (read-dollar-tag! i))
+                                        (lambda (tag next-i)
+                                          (cond
+                                           (tag (write-string tag out)
+                                                (loop next-i 'in-dollar tag))
+                                           (else
+                                            (write-char #\$ out)
+                                            (loop (+ i 1) 'default #f))))))))
+                         (else (write-char c out)
+                               (loop (+ i 1) 'default #f)))))
+                ((eq? state 'in-single-quote)
+                 (let ((c (at i)))
+                   (cond ((and (char=? c #\') (eq-at? (+ i 1) #\'))
+                          (write-char #\' out)
+                          (write-char #\' out)
+                          (loop (+ i 2) 'in-single-quote #f))
+                         ((char=? c #\')
+                          (write-char #\' out)
+                          (loop (+ i 1) 'default #f))
+                         (else (write-char c out)
+                               (loop (+ i 1) 'in-single-quote #f)))))
+                ((eq? state 'in-double-quote)
+                 (let ((c (at i)))
+                   (cond ((and (char=? c #\") (eq-at? (+ i 1) #\"))
+                          (write-char #\" out)
+                          (write-char #\" out)
+                          (loop (+ i 2) 'in-double-quote #f))
+                         ((char=? c #\")
+                          (write-char #\" out)
+                          (loop (+ i 1) 'default #f))
+                         (else (write-char c out)
+                               (loop (+ i 1) 'in-double-quote #f)))))
+                ((eq? state 'in-line-comment)
+                 (let ((c (at i)))
+                   (cond ((char=? c #\newline)
+                          (write-char c out)
+                          (loop (+ i 1) 'default #f))
+                         (else (write-char c out)
+                               (loop (+ i 1) 'in-line-comment #f)))))
+                ((eq? state 'in-block-comment)
+                 (let ((c (at i)))
+                   (cond ((and (char=? c #\*) (eq-at? (+ i 1) #\/))
+                          (write-char #\* out)
+                          (write-char #\/ out)
+                          (loop (+ i 2) 'default #f))
+                         (else (write-char c out)
+                               (loop (+ i 1) 'in-block-comment #f)))))
+                ((eq? state 'in-dollar)
+                 (let ((tag-len (string-length dollar-tag)))
+                   (cond ((and (char=? (at i) #\$)
+                               (<= (+ i tag-len) n)
+                               (string=? (substring sql i (+ i tag-len))
+                                         dollar-tag))
+                          (write-string dollar-tag out)
+                          (loop (+ i tag-len) 'default #f))
+                         (else (write-char (at i) out)
+                               (loop (+ i 1) 'in-dollar dollar-tag)))))
+                (else (error "pg-format-sql: internal state error" state))))))
 
     ;; ============================================================
     ;; Connection pool
@@ -1032,19 +1042,19 @@ Example:
     ;; ============================================================
 
     (define-record-type pg-pool
-      (%make-pool host port user password database
-                  capacity idle in-use mutex cv shutdown?)
+      (%make-pool host port user password database capacity idle in-use mutex
+                  cv shutdown?)
       pg-pool?
-      (host     pool-host)
-      (port     pool-port)
-      (user     pool-user)
+      (host pool-host)
+      (port pool-port)
+      (user pool-user)
       (password pool-password)
       (database pool-database)
       (capacity pool-capacity)
-      (idle     pool-idle     pool-idle-set!)
-      (in-use   pool-in-use   pool-in-use-set!)
-      (mutex    pool-mutex)
-      (cv       pool-cv)
+      (idle pool-idle pool-idle-set!)
+      (in-use pool-in-use pool-in-use-set!)
+      (mutex pool-mutex)
+      (cv pool-cv)
       (shutdown? pool-shutdown? pool-shutdown-set!))
 
     (define (make-pg-pool host port user password database capacity)
@@ -1055,15 +1065,15 @@ Description: Creates an empty pg connection pool. Connections are created
   to borrow a connection, and pg-pool-close-all! to tear it down.
 Example:
   (define pool (make-pg-pool \"localhost\" 5432 \"u\" \"p\" \"db\" 8))"
-      (cond
-        ((not (and (integer? capacity) (> capacity 0)))
-         (error "make-pg-pool: capacity must be a positive integer" capacity))
-        (else
-         (%make-pool host port user password database
-                     capacity '() 0
-                     (make-mutex)
-                     (make-condition-variable)
-                     #f))))
+      (cond ((not (and (integer? capacity) (> capacity 0)))
+             (error "make-pg-pool: capacity must be a positive integer"
+                    capacity))
+            (else (%make-pool host port user password database capacity
+                              '()
+                              0
+                              (make-mutex)
+                              (make-condition-variable)
+                              #f))))
 
     (define (pg-pool-checkout pool)
       "Syntax: (pg-pool-checkout pool)
@@ -1075,41 +1085,40 @@ Description: Borrows a connection from the pool. If an idle connection
   the matching checkin under exceptions."
       (mutex-lock! (pool-mutex pool))
       (let loop ()
-        (cond
-          ((pool-shutdown? pool)
-           (mutex-unlock! (pool-mutex pool))
-           (error "pg-pool: closed"))
-          ((pair? (pool-idle pool))
-           (let ((conn (car (pool-idle pool))))
-             (pool-idle-set!   pool (cdr (pool-idle pool)))
-             (pool-in-use-set! pool (+ 1 (pool-in-use pool)))
-             (mutex-unlock! (pool-mutex pool))
-             conn))
-          ((< (pool-in-use pool) (pool-capacity pool))
-           ;; Reserve a slot, then connect outside the lock — pg-connect
-           ;; takes ~100 ms with SCRAM, so we must not hold the mutex
-           ;; while doing it.
-           (pool-in-use-set! pool (+ 1 (pool-in-use pool)))
-           (mutex-unlock! (pool-mutex pool))
-           (guard (exn (#t
-                        ;; Connect failed — release the slot we reserved.
-                        (mutex-lock! (pool-mutex pool))
-                        (pool-in-use-set! pool (- (pool-in-use pool) 1))
-                        (condition-variable-signal! (pool-cv pool))
-                        (mutex-unlock! (pool-mutex pool))
-                        (raise exn)))
-             (pg-connect (pool-host pool)
-                         (pool-port pool)
-                         (pool-user pool)
-                         (pool-password pool)
-                         (pool-database pool))))
-          (else
-           ;; At capacity and nothing idle — wait. mutex-unlock! with a
-           ;; condition variable atomically releases the mutex and
-           ;; waits to be signaled.
-           (mutex-unlock! (pool-mutex pool) (pool-cv pool))
-           (mutex-lock!   (pool-mutex pool))
-           (loop)))))
+        (cond ((pool-shutdown? pool)
+               (mutex-unlock! (pool-mutex pool))
+               (error "pg-pool: closed"))
+              ((pair? (pool-idle pool))
+               (let ((conn (car (pool-idle pool))))
+                 (pool-idle-set! pool (cdr (pool-idle pool)))
+                 (pool-in-use-set! pool (+ 1 (pool-in-use pool)))
+                 (mutex-unlock! (pool-mutex pool))
+                 conn))
+              ((< (pool-in-use pool) (pool-capacity pool))
+               ;; Reserve a slot, then connect outside the lock — pg-connect
+               ;; takes ~100 ms with SCRAM, so we must not hold the mutex
+               ;; while doing it.
+               (pool-in-use-set! pool (+ 1 (pool-in-use pool)))
+               (mutex-unlock! (pool-mutex pool))
+               (guard (exn (#t
+                            ;; Connect failed — release the slot we reserved.
+                            (mutex-lock! (pool-mutex pool))
+                            (pool-in-use-set! pool (- (pool-in-use pool) 1))
+                            (condition-variable-signal! (pool-cv pool))
+                            (mutex-unlock! (pool-mutex pool))
+                            (raise exn)))
+                 (pg-connect (pool-host pool)
+                             (pool-port pool)
+                             (pool-user pool)
+                             (pool-password pool)
+                             (pool-database pool))))
+              (else
+               ;; At capacity and nothing idle — wait. mutex-unlock! with a
+               ;; condition variable atomically releases the mutex and
+               ;; waits to be signaled.
+               (mutex-unlock! (pool-mutex pool) (pool-cv pool))
+               (mutex-lock! (pool-mutex pool))
+               (loop)))))
 
     (define (pg-pool-checkin pool conn ok?)
       "Syntax: (pg-pool-checkin pool conn ok?)
@@ -1120,15 +1129,13 @@ Description: Returns conn to the pool. If ok? is #t, the connection
   in an unknown state. Prefer with-pg-pool-connection."
       (mutex-lock! (pool-mutex pool))
       (pool-in-use-set! pool (- (pool-in-use pool) 1))
-      (cond
-        ((and ok? (not (pool-shutdown? pool)))
-         (pool-idle-set! pool (cons conn (pool-idle pool)))
-         (condition-variable-signal! (pool-cv pool))
-         (mutex-unlock! (pool-mutex pool)))
-        (else
-         (condition-variable-signal! (pool-cv pool))
-         (mutex-unlock! (pool-mutex pool))
-         (guard (e (#t #f)) (pg-close conn)))))
+      (cond ((and ok? (not (pool-shutdown? pool)))
+             (pool-idle-set! pool (cons conn (pool-idle pool)))
+             (condition-variable-signal! (pool-cv pool))
+             (mutex-unlock! (pool-mutex pool)))
+            (else (condition-variable-signal! (pool-cv pool))
+                  (mutex-unlock! (pool-mutex pool))
+                  (guard (e (#t #f)) (pg-close conn)))))
 
     (define (with-pg-pool-connection pool proc)
       "Syntax: (with-pg-pool-connection pool proc)
@@ -1158,5 +1165,4 @@ Description: Marks the pool as shut down and closes every idle
       (let ((idle (pool-idle pool)))
         (pool-idle-set! pool '())
         (mutex-unlock! (pool-mutex pool))
-        (for-each (lambda (c) (guard (e (#t #f)) (pg-close c))) idle)))
-))
+        (for-each (lambda (c) (guard (e (#t #f)) (pg-close c))) idle)))))

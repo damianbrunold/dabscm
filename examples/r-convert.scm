@@ -16,17 +16,20 @@
 (define args (cdr (command-line)))
 
 (when (null? args)
-  (display "usage: scm r-convert.scm file.R | file.scm\n" (current-error-port))
+  (display "usage: scm r-convert.scm file.R | file.scm\n"
+           (current-error-port))
   (exit 2))
 
 (define path (car args))
 
-(cond
- ((or (string-suffix-ci? ".r" path) (string-suffix-ci? ".rmd" path))
-  (let-values (((text unsupported) (r-file->scm path)))
-    (display text)
-    (unless (null? unsupported)
-      (display "\n;; not translated:\n")
-      (for-each (lambda (s) (display ";;   ") (display s) (newline)) unsupported))))
- (else
-  (display (scm-file->r path))))
+(cond ((or (string-suffix-ci? ".r" path) (string-suffix-ci? ".rmd" path))
+       (let-values (((text unsupported) (r-file->scm path)))
+         (display text)
+         (unless (null? unsupported)
+           (display "\n;; not translated:\n")
+           (for-each (lambda (s)
+                       (display ";;   ")
+                       (display s)
+                       (newline))
+                     unsupported))))
+      (else (display (scm-file->r path))))

@@ -1,6 +1,6 @@
 (import (scheme base)
-        (scm test)
-        (scm io))
+        (scm io)
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 
@@ -84,8 +84,10 @@
 ;; Mixed directives
 (test-group "mixed"
   (test-equal "1 + 2 = 3" (format #f "~a + ~a = ~d" 1 2 3))
-  (test-equal "char Z, int 42, hex 2a" (format #f "char ~c, int ~d, hex ~x" #\Z 42 42))
+  (test-equal "char Z, int 42, hex 2a"
+              (format #f "char ~c, int ~d, hex ~x" #\Z 42 42))
   (test-equal "10 in hex is a, in octal is 12, in binary is 1010"
-    (format #f "~d in hex is ~x, in octal is ~o, in binary is ~b" 10 10 10 10)))
+              (format #f "~d in hex is ~x, in octal is ~o, in binary is ~b" 10
+                      10 10 10)))
 
 (test-end "srfi-28")

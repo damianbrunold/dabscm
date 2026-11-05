@@ -26,12 +26,13 @@ Example:
   (%case-lambda-match? '(a b) 2) => #t
   (%case-lambda-match? '(a b) 3) => #f
   (%case-lambda-match? 'rest 5)  => #t"
-      (cond
-        ((symbol? formals) #t)
-        ((null? formals) (= nargs 0))
-        ((pair? formals)
-         (if (= nargs 0) #f (%case-lambda-match? (cdr formals) (- nargs 1))))
-        (else #t)))
+      (cond ((symbol? formals) #t)
+            ((null? formals) (= nargs 0))
+            ((pair? formals)
+             (if (= nargs 0)
+                 #f
+                 (%case-lambda-match? (cdr formals) (- nargs 1))))
+            (else #t)))
 
     ;; Dispatch to matching clause
     (define (%case-lambda-dispatch args nargs procs fmls-list)
@@ -48,7 +49,9 @@ Example:
           (error "case-lambda: no matching clause" nargs)
           (if (%case-lambda-match? (car fmls-list) nargs)
               (apply (car procs) args)
-              (%case-lambda-dispatch args nargs (cdr procs) (cdr fmls-list)))))
+              (%case-lambda-dispatch args nargs
+                                     (cdr procs)
+                                     (cdr fmls-list)))))
 
     (define-syntax case-lambda
       "Syntax: (case-lambda (formals body ...) ...)
@@ -69,7 +72,9 @@ Example:
       (syntax-rules ()
         ((case-lambda (formals body ...) ...)
          (lambda args
-           (let ((nargs (length args)))
-             (%case-lambda-dispatch args nargs
-               (list (lambda formals body ...) ...)
-               (list 'formals ...)))))))))
+                 (let ((nargs (length args)))
+                      (%case-lambda-dispatch
+                       args
+                       nargs
+                       (list (lambda formals body ...) ...)
+                       (list 'formals ...)))))))))

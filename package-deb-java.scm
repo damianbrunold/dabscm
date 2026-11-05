@@ -24,11 +24,11 @@
         (srfi 13)
         (scm crypto)
         (scm datetime)
+        (scm deb)
         (scm fs)
         (scm io)
         (scm system)
-        (build tools)
-        (scm deb))
+        (build tools))
 
 (define maintainer "Damian Brunold <damian.brunold@bluewin.ch>")
 
@@ -53,22 +53,22 @@
               (loop))))
         (get-output-bytevector out)))))
 
-(define (read-text path)
-  (utf8->string (read-bytes path)))
+(define (read-text path) (utf8->string (read-bytes path)))
 
 (define (git . args)
   (let ((r (run-program/capture (cons "git" args) `((work-dir ,base-dir)))))
-    (unless (and (pair? r) (eqv? (car r) 0))
-      (fail "git failed: ~a" args))
+    (unless (and (pair? r) (eqv? (car r) 0)) (fail "git failed: ~a" args))
     (string-trim-both (cadr r))))
 
 ;; Recursive file list under dir, relative "/"-joined paths.
 (define (tree-files dir)
   (let walk ((rel ""))
     (let ((os (if (string=? rel "") dir (join-path dir rel)))
-          (join (lambda (n) (if (string=? rel "") n (string-append rel "/" n)))))
+          (join (lambda (n)
+                  (if (string=? rel "") n (string-append rel "/" n)))))
       (append (map join (directory-files os))
-              (append-map (lambda (d) (walk (join d))) (directory-directories os))))))
+              (append-map (lambda (d) (walk (join d)))
+                          (directory-directories os))))))
 
 ;; --- arguments ---------------------------------------------------------------
 
@@ -83,9 +83,9 @@
         ((string=? (car args) "--allow-dirty")
          (set! allow-dirty? #t)
          (loop (cdr args)))
-        (else
-         (say "usage: package-deb-java.scm [--out <dir>] [--allow-dirty]")
-         (exit 2))))
+        (else (say
+               "usage: package-deb-java.scm [--out <dir>] [--allow-dirty]")
+              (exit 2))))
 
 ;; --- inputs ------------------------------------------------------------------
 
@@ -94,76 +94,96 @@
 (define dirty? (not (string=? (git "status" "--porcelain") "")))
 
 (unless (file-exists? jar)
-  (fail "~a not found; run ./builder.sh build-and-test-scm-java.scm first" jar))
+  (fail "~a not found; run ./builder.sh build-and-test-scm-java.scm first"
+        jar))
 
 ;; The jar must be built from this VERSION (its version.txt is copied from it).
 (let ((r (run-program/capture `(,java-cmd "-jar" ,jar "--version"))))
-  (when (and (pair? r) (eqv? (car r) 0)
-             (not (string=? (string-trim-both (cadr r)) base-version)))
+  (when
+      (and (pair? r)
+           (eqv? (car r) 0)
+           (not (string=? (string-trim-both (cadr r)) base-version)))
     (fail "scm.jar reports version ~a but VERSION is ~a; rebuild it"
-          (string-trim-both (cadr r)) base-version)))
+          (string-trim-both (cadr r))
+          base-version)))
 
 (when (and dirty? (not allow-dirty?))
-  (fail "the working tree has uncommitted changes; commit them or pass --allow-dirty"))
+  (fail
+   "the working tree has uncommitted changes; commit them or pass --allow-dirty"))
 
-(define version (if dirty? (string-append base-version "+dirty") base-version))
-(define epoch (if dirty?
-                  (quotient (timestamp) 1000)
-                  (string->number (git "log" "-1" "--format=%ct"))))
+(define version
+  (if dirty? (string-append base-version "+dirty") base-version))
+(define epoch
+  (if dirty?
+      (quotient (timestamp) 1000)
+      (string->number (git "log" "-1" "--format=%ct"))))
 (define hash (git "rev-parse" "--short=8" "HEAD"))
 
 ;; --- package contents --------------------------------------------------------
 
 (define launcher
-  (string-append
-    "#!/bin/sh\n"
-    "# dabscm " version " (Java). Extra JVM options via SCM_JAVA_OPTS, e.g.\n"
-    "#   SCM_JAVA_OPTS='-Xmx4g -Dscm.jit=off' scm script.scm\n"
-    "exec java $SCM_JAVA_OPTS -jar /usr/share/dabscm/scm.jar \"$@\"\n"))
+  (string-append "#!/bin/sh\n" "# dabscm " version
+                 " (Java). Extra JVM options via SCM_JAVA_OPTS, e.g.\n"
+                 "#   SCM_JAVA_OPTS='-Xmx4g -Dscm.jit=off' scm script.scm\n"
+                 "exec java $SCM_JAVA_OPTS -jar /usr/share/dabscm/scm.jar \"$@\"\n"))
 
 (define doc "usr/share/doc/dabscm/")
 
 (define data
-  (append
-    (list (list "usr/bin/scm" #o755 (string->utf8 launcher))
-          (list "usr/share/dabscm/scm.jar" #o644 (read-bytes jar))
-          (list (string-append doc "copyright") #o644 (read-bytes (repo "LICENSE")))
-          (list (string-append doc "README.md") #o644 (read-bytes (repo "README.md")))
-          (list (string-append doc "ACKNOWLEDGMENTS.md") #o644
-                (read-bytes (repo "ACKNOWLEDGMENTS.md"))))
-    (map (lambda (f)
-           (list (string-append doc "html/" f) #o644
-                 (read-bytes (repo "documentation" "site" f))))
-         (tree-files (repo "documentation" "site")))))
+  (append (list (list "usr/bin/scm" #o755 (string->utf8 launcher))
+                (list "usr/share/dabscm/scm.jar" #o644 (read-bytes jar))
+                (list (string-append doc "copyright")
+                      #o644
+                      (read-bytes (repo "LICENSE")))
+                (list (string-append doc "README.md")
+                      #o644
+                      (read-bytes (repo "README.md")))
+                (list (string-append doc "ACKNOWLEDGMENTS.md")
+                      #o644
+                      (read-bytes (repo "ACKNOWLEDGMENTS.md"))))
+          (map (lambda (f)
+                 (list (string-append doc "html/" f)
+                       #o644
+                       (read-bytes (repo "documentation" "site" f))))
+               (tree-files (repo "documentation" "site")))))
 
 (define installed-kib
   (+ (fold (lambda (e acc)
-             (+ acc (quotient (+ (bytevector-length (entry-content e)) 1023) 1024)))
-           0 data)
+             (+ acc
+                (quotient (+ (bytevector-length (entry-content e)) 1023)
+                          1024)))
+           0
+           data)
      (- (length (add-parent-dirs data)) (length data))))
 
 ;; Debian's own "scm" package (Aubrey Jaffer's SCM) also installs /usr/bin/scm.
 (define control
-  (string-append
-    "Package: dabscm\n"
-    "Version: " version "\n"
-    "Architecture: all\n"
-    "Maintainer: " maintainer "\n"
-    "Installed-Size: " (number->string installed-kib) "\n"
-    "Depends: default-jre-headless | java11-runtime-headless\n"
-    "Conflicts: scm\n"
-    "Section: interpreters\n"
-    "Priority: optional\n"
-    "Description: R7RS Scheme interpreter (Java implementation)\n"
-    " dabscm is an R7RS-small Scheme with a bytecode VM, a JIT to JVM\n"
-    " bytecode, a sets-of-scopes hygienic macro expander, 22 SRFIs and the\n"
-    " scm extension libraries (files, processes, HTTP, databases, archives).\n"
-    " Installs the scm command.\n"))
+  (string-append "Package: dabscm\n" "Version: " version "\n"
+                 "Architecture: all\n"
+                 "Maintainer: "
+                 maintainer
+                 "\n"
+                 "Installed-Size: "
+                 (number->string installed-kib)
+                 "\n"
+                 "Depends: default-jre-headless | java11-runtime-headless\n"
+                 "Conflicts: scm\n"
+                 "Section: interpreters\n"
+                 "Priority: optional\n"
+                 "Description: R7RS Scheme interpreter (Java implementation)\n"
+                 " dabscm is an R7RS-small Scheme with a bytecode VM, a JIT to JVM\n"
+                 " bytecode, a sets-of-scopes hygienic macro expander, 22 SRFIs and the\n"
+                 " scm extension libraries (files, processes, HTTP, databases, archives).\n"
+                 " Installs the scm command.\n"))
 
 (define md5sums
   (apply string-append
-    (map (lambda (e) (string-append (md5-hash (entry-content e)) "  " (entry-name e) "\n"))
-         data)))
+         (map (lambda (e)
+                (string-append (md5-hash (entry-content e))
+                               "  "
+                               (entry-name e)
+                               "\n"))
+              data)))
 
 (define control-entries
   (list (list "control" #o644 (string->utf8 control))
@@ -175,5 +195,8 @@
 
 (let ((deb (join-path out-dir (string-append "dabscm_" version "_all.deb"))))
   (call-with-port (open-binary-output-file deb)
-    (lambda (out) (write-bytevector (deb-bytevector control-entries data epoch) out)))
-  (say "~a (commit ~a, ~a files, ~a KiB installed)" deb hash (length data) installed-kib))
+    (lambda (out)
+      (write-bytevector (deb-bytevector control-entries data epoch) out)))
+  (say "~a (commit ~a, ~a files, ~a KiB installed)" deb hash
+       (length data)
+       installed-kib))

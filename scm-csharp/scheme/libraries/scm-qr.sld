@@ -1,15 +1,19 @@
 (define-library (scm qr)
-  (import (scm core) (scheme base) (scheme write) (scm png) (srfi 151))
-  (export qr-encode
-          qr-matrix?
-          qr-matrix-size
-          qr-matrix-ref
-          qr-matrix-version
-          qr-matrix-ec-level
-          qr-matrix-mask
+  (import (scheme base)
+          (scheme write)
+          (srfi 151)
+          (scm core)
+          (scm png))
+  (export qr->ascii
           qr->png
           qr->svg
-          qr->ascii)
+          qr-encode
+          qr-matrix-ec-level
+          qr-matrix-mask
+          qr-matrix-ref
+          qr-matrix-size
+          qr-matrix-version
+          qr-matrix?)
   (begin
 
     ;; --------------------------------------------------------------
@@ -39,50 +43,136 @@
     ;; ===============================================================
 
     (define total-codewords-table
-      #(26 44 70 100 134 172 196 242 292 346
-        404 466 532 581 655 733 815 901 991 1085
-        1156 1258 1364 1474 1588 1706 1828 1921 2051 2185
-        2323 2465 2611 2761 2876 3034 3196 3362 3532 3706))
+      #(26 44 70 100 134 172 196 242 292 346 404 466 532 581 655 733 815 901
+        991 1085 1156 1258 1364 1474 1588 1706 1828 1921 2051 2185 2323 2465
+        2611 2761 2876 3034 3196 3362 3532 3706))
 
     ;; ec codewords per block, [version-1][ec-index: L=0 M=1 Q=2 H=3]
     (define ec-codewords-per-block-table
-      #(#( 7 10 13 17) #(10 16 22 28) #(15 26 18 22) #(20 18 26 16)
-        #(26 24 18 22) #(18 16 24 28) #(20 18 18 26) #(24 22 22 26)
-        #(30 22 20 24) #(18 26 24 28) #(20 30 28 24) #(24 22 26 28)
-        #(26 22 24 22) #(30 24 20 24) #(22 24 30 24) #(24 28 24 30)
-        #(28 28 28 28) #(30 26 28 28) #(28 26 26 26) #(28 26 30 28)
-        #(28 26 28 30) #(28 28 30 24) #(30 28 30 30) #(30 28 30 30)
-        #(26 28 30 30) #(28 28 28 30) #(30 28 30 30) #(30 28 30 30)
-        #(30 28 30 30) #(30 28 30 30) #(30 28 30 30) #(30 28 30 30)
-        #(30 28 30 30) #(30 28 30 30) #(30 28 30 30) #(30 28 30 30)
-        #(30 28 30 30) #(30 28 30 30) #(30 28 30 30) #(30 28 30 30)))
+      #(#(7 10 13 17)
+        #(10 16 22 28)
+        #(15 26 18 22)
+        #(20 18 26 16)
+        #(26 24 18 22)
+        #(18 16 24 28)
+        #(20 18 18 26)
+        #(24 22 22 26)
+        #(30 22 20 24)
+        #(18 26 24 28)
+        #(20 30 28 24)
+        #(24 22 26 28)
+        #(26 22 24 22)
+        #(30 24 20 24)
+        #(22 24 30 24)
+        #(24 28 24 30)
+        #(28 28 28 28)
+        #(30 26 28 28)
+        #(28 26 26 26)
+        #(28 26 30 28)
+        #(28 26 28 30)
+        #(28 28 30 24)
+        #(30 28 30 30)
+        #(30 28 30 30)
+        #(26 28 30 30)
+        #(28 28 28 30)
+        #(30 28 30 30)
+        #(30 28 30 30)
+        #(30 28 30 30)
+        #(30 28 30 30)
+        #(30 28 30 30)
+        #(30 28 30 30)
+        #(30 28 30 30)
+        #(30 28 30 30)
+        #(30 28 30 30)
+        #(30 28 30 30)
+        #(30 28 30 30)
+        #(30 28 30 30)
+        #(30 28 30 30)
+        #(30 28 30 30)))
 
     (define num-blocks-table
-      #(#( 1  1  1  1) #( 1  1  1  1) #( 1  1  2  2) #( 1  2  2  4)
-        #( 1  2  4  4) #( 2  4  4  4) #( 2  4  6  5) #( 2  4  6  6)
-        #( 2  5  8  8) #( 4  5  8  8) #( 4  5  8 11) #( 4  8 10 11)
-        #( 4  9 16 16) #( 4  9 12 16) #( 6 10 12 18) #( 6 10 17 16)
-        #( 6 11 16 19) #( 6 13 18 21) #( 7 14 21 25) #( 8 16 20 25)
-        #( 8 17 23 25) #( 9 17 23 34) #( 9 18 25 30) #(10 20 27 32)
-        #(12 21 29 35) #(12 23 34 37) #(12 25 34 40) #(13 26 35 42)
-        #(14 28 38 45) #(15 29 40 48) #(16 31 43 51) #(17 33 45 54)
-        #(18 35 48 57) #(19 37 51 60) #(19 38 53 63) #(20 40 56 66)
-        #(21 43 59 70) #(22 45 62 74) #(24 47 65 77) #(25 49 68 81)))
+      #(#(1 1 1 1)
+        #(1 1 1 1)
+        #(1 1 2 2)
+        #(1 2 2 4)
+        #(1 2 4 4)
+        #(2 4 4 4)
+        #(2 4 6 5)
+        #(2 4 6 6)
+        #(2 5 8 8)
+        #(4 5 8 8)
+        #(4 5 8 11)
+        #(4 8 10 11)
+        #(4 9 16 16)
+        #(4 9 12 16)
+        #(6 10 12 18)
+        #(6 10 17 16)
+        #(6 11 16 19)
+        #(6 13 18 21)
+        #(7 14 21 25)
+        #(8 16 20 25)
+        #(8 17 23 25)
+        #(9 17 23 34)
+        #(9 18 25 30)
+        #(10 20 27 32)
+        #(12 21 29 35)
+        #(12 23 34 37)
+        #(12 25 34 40)
+        #(13 26 35 42)
+        #(14 28 38 45)
+        #(15 29 40 48)
+        #(16 31 43 51)
+        #(17 33 45 54)
+        #(18 35 48 57)
+        #(19 37 51 60)
+        #(19 38 53 63)
+        #(20 40 56 66)
+        #(21 43 59 70)
+        #(22 45 62 74)
+        #(24 47 65 77)
+        #(25 49 68 81)))
 
     (define alignment-positions-table
       #(()
-        (6 18) (6 22) (6 26) (6 30) (6 34)
-        (6 22 38) (6 24 42) (6 26 46) (6 28 50) (6 30 54)
-        (6 32 58) (6 34 62) (6 26 46 66) (6 26 48 70) (6 26 50 74)
-        (6 30 54 78) (6 30 56 82) (6 30 58 86) (6 34 62 90)
-        (6 28 50 72 94) (6 26 50 74 98) (6 30 54 78 102) (6 28 54 80 106)
-        (6 32 58 84 110) (6 30 58 86 114) (6 34 62 90 118)
-        (6 26 50 74 98 122) (6 30 54 78 102 126) (6 26 52 78 104 130)
-        (6 30 56 82 108 134) (6 34 60 86 112 138) (6 30 58 86 114 142)
+        (6 18)
+        (6 22)
+        (6 26)
+        (6 30)
+        (6 34)
+        (6 22 38)
+        (6 24 42)
+        (6 26 46)
+        (6 28 50)
+        (6 30 54)
+        (6 32 58)
+        (6 34 62)
+        (6 26 46 66)
+        (6 26 48 70)
+        (6 26 50 74)
+        (6 30 54 78)
+        (6 30 56 82)
+        (6 30 58 86)
+        (6 34 62 90)
+        (6 28 50 72 94)
+        (6 26 50 74 98)
+        (6 30 54 78 102)
+        (6 28 54 80 106)
+        (6 32 58 84 110)
+        (6 30 58 86 114)
+        (6 34 62 90 118)
+        (6 26 50 74 98 122)
+        (6 30 54 78 102 126)
+        (6 26 52 78 104 130)
+        (6 30 56 82 108 134)
+        (6 34 60 86 112 138)
+        (6 30 58 86 114 142)
         (6 34 62 90 118 146)
-        (6 30 54 78 102 126 150) (6 24 50 76 102 128 154)
-        (6 28 54 80 106 132 158) (6 32 58 84 110 136 162)
-        (6 26 54 82 110 138 166) (6 30 58 86 114 142 170)))
+        (6 30 54 78 102 126 150)
+        (6 24 50 76 102 128 154)
+        (6 28 54 80 106 132 158)
+        (6 32 58 84 110 136 162)
+        (6 26 54 82 110 138 166)
+        (6 30 58 86 114 142 170)))
 
     (define (ec-index ec-level)
       (case ec-level
@@ -94,19 +184,21 @@
 
     (define (ec-level->format-bits ec)
       ;; format-info encoding: L=01, M=00, Q=11, H=10
-      (case ec ((0) #b01) ((1) #b00) ((2) #b11) ((3) #b10)))
+      (case ec
+        ((0) #b01)
+        ((1) #b00)
+        ((2) #b11)
+        ((3) #b10)))
 
-    (define (table-ref v1 v2 v ec)
-      (vector-ref (vector-ref v1 (- v 1)) ec))
+    (define (table-ref v1 v2 v ec) (vector-ref (vector-ref v1 (- v 1)) ec))
 
     (define (version-data-codewords version ec)
       (let* ((total (vector-ref total-codewords-table (- version 1)))
-             (ecpb  (table-ref ec-codewords-per-block-table 0 version ec))
+             (ecpb (table-ref ec-codewords-per-block-table 0 version ec))
              (blocks (table-ref num-blocks-table 0 version ec)))
         (- total (* ecpb blocks))))
 
-    (define (char-count-bits version)
-      (if (<= version 9) 8 16))
+    (define (char-count-bits version) (if (<= version 9) 8 16))
 
     (define (module-size version) (+ 17 (* 4 version)))
 
@@ -114,15 +206,18 @@
     ;; Bit stream (variable-width append)
     ;; ===============================================================
 
-    (define (new-bs) (vector 0 0 '()))   ; #(bit-count partial-byte byte-list-reversed)
+    (define (new-bs) (vector 0 0 '())) ; #(bit-count partial-byte byte-list-reversed)
 
     (define (bs-put! bs value width)
       (let loop ((cnt (vector-ref bs 0))
-                 (pb  (vector-ref bs 1))
-                 (bl  (vector-ref bs 2))
+                 (pb (vector-ref bs 1))
+                 (bl (vector-ref bs 2))
                  (i (- width 1)))
         (if (< i 0)
-            (begin (vector-set! bs 0 cnt) (vector-set! bs 1 pb) (vector-set! bs 2 bl))
+            (begin
+              (vector-set! bs 0 cnt)
+              (vector-set! bs 1 pb)
+              (vector-set! bs 2 bl))
             (let* ((bit (bitwise-and (arithmetic-shift value (- i)) 1))
                    (pb2 (bitwise-ior (arithmetic-shift pb 1) bit))
                    (cnt2 (+ cnt 1)))
@@ -134,15 +229,19 @@
 
     (define (bs->bytes bs)
       (let* ((cnt (vector-ref bs 0))
-             (pb  (vector-ref bs 1))
-             (bl  (vector-ref bs 2))
-             (bl  (if (zero? cnt) bl (cons (arithmetic-shift pb (- 8 cnt)) bl)))
+             (pb (vector-ref bs 1))
+             (bl (vector-ref bs 2))
+             (bl (if (zero? cnt)
+                     bl
+                     (cons (arithmetic-shift pb (- 8 cnt)) bl)))
              (lst (reverse bl))
              (out (make-bytevector (length lst) 0)))
         (let loop ((i 0) (l lst))
-          (if (null? l) out
-              (begin (bytevector-u8-set! out i (car l))
-                     (loop (+ i 1) (cdr l)))))))
+          (if (null? l)
+              out
+              (begin
+                (bytevector-u8-set! out i (car l))
+                (loop (+ i 1) (cdr l)))))))
 
     ;; ===============================================================
     ;; Version selection
@@ -153,7 +252,8 @@
 
     (define (choose-version data-len ec)
       (let loop ((v 1))
-        (cond ((> v 40) (error "qr: data too large for byte-mode QR" data-len))
+        (cond ((> v 40)
+               (error "qr: data too large for byte-mode QR" data-len))
               ((<= (data-bits-required data-len v)
                    (* 8 (version-data-codewords v ec)))
                v)
@@ -167,7 +267,7 @@
       (let* ((bs (new-bs))
              (cap-bits (* 8 (version-data-codewords version ec)))
              (nbytes (bytevector-length bytes)))
-        (bs-put! bs #b0100 4)                              ; mode: byte
+        (bs-put! bs #b0100 4) ; mode: byte
         (bs-put! bs nbytes (char-count-bits version))
         (let loop ((i 0))
           (when (< i nbytes)
@@ -181,11 +281,13 @@
                (need-bytes (quotient cap-bits 8))
                (out (make-bytevector need-bytes 0)))
           (bytevector-copy! out 0 bv 0 (bytevector-length bv))
-          (let loop ((i (bytevector-length bv)) (toggle #t))
+          (let loop ((i (bytevector-length bv))
+                     (toggle #t))
             (if (>= i need-bytes)
                 out
-                (begin (bytevector-u8-set! out i (if toggle #xEC #x11))
-                       (loop (+ i 1) (not toggle))))))))
+                (begin
+                  (bytevector-u8-set! out i (if toggle #xEC #x11))
+                  (loop (+ i 1) (not toggle))))))))
 
     ;; ===============================================================
     ;; Reed-Solomon over GF(256), primitive polynomial 0x11D.
@@ -198,11 +300,12 @@
       (let loop ((i 0) (x 1))
         (if (= i 255)
             'ok
-            (begin (vector-set! gf-exp i x)
-                   (vector-set! gf-log x i)
-                   (let* ((x2 (arithmetic-shift x 1))
-                          (x3 (if (>= x2 256) (bitwise-xor x2 #x11D) x2)))
-                     (loop (+ i 1) x3)))))
+            (begin
+              (vector-set! gf-exp i x)
+              (vector-set! gf-log x i)
+              (let* ((x2 (arithmetic-shift x 1))
+                     (x3 (if (>= x2 256) (bitwise-xor x2 #x11D) x2)))
+                (loop (+ i 1) x3)))))
       (let loop ((i 255))
         (when (< i 512)
           (vector-set! gf-exp i (vector-ref gf-exp (- i 255)))
@@ -213,7 +316,8 @@
     (define (gf-mul a b)
       (if (or (zero? a) (zero? b))
           0
-          (vector-ref gf-exp (+ (vector-ref gf-log a) (vector-ref gf-log b)))))
+          (vector-ref gf-exp
+                      (+ (vector-ref gf-log a) (vector-ref gf-log b)))))
 
     (define (rs-generator nsym)
       ;; Returns a vector of length nsym+1, coefficients from highest to
@@ -231,10 +335,11 @@
                 (let kloop ((k 0))
                   (when (<= k len)
                     (let ((above (if (= k 0) 0 (vector-ref g (- k 1))))
-                          (here  (if (< k len) (vector-ref g k) 0)))
+                          (here (if (< k len) (vector-ref g k) 0)))
                       ;; new[k] = (x*g)[k] xor (α^i * g)[k]
                       ;;        = here xor (α^i * above)
-                      (vector-set! new k (bitwise-xor here (gf-mul above alpha)))
+                      (vector-set! new k
+                                   (bitwise-xor here (gf-mul above alpha)))
                       (kloop (+ k 1)))))
                 (let kloop ((k 0))
                   (when (<= k len)
@@ -244,7 +349,7 @@
 
     (define (rs-encode-block data ec-length)
       ;; Returns ec-length bytes of Reed-Solomon parity for `data`.
-      (let* ((gen (rs-generator ec-length))      ; length = ec-length + 1
+      (let* ((gen (rs-generator ec-length)) ; length = ec-length + 1
              (dlen (bytevector-length data))
              (buf (make-vector (+ dlen ec-length) 0)))
         (let loop ((i 0))
@@ -257,16 +362,20 @@
               (when (not (zero? coef))
                 (let jloop ((j 1))
                   (when (<= j ec-length)
-                    (vector-set! buf (+ i j)
-                                 (bitwise-xor (vector-ref buf (+ i j))
-                                              (gf-mul (vector-ref gen j) coef)))
+                    (vector-set! buf
+                                 (+ i j)
+                                 (bitwise-xor
+                                  (vector-ref buf (+ i j))
+                                  (gf-mul (vector-ref gen j) coef)))
                     (jloop (+ j 1))))))
             (iloop (+ i 1))))
         (let ((out (make-bytevector ec-length 0)))
           (let loop ((k 0))
-            (if (= k ec-length) out
-                (begin (bytevector-u8-set! out k (vector-ref buf (+ dlen k)))
-                       (loop (+ k 1))))))))
+            (if (= k ec-length)
+                out
+                (begin
+                  (bytevector-u8-set! out k (vector-ref buf (+ dlen k)))
+                  (loop (+ k 1))))))))
 
     ;; ===============================================================
     ;; Block splitting + interleaving
@@ -285,7 +394,8 @@
               (let* ((blen (if (< i n-short) short-len (+ short-len 1)))
                      (blk (make-bytevector blen 0)))
                 (bytevector-copy! blk 0 data off (+ off blen))
-                (loop (+ i 1) (+ off blen)
+                (loop (+ i 1)
+                      (+ off blen)
                       (cons blk dblocks)
                       (cons (rs-encode-block blk ecpb) eblocks)))))))
 
@@ -321,9 +431,11 @@
     (define (make-square-matrix size init)
       (let ((m (make-vector size #f)))
         (let loop ((i 0))
-          (if (= i size) m
-              (begin (vector-set! m i (make-vector size init))
-                     (loop (+ i 1)))))))
+          (if (= i size)
+              m
+              (begin
+                (vector-set! m i (make-vector size init))
+                (loop (+ i 1)))))))
 
     (define (m-ref m y x) (vector-ref (vector-ref m y) x))
     (define (m-set! m y x v) (vector-set! (vector-ref m y) x v))
@@ -341,7 +453,8 @@
         (when (<= dy 4)
           (let xloop ((dx -4))
             (when (<= dx 4)
-              (let ((y (+ cy dy)) (x (+ cx dx)))
+              (let ((y (+ cy dy))
+                    (x (+ cx dx)))
                 (when (and (<= 0 y (- size 1)) (<= 0 x (- size 1)))
                   (let* ((d (max (abs dy) (abs dx)))
                          (dark (or (<= d 1) (= d 3))))
@@ -362,10 +475,8 @@
     (define (draw-timing! m mark size)
       (let loop ((i 0))
         (when (< i size)
-          (unless (m-ref mark 6 i)
-            (set-fn! m mark 6 i (even? i)))
-          (unless (m-ref mark i 6)
-            (set-fn! m mark i 6 (even? i)))
+          (unless (m-ref mark 6 i) (set-fn! m mark 6 i (even? i)))
+          (unless (m-ref mark i 6) (set-fn! m mark i 6 (even? i)))
           (loop (+ i 1)))))
 
     (define (reserve-format! mark size)
@@ -399,17 +510,17 @@
         (draw-finder! m mark 3 (- size 4) size)
         (draw-finder! m mark (- size 4) 3 size)
         (draw-timing! m mark size)
-        (let ((positions (vector-ref alignment-positions-table (- version 1))))
-          (for-each
-            (lambda (cy)
-              (for-each
-                (lambda (cx)
-                  (unless (or (and (< cy 8) (< cx 8))
-                              (and (< cy 8) (> cx (- size 9)))
-                              (and (> cy (- size 9)) (< cx 8)))
-                    (draw-alignment! m mark cy cx)))
-                positions))
-            positions))
+        (let
+            ((positions (vector-ref alignment-positions-table (- version 1))))
+          (for-each (lambda (cy)
+                      (for-each (lambda (cx)
+                                  (unless
+                                      (or (and (< cy 8) (< cx 8))
+                                          (and (< cy 8) (> cx (- size 9)))
+                                          (and (> cy (- size 9)) (< cx 8)))
+                                    (draw-alignment! m mark cy cx)))
+                                positions))
+                    positions))
         (reserve-format! mark size)
         (reserve-version! mark size version)
         ;; Dark module.
@@ -424,30 +535,34 @@
              (nbits (* 8 (bytevector-length bits)))
              (bit-at (lambda (i)
                        (bitwise-and 1
-                         (arithmetic-shift
-                           (bytevector-u8-ref bits (quotient i 8))
-                           (- (- 7 (modulo i 8))))))))
-        (let rcol ((right (- size 1)) (i 0))
-          (cond
-            ((<= right 0) 'done)
-            (else
-             (let ((right (if (= right 6) 5 right)))
-               (let vloop ((vert 0) (i i))
-                 (if (= vert size)
-                     (rcol (- right 2) i)
-                     (let jloop ((j 0) (i i))
-                       (if (= j 2)
-                           (vloop (+ vert 1) i)
-                           (let* ((x (- right j))
-                                  (upward? (zero? (bitwise-and (+ right 1) 2)))
-                                  (y (if upward? (- size 1 vert) vert)))
-                             (if (m-ref mark y x)
-                                 (jloop (+ j 1) i)
-                                 (if (< i nbits)
-                                     (begin
-                                       (m-set! m y x (bit-at i))
-                                       (jloop (+ j 1) (+ i 1)))
-                                     (jloop (+ j 1) i))))))))))))))
+                                    (arithmetic-shift
+                                     (bytevector-u8-ref bits (quotient i 8))
+                                     (- (- 7 (modulo i 8))))))))
+        (let rcol ((right (- size 1))
+                   (i 0))
+          (cond ((<= right 0) 'done)
+                (else (let ((right (if (= right 6) 5 right)))
+                        (let vloop ((vert 0) (i i))
+                          (if (= vert size)
+                              (rcol (- right 2) i)
+                              (let jloop ((j 0) (i i))
+                                (if (= j 2)
+                                    (vloop (+ vert 1) i)
+                                    (let*
+                                        ((x (- right j))
+                                         (upward?
+                                          (zero? (bitwise-and (+ right 1) 2)))
+                                         (y
+                                          (if upward? (- size 1 vert) vert)))
+                                      (if
+                                       (m-ref mark y x)
+                                       (jloop (+ j 1) i)
+                                       (if
+                                        (< i nbits)
+                                        (begin
+                                          (m-set! m y x (bit-at i))
+                                          (jloop (+ j 1) (+ i 1)))
+                                        (jloop (+ j 1) i))))))))))))))
 
     ;; ===============================================================
     ;; Masks
@@ -480,18 +595,22 @@
     (define (mask-penalty m size)
       (let ((p1 0) (p2 0) (p3 0) (p4 0))
         (define (count-runs get)
-          (let loop ((i 1) (run 1) (last (get 0)))
+          (let loop ((i 1)
+                     (run 1)
+                     (last (get 0)))
             (if (>= i size)
                 (when (>= run 5) (set! p1 (+ p1 (- run 2))))
                 (let ((c (get i)))
                   (if (= c last)
                       (loop (+ i 1) (+ run 1) last)
-                      (begin (when (>= run 5) (set! p1 (+ p1 (- run 2))))
-                             (loop (+ i 1) 1 c)))))))
+                      (begin
+                        (when (>= run 5) (set! p1 (+ p1 (- run 2))))
+                        (loop (+ i 1) 1 c)))))))
         (define (matches-pat? get)
           (let loop ((i 0))
             (cond ((= i 7) #t)
-                  ((= (get i) (vector-ref mask-penalty-pattern i)) (loop (+ i 1)))
+                  ((= (get i) (vector-ref mask-penalty-pattern i))
+                   (loop (+ i 1)))
                   (else #f))))
         (define (light-run? get from to)
           (let loop ((i from))
@@ -516,8 +635,7 @@
                       (b (m-ref m y (+ x 1)))
                       (c (m-ref m (+ y 1) x))
                       (d (m-ref m (+ y 1) (+ x 1))))
-                  (when (and (= a b) (= b c) (= c d))
-                    (set! p2 (+ p2 3))))
+                  (when (and (= a b) (= b c) (= c d)) (set! p2 (+ p2 3))))
                 (xloop (+ x 1))))
             (yloop (+ y 1))))
         ;; Rule 3: finder-like pattern (1011101) with 4 light modules adjacent.
@@ -526,10 +644,15 @@
             (let xloop ((x 0))
               (when (<= (+ x 6) (- size 1))
                 (when (matches-pat? (lambda (i) (m-ref m y (+ x i))))
-                  (when (or (and (<= (+ x 11) size)
-                                 (light-run? (lambda (i) (m-ref m y (+ x i))) 7 11))
-                            (and (>= x 4)
-                                 (light-run? (lambda (i) (m-ref m y (+ x i))) -4 0)))
+                  (when
+                      (or (and (<= (+ x 11) size)
+                               (light-run? (lambda (i) (m-ref m y (+ x i)))
+                                           7
+                                           11))
+                          (and (>= x 4)
+                               (light-run? (lambda (i) (m-ref m y (+ x i)))
+                                           -4
+                                           0)))
                     (set! p3 (+ p3 40))))
                 (xloop (+ x 1))))
             (yloop (+ y 1))))
@@ -538,21 +661,27 @@
             (let yloop ((y 0))
               (when (<= (+ y 6) (- size 1))
                 (when (matches-pat? (lambda (i) (m-ref m (+ y i) x)))
-                  (when (or (and (<= (+ y 11) size)
-                                 (light-run? (lambda (i) (m-ref m (+ y i) x)) 7 11))
-                            (and (>= y 4)
-                                 (light-run? (lambda (i) (m-ref m (+ y i) x)) -4 0)))
+                  (when
+                      (or (and (<= (+ y 11) size)
+                               (light-run? (lambda (i) (m-ref m (+ y i) x))
+                                           7
+                                           11))
+                          (and (>= y 4)
+                               (light-run? (lambda (i) (m-ref m (+ y i) x))
+                                           -4
+                                           0)))
                     (set! p3 (+ p3 40))))
                 (yloop (+ y 1))))
             (xloop (+ x 1))))
         ;; Rule 4: dark-module proportion.
         (let* ((total (* size size))
-               (dark
-                 (let yloop ((y 0) (acc 0))
-                   (if (= y size) acc
-                       (let xloop ((x 0) (acc acc))
-                         (if (= x size) (yloop (+ y 1) acc)
-                             (xloop (+ x 1) (+ acc (m-ref m y x))))))))
+               (dark (let yloop ((y 0) (acc 0))
+                       (if (= y size)
+                           acc
+                           (let xloop ((x 0) (acc acc))
+                             (if (= x size)
+                                 (yloop (+ y 1) acc)
+                                 (xloop (+ x 1) (+ acc (m-ref m y x))))))))
                (percent (quotient (* 100 dark) total))
                (diff (abs (- percent 50)))
                (k (quotient diff 5)))
@@ -566,16 +695,19 @@
     (define (bch-divide data data-bits gen gen-bits)
       ;; Polynomial long division in GF(2). Returns the remainder.
       (let ((d (arithmetic-shift data (- gen-bits 1))))
-        (let loop ((d d) (i (- data-bits 1)))
+        (let loop ((d d)
+                   (i (- data-bits 1)))
           (if (< i 0)
               d
-              (if (not (zero? (bitwise-and d (arithmetic-shift 1 (+ i gen-bits -1)))))
+              (if (not (zero? (bitwise-and
+                               d
+                               (arithmetic-shift 1 (+ i gen-bits -1)))))
                   (loop (bitwise-xor d (arithmetic-shift gen i)) (- i 1))
                   (loop d (- i 1)))))))
 
     (define (format-bits ec-bits mask-pattern)
       (let* ((data (bitwise-ior (arithmetic-shift ec-bits 3) mask-pattern))
-             (rem  (bch-divide data 5 #b10100110111 11))
+             (rem (bch-divide data 5 #b10100110111 11))
              (combined (bitwise-ior (arithmetic-shift data 10) rem)))
         (bitwise-xor combined #b101010000010010)))
 
@@ -615,7 +747,8 @@
       (when (>= version 7)
         (let* ((size (module-size version))
                (bits (version-info-bits version))
-               (bit (lambda (i) (bitwise-and 1 (arithmetic-shift bits (- i))))))
+               (bit (lambda (i)
+                      (bitwise-and 1 (arithmetic-shift bits (- i))))))
           (let loop ((i 0))
             (when (< i 18)
               (let* ((r (modulo i 3))
@@ -653,37 +786,43 @@ Description: Encodes data as a QR code and returns a qr-matrix record.
 Example:
   (qr->svg (qr-encode \"https://example.org\") 4 4)"
       (let* ((ec-sym (if (pair? rest) (car rest) 'M))
-             (ver-arg (if (and (pair? rest) (pair? (cdr rest))) (cadr rest) #f))
+             (ver-arg (if (and (pair? rest) (pair? (cdr rest)))
+                          (cadr rest)
+                          #f))
              (bv (cond ((string? data) (string->utf8 data))
                        ((bytevector? data) data)
-                       (else (error "qr-encode: data must be string or bytevector" data))))
+                       (else (error
+                              "qr-encode: data must be string or bytevector"
+                              data))))
              (ec (ec-index ec-sym))
-             (version (or ver-arg (choose-version (bytevector-length bv) ec))))
+             (version (or ver-arg
+                          (choose-version (bytevector-length bv) ec))))
         (encode-with-version bv ec version)))
 
     (define (encode-with-version bv ec version)
-      (let* ((codewords   (encode-data bv version ec))
-             (blocks      (split-into-blocks codewords version ec))
+      (let* ((codewords (encode-data bv version ec))
+             (blocks (split-into-blocks codewords version ec))
              (interleaved (interleave-blocks (car blocks) (cadr blocks)))
-             (size        (module-size version))
-             (m           (make-square-matrix size 0))
-             (mark        (make-square-matrix size #f)))
+             (size (module-size version))
+             (m (make-square-matrix size 0))
+             (mark (make-square-matrix size #f)))
         (draw-function-patterns! m mark version)
         (place-data! m mark version interleaved)
         (place-version-info! m version)
         ;; Try all 8 masks; pick the one with lowest penalty.
-        (let* ((best
-                (let loop ((p 0) (best 0) (best-pen #f))
-                  (if (= p 8)
-                      best
-                      (begin
-                        (apply-mask! m mark size p)
-                        (place-format-info! m version (ec-level->format-bits ec) p)
-                        (let ((pen (mask-penalty m size)))
-                          (apply-mask! m mark size p)
-                          (if (or (not best-pen) (< pen best-pen))
-                              (loop (+ p 1) p pen)
-                              (loop (+ p 1) best best-pen))))))))
+        (let* ((best (let loop ((p 0) (best 0) (best-pen #f))
+                       (if (= p 8)
+                           best
+                           (begin
+                             (apply-mask! m mark size p)
+                             (place-format-info! m version
+                                                 (ec-level->format-bits ec)
+                                                 p)
+                             (let ((pen (mask-penalty m size)))
+                               (apply-mask! m mark size p)
+                               (if (or (not best-pen) (< pen best-pen))
+                                   (loop (+ p 1) p pen)
+                                   (loop (+ p 1) best best-pen))))))))
           (apply-mask! m mark size best)
           (place-format-info! m version (ec-level->format-bits ec) best)
           (make-qr-matrix size m version ec best))))
@@ -741,10 +880,15 @@ Example:
              (full (+ modules (* 2 quiet)))
              (side (* full mod-px))
              (out (open-output-string)))
-        (display "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 " out)
-        (display full out) (display " " out) (display full out)
-        (display "\" width=\"" out) (display side out)
-        (display "\" height=\"" out) (display side out)
+        (display "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 "
+                 out)
+        (display full out)
+        (display " " out)
+        (display full out)
+        (display "\" width=\"" out)
+        (display side out)
+        (display "\" height=\"" out)
+        (display side out)
         (display "\" shape-rendering=\"crispEdges\">" out)
         (display "<rect width=\"100%\" height=\"100%\" fill=\"#fff\"/>" out)
         (display "<path fill=\"#000\" d=\"" out)
@@ -753,8 +897,10 @@ Example:
             (let xloop ((mx 0))
               (when (< mx modules)
                 (when (= 1 (vector-ref (vector-ref cells my) mx))
-                  (display "M" out) (display (+ mx quiet) out)
-                  (display " " out) (display (+ my quiet) out)
+                  (display "M" out)
+                  (display (+ mx quiet) out)
+                  (display " " out)
+                  (display (+ my quiet) out)
                   (display "h1v1h-1z" out))
                 (xloop (+ mx 1))))
             (yloop (+ my 1))))
@@ -776,12 +922,12 @@ Example:
           (when (<= y size)
             (let xloop ((x -1))
               (when (<= x size)
-                (let ((dark (and (<= 0 y (- size 1)) (<= 0 x (- size 1))
-                                 (= 1 (vector-ref (vector-ref cells y) x)))))
+                (let
+                    ((dark (and (<= 0 y (- size 1))
+                                (<= 0 x (- size 1))
+                                (= 1 (vector-ref (vector-ref cells y) x)))))
                   (display (if dark "##" "  ") out))
                 (xloop (+ x 1))))
             (newline out)
             (yloop (+ y 1))))
-        (get-output-string out)))
-
-    ))
+        (get-output-string out)))))

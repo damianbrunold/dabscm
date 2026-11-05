@@ -1,31 +1,56 @@
 (define-library (srfi 125)
-  (import (scheme base) (srfi 128))
+  (import (scheme base)
+          (srfi 128))
   (export
-    ;; Constructors
-    make-hash-table hash-table hash-table-unfold alist->hash-table
-    ;; Predicates
-    hash-table? hash-table-contains? hash-table-empty? hash-table=?
-    hash-table-mutable?
-    ;; Accessors
-    hash-table-ref hash-table-ref/default
-    ;; Mutators
-    hash-table-set! hash-table-delete! hash-table-intern!
-    hash-table-update! hash-table-update!/default
-    hash-table-pop! hash-table-clear!
-    ;; The whole hash table
-    hash-table-size hash-table-keys hash-table-values hash-table-entries
-    hash-table-find hash-table-count
-    ;; Mapping and folding
-    hash-table-map hash-table-for-each hash-table-map!
-    hash-table-map->list hash-table-fold hash-table-prune!
-    ;; Copying and conversion
-    hash-table-copy hash-table-empty-copy hash-table->alist
-    ;; Hash tables as sets
-    hash-table-union! hash-table-intersection!
-    hash-table-difference! hash-table-xor!
-    ;; Comparator access
-    hash-table-equivalence-function hash-table-hash-function
-    hash-table-comparator)
+   ;; Constructors
+   alist->hash-table
+   hash-table
+   hash-table-unfold
+   make-hash-table
+   ;; Predicates
+   hash-table-contains?
+   hash-table-empty?
+   hash-table-mutable?
+   hash-table=?
+   hash-table?
+   ;; Accessors
+   hash-table-ref
+   hash-table-ref/default
+   ;; Mutators
+   hash-table-clear!
+   hash-table-delete!
+   hash-table-intern!
+   hash-table-pop!
+   hash-table-set!
+   hash-table-update!
+   hash-table-update!/default
+   ;; The whole hash table
+   hash-table-count
+   hash-table-entries
+   hash-table-find
+   hash-table-keys
+   hash-table-size
+   hash-table-values
+   ;; Mapping and folding
+   hash-table-fold
+   hash-table-for-each
+   hash-table-map
+   hash-table-map!
+   hash-table-map->list
+   hash-table-prune!
+   ;; Copying and conversion
+   hash-table->alist
+   hash-table-copy
+   hash-table-empty-copy
+   ;; Hash tables as sets
+   hash-table-difference!
+   hash-table-intersection!
+   hash-table-union!
+   hash-table-xor!
+   ;; Comparator access
+   hash-table-comparator
+   hash-table-equivalence-function
+   hash-table-hash-function)
   (begin
 
     ;; --- Primitives ---
@@ -73,7 +98,8 @@ Example:
   (hash-table-ref ht 'b) => 2"
       (let ((ht (make-hash-table comparator)))
         (let loop ((args args))
-          (if (null? args) ht
+          (if (null? args)
+              ht
               (begin
                 (if (null? (cdr args))
                     (error "hash-table: odd number of arguments"))
@@ -96,8 +122,7 @@ Example:
         (let loop ((seed seed))
           (if (stop? seed)
               ht
-              (call-with-values
-                (lambda () (mapper seed))
+              (call-with-values (lambda () (mapper seed))
                 (lambda (key value)
                   (hash-table-set! ht key value)
                   (loop (successor seed))))))))
@@ -178,19 +203,17 @@ Example:
   (hash-table-ref ht 'a) => 1
   (hash-table-ref ht 'b (lambda () 42)) => 42
   (hash-table-ref ht 'a #f (lambda (v) (* v 10))) => 10"
-      (cond
-        ((null? args)
-         (%hash-table-ref ht key))
-        ((null? (cdr args))
-         ;; failure thunk provided
-         (if (%hash-table-exists? ht key)
-             (hash-table-ref/default ht key #f)
-             ((car args))))
-        (else
-         ;; failure and success provided
-         (if (%hash-table-exists? ht key)
-             ((cadr args) (hash-table-ref/default ht key #f))
-             ((car args))))))
+      (cond ((null? args) (%hash-table-ref ht key))
+            ((null? (cdr args))
+             ;; failure thunk provided
+             (if (%hash-table-exists? ht key)
+                 (hash-table-ref/default ht key #f)
+                 ((car args))))
+            (else
+             ;; failure and success provided
+             (if (%hash-table-exists? ht key)
+                 ((cadr args) (hash-table-ref/default ht key #f))
+                 ((car args))))))
 
     ;; --- Mutators ---
 
@@ -219,21 +242,22 @@ Example:
   (define ht (hash-table (make-default-comparator) 'a 1))
   (hash-table-update! ht 'a (lambda (v) (+ v 1)))
   (hash-table-ref ht 'a) => 2"
-      (cond
-        ((null? rest)
-         (hash-table-set! ht key (updater (%hash-table-ref ht key))))
-        ((null? (cdr rest))
-         ;; failure thunk
-         (let ((val (if (%hash-table-exists? ht key)
-                        (hash-table-ref/default ht key #f)
-                        ((car rest)))))
-           (hash-table-set! ht key (updater val))))
-        (else
-         ;; failure and success
-         (let ((val (if (%hash-table-exists? ht key)
-                        ((cadr rest) (hash-table-ref/default ht key #f))
-                        ((car rest)))))
-           (hash-table-set! ht key (updater val))))))
+      (cond ((null? rest)
+             (hash-table-set! ht key (updater (%hash-table-ref ht key))))
+            ((null? (cdr rest))
+             ;; failure thunk
+             (let
+                 ((val (if (%hash-table-exists? ht key)
+                           (hash-table-ref/default ht key #f)
+                           ((car rest)))))
+               (hash-table-set! ht key (updater val))))
+            (else
+             ;; failure and success
+             (let
+                 ((val (if (%hash-table-exists? ht key)
+                           ((cadr rest) (hash-table-ref/default ht key #f))
+                           ((car rest)))))
+               (hash-table-set! ht key (updater val))))))
 
     (define (hash-table-update!/default ht key updater default)
       "Syntax: (hash-table-update!/default ht key updater default)
@@ -244,7 +268,8 @@ Example:
   (define ht (make-hash-table (make-default-comparator)))
   (hash-table-update!/default ht 'x (lambda (v) (+ v 1)) 0)
   (hash-table-ref ht 'x) => 1"
-      (hash-table-set! ht key (updater (hash-table-ref/default ht key default))))
+      (hash-table-set! ht key
+                       (updater (hash-table-ref/default ht key default))))
 
     (define (hash-table-pop! ht)
       "Syntax: (hash-table-pop! ht)
@@ -285,8 +310,7 @@ Example:
         (if (null? alist)
             (failure)
             (let ((result (proc (caar alist) (cdar alist))))
-              (if result result
-                  (loop (cdr alist)))))))
+              (if result result (loop (cdr alist)))))))
 
     (define (hash-table-count pred ht)
       "Syntax: (hash-table-count pred ht)
@@ -296,8 +320,10 @@ returns true.
 Example:
   (define ht (hash-table (make-default-comparator) 'a 1 'b 2 'c 3))
   (hash-table-count (lambda (k v) (> v 1)) ht) => 2"
-      (let loop ((alist (hash-table->alist ht)) (n 0))
-        (if (null? alist) n
+      (let loop ((alist (hash-table->alist ht))
+                 (n 0))
+        (if (null? alist)
+            n
             (loop (cdr alist)
                   (if (pred (caar alist) (cdar alist)) (+ n 1) n)))))
 
@@ -338,7 +364,9 @@ Example:
   (hash-table-map! (lambda (k v) (* v 10)) ht)
   (hash-table-ref ht 'a) => 10"
       (for-each (lambda (pair)
-                  (hash-table-set! ht (car pair) (proc (car pair) (cdr pair))))
+                  (hash-table-set! ht
+                                   (car pair)
+                                   (proc (car pair) (cdr pair))))
                 (hash-table->alist ht)))
 
     (define (hash-table-map->list proc ht)
@@ -359,10 +387,11 @@ Note: SRFI-125 argument order is (proc init ht), unlike SRFI-69's (ht proc init)
 Example:
   (define ht (hash-table (make-default-comparator) 'a 1 'b 2))
   (hash-table-fold (lambda (k v acc) (+ v acc)) 0 ht) => 3"
-      (let loop ((alist (hash-table->alist ht)) (acc init))
-        (if (null? alist) acc
-            (loop (cdr alist)
-                  (proc (caar alist) (cdar alist) acc)))))
+      (let loop ((alist (hash-table->alist ht))
+                 (acc init))
+        (if (null? alist)
+            acc
+            (loop (cdr alist) (proc (caar alist) (cdar alist) acc)))))
 
     (define (hash-table-prune! proc ht)
       "Syntax: (hash-table-prune! proc ht)
@@ -399,9 +428,7 @@ Example:
   (define ht2 (hash-table-empty-copy ht))
   (hash-table-empty? ht2) => #t"
       (let ((comp (%get-comparator ht)))
-        (if comp
-            (make-hash-table comp)
-            (%make-hash-table-prim equal?))))
+        (if comp (make-hash-table comp) (%make-hash-table-prim equal?))))
 
     ;; --- Hash tables as sets ---
 
@@ -464,15 +491,15 @@ Example:
   (hash-table-size ht1) => 2
   (hash-table-contains? ht1 'a) => #t
   (hash-table-contains? ht1 'c) => #t"
-      (let ((to-delete '())
-            (to-add '()))
+      (let ((to-delete '()) (to-add '()))
         (for-each (lambda (pair)
                     (if (%hash-table-exists? ht1 (car pair))
                         (set! to-delete (cons (car pair) to-delete))
                         (set! to-add (cons pair to-add))))
                   (hash-table->alist ht2))
         (for-each (lambda (key) (hash-table-delete! ht1 key)) to-delete)
-        (for-each (lambda (pair) (hash-table-set! ht1 (car pair) (cdr pair))) to-add)
+        (for-each (lambda (pair) (hash-table-set! ht1 (car pair) (cdr pair)))
+                  to-add)
         ht1))
 
     ;; --- Comparator access ---
@@ -495,9 +522,7 @@ Example:
   (define ht (make-hash-table (make-default-comparator)))
   (procedure? (hash-table-equivalence-function ht)) => #t"
       (let ((comp (%get-comparator ht)))
-        (if comp
-            (comparator-equality-predicate comp)
-            equal?)))
+        (if comp (comparator-equality-predicate comp) equal?)))
 
     (define (hash-table-hash-function ht)
       "Syntax: (hash-table-hash-function ht)
@@ -507,8 +532,4 @@ Example:
   (define ht (make-hash-table (make-default-comparator)))
   (procedure? (hash-table-hash-function ht)) => #t"
       (let ((comp (%get-comparator ht)))
-        (if comp
-            (comparator-hash-function comp)
-            default-hash)))
-
-    ))
+        (if comp (comparator-hash-function comp) default-hash)))))

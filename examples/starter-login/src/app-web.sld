@@ -11,16 +11,16 @@
           (srfi 18)
           (scm io)
           (scm json simple)
+          (scm net http forms)
+          (scm net http middleware)
           (scm net http request)
           (scm net http response)
           (scm net http route)
-          (scm net http forms)
-          (scm net http static)
           (scm net http session)
-          (scm net http middleware)
+          (scm net http static)
+          (app auth)
           (app site)
           (app users)
-          (app auth)
           (app views))
   (export make-app)
   (begin
@@ -51,14 +51,15 @@ Description: Builds the app's request handler. settings is an alist:
       (let* ((site (make-site (setting settings 'url-prefix)
                               (setting settings 'static-dir)))
              (prefix (site-prefix site))
-             (auth (make-auth
-                    (make-session-config
-                     cookie-name
-                     (setting settings 'session-secret)
-                     (setting settings 'session-max-age)
-                     `((path . ,(cookie-path site))
-                       (secure? . ,(setting settings 'secure-cookies?))))
-                    (setting settings 'users-file)))
+             (auth (make-auth (make-session-config
+                               cookie-name
+                               (setting settings 'session-secret)
+                               (setting settings 'session-max-age)
+                               `((path . ,(cookie-path site))
+                                 (secure?
+                                  .
+                                  ,(setting settings 'secure-cookies?))))
+                              (setting settings 'users-file)))
              (items-file (setting settings 'items-file))
              (router (make-router)))
 
@@ -72,70 +73,93 @@ Description: Builds the app's request handler. settings is an alist:
             (let ((user (session-user auth req)))
               (if user (handler req params user) (redirect "/login")))))
 
-        (route! "GET" "/static/*" (make-static-handler (setting settings 'static-dir)))
+        (route! "GET" "/static/*"
+                (make-static-handler (setting settings 'static-dir)))
 
         (route! "GET" "/"
-          (signed-in
-            (lambda (req params user)
-              (html-response (home-page (user-name user) (load-items items-file))))))
+                (signed-in (lambda (req params user)
+                             (html-response
+                              (home-page (user-name user)
+                                         (load-items items-file))))))
 
         (route! "GET" "/login"
-          (lambda (req params)
-            (if (session-user auth req)
-                (redirect "/")
-                (html-response (login-page #f)))))
+                (lambda (req params)
+                  (if (session-user auth req)
+                      (redirect "/")
+                      (html-response (login-page #f)))))
 
         (route! "POST" "/login"
-          (lambda (req params)
-            (let* ((form (http-request-form req))
-                   (user (sign-in auth (form-ref form "username" "")
-                                  (form-ref form "password" ""))))
-              (if user
-                  (redirect "/" (start-session auth user))
-                  (begin (penalty) (html-response (login-page #t)))))))
+                (lambda (req params)
+                  (let* ((form (http-request-form req))
+                         (user (sign-in auth
+                                        (form-ref form "username" "")
+                                        (form-ref form "password" ""))))
+                    (if user
+                        (redirect "/" (start-session auth user))
+                        (begin
+                          (penalty)
+                          (html-response (login-page #t)))))))
 
         (route! "POST" "/logout"
-          (lambda (req params) (redirect "/login" (end-session auth))))
+                (lambda (req params) (redirect "/login" (end-session auth))))
 
         (route! "GET" "/profile"
-          (signed-in
-            (lambda (req params user)
-              (let ((done? (assoc "updated" (url-query-params (http-request-url req)))))
-                (html-response
-                 (profile-page (user-name user)
-                               (and done? '(success . "Password updated."))))))))
+                (signed-in (lambda (req params user)
+                             (let
+                                 ((done?
+                                   (assoc
+                                    "updated"
+                                    (url-query-params
+                                     (http-request-url req)))))
+                               (html-response
+                                (profile-page
+                                 (user-name user)
+                                 (and done?
+                                      '(success . "Password updated."))))))))
 
         (route! "POST" "/profile/password"
-          (signed-in
-            (lambda (req params user)
-              (let* ((form (http-request-form req))
-                     (new (form-ref form "new" ""))
-                     (fail (lambda (text)
-                             (html-response
-                              (profile-page (user-name user) (cons 'error text))))))
-                (cond
-                  ((not (sign-in auth (user-name user) (form-ref form "current" "")))
-                   (penalty)
-                   (fail "Current password is incorrect."))
-                  ((< (string-length new) min-password-length)
-                   (fail "New password must be at least 8 characters."))
-                  ((not (string=? new (form-ref form "confirm" "")))
-                   (fail "New passwords do not match."))
-                  (else
-                   ;; The new hash ends all other sessions; this browser
-                   ;; gets a fresh cookie.
-                   (let ((user (change-password! auth user new)))
-                     (redirect "/profile?updated" (start-session auth user)))))))))
+                (signed-in (lambda (req params user)
+                             (let* ((form (http-request-form req))
+                                    (new (form-ref form "new" ""))
+                                    (fail
+                                     (lambda (text)
+                                       (html-response
+                                        (profile-page (user-name user)
+                                                      (cons 'error text))))))
+                               (cond ((not
+                                       (sign-in auth
+                                                (user-name user)
+                                                (form-ref form "current" "")))
+                                      (penalty)
+                                      (fail "Current password is incorrect."))
+                                     ((< (string-length new)
+                                         min-password-length)
+                                      (fail
+                                       "New password must be at least 8 characters."))
+                                     ((not
+                                       (string=?
+                                        new
+                                        (form-ref form "confirm" "")))
+                                      (fail "New passwords do not match."))
+                                     (else
+                                      ;; The new hash ends all other sessions; this browser
+                                      ;; gets a fresh cookie.
+                                      (let
+                                          ((user
+                                            (change-password! auth user new)))
+                                        (redirect
+                                         "/profile?updated"
+                                         (start-session auth user)))))))))
 
         ;; Outside the prefix: the health probe talks to the app directly.
         (router-add! router "GET" "/healthz"
-          (lambda (req params) (text-response "ok\n")))
+                     (lambda (req params) (text-response "ok\n")))
 
         ;; Outermost first: log every request, add the security headers,
         ;; make the site current for url/asset, and turn errors into a
         ;; logged 500 page.
         (with-access-log
-         (with-security-headers
-          (with-site site
-           (with-error-handler (router->handler router)
-                               (lambda (req) (html-response (error-page)))))))))))
+            (with-security-headers
+                (with-site site
+                  (with-error-handler (router->handler router)
+                    (lambda (req) (html-response (error-page)))))))))))

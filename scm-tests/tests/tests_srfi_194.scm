@@ -4,12 +4,12 @@
 ;;; samples.
 
 (import (scheme base)
-        (scheme inexact)
         (scheme complex)
-        (scm test)
+        (scheme inexact)
         (srfi 27)
         (srfi 158)
-        (srfi 194))
+        (srfi 194)
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 
@@ -19,8 +19,7 @@
   (random-source-pseudo-randomize! (current-random-source) 0 0))
 
 (define (all-in-range? gen from to)
-  (generator-every (lambda (x) (and (>= x from) (< x to)))
-                   (gtake gen 1000)))
+  (generator-every (lambda (x) (and (>= x from) (< x to))) (gtake gen 1000)))
 
 ;; all values in [from, to), and each quarter of the range is hit
 (define (test-number-generator gen from to)
@@ -35,10 +34,8 @@
 (define (mean+variance gen n)
   (let loop ((i 0) (sum 0.0) (sum2 0.0))
     (if (= i n)
-        (let ((mean (/ sum n)))
-          (values mean (- (/ sum2 n) (* mean mean))))
-        (let ((x (gen)))
-          (loop (+ i 1) (+ sum x) (+ sum2 (* x x)))))))
+        (let ((mean (/ sum n))) (values mean (- (/ sum2 n) (* mean mean))))
+        (let ((x (gen))) (loop (+ i 1) (+ sum x) (+ sum2 (* x x)))))))
 
 (define (norm v)
   (let loop ((i 0) (sum 0.0))
@@ -69,8 +66,10 @@
         (s2 (make-random-source)))
     (random-source-pseudo-randomize! s1 5 0)
     (random-source-pseudo-randomize! s2 5 0)
-    (let ((g1 (with-random-source s1 (lambda () (make-random-integer-generator 0 1000000))))
-          (g2 (with-random-source s2 (lambda () (make-random-integer-generator 0 1000000)))))
+    (let ((g1 (with-random-source s1
+                (lambda () (make-random-integer-generator 0 1000000))))
+          (g2 (with-random-source s2
+                (lambda () (make-random-integer-generator 0 1000000)))))
       (test-equal (generator->list g1 10) (generator->list g2 10))))
   ;; make-random-source-generator
   (let ((g (make-random-source-generator 3))
@@ -97,9 +96,13 @@
   (test-number-generator (make-random-u16-generator) 0 65536)
   (test-number-generator (make-random-s16-generator) -32768 32768)
   (test-number-generator (make-random-u32-generator) 0 (expt 2 32))
-  (test-number-generator (make-random-s32-generator) (- (expt 2 31)) (expt 2 31))
+  (test-number-generator (make-random-s32-generator)
+                         (- (expt 2 31))
+                         (expt 2 31))
   (test-number-generator (make-random-u64-generator) 0 (expt 2 64))
-  (test-number-generator (make-random-s64-generator) (- (expt 2 63)) (expt 2 63))
+  (test-number-generator (make-random-s64-generator)
+                         (- (expt 2 63))
+                         (expt 2 63))
   (test-assert (exact-integer? ((make-random-u64-generator))))
   (test-error (make-random-integer-generator 1 1))
   (test-error (make-random-integer-generator 1.0 2))
@@ -119,10 +122,12 @@
     (test-number-generator (gmap real-part g) -1.0 1.0)
     (test-number-generator (gmap imag-part g) -10.0 10.0))
   (let ((g (make-random-polar-generator 1.0 2.0)))
-    (test-assert (generator-every (lambda (z) (<= 1.0 (magnitude z) 2.0000001))
+    (test-assert (generator-every (lambda (z)
+                                    (<= 1.0 (magnitude z) 2.0000001))
                                   (gtake g 1000))))
   (let ((g (make-random-polar-generator 3+4i 1.0 2.0)))
-    (test-assert (generator-every (lambda (z) (<= 0.9999 (magnitude (- z 3+4i)) 2.0001))
+    (test-assert (generator-every (lambda (z)
+                                    (<= 0.9999 (magnitude (- z 3+4i)) 2.0001))
                                   (gtake g 1000))))
   (let ((g (make-random-polar-generator 0.0 1.0 0.0 1.0)))
     (test-assert (generator-every (lambda (z) (<= -0.0001 (angle z) 1.0001))
@@ -140,24 +145,29 @@
     (test-assert (memv #\c chars))
     (test-assert (not (memv #\d chars))))
   (test-error (make-random-char-generator ""))
-  (let ((strings (generator->list (make-random-string-generator 5 "abc") 500)))
-    (test-assert (generator-every
-                  (lambda (s)
-                    (and (< (string-length s) 5)
-                         (string? s)
-                         (let loop ((cs (string->list s)))
-                           (or (null? cs)
-                               (and (memv (car cs) '(#\a #\b #\c))
-                                    (loop (cdr cs)))))))
-                  (list->generator strings)))
+  (let
+      ((strings (generator->list (make-random-string-generator 5 "abc") 500)))
+    (test-assert (generator-every (lambda (s)
+                                    (and
+                                     (< (string-length s) 5)
+                                     (string? s)
+                                     (let loop ((cs (string->list s)))
+                                       (or
+                                        (null? cs)
+                                        (and (memv (car cs) '(#\a #\b #\c))
+                                             (loop (cdr cs)))))))
+                                  (list->generator strings)))
     (test-assert (generator-any (lambda (s) (= (string-length s) 4))
                                 (list->generator strings)))))
 
 (test-group "bernoulli"
   (reset-source!)
-  (test-assert (generator-every (lambda (x) (= x 1)) (gtake (make-bernoulli-generator 1) 100)))
-  (test-assert (generator-every (lambda (x) (= x 0)) (gtake (make-bernoulli-generator 0) 100)))
-  (let-values (((mean var) (mean+variance (make-bernoulli-generator 0.3) 10000)))
+  (test-assert (generator-every (lambda (x) (= x 1))
+                                (gtake (make-bernoulli-generator 1) 100)))
+  (test-assert (generator-every (lambda (x) (= x 0))
+                                (gtake (make-bernoulli-generator 0) 100)))
+  (let-values
+      (((mean var) (mean+variance (make-bernoulli-generator 0.3) 10000)))
     (test-assert (close? 0.3 mean 0.03)))
   (test-error (make-bernoulli-generator 1.5)))
 
@@ -165,7 +175,8 @@
   (reset-source!)
   (let* ((g (make-categorical-generator #(1 2 7)))
          (counts (make-vector 3 0)))
-    (generator-for-each (lambda (i) (vector-set! counts i (+ 1 (vector-ref counts i))))
+    (generator-for-each (lambda (i)
+                          (vector-set! counts i (+ 1 (vector-ref counts i))))
                         (gtake g 10000))
     (test-assert (close? 0.1 (/ (vector-ref counts 0) 10000.) 0.02))
     (test-assert (close? 0.2 (/ (vector-ref counts 1) 10000.) 0.02))
@@ -178,7 +189,8 @@
   (let-values (((mean var) (mean+variance (make-normal-generator) 10000)))
     (test-assert (close? 0.0 mean 0.05))
     (test-assert (close? 1.0 var 0.05)))
-  (let-values (((mean var) (mean+variance (make-normal-generator 10.0 2.0) 10000)))
+  (let-values
+      (((mean var) (mean+variance (make-normal-generator 10.0 2.0) 10000)))
     (test-assert (close? 10.0 mean 0.1))
     (test-assert (close? 4.0 var 0.2)))
   (test-error (make-normal-generator 0.0 -1.0))
@@ -186,7 +198,8 @@
 
 (test-group "exponential"
   (reset-source!)
-  (let-values (((mean var) (mean+variance (make-exponential-generator 2.0) 10000)))
+  (let-values
+      (((mean var) (mean+variance (make-exponential-generator 2.0) 10000)))
     (test-assert (close? 2.0 mean 0.1))
     (test-assert (close? 4.0 var 0.4)))
   (test-error (make-exponential-generator 0))
@@ -194,80 +207,100 @@
 
 (test-group "geometric"
   (reset-source!)
-  (test-assert (generator-every (lambda (x) (= x 1)) (gtake (make-geometric-generator 1) 100)))
-  (let-values (((mean var) (mean+variance (make-geometric-generator 0.25) 10000)))
+  (test-assert (generator-every (lambda (x) (= x 1))
+                                (gtake (make-geometric-generator 1) 100)))
+  (let-values
+      (((mean var) (mean+variance (make-geometric-generator 0.25) 10000)))
     (test-assert (close? 4.0 mean 0.2))
     (test-assert (close? 12.0 var 1.2)))
-  (test-assert (generator-every exact-integer? (gtake (make-geometric-generator 0.5) 100)))
+  (test-assert (generator-every exact-integer?
+                                (gtake (make-geometric-generator 0.5) 100)))
   (test-error (make-geometric-generator 0)))
 
 (test-group "poisson"
   (reset-source!)
   ;; small L (Knuth) and large L (Atkinson rejection)
-  (let-values (((mean var) (mean+variance (make-poisson-generator 3.5) 10000)))
+  (let-values
+      (((mean var) (mean+variance (make-poisson-generator 3.5) 10000)))
     (test-assert (close? 3.5 mean 0.15))
     (test-assert (close? 3.5 var 0.3)))
-  (let-values (((mean var) (mean+variance (make-poisson-generator 100) 10000)))
+  (let-values
+      (((mean var) (mean+variance (make-poisson-generator 100) 10000)))
     (test-assert (close? 100.0 mean 1.0))
     (test-assert (close? 100.0 var 8.0)))
-  (test-assert (generator-every exact-integer? (gtake (make-poisson-generator 40) 100)))
+  (test-assert (generator-every exact-integer?
+                                (gtake (make-poisson-generator 40) 100)))
   (test-error (make-poisson-generator 0)))
 
 (test-group "binomial"
   (reset-source!)
-  (test-assert (generator-every zero? (gtake (make-binomial-generator 10 0) 100)))
-  (test-assert (generator-every (lambda (x) (= x 10)) (gtake (make-binomial-generator 10 1) 100)))
+  (test-assert (generator-every zero?
+                                (gtake (make-binomial-generator 10 0) 100)))
+  (test-assert (generator-every (lambda (x) (= x 10))
+                                (gtake (make-binomial-generator 10 1) 100)))
   ;; geometric method (np < 10), complement (p > 1/2), rejection (np >= 10)
-  (let-values (((mean var) (mean+variance (make-binomial-generator 10 0.25) 10000)))
+  (let-values
+      (((mean var) (mean+variance (make-binomial-generator 10 0.25) 10000)))
     (test-assert (close? 2.5 mean 0.1))
     (test-assert (close? 1.875 var 0.2)))
-  (let-values (((mean var) (mean+variance (make-binomial-generator 10 0.75) 10000)))
+  (let-values
+      (((mean var) (mean+variance (make-binomial-generator 10 0.75) 10000)))
     (test-assert (close? 7.5 mean 0.1)))
-  (let-values (((mean var) (mean+variance (make-binomial-generator 100 0.375) 10000)))
+  (let-values
+      (((mean var) (mean+variance (make-binomial-generator 100 0.375) 10000)))
     (test-assert (close? 37.5 mean 0.3))
     (test-assert (close? 23.4375 var 2.0)))
-  (test-assert (generator-every (lambda (x) (and (exact-integer? x) (<= 0 x 40)))
-                                (gtake (make-binomial-generator 40 0.375) 1000)))
+  (test-assert (generator-every (lambda (x)
+                                  (and (exact-integer? x) (<= 0 x 40)))
+                                (gtake (make-binomial-generator 40 0.375)
+                                       1000)))
   (test-error (make-binomial-generator 0 0.5))
   (test-error (make-binomial-generator 10 2)))
 
 (test-group "zipf"
   (reset-source!)
   ;; s = 1 path and s != 1 path
-  (test-assert (generator-every (lambda (k) (and (exact-integer? k) (<= 1 k 10)))
+  (test-assert (generator-every (lambda (k)
+                                  (and (exact-integer? k) (<= 1 k 10)))
                                 (gtake (make-zipf-generator 10) 1000)))
-  (test-assert (generator-every (lambda (k) (and (exact-integer? k) (<= 1 k 50)))
+  (test-assert (generator-every (lambda (k)
+                                  (and (exact-integer? k) (<= 1 k 50)))
                                 (gtake (make-zipf-generator 50 1.5) 1000)))
   ;; P(1) for s = 1, n = 10 is 1/H_10
   (let* ((n 10000)
-         (ones (generator-count (lambda (k) (= k 1)) (gtake (make-zipf-generator 10) n)))
-         (h10 (let loop ((k 1) (sum 0.0)) (if (> k 10) sum (loop (+ k 1) (+ sum (/ 1.0 k)))))))
+         (ones (generator-count (lambda (k) (= k 1))
+                                (gtake (make-zipf-generator 10) n)))
+         (h10 (let loop ((k 1) (sum 0.0))
+                (if (> k 10) sum (loop (+ k 1) (+ sum (/ 1.0 k)))))))
     (test-assert (close? (/ 1.0 h10) (/ ones (inexact n)) 0.02))))
 
 (test-group "spheres, ellipsoids and balls"
   (reset-source!)
   (let ((g (make-sphere-generator 2)))
     (test-equal 3 (vector-length (g)))
-    (test-assert (generator-every (lambda (p) (close? 1.0 (norm p) 1e-9)) (gtake g 200))))
+    (test-assert (generator-every (lambda (p) (close? 1.0 (norm p) 1e-9))
+                                  (gtake g 200))))
   (let ((g (make-ellipsoid-generator #(1.0 3.0 5.0))))
-    (test-assert (generator-every
-                  (lambda (p)
-                    (close? 1.0
-                            (+ (square (/ (vector-ref p 0) 1.0))
-                               (square (/ (vector-ref p 1) 3.0))
-                               (square (/ (vector-ref p 2) 5.0)))
-                            1e-9))
-                  (gtake g 200))))
+    (test-assert (generator-every (lambda (p)
+                                    (close?
+                                     1.0
+                                     (+ (square (/ (vector-ref p 0) 1.0))
+                                        (square (/ (vector-ref p 1) 3.0))
+                                        (square (/ (vector-ref p 2) 5.0)))
+                                     1e-9))
+                                  (gtake g 200))))
   (let ((g (make-ball-generator 3)))
     (test-equal 3 (vector-length (g)))
-    (test-assert (generator-every (lambda (p) (<= (norm p) 1.0)) (gtake g 200)))
+    (test-assert (generator-every (lambda (p) (<= (norm p) 1.0))
+                                  (gtake g 200)))
     (test-assert (generator-any (lambda (p) (< (norm p) 0.5)) (gtake g 200))))
   (let ((g (make-ball-generator #(1 3))))
-    (test-assert (generator-every
-                  (lambda (p) (<= (+ (square (vector-ref p 0))
-                                     (square (/ (vector-ref p 1) 3.0)))
-                                  1.0000001))
-                  (gtake g 200))))
+    (test-assert (generator-every (lambda (p)
+                                    (<=
+                                     (+ (square (vector-ref p 0))
+                                        (square (/ (vector-ref p 1) 3.0)))
+                                     1.0000001))
+                                  (gtake g 200))))
   (test-error (make-sphere-generator 0))
   (test-error (make-ellipsoid-generator #(1.0 -1.0)))
   (test-error (make-ball-generator 'x)))
@@ -281,7 +314,8 @@
       (test-equal '(1 2 3) (filter-list (lambda (x) (<= x 3)) values))
       (test-equal '(4 5) (filter-list (lambda (x) (> x 3)) values))))
   (test-assert (generator-any (lambda (x) (= x 2))
-                              (gtake (gsampling (circular-generator 1) (circular-generator 2))
+                              (gtake (gsampling (circular-generator 1)
+                                                (circular-generator 2))
                                      100))))
 
 (test-end "srfi-194")

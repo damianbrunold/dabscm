@@ -60,7 +60,7 @@
     (define char<=? (%primitive "char<=?"))
     (define char>? (%primitive "char>?"))
     (define char>=? (%primitive "char>=?"))
-    (define (char-ci=?  . chars)
+    (define (char-ci=? . chars)
       "Syntax: (char-ci=? char1 char2 ...)
 Library: (scheme char)
 Description: Returns #t if all given characters are equal when compared in a case-insensitive manner,
@@ -68,8 +68,8 @@ Description: Returns #t if all given characters are equal when compared in a cas
 Example:
   (char-ci=? #\\A #\\a) => #t
   (char-ci=? #\\B #\\b #\\B) => #t"
-      (apply char=?  (map char-downcase chars)))
-    (define (char-ci<?  . chars)
+      (apply char=? (map char-downcase chars)))
+    (define (char-ci<? . chars)
       "Syntax: (char-ci<? char1 char2 ...)
 Library: (scheme char)
 Description: Returns #t if the given characters are monotonically increasing (strictly less than)
@@ -77,7 +77,7 @@ Description: Returns #t if the given characters are monotonically increasing (st
 Example:
   (char-ci<? #\\a #\\B) => #t
   (char-ci<? #\\A #\\b #\\C) => #t"
-      (apply char<?  (map char-downcase chars)))
+      (apply char<? (map char-downcase chars)))
     (define (char-ci<=? . chars)
       "Syntax: (char-ci<=? char1 char2 ...)
 Library: (scheme char)
@@ -87,7 +87,7 @@ Example:
   (char-ci<=? #\\a #\\A) => #t
   (char-ci<=? #\\A #\\b #\\B) => #t"
       (apply char<=? (map char-downcase chars)))
-    (define (char-ci>?  . chars)
+    (define (char-ci>? . chars)
       "Syntax: (char-ci>? char1 char2 ...)
 Library: (scheme char)
 Description: Returns #t if the given characters are monotonically decreasing (strictly greater than)
@@ -95,7 +95,7 @@ Description: Returns #t if the given characters are monotonically decreasing (st
 Example:
   (char-ci>? #\\B #\\a) => #t
   (char-ci>? #\\C #\\b #\\A) => #t"
-      (apply char>?  (map char-downcase chars)))
+      (apply char>? (map char-downcase chars)))
     (define (char-ci>=? . chars)
       "Syntax: (char-ci>=? char1 char2 ...)
 Library: (scheme char)
@@ -122,7 +122,9 @@ Example:
       (if (null? rest)
           (%string-downcase s)
           (let* ((start (car rest))
-                 (end (if (null? (cdr rest)) (string-length s) (car (cdr rest)))))
+                 (end (if (null? (cdr rest))
+                          (string-length s)
+                          (car (cdr rest)))))
             (%string-downcase (substring s start end)))))
 
     (define %string-upcase (%primitive "string-upcase"))
@@ -137,13 +139,15 @@ Example:
       (if (null? rest)
           (%string-upcase s)
           (let* ((start (car rest))
-                 (end (if (null? (cdr rest)) (string-length s) (car (cdr rest)))))
+                 (end (if (null? (cdr rest))
+                          (string-length s)
+                          (car (cdr rest)))))
             (%string-upcase (substring s start end)))))
 
     (define string-foldcase (%primitive "string-foldcase"))
-    (define char-foldcase   (%primitive "char-foldcase"))
+    (define char-foldcase (%primitive "char-foldcase"))
 
-    (define (string-ci=?  . strs)
+    (define (string-ci=? . strs)
       "Syntax: (string-ci=? string1 string2 ...)
 Library: (scheme char)
 Description: Returns #t if all given strings are equal when compared in a case-insensitive manner,
@@ -151,8 +155,8 @@ Description: Returns #t if all given strings are equal when compared in a case-i
 Example:
   (string-ci=? \"Hello\" \"hello\") => #t
   (string-ci=? \"ABC\" \"abc\" \"Abc\") => #t"
-      (apply string=?  (map string-downcase strs)))
-    (define (string-ci<?  . strs)
+      (apply string=? (map string-downcase strs)))
+    (define (string-ci<? . strs)
       "Syntax: (string-ci<? string1 string2 ...)
 Library: (scheme char)
 Description: Returns #t if the given strings are in strictly ascending lexicographic order when
@@ -160,7 +164,7 @@ Description: Returns #t if the given strings are in strictly ascending lexicogra
 Example:
   (string-ci<? \"apple\" \"Banana\") => #t
   (string-ci<? \"a\" \"B\" \"c\") => #t"
-      (apply string<?  (map string-downcase strs)))
+      (apply string<? (map string-downcase strs)))
     (define (string-ci<=? . strs)
       "Syntax: (string-ci<=? string1 string2 ...)
 Library: (scheme char)
@@ -170,7 +174,7 @@ Example:
   (string-ci<=? \"abc\" \"ABC\") => #t
   (string-ci<=? \"Apple\" \"apple\" \"Banana\") => #t"
       (apply string<=? (map string-downcase strs)))
-    (define (string-ci>?  . strs)
+    (define (string-ci>? . strs)
       "Syntax: (string-ci>? string1 string2 ...)
 Library: (scheme char)
 Description: Returns #t if the given strings are in strictly descending lexicographic order when
@@ -178,7 +182,7 @@ Description: Returns #t if the given strings are in strictly descending lexicogr
 Example:
   (string-ci>? \"Banana\" \"apple\") => #t
   (string-ci>? \"c\" \"B\" \"a\") => #t"
-      (apply string>?  (map string-downcase strs)))
+      (apply string>? (map string-downcase strs)))
     (define (string-ci>=? . strs)
       "Syntax: (string-ci>=? string1 string2 ...)
 Library: (scheme char)

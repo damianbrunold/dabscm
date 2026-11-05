@@ -1,4 +1,8 @@
-(import (scheme base) (scheme char) (scm crypto) (scm crypto token) (scm test))
+(import (scheme base)
+        (scheme char)
+        (scm crypto)
+        (scm crypto token)
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 
@@ -12,7 +16,9 @@
   (let loop ((i 0))
     (or (= i (string-length s))
         (let ((c (string-ref s i)))
-          (and (or (char-alphabetic? c) (char-numeric? c) (memv c '(#\- #\_ #\.)))
+          (and (or (char-alphabetic? c)
+                   (char-numeric? c)
+                   (memv c '(#\- #\_ #\.)))
                (loop (+ i 1)))))))
 
 ;; Replace the character at i with one that differs from it.
@@ -28,14 +34,17 @@
     (test-equal datum (token-verify key-b64 (token-sign key-b64 datum 60)))
     (test-equal "string" (token-verify key (token-sign key "string" 60)))
     (test-equal 7 (token-verify key (token-sign key 7 #f))))
-  (test-assert "url-safe" (url-safe? (token-sign key (make-string 100 #\?) 60))))
+  (test-assert "url-safe"
+               (url-safe? (token-sign key (make-string 100 #\?) 60))))
 
 (test-group "rejected tokens"
   (let ((tok (token-sign key '((uid . 1)) 60)))
     (test-equal #f (token-verify other tok))
     (test-equal #f (token-verify key (flip tok 3)))
     (test-equal #f (token-verify key (flip tok (- (string-length tok) 2))))
-    (test-equal #f (token-verify key (substring tok 0 (- (string-length tok) 1))))
+    (test-equal #f
+                (token-verify key
+                              (substring tok 0 (- (string-length tok) 1))))
     (test-equal #f (token-verify key (string-append tok "x")))
     (test-equal #f (token-verify key ""))
     (test-equal #f (token-verify key "."))

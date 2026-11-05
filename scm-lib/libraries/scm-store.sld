@@ -1,28 +1,28 @@
 (define-library (scm store)
   (import (scheme base)
           (scheme cxr)
-          (scheme write)
           (scheme read)
+          (scheme write)
           (srfi 69)
           (srfi 132)
           (scm bytevector)
           (scm random access))
   (export ;; writing
-          store-writer-open
-          store-writer-add!
-          store-writer-close
-          ;; reading
-          store-open
-          store-close
-          store?
-          store-count
-          store-ref
-          store-field-values
-          ;; querying
-          store-query
-          store-count-matching
-          store-page
-          store-page-records)
+   store-writer-add!
+   store-writer-close
+   store-writer-open
+   ;; reading
+   store-close
+   store-count
+   store-field-values
+   store-open
+   store-ref
+   store?
+   ;; querying
+   store-count-matching
+   store-page
+   store-page-records
+   store-query)
   (begin
 
     ;; ================================================================
@@ -60,8 +60,7 @@
 
     ;; --- little-endian integer codecs over bytevectors ---
 
-    (define (write-u32-le! bv i v)
-      (bytevector-u32-set! bv i v 'little))
+    (define (write-u32-le! bv i v) (bytevector-u32-set! bv i v 'little))
 
     (define (write-u64-le! bv i v)
       (bytevector-u32-set! bv i (modulo v 4294967296) 'little)
@@ -86,8 +85,7 @@
         (write d p)
         (string->utf8 (get-output-string p))))
 
-    (define (utf8->datum bv)
-      (read (open-input-string (utf8->string bv))))
+    (define (utf8->datum bv) (read (open-input-string (utf8->string bv))))
 
     ;; --- sorted-list set operations (ascending integer rowids) ---
 
@@ -96,7 +94,8 @@
     (define (ascending-unique rows)
       (let loop ((rows rows) (acc '()))
         (cond ((null? rows) acc)
-              ((and (pair? acc) (= (car rows) (car acc))) (loop (cdr rows) acc))
+              ((and (pair? acc) (= (car rows) (car acc)))
+               (loop (cdr rows) acc))
               (else (loop (cdr rows) (cons (car rows) acc))))))
 
     (define (merge-intersect a b)
@@ -120,8 +119,8 @@
     ;; ================================================================
 
     (define-record-type <store-writer>
-      (%make-store-writer raf wpos count scalar-names multi-names
-                          offsets lens field-tables)
+      (%make-store-writer raf wpos count scalar-names multi-names offsets lens
+                          field-tables)
       store-writer?
       (raf swr-raf)
       (wpos swr-wpos set-swr-wpos!)
@@ -129,8 +128,8 @@
       (scalar-names swr-scalar-names)
       (multi-names swr-multi-names)
       (offsets swr-offsets set-swr-offsets!) ; reversed list: payload offsets
-      (lens swr-lens set-swr-lens!)          ; reversed list: payload lengths
-      (field-tables swr-field-tables))       ; vector of hash-tables, scalars then multis
+      (lens swr-lens set-swr-lens!) ; reversed list: payload lengths
+      (field-tables swr-field-tables)) ; vector of hash-tables, scalars then multis
 
     (define (store-writer-open filename scalar-names multi-names)
       "Syntax: (store-writer-open filename scalar-names multi-names)
@@ -153,7 +152,10 @@ Example:
           (when (< i nfields)
             (vector-set! tables i (make-hash-table))
             (loop (+ i 1))))
-        (%make-store-writer raf 16 0 scalar-names multi-names '() '() tables)))
+        (%make-store-writer raf 16 0 scalar-names multi-names
+                            '()
+                            '()
+                            tables)))
 
     (define (store-writer-add! w payload fields)
       "Syntax: (store-writer-add! w payload fields)
@@ -172,26 +174,35 @@ Example:
         (set-swr-wpos! w (+ off (bytevector-length bytes)))
         (set-swr-offsets! w (cons off (swr-offsets w)))
         (set-swr-lens! w (cons (bytevector-length bytes) (swr-lens w)))
-        (let loop ((i 0) (ns (swr-scalar-names w)))
+        (let loop ((i 0)
+                   (ns (swr-scalar-names w)))
           (when (pair? ns)
             (let ((p (assq (car ns) fields)))
               (when (and p (cdr p))
                 (let ((ht (vector-ref (swr-field-tables w) i)))
-                  (hash-table-set! ht (cdr p)
-                                   (cons rowid (hash-table-ref/default ht (cdr p) '()))))))
+                  (hash-table-set! ht
+                                   (cdr p)
+                                   (cons
+                                    rowid
+                                    (hash-table-ref/default ht
+                                                            (cdr p)
+                                                            '()))))))
             (loop (+ i 1) (cdr ns))))
         (let ((base (length (swr-scalar-names w))))
-          (let loop ((i 0) (ns (swr-multi-names w)))
+          (let loop ((i 0)
+                     (ns (swr-multi-names w)))
             (when (pair? ns)
               (let ((p (assq (car ns) fields))
                     (ht (vector-ref (swr-field-tables w) (+ base i))))
                 (when p
-                  (for-each
-                    (lambda (v)
-                      (when v
-                        (hash-table-set! ht v
-                                         (cons rowid (hash-table-ref/default ht v '())))))
-                    (cdr p))))
+                  (for-each (lambda (v)
+                              (when v
+                                (hash-table-set!
+                                 ht
+                                 v
+                                 (cons rowid
+                                       (hash-table-ref/default ht v '())))))
+                            (cdr p))))
               (loop (+ i 1) (cdr ns)))))
         (set-swr-count! w (+ rowid 1))
         rowid))
@@ -199,23 +210,29 @@ Example:
     ;; Build one field index region; returns (name kind vtbase vcount).
     (define (write-field-index! emit! raf name kind ht)
       (let* ((values-sorted (list-sort string<? (hash-table-keys ht)))
-             (postings-offsets
-               (map (lambda (val)
-                      (let* ((rows (ascending-unique (hash-table-ref/default ht val '())))
-                             (n (length rows))
-                             (bv (make-bytevector (+ 4 (* 4 n)) 0)))
-                        (write-u32-le! bv 0 n)
-                        (let loop ((i 0) (rs rows))
-                          (when (pair? rs)
-                            (write-u32-le! bv (+ 4 (* 4 i)) (car rs))
-                            (loop (+ i 1) (cdr rs))))
-                        (emit! bv)))
-                    values-sorted))
-             (val-locs
-               (map (lambda (val)
-                      (let ((vb (string->utf8 val)))
-                        (cons (emit! vb) (bytevector-length vb))))
-                    values-sorted))
+             (postings-offsets (map (lambda (val)
+                                      (let*
+                                          ((rows
+                                            (ascending-unique
+                                             (hash-table-ref/default ht val
+                                                                     '())))
+                                           (n (length rows))
+                                           (bv
+                                            (make-bytevector (+ 4 (* 4 n))
+                                                             0)))
+                                        (write-u32-le! bv 0 n)
+                                        (let loop ((i 0) (rs rows))
+                                          (when (pair? rs)
+                                            (write-u32-le! bv
+                                                           (+ 4 (* 4 i))
+                                                           (car rs))
+                                            (loop (+ i 1) (cdr rs))))
+                                        (emit! bv)))
+                                    values-sorted))
+             (val-locs (map (lambda (val)
+                              (let ((vb (string->utf8 val)))
+                                (cons (emit! vb) (bytevector-length vb))))
+                            values-sorted))
              (vc (length values-sorted))
              (vt (make-bytevector (* 20 vc) 0)))
         (let loop ((i 0) (vls val-locs) (pos postings-offsets))
@@ -239,20 +256,23 @@ Example:
         (let ((fc (make-bytevector 4 0)))
           (write-u32-le! fc 0 (length field-dir))
           (push! fc))
-        (for-each
-          (lambda (fd)
-            (let* ((name (car fd)) (kind (cadr fd))
-                   (vtbase (caddr fd)) (vc (cadddr fd))
-                   (nb (string->utf8 (symbol->string name)))
-                   (rec (make-bytevector (+ 4 (bytevector-length nb) 1 8 8) 0)))
-              (write-u32-le! rec 0 (bytevector-length nb))
-              (bytevector-copy! rec 4 nb 0 (bytevector-length nb))
-              (let ((o (+ 4 (bytevector-length nb))))
-                (bytevector-u8-set! rec o (if (eq? kind 'multi) 1 0))
-                (write-u64-le! rec (+ o 1) vtbase)
-                (write-u64-le! rec (+ o 9) vc))
-              (push! rec)))
-          field-dir)
+        (for-each (lambda (fd)
+                    (let* ((name (car fd))
+                           (kind (cadr fd))
+                           (vtbase (caddr fd))
+                           (vc (cadddr fd))
+                           (nb (string->utf8 (symbol->string name)))
+                           (rec (make-bytevector
+                                 (+ 4 (bytevector-length nb) 1 8 8)
+                                 0)))
+                      (write-u32-le! rec 0 (bytevector-length nb))
+                      (bytevector-copy! rec 4 nb 0 (bytevector-length nb))
+                      (let ((o (+ 4 (bytevector-length nb))))
+                        (bytevector-u8-set! rec o (if (eq? kind 'multi) 1 0))
+                        (write-u64-le! rec (+ o 1) vtbase)
+                        (write-u64-le! rec (+ o 9) vc))
+                      (push! rec)))
+                  field-dir)
         (let* ((ordered (reverse parts))
                (total (apply + (map bytevector-length ordered)))
                (out (make-bytevector total 0)))
@@ -280,31 +300,49 @@ Example:
             (random-access-file-write! raf p bv)
             (set! wpos (+ p (bytevector-length bv)))
             p))
-        (let* ((prim-base
-                 (let ((prim (make-bytevector (* 12 count) 0)))
-                   (let loop ((k 0))
-                     (when (< k count)
-                       (write-u64-le! prim (* 12 k) (vector-ref offsets k))
-                       (write-u32-le! prim (+ (* 12 k) 8) (vector-ref lens k))
-                       (loop (+ k 1))))
-                   (emit! prim)))
-               (scalar-dir
-                 (let loop ((i 0) (ns (swr-scalar-names w)) (acc '()))
-                   (if (pair? ns)
-                       (loop (+ i 1) (cdr ns)
-                             (cons (write-field-index! emit! raf (car ns) 'scalar
-                                     (vector-ref (swr-field-tables w) i))
-                                   acc))
-                       (reverse acc))))
+        (let* ((prim-base (let ((prim (make-bytevector (* 12 count) 0)))
+                            (let loop ((k 0))
+                              (when (< k count)
+                                (write-u64-le! prim
+                                               (* 12 k)
+                                               (vector-ref offsets k))
+                                (write-u32-le! prim
+                                               (+ (* 12 k) 8)
+                                               (vector-ref lens k))
+                                (loop (+ k 1))))
+                            (emit! prim)))
+               (scalar-dir (let loop ((i 0)
+                                      (ns (swr-scalar-names w))
+                                      (acc '()))
+                             (if (pair? ns)
+                                 (loop (+ i 1)
+                                       (cdr ns)
+                                       (cons
+                                        (write-field-index!
+                                         emit!
+                                         raf
+                                         (car ns)
+                                         'scalar
+                                         (vector-ref (swr-field-tables w) i))
+                                        acc))
+                                 (reverse acc))))
                (base (length (swr-scalar-names w)))
-               (multi-dir
-                 (let loop ((i 0) (ns (swr-multi-names w)) (acc '()))
-                   (if (pair? ns)
-                       (loop (+ i 1) (cdr ns)
-                             (cons (write-field-index! emit! raf (car ns) 'multi
-                                     (vector-ref (swr-field-tables w) (+ base i)))
-                                   acc))
-                       (reverse acc))))
+               (multi-dir (let loop ((i 0)
+                                     (ns (swr-multi-names w))
+                                     (acc '()))
+                            (if (pair? ns)
+                                (loop (+ i 1)
+                                      (cdr ns)
+                                      (cons
+                                       (write-field-index!
+                                        emit!
+                                        raf
+                                        (car ns)
+                                        'multi
+                                        (vector-ref (swr-field-tables w)
+                                                    (+ base i)))
+                                       acc))
+                                (reverse acc))))
                (field-dir (append scalar-dir multi-dir))
                (footer-offset wpos))
           (emit! (build-footer count prim-base field-dir))
@@ -337,8 +375,7 @@ Example:
 
     (define (parse-footer bv)
       ;; returns (values count prim-base fields-alist)
-      (unless (magic-ok? bv)
-        (error "store-open: bad footer magic"))
+      (unless (magic-ok? bv) (error "store-open: bad footer magic"))
       (let* ((count (read-u64-le bv 12))
              (prim-base (read-u64-le bv 20))
              (fcount (read-u32-le bv 28)))
@@ -347,12 +384,16 @@ Example:
               (values count prim-base (reverse acc))
               (let* ((nlen (read-u32-le bv o))
                      (name (string->symbol
-                             (utf8->string (bytevector-copy bv (+ o 4) (+ o 4 nlen)))))
+                            (utf8->string
+                             (bytevector-copy bv (+ o 4) (+ o 4 nlen)))))
                      (ko (+ o 4 nlen))
-                     (kind (if (= (bytevector-u8-ref bv ko) 1) 'multi 'scalar))
+                     (kind (if (= (bytevector-u8-ref bv ko) 1)
+                               'multi
+                               'scalar))
                      (vtbase (read-u64-le bv (+ ko 1)))
                      (vc (read-u64-le bv (+ ko 9))))
-                (loop (+ i 1) (+ ko 17)
+                (loop (+ i 1)
+                      (+ ko 17)
                       (cons (cons name (list kind vtbase vc)) acc)))))))
 
     (define (store-open filename)
@@ -370,10 +411,12 @@ Example:
           (close-random-access-file raf)
           (error "store-open: not a store file" filename))
         (let ((footer-offset (read-u64-le hdr 8)))
-          (let-values (((count prim-base fields)
-                        (parse-footer
-                          (random-access-file-read raf footer-offset
-                                                   (- size footer-offset)))))
+          (let-values
+              (((count prim-base fields)
+                (parse-footer (random-access-file-read
+                               raf
+                               footer-offset
+                               (- size footer-offset)))))
             (%make-store raf count prim-base fields)))))
 
     (define (store-close s)
@@ -402,7 +445,9 @@ Example:
       (when (or (< rowid 0) (>= rowid (st-count s)))
         (error "store-ref: rowid out of range" rowid))
       (let* ((raf (st-raf s))
-             (e (random-access-file-read raf (+ (st-prim-base s) (* 12 rowid)) 12))
+             (e (random-access-file-read raf
+                                         (+ (st-prim-base s) (* 12 rowid))
+                                         12))
              (off (read-u64-le e 0))
              (len (read-u32-le e 8)))
         (utf8->datum (random-access-file-read raf off len))))
@@ -416,15 +461,19 @@ Example:
       (let ((raf (st-raf s))
             (vtbase (cadr fi))
             (vc (caddr fi)))
-        (let loop ((lo 0) (hi (- vc 1)))
+        (let loop ((lo 0)
+                   (hi (- vc 1)))
           (if (> lo hi)
               #f
               (let* ((mid (quotient (+ lo hi) 2))
-                     (e (random-access-file-read raf (+ vtbase (* 20 mid)) 20))
+                     (e (random-access-file-read raf
+                                                 (+ vtbase (* 20 mid))
+                                                 20))
                      (voff (read-u64-le e 0))
                      (vlen (read-u32-le e 8))
                      (poff (read-u64-le e 12))
-                     (vstr (utf8->string (random-access-file-read raf voff vlen))))
+                     (vstr (utf8->string
+                            (random-access-file-read raf voff vlen))))
                 (cond ((string=? val vstr) poff)
                       ((string<? val vstr) (loop lo (- mid 1)))
                       (else (loop (+ mid 1) hi))))))))
@@ -432,8 +481,11 @@ Example:
     (define (read-postings raf poff)
       (let* ((cnt (read-u32-le (random-access-file-read raf poff 4) 0))
              (data (random-access-file-read raf (+ poff 4) (* 4 cnt))))
-        (let loop ((i (- cnt 1)) (acc '()))
-          (if (< i 0) acc (loop (- i 1) (cons (read-u32-le data (* 4 i)) acc))))))
+        (let loop ((i (- cnt 1))
+                   (acc '()))
+          (if (< i 0)
+              acc
+              (loop (- i 1) (cons (read-u32-le data (* 4 i)) acc))))))
 
     (define (store-field-values s name)
       "Syntax: (store-field-values s name)
@@ -447,14 +499,17 @@ Example:
              (raf (st-raf s))
              (vtbase (cadr fi))
              (vc (caddr fi)))
-        (let loop ((i (- vc 1)) (acc '()))
+        (let loop ((i (- vc 1))
+                   (acc '()))
           (if (< i 0)
               acc
               (let* ((e (random-access-file-read raf (+ vtbase (* 20 i)) 20))
                      (voff (read-u64-le e 0))
                      (vlen (read-u32-le e 8)))
                 (loop (- i 1)
-                      (cons (utf8->string (random-access-file-read raf voff vlen)) acc)))))))
+                      (cons (utf8->string
+                             (random-access-file-read raf voff vlen))
+                            acc)))))))
 
     ;; --- query clauses ---
     ;; A clause is one of:
@@ -471,15 +526,21 @@ Example:
       (case (car clause)
         ((eq) (eq-rows s (cadr clause) (caddr clause)))
         ((in)
-         (let loop ((vals (caddr clause)) (acc '()))
+         (let loop ((vals (caddr clause))
+                    (acc '()))
            (if (null? vals)
                acc
-               (loop (cdr vals) (merge-union acc (eq-rows s (cadr clause) (car vals)))))))
+               (loop (cdr vals)
+                     (merge-union acc
+                                  (eq-rows s (cadr clause) (car vals)))))))
         ((present)
-         (let loop ((vals (store-field-values s (cadr clause))) (acc '()))
+         (let loop ((vals (store-field-values s (cadr clause)))
+                    (acc '()))
            (if (null? vals)
                acc
-               (loop (cdr vals) (merge-union acc (eq-rows s (cadr clause) (car vals)))))))
+               (loop (cdr vals)
+                     (merge-union acc
+                                  (eq-rows s (cadr clause) (car vals)))))))
         (else (error "store-query: unknown clause" clause))))
 
     (define (store-query s clauses)
@@ -493,10 +554,12 @@ Example:
   (store-query s '((eq splg \"A1\") (in quer (\"x\" \"y\"))))"
       (if (null? clauses)
           #f
-          (let loop ((cs (cdr clauses)) (acc (clause->rows s (car clauses))))
+          (let loop ((cs (cdr clauses))
+                     (acc (clause->rows s (car clauses))))
             (if (null? cs)
                 acc
-                (loop (cdr cs) (merge-intersect acc (clause->rows s (car cs))))))))
+                (loop (cdr cs)
+                      (merge-intersect acc (clause->rows s (car cs))))))))
 
     (define (store-count-matching s clauses)
       "Syntax: (store-count-matching s clauses)
@@ -531,7 +594,9 @@ Example:
         (if rows
             (list-slice rows offset limit)
             (let ((n (st-count s)))
-              (let loop ((k (max 0 offset)) (taken 0) (acc '()))
+              (let loop ((k (max 0 offset))
+                         (taken 0)
+                         (acc '()))
                 (if (or (>= k n) (>= taken limit))
                     (reverse acc)
                     (loop (+ k 1) (+ taken 1) (cons k acc))))))))

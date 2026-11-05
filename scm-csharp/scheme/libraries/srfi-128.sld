@@ -1,19 +1,43 @@
 (define-library (srfi 128)
-  (import (scheme base) (scheme char) (scheme inexact) (scheme complex))
-  (export comparator? comparator-ordered? comparator-hashable?
-          make-comparator
-          make-pair-comparator make-list-comparator make-vector-comparator
-          make-eq-comparator make-eqv-comparator make-equal-comparator
-          boolean-hash char-hash char-ci-hash default-hash number-hash
-          string-hash string-ci-hash symbol-hash
-          hash-bound hash-salt
-          make-default-comparator default-comparator
-          comparator-type-test-predicate comparator-equality-predicate
-          comparator-ordering-predicate comparator-hash-function
-          comparator-test-type comparator-check-type
-          =? <? >? <=? >=?
+  (import (scheme base)
+          (scheme char)
+          (scheme complex)
+          (scheme inexact))
+  (export <=?
+          <?
+          =?
+          >=?
+          >?
+          boolean-hash
+          char-ci-hash
+          char-hash
+          comparator-check-type
+          comparator-equality-predicate
+          comparator-hash-function
+          comparator-hashable?
           comparator-if<=>
-          comparator-register-default!)
+          comparator-ordered?
+          comparator-ordering-predicate
+          comparator-register-default!
+          comparator-test-type
+          comparator-type-test-predicate
+          comparator?
+          default-comparator
+          default-hash
+          hash-bound
+          hash-salt
+          make-comparator
+          make-default-comparator
+          make-eq-comparator
+          make-equal-comparator
+          make-eqv-comparator
+          make-list-comparator
+          make-pair-comparator
+          make-vector-comparator
+          number-hash
+          string-ci-hash
+          string-hash
+          symbol-hash)
   (begin
 
     ;; --- Record type ---
@@ -44,8 +68,15 @@ Example:
       (let ((type-test (if (eq? type-test #t) (lambda (x) #t) type-test))
             (equality (if (eq? equality #t) equal? equality)))
         (%make-comparator type-test equality
-                          (if ordering ordering (lambda (a b) (error "comparator has no ordering predicate")))
-                          (if hash hash (lambda (x) (error "comparator has no hash function")))
+                          (if ordering
+                              ordering
+                              (lambda (a b)
+                                (error
+                                 "comparator has no ordering predicate")))
+                          (if hash
+                              hash
+                              (lambda (x)
+                                (error "comparator has no hash function")))
                           (and ordering #t)
                           (and hash #t))))
 
@@ -134,8 +165,7 @@ Example:
       (let loop ((i 0) (h 0))
         (if (= i (string-length obj))
             (modulo h (hash-bound))
-            (loop (+ i 1)
-                  (+ (* h 31) (char->integer (string-ref obj i)))))))
+            (loop (+ i 1) (+ (* h 31) (char->integer (string-ref obj i)))))))
 
     (define (string-ci-hash obj)
       "Syntax: (string-ci-hash obj)
@@ -161,25 +191,24 @@ Description: Returns a hash value for any object using the default hashing strat
 Example:
   (integer? (default-hash 42)) => #t
   (integer? (default-hash \"hello\")) => #t"
-      (cond
-        ((boolean? obj) (boolean-hash obj))
-        ((char? obj) (char-hash obj))
-        ((string? obj) (string-hash obj))
-        ((symbol? obj) (symbol-hash obj))
-        ((number? obj) (number-hash obj))
-        ((null? obj) 0)
-        ((pair? obj)
-         (modulo (+ (* 31 (default-hash (car obj)))
-                    (default-hash (cdr obj)))
-                 (hash-bound)))
-        ((vector? obj)
-         (let ((len (min (vector-length obj) 8)))
-           (let loop ((i 0) (h 0))
-             (if (= i len)
-                 (modulo h (hash-bound))
-                 (loop (+ i 1)
-                       (+ (* h 31) (default-hash (vector-ref obj i))))))))
-        (else 0)))
+      (cond ((boolean? obj) (boolean-hash obj))
+            ((char? obj) (char-hash obj))
+            ((string? obj) (string-hash obj))
+            ((symbol? obj) (symbol-hash obj))
+            ((number? obj) (number-hash obj))
+            ((null? obj) 0)
+            ((pair? obj)
+             (modulo (+ (* 31 (default-hash (car obj)))
+                        (default-hash (cdr obj)))
+                     (hash-bound)))
+            ((vector? obj)
+             (let ((len (min (vector-length obj) 8)))
+               (let loop ((i 0) (h 0))
+                 (if (= i len)
+                     (modulo h (hash-bound))
+                     (loop (+ i 1)
+                           (+ (* h 31) (default-hash (vector-ref obj i))))))))
+            (else 0)))
 
     ;; --- Standard comparators ---
 
@@ -227,86 +256,109 @@ Example:
             (cons comparator *default-comparator-registry*)))
 
     (define (default-comparator-type-test obj)
-      (or (boolean? obj) (char? obj) (string? obj) (symbol? obj)
-          (number? obj) (null? obj) (pair? obj) (vector? obj)
+      (or (boolean? obj)
+          (char? obj)
+          (string? obj)
+          (symbol? obj)
+          (number? obj)
+          (null? obj)
+          (pair? obj)
+          (vector? obj)
           (let loop ((regs *default-comparator-registry*))
-            (if (null? regs) #f
-                (if (comparator-test-type (car regs) obj) #t
+            (if (null? regs)
+                #f
+                (if (comparator-test-type (car regs) obj)
+                    #t
                     (loop (cdr regs)))))))
 
     (define (type-index obj)
-      (cond
-        ((null? obj)    0)
-        ((boolean? obj) 1)
-        ((char? obj)    2)
-        ((number? obj)  3)
-        ((string? obj)  4)
-        ((symbol? obj)  5)
-        ((pair? obj)    6)
-        ((vector? obj)  7)
-        (else           8)))
+      (cond ((null? obj) 0)
+            ((boolean? obj) 1)
+            ((char? obj) 2)
+            ((number? obj) 3)
+            ((string? obj) 4)
+            ((symbol? obj) 5)
+            ((pair? obj) 6)
+            ((vector? obj) 7)
+            (else 8)))
 
     (define (default-comparator-equality a b)
-      (cond
-        ((and (boolean? a) (boolean? b)) (eq? a b))
-        ((and (char? a) (char? b)) (char=? a b))
-        ((and (number? a) (number? b)) (= a b))
-        ((and (string? a) (string? b)) (string=? a b))
-        ((and (symbol? a) (symbol? b)) (eq? a b))
-        ((and (null? a) (null? b)) #t)
-        ((and (pair? a) (pair? b))
-         (and (default-comparator-equality (car a) (car b))
-              (default-comparator-equality (cdr a) (cdr b))))
-        ((and (vector? a) (vector? b))
-         (and (= (vector-length a) (vector-length b))
-              (let loop ((i 0))
-                (or (= i (vector-length a))
-                    (and (default-comparator-equality (vector-ref a i) (vector-ref b i))
-                         (loop (+ i 1)))))))
-        (else
-         (let loop ((regs *default-comparator-registry*))
-           (if (null? regs) (equal? a b)
-               (if (and (comparator-test-type (car regs) a)
-                        (comparator-test-type (car regs) b))
-                   ((comparator-equality-predicate (car regs)) a b)
-                   (loop (cdr regs))))))))
+      (cond ((and (boolean? a) (boolean? b)) (eq? a b))
+            ((and (char? a) (char? b)) (char=? a b))
+            ((and (number? a) (number? b)) (= a b))
+            ((and (string? a) (string? b)) (string=? a b))
+            ((and (symbol? a) (symbol? b)) (eq? a b))
+            ((and (null? a) (null? b)) #t)
+            ((and (pair? a) (pair? b))
+             (and (default-comparator-equality (car a) (car b))
+                  (default-comparator-equality (cdr a) (cdr b))))
+            ((and (vector? a) (vector? b))
+             (and (= (vector-length a) (vector-length b))
+                  (let loop ((i 0))
+                    (or (= i (vector-length a))
+                        (and (default-comparator-equality (vector-ref a i)
+                                                          (vector-ref b i))
+                             (loop (+ i 1)))))))
+            (else (let loop ((regs *default-comparator-registry*))
+                    (if (null? regs)
+                        (equal? a b)
+                        (if (and (comparator-test-type (car regs) a)
+                                 (comparator-test-type (car regs) b))
+                            ((comparator-equality-predicate (car regs)) a b)
+                            (loop (cdr regs))))))))
 
     (define (default-comparator-ordering a b)
-      (let ((ia (type-index a)) (ib (type-index b)))
-        (cond
-          ((< ia ib) #t)
-          ((> ia ib) #f)
-          (else
-           (cond
-             ((null? a) #f)
-             ((boolean? a) (and (not a) b))
-             ((char? a) (char<? a b))
-             ((number? a) (< a b))
-             ((string? a) (string<? a b))
-             ((symbol? a) (string<? (symbol->string a) (symbol->string b)))
-             ((pair? a)
-              (cond
-                ((default-comparator-ordering (car a) (car b)) #t)
-                ((default-comparator-ordering (car b) (car a)) #f)
-                (else (default-comparator-ordering (cdr a) (cdr b)))))
-             ((vector? a)
-              (let ((la (vector-length a)) (lb (vector-length b)))
-                (let loop ((i 0))
-                  (cond
-                    ((and (= i la) (= i lb)) #f)
-                    ((= i la) #t)
-                    ((= i lb) #f)
-                    ((default-comparator-ordering (vector-ref a i) (vector-ref b i)) #t)
-                    ((default-comparator-ordering (vector-ref b i) (vector-ref a i)) #f)
-                    (else (loop (+ i 1)))))))
-             (else
-              (let loop ((regs *default-comparator-registry*))
-                (if (null? regs) (error "cannot order objects" a b)
-                    (if (and (comparator-test-type (car regs) a)
-                             (comparator-test-type (car regs) b)
-                             (comparator-ordered? (car regs)))
-                        ((comparator-ordering-predicate (car regs)) a b)
-                        (loop (cdr regs)))))))))))
+      (let ((ia (type-index a))
+            (ib (type-index b)))
+        (cond ((< ia ib) #t)
+              ((> ia ib) #f)
+              (else (cond ((null? a) #f)
+                          ((boolean? a) (and (not a) b))
+                          ((char? a) (char<? a b))
+                          ((number? a) (< a b))
+                          ((string? a) (string<? a b))
+                          ((symbol? a)
+                           (string<? (symbol->string a) (symbol->string b)))
+                          ((pair? a)
+                           (cond ((default-comparator-ordering (car a)
+                                                               (car b))
+                                  #t)
+                                 ((default-comparator-ordering (car b)
+                                                               (car a))
+                                  #f)
+                                 (else (default-comparator-ordering
+                                        (cdr a)
+                                        (cdr b)))))
+                          ((vector? a)
+                           (let ((la (vector-length a))
+                                 (lb (vector-length b)))
+                             (let loop ((i 0))
+                               (cond ((and (= i la) (= i lb)) #f)
+                                     ((= i la) #t)
+                                     ((= i lb) #f)
+                                     ((default-comparator-ordering
+                                       (vector-ref a i)
+                                       (vector-ref b i))
+                                      #t)
+                                     ((default-comparator-ordering
+                                       (vector-ref b i)
+                                       (vector-ref a i))
+                                      #f)
+                                     (else (loop (+ i 1)))))))
+                          (else (let loop
+                                    ((regs *default-comparator-registry*))
+                                  (if (null? regs)
+                                      (error "cannot order objects" a b)
+                                      (if
+                                       (and
+                                        (comparator-test-type (car regs) a)
+                                        (comparator-test-type (car regs) b)
+                                        (comparator-ordered? (car regs)))
+                                       ((comparator-ordering-predicate
+                                         (car regs))
+                                        a
+                                        b)
+                                       (loop (cdr regs)))))))))))
 
     (define (make-default-comparator)
       "Syntax: (make-default-comparator)
@@ -320,9 +372,7 @@ Example:
   (<? c \"a\" \"b\") => #t"
       (%make-comparator default-comparator-type-test
                         default-comparator-equality
-                        default-comparator-ordering
-                        default-hash
-                        #t #t))
+                        default-comparator-ordering default-hash #t #t))
 
     (define default-comparator (make-default-comparator))
 
@@ -336,26 +386,50 @@ the given comparators.
 Example:
   (define c (make-pair-comparator (make-default-comparator) (make-default-comparator)))
   (=? c '(1 . 2) '(1 . 2)) => #t"
-      (make-comparator
-       pair?
-       (lambda (a b)
-         (and ((comparator-equality-predicate car-comparator) (car a) (car b))
-              ((comparator-equality-predicate cdr-comparator) (cdr a) (cdr b))))
-       (if (and (comparator-ordered? car-comparator) (comparator-ordered? cdr-comparator))
-           (lambda (a b)
-             (cond
-               (((comparator-ordering-predicate car-comparator) (car a) (car b)) #t)
-               (((comparator-ordering-predicate car-comparator) (car b) (car a)) #f)
-               (else ((comparator-ordering-predicate cdr-comparator) (cdr a) (cdr b)))))
-           #f)
-       (if (and (comparator-hashable? car-comparator) (comparator-hashable? cdr-comparator))
-           (lambda (x)
-             (modulo (+ (* 31 ((comparator-hash-function car-comparator) (car x)))
-                        ((comparator-hash-function cdr-comparator) (cdr x)))
-                     (hash-bound)))
-           #f)))
+      (make-comparator pair?
+                       (lambda (a b)
+                         (and ((comparator-equality-predicate car-comparator)
+                               (car a)
+                               (car b))
+                              ((comparator-equality-predicate cdr-comparator)
+                               (cdr a)
+                               (cdr b))))
+                       (if (and (comparator-ordered? car-comparator)
+                                (comparator-ordered? cdr-comparator))
+                           (lambda (a b)
+                             (cond (((comparator-ordering-predicate
+                                      car-comparator)
+                                     (car a)
+                                     (car b))
+                                    #t)
+                                   (((comparator-ordering-predicate
+                                      car-comparator)
+                                     (car b)
+                                     (car a))
+                                    #f)
+                                   (else
+                                    ((comparator-ordering-predicate
+                                      cdr-comparator)
+                                     (cdr a)
+                                     (cdr b)))))
+                           #f)
+                       (if (and (comparator-hashable? car-comparator)
+                                (comparator-hashable? cdr-comparator))
+                           (lambda (x)
+                             (modulo (+
+                                      (*
+                                       31
+                                       ((comparator-hash-function
+                                         car-comparator)
+                                        (car x)))
+                                      ((comparator-hash-function
+                                        cdr-comparator)
+                                       (cdr x)))
+                                     (hash-bound)))
+                           #f)))
 
-    (define (make-list-comparator element-comparator type-test empty? head tail)
+    (define
+        (make-list-comparator element-comparator type-test empty? head tail)
       "Syntax: (make-list-comparator element-comparator type-test empty? head tail)
 Library: (srfi 128)
 Description: Returns a comparator for list-like sequences using the given element
@@ -363,33 +437,47 @@ comparator and sequence access procedures.
 Example:
   (define c (make-list-comparator (make-default-comparator) list? null? car cdr))
   (=? c '(1 2 3) '(1 2 3)) => #t"
-      (make-comparator
-       type-test
-       (lambda (a b)
-         (let loop ((a a) (b b))
-           (cond
-             ((and (empty? a) (empty? b)) #t)
-             ((or (empty? a) (empty? b)) #f)
-             (else (and ((comparator-equality-predicate element-comparator) (head a) (head b))
-                        (loop (tail a) (tail b)))))))
-       (if (comparator-ordered? element-comparator)
-           (lambda (a b)
-             (let loop ((a a) (b b))
-               (cond
-                 ((and (empty? a) (empty? b)) #f)
-                 ((empty? a) #t)
-                 ((empty? b) #f)
-                 (((comparator-ordering-predicate element-comparator) (head a) (head b)) #t)
-                 (((comparator-ordering-predicate element-comparator) (head b) (head a)) #f)
-                 (else (loop (tail a) (tail b))))))
-           #f)
-       (if (comparator-hashable? element-comparator)
-           (lambda (x)
-             (let loop ((x x) (h 0))
-               (if (empty? x) (modulo h (hash-bound))
-                   (loop (tail x)
-                         (+ (* h 31) ((comparator-hash-function element-comparator) (head x)))))))
-           #f)))
+      (make-comparator type-test
+                       (lambda (a b)
+                         (let loop ((a a) (b b))
+                           (cond ((and (empty? a) (empty? b)) #t)
+                                 ((or (empty? a) (empty? b)) #f)
+                                 (else (and
+                                        ((comparator-equality-predicate
+                                          element-comparator)
+                                         (head a)
+                                         (head b))
+                                        (loop (tail a) (tail b)))))))
+                       (if (comparator-ordered? element-comparator)
+                           (lambda (a b)
+                             (let loop ((a a) (b b))
+                               (cond ((and (empty? a) (empty? b)) #f)
+                                     ((empty? a) #t)
+                                     ((empty? b) #f)
+                                     (((comparator-ordering-predicate
+                                        element-comparator)
+                                       (head a)
+                                       (head b))
+                                      #t)
+                                     (((comparator-ordering-predicate
+                                        element-comparator)
+                                       (head b)
+                                       (head a))
+                                      #f)
+                                     (else (loop (tail a) (tail b))))))
+                           #f)
+                       (if (comparator-hashable? element-comparator)
+                           (lambda (x)
+                             (let loop ((x x) (h 0))
+                               (if (empty? x)
+                                   (modulo h (hash-bound))
+                                   (loop
+                                    (tail x)
+                                    (+ (* h 31)
+                                       ((comparator-hash-function
+                                         element-comparator)
+                                        (head x)))))))
+                           #f)))
 
     (define (make-vector-comparator element-comparator type-test length ref)
       "Syntax: (make-vector-comparator element-comparator type-test length ref)
@@ -399,34 +487,51 @@ comparator and vector access procedures.
 Example:
   (define c (make-vector-comparator (make-default-comparator) vector? vector-length vector-ref))
   (=? c #(1 2 3) #(1 2 3)) => #t"
-      (make-comparator
-       type-test
-       (lambda (a b)
-         (and (= (length a) (length b))
-              (let loop ((i 0))
-                (or (= i (length a))
-                    (and ((comparator-equality-predicate element-comparator) (ref a i) (ref b i))
-                         (loop (+ i 1)))))))
-       (if (comparator-ordered? element-comparator)
-           (lambda (a b)
-             (let ((la (length a)) (lb (length b)))
-               (let loop ((i 0))
-                 (cond
-                   ((and (= i la) (= i lb)) #f)
-                   ((= i la) #t)
-                   ((= i lb) #f)
-                   (((comparator-ordering-predicate element-comparator) (ref a i) (ref b i)) #t)
-                   (((comparator-ordering-predicate element-comparator) (ref b i) (ref a i)) #f)
-                   (else (loop (+ i 1)))))))
-           #f)
-       (if (comparator-hashable? element-comparator)
-           (lambda (x)
-             (let ((len (min (length x) 8)))
-               (let loop ((i 0) (h 0))
-                 (if (= i len) (modulo h (hash-bound))
-                     (loop (+ i 1)
-                           (+ (* h 31) ((comparator-hash-function element-comparator) (ref x i))))))))
-           #f)))
+      (make-comparator type-test
+                       (lambda (a b)
+                         (and (= (length a) (length b))
+                              (let loop ((i 0))
+                                (or (= i (length a))
+                                    (and
+                                     ((comparator-equality-predicate
+                                       element-comparator)
+                                      (ref a i)
+                                      (ref b i))
+                                     (loop (+ i 1)))))))
+                       (if (comparator-ordered? element-comparator)
+                           (lambda (a b)
+                             (let ((la (length a))
+                                   (lb (length b)))
+                               (let loop ((i 0))
+                                 (cond ((and (= i la) (= i lb)) #f)
+                                       ((= i la) #t)
+                                       ((= i lb) #f)
+                                       (((comparator-ordering-predicate
+                                          element-comparator)
+                                         (ref a i)
+                                         (ref b i))
+                                        #t)
+                                       (((comparator-ordering-predicate
+                                          element-comparator)
+                                         (ref b i)
+                                         (ref a i))
+                                        #f)
+                                       (else (loop (+ i 1)))))))
+                           #f)
+                       (if (comparator-hashable? element-comparator)
+                           (lambda (x)
+                             (let ((len (min (length x) 8)))
+                               (let loop ((i 0) (h 0))
+                                 (if (= i len)
+                                     (modulo h (hash-bound))
+                                     (loop
+                                      (+ i 1)
+                                      (+
+                                       (* h 31)
+                                       ((comparator-hash-function
+                                         element-comparator)
+                                        (ref x i))))))))
+                           #f)))
 
     ;; --- Comparison predicates ---
 
@@ -441,7 +546,9 @@ Example:
            (or (null? rest)
                (let loop ((prev b) (rest rest))
                  (or (null? rest)
-                     (and ((comparator-equality-predicate comparator) prev (car rest))
+                     (and ((comparator-equality-predicate comparator)
+                           prev
+                           (car rest))
                           (loop (car rest) (cdr rest))))))))
 
     (define (<? comparator a b . rest)
@@ -455,7 +562,9 @@ Example:
            (or (null? rest)
                (let loop ((prev b) (rest rest))
                  (or (null? rest)
-                     (and ((comparator-ordering-predicate comparator) prev (car rest))
+                     (and ((comparator-ordering-predicate comparator)
+                           prev
+                           (car rest))
                           (loop (car rest) (cdr rest))))))))
 
     (define (>? comparator a b . rest)
@@ -468,7 +577,9 @@ Example:
            (or (null? rest)
                (let loop ((prev b) (rest rest))
                  (or (null? rest)
-                     (and ((comparator-ordering-predicate comparator) (car rest) prev)
+                     (and ((comparator-ordering-predicate comparator)
+                           (car rest)
+                           prev)
                           (loop (car rest) (cdr rest))))))))
 
     (define (<=? comparator a b . rest)
@@ -481,7 +592,9 @@ Example:
            (or (null? rest)
                (let loop ((prev b) (rest rest))
                  (or (null? rest)
-                     (and (not ((comparator-ordering-predicate comparator) (car rest) prev))
+                     (and (not ((comparator-ordering-predicate comparator)
+                                (car rest)
+                                prev))
                           (loop (car rest) (cdr rest))))))))
 
     (define (>=? comparator a b . rest)
@@ -494,7 +607,9 @@ Example:
            (or (null? rest)
                (let loop ((prev b) (rest rest))
                  (or (null? rest)
-                     (and (not ((comparator-ordering-predicate comparator) prev (car rest)))
+                     (and (not ((comparator-ordering-predicate comparator)
+                                prev
+                                (car rest)))
                           (loop (car rest) (cdr rest))))))))
 
     ;; --- Three-way comparison ---
@@ -503,11 +618,8 @@ Example:
       (syntax-rules ()
         ((_ comparator a b less equal greater)
          (let ((cmp comparator) (x a) (y b))
-           (cond
-             (((comparator-equality-predicate cmp) x y) equal)
-             (((comparator-ordering-predicate cmp) x y) less)
-             (else greater))))
+              (cond (((comparator-equality-predicate cmp) x y) equal)
+                    (((comparator-ordering-predicate cmp) x y) less)
+                    (else greater))))
         ((_ a b less equal greater)
-         (comparator-if<=> default-comparator a b less equal greater))))
-
-    ))
+         (comparator-if<=> default-comparator a b less equal greater))))))

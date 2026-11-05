@@ -1,8 +1,8 @@
 (import (scheme base)
         (scheme write)
         (srfi 1)
-        (scm test)
-        (scm geiser))
+        (scm geiser)
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 
@@ -48,7 +48,7 @@
   ;; (map proc list1 list2 ...) -> required proc list1 list2, optional "..."
   (let* ((ad (geiser:autodoc '(map)))
          (entry (car ad))
-         (args (cadr (cadr entry)))      ; the list of arg groups
+         (args (cadr (cadr entry))) ; the list of arg groups
          (required (cdr (assoc "required" args)))
          (optional (cdr (assoc "optional" args))))
     (test-equal 'map (car entry))

@@ -1,6 +1,6 @@
 (import (scheme base)
-        (scm test)
-        (scm bytevector))
+        (scm bytevector)
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 
@@ -21,7 +21,8 @@
 
 (test-group "32-bit"
   (test-equal 9994 (bytevector-u32-ref (bytevector 0 0 39 10) 0 'big))
-  (test-equal 4294967295 (bytevector-u32-ref (bytevector 255 255 255 255) 0 'little))
+  (test-equal 4294967295
+              (bytevector-u32-ref (bytevector 255 255 255 255) 0 'little))
   (test-equal -1 (bytevector-s32-ref (bytevector 255 255 255 255) 0 'little))
   (test-equal -2147483648 (bytevector-s32-ref (bytevector 128 0 0 0) 0 'big))
   ;; unaligned index
@@ -35,10 +36,18 @@
     (test-equal (bytevector 0 1 0 0) bv)))
 
 (test-group "ieee"
-  (test-equal 1.0 (bytevector-ieee-single-ref (bytevector 0 0 128 63) 0 'little))
-  (test-equal -2.5 (bytevector-ieee-single-ref (bytevector 192 32 0 0) 0 'big))
-  (test-equal 1.0 (bytevector-ieee-double-ref (bytevector 0 0 0 0 0 0 240 63) 0 'little))
-  (test-equal 1.0 (bytevector-ieee-double-ref (bytevector 63 240 0 0 0 0 0 0) 0 'big))
+  (test-equal 1.0
+              (bytevector-ieee-single-ref (bytevector 0 0 128 63) 0 'little))
+  (test-equal -2.5
+              (bytevector-ieee-single-ref (bytevector 192 32 0 0) 0 'big))
+  (test-equal 1.0
+              (bytevector-ieee-double-ref (bytevector 0 0 0 0 0 0 240 63)
+                                          0
+                                          'little))
+  (test-equal 1.0
+              (bytevector-ieee-double-ref (bytevector 63 240 0 0 0 0 0 0)
+                                          0
+                                          'big))
   (let ((bv (make-bytevector 9 0)))
     (bytevector-ieee-double-set! bv 1 2683256.125 'little)
     (test-equal 2683256.125 (bytevector-ieee-double-ref bv 1 'little))

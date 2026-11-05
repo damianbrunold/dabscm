@@ -14,29 +14,29 @@
 ;; Pure Scheme: no native graphics library is used.
 
 (define-library (scm raster)
-  (export make-canvas
-          canvas?
-          canvas-width
+  (export canvas->png
+          canvas-fill-path!
           canvas-height
           canvas-pixels
           canvas-ref
-          canvas-fill-path!
           canvas-stroke-path!
-          canvas->png
-          rgba
-          transform-identity
-          transform-translate
-          transform-scale
-          transform-rotate
-          transform-multiply
-          transform-apply
-          path-rect
+          canvas-width
+          canvas?
+          make-canvas
           path-circle
           path-ellipse
-          path-polyline)
+          path-polyline
+          path-rect
+          rgba
+          transform-apply
+          transform-identity
+          transform-multiply
+          transform-rotate
+          transform-scale
+          transform-translate)
   (import (scheme base)
-          (scheme inexact)
           (scheme cxr)
+          (scheme inexact)
           (scm png))
   (begin
 
@@ -89,8 +89,10 @@ Example:
   (canvas-ref (make-canvas 1 1 (rgba 255 0 0)) 0 0) => (255 0 0 255)"
       (let ((px (canvas-pixels canvas))
             (k (* 4 (+ x (* y (canvas-width canvas))))))
-        (list (bytevector-u8-ref px k) (bytevector-u8-ref px (+ k 1))
-              (bytevector-u8-ref px (+ k 2)) (bytevector-u8-ref px (+ k 3)))))
+        (list (bytevector-u8-ref px k)
+              (bytevector-u8-ref px (+ k 1))
+              (bytevector-u8-ref px (+ k 2))
+              (bytevector-u8-ref px (+ k 3)))))
 
     (define (canvas->png canvas)
       "Syntax: (canvas->png canvas)
@@ -99,7 +101,8 @@ Description: Encodes the canvas as a PNG (RGBA) and returns the bytes as a
   bytevector.
 Example:
   (canvas->png (make-canvas 10 10 (rgba 255 255 255)))"
-      (png-encode-rgba (canvas-width canvas) (canvas-height canvas)
+      (png-encode-rgba (canvas-width canvas)
+                       (canvas-height canvas)
                        (canvas-pixels canvas)))
 
     ;; --- transforms ---------------------------------------------------
@@ -143,7 +146,8 @@ Description: Returns a transform that rotates by degrees around the
 Example:
   (transform-apply (transform-rotate 90) 1 0) ; => approximately (0 . 1)"
       (let* ((r (* degrees (/ (* 4 (atan 1)) 180)))
-             (c (cos r)) (s (sin r)))
+             (c (cos r))
+             (s (sin r)))
         (vector c s (- s) c 0.0 0.0)))
 
     (define (transform-multiply m n)
@@ -153,13 +157,24 @@ Description: Returns the transform that applies n first, then m (the
   matrix product m * n).
 Example:
   (transform-multiply (transform-translate 10 0) (transform-scale 2))"
-      (let ((a (vector-ref m 0)) (b (vector-ref m 1)) (c (vector-ref m 2))
-            (d (vector-ref m 3)) (e (vector-ref m 4)) (f (vector-ref m 5))
-            (a2 (vector-ref n 0)) (b2 (vector-ref n 1)) (c2 (vector-ref n 2))
-            (d2 (vector-ref n 3)) (e2 (vector-ref n 4)) (f2 (vector-ref n 5)))
-        (vector (+ (* a a2) (* c b2)) (+ (* b a2) (* d b2))
-                (+ (* a c2) (* c d2)) (+ (* b c2) (* d d2))
-                (+ (* a e2) (* c f2) e) (+ (* b e2) (* d f2) f))))
+      (let ((a (vector-ref m 0))
+            (b (vector-ref m 1))
+            (c (vector-ref m 2))
+            (d (vector-ref m 3))
+            (e (vector-ref m 4))
+            (f (vector-ref m 5))
+            (a2 (vector-ref n 0))
+            (b2 (vector-ref n 1))
+            (c2 (vector-ref n 2))
+            (d2 (vector-ref n 3))
+            (e2 (vector-ref n 4))
+            (f2 (vector-ref n 5)))
+        (vector (+ (* a a2) (* c b2))
+                (+ (* b a2) (* d b2))
+                (+ (* a c2) (* c d2))
+                (+ (* b c2) (* d d2))
+                (+ (* a e2) (* c f2) e)
+                (+ (* b e2) (* d f2) f))))
 
     (define (transform-apply m x y)
       "Syntax: (transform-apply m x y)
@@ -168,7 +183,9 @@ Description: Returns the transformed point as a pair (x . y).
 Example:
   (transform-apply (transform-scale 2 3) 1 1) => (2.0 . 3.0)"
       (cons (+ (* (vector-ref m 0) x) (* (vector-ref m 2) y) (vector-ref m 4))
-            (+ (* (vector-ref m 1) x) (* (vector-ref m 3) y) (vector-ref m 5))))
+            (+ (* (vector-ref m 1) x)
+               (* (vector-ref m 3) y)
+               (vector-ref m 5))))
 
     ;; How much the transform scales lengths, for stroke widths and the
     ;; flattening tolerance: the square root of the area factor.
@@ -188,7 +205,8 @@ Description: Returns a closed path for the ellipse centred on cx, cy with
   radii rx and ry, as four cubic arcs.
 Example:
   (path-ellipse 50 50 40 20)"
-      (let ((kx (* kappa rx)) (ky (* kappa ry)))
+      (let ((kx (* kappa rx))
+            (ky (* kappa ry)))
         `((M ,(+ cx rx) ,cy)
           (C ,(+ cx rx) ,(+ cy ky) ,(+ cx kx) ,(+ cy ry) ,cx ,(+ cy ry))
           (C ,(- cx kx) ,(+ cy ry) ,(- cx rx) ,(+ cy ky) ,(- cx rx) ,cy)
@@ -215,13 +233,21 @@ Example:
   (path-rect 0 0 100 50)
   (path-rect 0 0 100 50 4)"
       (let* ((rx0 (if (pair? radii) (car radii) 0))
-             (ry0 (if (and (pair? radii) (pair? (cdr radii))) (cadr radii) rx0))
+             (ry0 (if (and (pair? radii) (pair? (cdr radii)))
+                      (cadr radii)
+                      rx0))
              (rx (min (abs rx0) (/ w 2)))
              (ry (min (abs ry0) (/ h 2))))
         (if (or (<= rx 0) (<= ry 0))
-            `((M ,x ,y) (L ,(+ x w) ,y) (L ,(+ x w) ,(+ y h)) (L ,x ,(+ y h)) (Z))
-            (let ((kx (* kappa rx)) (ky (* kappa ry))
-                  (x1 (+ x w)) (y1 (+ y h)))
+            `((M ,x ,y)
+              (L ,(+ x w) ,y)
+              (L ,(+ x w) ,(+ y h))
+              (L ,x ,(+ y h))
+              (Z))
+            (let ((kx (* kappa rx))
+                  (ky (* kappa ry))
+                  (x1 (+ x w))
+                  (y1 (+ y h)))
               `((M ,(+ x rx) ,y)
                 (L ,(- x1 rx) ,y)
                 (C ,(+ (- x1 rx) kx) ,y ,x1 ,(- (+ y ry) ky) ,x1 ,(+ y ry))
@@ -260,28 +286,40 @@ Example:
             (if (pair? cur) (cons (cons closed? (reverse cur)) out) out))
           (if (null? cmds)
               (reverse (finish #f))
-              (let* ((c (car cmds)) (op (car c)))
+              (let* ((c (car cmds))
+                     (op (car c)))
                 (case op
                   ((M)
                    (let ((p (tx (cadr c) (caddr c))))
                      (loop (cdr cmds) (list p) p p (finish #f))))
                   ((L)
                    (let ((p (tx (cadr c) (caddr c))))
-                     (loop (cdr cmds) (cons p (if (pair? cur) cur (list pen)))
-                           (or start pen) p out)))
+                     (loop (cdr cmds)
+                           (cons p (if (pair? cur) cur (list pen)))
+                           (or start pen)
+                           p
+                           out)))
                   ((Q)
                    (let* ((p1 (tx (list-ref c 1) (list-ref c 2)))
                           (p2 (tx (list-ref c 3) (list-ref c 4)))
                           (pts (flatten-quad pen p1 p2)))
-                     (loop (cdr cmds) (append (reverse pts) (if (pair? cur) cur (list pen)))
-                           (or start pen) p2 out)))
+                     (loop (cdr cmds)
+                           (append (reverse pts)
+                                   (if (pair? cur) cur (list pen)))
+                           (or start pen)
+                           p2
+                           out)))
                   ((C)
                    (let* ((p1 (tx (list-ref c 1) (list-ref c 2)))
                           (p2 (tx (list-ref c 3) (list-ref c 4)))
                           (p3 (tx (list-ref c 5) (list-ref c 6)))
                           (pts (flatten-cubic pen p1 p2 p3)))
-                     (loop (cdr cmds) (append (reverse pts) (if (pair? cur) cur (list pen)))
-                           (or start pen) p3 out)))
+                     (loop (cdr cmds)
+                           (append (reverse pts)
+                                   (if (pair? cur) cur (list pen)))
+                           (or start pen)
+                           p3
+                           out)))
                   ((Z)
                    ;; the pen returns to the subpath's start
                    (loop (cdr cmds) '() start start (finish #t)))
@@ -293,15 +331,22 @@ Example:
     (define (flatten-quad p0 p1 p2)
       (let* ((ddx (+ (car p0) (* -2 (car p1)) (car p2)))
              (ddy (+ (cdr p0) (* -2 (cdr p1)) (cdr p2)))
-             (n (max 1 (exact (ceiling (sqrt (/ (sqrt (dist2 ddx ddy))
-                                               (* 8 tolerance))))))))
+             (n (max 1
+                     (exact (ceiling (sqrt
+                                      (/ (sqrt (dist2 ddx ddy))
+                                         (* 8 tolerance))))))))
         (let loop ((i 1) (acc '()))
           (if (> i n)
               (reverse acc)
-              (let* ((t (/ i (inexact n))) (u (- 1.0 t)))
+              (let* ((t (/ i (inexact n)))
+                     (u (- 1.0 t)))
                 (loop (+ i 1)
-                      (cons (cons (+ (* u u (car p0)) (* 2 u t (car p1)) (* t t (car p2)))
-                                  (+ (* u u (cdr p0)) (* 2 u t (cdr p1)) (* t t (cdr p2))))
+                      (cons (cons (+ (* u u (car p0))
+                                     (* 2 u t (car p1))
+                                     (* t t (car p2)))
+                                  (+ (* u u (cdr p0))
+                                     (* 2 u t (cdr p1))
+                                     (* t t (cdr p2))))
                             acc)))))))
 
     (define (flatten-cubic p0 p1 p2 p3)
@@ -310,15 +355,26 @@ Example:
              (d2 (dist2 (+ (car p1) (* -2 (car p2)) (car p3))
                         (+ (cdr p1) (* -2 (cdr p2)) (cdr p3))))
              (dd (sqrt (max d1 d2)))
-             (n (max 1 (exact (ceiling (sqrt (/ (* 3 dd) (* 4 tolerance))))))))
+             (n (max 1
+                     (exact (ceiling (sqrt (/ (* 3 dd) (* 4 tolerance))))))))
         (let loop ((i 1) (acc '()))
           (if (> i n)
               (reverse acc)
-              (let* ((t (/ i (inexact n))) (u (- 1.0 t))
-                     (a (* u u u)) (b (* 3 u u t)) (c (* 3 u t t)) (d (* t t t)))
+              (let* ((t (/ i (inexact n)))
+                     (u (- 1.0 t))
+                     (a (* u u u))
+                     (b (* 3 u u t))
+                     (c (* 3 u t t))
+                     (d (* t t t)))
                 (loop (+ i 1)
-                      (cons (cons (+ (* a (car p0)) (* b (car p1)) (* c (car p2)) (* d (car p3)))
-                                  (+ (* a (cdr p0)) (* b (cdr p1)) (* c (cdr p2)) (* d (cdr p3))))
+                      (cons (cons (+ (* a (car p0))
+                                     (* b (car p1))
+                                     (* c (car p2))
+                                     (* d (car p3)))
+                                  (+ (* a (cdr p0))
+                                     (* b (cdr p1))
+                                     (* c (cdr p2))
+                                     (* d (cdr p3))))
                             acc)))))))
 
     ;; --- coverage -----------------------------------------------------
@@ -328,12 +384,16 @@ Example:
     ;; clipped to the buffer vertically; horizontally the box always
     ;; contains it.
     (define (accumulate-edge! acc w h ox oy x0 y0 x1 y1)
-      (let ((x0 (- x0 ox)) (y0 (- y0 oy)) (x1 (- x1 ox)) (y1 (- y1 oy)))
+      (let ((x0 (- x0 ox))
+            (y0 (- y0 oy))
+            (x1 (- x1 ox))
+            (y1 (- y1 oy)))
         (unless (< (abs (- y0 y1)) 1e-9)
-          (let-values (((dir px0 py0 px1 py1)
-                        (if (< y0 y1)
-                            (values 1.0 x0 y0 x1 y1)
-                            (values -1.0 x1 y1 x0 y0))))
+          (let-values
+              (((dir px0 py0 px1 py1)
+                (if (< y0 y1)
+                    (values 1.0 x0 y0 x1 y1)
+                    (values -1.0 x1 y1 x0 y0))))
             (let* ((dxdy (/ (- px1 px0) (- py1 py0)))
                    (x (if (< py0 0.0) (- px0 (* py0 dxdy)) px0))
                    (ystart (max 0 (exact (floor py0))))
@@ -344,10 +404,14 @@ Example:
                          (dy (- (min (+ yy 1.0) py1) (max (inexact yy) py0)))
                          (xnext (+ x (* dxdy dy)))
                          (d (* dy dir))
-                         (xa (min x xnext)) (xb (max x xnext))
-                         (xaf (floor xa)) (xai (exact xaf))
-                         (xbc (ceiling xb)) (xbi (exact xbc)))
-                    (define (add! k v) (vector-set! acc k (+ (vector-ref acc k) v)))
+                         (xa (min x xnext))
+                         (xb (max x xnext))
+                         (xaf (floor xa))
+                         (xai (exact xaf))
+                         (xbc (ceiling xb))
+                         (xbi (exact xbc)))
+                    (define (add! k v)
+                      (vector-set! acc k (+ (vector-ref acc k) v)))
                     (if (<= xbi (+ xai 1))
                         ;; within one pixel column
                         (let ((xmf (- (* 0.5 (+ x xnext)) xaf))
@@ -365,23 +429,36 @@ Example:
                               (add! (+ k 1) (* d (- 1.0 a0 am)))
                               (let ((a1 (* s (- 1.5 x0f))))
                                 (add! (+ k 1) (* d (- a1 a0)))
-                                (do ((xi (+ xai 2) (+ xi 1))) ((>= xi (- xbi 1)))
+                                (do ((xi (+ xai 2) (+ xi 1)))
+                                    ((>= xi (- xbi 1)))
                                   (add! (+ ls xi) (* d s)))
                                 (let ((a2 (+ a1 (* (- xbi xai 3) s))))
-                                  (add! (+ ls (- xbi 1)) (* d (- 1.0 a2 am))))))
+                                  (add! (+ ls (- xbi 1))
+                                        (* d (- 1.0 a2 am))))))
                           (add! (+ ls xbi) (* d am))))
                     (row (+ yy 1) xnext)))))))))
 
     ;; Fills rings (lists of (x . y), implicitly closed) with paint.
     ;; rule: 'nonzero or 'evenodd; opacity multiplies the paint's alpha.
     (define (fill-rings! canvas rings rule paint opacity)
-      (let ((W (canvas-width canvas)) (H (canvas-height canvas)))
-        (let bounds ((rs rings) (x0 +inf.0) (y0 +inf.0) (x1 -inf.0) (y1 -inf.0))
+      (let ((W (canvas-width canvas))
+            (H (canvas-height canvas)))
+        (let bounds
+            ((rs rings) (x0 +inf.0) (y0 +inf.0) (x1 -inf.0) (y1 -inf.0))
           (if (pair? rs)
-              (let pts ((ps (car rs)) (x0 x0) (y0 y0) (x1 x1) (y1 y1))
+              (let pts ((ps (car rs))
+                        (x0 x0)
+                        (y0 y0)
+                        (x1 x1)
+                        (y1 y1))
                 (if (pair? ps)
-                    (let ((x (caar ps)) (y (cdar ps)))
-                      (pts (cdr ps) (min x0 x) (min y0 y) (max x1 x) (max y1 y)))
+                    (let ((x (caar ps))
+                          (y (cdar ps)))
+                      (pts (cdr ps)
+                           (min x0 x)
+                           (min y0 y)
+                           (max x1 x)
+                           (max y1 y)))
                     (bounds (cdr rs) x0 y0 x1 y1)))
               (when (and (< x0 x1) (< y0 y1))
                 (let* ((bx0 (max 0 (exact (floor x0))))
@@ -396,15 +473,24 @@ Example:
                        (h (- by1 by0)))
                   (when (and (> h 0) (< bx0 bx1))
                     (let ((acc (make-vector (* w h) 0.0)))
-                      (for-each
-                       (lambda (ring)
-                         (let loop ((p ring))
-                           (when (pair? p)
-                             (let ((a (car p)) (b (if (pair? (cdr p)) (cadr p) (car ring))))
-                               (accumulate-edge! acc w h ox by0 (car a) (cdr a) (car b) (cdr b))
-                               (loop (cdr p))))))
-                       rings)
-                      (composite! canvas acc w h ox by0 bx0 bx1 rule paint opacity)))))))))
+                      (for-each (lambda (ring)
+                                  (let loop ((p ring))
+                                    (when (pair? p)
+                                      (let
+                                          ((a (car p))
+                                           (b
+                                            (if (pair? (cdr p))
+                                                (cadr p)
+                                                (car ring))))
+                                        (accumulate-edge! acc w h ox by0
+                                                          (car a)
+                                                          (cdr a)
+                                                          (car b)
+                                                          (cdr b))
+                                        (loop (cdr p))))))
+                                rings)
+                      (composite! canvas acc w h ox by0 bx0 bx1 rule paint
+                                  opacity)))))))))
 
     ;; Sums each row of acc into coverage and blends paint over the
     ;; canvas where the coverage is positive, columns bx0 .. bx1-1. The
@@ -413,7 +499,8 @@ Example:
     ;; uncovered, copied from a row of the paint when fully covered by
     ;; an opaque colour, and blended pixel by pixel only otherwise.
     (define (composite! canvas acc w h ox oy bx0 bx1 rule paint opacity)
-      (let* ((W (canvas-width canvas)) (px (canvas-pixels canvas))
+      (let* ((W (canvas-width canvas))
+             (px (canvas-pixels canvas))
              (solid? (vector? paint))
              (evenodd? (eq? rule 'evenodd))
              (r (if solid? (vector-ref paint 0) 0))
@@ -422,9 +509,11 @@ Example:
              (pa (if solid? (* opacity (vector-ref paint 3)) opacity))
              (i0 (- bx0 ox))
              (i1 (- bx1 ox))
-             (template (and solid? (>= pa 0.999)
+             (template (and solid?
+                            (>= pa 0.999)
                             (let ((t (make-bytevector (* 4 (- bx1 bx0)) 255)))
-                              (do ((k 0 (+ k 4))) ((= k (bytevector-length t)) t)
+                              (do ((k 0 (+ k 4)))
+                                  ((= k (bytevector-length t)) t)
                                 (bytevector-u8-set! t k r)
                                 (bytevector-u8-set! t (+ k 1) g)
                                 (bytevector-u8-set! t (+ k 2) b))))))
@@ -435,27 +524,37 @@ Example:
                   (if (> m 1.0) (- 2.0 m) m))
                 (if (> a 1.0) 1.0 a))))
         (do ((yy 0 (+ yy 1))) ((= yy h))
-          (let* ((ls (* yy w)) (y (+ oy yy)) (rowk (* 4 (+ (* y W) ox))))
+          (let* ((ls (* yy w))
+                 (y (+ oy yy))
+                 (rowk (* 4 (+ (* y W) ox))))
             (define (paint-pixel! i cov)
               (let ((k (+ rowk (* 4 i))))
                 (if solid?
                     (put! px k r g b (* cov pa))
                     (let ((c (paint (+ ox i 0.5) (+ y 0.5))))
-                      (put! px k (vector-ref c 0) (vector-ref c 1) (vector-ref c 2)
+                      (put! px k
+                            (vector-ref c 0)
+                            (vector-ref c 1)
+                            (vector-ref c 2)
                             (* cov opacity (vector-ref c 3)))))))
             (let col ((i 0) (sum 0.0))
               (when (< i i1)
                 (let* ((sum (+ sum (vector-ref acc (+ ls i))))
                        ;; the run of columns after i with nothing added
                        (j (let scan ((j (+ i 1)))
-                            (if (and (< j i1) (= 0.0 (vector-ref acc (+ ls j))))
+                            (if (and (< j i1)
+                                     (= 0.0 (vector-ref acc (+ ls j))))
                                 (scan (+ j 1))
                                 j)))
                        (cov (coverage sum))
                        (from (max i i0)))
                   (when (and (> cov 0.001) (< from j))
                     (if (and template (>= cov 0.999))
-                        (bytevector-copy! px (+ rowk (* 4 from)) template 0 (* 4 (- j from)))
+                        (bytevector-copy! px
+                                          (+ rowk (* 4 from))
+                                          template
+                                          0
+                                          (* 4 (- j from)))
                         (do ((k from (+ k 1))) ((= k j))
                           (paint-pixel! k cov))))
                   (col j sum))))))))
@@ -464,28 +563,59 @@ Example:
 
     ;; Source over, straight alpha, sa the source alpha after coverage.
     (define (put! px k r g b sa)
-      (cond
-       ((<= sa 0.0) #f)
-       ((>= sa 0.999)
-        (bytevector-u8-set! px k r)
-        (bytevector-u8-set! px (+ k 1) g)
-        (bytevector-u8-set! px (+ k 2) b)
-        (bytevector-u8-set! px (+ k 3) 255))
-       (else
-        (let ((dab (bytevector-u8-ref px (+ k 3)))
-              (ia (- 1.0 sa)))
-          (if (= dab 255)
-              (begin
-                (bytevector-u8-set! px k (to-byte (+ (* r sa) (* (bytevector-u8-ref px k) ia))))
-                (bytevector-u8-set! px (+ k 1) (to-byte (+ (* g sa) (* (bytevector-u8-ref px (+ k 1)) ia))))
-                (bytevector-u8-set! px (+ k 2) (to-byte (+ (* b sa) (* (bytevector-u8-ref px (+ k 2)) ia)))))
-              (let* ((da (/ dab 255.0))
-                     (dw (* da ia))
-                     (oa (+ sa dw)))
-                (bytevector-u8-set! px k (to-byte (/ (+ (* r sa) (* (bytevector-u8-ref px k) dw)) oa)))
-                (bytevector-u8-set! px (+ k 1) (to-byte (/ (+ (* g sa) (* (bytevector-u8-ref px (+ k 1)) dw)) oa)))
-                (bytevector-u8-set! px (+ k 2) (to-byte (/ (+ (* b sa) (* (bytevector-u8-ref px (+ k 2)) dw)) oa)))
-                (bytevector-u8-set! px (+ k 3) (to-byte (* 255.0 oa)))))))))
+      (cond ((<= sa 0.0) #f)
+            ((>= sa 0.999)
+             (bytevector-u8-set! px k r)
+             (bytevector-u8-set! px (+ k 1) g)
+             (bytevector-u8-set! px (+ k 2) b)
+             (bytevector-u8-set! px (+ k 3) 255))
+            (else (let ((dab (bytevector-u8-ref px (+ k 3)))
+                        (ia (- 1.0 sa)))
+                    (if (= dab 255)
+                        (begin
+                          (bytevector-u8-set!
+                           px
+                           k
+                           (to-byte (+ (* r sa)
+                                       (* (bytevector-u8-ref px k) ia))))
+                          (bytevector-u8-set!
+                           px
+                           (+ k 1)
+                           (to-byte (+ (* g sa)
+                                       (* (bytevector-u8-ref px (+ k 1))
+                                          ia))))
+                          (bytevector-u8-set!
+                           px
+                           (+ k 2)
+                           (to-byte (+ (* b sa)
+                                       (* (bytevector-u8-ref px (+ k 2))
+                                          ia)))))
+                        (let* ((da (/ dab 255.0))
+                               (dw (* da ia))
+                               (oa (+ sa dw)))
+                          (bytevector-u8-set!
+                           px
+                           k
+                           (to-byte (/ (+ (* r sa)
+                                          (* (bytevector-u8-ref px k) dw))
+                                       oa)))
+                          (bytevector-u8-set!
+                           px
+                           (+ k 1)
+                           (to-byte (/ (+
+                                        (* g sa)
+                                        (* (bytevector-u8-ref px (+ k 1)) dw))
+                                       oa)))
+                          (bytevector-u8-set!
+                           px
+                           (+ k 2)
+                           (to-byte (/ (+
+                                        (* b sa)
+                                        (* (bytevector-u8-ref px (+ k 2)) dw))
+                                       oa)))
+                          (bytevector-u8-set! px
+                                              (+ k 3)
+                                              (to-byte (* 255.0 oa)))))))))
 
     ;; --- options --------------------------------------------------------
 
@@ -509,7 +639,9 @@ Example:
       (let* ((options (if (pair? options) (car options) '()))
              (m (opt options 'transform (transform-identity)))
              (rings (map cdr (flatten path m))))
-        (fill-rings! canvas rings (opt options 'fill-rule 'nonzero) paint
+        (fill-rings! canvas rings
+                     (opt options 'fill-rule 'nonzero)
+                     paint
                      (inexact (opt options 'opacity 1.0)))))
 
     ;; --- stroke ---------------------------------------------------------
@@ -520,8 +652,10 @@ Example:
       (let loop ((p ring) (s 0.0))
         (if (null? p)
             s
-            (let ((a (car p)) (b (if (pair? (cdr p)) (cadr p) (car ring))))
-              (loop (cdr p) (+ s (- (* (car a) (cdr b)) (* (car b) (cdr a)))))))))
+            (let ((a (car p))
+                  (b (if (pair? (cdr p)) (cadr p) (car ring))))
+              (loop (cdr p)
+                    (+ s (- (* (car a) (cdr b)) (* (car b) (cdr a)))))))))
 
     ;; Every stroke piece is wound the same way, so their coverage adds up
     ;; instead of cancelling, and the non-zero clamp makes it a union.
@@ -533,72 +667,99 @@ Example:
           (if (= i n)
               acc
               (let ((t (/ (* 2 pi i) n)))
-                (loop (+ i 1) (cons (cons (+ cx (* r (cos t))) (+ cy (* r (sin t)))) acc)))))))
+                (loop (+ i 1)
+                      (cons (cons (+ cx (* r (cos t))) (+ cy (* r (sin t))))
+                            acc)))))))
 
     ;; consecutive duplicates removed
     (define (dedupe pts)
       (let loop ((ps pts) (acc '()))
         (cond ((null? ps) (reverse acc))
               ((and (pair? acc)
-                    (< (dist2 (- (caar ps) (caar acc)) (- (cdar ps) (cdar acc))) 1e-12))
+                    (< (dist2 (- (caar ps) (caar acc))
+                              (- (cdar ps) (cdar acc)))
+                       1e-12))
                (loop (cdr ps) acc))
               (else (loop (cdr ps) (cons (car ps) acc))))))
 
     (define (unit a b)
-      (let* ((dx (- (car b) (car a))) (dy (- (cdr b) (cdr a)))
+      (let* ((dx (- (car b) (car a)))
+             (dy (- (cdr b) (cdr a)))
              (l (sqrt (dist2 dx dy))))
         (cons (/ dx l) (/ dy l))))
 
     ;; The polygons that make up the stroke of one polyline.
     (define (stroke-polyline pts closed? hw join cap miter-limit)
       (let* ((pts (dedupe pts))
-             (pts (if (and closed? (pair? pts) (pair? (cdr pts))
+             (pts (if (and closed?
+                           (pair? pts)
+                           (pair? (cdr pts))
                            (< (dist2 (- (caar pts) (car (last pts)))
                                      (- (cdar pts) (cdr (last pts))))
                               1e-12))
                       (except-last pts)
                       pts)))
-        (cond
-         ((null? pts) '())
-         ((null? (cdr pts))
-          ;; a single point: only a round or square cap shows
-          (let ((x (caar pts)) (y (cdar pts)))
-            (case cap
-              ((round) (list (disc x y hw)))
-              ((square) (list (list (cons (- x hw) (- y hw)) (cons (+ x hw) (- y hw))
-                                    (cons (+ x hw) (+ y hw)) (cons (- x hw) (+ y hw)))))
-              (else '()))))
-         (else
-          (let* ((ring (if closed? (append pts (list (car pts))) pts))
-                 (ring (if (and (not closed?) (eq? cap 'square)) (extend-ends ring hw) ring))
-                 (segs (let loop ((p ring) (acc '()))
-                         (if (null? (cdr p))
-                             acc
-                             (loop (cdr p)
-                                   (cons (segment-quad (car p) (cadr p) hw) acc)))))
-                 (joins (join-polys ring closed? hw join miter-limit))
-                 (caps (if (and (not closed?) (eq? cap 'round))
-                           (list (disc (caar ring) (cdar ring) hw)
-                                 (let ((e (last ring))) (disc (car e) (cdr e) hw)))
-                           '())))
-            (append segs joins caps))))))
+        (cond ((null? pts) '())
+              ((null? (cdr pts))
+               ;; a single point: only a round or square cap shows
+               (let ((x (caar pts))
+                     (y (cdar pts)))
+                 (case cap
+                   ((round) (list (disc x y hw)))
+                   ((square)
+                    (list (list (cons (- x hw) (- y hw))
+                                (cons (+ x hw) (- y hw))
+                                (cons (+ x hw) (+ y hw))
+                                (cons (- x hw) (+ y hw)))))
+                   (else '()))))
+              (else (let* ((ring (if closed?
+                                     (append pts (list (car pts)))
+                                     pts))
+                           (ring (if (and (not closed?) (eq? cap 'square))
+                                     (extend-ends ring hw)
+                                     ring))
+                           (segs (let loop ((p ring) (acc '()))
+                                   (if (null? (cdr p))
+                                       acc
+                                       (loop
+                                        (cdr p)
+                                        (cons
+                                         (segment-quad (car p) (cadr p) hw)
+                                         acc)))))
+                           (joins (join-polys ring closed? hw join
+                                              miter-limit))
+                           (caps (if (and (not closed?) (eq? cap 'round))
+                                     (list
+                                      (disc (caar ring) (cdar ring) hw)
+                                      (let ((e (last ring)))
+                                        (disc (car e) (cdr e) hw)))
+                                     '())))
+                      (append segs joins caps))))))
 
     (define (last l) (if (null? (cdr l)) (car l) (last (cdr l))))
-    (define (except-last l) (if (null? (cdr l)) '() (cons (car l) (except-last (cdr l)))))
+    (define (except-last l)
+      (if (null? (cdr l)) '() (cons (car l) (except-last (cdr l)))))
 
     (define (segment-quad a b hw)
-      (let* ((u (unit a b)) (nx (* hw (- (cdr u)))) (ny (* hw (car u))))
-        (list (cons (+ (car a) nx) (+ (cdr a) ny)) (cons (+ (car b) nx) (+ (cdr b) ny))
-              (cons (- (car b) nx) (- (cdr b) ny)) (cons (- (car a) nx) (- (cdr a) ny)))))
+      (let* ((u (unit a b))
+             (nx (* hw (- (cdr u))))
+             (ny (* hw (car u))))
+        (list (cons (+ (car a) nx) (+ (cdr a) ny))
+              (cons (+ (car b) nx) (+ (cdr b) ny))
+              (cons (- (car b) nx) (- (cdr b) ny))
+              (cons (- (car a) nx) (- (cdr a) ny)))))
 
     ;; square caps: each end pushed out by half the width
     (define (extend-ends pts hw)
       (let* ((u0 (unit (cadr pts) (car pts)))
              (n (length pts))
-             (e (list-ref pts (- n 1))) (pe (list-ref pts (- n 2)))
+             (e (list-ref pts (- n 1)))
+             (pe (list-ref pts (- n 2)))
              (u1 (unit pe e))
-             (first (cons (+ (caar pts) (* hw (car u0))) (+ (cdar pts) (* hw (cdr u0)))))
-             (lastp (cons (+ (car e) (* hw (car u1))) (+ (cdr e) (* hw (cdr u1))))))
+             (first (cons (+ (caar pts) (* hw (car u0)))
+                          (+ (cdar pts) (* hw (cdr u0)))))
+             (lastp (cons (+ (car e) (* hw (car u1)))
+                          (+ (cdr e) (* hw (cdr u1))))))
         (append (list first) (except-last (cdr pts)) (list lastp))))
 
     ;; At each vertex where two segments meet (and where a closed one
@@ -609,71 +770,112 @@ Example:
           (let loop ((i 1) (acc '()))
             (if (>= i (- n 1))
                 (if (and closed? (> n 2))
-                    (append (join-at (vector-ref v (- n 2)) (vector-ref v 0) (vector-ref v 1)
-                                     hw join miter-limit)
+                    (append (join-at (vector-ref v (- n 2))
+                                     (vector-ref v 0)
+                                     (vector-ref v 1)
+                                     hw
+                                     join
+                                     miter-limit)
                             acc)
                     acc)
                 (loop (+ i 1)
-                      (append (join-at (vector-ref v (- i 1)) (vector-ref v i) (vector-ref v (+ i 1))
-                                       hw join miter-limit)
+                      (append (join-at (vector-ref v (- i 1))
+                                       (vector-ref v i)
+                                       (vector-ref v (+ i 1))
+                                       hw
+                                       join
+                                       miter-limit)
                               acc)))))))
 
     (define (join-at a v b hw join miter-limit)
-      (let* ((d1 (unit a v)) (d2 (unit v b))
+      (let* ((d1 (unit a v))
+             (d2 (unit v b))
              (cross (- (* (car d1) (cdr d2)) (* (cdr d1) (car d2))))
              (dot (+ (* (car d1) (car d2)) (* (cdr d1) (cdr d2)))))
         (cond
          ;; straight on: the quads already meet
          ((and (< (abs cross) 1e-9) (> dot 0)) '())
          ((eq? join 'round) (list (disc (car v) (cdr v) hw)))
-         (else
-          (let* ((s (if (> cross 0) -1.0 1.0))
-                 (n1x (- (cdr d1))) (n1y (car d1))
-                 (n2x (- (cdr d2))) (n2y (car d2))
-                 (p1 (cons (+ (car v) (* s hw n1x)) (+ (cdr v) (* s hw n1y))))
-                 (p2 (cons (+ (car v) (* s hw n2x)) (+ (cdr v) (* s hw n2y))))
-                 (ndot (+ (* n1x n2x) (* n1y n2y)))
-                 (bevel (list v p1 p2)))
-            (if (and (eq? join 'miter) (> (+ 1.0 ndot) 1e-9)
-                     ;; the miter's length over half the width is 2/|n1+n2|
-                     (<= (/ 2.0 (sqrt (* 2.0 (+ 1.0 ndot)))) miter-limit))
-                (let ((k (/ (* s hw) (+ 1.0 ndot))))
-                  (list (list v p1 (cons (+ (car v) (* k (+ n1x n2x)))
+         (else (let* ((s (if (> cross 0) -1.0 1.0))
+                      (n1x (- (cdr d1)))
+                      (n1y (car d1))
+                      (n2x (- (cdr d2)))
+                      (n2y (car d2))
+                      (p1 (cons (+ (car v) (* s hw n1x))
+                                (+ (cdr v) (* s hw n1y))))
+                      (p2 (cons (+ (car v) (* s hw n2x))
+                                (+ (cdr v) (* s hw n2y))))
+                      (ndot (+ (* n1x n2x) (* n1y n2y)))
+                      (bevel (list v p1 p2)))
+                 (if (and (eq? join 'miter)
+                          (> (+ 1.0 ndot) 1e-9)
+                          ;; the miter's length over half the width is 2/|n1+n2|
+                          (<= (/ 2.0 (sqrt (* 2.0 (+ 1.0 ndot))))
+                              miter-limit))
+                     (let ((k (/ (* s hw) (+ 1.0 ndot))))
+                       (list (list v p1
+                                   (cons (+ (car v) (* k (+ n1x n2x)))
                                          (+ (cdr v) (* k (+ n1y n2y))))
-                              p2)))
-                (list bevel)))))))
+                                   p2)))
+                     (list bevel)))))))
 
     ;; Cuts a polyline into the dashes of pattern (lengths, on, off, ...)
     ;; starting offset into it. -> list of point lists.
     (define (dash-polyline pts pattern offset)
       (let* ((pat (list->vector pattern))
              (np (vector-length pat))
-             (total (let loop ((i 0) (s 0.0)) (if (= i np) s (loop (+ i 1) (+ s (vector-ref pat i)))))))
+             (total (let loop ((i 0) (s 0.0))
+                      (if (= i np)
+                          s
+                          (loop (+ i 1) (+ s (vector-ref pat i)))))))
         (if (<= total 0)
             (list pts)
             ;; find where in the pattern the offset lands
-            (let start ((i 0) (left (let ((o (- offset (* total (floor (/ offset total)))))) o)))
+            (let start ((i 0)
+                        (left (let
+                                  ((o (- offset
+                                         (* total (floor (/ offset total))))))
+                                o)))
               (if (> left (vector-ref pat i))
                   (start (modulo (+ i 1) np) (- left (vector-ref pat i)))
-                  (let walk ((ps pts) (i i) (remain (- (vector-ref pat i) left))
-                             (cur (if (even? i) (list (car pts)) '())) (out '()))
+                  (let walk ((ps pts)
+                             (i i)
+                             (remain (- (vector-ref pat i) left))
+                             (cur (if (even? i) (list (car pts)) '()))
+                             (out '()))
                     (if (null? (cdr ps))
-                        (reverse (if (and (even? i) (pair? (cdr* cur))) (cons (reverse cur) out) out))
-                        (let* ((a (car ps)) (b (cadr ps))
-                               (seg (sqrt (dist2 (- (car b) (car a)) (- (cdr b) (cdr a))))))
+                        (reverse (if (and (even? i) (pair? (cdr* cur)))
+                                     (cons (reverse cur) out)
+                                     out))
+                        (let* ((a (car ps))
+                               (b (cadr ps))
+                               (seg (sqrt
+                                     (dist2 (- (car b) (car a))
+                                            (- (cdr b) (cdr a))))))
                           (if (< remain seg)
                               ;; the pattern switches inside this segment
                               (let* ((t (/ remain seg))
-                                     (p (cons (+ (car a) (* t (- (car b) (car a))))
-                                              (+ (cdr a) (* t (- (cdr b) (cdr a))))))
+                                     (p
+                                      (cons
+                                       (+ (car a) (* t (- (car b) (car a))))
+                                       (+ (cdr a) (* t (- (cdr b) (cdr a))))))
                                      (next (modulo (+ i 1) np)))
                                 (if (even? i)
-                                    (walk (cons p (cdr ps)) next (vector-ref pat next)
-                                          '() (cons (reverse (cons p cur)) out))
-                                    (walk (cons p (cdr ps)) next (vector-ref pat next)
-                                          (list p) out)))
-                              (walk (cdr ps) i (- remain seg)
-                                    (if (even? i) (cons b cur) cur) out))))))))))
+                                    (walk (cons p (cdr ps))
+                                          next
+                                          (vector-ref pat next)
+                                          '()
+                                          (cons (reverse (cons p cur)) out))
+                                    (walk (cons p (cdr ps))
+                                          next
+                                          (vector-ref pat next)
+                                          (list p)
+                                          out)))
+                              (walk (cdr ps)
+                                    i
+                                    (- remain seg)
+                                    (if (even? i) (cons b cur) cur)
+                                    out))))))))))
 
     (define (cdr* l) (if (pair? l) (cdr l) '()))
 
@@ -690,36 +892,54 @@ Example:
                        '((width . 2) (cap . round)))"
       (let* ((options (if (pair? options) (car options) '()))
              (m (opt options 'transform (transform-identity)))
-             (hw (* 0.5 (inexact (opt options 'width 1)) (transform-scale-factor m)))
+             (hw (* 0.5
+                    (inexact (opt options 'width 1))
+                    (transform-scale-factor m)))
              (join (opt options 'join 'miter))
              (cap (opt options 'cap 'butt))
              (limit (inexact (opt options 'miter-limit 4)))
              (dash (let ((d (opt options 'dash #f)))
-                     (and d (pair? d) (positive-pattern d)
-                          (map (lambda (x) (* (inexact x) (transform-scale-factor m))) d))))
-             (offset (* (inexact (opt options 'dash-offset 0)) (transform-scale-factor m)))
+                     (and d
+                          (pair? d)
+                          (positive-pattern d)
+                          (map (lambda (x)
+                                 (* (inexact x) (transform-scale-factor m)))
+                               d))))
+             (offset (* (inexact (opt options 'dash-offset 0))
+                        (transform-scale-factor m)))
              (subpaths (flatten path m))
-             (polys
-              (apply append
-                     (map (lambda (sp)
-                            (let ((closed? (car sp)) (pts (cdr sp)))
-                              (if dash
-                                  (apply append
-                                         (map (lambda (piece)
-                                                (stroke-polyline piece #f hw join cap limit))
-                                              (dash-polyline (if closed? (append pts (list (car pts))) pts)
-                                                             (if (odd? (length dash)) (append dash dash) dash)
-                                                             offset)))
-                                  (stroke-polyline pts closed? hw join cap limit))))
-                          subpaths))))
+             (polys (apply append
+                           (map (lambda (sp)
+                                  (let ((closed? (car sp))
+                                        (pts (cdr sp)))
+                                    (if
+                                     dash
+                                     (apply
+                                      append
+                                      (map
+                                       (lambda (piece)
+                                         (stroke-polyline piece #f hw join cap
+                                                          limit))
+                                       (dash-polyline
+                                        (if closed?
+                                            (append pts (list (car pts)))
+                                            pts)
+                                        (if (odd? (length dash))
+                                            (append dash dash)
+                                            dash)
+                                        offset)))
+                                     (stroke-polyline pts closed? hw join cap
+                                                      limit))))
+                                subpaths))))
         (when (> hw 0)
-          (fill-rings! canvas (map positive polys) 'nonzero paint
+          (fill-rings! canvas
+                       (map positive polys)
+                       'nonzero
+                       paint
                        (inexact (opt options 'opacity 1.0))))))
 
     (define (positive-pattern d)
       (let loop ((d d) (any #f))
         (cond ((null? d) any)
               ((< (car d) 0) #f)
-              (else (loop (cdr d) (or any (> (car d) 0)))))))
-
-))
+              (else (loop (cdr d) (or any (> (car d) 0)))))))))

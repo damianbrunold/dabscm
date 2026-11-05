@@ -1,7 +1,7 @@
 (import (scheme base)
-        (scm net http route)
         (scm net http request)
         (scm net http response)
+        (scm net http route)
         (scm test))
 
 (test-runner-factory scm-test-runner)
@@ -19,8 +19,7 @@
   ;; key with no '=' gets empty-string value
   (test-equal '(("flag" . "")) (parse-query-string "flag"))
   ;; percent-decoding applies to keys and values, as UTF-8
-  (test-equal '(("q" . "Zürich"))
-              (parse-query-string "q=Z%C3%BCrich"))
+  (test-equal '(("q" . "Zürich")) (parse-query-string "q=Z%C3%BCrich"))
   (test-equal '(("nä me" . "Ada Lovelace"))
               (parse-query-string "n%C3%A4+me=Ada+Lovelace"))
   ;; '+' decodes to space
@@ -36,12 +35,13 @@
 (test-group "path params are percent-decoded"
   (define r (make-router))
   (define (dispatch url)
-    (http-response-body
-      (router-dispatch r (make-http-request "GET" url '() #f))))
+    (http-response-body (router-dispatch
+                         r
+                         (make-http-request "GET" url '() #f))))
   (router-add! r "GET" "/h/:name"
-    (lambda (req params) (http-ok (params-ref params "name"))))
+               (lambda (req params) (http-ok (params-ref params "name"))))
   (router-add! r "GET" "/files/*"
-    (lambda (req params) (http-ok (params-ref params "*"))))
+               (lambda (req params) (http-ok (params-ref params "*"))))
   ;; :named segment decoded as UTF-8
   (test-equal "Män" (dispatch "/h/M%C3%A4n"))
   ;; %2F inside a segment is a literal slash, not a delimiter (split happens
@@ -82,7 +82,8 @@
   (router-add! r "POST" "/form" (lambda (req p) (http-ok "post")))
   (test-equal "page" (http-response-body (send "HEAD" "/page")))
   (test-equal "head" (http-response-body (send "HEAD" "/own")))
-  (test-equal "GET, HEAD" (http-response-header (send "POST" "/page") "Allow"))
+  (test-equal "GET, HEAD"
+              (http-response-header (send "POST" "/page") "Allow"))
   (test-equal "GET, HEAD" (http-response-header (send "PUT" "/own") "Allow"))
   ;; no GET route: HEAD is not allowed either
   (test-equal 405 (http-response-status (send "HEAD" "/form")))
@@ -92,7 +93,13 @@
   (define r (make-router))
   (define h (router->handler r))
   (router-add! r "GET" "/hi/:n" (lambda (req p) (http-ok (params-ref p "n"))))
-  (test-equal "bob" (http-response-body (h (make-http-request "GET" "/hi/bob" '() #f))))
-  (test-equal 404 (http-response-status (h (make-http-request "GET" "/x" '() #f)))))
+  (test-equal "bob"
+              (http-response-body (h (make-http-request "GET" "/hi/bob"
+                                                        '()
+                                                        #f))))
+  (test-equal 404
+              (http-response-status (h (make-http-request "GET" "/x"
+                                                          '()
+                                                          #f)))))
 
 (test-end "scm-http-route")

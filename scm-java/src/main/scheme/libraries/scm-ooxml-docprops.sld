@@ -1,11 +1,11 @@
 (define-library (scm ooxml docprops)
   ;; Document properties (docProps/core.xml, app.xml, custom.xml) shared by
   ;; (scm ooxml excel) and (scm ooxml word).
-  (export docprops-valid?
+  (export docprops-content-types
+          docprops-parts
           docprops-present?
           docprops-relationships
-          docprops-content-types
-          docprops-parts)
+          docprops-valid?)
   (import (scheme base)
           (scheme write)
           (scm io))
@@ -22,15 +22,16 @@
 
     ;; Core property key -> element name (in core.xml order).
     (define core-keys
-      '((title       . "dc:title")
-        (subject     . "dc:subject")
-        (creator     . "dc:creator")
-        (keywords    . "cp:keywords")
+      '((title . "dc:title")
+        (subject . "dc:subject")
+        (creator . "dc:creator")
+        (keywords . "cp:keywords")
         (description . "dc:description")
-        (category    . "cp:category")))
+        (category . "cp:category")))
 
     (define (xml-escape str)
-      (let loop ((chars (string->list str)) (acc '()))
+      (let loop ((chars (string->list str))
+                 (acc '()))
         (if (null? chars)
             (list->string (reverse acc))
             (let* ((c (car chars))
@@ -38,12 +39,11 @@
                                       ((char=? c #\<) (string->list "&lt;"))
                                       ((char=? c #\>) (string->list "&gt;"))
                                       ((char=? c #\") (string->list "&quot;"))
-                                      (else           (list c)))))
+                                      (else (list c)))))
               (loop (cdr chars) (append (reverse replacement) acc))))))
 
     (define (prop-ref props key)
-      (let ((p (and (list? props) (assq key props))))
-        (and p (cdr p))))
+      (let ((p (and (list? props) (assq key props)))) (and p (cdr p))))
 
     (define (core-entries props)
       (let loop ((ks core-keys) (acc '()))
@@ -60,7 +60,9 @@
         (if (list? c)
             (let loop ((c c) (acc '()))
               (cond ((null? c) (reverse acc))
-                    ((and (pair? (car c)) (string? (caar c)) (string? (cdar c)))
+                    ((and (pair? (car c))
+                          (string? (caar c))
+                          (string? (cdar c)))
                      (loop (cdr c) (cons (car c) acc)))
                     (else (loop (cdr c) acc))))
             '())))
@@ -84,8 +86,10 @@ Example:
                     (and (list? (cdar ps))
                          (let check ((c (cdar ps)))
                            (or (null? c)
-                               (and (pair? (car c)) (string? (caar c))
-                                    (string? (cdar c)) (check (cdr c)))))
+                               (and (pair? (car c))
+                                    (string? (caar c))
+                                    (string? (cdar c))
+                                    (check (cdr c)))))
                          (loop (cdr ps))))
                    (else #f)))))
 
@@ -108,14 +112,17 @@ Example:
       (if (not (docprops-present? props))
           ""
           (call-with-output-string
-           (lambda (port)
-             (format port "<Relationship Id=\"rIdDpCore\" Type=\"~a/core-properties\" Target=\"docProps/core.xml\"/>"
-                     ns-pkg-rel-base)
-             (format port "<Relationship Id=\"rIdDpApp\" Type=\"~a/extended-properties\" Target=\"docProps/app.xml\"/>"
-                     ns-rel-base)
-             (when (pair? (custom-entries props))
-               (format port "<Relationship Id=\"rIdDpCustom\" Type=\"~a/custom-properties\" Target=\"docProps/custom.xml\"/>"
-                       ns-rel-base))))))
+            (lambda (port)
+              (format port
+                      "<Relationship Id=\"rIdDpCore\" Type=\"~a/core-properties\" Target=\"docProps/core.xml\"/>"
+                      ns-pkg-rel-base)
+              (format port
+                      "<Relationship Id=\"rIdDpApp\" Type=\"~a/extended-properties\" Target=\"docProps/app.xml\"/>"
+                      ns-rel-base)
+              (when (pair? (custom-entries props))
+                (format port
+                        "<Relationship Id=\"rIdDpCustom\" Type=\"~a/custom-properties\" Target=\"docProps/custom.xml\"/>"
+                        ns-rel-base))))))
 
     (define (docprops-content-types props)
       "Syntax: (docprops-content-types props)
@@ -127,42 +134,58 @@ Example:
       (if (not (docprops-present? props))
           ""
           (call-with-output-string
-           (lambda (port)
-             (format port "<Override PartName=\"/docProps/core.xml\" ContentType=\"~a-package.core-properties+xml\"/>"
-                     ct-base)
-             (format port "<Override PartName=\"/docProps/app.xml\" ContentType=\"~a-officedocument.extended-properties+xml\"/>"
-                     ct-base)
-             (when (pair? (custom-entries props))
-               (format port "<Override PartName=\"/docProps/custom.xml\" ContentType=\"~a-officedocument.custom-properties+xml\"/>"
-                       ct-base))))))
+            (lambda (port)
+              (format port
+                      "<Override PartName=\"/docProps/core.xml\" ContentType=\"~a-package.core-properties+xml\"/>"
+                      ct-base)
+              (format port
+                      "<Override PartName=\"/docProps/app.xml\" ContentType=\"~a-officedocument.extended-properties+xml\"/>"
+                      ct-base)
+              (when (pair? (custom-entries props))
+                (format port
+                        "<Override PartName=\"/docProps/custom.xml\" ContentType=\"~a-officedocument.custom-properties+xml\"/>"
+                        ct-base))))))
 
     (define (render-core props)
       (call-with-output-string
-       (lambda (port)
-         (display xml-preamble port)
-         (display "<cp:coreProperties xmlns:cp=\"http://schemas.openxmlformats.org/package/2006/metadata/core-properties\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:dcterms=\"http://purl.org/dc/terms/\" xmlns:dcmitype=\"http://purl.org/dc/dcmitype/\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">" port)
-         (for-each (lambda (e)
-                     (format port "<~a>~a</~a>" (car e) (xml-escape (cdr e)) (car e)))
-                   (core-entries props))
-         (display "</cp:coreProperties>" port))))
+        (lambda (port)
+          (display xml-preamble port)
+          (display
+           "<cp:coreProperties xmlns:cp=\"http://schemas.openxmlformats.org/package/2006/metadata/core-properties\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:dcterms=\"http://purl.org/dc/terms/\" xmlns:dcmitype=\"http://purl.org/dc/dcmitype/\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">"
+           port)
+          (for-each (lambda (e)
+                      (format port "<~a>~a</~a>"
+                              (car e)
+                              (xml-escape (cdr e))
+                              (car e)))
+                    (core-entries props))
+          (display "</cp:coreProperties>" port))))
 
     (define (render-app)
       (call-with-output-string
-       (lambda (port)
-         (display xml-preamble port)
-         (display "<Properties xmlns=\"http://schemas.openxmlformats.org/officeDocument/2006/extended-properties\" xmlns:vt=\"http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes\"><Application>scm</Application></Properties>" port))))
+        (lambda (port)
+          (display xml-preamble port)
+          (display
+           "<Properties xmlns=\"http://schemas.openxmlformats.org/officeDocument/2006/extended-properties\" xmlns:vt=\"http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes\"><Application>scm</Application></Properties>"
+           port))))
 
     (define (render-custom props)
       (call-with-output-string
-       (lambda (port)
-         (display xml-preamble port)
-         (display "<Properties xmlns=\"http://schemas.openxmlformats.org/officeDocument/2006/custom-properties\" xmlns:vt=\"http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes\">" port)
-         (let loop ((es (custom-entries props)) (pid 2))
-           (unless (null? es)
-             (format port "<property fmtid=\"{D5CDD505-2E9C-101B-9397-08002B2CF9AE}\" pid=\"~a\" name=\"~a\"><vt:lpwstr>~a</vt:lpwstr></property>"
-                     pid (xml-escape (caar es)) (xml-escape (cdar es)))
-             (loop (cdr es) (+ pid 1))))
-         (display "</Properties>" port))))
+        (lambda (port)
+          (display xml-preamble port)
+          (display
+           "<Properties xmlns=\"http://schemas.openxmlformats.org/officeDocument/2006/custom-properties\" xmlns:vt=\"http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes\">"
+           port)
+          (let loop ((es (custom-entries props))
+                     (pid 2))
+            (unless (null? es)
+              (format port
+                      "<property fmtid=\"{D5CDD505-2E9C-101B-9397-08002B2CF9AE}\" pid=\"~a\" name=\"~a\"><vt:lpwstr>~a</vt:lpwstr></property>"
+                      pid
+                      (xml-escape (caar es))
+                      (xml-escape (cdar es)))
+              (loop (cdr es) (+ pid 1))))
+          (display "</Properties>" port))))
 
     (define (docprops-parts props)
       "Syntax: (docprops-parts props)
@@ -174,9 +197,9 @@ Example:
     => (\"docProps/core.xml\" \"docProps/app.xml\")"
       (if (not (docprops-present? props))
           '()
-          (append
-           (list (cons "docProps/core.xml" (render-core props))
-                 (cons "docProps/app.xml" (render-app)))
-           (if (pair? (custom-entries props))
-               (list (cons "docProps/custom.xml" (render-custom props)))
-               '()))))))
+          (append (list (cons "docProps/core.xml" (render-core props))
+                        (cons "docProps/app.xml" (render-app)))
+                  (if (pair? (custom-entries props))
+                      (list (cons "docProps/custom.xml"
+                                  (render-custom props)))
+                      '()))))))

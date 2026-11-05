@@ -1,18 +1,18 @@
 (define-library (scm net http middleware)
-  (import (scm core)
-          (scheme base)
+  (import (scheme base)
           (scheme char)
           (scheme time)
           (scheme write)
+          (scm core)
           (scm log)
           (scm net http request)
           (scm net http response)
           (scm net http route))
-  (export with-error-handler
+  (export security-headers
           with-access-log
+          with-error-handler
           with-response-headers
-          with-security-headers
-          security-headers)
+          with-security-headers)
   (begin
 
     ;; Each wrapper takes a server-level handler (lambda (req) resp) and
@@ -23,21 +23,24 @@
     ;;       (with-error-handler (router->handler router) render-500)))
 
     (define (internal-error)
-      (make-http-response 500 '(("Content-Type" . "text/plain; charset=utf-8"))
+      (make-http-response 500
+                          '(("Content-Type" . "text/plain; charset=utf-8"))
                           "Internal Server Error"))
 
     (define (describe-condition e)
       (let ((p (open-output-string)))
-        (cond
-          ((error-object? e)
-           (display (error-object-message e) p)
-           (for-each (lambda (x) (write-char #\space p) (write x p))
-                     (error-object-irritants e)))
-          (else (write e p)))
+        (cond ((error-object? e)
+               (display (error-object-message e) p)
+               (for-each (lambda (x)
+                           (write-char #\space p)
+                           (write x p))
+                         (error-object-irritants e)))
+              (else (write e p)))
         (get-output-string p)))
 
     (define (request-label req)
-      (string-append (http-request-method req) " "
+      (string-append (http-request-method req)
+                     " "
                      (url-path (http-request-url req))))
 
     (define (with-error-handler handler . render)
@@ -55,24 +58,31 @@ Example:
         (define (fail req detail)
           (log-error "http" (string-append (request-label req) " " detail))
           (if render
-              (guard (e (#t (log-error "http" (string-append
-                                               "error page failed: "
-                                               (describe-condition e)))
-                            (internal-error)))
+              (guard
+                  (e (#t
+                      (log-error "http"
+                                 (string-append "error page failed: "
+                                                (describe-condition e)))
+                      (internal-error)))
                 (let ((resp (render req)))
                   (if (http-response? resp)
-                      (http-response-with-headers resp 500 (http-response-headers resp))
+                      (http-response-with-headers
+                       resp
+                       500
+                       (http-response-headers resp))
                       (internal-error))))
               (internal-error)))
         (lambda (req)
-          (let ((outcome
-                 (guard (e (#t (cons 'raised e)))
-                   (cons 'returned (handler req)))))
-            (cond
-              ((eq? (car outcome) 'raised)
-               (fail req (string-append "raised: " (describe-condition (cdr outcome)))))
-              ((http-response? (cdr outcome)) (cdr outcome))
-              (else (fail req "handler did not return an http-response")))))))
+          (let
+              ((outcome (guard (e (#t (cons 'raised e)))
+                          (cons 'returned (handler req)))))
+            (cond ((eq? (car outcome) 'raised)
+                   (fail req
+                         (string-append "raised: "
+                                        (describe-condition (cdr outcome)))))
+                  ((http-response? (cdr outcome)) (cdr outcome))
+                  (else (fail req
+                              "handler did not return an http-response")))))))
 
     (define (elapsed-ms start)
       (quotient (* 1000 (- (current-jiffy) start)) (jiffies-per-second)))
@@ -96,19 +106,22 @@ Example:
           (let ((start (current-jiffy))
                 (method (http-request-method req))
                 (shown (log-url (http-request-url req))))
-            (guard (e (#t (log-access method shown 500 (elapsed-ms start))
-                          (raise e)))
+            (guard
+                (e (#t
+                    (log-access method shown 500 (elapsed-ms start))
+                    (raise e)))
               (let ((resp (handler req)))
                 (log-access method shown
-                            (if (http-response? resp) (http-response-status resp) 500)
+                            (if (http-response? resp)
+                                (http-response-status resp)
+                                500)
                             (elapsed-ms start))
                 resp))))))
 
     (define (has-header? headers name)
       (let loop ((hs headers))
         (and (pair? hs)
-             (or (string-ci=? (car (car hs)) name)
-                 (loop (cdr hs))))))
+             (or (string-ci=? (car (car hs)) name) (loop (cdr hs))))))
 
     (define (with-response-headers handler headers)
       "Syntax: (with-response-headers handler headers)
@@ -125,18 +138,20 @@ Example:
               resp
               (let* ((own (http-response-headers resp))
                      (extra (let loop ((hs headers) (acc '()))
-                              (cond
-                                ((null? hs) (reverse acc))
-                                ((has-header? own (car (car hs))) (loop (cdr hs) acc))
-                                (else (loop (cdr hs) (cons (car hs) acc)))))))
+                              (cond ((null? hs) (reverse acc))
+                                    ((has-header? own (car (car hs)))
+                                     (loop (cdr hs) acc))
+                                    (else
+                                     (loop (cdr hs) (cons (car hs) acc)))))))
                 (if (null? extra)
                     resp
-                    (http-response-with-headers resp (http-response-status resp)
+                    (http-response-with-headers resp
+                                                (http-response-status resp)
                                                 (append own extra))))))))
 
     (define security-headers
-      '(("Content-Security-Policy"
-         . "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'")
+      '(("Content-Security-Policy" .
+         "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'")
         ("X-Content-Type-Options" . "nosniff")
         ("Referrer-Policy" . "same-origin")
         ("X-Frame-Options" . "DENY")))
@@ -152,10 +167,8 @@ Description: Wraps handler with with-response-headers and
 Example:
   (with-security-headers handler
     \"default-src 'self'; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'\")"
-      (with-response-headers
-       handler
-       (if (pair? csp)
-           (cons (cons "Content-Security-Policy" (car csp))
-                 (cdr security-headers))
-           security-headers)))
-))
+      (with-response-headers handler
+        (if (pair? csp)
+            (cons (cons "Content-Security-Policy" (car csp))
+                  (cdr security-headers))
+            security-headers)))))

@@ -8,6 +8,8 @@ exclude = [
   "dist/**",
   "scm-lib/libraries/scm-fonts-*.sld",
   "scm-lib/libraries/scm-scaffold-starters.sld",
+  # error-output tests compare messages with line numbers
+  "scm-tests/failures/**",
 ]
 
 [format]

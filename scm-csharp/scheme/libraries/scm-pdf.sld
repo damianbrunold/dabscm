@@ -1,113 +1,117 @@
 (define-library (scm pdf)
-  (import (scheme base) (scheme file) (scheme write) (scheme inexact)
-          (scm compression) (srfi 151))
+  (import (scheme base)
+          (scheme file)
+          (scheme inexact)
+          (scheme write)
+          (srfi 151)
+          (scm compression))
   (export
-    ;; Document
-    make-pdf
-    pdf-add-page!
-    pdf-page-count
-    pdf->bytevector
-    pdf-save
-    ;; Page record accessors
-    pdf-page?
-    pdf-page-width
-    pdf-page-height
-    pdf-page-has-content?
-    ;; Page-size presets (point pairs: (cons width height))
-    pdf-page-size-a4
-    pdf-page-size-a5
-    pdf-page-size-letter
-    pdf-page-size-legal
-    ;; ── Drawing API ─────────────────────────────────────────────────────
-    ;; Path construction
-    pdf-move-to
-    pdf-line-to
-    pdf-curve-to
-    pdf-rect
-    pdf-close-path
-    ;; Painting
-    pdf-stroke
-    pdf-close-stroke
-    pdf-fill
-    pdf-fill-even-odd
-    pdf-fill-and-stroke
-    pdf-fill-and-stroke-even-odd
-    pdf-end-path
-    pdf-clip
-    pdf-clip-even-odd
-    ;; Graphics state
-    pdf-save-state
-    pdf-restore-state
-    pdf-with-state
-    ;; Line attributes
-    pdf-set-line-width
-    pdf-set-line-cap
-    pdf-set-line-join
-    pdf-set-miter-limit
-    pdf-set-dash
-    ;; Colors
-    pdf-set-stroke-gray
-    pdf-set-stroke-rgb
-    pdf-set-stroke-cmyk
-    pdf-set-fill-gray
-    pdf-set-fill-rgb
-    pdf-set-fill-cmyk
-    pdf-set-opacity
-    ;; Transforms
-    pdf-translate
-    pdf-scale
-    pdf-rotate
-    pdf-transform
-    ;; Line cap/join constants
-    pdf-line-cap-butt
-    pdf-line-cap-round
-    pdf-line-cap-square
-    pdf-line-join-miter
-    pdf-line-join-round
-    pdf-line-join-bevel
-    ;; ── Fonts and text ──────────────────────────────────────────────────
-    pdf-use-font
-    pdf-font?
-    pdf-font-base-name
-    pdf-font-encoding
-    pdf-text-width
-    pdf-draw-text
-    pdf-font-ascender
-    pdf-font-descender
-    pdf-font-cap-height
-    pdf-font-x-height
-    pdf-flow-text
-    ;; TrueType embedding (phase 4)
-    pdf-embed-truetype-font
-    pdf-read-binary-file
-    pdf-font-kind
-    pdf-font-ttf-bytes
-    pdf-font-num-glyphs
-    pdf-font-cmap-lookup
-    pdf-font-units-per-em
-    ;; ── Images (phase 5) ────────────────────────────────────────────────
-    pdf-embed-jpeg
-    pdf-embed-png
-    pdf-draw-image
-    pdf-image?
-    pdf-image-width
-    pdf-image-height
-    ;; ── Metadata, links, outlines (phase 6) ─────────────────────────────
-    pdf-set-metadata!
-    pdf-add-link
-    pdf-add-outline!
-    ;; PDF value constructors (low-level, used by later phases)
-    pdf/name
-    pdf/ref
-    pdf/dict
-    pdf/array
-    pdf/stream
-    pdf/literal
-    pdf-name?
-    pdf-ref?
-    pdf-dict?
-    pdf-array?
-    pdf-stream?)
+   ;; Document
+   make-pdf
+   pdf->bytevector
+   pdf-add-page!
+   pdf-page-count
+   pdf-save
+   ;; Page record accessors
+   pdf-page-has-content?
+   pdf-page-height
+   pdf-page-width
+   pdf-page?
+   ;; Page-size presets (point pairs: (cons width height))
+   pdf-page-size-a4
+   pdf-page-size-a5
+   pdf-page-size-legal
+   pdf-page-size-letter
+   ;; ── Drawing API ─────────────────────────────────────────────────────
+   ;; Path construction
+   pdf-close-path
+   pdf-curve-to
+   pdf-line-to
+   pdf-move-to
+   pdf-rect
+   ;; Painting
+   pdf-clip
+   pdf-clip-even-odd
+   pdf-close-stroke
+   pdf-end-path
+   pdf-fill
+   pdf-fill-and-stroke
+   pdf-fill-and-stroke-even-odd
+   pdf-fill-even-odd
+   pdf-stroke
+   ;; Graphics state
+   pdf-restore-state
+   pdf-save-state
+   pdf-with-state
+   ;; Line attributes
+   pdf-set-dash
+   pdf-set-line-cap
+   pdf-set-line-join
+   pdf-set-line-width
+   pdf-set-miter-limit
+   ;; Colors
+   pdf-set-fill-cmyk
+   pdf-set-fill-gray
+   pdf-set-fill-rgb
+   pdf-set-opacity
+   pdf-set-stroke-cmyk
+   pdf-set-stroke-gray
+   pdf-set-stroke-rgb
+   ;; Transforms
+   pdf-rotate
+   pdf-scale
+   pdf-transform
+   pdf-translate
+   ;; Line cap/join constants
+   pdf-line-cap-butt
+   pdf-line-cap-round
+   pdf-line-cap-square
+   pdf-line-join-bevel
+   pdf-line-join-miter
+   pdf-line-join-round
+   ;; ── Fonts and text ──────────────────────────────────────────────────
+   pdf-draw-text
+   pdf-flow-text
+   pdf-font-ascender
+   pdf-font-base-name
+   pdf-font-cap-height
+   pdf-font-descender
+   pdf-font-encoding
+   pdf-font-x-height
+   pdf-font?
+   pdf-text-width
+   pdf-use-font
+   ;; TrueType embedding (phase 4)
+   pdf-embed-truetype-font
+   pdf-font-cmap-lookup
+   pdf-font-kind
+   pdf-font-num-glyphs
+   pdf-font-ttf-bytes
+   pdf-font-units-per-em
+   pdf-read-binary-file
+   ;; ── Images (phase 5) ────────────────────────────────────────────────
+   pdf-draw-image
+   pdf-embed-jpeg
+   pdf-embed-png
+   pdf-image-height
+   pdf-image-width
+   pdf-image?
+   ;; ── Metadata, links, outlines (phase 6) ─────────────────────────────
+   pdf-add-link
+   pdf-add-outline!
+   pdf-set-metadata!
+   ;; PDF value constructors (low-level, used by later phases)
+   pdf-array?
+   pdf-dict?
+   pdf-name?
+   pdf-ref?
+   pdf-stream?
+   pdf/array
+   pdf/dict
+   pdf/literal
+   pdf/name
+   pdf/ref
+   pdf/stream)
   (begin
 
     ;; ──────────────────────────────────────────────────────────────────────
@@ -122,10 +126,10 @@
 
     ;; ── Page-size presets (points; 1pt = 1/72 inch) ────────────────────────
 
-    (define pdf-page-size-a4     (cons 595 842))
-    (define pdf-page-size-a5     (cons 420 595))
+    (define pdf-page-size-a4 (cons 595 842))
+    (define pdf-page-size-a5 (cons 420 595))
     (define pdf-page-size-letter (cons 612 792))
-    (define pdf-page-size-legal  (cons 612 1008))
+    (define pdf-page-size-legal (cons 612 1008))
 
     ;; ── PDF value types ───────────────────────────────────────────────────
     ;; Tagged records so the serializer can dispatch on type. Plain Scheme
@@ -222,26 +226,23 @@ Example: (pdf/literal (string->utf8 \"<< /Foo /Bar >>\"))"
       (%make-pdf-literal bytes))
 
     (define (pairs->entries args)
-      (cond
-        ((null? args) '())
-        ((null? (cdr args))
-         (error "pdf/dict: odd number of arguments"))
-        (else
-         (cons (cons (car args) (cadr args))
-               (pairs->entries (cddr args))))))
+      (cond ((null? args) '())
+            ((null? (cdr args)) (error "pdf/dict: odd number of arguments"))
+            (else (cons (cons (car args) (cadr args))
+                        (pairs->entries (cddr args))))))
 
     ;; ── Document and page records ─────────────────────────────────────────
 
     (define-record-type pdf-document
       (%make-pdf-document pages fonts images metadata outlines gstates)
       pdf-document?
-      (pages    pdf-document-pages    set-pdf-document-pages!)
+      (pages pdf-document-pages set-pdf-document-pages!)
       ;; Alist of font-symbol → pdf-font. Order is preserved so font
       ;; resource names (F1, F2, …) are stable across saves.
-      (fonts    pdf-document-fonts    set-pdf-document-fonts!)
+      (fonts pdf-document-fonts set-pdf-document-fonts!)
       ;; List of pdf-image, in registration order; resource names are
       ;; Im1, Im2, ….
-      (images   pdf-document-images   set-pdf-document-images!)
+      (images pdf-document-images set-pdf-document-images!)
       ;; Alist of metadata key (symbol: title author subject keywords
       ;; creator producer creation-date mod-date) → string.
       (metadata pdf-document-metadata set-pdf-document-metadata!)
@@ -250,25 +251,25 @@ Example: (pdf/literal (string->utf8 \"<< /Foo /Bar >>\"))"
       (outlines pdf-document-outlines set-pdf-document-outlines!)
       ;; Alist of (fill-alpha . stroke-alpha) → ExtGState resource name
       ;; (GS1, GS2, …), registered by pdf-set-opacity.
-      (gstates  pdf-document-gstates  set-pdf-document-gstates!))
+      (gstates pdf-document-gstates set-pdf-document-gstates!))
 
     (define-record-type pdf-page
       (%make-pdf-page width height content annotations object-id doc)
       pdf-page?
-      (width       pdf-page-width)
-      (height      pdf-page-height)
+      (width pdf-page-width)
+      (height pdf-page-height)
       ;; Reversed list of bytevector chunks holding the content stream's
       ;; operators. Append with %pdf-page-add-chunk!; concatenate at save.
-      (content     pdf-page-content     set-pdf-page-content!)
+      (content pdf-page-content set-pdf-page-content!)
       ;; List of pdf-annotation records attached to this page (link
       ;; annotations, etc.). Order preserved; emitted into /Annots.
       (annotations pdf-page-annotations set-pdf-page-annotations!)
       ;; Indirect-object id assigned by pdf->bytevector; #f until then.
       ;; Used by outline /Dest entries to refer to the page.
-      (object-id   pdf-page-object-id   set-pdf-page-object-id!)
+      (object-id pdf-page-object-id set-pdf-page-object-id!)
       ;; The document the page belongs to (for resources that a drawing
       ;; operator registers, such as opacity).
-      (doc         pdf-page-doc))
+      (doc pdf-page-doc))
 
     (define (%pdf-page-add-chunk! page bv)
       (set-pdf-page-content! page (cons bv (pdf-page-content page))))
@@ -313,19 +314,19 @@ Example:
   (pdf-add-page! doc pdf-page-size-letter)  ; US Letter
   (pdf-add-page! doc 200 100)               ; custom size"
       (let ((w 595) (h 842))
-        (cond
-          ((null? opts) #t)
-          ((and (null? (cdr opts)) (pair? (car opts)))
-           (set! w (car (car opts)))
-           (set! h (cdr (car opts))))
-          ((and (pair? (cdr opts)) (null? (cddr opts)))
-           (set! w (car opts))
-           (set! h (cadr opts)))
-          (else
-           (error "pdf-add-page!: expected (), (size-pair), or (w h)" opts)))
+        (cond ((null? opts) #t)
+              ((and (null? (cdr opts)) (pair? (car opts)))
+               (set! w (car (car opts)))
+               (set! h (cdr (car opts))))
+              ((and (pair? (cdr opts)) (null? (cddr opts)))
+               (set! w (car opts))
+               (set! h (cadr opts)))
+              (else (error "pdf-add-page!: expected (), (size-pair), or (w h)"
+                           opts)))
         (let ((page (%make-pdf-page w h '() '() #f doc)))
           (set-pdf-document-pages! doc
-            (append (pdf-document-pages doc) (list page)))
+                                   (append (pdf-document-pages doc)
+                                           (list page)))
           page)))
 
     ;; ── Byte-accumulating writer ──────────────────────────────────────────
@@ -336,18 +337,18 @@ Example:
     (define-record-type pdf-writer
       (%make-pdf-writer chunks length objects next-id)
       pdf-writer?
-      (chunks   pdf-writer-chunks   set-pdf-writer-chunks!)
-      (length   pdf-writer-length   set-pdf-writer-length!)
-      (objects  pdf-writer-objects  set-pdf-writer-objects!)
-      (next-id  pdf-writer-next-id  set-pdf-writer-next-id!))
+      (chunks pdf-writer-chunks set-pdf-writer-chunks!)
+      (length pdf-writer-length set-pdf-writer-length!)
+      (objects pdf-writer-objects set-pdf-writer-objects!)
+      (next-id pdf-writer-next-id set-pdf-writer-next-id!))
 
-    (define (make-pdf-writer)
-      (%make-pdf-writer '() 0 '() 1))
+    (define (make-pdf-writer) (%make-pdf-writer '() 0 '() 1))
 
     (define (pdf-writer-emit-bytes! w bv)
       (set-pdf-writer-chunks! w (cons bv (pdf-writer-chunks w)))
-      (set-pdf-writer-length! w (+ (pdf-writer-length w)
-                                   (bytevector-length bv))))
+      (set-pdf-writer-length! w
+                              (+ (pdf-writer-length w)
+                                 (bytevector-length bv))))
 
     (define (pdf-writer-emit-string! w s)
       (pdf-writer-emit-bytes! w (string->utf8 s)))
@@ -359,74 +360,69 @@ Example:
 
     (define (pdf-writer-define-object! w id value)
       (set-pdf-writer-objects! w
-        (cons (cons id (pdf-writer-length w))
-              (pdf-writer-objects w)))
+                               (cons (cons id (pdf-writer-length w))
+                                     (pdf-writer-objects w)))
       (pdf-writer-emit-string! w
-        (string-append (number->string id) " 0 obj\n"))
+                               (string-append (number->string id) " 0 obj\n"))
       (pdf-emit-value! w value)
       (pdf-writer-emit-string! w "\nendobj\n"))
 
     ;; ── Value serializer ──────────────────────────────────────────────────
 
     (define (pdf-emit-value! w v)
-      (cond
-        ((pdf-name? v)
-         (pdf-writer-emit-string! w
-           (string-append "/" (pdf-name-value v))))
-        ((pdf-ref? v)
-         (pdf-writer-emit-string! w
-           (string-append (number->string (pdf-ref-id v)) " 0 R")))
-        ((pdf-dict? v)    (pdf-emit-dict! w v))
-        ((pdf-array? v)   (pdf-emit-array! w v))
-        ((pdf-stream? v)  (pdf-emit-stream! w v))
-        ((pdf-literal? v) (pdf-writer-emit-bytes! w (pdf-literal-bytes v)))
-        ((number? v)
-         (pdf-writer-emit-string! w (pdf-format-number v)))
-        ((boolean? v)
-         (pdf-writer-emit-string! w (if v "true" "false")))
-        ((eq? v 'null)
-         (pdf-writer-emit-string! w "null"))
-        ((string? v)
-         (pdf-emit-literal-string! w v))
-        ((symbol? v)
-         (pdf-writer-emit-string! w
-           (string-append "/" (symbol->string v))))
-        (else
-         (error "pdf: cannot serialize value" v))))
+      (cond ((pdf-name? v)
+             (pdf-writer-emit-string! w
+                                      (string-append "/" (pdf-name-value v))))
+            ((pdf-ref? v)
+             (pdf-writer-emit-string! w
+                                      (string-append
+                                       (number->string (pdf-ref-id v))
+                                       " 0 R")))
+            ((pdf-dict? v) (pdf-emit-dict! w v))
+            ((pdf-array? v) (pdf-emit-array! w v))
+            ((pdf-stream? v) (pdf-emit-stream! w v))
+            ((pdf-literal? v)
+             (pdf-writer-emit-bytes! w (pdf-literal-bytes v)))
+            ((number? v) (pdf-writer-emit-string! w (pdf-format-number v)))
+            ((boolean? v) (pdf-writer-emit-string! w (if v "true" "false")))
+            ((eq? v 'null) (pdf-writer-emit-string! w "null"))
+            ((string? v) (pdf-emit-literal-string! w v))
+            ((symbol? v)
+             (pdf-writer-emit-string! w
+                                      (string-append "/" (symbol->string v))))
+            (else (error "pdf: cannot serialize value" v))))
 
     (define (pdf-emit-dict! w d)
       (pdf-writer-emit-string! w "<<")
-      (for-each
-        (lambda (entry)
-          (pdf-writer-emit-string! w
-            (string-append " /" (car entry) " "))
-          (pdf-emit-value! w (cdr entry)))
-        (pdf-dict-entries d))
+      (for-each (lambda (entry)
+                  (pdf-writer-emit-string!
+                   w
+                   (string-append " /" (car entry) " "))
+                  (pdf-emit-value! w (cdr entry)))
+                (pdf-dict-entries d))
       (pdf-writer-emit-string! w " >>"))
 
     (define (pdf-emit-array! w a)
       (pdf-writer-emit-string! w "[")
-      (let loop ((items (pdf-array-items a)) (first? #t))
-        (cond
-          ((null? items)
-           (pdf-writer-emit-string! w "]"))
-          (else
-           (unless first? (pdf-writer-emit-string! w " "))
-           (pdf-emit-value! w (car items))
-           (loop (cdr items) #f)))))
+      (let loop ((items (pdf-array-items a))
+                 (first? #t))
+        (cond ((null? items) (pdf-writer-emit-string! w "]"))
+              (else (unless first? (pdf-writer-emit-string! w " "))
+                    (pdf-emit-value! w (car items))
+                    (loop (cdr items) #f)))))
 
     (define (pdf-emit-stream! w s)
       ;; Ensure the dictionary advertises a /Length matching the payload.
       ;; If the caller already set /Length we trust it.
-      (let* ((data    (pdf-stream-data s))
-             (dict    (pdf-stream-dict s))
+      (let* ((data (pdf-stream-data s))
+             (dict (pdf-stream-dict s))
              (entries (pdf-dict-entries dict))
-             (dict*   (if (assoc "Length" entries)
-                          dict
-                          (%make-pdf-dict
-                           (append entries
-                                   (list (cons "Length"
-                                               (bytevector-length data))))))))
+             (dict* (if (assoc "Length" entries)
+                        dict
+                        (%make-pdf-dict
+                         (append entries
+                                 (list (cons "Length"
+                                             (bytevector-length data))))))))
         (pdf-emit-dict! w dict*)
         (pdf-writer-emit-string! w "\nstream\n")
         (pdf-writer-emit-bytes! w data)
@@ -442,26 +438,21 @@ Example:
       ;; This is the difference between Unicode metadata that displays
       ;; correctly in spec-compliant viewers and metadata that comes out
       ;; as mojibake.
-      (cond
-        ((%string-printable-ascii? s)
-         (pdf-writer-emit-string! w "(")
-         (pdf-writer-emit-string! w (pdf-escape-literal s))
-         (pdf-writer-emit-string! w ")"))
-        (else
-         (pdf-writer-emit-string! w "<FEFF")
-         (pdf-writer-emit-string! w (%string->utf16be-hex s))
-         (pdf-writer-emit-string! w ">"))))
+      (cond ((%string-printable-ascii? s)
+             (pdf-writer-emit-string! w "(")
+             (pdf-writer-emit-string! w (pdf-escape-literal s))
+             (pdf-writer-emit-string! w ")"))
+            (else (pdf-writer-emit-string! w "<FEFF")
+                  (pdf-writer-emit-string! w (%string->utf16be-hex s))
+                  (pdf-writer-emit-string! w ">"))))
 
     (define (%string-printable-ascii? s)
       (let ((n (string-length s)))
         (let loop ((i 0))
-          (cond
-            ((= i n) #t)
-            (else
-             (let ((cp (char->integer (string-ref s i))))
-               (cond
-                 ((and (>= cp 32) (<= cp 126)) (loop (+ i 1)))
-                 (else #f))))))))
+          (cond ((= i n) #t)
+                (else (let ((cp (char->integer (string-ref s i))))
+                        (cond ((and (>= cp 32) (<= cp 126)) (loop (+ i 1)))
+                              (else #f))))))))
 
     (define (%string->utf16be-hex s)
       ;; Each BMP codepoint becomes 4 hex digits; codepoints above U+FFFF
@@ -470,28 +461,26 @@ Example:
       ;; string-upcase is not in (scheme base)).
       (define (hex4 n)
         (define (d v)
-          (cond
-            ((< v 10) (integer->char (+ 48 v)))     ; 0-9
-            (else     (integer->char (+ 55 v)))))   ; A-F
+          (cond ((< v 10) (integer->char (+ 48 v))) ; 0-9
+                (else (integer->char (+ 55 v))))) ; A-F
         (string (d (bitwise-and (arithmetic-shift n -12) 15))
-                (d (bitwise-and (arithmetic-shift n -8)  15))
-                (d (bitwise-and (arithmetic-shift n -4)  15))
+                (d (bitwise-and (arithmetic-shift n -8) 15))
+                (d (bitwise-and (arithmetic-shift n -4) 15))
                 (d (bitwise-and n 15))))
       (let ((n (string-length s)))
         (let loop ((i 0) (acc '()))
-          (cond
-            ((= i n) (apply string-append (reverse acc)))
-            (else
-             (let ((cp (char->integer (string-ref s i))))
-               (cond
-                 ((< cp #x10000)
-                  (loop (+ i 1) (cons (hex4 cp) acc)))
-                 (else
-                  (let* ((c  (- cp #x10000))
-                         (hi (+ #xD800 (quotient c 1024)))
-                         (lo (+ #xDC00 (modulo c 1024))))
-                    (loop (+ i 1)
-                          (cons (hex4 lo) (cons (hex4 hi) acc))))))))))))
+          (cond ((= i n) (apply string-append (reverse acc)))
+                (else (let ((cp (char->integer (string-ref s i))))
+                        (cond ((< cp #x10000)
+                               (loop (+ i 1) (cons (hex4 cp) acc)))
+                              (else (let*
+                                        ((c (- cp #x10000))
+                                         (hi (+ #xD800 (quotient c 1024)))
+                                         (lo (+ #xDC00 (modulo c 1024))))
+                                      (loop
+                                       (+ i 1)
+                                       (cons (hex4 lo)
+                                             (cons (hex4 hi) acc))))))))))))
 
     (define (pdf-escape-literal s)
       ;; Escape ( ) and \ per the PDF spec.
@@ -504,89 +493,96 @@ Example:
                       ((#\\) (cons #\\ (cons #\\ acc)))
                       ((#\() (cons #\( (cons #\\ acc)))
                       ((#\)) (cons #\) (cons #\\ acc)))
-                      (else  (cons c acc))))))))
+                      (else (cons c acc))))))))
 
     (define (pdf-format-number n)
-      (cond
-        ((exact-integer? n) (number->string n))
-        ((and (rational? n) (exact? n))
-         ;; Convert exact non-integer rationals to inexact to avoid
-         ;; emitting fractions like 1/2 that PDF can't parse.
-         (pdf-format-number (inexact n)))
-        ((not (and (real? n) (= n n) (< (abs n) 1e300))) "0")
-        (else
-         ;; PDF has no exponent notation (6e-17 from a rotation would
-         ;; break the content stream): plain decimals, 6 places at most
-         (let* ((r (exact (round (* n 1000000))))
-                (s (number->string (abs r)))
-                (s (if (< (string-length s) 7)
-                       (string-append (make-string (- 7 (string-length s)) #\0) s)
-                       s))
-                (int (substring s 0 (- (string-length s) 6)))
-                (frac (let trim ((f (substring s (- (string-length s) 6) (string-length s))))
-                        (if (and (> (string-length f) 0)
-                                 (char=? (string-ref f (- (string-length f) 1)) #\0))
-                            (trim (substring f 0 (- (string-length f) 1)))
-                            f))))
-           (string-append (if (< r 0) "-" "") int
-                          (if (string=? frac "") "" ".") frac)))))
+      (cond ((exact-integer? n) (number->string n))
+            ((and (rational? n) (exact? n))
+             ;; Convert exact non-integer rationals to inexact to avoid
+             ;; emitting fractions like 1/2 that PDF can't parse.
+             (pdf-format-number (inexact n)))
+            ((not (and (real? n) (= n n) (< (abs n) 1e300))) "0")
+            (else
+             ;; PDF has no exponent notation (6e-17 from a rotation would
+             ;; break the content stream): plain decimals, 6 places at most
+             (let* ((r (exact (round (* n 1000000))))
+                    (s (number->string (abs r)))
+                    (s (if (< (string-length s) 7)
+                           (string-append
+                            (make-string (- 7 (string-length s)) #\0)
+                            s)
+                           s))
+                    (int (substring s 0 (- (string-length s) 6)))
+                    (frac (let trim
+                              ((f (substring s
+                                             (- (string-length s) 6)
+                                             (string-length s))))
+                            (if (and (> (string-length f) 0)
+                                     (char=?
+                                      (string-ref f (- (string-length f) 1))
+                                      #\0))
+                                (trim (substring f 0 (- (string-length f) 1)))
+                                f))))
+               (string-append (if (< r 0) "-" "")
+                              int
+                              (if (string=? frac "") "" ".")
+                              frac)))))
 
     (define (pdf-pad10 n)
       (let* ((s (number->string n))
              (len (string-length s)))
-        (if (>= len 10)
-            s
-            (string-append (make-string (- 10 len) #\0) s))))
+        (if (>= len 10) s (string-append (make-string (- 10 len) #\0) s))))
 
     ;; ── Trailer / xref ────────────────────────────────────────────────────
 
     (define (pdf-writer-finish! w root-id . opts)
-      (let* ((info-id     (if (null? opts) #f (car opts)))
+      (let* ((info-id (if (null? opts) #f (car opts)))
              (xref-offset (pdf-writer-length w))
-             (size        (pdf-writer-next-id w))
-             (offsets     (make-vector size 0)))
-        (for-each
-          (lambda (pair)
-            (vector-set! offsets (car pair) (cdr pair)))
-          (pdf-writer-objects w))
+             (size (pdf-writer-next-id w))
+             (offsets (make-vector size 0)))
+        (for-each (lambda (pair) (vector-set! offsets (car pair) (cdr pair)))
+                  (pdf-writer-objects w))
         (pdf-writer-emit-string! w "xref\n")
         (pdf-writer-emit-string! w
-          (string-append "0 " (number->string size) "\n"))
+                                 (string-append "0 "
+                                                (number->string size)
+                                                "\n"))
         ;; Object 0 is the head of the free-object linked list.
         (pdf-writer-emit-string! w "0000000000 65535 f \n")
         (let loop ((i 1))
           (when (< i size)
             (pdf-writer-emit-string! w
-              (string-append (pdf-pad10 (vector-ref offsets i))
-                             " 00000 n \n"))
+                                     (string-append
+                                      (pdf-pad10 (vector-ref offsets i))
+                                      " 00000 n \n"))
             (loop (+ i 1))))
         (pdf-writer-emit-string! w "trailer\n")
-        (let ((entries (list (cons "Size" size)
-                             (cons "Root" (pdf/ref root-id)))))
+        (let
+            ((entries (list (cons "Size" size)
+                            (cons "Root" (pdf/ref root-id)))))
           (when info-id
             (set! entries
-              (append entries (list (cons "Info" (pdf/ref info-id))))))
+                  (append entries (list (cons "Info" (pdf/ref info-id))))))
           (pdf-emit-value! w (%make-pdf-dict entries)))
         (pdf-writer-emit-string! w
-          (string-append "\nstartxref\n"
-                         (number->string xref-offset)
-                         "\n%%EOF\n"))
+                                 (string-append "\nstartxref\n"
+                                                (number->string xref-offset)
+                                                "\n%%EOF\n"))
         (bytevector-concat (reverse (pdf-writer-chunks w)))))
 
     (define (bytevector-concat bvs)
       (let* ((total (let loop ((rest bvs) (acc 0))
-                      (if (null? rest) acc
+                      (if (null? rest)
+                          acc
                           (loop (cdr rest)
                                 (+ acc (bytevector-length (car rest)))))))
              (out (make-bytevector total 0)))
         (let loop ((rest bvs) (off 0))
-          (cond
-            ((null? rest) out)
-            (else
-             (let* ((bv (car rest))
-                    (len (bytevector-length bv)))
-               (bytevector-copy! out off bv 0 len)
-               (loop (cdr rest) (+ off len))))))))
+          (cond ((null? rest) out)
+                (else (let* ((bv (car rest))
+                             (len (bytevector-length bv)))
+                        (bytevector-copy! out off bv 0 len)
+                        (loop (cdr rest) (+ off len))))))))
 
     ;; ── Top-level: build the bytevector / save to file ────────────────────
 
@@ -607,138 +603,172 @@ Example:
         ;; spec-recommended hint that the file is binary, so tools that
         ;; sniff line endings don't mangle it.
         (pdf-writer-emit-string! w "%PDF-1.4\n")
-        (pdf-writer-emit-bytes! w
-          (bytevector #x25 #xE2 #xE3 #xCF #xD3 #x0A))
-        (let* ((pages      (pdf-document-pages doc))
-               (fonts      (map cdr (pdf-document-fonts doc)))
-               (images     (pdf-document-images doc))
-               (outlines   (pdf-document-outlines doc))
-               (metadata   (pdf-document-metadata doc))
+        (pdf-writer-emit-bytes! w (bytevector #x25 #xE2 #xE3 #xCF #xD3 #x0A))
+        (let* ((pages (pdf-document-pages doc))
+               (fonts (map cdr (pdf-document-fonts doc)))
+               (images (pdf-document-images doc))
+               (outlines (pdf-document-outlines doc))
+               (metadata (pdf-document-metadata doc))
                (catalog-id (pdf-writer-allocate-id! w))
-               (pages-id   (pdf-writer-allocate-id! w))
-               (page-ids   (map (lambda (page)
-                                  (let ((id (pdf-writer-allocate-id! w)))
-                                    (set-pdf-page-object-id! page id)
-                                    id))
-                                pages))
-               (font-ids   (map (lambda (f)
-                                  (let ((id (pdf-writer-allocate-id! w)))
-                                    (set-pdf-font-object-id! f id)
-                                    id))
-                                fonts))
-               (image-ids  (map (lambda (i)
-                                  (let ((id (pdf-writer-allocate-id! w)))
-                                    (set-pdf-image-object-id! i id)
-                                    id))
-                                images))
+               (pages-id (pdf-writer-allocate-id! w))
+               (page-ids (map (lambda (page)
+                                (let ((id (pdf-writer-allocate-id! w)))
+                                  (set-pdf-page-object-id! page id)
+                                  id))
+                              pages))
+               (font-ids (map (lambda (f)
+                                (let ((id (pdf-writer-allocate-id! w)))
+                                  (set-pdf-font-object-id! f id)
+                                  id))
+                              fonts))
+               (image-ids (map (lambda (i)
+                                 (let ((id (pdf-writer-allocate-id! w)))
+                                   (set-pdf-image-object-id! i id)
+                                   id))
+                               images))
                ;; One indirect object per annotation, per page. We flatten
                ;; into a parallel list of (page . list-of-annotation-ids).
-               (annotation-ids
-                (map (lambda (page)
-                       (map (lambda (_) (pdf-writer-allocate-id! w))
-                            (pdf-page-annotations page)))
-                     pages))
-               (outline-tree-ids
-                (and (not (null? outlines))
-                     (%outlines-allocate-ids! w outlines)))
-               (outlines-root-id
-                (and outline-tree-ids (pdf-writer-allocate-id! w)))
-               (info-id
-                (and (not (null? metadata)) (pdf-writer-allocate-id! w)))
-               (font-subdict
-                (if (null? fonts)
-                    #f
-                    (%make-pdf-dict
-                      (map (lambda (f)
-                             (cons (pdf-font-resource-name f)
-                                   (pdf/ref (pdf-font-object-id f))))
-                           fonts))))
-               (xobject-subdict
-                (if (null? images)
-                    #f
-                    (%make-pdf-dict
-                      (map (lambda (i)
-                             (cons (pdf-image-resource-name i)
-                                   (pdf/ref (pdf-image-object-id i))))
-                           images))))
-               (gstate-subdict
-                (if (null? (pdf-document-gstates doc))
-                    #f
-                    (%make-pdf-dict
-                      (map (lambda (g)
-                             (cons (cdr g)
-                                   (pdf/dict "Type" (pdf/name "ExtGState")
-                                             "ca" (car (car g))
-                                             "CA" (cdr (car g)))))
-                           (pdf-document-gstates doc)))))
-               (page-resources
-                (%make-pdf-dict
-                  (append
-                    (if font-subdict (list (cons "Font" font-subdict)) '())
-                    (if xobject-subdict (list (cons "XObject" xobject-subdict)) '())
-                    (if gstate-subdict (list (cons "ExtGState" gstate-subdict)) '())))))
+               (annotation-ids (map (lambda (page)
+                                      (map
+                                       (lambda (_)
+                                         (pdf-writer-allocate-id! w))
+                                       (pdf-page-annotations page)))
+                                    pages))
+               (outline-tree-ids (and (not (null? outlines))
+                                      (%outlines-allocate-ids! w outlines)))
+               (outlines-root-id (and outline-tree-ids
+                                      (pdf-writer-allocate-id! w)))
+               (info-id (and (not (null? metadata))
+                             (pdf-writer-allocate-id! w)))
+               (font-subdict (if (null? fonts)
+                                 #f
+                                 (%make-pdf-dict
+                                  (map (lambda (f)
+                                         (cons
+                                          (pdf-font-resource-name f)
+                                          (pdf/ref (pdf-font-object-id f))))
+                                       fonts))))
+               (xobject-subdict (if (null? images)
+                                    #f
+                                    (%make-pdf-dict
+                                     (map
+                                      (lambda (i)
+                                        (cons
+                                         (pdf-image-resource-name i)
+                                         (pdf/ref (pdf-image-object-id i))))
+                                      images))))
+               (gstate-subdict (if (null? (pdf-document-gstates doc))
+                                   #f
+                                   (%make-pdf-dict
+                                    (map
+                                     (lambda (g)
+                                       (cons
+                                        (cdr g)
+                                        (pdf/dict "Type"
+                                                  (pdf/name "ExtGState")
+                                                  "ca"
+                                                  (car (car g))
+                                                  "CA"
+                                                  (cdr (car g)))))
+                                     (pdf-document-gstates doc)))))
+               (page-resources (%make-pdf-dict
+                                (append
+                                 (if font-subdict
+                                     (list (cons "Font" font-subdict))
+                                     '())
+                                 (if xobject-subdict
+                                     (list (cons "XObject" xobject-subdict))
+                                     '())
+                                 (if gstate-subdict
+                                     (list (cons "ExtGState" gstate-subdict))
+                                     '())))))
           ;; Catalog (with optional /Outlines).
           (pdf-writer-define-object! w catalog-id
-            (let ((entries
-                   (list (cons "Type"  (pdf/name "Catalog"))
-                         (cons "Pages" (pdf/ref pages-id)))))
-              (when outlines-root-id
-                (set! entries
-                  (append entries
-                          (list (cons "Outlines" (pdf/ref outlines-root-id))
-                                (cons "PageMode" (pdf/name "UseOutlines"))))))
-              (%make-pdf-dict entries)))
+                                     (let
+                                         ((entries
+                                           (list
+                                            (cons "Type" (pdf/name "Catalog"))
+                                            (cons "Pages"
+                                                  (pdf/ref pages-id)))))
+                                       (when outlines-root-id
+                                         (set!
+                                          entries
+                                          (append
+                                           entries
+                                           (list
+                                            (cons "Outlines"
+                                                  (pdf/ref outlines-root-id))
+                                            (cons
+                                             "PageMode"
+                                             (pdf/name "UseOutlines"))))))
+                                       (%make-pdf-dict entries)))
           ;; Pages.
           (pdf-writer-define-object! w pages-id
-            (pdf/dict "Type"  (pdf/name "Pages")
-                      "Kids"  (pdf/array (map pdf/ref page-ids))
-                      "Count" (length pages)))
+                                     (pdf/dict
+                                      "Type"
+                                      (pdf/name "Pages")
+                                      "Kids"
+                                      (pdf/array (map pdf/ref page-ids))
+                                      "Count"
+                                      (length pages)))
           ;; Each page + its content stream + its annotations.
-          (for-each
-            (lambda (page id annot-ids)
-              (let* ((content-id
-                      (and (pdf-page-has-content? page)
-                           (pdf-writer-allocate-id! w)))
-                     (page-dict-entries
-                      (list (cons "Type"      (pdf/name "Page"))
-                            (cons "Parent"    (pdf/ref pages-id))
-                            (cons "MediaBox"  (pdf/array
-                                                (list 0 0
-                                                      (pdf-page-width page)
-                                                      (pdf-page-height page))))
-                            (cons "Resources" page-resources))))
-                (when content-id
-                  (set! page-dict-entries
-                    (append page-dict-entries
-                            (list (cons "Contents" (pdf/ref content-id))))))
-                (when (not (null? annot-ids))
-                  (set! page-dict-entries
-                    (append page-dict-entries
-                            (list (cons "Annots"
-                                        (pdf/array (map pdf/ref annot-ids)))))))
-                (pdf-writer-define-object! w id
-                  (%make-pdf-dict page-dict-entries))
-                (when content-id
-                  (let* ((raw (bytevector-concat
-                                (reverse (pdf-page-content page))))
-                         (zbv (zlib-compress raw)))
-                    (pdf-writer-define-object! w content-id
-                      (pdf/stream
-                        (pdf/dict "Filter" (pdf/name "FlateDecode"))
-                        zbv))))
-                ;; Emit each annotation object.
-                (for-each
-                  (lambda (annot aid)
-                    (%emit-annotation! w annot aid))
-                  (pdf-page-annotations page) annot-ids)))
-            pages page-ids annotation-ids)
+          (for-each (lambda (page id annot-ids)
+                      (let* ((content-id
+                              (and (pdf-page-has-content? page)
+                                   (pdf-writer-allocate-id! w)))
+                             (page-dict-entries
+                              (list (cons "Type" (pdf/name "Page"))
+                                    (cons "Parent" (pdf/ref pages-id))
+                                    (cons
+                                     "MediaBox"
+                                     (pdf/array
+                                      (list 0 0
+                                            (pdf-page-width page)
+                                            (pdf-page-height page))))
+                                    (cons "Resources" page-resources))))
+                        (when content-id
+                          (set! page-dict-entries
+                                (append
+                                 page-dict-entries
+                                 (list (cons "Contents"
+                                             (pdf/ref content-id))))))
+                        (when (not (null? annot-ids))
+                          (set! page-dict-entries
+                                (append
+                                 page-dict-entries
+                                 (list (cons
+                                        "Annots"
+                                        (pdf/array
+                                         (map pdf/ref annot-ids)))))))
+                        (pdf-writer-define-object!
+                         w
+                         id
+                         (%make-pdf-dict page-dict-entries))
+                        (when content-id
+                          (let* ((raw (bytevector-concat
+                                       (reverse (pdf-page-content page))))
+                                 (zbv (zlib-compress raw)))
+                            (pdf-writer-define-object!
+                             w
+                             content-id
+                             (pdf/stream
+                              (pdf/dict "Filter" (pdf/name "FlateDecode"))
+                              zbv))))
+                        ;; Emit each annotation object.
+                        (for-each (lambda (annot aid)
+                                    (%emit-annotation! w annot aid))
+                                  (pdf-page-annotations page)
+                                  annot-ids)))
+                    pages
+                    page-ids
+                    annotation-ids)
           ;; Fonts.
-          (for-each
-            (lambda (font id)
-              (case (pdf-font-kind font)
-                ((truetype) (%emit-truetype-font! w font id))
-                (else       (%emit-core14-font! w font id))))
-            fonts font-ids)
+          (for-each (lambda (font id)
+                      (case (pdf-font-kind font)
+                        ((truetype) (%emit-truetype-font! w font id))
+                        (else (%emit-core14-font! w font id))))
+                    fonts
+                    font-ids)
           ;; Images.
           (for-each (lambda (img) (%emit-image! w img)) images)
           ;; Outlines (if any). The pre-allocated ids let us emit the
@@ -747,24 +777,31 @@ Example:
             (%emit-outlines! w outlines outlines-root-id))
           ;; Info (metadata) object.
           (when info-id
-            (pdf-writer-define-object! w info-id
-              (%build-info-dict metadata)))
+            (pdf-writer-define-object! w info-id (%build-info-dict metadata)))
           (pdf-writer-finish! w catalog-id info-id))))
 
     (define (%emit-core14-font! w font id)
       (let ((base (pdf-font-base-name font))
-            (enc  (pdf-font-encoding font)))
+            (enc (pdf-font-encoding font)))
         (pdf-writer-define-object! w id
-          ;; Symbol and ZapfDingbats must use their built-in encoding
-          ;; (omit /Encoding); the 12 Latin fonts use WinAnsiEncoding.
-          (if (memq enc '(symbol zapfdingbats))
-              (pdf/dict "Type"     (pdf/name "Font")
-                        "Subtype"  (pdf/name "Type1")
-                        "BaseFont" (pdf/name base))
-              (pdf/dict "Type"     (pdf/name "Font")
-                        "Subtype"  (pdf/name "Type1")
-                        "BaseFont" (pdf/name base)
-                        "Encoding" (pdf/name "WinAnsiEncoding"))))))
+                                   ;; Symbol and ZapfDingbats must use their built-in encoding
+                                   ;; (omit /Encoding); the 12 Latin fonts use WinAnsiEncoding.
+                                   (if (memq enc '(symbol zapfdingbats))
+                                       (pdf/dict "Type"
+                                                 (pdf/name "Font")
+                                                 "Subtype"
+                                                 (pdf/name "Type1")
+                                                 "BaseFont"
+                                                 (pdf/name base))
+                                       (pdf/dict
+                                        "Type"
+                                        (pdf/name "Font")
+                                        "Subtype"
+                                        (pdf/name "Type1")
+                                        "BaseFont"
+                                        (pdf/name base)
+                                        "Encoding"
+                                        (pdf/name "WinAnsiEncoding"))))))
 
     ;; ──────────────────────────────────────────────────────────────────────
     ;; Drawing API (phase 1)
@@ -775,8 +812,8 @@ Example:
     ;; lazily and Flate-compressed at save time.
     ;; ──────────────────────────────────────────────────────────────────────
 
-    (define pdf-line-cap-butt   0)
-    (define pdf-line-cap-round  1)
+    (define pdf-line-cap-butt 0)
+    (define pdf-line-cap-round 1)
     (define pdf-line-cap-square 2)
     (define pdf-line-join-miter 0)
     (define pdf-line-join-round 1)
@@ -791,18 +828,15 @@ Example:
       ;; tokens is a list of pre-formatted strings; they are joined with
       ;; single spaces and terminated by a newline.
       (let loop ((rest tokens) (acc '()) (first? #t))
-        (cond
-          ((null? rest)
-           (%pdf-page-add-chunk! page
-             (string->utf8
-               (string-append
-                 (apply string-append (reverse acc))
-                 "\n"))))
-          (else
-           (loop (cdr rest)
-                 (cons (car rest)
-                       (if first? acc (cons " " acc)))
-                 #f)))))
+        (cond ((null? rest)
+               (%pdf-page-add-chunk! page
+                                     (string->utf8
+                                      (string-append
+                                       (apply string-append (reverse acc))
+                                       "\n"))))
+              (else (loop (cdr rest)
+                          (cons (car rest) (if first? acc (cons " " acc)))
+                          #f)))))
 
     (define (n->s x) (pdf-fmt-num x))
 
@@ -829,9 +863,14 @@ Library: (scm pdf)
 Description: Appends a cubic Bezier curve from the current point to
   (x, y) using control points (cx1, cy1) and (cx2, cy2). Emits 'c'.
 Example: (pdf-curve-to page 100 100 200 200 300 100)"
-      (emit-op! page (n->s cx1) (n->s cy1)
-                     (n->s cx2) (n->s cy2)
-                     (n->s x)   (n->s y) "c"))
+      (emit-op! page
+                (n->s cx1)
+                (n->s cy1)
+                (n->s cx2)
+                (n->s cy2)
+                (n->s x)
+                (n->s y)
+                "c"))
 
     (define (pdf-rect page x y w h)
       "Syntax: (pdf-rect page x y width height)
@@ -995,15 +1034,18 @@ Description: Sets the dash pattern. pattern-list is a list of numbers
 Example:
   (pdf-set-dash page '(5 3) 0)   ; 5-on 3-off
   (pdf-set-dash page '() 0)      ; solid"
-      (let ((array (string-append
-                     "["
-                     (let loop ((p pattern) (first? #t) (acc ""))
-                       (if (null? p) acc
-                           (loop (cdr p) #f
-                                 (string-append acc
-                                                (if first? "" " ")
-                                                (n->s (car p))))))
-                     "]")))
+      (let
+          ((array (string-append "["
+                                 (let loop ((p pattern) (first? #t) (acc ""))
+                                   (if (null? p)
+                                       acc
+                                       (loop
+                                        (cdr p)
+                                        #f
+                                        (string-append acc
+                                                       (if first? "" " ")
+                                                       (n->s (car p))))))
+                                 "]")))
         (emit-op! page array (n->s phase) "d")))
 
     ;; ── Colors ───────────────────────────────────────────────────────────
@@ -1078,14 +1120,20 @@ Example:
       (pdf-fill page)))"
       (let* ((doc (pdf-page-doc page))
              (clamp (lambda (a) (max 0 (min 1 a))))
-             (key (cons (clamp fill) (clamp (if (pair? stroke) (car stroke) fill))))
+             (key (cons (clamp fill)
+                        (clamp (if (pair? stroke) (car stroke) fill))))
              (known (assoc key (pdf-document-gstates doc)))
              (name (if known
                        (cdr known)
-                       (let ((n (string-append "GS" (number->string
-                                                     (+ 1 (length (pdf-document-gstates doc)))))))
-                         (set-pdf-document-gstates! doc
-                           (append (pdf-document-gstates doc) (list (cons key n))))
+                       (let
+                           ((n (string-append
+                                "GS"
+                                (number->string
+                                 (+ 1 (length (pdf-document-gstates doc)))))))
+                         (set-pdf-document-gstates!
+                          doc
+                          (append (pdf-document-gstates doc)
+                                  (list (cons key n))))
                          n))))
         (emit-op! page (string-append "/" name) "gs")))
 
@@ -1096,8 +1144,14 @@ Description: Concatenates the matrix [a b c d e f] onto the current
   transformation matrix. The PDF CTM is a 3x3 affine matrix whose six
   free entries are passed in column-major order. Emits 'cm'.
 Example: (pdf-transform page 1 0 0 1 100 200)   ; translate (100,200)"
-      (emit-op! page (n->s a) (n->s b) (n->s c)
-                     (n->s d) (n->s e) (n->s f) "cm"))
+      (emit-op! page
+                (n->s a)
+                (n->s b)
+                (n->s c)
+                (n->s d)
+                (n->s e)
+                (n->s f)
+                "cm"))
 
     (define (pdf-translate page tx ty)
       "Syntax: (pdf-translate page tx ty)
@@ -1152,411 +1206,422 @@ Example:
     ;; the font's native encoding code.
 
     (define %core14-widths-helvetica
-      (vector
-           0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
-           0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
-         278  278  355  556  556  889  667  191  333  333  389  584  278  333  278  278 
-         556  556  556  556  556  556  556  556  556  556  278  278  584  584  584  556 
-        1015  667  667  722  722  667  611  778  722  278  500  667  556  833  722  778 
-         667  778  722  667  611  722  667  944  667  667  611  278  278  278  469  556 
-         333  556  556  500  556  556  278  556  556  222  222  500  222  833  556  556 
-         556  556  333  500  278  556  500  722  500  500  500  334  260  334  584    0 
-         556    0  222  556  333 1000  556  556  333 1000  667  333 1000    0  611    0 
-           0  222  222  333  333  350  556 1000  333 1000  500  333  944    0  500  667 
-         278  333  556  556  556  556  260  556  333  737  370  556  584  333  737  333 
-         400  584  333  333  333  556  537  278  333  333  365  556  834  834  834  611 
-         667  667  667  667  667  667 1000  722  667  667  667  667  278  278  278  278 
-         722  722  778  778  778  778  778  584  778  722  722  722  722  667  667  611 
-         556  556  556  556  556  556  889  500  556  556  556  556  278  278  278  278 
-         556  556  556  556  556  556  556  584  611  556  556  556  556  500  556  500 ))
+      (vector 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+              278 278 355 556 556 889 667 191 333 333 389 584 278 333 278 278
+              556 556 556 556 556 556 556 556 556 556 278 278 584 584 584 556
+              1015 667 667 722 722 667 611 778 722 278 500 667 556 833 722 778
+              667 778 722 667 611 722 667 944 667 667 611 278 278 278 469 556
+              333 556 556 500 556 556 278 556 556 222 222 500 222 833 556 556
+              556 556 333 500 278 556 500 722 500 500 500 334 260 334 584 0
+              556 0 222 556 333 1000 556 556 333 1000 667 333 1000 0 611 0 0
+              222 222 333 333 350 556 1000 333 1000 500 333 944 0 500 667 278
+              333 556 556 556 556 260 556 333 737 370 556 584 333 737 333 400
+              584 333 333 333 556 537 278 333 333 365 556 834 834 834 611 667
+              667 667 667 667 667 1000 722 667 667 667 667 278 278 278 278 722
+              722 778 778 778 778 778 584 778 722 722 722 722 667 667 611 556
+              556 556 556 556 556 889 500 556 556 556 556 278 278 278 278 556
+              556 556 556 556 556 556 584 611 556 556 556 556 500 556 500))
 
     (define %core14-widths-helvetica-bold
-      (vector
-           0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
-           0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
-         278  333  474  556  556  889  722  238  333  333  389  584  278  333  278  278 
-         556  556  556  556  556  556  556  556  556  556  333  333  584  584  584  611 
-         975  722  722  722  722  667  611  778  722  278  556  722  611  833  722  778 
-         667  778  722  667  611  722  667  944  667  667  611  333  278  333  584  556 
-         333  556  611  556  611  556  333  611  611  278  278  556  278  889  611  611 
-         611  611  389  556  333  611  556  778  556  556  500  389  280  389  584    0 
-         556    0  278  556  500 1000  556  556  333 1000  667  333 1000    0  611    0 
-           0  278  278  500  500  350  556 1000  333 1000  556  333  944    0  500  667 
-         278  333  556  556  556  556  280  556  333  737  370  556  584  333  737  333 
-         400  584  333  333  333  611  556  278  333  333  365  556  834  834  834  611 
-         722  722  722  722  722  722 1000  722  667  667  667  667  278  278  278  278 
-         722  722  778  778  778  778  778  584  778  722  722  722  722  667  667  611 
-         556  556  556  556  556  556  889  556  556  556  556  556  278  278  278  278 
-         611  611  611  611  611  611  611  584  611  611  611  611  611  556  611  556 ))
+      (vector 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+              278 333 474 556 556 889 722 238 333 333 389 584 278 333 278 278
+              556 556 556 556 556 556 556 556 556 556 333 333 584 584 584 611
+              975 722 722 722 722 667 611 778 722 278 556 722 611 833 722 778
+              667 778 722 667 611 722 667 944 667 667 611 333 278 333 584 556
+              333 556 611 556 611 556 333 611 611 278 278 556 278 889 611 611
+              611 611 389 556 333 611 556 778 556 556 500 389 280 389 584 0
+              556 0 278 556 500 1000 556 556 333 1000 667 333 1000 0 611 0 0
+              278 278 500 500 350 556 1000 333 1000 556 333 944 0 500 667 278
+              333 556 556 556 556 280 556 333 737 370 556 584 333 737 333 400
+              584 333 333 333 611 556 278 333 333 365 556 834 834 834 611 722
+              722 722 722 722 722 1000 722 667 667 667 667 278 278 278 278 722
+              722 778 778 778 778 778 584 778 722 722 722 722 667 667 611 556
+              556 556 556 556 556 889 556 556 556 556 556 278 278 278 278 611
+              611 611 611 611 611 611 584 611 611 611 611 611 556 611 556))
 
     (define %core14-widths-helvetica-oblique
-      (vector
-           0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
-           0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
-         278  278  355  556  556  889  667  191  333  333  389  584  278  333  278  278 
-         556  556  556  556  556  556  556  556  556  556  278  278  584  584  584  556 
-        1015  667  667  722  722  667  611  778  722  278  500  667  556  833  722  778 
-         667  778  722  667  611  722  667  944  667  667  611  278  278  278  469  556 
-         333  556  556  500  556  556  278  556  556  222  222  500  222  833  556  556 
-         556  556  333  500  278  556  500  722  500  500  500  334  260  334  584    0 
-         556    0  222  556  333 1000  556  556  333 1000  667  333 1000    0  611    0 
-           0  222  222  333  333  350  556 1000  333 1000  500  333  944    0  500  667 
-         278  333  556  556  556  556  260  556  333  737  370  556  584  333  737  333 
-         400  584  333  333  333  556  537  278  333  333  365  556  834  834  834  611 
-         667  667  667  667  667  667 1000  722  667  667  667  667  278  278  278  278 
-         722  722  778  778  778  778  778  584  778  722  722  722  722  667  667  611 
-         556  556  556  556  556  556  889  500  556  556  556  556  278  278  278  278 
-         556  556  556  556  556  556  556  584  611  556  556  556  556  500  556  500 ))
+      (vector 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+              278 278 355 556 556 889 667 191 333 333 389 584 278 333 278 278
+              556 556 556 556 556 556 556 556 556 556 278 278 584 584 584 556
+              1015 667 667 722 722 667 611 778 722 278 500 667 556 833 722 778
+              667 778 722 667 611 722 667 944 667 667 611 278 278 278 469 556
+              333 556 556 500 556 556 278 556 556 222 222 500 222 833 556 556
+              556 556 333 500 278 556 500 722 500 500 500 334 260 334 584 0
+              556 0 222 556 333 1000 556 556 333 1000 667 333 1000 0 611 0 0
+              222 222 333 333 350 556 1000 333 1000 500 333 944 0 500 667 278
+              333 556 556 556 556 260 556 333 737 370 556 584 333 737 333 400
+              584 333 333 333 556 537 278 333 333 365 556 834 834 834 611 667
+              667 667 667 667 667 1000 722 667 667 667 667 278 278 278 278 722
+              722 778 778 778 778 778 584 778 722 722 722 722 667 667 611 556
+              556 556 556 556 556 889 500 556 556 556 556 278 278 278 278 556
+              556 556 556 556 556 556 584 611 556 556 556 556 500 556 500))
 
     (define %core14-widths-helvetica-bold-oblique
-      (vector
-           0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
-           0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
-         278  333  474  556  556  889  722  238  333  333  389  584  278  333  278  278 
-         556  556  556  556  556  556  556  556  556  556  333  333  584  584  584  611 
-         975  722  722  722  722  667  611  778  722  278  556  722  611  833  722  778 
-         667  778  722  667  611  722  667  944  667  667  611  333  278  333  584  556 
-         333  556  611  556  611  556  333  611  611  278  278  556  278  889  611  611 
-         611  611  389  556  333  611  556  778  556  556  500  389  280  389  584    0 
-         556    0  278  556  500 1000  556  556  333 1000  667  333 1000    0  611    0 
-           0  278  278  500  500  350  556 1000  333 1000  556  333  944    0  500  667 
-         278  333  556  556  556  556  280  556  333  737  370  556  584  333  737  333 
-         400  584  333  333  333  611  556  278  333  333  365  556  834  834  834  611 
-         722  722  722  722  722  722 1000  722  667  667  667  667  278  278  278  278 
-         722  722  778  778  778  778  778  584  778  722  722  722  722  667  667  611 
-         556  556  556  556  556  556  889  556  556  556  556  556  278  278  278  278 
-         611  611  611  611  611  611  611  584  611  611  611  611  611  556  611  556 ))
+      (vector 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+              278 333 474 556 556 889 722 238 333 333 389 584 278 333 278 278
+              556 556 556 556 556 556 556 556 556 556 333 333 584 584 584 611
+              975 722 722 722 722 667 611 778 722 278 556 722 611 833 722 778
+              667 778 722 667 611 722 667 944 667 667 611 333 278 333 584 556
+              333 556 611 556 611 556 333 611 611 278 278 556 278 889 611 611
+              611 611 389 556 333 611 556 778 556 556 500 389 280 389 584 0
+              556 0 278 556 500 1000 556 556 333 1000 667 333 1000 0 611 0 0
+              278 278 500 500 350 556 1000 333 1000 556 333 944 0 500 667 278
+              333 556 556 556 556 280 556 333 737 370 556 584 333 737 333 400
+              584 333 333 333 611 556 278 333 333 365 556 834 834 834 611 722
+              722 722 722 722 722 1000 722 667 667 667 667 278 278 278 278 722
+              722 778 778 778 778 778 584 778 722 722 722 722 667 667 611 556
+              556 556 556 556 556 889 556 556 556 556 556 278 278 278 278 611
+              611 611 611 611 611 611 584 611 611 611 611 611 556 611 556))
 
     (define %core14-widths-times-roman
-      (vector
-           0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
-           0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
-         250  333  408  500  500  833  778  180  333  333  500  564  250  333  250  278 
-         500  500  500  500  500  500  500  500  500  500  278  278  564  564  564  444 
-         921  722  667  667  722  611  556  722  722  333  389  722  611  889  722  722 
-         556  722  667  556  611  722  722  944  722  722  611  333  278  333  469  500 
-         333  444  500  444  500  444  333  500  500  278  278  500  278  778  500  500 
-         500  500  333  389  278  500  500  722  500  500  444  480  200  480  541    0 
-         500    0  333  500  444 1000  500  500  333 1000  556  333  889    0  611    0 
-           0  333  333  444  444  350  500 1000  333  980  389  333  722    0  444  722 
-         250  333  500  500  500  500  200  500  333  760  276  500  564  333  760  333 
-         400  564  300  300  333  500  453  250  333  300  310  500  750  750  750  444 
-         722  722  722  722  722  722  889  667  611  611  611  611  333  333  333  333 
-         722  722  722  722  722  722  722  564  722  722  722  722  722  722  556  500 
-         444  444  444  444  444  444  667  444  444  444  444  444  278  278  278  278 
-         500  500  500  500  500  500  500  564  500  500  500  500  500  500  500  500 ))
+      (vector 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+              250 333 408 500 500 833 778 180 333 333 500 564 250 333 250 278
+              500 500 500 500 500 500 500 500 500 500 278 278 564 564 564 444
+              921 722 667 667 722 611 556 722 722 333 389 722 611 889 722 722
+              556 722 667 556 611 722 722 944 722 722 611 333 278 333 469 500
+              333 444 500 444 500 444 333 500 500 278 278 500 278 778 500 500
+              500 500 333 389 278 500 500 722 500 500 444 480 200 480 541 0
+              500 0 333 500 444 1000 500 500 333 1000 556 333 889 0 611 0 0
+              333 333 444 444 350 500 1000 333 980 389 333 722 0 444 722 250
+              333 500 500 500 500 200 500 333 760 276 500 564 333 760 333 400
+              564 300 300 333 500 453 250 333 300 310 500 750 750 750 444 722
+              722 722 722 722 722 889 667 611 611 611 611 333 333 333 333 722
+              722 722 722 722 722 722 564 722 722 722 722 722 722 556 500 444
+              444 444 444 444 444 667 444 444 444 444 444 278 278 278 278 500
+              500 500 500 500 500 500 564 500 500 500 500 500 500 500 500))
 
     (define %core14-widths-times-bold
-      (vector
-           0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
-           0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
-         250  333  555  500  500 1000  833  278  333  333  500  570  250  333  250  278 
-         500  500  500  500  500  500  500  500  500  500  333  333  570  570  570  500 
-         930  722  667  722  722  667  611  778  778  389  500  778  667  944  722  778 
-         611  778  722  556  667  722  722 1000  722  722  667  333  278  333  581  500 
-         333  500  556  444  556  444  333  500  556  278  333  556  278  833  556  500 
-         556  556  444  389  333  556  500  722  500  500  444  394  220  394  520    0 
-         500    0  333  500  500 1000  500  500  333 1000  556  333 1000    0  667    0 
-           0  333  333  500  500  350  500 1000  333 1000  389  333  722    0  444  722 
-         250  333  500  500  500  500  220  500  333  747  300  500  570  333  747  333 
-         400  570  300  300  333  556  540  250  333  300  330  500  750  750  750  500 
-         722  722  722  722  722  722 1000  722  667  667  667  667  389  389  389  389 
-         722  722  778  778  778  778  778  570  778  722  722  722  722  722  611  556 
-         500  500  500  500  500  500  722  444  444  444  444  444  278  278  278  278 
-         500  556  500  500  500  500  500  570  500  556  556  556  556  500  556  500 ))
+      (vector 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+              250 333 555 500 500 1000 833 278 333 333 500 570 250 333 250 278
+              500 500 500 500 500 500 500 500 500 500 333 333 570 570 570 500
+              930 722 667 722 722 667 611 778 778 389 500 778 667 944 722 778
+              611 778 722 556 667 722 722 1000 722 722 667 333 278 333 581 500
+              333 500 556 444 556 444 333 500 556 278 333 556 278 833 556 500
+              556 556 444 389 333 556 500 722 500 500 444 394 220 394 520 0
+              500 0 333 500 500 1000 500 500 333 1000 556 333 1000 0 667 0 0
+              333 333 500 500 350 500 1000 333 1000 389 333 722 0 444 722 250
+              333 500 500 500 500 220 500 333 747 300 500 570 333 747 333 400
+              570 300 300 333 556 540 250 333 300 330 500 750 750 750 500 722
+              722 722 722 722 722 1000 722 667 667 667 667 389 389 389 389 722
+              722 778 778 778 778 778 570 778 722 722 722 722 722 611 556 500
+              500 500 500 500 500 722 444 444 444 444 444 278 278 278 278 500
+              556 500 500 500 500 500 570 500 556 556 556 556 500 556 500))
 
     (define %core14-widths-times-italic
-      (vector
-           0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
-           0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
-         250  333  420  500  500  833  778  214  333  333  500  675  250  333  250  278 
-         500  500  500  500  500  500  500  500  500  500  333  333  675  675  675  500 
-         920  611  611  667  722  611  611  722  722  333  444  667  556  833  667  722 
-         611  722  611  500  556  722  611  833  611  556  556  389  278  389  422  500 
-         333  500  500  444  500  444  278  500  500  278  278  444  278  722  500  500 
-         500  500  389  389  278  500  444  667  444  444  389  400  275  400  541    0 
-         500    0  333  500  556  889  500  500  333 1000  500  333  944    0  556    0 
-           0  333  333  556  556  350  500  889  333  980  389  333  667    0  389  556 
-         250  389  500  500  500  500  275  500  333  760  276  500  675  333  760  333 
-         400  675  300  300  333  500  523  250  333  300  310  500  750  750  750  500 
-         611  611  611  611  611  611  889  667  611  611  611  611  333  333  333  333 
-         722  667  722  722  722  722  722  675  722  722  722  722  722  556  611  500 
-         500  500  500  500  500  500  667  444  444  444  444  444  278  278  278  278 
-         500  500  500  500  500  500  500  675  500  500  500  500  500  444  500  444 ))
+      (vector 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+              250 333 420 500 500 833 778 214 333 333 500 675 250 333 250 278
+              500 500 500 500 500 500 500 500 500 500 333 333 675 675 675 500
+              920 611 611 667 722 611 611 722 722 333 444 667 556 833 667 722
+              611 722 611 500 556 722 611 833 611 556 556 389 278 389 422 500
+              333 500 500 444 500 444 278 500 500 278 278 444 278 722 500 500
+              500 500 389 389 278 500 444 667 444 444 389 400 275 400 541 0
+              500 0 333 500 556 889 500 500 333 1000 500 333 944 0 556 0 0 333
+              333 556 556 350 500 889 333 980 389 333 667 0 389 556 250 389
+              500 500 500 500 275 500 333 760 276 500 675 333 760 333 400 675
+              300 300 333 500 523 250 333 300 310 500 750 750 750 500 611 611
+              611 611 611 611 889 667 611 611 611 611 333 333 333 333 722 667
+              722 722 722 722 722 675 722 722 722 722 722 556 611 500 500 500
+              500 500 500 500 667 444 444 444 444 444 278 278 278 278 500 500
+              500 500 500 500 500 675 500 500 500 500 500 444 500 444))
 
     (define %core14-widths-times-bold-italic
-      (vector
-           0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
-           0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
-         250  389  555  500  500  833  778  278  333  333  500  570  250  333  250  278 
-         500  500  500  500  500  500  500  500  500  500  333  333  570  570  570  500 
-         832  667  667  667  722  667  667  722  778  389  500  667  611  889  722  722 
-         611  722  667  556  611  722  667  889  667  611  611  333  278  333  570  500 
-         333  500  500  444  500  444  333  500  556  278  278  500  278  778  556  500 
-         500  500  389  389  278  556  444  667  500  444  389  348  220  348  570    0 
-         500    0  333  500  500 1000  500  500  333 1000  556  333  944    0  611    0 
-           0  333  333  500  500  350  500 1000  333 1000  389  333  722    0  389  611 
-         250  389  500  500  500  500  220  500  333  747  266  500  606  333  747  333 
-         400  570  300  300  333  576  500  250  333  300  300  500  750  750  750  500 
-         667  667  667  667  667  667  944  667  667  667  667  667  389  389  389  389 
-         722  722  722  722  722  722  722  570  722  722  722  722  722  611  611  500 
-         500  500  500  500  500  500  722  444  444  444  444  444  278  278  278  278 
-         500  556  500  500  500  500  500  570  500  556  556  556  556  444  500  444 ))
+      (vector 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+              250 389 555 500 500 833 778 278 333 333 500 570 250 333 250 278
+              500 500 500 500 500 500 500 500 500 500 333 333 570 570 570 500
+              832 667 667 667 722 667 667 722 778 389 500 667 611 889 722 722
+              611 722 667 556 611 722 667 889 667 611 611 333 278 333 570 500
+              333 500 500 444 500 444 333 500 556 278 278 500 278 778 556 500
+              500 500 389 389 278 556 444 667 500 444 389 348 220 348 570 0
+              500 0 333 500 500 1000 500 500 333 1000 556 333 944 0 611 0 0
+              333 333 500 500 350 500 1000 333 1000 389 333 722 0 389 611 250
+              389 500 500 500 500 220 500 333 747 266 500 606 333 747 333 400
+              570 300 300 333 576 500 250 333 300 300 500 750 750 750 500 667
+              667 667 667 667 667 944 667 667 667 667 667 389 389 389 389 722
+              722 722 722 722 722 722 570 722 722 722 722 722 611 611 500 500
+              500 500 500 500 500 722 444 444 444 444 444 278 278 278 278 500
+              556 500 500 500 500 500 570 500 556 556 556 556 444 500 444))
 
     (define %core14-widths-courier
-      (vector
-           0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
-           0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600  600 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600  600 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600  600 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600  600 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600  600 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600    0 
-         600    0  600  600  600  600  600  600  600  600  600  600  600    0  600    0 
-           0  600  600  600  600  600  600  600  600  600  600  600  600    0  600  600 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600  600 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600  600 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600  600 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600  600 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600  600 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600  600 ))
+      (vector 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 0
+              600 0 600 600 600 600 600 600 600 600 600 600 600 0 600 0 0 600
+              600 600 600 600 600 600 600 600 600 600 600 0 600 600 600 600
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600))
 
     (define %core14-widths-courier-bold
-      (vector
-           0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
-           0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600  600 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600  600 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600  600 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600  600 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600  600 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600    0 
-         600    0  600  600  600  600  600  600  600  600  600  600  600    0  600    0 
-           0  600  600  600  600  600  600  600  600  600  600  600  600    0  600  600 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600  600 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600  600 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600  600 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600  600 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600  600 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600  600 ))
+      (vector 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 0
+              600 0 600 600 600 600 600 600 600 600 600 600 600 0 600 0 0 600
+              600 600 600 600 600 600 600 600 600 600 600 0 600 600 600 600
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600))
 
     (define %core14-widths-courier-oblique
-      (vector
-           0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
-           0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600  600 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600  600 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600  600 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600  600 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600  600 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600    0 
-         600    0  600  600  600  600  600  600  600  600  600  600  600    0  600    0 
-           0  600  600  600  600  600  600  600  600  600  600  600  600    0  600  600 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600  600 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600  600 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600  600 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600  600 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600  600 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600  600 ))
+      (vector 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 0
+              600 0 600 600 600 600 600 600 600 600 600 600 600 0 600 0 0 600
+              600 600 600 600 600 600 600 600 600 600 600 0 600 600 600 600
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600))
 
     (define %core14-widths-courier-bold-oblique
-      (vector
-           0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
-           0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600  600 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600  600 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600  600 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600  600 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600  600 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600    0 
-         600    0  600  600  600  600  600  600  600  600  600  600  600    0  600    0 
-           0  600  600  600  600  600  600  600  600  600  600  600  600    0  600  600 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600  600 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600  600 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600  600 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600  600 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600  600 
-         600  600  600  600  600  600  600  600  600  600  600  600  600  600  600  600 ))
+      (vector 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 0
+              600 0 600 600 600 600 600 600 600 600 600 600 600 0 600 0 0 600
+              600 600 600 600 600 600 600 600 600 600 600 0 600 600 600 600
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600
+              600 600 600 600 600 600 600 600 600 600 600 600 600 600))
 
     (define %core14-widths-symbol
-      (vector
-           0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
-           0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
-         250  333  713  500  549  833  778  439  333  333  500  549  250  549  250  278 
-         500  500  500  500  500  500  500  500  500  500  278  278  549  549  549  444 
-         549  722  667  722  612  611  763  603  722  333  631  722  686  889  722  722 
-         768  741  556  592  611  690  439  768  645  795  611  333  863  333  658  500 
-         500  631  549  549  494  439  521  411  603  329  603  549  549  576  521  549 
-         549  521  549  603  439  576  713  686  493  686  494  480  200  480  549    0 
-         750    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
-           0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
-         750  620  247  549  167  713  500  753  753  753  753 1042  987  603  987  603 
-         400  549  411  549  549  713  494  460  549  549  549  549 1000  603 1000  658 
-         823  686  795  987  768  768  823  768  768  713  713  713  713  713  713  713 
-         768  713  790  790  890  823  549  250  713  603  603 1042  987  603  987  603 
-         494  329  790  790  786  713  384  384  384  384  384  384  494  494  494  494 
-           0  329  274  686  686  686  384  384  384  384  384  384  494  494  494    0 ))
+      (vector 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+              250 333 713 500 549 833 778 439 333 333 500 549 250 549 250 278
+              500 500 500 500 500 500 500 500 500 500 278 278 549 549 549 444
+              549 722 667 722 612 611 763 603 722 333 631 722 686 889 722 722
+              768 741 556 592 611 690 439 768 645 795 611 333 863 333 658 500
+              500 631 549 549 494 439 521 411 603 329 603 549 549 576 521 549
+              549 521 549 603 439 576 713 686 493 686 494 480 200 480 549 0
+              750 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+              0 750 620 247 549 167 713 500 753 753 753 753 1042 987 603 987
+              603 400 549 411 549 549 713 494 460 549 549 549 549 1000 603
+              1000 658 823 686 795 987 768 768 823 768 768 713 713 713 713 713
+              713 713 768 713 790 790 890 823 549 250 713 603 603 1042 987 603
+              987 603 494 329 790 790 786 713 384 384 384 384 384 384 494 494
+              494 494 0 329 274 686 686 686 384 384 384 384 384 384 494 494
+              494 0))
 
     (define %core14-widths-zapf-dingbats
-      (vector
-           0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
-           0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
-         278  974  961  974  980  719  789  790  791  690  960  939  549  855  911  933 
-         911  945  974  755  846  762  761  571  677  763  760  759  754  494  552  537 
-         577  692  786  788  788  790  793  794  816  823  789  841  823  833  816  831 
-         923  744  723  749  790  792  695  776  768  792  759  707  708  682  701  826 
-         815  789  789  707  687  696  689  786  787  713  791  785  791  873  761  762 
-         762  759  759  892  892  788  784  438  138  277  415  392  392  668  668    0 
-         390  390  317  317  276  276  509  509  410  410  234  234  334  334    0    0 
-           0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
-           0  732  544  544  910  667  760  760  776  595  694  626  788  788  788  788 
-         788  788  788  788  788  788  788  788  788  788  788  788  788  788  788  788 
-         788  788  788  788  788  788  788  788  788  788  788  788  788  788  788  788 
-         788  788  788  788  894  838 1016  458  748  924  748  918  927  928  928  834 
-         873  828  924  924  917  930  931  463  883  836  836  867  867  696  696  874 
-           0  874  760  946  771  865  771  888  967  888  831  873  927  970  918    0 ))
+      (vector 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+              278 974 961 974 980 719 789 790 791 690 960 939 549 855 911 933
+              911 945 974 755 846 762 761 571 677 763 760 759 754 494 552 537
+              577 692 786 788 788 790 793 794 816 823 789 841 823 833 816 831
+              923 744 723 749 790 792 695 776 768 792 759 707 708 682 701 826
+              815 789 789 707 687 696 689 786 787 713 791 785 791 873 761 762
+              762 759 759 892 892 788 784 438 138 277 415 392 392 668 668 0
+              390 390 317 317 276 276 509 509 410 410 234 234 334 334 0 0 0 0
+              0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 732 544 544 910 667 760 760 776
+              595 694 626 788 788 788 788 788 788 788 788 788 788 788 788 788
+              788 788 788 788 788 788 788 788 788 788 788 788 788 788 788 788
+              788 788 788 788 788 788 788 788 788 788 788 894 838 1016 458 748
+              924 748 918 927 928 928 834 873 828 924 924 917 930 931 463 883
+              836 836 867 867 696 696 874 0 874 760 946 771 865 771 888 967
+              888 831 873 927 970 918 0))
 
     (define %core14-fonts
-      (list
-        (list 'helvetica "Helvetica" 'winansi %core14-widths-helvetica
-              '((font-bbox . #(-166 -225 1000 931))
-                (ascender . 718)
-                (descender . -207)
-                (cap-height . 718)
-                (x-height . 523)
-                (italic-angle . 0.0)
-                (fixed-pitch . #f)))
-        (list 'helvetica-bold "Helvetica-Bold" 'winansi %core14-widths-helvetica-bold
-              '((font-bbox . #(-170 -228 1003 962))
-                (ascender . 718)
-                (descender . -207)
-                (cap-height . 718)
-                (x-height . 532)
-                (italic-angle . 0.0)
-                (fixed-pitch . #f)))
-        (list 'helvetica-oblique "Helvetica-Oblique" 'winansi %core14-widths-helvetica-oblique
-              '((font-bbox . #(-170 -225 1116 931))
-                (ascender . 718)
-                (descender . -207)
-                (cap-height . 718)
-                (x-height . 523)
-                (italic-angle . -12.0)
-                (fixed-pitch . #f)))
-        (list 'helvetica-bold-oblique "Helvetica-BoldOblique" 'winansi %core14-widths-helvetica-bold-oblique
-              '((font-bbox . #(-174 -228 1114 962))
-                (ascender . 718)
-                (descender . -207)
-                (cap-height . 718)
-                (x-height . 532)
-                (italic-angle . -12.0)
-                (fixed-pitch . #f)))
-        (list 'times-roman "Times-Roman" 'winansi %core14-widths-times-roman
-              '((font-bbox . #(-168 -218 1000 898))
-                (ascender . 683)
-                (descender . -217)
-                (cap-height . 662)
-                (x-height . 450)
-                (italic-angle . 0.0)
-                (fixed-pitch . #f)))
-        (list 'times-bold "Times-Bold" 'winansi %core14-widths-times-bold
-              '((font-bbox . #(-168 -218 1000 935))
-                (ascender . 683)
-                (descender . -217)
-                (cap-height . 676)
-                (x-height . 461)
-                (italic-angle . 0.0)
-                (fixed-pitch . #f)))
-        (list 'times-italic "Times-Italic" 'winansi %core14-widths-times-italic
-              '((font-bbox . #(-169 -217 1010 883))
-                (ascender . 683)
-                (descender . -217)
-                (cap-height . 653)
-                (x-height . 441)
-                (italic-angle . -15.5)
-                (fixed-pitch . #f)))
-        (list 'times-bold-italic "Times-BoldItalic" 'winansi %core14-widths-times-bold-italic
-              '((font-bbox . #(-200 -218 996 921))
-                (ascender . 683)
-                (descender . -217)
-                (cap-height . 669)
-                (x-height . 462)
-                (italic-angle . -15.0)
-                (fixed-pitch . #f)))
-        (list 'courier "Courier" 'winansi %core14-widths-courier
-              '((font-bbox . #(-23 -250 715 805))
-                (ascender . 629)
-                (descender . -157)
-                (cap-height . 562)
-                (x-height . 426)
-                (italic-angle . 0.0)
-                (fixed-pitch . #t)))
-        (list 'courier-bold "Courier-Bold" 'winansi %core14-widths-courier-bold
-              '((font-bbox . #(-113 -250 749 801))
-                (ascender . 629)
-                (descender . -157)
-                (cap-height . 562)
-                (x-height . 439)
-                (italic-angle . 0.0)
-                (fixed-pitch . #t)))
-        (list 'courier-oblique "Courier-Oblique" 'winansi %core14-widths-courier-oblique
-              '((font-bbox . #(-27 -250 849 805))
-                (ascender . 629)
-                (descender . -157)
-                (cap-height . 562)
-                (x-height . 426)
-                (italic-angle . -12.0)
-                (fixed-pitch . #t)))
-        (list 'courier-bold-oblique "Courier-BoldOblique" 'winansi %core14-widths-courier-bold-oblique
-              '((font-bbox . #(-57 -250 869 801))
-                (ascender . 629)
-                (descender . -157)
-                (cap-height . 562)
-                (x-height . 439)
-                (italic-angle . -12.0)
-                (fixed-pitch . #t)))
-        (list 'symbol "Symbol" 'symbol %core14-widths-symbol
-              '((font-bbox . #(-180 -293 1090 1010))
-                (ascender . 0)
-                (descender . 0)
-                (cap-height . 0)
-                (x-height . 0)
-                (italic-angle . 0.0)
-                (fixed-pitch . #f)))
-        (list 'zapf-dingbats "ZapfDingbats" 'zapfdingbats %core14-widths-zapf-dingbats
-              '((font-bbox . #(-1 -143 981 820))
-                (ascender . 0)
-                (descender . 0)
-                (cap-height . 0)
-                (x-height . 0)
-                (italic-angle . 0.0)
-                (fixed-pitch . #f)))
-        ))
+      (list (list 'helvetica
+                  "Helvetica"
+                  'winansi
+                  %core14-widths-helvetica
+                  '((font-bbox . #(-166 -225 1000 931))
+                    (ascender . 718)
+                    (descender . -207)
+                    (cap-height . 718)
+                    (x-height . 523)
+                    (italic-angle . 0.0)
+                    (fixed-pitch . #f)))
+            (list 'helvetica-bold
+                  "Helvetica-Bold"
+                  'winansi
+                  %core14-widths-helvetica-bold
+                  '((font-bbox . #(-170 -228 1003 962))
+                    (ascender . 718)
+                    (descender . -207)
+                    (cap-height . 718)
+                    (x-height . 532)
+                    (italic-angle . 0.0)
+                    (fixed-pitch . #f)))
+            (list 'helvetica-oblique
+                  "Helvetica-Oblique"
+                  'winansi
+                  %core14-widths-helvetica-oblique
+                  '((font-bbox . #(-170 -225 1116 931))
+                    (ascender . 718)
+                    (descender . -207)
+                    (cap-height . 718)
+                    (x-height . 523)
+                    (italic-angle . -12.0)
+                    (fixed-pitch . #f)))
+            (list 'helvetica-bold-oblique
+                  "Helvetica-BoldOblique"
+                  'winansi
+                  %core14-widths-helvetica-bold-oblique
+                  '((font-bbox . #(-174 -228 1114 962))
+                    (ascender . 718)
+                    (descender . -207)
+                    (cap-height . 718)
+                    (x-height . 532)
+                    (italic-angle . -12.0)
+                    (fixed-pitch . #f)))
+            (list 'times-roman
+                  "Times-Roman"
+                  'winansi
+                  %core14-widths-times-roman
+                  '((font-bbox . #(-168 -218 1000 898))
+                    (ascender . 683)
+                    (descender . -217)
+                    (cap-height . 662)
+                    (x-height . 450)
+                    (italic-angle . 0.0)
+                    (fixed-pitch . #f)))
+            (list 'times-bold
+                  "Times-Bold"
+                  'winansi
+                  %core14-widths-times-bold
+                  '((font-bbox . #(-168 -218 1000 935))
+                    (ascender . 683)
+                    (descender . -217)
+                    (cap-height . 676)
+                    (x-height . 461)
+                    (italic-angle . 0.0)
+                    (fixed-pitch . #f)))
+            (list 'times-italic
+                  "Times-Italic"
+                  'winansi
+                  %core14-widths-times-italic
+                  '((font-bbox . #(-169 -217 1010 883))
+                    (ascender . 683)
+                    (descender . -217)
+                    (cap-height . 653)
+                    (x-height . 441)
+                    (italic-angle . -15.5)
+                    (fixed-pitch . #f)))
+            (list 'times-bold-italic
+                  "Times-BoldItalic"
+                  'winansi
+                  %core14-widths-times-bold-italic
+                  '((font-bbox . #(-200 -218 996 921))
+                    (ascender . 683)
+                    (descender . -217)
+                    (cap-height . 669)
+                    (x-height . 462)
+                    (italic-angle . -15.0)
+                    (fixed-pitch . #f)))
+            (list 'courier
+                  "Courier"
+                  'winansi
+                  %core14-widths-courier
+                  '((font-bbox . #(-23 -250 715 805))
+                    (ascender . 629)
+                    (descender . -157)
+                    (cap-height . 562)
+                    (x-height . 426)
+                    (italic-angle . 0.0)
+                    (fixed-pitch . #t)))
+            (list 'courier-bold
+                  "Courier-Bold"
+                  'winansi
+                  %core14-widths-courier-bold
+                  '((font-bbox . #(-113 -250 749 801))
+                    (ascender . 629)
+                    (descender . -157)
+                    (cap-height . 562)
+                    (x-height . 439)
+                    (italic-angle . 0.0)
+                    (fixed-pitch . #t)))
+            (list 'courier-oblique
+                  "Courier-Oblique"
+                  'winansi
+                  %core14-widths-courier-oblique
+                  '((font-bbox . #(-27 -250 849 805))
+                    (ascender . 629)
+                    (descender . -157)
+                    (cap-height . 562)
+                    (x-height . 426)
+                    (italic-angle . -12.0)
+                    (fixed-pitch . #t)))
+            (list 'courier-bold-oblique
+                  "Courier-BoldOblique"
+                  'winansi
+                  %core14-widths-courier-bold-oblique
+                  '((font-bbox . #(-57 -250 869 801))
+                    (ascender . 629)
+                    (descender . -157)
+                    (cap-height . 562)
+                    (x-height . 439)
+                    (italic-angle . -12.0)
+                    (fixed-pitch . #t)))
+            (list 'symbol
+                  "Symbol"
+                  'symbol
+                  %core14-widths-symbol
+                  '((font-bbox . #(-180 -293 1090 1010))
+                    (ascender . 0)
+                    (descender . 0)
+                    (cap-height . 0)
+                    (x-height . 0)
+                    (italic-angle . 0.0)
+                    (fixed-pitch . #f)))
+            (list 'zapf-dingbats
+                  "ZapfDingbats"
+                  'zapfdingbats
+                  %core14-widths-zapf-dingbats
+                  '((font-bbox . #(-1 -143 981 820))
+                    (ascender . 0)
+                    (descender . 0)
+                    (cap-height . 0)
+                    (x-height . 0)
+                    (italic-angle . 0.0)
+                    (fixed-pitch . #f)))))
 
     (define-record-type pdf-font
       (%make-pdf-font kind resource-name base-name encoding widths metrics
-                      object-id
-                      ttf-bytes gid-widths cmap-lookup units-per-em
+                      object-id ttf-bytes gid-widths cmap-lookup units-per-em
                       num-glyphs descriptor-meta used-codepoints)
       pdf-font?
       ;; Either 'core14 (single-byte WinAnsi/native, no embedding) or
       ;; 'truetype (composite Type0/CIDFontType2 with embedded outlines).
-      (kind            pdf-font-kind)
-      (resource-name   pdf-font-resource-name)
-      (base-name       pdf-font-base-name)
-      (encoding        pdf-font-encoding)
-      (widths          pdf-font-widths)
-      (metrics         pdf-font-metrics)
+      (kind pdf-font-kind)
+      (resource-name pdf-font-resource-name)
+      (base-name pdf-font-base-name)
+      (encoding pdf-font-encoding)
+      (widths pdf-font-widths)
+      (metrics pdf-font-metrics)
       ;; Filled in by pdf->bytevector when the font's indirect-object id
       ;; is allocated. #f until then.
-      (object-id       pdf-font-object-id       set-pdf-font-object-id!)
+      (object-id pdf-font-object-id set-pdf-font-object-id!)
       ;; TrueType-only slots; #f for core14 fonts.
-      (ttf-bytes       pdf-font-ttf-bytes)              ; bytevector
-      (gid-widths      pdf-font-gid-widths)             ; vector, 1000-em units
-      (cmap-lookup     pdf-font-cmap-lookup)            ; proc: cp → gid (or 0)
-      (units-per-em    pdf-font-units-per-em)           ; integer
-      (num-glyphs      pdf-font-num-glyphs)             ; integer
-      (descriptor-meta pdf-font-descriptor-meta)        ; alist
+      (ttf-bytes pdf-font-ttf-bytes) ; bytevector
+      (gid-widths pdf-font-gid-widths) ; vector, 1000-em units
+      (cmap-lookup pdf-font-cmap-lookup) ; proc: cp → gid (or 0)
+      (units-per-em pdf-font-units-per-em) ; integer
+      (num-glyphs pdf-font-num-glyphs) ; integer
+      (descriptor-meta pdf-font-descriptor-meta) ; alist
       ;; Vector indexed by GID; value is the most-recent codepoint we saw
       ;; mapped to that GID. Used to build the ToUnicode CMap at save.
       (used-codepoints pdf-font-used-codepoints))
@@ -1595,10 +1660,9 @@ Description: Returns the font's x-height in 1/1000 em units."
 
     (define (%find-core14 sym)
       (let loop ((fs %core14-fonts))
-        (cond
-          ((null? fs) #f)
-          ((eq? (car (car fs)) sym) (car fs))
-          (else (loop (cdr fs))))))
+        (cond ((null? fs) #f)
+              ((eq? (car (car fs)) sym) (car fs))
+              (else (loop (cdr fs))))))
 
     (define (pdf-use-font doc font-sym)
       "Syntax: (pdf-use-font doc font-symbol)
@@ -1618,20 +1682,31 @@ Example:
         (if existing
             (cdr existing)
             (let ((spec (%find-core14 font-sym)))
-              (unless spec
-                (error "pdf-use-font: unknown font" font-sym))
-              (let* ((base    (list-ref spec 1))
-                     (enc     (list-ref spec 2))
-                     (widths  (list-ref spec 3))
+              (unless spec (error "pdf-use-font: unknown font" font-sym))
+              (let* ((base (list-ref spec 1))
+                     (enc (list-ref spec 2))
+                     (widths (list-ref spec 3))
                      (metrics (list-ref spec 4))
-                     (idx     (length (pdf-document-fonts doc)))
-                     (rname   (string-append "F" (number->string (+ idx 1))))
-                     (font    (%make-pdf-font 'core14 rname base enc widths
-                                              metrics #f
-                                              #f #f #f #f #f #f #f)))
-                (set-pdf-document-fonts! doc
-                  (append (pdf-document-fonts doc)
-                          (list (cons font-sym font))))
+                     (idx (length (pdf-document-fonts doc)))
+                     (rname (string-append "F" (number->string (+ idx 1))))
+                     (font (%make-pdf-font 'core14
+                                           rname
+                                           base
+                                           enc
+                                           widths
+                                           metrics
+                                           #f
+                                           #f
+                                           #f
+                                           #f
+                                           #f
+                                           #f
+                                           #f
+                                           #f)))
+                (set-pdf-document-fonts!
+                 doc
+                 (append (pdf-document-fonts doc)
+                         (list (cons font-sym font))))
                 font)))))
 
     ;; ── Encoding (Unicode → byte) ─────────────────────────────────────────
@@ -1641,102 +1716,96 @@ Example:
       ;; the 128–159 range is the Windows extension where Unicode lives
       ;; outside Latin-1 (Euro, smart quotes, …). Unknown codepoints map
       ;; to 0x3F ('?') so output stays printable.
-      (cond
-        ((<= 0 cp 127) cp)
-        ((<= 160 cp 255) cp)
-        (else
-         (case cp
-           ((#x20AC) 128)  ; €
-           ((#x201A) 130)
-           ((#x0192) 131)
-           ((#x201E) 132)
-           ((#x2026) 133)  ; …
-           ((#x2020) 134)  ; †
-           ((#x2021) 135)  ; ‡
-           ((#x02C6) 136)
-           ((#x2030) 137)  ; ‰
-           ((#x0160) 138)  ; Š
-           ((#x2039) 139)
-           ((#x0152) 140)  ; Œ
-           ((#x017D) 142)  ; Ž
-           ((#x2018) 145)  ; ‘
-           ((#x2019) 146)  ; ’
-           ((#x201C) 147)  ; “
-           ((#x201D) 148)  ; ”
-           ((#x2022) 149)  ; •
-           ((#x2013) 150)  ; –
-           ((#x2014) 151)  ; —
-           ((#x02DC) 152)
-           ((#x2122) 153)  ; ™
-           ((#x0161) 154)
-           ((#x203A) 155)
-           ((#x0153) 156)  ; œ
-           ((#x017E) 158)
-           ((#x0178) 159)  ; Ÿ
-           (else #x3F)))))
+      (cond ((<= 0 cp 127) cp)
+            ((<= 160 cp 255) cp)
+            (else (case cp
+                    ((#x20AC) 128) ; €
+                    ((#x201A) 130)
+                    ((#x0192) 131)
+                    ((#x201E) 132)
+                    ((#x2026) 133) ; …
+                    ((#x2020) 134) ; †
+                    ((#x2021) 135) ; ‡
+                    ((#x02C6) 136)
+                    ((#x2030) 137) ; ‰
+                    ((#x0160) 138) ; Š
+                    ((#x2039) 139)
+                    ((#x0152) 140) ; Œ
+                    ((#x017D) 142) ; Ž
+                    ((#x2018) 145) ; ‘
+                    ((#x2019) 146) ; ’
+                    ((#x201C) 147) ; “
+                    ((#x201D) 148) ; ”
+                    ((#x2022) 149) ; •
+                    ((#x2013) 150) ; –
+                    ((#x2014) 151) ; —
+                    ((#x02DC) 152)
+                    ((#x2122) 153) ; ™
+                    ((#x0161) 154)
+                    ((#x203A) 155)
+                    ((#x0153) 156) ; œ
+                    ((#x017E) 158)
+                    ((#x0178) 159) ; Ÿ
+                    (else #x3F)))))
 
     (define (%char->font-byte font ch)
       (let ((cp (char->integer ch))
             (enc (pdf-font-encoding font)))
-        (cond
-          ((eq? enc 'winansi) (%unicode->winansi cp))
-          (else
-           ;; Symbol / ZapfDingbats: accept any 0–255 codepoint verbatim;
-           ;; substitute '?' for anything above. Real Unicode→Symbol
-           ;; mapping is a separate concern users can do themselves.
-           (if (< cp 256) cp #x3F)))))
+        (cond ((eq? enc 'winansi) (%unicode->winansi cp))
+              (else
+               ;; Symbol / ZapfDingbats: accept any 0–255 codepoint verbatim;
+               ;; substitute '?' for anything above. Real Unicode→Symbol
+               ;; mapping is a separate concern users can do themselves.
+               (if (< cp 256) cp #x3F)))))
 
     (define (%encode-string-bytes font s)
       (let* ((len (string-length s))
-             (bv  (make-bytevector len 0)))
+             (bv (make-bytevector len 0)))
         (let loop ((i 0))
-          (cond
-            ((= i len) bv)
-            (else
-             (bytevector-u8-set! bv i
-               (%char->font-byte font (string-ref s i)))
-             (loop (+ i 1)))))))
+          (cond ((= i len) bv)
+                (else (bytevector-u8-set!
+                       bv
+                       i
+                       (%char->font-byte font (string-ref s i)))
+                      (loop (+ i 1)))))))
 
     (define (%escape-literal-bytes bv)
       ;; Wrap with the PDF literal-string escaping rules (‘(’, ‘)’, ‘\’
       ;; preceded by backslash). Returns a fresh bytevector.
       (let* ((len (bytevector-length bv))
              (extra (let loop ((i 0) (n 0))
-                      (cond
-                        ((= i len) n)
-                        (else
-                         (let ((b (bytevector-u8-ref bv i)))
-                           (loop (+ i 1)
-                                 (if (or (= b #x28) (= b #x29) (= b #x5C))
-                                     (+ n 1) n))))))))
+                      (cond ((= i len) n)
+                            (else (let ((b (bytevector-u8-ref bv i)))
+                                    (loop
+                                     (+ i 1)
+                                     (if (or (= b #x28) (= b #x29) (= b #x5C))
+                                         (+ n 1)
+                                         n))))))))
         (if (zero? extra)
             bv
             (let ((out (make-bytevector (+ len extra) 0)))
               (let loop ((i 0) (j 0))
-                (cond
-                  ((= i len) out)
-                  (else
-                   (let ((b (bytevector-u8-ref bv i)))
-                     (cond
-                       ((or (= b #x28) (= b #x29) (= b #x5C))
-                        (bytevector-u8-set! out j #x5C)
-                        (bytevector-u8-set! out (+ j 1) b)
-                        (loop (+ i 1) (+ j 2)))
-                       (else
-                        (bytevector-u8-set! out j b)
-                        (loop (+ i 1) (+ j 1))))))))))))
+                (cond ((= i len) out)
+                      (else (let ((b (bytevector-u8-ref bv i)))
+                              (cond ((or (= b #x28) (= b #x29) (= b #x5C))
+                                     (bytevector-u8-set! out j #x5C)
+                                     (bytevector-u8-set! out (+ j 1) b)
+                                     (loop (+ i 1) (+ j 2)))
+                                    (else (bytevector-u8-set! out j b)
+                                          (loop (+ i 1) (+ j 1))))))))))))
 
     (define (%core14-text-width font size string)
       (let* ((widths (pdf-font-widths font))
-             (len    (string-length string))
-             (total
-              (let loop ((i 0) (acc 0))
-                (cond
-                  ((= i len) acc)
-                  (else
-                   (let* ((b (%char->font-byte font (string-ref string i))))
-                     (loop (+ i 1)
-                           (+ acc (vector-ref widths b)))))))))
+             (len (string-length string))
+             (total (let loop ((i 0) (acc 0))
+                      (cond ((= i len) acc)
+                            (else (let*
+                                      ((b
+                                        (%char->font-byte
+                                         font
+                                         (string-ref string i))))
+                                    (loop (+ i 1)
+                                          (+ acc (vector-ref widths b)))))))))
         (* total (/ size 1000.0))))
 
     (define (pdf-text-width font size string . kerning)
@@ -1754,14 +1823,15 @@ Example:
   (pdf-text-width helv 12 \"Hello\")"
       (+ (case (pdf-font-kind font)
            ((truetype) (%ttf-text-width font size string))
-           (else       (%core14-text-width font size string)))
+           (else (%core14-text-width font size string)))
          (if (and (pair? kerning) (car kerning))
              (* (/ size 1000.0) (%kerning-total (car kerning) string))
              0)))
 
     ;; The sum of the pair adjustments of string, in thousandths of an em.
     (define (%kerning-total kerning string)
-      (let loop ((cs (string->list string)) (sum 0))
+      (let loop ((cs (string->list string))
+                 (sum 0))
         (if (or (null? cs) (null? (cdr cs)))
             sum
             (loop (cdr cs) (+ sum (kerning (car cs) (cadr cs)))))))
@@ -1774,26 +1844,38 @@ Example:
       (let ((piece (lambda (s)
                      (case (pdf-font-kind font)
                        ((truetype)
-                        (string->utf8 (string-append "<" (%ttf-string-to-hex font s) ">")))
-                       (else
-                        (bytevector-append (string->utf8 "(")
-                                           (%escape-literal-bytes (%encode-string-bytes font s))
-                                           (string->utf8 ")")))))))
+                        (string->utf8 (string-append
+                                       "<"
+                                       (%ttf-string-to-hex font s)
+                                       ">")))
+                       (else (bytevector-append
+                              (string->utf8 "(")
+                              (%escape-literal-bytes
+                               (%encode-string-bytes font s))
+                              (string->utf8 ")")))))))
         (%pdf-page-add-chunk! page (string->utf8 "["))
-        (let loop ((cs (string->list string)) (cur '()))
-          (cond
-            ((null? cs)
-             (unless (null? cur)
-               (%pdf-page-add-chunk! page (piece (list->string (reverse cur))))))
-            (else
-             (let* ((c (car cs))
-                    (k (if (pair? (cdr cs)) (kerning c (cadr cs)) 0)))
-               (if (= k 0)
-                   (loop (cdr cs) (cons c cur))
-                   (begin
-                     (%pdf-page-add-chunk! page (piece (list->string (reverse (cons c cur)))))
-                     (%pdf-page-add-chunk! page (string->utf8 (string-append " " (n->s (- k)) " ")))
-                     (loop (cdr cs) '())))))))
+        (let loop ((cs (string->list string))
+                   (cur '()))
+          (cond ((null? cs)
+                 (unless (null? cur)
+                   (%pdf-page-add-chunk!
+                    page
+                    (piece (list->string (reverse cur))))))
+                (else (let* ((c (car cs))
+                             (k (if (pair? (cdr cs))
+                                    (kerning c (cadr cs))
+                                    0)))
+                        (if (= k 0)
+                            (loop (cdr cs) (cons c cur))
+                            (begin
+                              (%pdf-page-add-chunk!
+                               page
+                               (piece (list->string (reverse (cons c cur)))))
+                              (%pdf-page-add-chunk!
+                               page
+                               (string->utf8
+                                (string-append " " (n->s (- k)) " ")))
+                              (loop (cdr cs) '())))))))
         (%pdf-page-add-chunk! page (string->utf8 "] TJ\n"))))
 
     (define (%emit-text-show! page font string)
@@ -1808,12 +1890,11 @@ Example:
            (%pdf-page-add-chunk! page (string->utf8 "<"))
            (%pdf-page-add-chunk! page (string->utf8 hex))
            (%pdf-page-add-chunk! page (string->utf8 "> Tj\n"))))
-        (else
-         (let* ((bytes   (%encode-string-bytes font string))
-                (escaped (%escape-literal-bytes bytes)))
-           (%pdf-page-add-chunk! page (string->utf8 "("))
-           (%pdf-page-add-chunk! page escaped)
-           (%pdf-page-add-chunk! page (string->utf8 ") Tj\n"))))))
+        (else (let* ((bytes (%encode-string-bytes font string))
+                     (escaped (%escape-literal-bytes bytes)))
+                (%pdf-page-add-chunk! page (string->utf8 "("))
+                (%pdf-page-add-chunk! page escaped)
+                (%pdf-page-add-chunk! page (string->utf8 ") Tj\n"))))))
 
     (define (pdf-draw-text page font size x y string . opts)
       "Syntax: (pdf-draw-text page font size x y string [option value] ...)
@@ -1839,8 +1920,12 @@ Example:
         (emit-op! page (string-append "/" rname) (n->s size) "Tf")
         (if (= skew 0)
             (emit-op! page (n->s x) (n->s y) "Td")
-            (emit-op! page "1" "0" (n->s (tan (* skew (/ 3.141592653589793 180)))) "1"
-                      (n->s x) (n->s y) "Tm"))
+            (emit-op! page "1" "0"
+                      (n->s (tan (* skew (/ 3.141592653589793 180))))
+                      "1"
+                      (n->s x)
+                      (n->s y)
+                      "Tm"))
         (if kerning
             (%emit-kerned-show! page font string kerning)
             (%emit-text-show! page font string))
@@ -1861,12 +1946,11 @@ Example:
     ;; ──────────────────────────────────────────────────────────────────────
 
     (define (%plist-ref plist key default)
-      (cond
-        ((null? plist) default)
-        ((null? (cdr plist))
-         (error "pdf-flow-text: odd option list" plist))
-        ((eq? (car plist) key) (cadr plist))
-        (else (%plist-ref (cddr plist) key default))))
+      (cond ((null? plist) default)
+            ((null? (cdr plist))
+             (error "pdf-flow-text: odd option list" plist))
+            ((eq? (car plist) key) (cadr plist))
+            (else (%plist-ref (cddr plist) key default))))
 
     (define (%flow-tokenize s)
       ;; Returns a list of tokens: a non-empty string (a word) or the
@@ -1874,80 +1958,82 @@ Example:
       ;; collapse to nothing; #\newline becomes a 'newline token.
       (let ((len (string-length s)))
         (let loop ((i 0) (cur '()) (out '()))
-          (cond
-            ((>= i len)
-             (reverse (if (null? cur)
-                          out
-                          (cons (list->string (reverse cur)) out))))
-            (else
-             (let ((c (string-ref s i)))
-               (cond
-                 ((char=? c #\newline)
-                  (loop (+ i 1) '()
-                        (cons 'newline
-                              (if (null? cur)
-                                  out
-                                  (cons (list->string (reverse cur)) out)))))
-                 ((or (char=? c #\space)
-                      (char=? c #\tab)
-                      (char=? c #\return))
-                  (if (null? cur)
-                      (loop (+ i 1) '() out)
-                      (loop (+ i 1) '()
-                            (cons (list->string (reverse cur)) out))))
-                 (else
-                  (loop (+ i 1) (cons c cur) out)))))))))
+          (cond ((>= i len)
+                 (reverse (if (null? cur)
+                              out
+                              (cons (list->string (reverse cur)) out))))
+                (else (let ((c (string-ref s i)))
+                        (cond ((char=? c #\newline)
+                               (loop (+ i 1)
+                                     '()
+                                     (cons
+                                      'newline
+                                      (if
+                                       (null? cur)
+                                       out
+                                       (cons (list->string (reverse cur))
+                                             out)))))
+                              ((or (char=? c #\space)
+                                   (char=? c #\tab)
+                                   (char=? c #\return))
+                               (if (null? cur)
+                                   (loop (+ i 1) '() out)
+                                   (loop
+                                    (+ i 1)
+                                    '()
+                                    (cons (list->string (reverse cur)) out))))
+                              (else (loop (+ i 1) (cons c cur) out)))))))))
 
     (define (%tokens->remaining tokens)
       ;; Reconstruct a string suitable for re-flowing into the next box.
       ;; Words rejoin with single spaces; 'newline becomes "\n".
       (let loop ((ts tokens) (acc '()) (need-space? #f))
-        (cond
-          ((null? ts) (apply string-append (reverse acc)))
-          ((eq? (car ts) 'newline)
-           (loop (cdr ts) (cons "\n" acc) #f))
-          (else
-           (loop (cdr ts)
-                 (cons (car ts)
-                       (if need-space? (cons " " acc) acc))
-                 #t)))))
+        (cond ((null? ts) (apply string-append (reverse acc)))
+              ((eq? (car ts) 'newline) (loop (cdr ts) (cons "\n" acc) #f))
+              (else (loop (cdr ts)
+                          (cons (car ts) (if need-space? (cons " " acc) acc))
+                          #t)))))
 
     (define (%emit-flow-line! page font size line-x line-y line-text tw)
       (emit-op! page "q")
       (emit-op! page "BT")
-      (emit-op! page (string-append "/" (pdf-font-resource-name font))
-                     (n->s size) "Tf")
-      (when (not (= tw 0))
-        (emit-op! page (n->s tw) "Tw"))
+      (emit-op! page
+                (string-append "/" (pdf-font-resource-name font))
+                (n->s size)
+                "Tf")
+      (when (not (= tw 0)) (emit-op! page (n->s tw) "Tw"))
       (emit-op! page "1" "0" "0" "1" (n->s line-x) (n->s line-y) "Tm")
       (%emit-text-show! page font line-text)
       (emit-op! page "ET")
       (emit-op! page "Q"))
 
-    (define (%place-line! page font size rect-x rect-w cur-y
-                          line-words line-natural-w align hard-break?)
+    (define
+        (%place-line! page font size rect-x rect-w cur-y line-words
+                      line-natural-w align hard-break?)
       ;; line-words is a non-empty list of word strings.
       (let* ((joined (apply string-append
                             (let loop ((ws line-words) (first? #t))
-                              (cond
-                                ((null? ws) '())
-                                (first? (cons (car ws) (loop (cdr ws) #f)))
-                                (else (cons " " (cons (car ws)
-                                                      (loop (cdr ws) #f))))))))
-             (gap     (max 0 (- (length line-words) 1)))
-             (slack   (- rect-w line-natural-w))
-             (line-x  (case align
-                        ((left)    rect-x)
-                        ((right)   (+ rect-x slack))
-                        ((center)  (+ rect-x (/ slack 2.0)))
-                        ((justify) rect-x)
-                        (else      rect-x)))
-             (tw      (if (and (eq? align 'justify)
-                               (not hard-break?)
-                               (> gap 0)
-                               (> slack 0))
-                          (/ slack gap)
-                          0)))
+                              (cond ((null? ws) '())
+                                    (first?
+                                     (cons (car ws) (loop (cdr ws) #f)))
+                                    (else
+                                     (cons
+                                      " "
+                                      (cons (car ws) (loop (cdr ws) #f))))))))
+             (gap (max 0 (- (length line-words) 1)))
+             (slack (- rect-w line-natural-w))
+             (line-x (case align
+                       ((left) rect-x)
+                       ((right) (+ rect-x slack))
+                       ((center) (+ rect-x (/ slack 2.0)))
+                       ((justify) rect-x)
+                       (else rect-x)))
+             (tw (if (and (eq? align 'justify)
+                          (not hard-break?)
+                          (> gap 0)
+                          (> slack 0))
+                     (/ slack gap)
+                     0)))
         (%emit-flow-line! page font size line-x cur-y joined tw)))
 
     (define (pdf-flow-text page font size rect text . opts)
@@ -1975,80 +2061,78 @@ Example:
     (lambda (rest final-y)
       (when (not (string=? rest \"\"))
         ...flow rest into a second column...)))"
-      (let* ((align    (%plist-ref opts 'align 'left))
-             (leading  (%plist-ref opts 'leading (* size 1.2)))
-             (rect-x   (list-ref rect 0))
-             (rect-y   (list-ref rect 1))
-             (rect-w   (list-ref rect 2))
-             (rect-h   (list-ref rect 3))
-             (bot-y    rect-y)
-             (top-y    (+ rect-y rect-h))
-             (space-w  (pdf-text-width font size " "))
-             (cur-y    (- top-y size)))
+      (let* ((align (%plist-ref opts 'align 'left))
+             (leading (%plist-ref opts 'leading (* size 1.2)))
+             (rect-x (list-ref rect 0))
+             (rect-y (list-ref rect 1))
+             (rect-w (list-ref rect 2))
+             (rect-h (list-ref rect 3))
+             (bot-y rect-y)
+             (top-y (+ rect-y rect-h))
+             (space-w (pdf-text-width font size " "))
+             (cur-y (- top-y size)))
         (define (word-w w) (pdf-text-width font size w))
         (define (place-line! words width hard?)
           (%place-line! page font size rect-x rect-w cur-y
-                        (reverse words) width align hard?))
-        (let loop ((tokens     (%flow-tokenize text))
-                   (line-rev   '())   ; reversed list of words on this line
+                        (reverse words)
+                        width
+                        align
+                        hard?))
+        (let loop ((tokens (%flow-tokenize text))
+                   (line-rev '()) ; reversed list of words on this line
                    (line-width 0)
                    (line-spaces 0))
           (cond
-            ;; Out of vertical room: stash whatever is left and stop.
-            ((< cur-y bot-y)
-             (let ((remaining
-                    (cond
-                      ((null? line-rev) tokens)
-                      (else (append (reverse line-rev) tokens)))))
-               (values (%tokens->remaining remaining) cur-y)))
-            ((null? tokens)
-             ;; Drain the last partial line and finish.
-             (when (not (null? line-rev))
-               (place-line! line-rev line-width #t)
-               (set! cur-y (- cur-y leading)))
-             (values "" cur-y))
-            (else
-             (let ((tok (car tokens)) (rest (cdr tokens)))
-               (cond
-                 ;; Hard line break.
-                 ((eq? tok 'newline)
-                  (cond
-                    ((null? line-rev)
-                     ;; Blank paragraph: just drop a line.
-                     (set! cur-y (- cur-y leading))
-                     (loop rest '() 0 0))
-                    (else
-                     (place-line! line-rev line-width #t)
-                     (set! cur-y (- cur-y leading))
-                     (loop rest '() 0 0))))
-                 (else
-                  (let* ((w (word-w tok))
-                         (candidate
-                          (if (null? line-rev)
-                              w
-                              (+ line-width space-w w))))
-                    (cond
-                      ;; Word fits — accumulate.
-                      ((<= candidate rect-w)
-                       (loop rest
-                             (cons tok line-rev)
-                             candidate
-                             (if (null? line-rev)
-                                 line-spaces
-                                 (+ line-spaces 1))))
-                      ;; Line already non-empty: emit it, retry word.
-                      ((not (null? line-rev))
-                       (place-line! line-rev line-width #f)
-                       (set! cur-y (- cur-y leading))
-                       (loop tokens '() 0 0))
-                      ;; Overlong word, alone on its line — place it
-                      ;; anyway (overflowing rect-width). Phase 3 keeps
-                      ;; the algorithm simple; char-level breaking is a
-                      ;; future refinement.
-                      (else
-                       (place-line! (list tok) w #t)
-                       (set! cur-y (- cur-y leading))
-                       (loop rest '() 0 0))))))))))))
+           ;; Out of vertical room: stash whatever is left and stop.
+           ((< cur-y bot-y)
+            (let ((remaining (cond ((null? line-rev) tokens)
+                                   (else
+                                    (append (reverse line-rev) tokens)))))
+              (values (%tokens->remaining remaining) cur-y)))
+           ((null? tokens)
+            ;; Drain the last partial line and finish.
+            (when (not (null? line-rev))
+              (place-line! line-rev line-width #t)
+              (set! cur-y (- cur-y leading)))
+            (values "" cur-y))
+           (else (let ((tok (car tokens))
+                       (rest (cdr tokens)))
+                   (cond
+                    ;; Hard line break.
+                    ((eq? tok 'newline)
+                     (cond ((null? line-rev)
+                            ;; Blank paragraph: just drop a line.
+                            (set! cur-y (- cur-y leading))
+                            (loop rest '() 0 0))
+                           (else (place-line! line-rev line-width #t)
+                                 (set! cur-y (- cur-y leading))
+                                 (loop rest '() 0 0))))
+                    (else (let* ((w (word-w tok))
+                                 (candidate
+                                  (if (null? line-rev)
+                                      w
+                                      (+ line-width space-w w))))
+                            (cond
+                             ;; Word fits — accumulate.
+                             ((<= candidate rect-w)
+                              (loop rest
+                                    (cons tok line-rev)
+                                    candidate
+                                    (if (null? line-rev)
+                                        line-spaces
+                                        (+ line-spaces 1))))
+                             ;; Line already non-empty: emit it, retry word.
+                             ((not (null? line-rev))
+                              (place-line! line-rev line-width #f)
+                              (set! cur-y (- cur-y leading))
+                              (loop tokens '() 0 0))
+                             ;; Overlong word, alone on its line — place it
+                             ;; anyway (overflowing rect-width). Phase 3 keeps
+                             ;; the algorithm simple; char-level breaking is a
+                             ;; future refinement.
+                             (else (place-line! (list tok) w #t)
+                                   (set! cur-y (- cur-y leading))
+                                   (loop rest '() 0 0))))))))))))
 
     ;; ──────────────────────────────────────────────────────────────────────
     ;; TrueType embedding (phase 4)
@@ -2065,13 +2149,11 @@ Example:
 
     ;; ── Big-endian byte readers ──────────────────────────────────────────
 
-    (define (%u8 bv off)  (bytevector-u8-ref bv off))
+    (define (%u8 bv off) (bytevector-u8-ref bv off))
     (define (%u16 bv off)
-      (+ (* (bytevector-u8-ref bv off) 256)
-         (bytevector-u8-ref bv (+ off 1))))
+      (+ (* (bytevector-u8-ref bv off) 256) (bytevector-u8-ref bv (+ off 1))))
     (define (%s16 bv off)
-      (let ((u (%u16 bv off)))
-        (if (>= u 32768) (- u 65536) u)))
+      (let ((u (%u16 bv off))) (if (>= u 32768) (- u 65536) u)))
     (define (%u32 bv off)
       (+ (* (bytevector-u8-ref bv off) 16777216)
          (* (bytevector-u8-ref bv (+ off 1)) 65536)
@@ -2089,20 +2171,20 @@ Example:
       (let ((port (open-binary-input-file path)))
         (let loop ((acc '()) (total 0))
           (let ((chunk (read-bytevector 65536 port)))
-            (cond
-              ((eof-object? chunk)
-               (close-input-port port)
-               (let ((out (make-bytevector total 0)))
-                 (let copy ((rest (reverse acc)) (off 0))
-                   (cond
-                     ((null? rest) out)
-                     (else
-                      (let ((c (car rest)))
-                        (bytevector-copy! out off c 0 (bytevector-length c))
-                        (copy (cdr rest) (+ off (bytevector-length c)))))))))
-              (else
-               (loop (cons chunk acc)
-                     (+ total (bytevector-length chunk)))))))))
+            (cond ((eof-object? chunk)
+                   (close-input-port port)
+                   (let ((out (make-bytevector total 0)))
+                     (let copy ((rest (reverse acc))
+                                (off 0))
+                       (cond ((null? rest) out)
+                             (else (let ((c (car rest)))
+                                     (bytevector-copy! out off c 0
+                                                       (bytevector-length c))
+                                     (copy
+                                      (cdr rest)
+                                      (+ off (bytevector-length c)))))))))
+                  (else (loop (cons chunk acc)
+                              (+ total (bytevector-length chunk)))))))))
 
     ;; ── TTF table directory ──────────────────────────────────────────────
 
@@ -2110,16 +2192,16 @@ Example:
       ;; Returns alist tag-string → (cons offset length).
       (let ((num (%u16 bv 4)))
         (let loop ((i 0) (acc '()))
-          (cond
-            ((= i num) acc)
-            (else
-             (let* ((rec-off (+ 12 (* i 16)))
-                    (tag (let ((bs (make-bytevector 4 0)))
-                           (bytevector-copy! bs 0 bv rec-off (+ rec-off 4))
-                           (utf8->string bs)))
-                    (off (%u32 bv (+ rec-off 8)))
-                    (len (%u32 bv (+ rec-off 12))))
-               (loop (+ i 1) (cons (cons tag (cons off len)) acc))))))))
+          (cond ((= i num) acc)
+                (else (let* ((rec-off (+ 12 (* i 16)))
+                             (tag (let ((bs (make-bytevector 4 0)))
+                                    (bytevector-copy! bs 0 bv rec-off
+                                                      (+ rec-off 4))
+                                    (utf8->string bs)))
+                             (off (%u32 bv (+ rec-off 8)))
+                             (len (%u32 bv (+ rec-off 12))))
+                        (loop (+ i 1)
+                              (cons (cons tag (cons off len)) acc))))))))
 
     (define (%ttf-table-required tables tag)
       (let ((e (assoc tag tables)))
@@ -2127,8 +2209,7 @@ Example:
         (cdr e)))
 
     (define (%ttf-table-optional tables tag)
-      (let ((e (assoc tag tables)))
-        (and e (cdr e))))
+      (let ((e (assoc tag tables))) (and e (cdr e))))
 
     ;; ── cmap (Unicode → GID) ─────────────────────────────────────────────
 
@@ -2137,95 +2218,104 @@ Example:
       ;; (3,10) Win UCS-4 > (0,4) Unicode 2.0 full > (3,1) Win BMP >
       ;; (0,3) Unicode BMP. Returns a closure cp → gid (0 for missing).
       (let* ((cmap-info (%ttf-table-required tables "cmap"))
-             (cmap-off  (car cmap-info))
-             (num-subs  (%u16 bv (+ cmap-off 2))))
+             (cmap-off (car cmap-info))
+             (num-subs (%u16 bv (+ cmap-off 2))))
         (define (sub-priority pid eid)
           (cond ((and (= pid 3) (= eid 10)) 4)
-                ((and (= pid 0) (>= eid 4))  3)
-                ((and (= pid 3) (= eid 1))   2)
-                ((and (= pid 0) (= eid 3))   1)
+                ((and (= pid 0) (>= eid 4)) 3)
+                ((and (= pid 3) (= eid 1)) 2)
+                ((and (= pid 0) (= eid 3)) 1)
                 (else 0)))
         (let loop ((i 0) (best #f) (best-pri 0))
-          (cond
-            ((= i num-subs)
-             (unless best (error "TTF: no usable cmap subtable"))
-             (%ttf-cmap-make-lookup bv cmap-off best))
-            (else
-             (let* ((rec (+ cmap-off 4 (* i 8)))
-                    (pid (%u16 bv rec))
-                    (eid (%u16 bv (+ rec 2)))
-                    (off (%u32 bv (+ rec 4)))
-                    (pri (sub-priority pid eid)))
-               (if (> pri best-pri)
-                   (loop (+ i 1) off pri)
-                   (loop (+ i 1) best best-pri))))))))
+          (cond ((= i num-subs)
+                 (unless best (error "TTF: no usable cmap subtable"))
+                 (%ttf-cmap-make-lookup bv cmap-off best))
+                (else (let* ((rec (+ cmap-off 4 (* i 8)))
+                             (pid (%u16 bv rec))
+                             (eid (%u16 bv (+ rec 2)))
+                             (off (%u32 bv (+ rec 4)))
+                             (pri (sub-priority pid eid)))
+                        (if (> pri best-pri)
+                            (loop (+ i 1) off pri)
+                            (loop (+ i 1) best best-pri))))))))
 
     (define (%ttf-cmap-make-lookup bv cmap-off sub-off)
       (let* ((abs-off (+ cmap-off sub-off))
-             (format  (%u16 bv abs-off)))
+             (format (%u16 bv abs-off)))
         (case format
-          ((4)  (%ttf-cmap4-lookup  bv abs-off))
+          ((4) (%ttf-cmap4-lookup bv abs-off))
           ((12) (%ttf-cmap12-lookup bv abs-off))
           (else (error "TTF: unsupported cmap format" format)))))
 
     (define (%ttf-cmap4-lookup bv off)
       ;; Returns a closure (cp → gid). Format 4 covers the BMP only.
       (let* ((seg-count (quotient (%u16 bv (+ off 6)) 2))
-             (end-off     (+ off 14))
-             (start-off   (+ end-off (* 2 seg-count) 2))      ; +2 reservedPad
-             (delta-off   (+ start-off (* 2 seg-count)))
+             (end-off (+ off 14))
+             (start-off (+ end-off (* 2 seg-count) 2)) ; +2 reservedPad
+             (delta-off (+ start-off (* 2 seg-count)))
              (rangeoff-off (+ delta-off (* 2 seg-count)))
-             (glyph-off   (+ rangeoff-off (* 2 seg-count))))
+             (glyph-off (+ rangeoff-off (* 2 seg-count))))
         (lambda (cp)
-          (cond
-            ((> cp #xFFFF) 0)
-            (else
-             ;; Linear scan: simple and bounded by seg-count (typically
-             ;; < 200). Binary search would be faster but adds code.
-             (let loop ((i 0))
-               (cond
-                 ((= i seg-count) 0)
-                 (else
-                  (let ((endc (%u16 bv (+ end-off (* 2 i)))))
-                    (cond
-                      ((< endc cp) (loop (+ i 1)))
-                      (else
-                       (let ((startc (%u16 bv (+ start-off (* 2 i)))))
-                         (cond
-                           ((> startc cp) 0)
-                           (else
-                            (let* ((delta  (%s16 bv (+ delta-off (* 2 i))))
-                                   (ro     (%u16 bv (+ rangeoff-off (* 2 i)))))
-                              (cond
-                                ((zero? ro)
-                                 (modulo (+ cp delta) 65536))
-                                (else
-                                 (let* ((glyph-addr
-                                         (+ (+ rangeoff-off (* 2 i))
-                                            ro
-                                            (* 2 (- cp startc))))
-                                        (g (%u16 bv glyph-addr)))
-                                   (if (zero? g) 0
-                                       (modulo (+ g delta) 65536))))))))))))))))))))
+          (cond ((> cp #xFFFF) 0)
+                (else
+                 ;; Linear scan: simple and bounded by seg-count (typically
+                 ;; < 200). Binary search would be faster but adds code.
+                 (let loop ((i 0))
+                   (cond ((= i seg-count) 0)
+                         (else (let ((endc (%u16 bv (+ end-off (* 2 i)))))
+                                 (cond ((< endc cp) (loop (+ i 1)))
+                                       (else
+                                        (let
+                                            ((startc
+                                              (%u16 bv
+                                                    (+ start-off (* 2 i)))))
+                                          (cond
+                                           ((> startc cp) 0)
+                                           (else
+                                            (let*
+                                                ((delta
+                                                  (%s16
+                                                   bv
+                                                   (+ delta-off (* 2 i))))
+                                                 (ro
+                                                  (%u16
+                                                   bv
+                                                   (+ rangeoff-off (* 2 i)))))
+                                              (cond
+                                               ((zero? ro)
+                                                (modulo (+ cp delta) 65536))
+                                               (else
+                                                (let*
+                                                    ((glyph-addr
+                                                      (+
+                                                       (+ rangeoff-off
+                                                          (* 2 i))
+                                                       ro
+                                                       (* 2 (- cp startc))))
+                                                     (g (%u16 bv glyph-addr)))
+                                                  (if
+                                                   (zero? g)
+                                                   0
+                                                   (modulo
+                                                    (+ g delta)
+                                                    65536))))))))))))))))))))
 
     (define (%ttf-cmap12-lookup bv off)
       ;; Format 12: full Unicode via 32-bit ranges.
       (let* ((num-groups (%u32 bv (+ off 12)))
              (groups-off (+ off 16)))
         (lambda (cp)
-          (let loop ((lo 0) (hi (- num-groups 1)))
-            (cond
-              ((> lo hi) 0)
-              (else
-               (let* ((mid     (quotient (+ lo hi) 2))
-                      (rec     (+ groups-off (* mid 12)))
-                      (sc      (%u32 bv rec))
-                      (ec      (%u32 bv (+ rec 4)))
-                      (sg      (%u32 bv (+ rec 8))))
-                 (cond
-                   ((< cp sc) (loop lo (- mid 1)))
-                   ((> cp ec) (loop (+ mid 1) hi))
-                   (else      (+ sg (- cp sc)))))))))))
+          (let loop ((lo 0)
+                     (hi (- num-groups 1)))
+            (cond ((> lo hi) 0)
+                  (else (let* ((mid (quotient (+ lo hi) 2))
+                               (rec (+ groups-off (* mid 12)))
+                               (sc (%u32 bv rec))
+                               (ec (%u32 bv (+ rec 4)))
+                               (sg (%u32 bv (+ rec 8))))
+                          (cond ((< cp sc) (loop lo (- mid 1)))
+                                ((> cp ec) (loop (+ mid 1) hi))
+                                (else (+ sg (- cp sc)))))))))))
 
     ;; ── hmtx (glyph advance widths) ──────────────────────────────────────
 
@@ -2233,58 +2323,55 @@ Example:
       ;; Returns a vector of length num-glyphs of advance widths scaled
       ;; to 1000-em units (the PDF convention).
       (let* ((hhea-info (%ttf-table-required tables "hhea"))
-             (hhea-off  (car hhea-info))
+             (hhea-off (car hhea-info))
              (hmtx-info (%ttf-table-required tables "hmtx"))
-             (hmtx-off  (car hmtx-info))
-             (num-hm    (%u16 bv (+ hhea-off 34)))
-             (last-adv  (%u16 bv (+ hmtx-off (* 4 (- num-hm 1)))))
-             (scale     (/ 1000.0 units-per-em))
-             (out       (make-vector num-glyphs 0)))
+             (hmtx-off (car hmtx-info))
+             (num-hm (%u16 bv (+ hhea-off 34)))
+             (last-adv (%u16 bv (+ hmtx-off (* 4 (- num-hm 1)))))
+             (scale (/ 1000.0 units-per-em))
+             (out (make-vector num-glyphs 0)))
         (let loop ((g 0))
-          (cond
-            ((= g num-glyphs) out)
-            (else
-             (let ((aw (if (< g num-hm)
-                           (%u16 bv (+ hmtx-off (* 4 g)))
-                           last-adv)))
-               (vector-set! out g (* aw scale))
-               (loop (+ g 1))))))))
+          (cond ((= g num-glyphs) out)
+                (else (let
+                          ((aw (if (< g num-hm)
+                                   (%u16 bv (+ hmtx-off (* 4 g)))
+                                   last-adv)))
+                        (vector-set! out g (* aw scale))
+                        (loop (+ g 1))))))))
 
     ;; ── FontDescriptor metadata ──────────────────────────────────────────
 
     (define (%ttf-build-metadata bv tables units-per-em)
-      (let* ((head-off  (car (%ttf-table-required tables "head")))
-             (hhea-off  (car (%ttf-table-required tables "hhea")))
-             (os2-info  (%ttf-table-optional tables "OS/2"))
-             (scale     (/ 1000.0 units-per-em))
+      (let* ((head-off (car (%ttf-table-required tables "head")))
+             (hhea-off (car (%ttf-table-required tables "hhea")))
+             (os2-info (%ttf-table-optional tables "OS/2"))
+             (scale (/ 1000.0 units-per-em))
              (mac-style (%u16 bv (+ head-off 44)))
-             (italic?   (not (zero? (bitwise-and mac-style 2))))
-             (bold?     (not (zero? (bitwise-and mac-style 1))))
-             (x-min     (* scale (%s16 bv (+ head-off 36))))
-             (y-min     (* scale (%s16 bv (+ head-off 38))))
-             (x-max     (* scale (%s16 bv (+ head-off 40))))
-             (y-max     (* scale (%s16 bv (+ head-off 42))))
-             (ascent    (* scale (%s16 bv (+ hhea-off 4))))
-             (descent   (* scale (%s16 bv (+ hhea-off 6))))
-             (cap-h     (cond
-                          ((and os2-info
+             (italic? (not (zero? (bitwise-and mac-style 2))))
+             (bold? (not (zero? (bitwise-and mac-style 1))))
+             (x-min (* scale (%s16 bv (+ head-off 36))))
+             (y-min (* scale (%s16 bv (+ head-off 38))))
+             (x-max (* scale (%s16 bv (+ head-off 40))))
+             (y-max (* scale (%s16 bv (+ head-off 42))))
+             (ascent (* scale (%s16 bv (+ hhea-off 4))))
+             (descent (* scale (%s16 bv (+ hhea-off 6))))
+             (cap-h (cond ((and os2-info
                                 (>= (cdr os2-info) 92)
                                 (>= (%u16 bv (car os2-info)) 2))
                            (* scale (%s16 bv (+ (car os2-info) 88))))
                           (else ascent)))
-             (x-h       (cond
-                          ((and os2-info
-                                (>= (cdr os2-info) 92)
-                                (>= (%u16 bv (car os2-info)) 2))
-                           (* scale (%s16 bv (+ (car os2-info) 86))))
-                          (else (/ ascent 2)))))
-        (list (cons 'italic?   italic?)
-              (cons 'bold?     bold?)
+             (x-h (cond ((and os2-info
+                              (>= (cdr os2-info) 92)
+                              (>= (%u16 bv (car os2-info)) 2))
+                         (* scale (%s16 bv (+ (car os2-info) 86))))
+                        (else (/ ascent 2)))))
+        (list (cons 'italic? italic?)
+              (cons 'bold? bold?)
               (cons 'font-bbox (list x-min y-min x-max y-max))
-              (cons 'ascender  ascent)
+              (cons 'ascender ascent)
               (cons 'descender descent)
               (cons 'cap-height cap-h)
-              (cons 'x-height  x-h))))
+              (cons 'x-height x-h))))
 
     ;; ── Embed entry point ────────────────────────────────────────────────
 
@@ -2303,50 +2390,58 @@ Example:
   (define bv (pdf-read-binary-file \"/path/to/DejaVuSans.ttf\"))
   (define dj (pdf-embed-truetype-font doc bv \"DejaVuSans\"))
   (pdf-draw-text page dj 14 50 700 \"Hello, мир, 日本語, ✓\")"
-      (let* ((base-name (cond
-                         ((null? opts)
-                          (string-append
-                            "EmbeddedTTF"
-                            (number->string
-                              (+ 1 (length (pdf-document-fonts doc))))))
-                         (else (car opts))))
-             (tables       (%ttf-tables ttf-bytes))
-             (head-off     (car (%ttf-table-required tables "head")))
+      (let* ((base-name (cond ((null? opts)
+                               (string-append
+                                "EmbeddedTTF"
+                                (number->string
+                                 (+ 1 (length (pdf-document-fonts doc))))))
+                              (else (car opts))))
+             (tables (%ttf-tables ttf-bytes))
+             (head-off (car (%ttf-table-required tables "head")))
              (units-per-em (%u16 ttf-bytes (+ head-off 18)))
-             (maxp-off     (car (%ttf-table-required tables "maxp")))
-             (num-glyphs   (%u16 ttf-bytes (+ maxp-off 4)))
-             (cmap-lookup  (%ttf-build-cmap-lookup ttf-bytes tables))
-             (gid-widths   (%ttf-build-hmtx ttf-bytes tables num-glyphs
-                                            units-per-em))
-             (meta         (%ttf-build-metadata ttf-bytes tables units-per-em))
-             (used         (make-vector num-glyphs #f))
-             (idx          (length (pdf-document-fonts doc)))
-             (rname        (string-append "F" (number->string (+ idx 1))))
-             (font         (%make-pdf-font 'truetype rname base-name
-                                           'identity-h #f '() #f
-                                           ttf-bytes gid-widths
-                                           cmap-lookup units-per-em
-                                           num-glyphs meta used)))
+             (maxp-off (car (%ttf-table-required tables "maxp")))
+             (num-glyphs (%u16 ttf-bytes (+ maxp-off 4)))
+             (cmap-lookup (%ttf-build-cmap-lookup ttf-bytes tables))
+             (gid-widths (%ttf-build-hmtx ttf-bytes tables num-glyphs
+                                          units-per-em))
+             (meta (%ttf-build-metadata ttf-bytes tables units-per-em))
+             (used (make-vector num-glyphs #f))
+             (idx (length (pdf-document-fonts doc)))
+             (rname (string-append "F" (number->string (+ idx 1))))
+             (font (%make-pdf-font 'truetype
+                                   rname
+                                   base-name
+                                   'identity-h
+                                   #f
+                                   '()
+                                   #f
+                                   ttf-bytes
+                                   gid-widths
+                                   cmap-lookup
+                                   units-per-em
+                                   num-glyphs
+                                   meta
+                                   used)))
         (set-pdf-document-fonts! doc
-          (append (pdf-document-fonts doc)
-                  (list (cons (string->symbol rname) font))))
+                                 (append
+                                  (pdf-document-fonts doc)
+                                  (list (cons (string->symbol rname) font))))
         font))
 
     ;; ── TTF text-width and string encoding ───────────────────────────────
 
     (define (%ttf-text-width font size string)
-      (let* ((cmap   (pdf-font-cmap-lookup font))
+      (let* ((cmap (pdf-font-cmap-lookup font))
              (widths (pdf-font-gid-widths font))
-             (len    (string-length string))
-             (total
-              (let loop ((i 0) (acc 0))
-                (cond
-                  ((= i len) acc)
-                  (else
-                   (let* ((cp  (char->integer (string-ref string i)))
-                          (gid (cmap cp))
-                          (w   (vector-ref widths gid)))
-                     (loop (+ i 1) (+ acc w))))))))
+             (len (string-length string))
+             (total (let loop ((i 0) (acc 0))
+                      (cond ((= i len) acc)
+                            (else (let*
+                                      ((cp
+                                        (char->integer (string-ref string i)))
+                                       (gid (cmap cp))
+                                       (w (vector-ref widths gid)))
+                                    (loop (+ i 1) (+ acc w))))))))
         (* total (/ size 1000.0))))
 
     (define (%pad-hex n width)
@@ -2359,14 +2454,12 @@ Example:
     (define (%ttf-string-to-hex font s)
       ;; UTF-16-style hex: 4 hex digits per glyph (CID = GID, 16 bits).
       (let* ((cmap (pdf-font-cmap-lookup font))
-             (len  (string-length s)))
+             (len (string-length s)))
         (let loop ((i 0) (acc '()))
-          (cond
-            ((= i len) (apply string-append (reverse acc)))
-            (else
-             (let* ((cp  (char->integer (string-ref s i)))
-                    (gid (cmap cp)))
-               (loop (+ i 1) (cons (%pad-hex gid 4) acc))))))))
+          (cond ((= i len) (apply string-append (reverse acc)))
+                (else (let* ((cp (char->integer (string-ref s i)))
+                             (gid (cmap cp)))
+                        (loop (+ i 1) (cons (%pad-hex gid 4) acc))))))))
 
     (define (%ttf-record-used! font s)
       ;; Records gid → codepoint mappings for the ToUnicode CMap. Bulk
@@ -2374,16 +2467,14 @@ Example:
       ;; fine — the table is a vector, not a list.
       (let* ((cmap (pdf-font-cmap-lookup font))
              (used (pdf-font-used-codepoints font))
-             (len  (string-length s)))
+             (len (string-length s)))
         (let loop ((i 0))
-          (cond
-            ((= i len) #t)
-            (else
-             (let* ((cp  (char->integer (string-ref s i)))
-                    (gid (cmap cp)))
-               (when (and (> gid 0) (not (vector-ref used gid)))
-                 (vector-set! used gid cp))
-               (loop (+ i 1))))))))
+          (cond ((= i len) #t)
+                (else (let* ((cp (char->integer (string-ref s i)))
+                             (gid (cmap cp)))
+                        (when (and (> gid 0) (not (vector-ref used gid)))
+                          (vector-set! used gid cp))
+                        (loop (+ i 1))))))))
 
     ;; ── Emitting a TTF font and its descendant objects ───────────────────
 
@@ -2402,112 +2493,140 @@ Example:
     ;; DSIG, hinting tables) is dropped.
 
     (define (%u16be! bv off v)
-      (bytevector-u8-set! bv off       (bitwise-and (arithmetic-shift v -8) 255))
+      (bytevector-u8-set! bv off (bitwise-and (arithmetic-shift v -8) 255))
       (bytevector-u8-set! bv (+ off 1) (bitwise-and v 255)))
 
     (define (%u32be! bv off v)
-      (bytevector-u8-set! bv off       (bitwise-and (arithmetic-shift v -24) 255))
-      (bytevector-u8-set! bv (+ off 1) (bitwise-and (arithmetic-shift v -16) 255))
-      (bytevector-u8-set! bv (+ off 2) (bitwise-and (arithmetic-shift v -8) 255))
+      (bytevector-u8-set! bv off (bitwise-and (arithmetic-shift v -24) 255))
+      (bytevector-u8-set! bv
+                          (+ off 1)
+                          (bitwise-and (arithmetic-shift v -16) 255))
+      (bytevector-u8-set! bv
+                          (+ off 2)
+                          (bitwise-and (arithmetic-shift v -8) 255))
       (bytevector-u8-set! bv (+ off 3) (bitwise-and v 255)))
 
     (define (%simple-sort xs less?)
       ;; Merge sort. (scheme base) has no sort and (srfi 132) would
       ;; broaden imports.
-      (cond
-        ((or (null? xs) (null? (cdr xs))) xs)
-        (else
-         (let split ((slow xs) (fast xs) (left '()))
-           (cond
-             ((or (null? fast) (null? (cdr fast)))
-              (%simple-merge
-                (%simple-sort (reverse left) less?)
-                (%simple-sort slow less?)
-                less?))
-             (else
-              (split (cdr slow) (cddr fast) (cons (car slow) left))))))))
+      (cond ((or (null? xs) (null? (cdr xs))) xs)
+            (else (let split ((slow xs) (fast xs) (left '()))
+                    (cond ((or (null? fast) (null? (cdr fast)))
+                           (%simple-merge (%simple-sort (reverse left) less?)
+                                          (%simple-sort slow less?)
+                                          less?))
+                          (else (split (cdr slow)
+                                       (cddr fast)
+                                       (cons (car slow) left))))))))
 
     (define (%simple-merge a b less?)
-      (cond
-        ((null? a) b)
-        ((null? b) a)
-        ((less? (car a) (car b))
-         (cons (car a) (%simple-merge (cdr a) b less?)))
-        (else
-         (cons (car b) (%simple-merge a (cdr b) less?)))))
+      (cond ((null? a) b)
+            ((null? b) a)
+            ((less? (car a) (car b))
+             (cons (car a) (%simple-merge (cdr a) b less?)))
+            (else (cons (car b) (%simple-merge a (cdr b) less?)))))
 
     (define (%loca-read bv off num-glyphs format)
       ;; head.indexToLocFormat: 0 = short (u16 * 2), 1 = long (u32).
       (let ((out (make-vector (+ num-glyphs 1) 0)))
         (let loop ((i 0))
-          (cond
-            ((> i num-glyphs) out)
-            (else
-             (let ((v (if (zero? format)
-                          (* 2 (%u16 bv (+ off (* 2 i))))
-                          (%u32 bv (+ off (* 4 i))))))
-               (vector-set! out i v)
-               (loop (+ i 1))))))))
+          (cond ((> i num-glyphs) out)
+                (else (let
+                          ((v (if (zero? format)
+                                  (* 2 (%u16 bv (+ off (* 2 i))))
+                                  (%u32 bv (+ off (* 4 i))))))
+                        (vector-set! out i v)
+                        (loop (+ i 1))))))))
 
     (define (%ttf-close-composites bv loca glyf-off used num-glyphs)
       ;; Fixed-point: for each used composite glyph, mark all components
       ;; used. Repeat until no new entries are added. Composite glyph
       ;; format documented in OpenType spec / glyf table.
       (let outer ((changed? #t))
-        (cond
-          ((not changed?) used)
-          (else
-           (let scan ((g 0) (added? #f))
-             (cond
-               ((= g num-glyphs) (outer added?))
-               ((vector-ref used g)
-                (let* ((start (vector-ref loca g))
-                       (end   (vector-ref loca (+ g 1))))
-                  (cond
-                    ((= start end) (scan (+ g 1) added?))
-                    (else
-                     (let* ((goff      (+ glyf-off start))
-                            (ncontours (%s16 bv goff)))
-                       (cond
-                         ((>= ncontours 0) (scan (+ g 1) added?))
-                         (else
-                          ;; Composite: walk components.
-                          (let comp ((coff (+ goff 10)) (changed added?))
-                            (let* ((flags    (%u16 bv coff))
-                                   (comp-gid (%u16 bv (+ coff 2)))
-                                   (newly?
-                                    (and (< comp-gid num-glyphs)
-                                         (not (vector-ref used comp-gid))))
-                                   (arg-bytes
-                                    (if (zero? (bitwise-and flags 1)) 2 4))
-                                   (scale-bytes
-                                    (cond
-                                      ((not (zero? (bitwise-and flags 8))) 2)
-                                      ((not (zero? (bitwise-and flags #x40))) 4)
-                                      ((not (zero? (bitwise-and flags #x80))) 8)
-                                      (else 0)))
-                                   (next (+ coff 4 arg-bytes scale-bytes))
-                                   (more? (not (zero? (bitwise-and flags #x20)))))
-                              (when newly?
-                                (vector-set! used comp-gid #t))
-                              (cond
-                                (more? (comp next (or changed newly?)))
-                                (else (scan (+ g 1) (or changed newly?)))))))))))))
-               (else (scan (+ g 1) added?))))))))
+        (cond ((not changed?) used)
+              (else (let scan ((g 0) (added? #f))
+                      (cond ((= g num-glyphs) (outer added?))
+                            ((vector-ref used g)
+                             (let* ((start (vector-ref loca g))
+                                    (end (vector-ref loca (+ g 1))))
+                               (cond ((= start end) (scan (+ g 1) added?))
+                                     (else
+                                      (let*
+                                          ((goff (+ glyf-off start))
+                                           (ncontours (%s16 bv goff)))
+                                        (cond
+                                         ((>= ncontours 0)
+                                          (scan (+ g 1) added?))
+                                         (else
+                                          ;; Composite: walk components.
+                                          (let comp
+                                              ((coff (+ goff 10))
+                                               (changed added?))
+                                            (let*
+                                                ((flags (%u16 bv coff))
+                                                 (comp-gid
+                                                  (%u16 bv (+ coff 2)))
+                                                 (newly?
+                                                  (and
+                                                   (< comp-gid num-glyphs)
+                                                   (not
+                                                    (vector-ref used
+                                                                comp-gid))))
+                                                 (arg-bytes
+                                                  (if
+                                                   (zero?
+                                                    (bitwise-and flags 1))
+                                                   2
+                                                   4))
+                                                 (scale-bytes
+                                                  (cond
+                                                   ((not
+                                                     (zero?
+                                                      (bitwise-and flags 8)))
+                                                    2)
+                                                   ((not
+                                                     (zero?
+                                                      (bitwise-and flags
+                                                                   #x40)))
+                                                    4)
+                                                   ((not
+                                                     (zero?
+                                                      (bitwise-and flags
+                                                                   #x80)))
+                                                    8)
+                                                   (else 0)))
+                                                 (next
+                                                  (+ coff 4 arg-bytes
+                                                     scale-bytes))
+                                                 (more?
+                                                  (not
+                                                   (zero?
+                                                    (bitwise-and flags
+                                                                 #x20)))))
+                                              (when newly?
+                                                (vector-set! used comp-gid
+                                                             #t))
+                                              (cond
+                                               (more?
+                                                (comp next
+                                                      (or changed newly?)))
+                                               (else
+                                                (scan
+                                                 (+ g 1)
+                                                 (or changed
+                                                     newly?)))))))))))))
+                            (else (scan (+ g 1) added?))))))))
 
     (define (%ttf-pack-loca offsets long?)
       (let* ((n (vector-length offsets))
              (bytes-per (if long? 4 2))
              (out (make-bytevector (* n bytes-per) 0)))
         (let loop ((i 0))
-          (cond
-            ((= i n) out)
-            (else
-             (let ((v (vector-ref offsets i)))
-               (cond
-                 (long?  (%u32be! out (* i 4) v))
-                 (else   (%u16be! out (* i 2) (quotient v 2)))))
-             (loop (+ i 1)))))))
+          (cond ((= i n) out)
+                (else (let ((v (vector-ref offsets i)))
+                        (cond (long? (%u32be! out (* i 4) v))
+                              (else (%u16be! out (* i 2) (quotient v 2)))))
+                      (loop (+ i 1)))))))
 
     (define (%ttf-build-new-hmtx bv hmtx-off orig-num-hm new-num-glyphs)
       ;; New hmtx: keep `new-num-glyphs` (advanceWidth, lsb) longs.
@@ -2517,54 +2636,58 @@ Example:
       (let ((last-adv (%u16 bv (+ hmtx-off (* 4 (- orig-num-hm 1)))))
             (out (make-bytevector (* 4 new-num-glyphs) 0)))
         (let loop ((g 0))
-          (cond
-            ((= g new-num-glyphs) out)
-            (else
-             (cond
-               ((< g orig-num-hm)
-                (bytevector-copy! out (* 4 g) bv (+ hmtx-off (* 4 g))
-                                  (+ hmtx-off (* 4 g) 4)))
-               (else
-                (%u16be! out (* 4 g) last-adv)
-                (let ((lsb (%s16 bv (+ hmtx-off (* 4 orig-num-hm)
-                                       (* 2 (- g orig-num-hm))))))
-                  (%u16be! out (+ (* 4 g) 2) (modulo lsb 65536)))))
-             (loop (+ g 1)))))))
+          (cond ((= g new-num-glyphs) out)
+                (else (cond ((< g orig-num-hm)
+                             (bytevector-copy! out
+                                               (* 4 g)
+                                               bv
+                                               (+ hmtx-off (* 4 g))
+                                               (+ hmtx-off (* 4 g) 4)))
+                            (else (%u16be! out (* 4 g) last-adv)
+                                  (let
+                                      ((lsb
+                                        (%s16
+                                         bv
+                                         (+ hmtx-off
+                                            (* 4 orig-num-hm)
+                                            (* 2 (- g orig-num-hm))))))
+                                    (%u16be! out
+                                             (+ (* 4 g) 2)
+                                             (modulo lsb 65536)))))
+                      (loop (+ g 1)))))))
 
     (define (%ttf-build-new-cmap pairs)
       ;; Emit a single format-12 subtable (full Unicode). Each pair is
       ;; written as its own 12-byte group — simple, slightly wasteful.
       ;; If pairs is empty we still emit a stub so readers don't reject.
       (let* ((sorted (%simple-sort pairs (lambda (a b) (< (car a) (car b)))))
-             (n      (length sorted))
+             (n (length sorted))
              (sub-len (+ 16 (* 12 n)))
-             (out     (make-bytevector (+ 4 8 sub-len) 0)))
-        (%u16be! out 0  0)               ; cmap version
-        (%u16be! out 2  1)               ; numTables
-        (%u16be! out 4  3)               ; platformID = Windows
-        (%u16be! out 6  10)              ; encodingID = UCS-4
-        (%u32be! out 8  12)              ; subtable offset from start of cmap
-        (%u16be! out 12 12)              ; format = 12
-        (%u16be! out 14 0)               ; reserved
-        (%u32be! out 16 sub-len)         ; length
-        (%u32be! out 20 0)               ; language
-        (%u32be! out 24 n)               ; numGroups
+             (out (make-bytevector (+ 4 8 sub-len) 0)))
+        (%u16be! out 0 0) ; cmap version
+        (%u16be! out 2 1) ; numTables
+        (%u16be! out 4 3) ; platformID = Windows
+        (%u16be! out 6 10) ; encodingID = UCS-4
+        (%u32be! out 8 12) ; subtable offset from start of cmap
+        (%u16be! out 12 12) ; format = 12
+        (%u16be! out 14 0) ; reserved
+        (%u32be! out 16 sub-len) ; length
+        (%u32be! out 20 0) ; language
+        (%u32be! out 24 n) ; numGroups
         (let loop ((i 0) (rest sorted))
-          (cond
-            ((null? rest) out)
-            (else
-             (let ((p   (car rest))
-                   (off (+ 28 (* 12 i))))
-               (%u32be! out off       (car p))   ; startCharCode
-               (%u32be! out (+ off 4) (car p))   ; endCharCode
-               (%u32be! out (+ off 8) (cdr p))   ; startGlyphID
-               (loop (+ i 1) (cdr rest))))))))
+          (cond ((null? rest) out)
+                (else (let ((p (car rest))
+                            (off (+ 28 (* 12 i))))
+                        (%u32be! out off (car p)) ; startCharCode
+                        (%u32be! out (+ off 4) (car p)) ; endCharCode
+                        (%u32be! out (+ off 8) (cdr p)) ; startGlyphID
+                        (loop (+ i 1) (cdr rest))))))))
 
     (define (%ttf-patch-head bv head-off long-loca?)
       (let ((out (make-bytevector 54 0)))
         (bytevector-copy! out 0 bv head-off (+ head-off 54))
-        (%u32be! out 8 0)                          ; checkSumAdjustment = 0
-        (%u16be! out 50 (if long-loca? 1 0))       ; indexToLocFormat
+        (%u32be! out 8 0) ; checkSumAdjustment = 0
+        (%u16be! out 50 (if long-loca? 1 0)) ; indexToLocFormat
         out))
 
     (define (%ttf-patch-hhea bv hhea-off num-hm)
@@ -2584,15 +2707,25 @@ Example:
       ;; the table as zero (padding).
       (let ((orig-len (bytevector-length bv)))
         (let loop ((i 0) (sum 0))
-          (cond
-            ((>= i padded-len) (bitwise-and sum #xFFFFFFFF))
-            (else
-             (let* ((b0 (if (< i orig-len) (bytevector-u8-ref bv i) 0))
-                    (b1 (if (< (+ i 1) orig-len) (bytevector-u8-ref bv (+ i 1)) 0))
-                    (b2 (if (< (+ i 2) orig-len) (bytevector-u8-ref bv (+ i 2)) 0))
-                    (b3 (if (< (+ i 3) orig-len) (bytevector-u8-ref bv (+ i 3)) 0)))
-               (loop (+ i 4)
-                     (+ sum (+ (* b0 16777216) (* b1 65536) (* b2 256) b3)))))))))
+          (cond ((>= i padded-len) (bitwise-and sum #xFFFFFFFF))
+                (else (let* ((b0 (if (< i orig-len)
+                                     (bytevector-u8-ref bv i)
+                                     0))
+                             (b1 (if (< (+ i 1) orig-len)
+                                     (bytevector-u8-ref bv (+ i 1))
+                                     0))
+                             (b2 (if (< (+ i 2) orig-len)
+                                     (bytevector-u8-ref bv (+ i 2))
+                                     0))
+                             (b3 (if (< (+ i 3) orig-len)
+                                     (bytevector-u8-ref bv (+ i 3))
+                                     0)))
+                        (loop (+ i 4)
+                              (+ sum
+                                 (+ (* b0 16777216)
+                                    (* b1 65536)
+                                    (* b2 256)
+                                    b3)))))))))
 
     (define (%ttf-pack-tables alist)
       ;; alist: list of (tag . bytevector). Sorts by tag, computes
@@ -2601,58 +2734,55 @@ Example:
       ;; entries. The whole-file checkSumAdjustment is fixed up by the
       ;; caller after packing.
       (let* ((sorted (%simple-sort alist
-                                    (lambda (a b) (string<? (car a) (car b)))))
+                                   (lambda (a b) (string<? (car a) (car b)))))
              (n (length sorted))
              (dir-len (+ 12 (* 16 n)))
              ;; (tag bv abs-off len padded-len)
-             (entries
-              (let loop ((rest sorted) (off dir-len) (acc '()))
-                (cond
-                  ((null? rest) (reverse acc))
-                  (else
-                   (let* ((p   (car rest))
-                          (tag (car p))
-                          (bv  (cdr p))
-                          (len (bytevector-length bv))
-                          (pad (* 4 (quotient (+ len 3) 4))))
-                     (loop (cdr rest) (+ off pad)
-                           (cons (list tag bv off len pad) acc)))))))
-             (total
-              (let sum ((rest entries) (acc dir-len))
-                (cond
-                  ((null? rest) acc)
-                  (else (sum (cdr rest) (+ acc (list-ref (car rest) 4)))))))
+             (entries (let loop ((rest sorted) (off dir-len) (acc '()))
+                        (cond ((null? rest) (reverse acc))
+                              (else (let*
+                                        ((p (car rest))
+                                         (tag (car p))
+                                         (bv (cdr p))
+                                         (len (bytevector-length bv))
+                                         (pad (* 4 (quotient (+ len 3) 4))))
+                                      (loop
+                                       (cdr rest)
+                                       (+ off pad)
+                                       (cons (list tag bv off len pad)
+                                             acc)))))))
+             (total (let sum ((rest entries) (acc dir-len))
+                      (cond ((null? rest) acc)
+                            (else (sum (cdr rest)
+                                       (+ acc (list-ref (car rest) 4)))))))
              (out (make-bytevector total 0)))
         ;; sfnt header
-        (%u32be! out 0 #x00010000)              ; TrueType outline marker
-        (%u16be! out 4 n)                       ; numTables
+        (%u32be! out 0 #x00010000) ; TrueType outline marker
+        (%u16be! out 4 n) ; numTables
         (let* ((sr/e (let pow ((p 1) (e 0))
-                       (cond
-                         ((> (* 2 p) n) (cons p e))
-                         (else (pow (* 2 p) (+ e 1))))))
+                       (cond ((> (* 2 p) n) (cons p e))
+                             (else (pow (* 2 p) (+ e 1))))))
                (sr (car sr/e))
                (es (cdr sr/e)))
-          (%u16be! out 6  (* 16 sr))            ; searchRange
-          (%u16be! out 8  es)                   ; entrySelector
-          (%u16be! out 10 (- (* 16 n) (* 16 sr))))   ; rangeShift
+          (%u16be! out 6 (* 16 sr)) ; searchRange
+          (%u16be! out 8 es) ; entrySelector
+          (%u16be! out 10 (- (* 16 n) (* 16 sr)))) ; rangeShift
         (let loop ((rest entries) (i 0))
-          (cond
-            ((null? rest) out)
-            (else
-             (let* ((e   (car rest))
-                    (tag (list-ref e 0))
-                    (bv  (list-ref e 1))
-                    (off (list-ref e 2))
-                    (len (list-ref e 3))
-                    (pad (list-ref e 4))
-                    (dir (+ 12 (* 16 i)))
-                    (tagbv (string->utf8 tag)))
-               (bytevector-copy! out dir tagbv 0 4)
-               (%u32be! out (+ dir 4)  (%ttf-table-checksum bv pad))
-               (%u32be! out (+ dir 8)  off)
-               (%u32be! out (+ dir 12) len)
-               (bytevector-copy! out off bv 0 len)
-               (loop (cdr rest) (+ i 1))))))))
+          (cond ((null? rest) out)
+                (else (let* ((e (car rest))
+                             (tag (list-ref e 0))
+                             (bv (list-ref e 1))
+                             (off (list-ref e 2))
+                             (len (list-ref e 3))
+                             (pad (list-ref e 4))
+                             (dir (+ 12 (* 16 i)))
+                             (tagbv (string->utf8 tag)))
+                        (bytevector-copy! out dir tagbv 0 4)
+                        (%u32be! out (+ dir 4) (%ttf-table-checksum bv pad))
+                        (%u32be! out (+ dir 8) off)
+                        (%u32be! out (+ dir 12) len)
+                        (bytevector-copy! out off bv 0 len)
+                        (loop (cdr rest) (+ i 1))))))))
 
     (define (%ttf-fix-checksum-adjustment! bv)
       ;; Locate the head table from the directory, then set
@@ -2661,22 +2791,23 @@ Example:
       ;; adjustment field at zero, which we ensured in %ttf-patch-head.
       (let ((n (%u16 bv 4)))
         (let find ((i 0))
-          (cond
-            ((= i n) (error "subset: head table missing from packed font"))
-            (else
-             (let* ((dir (+ 12 (* 16 i)))
-                    (tag (let ((b (make-bytevector 4 0)))
-                           (bytevector-copy! b 0 bv dir (+ dir 4))
-                           (utf8->string b))))
-               (cond
-                 ((string=? tag "head")
-                  (let* ((head-off (%u32 bv (+ dir 8)))
-                         (file-cs  (%ttf-table-checksum
-                                     bv (bytevector-length bv)))
-                         (adj      (modulo (- #xB1B0AFBA file-cs)
-                                           #x100000000)))
-                    (%u32be! bv (+ head-off 8) adj)))
-                 (else (find (+ i 1))))))))))
+          (cond ((= i n)
+                 (error "subset: head table missing from packed font"))
+                (else (let* ((dir (+ 12 (* 16 i)))
+                             (tag (let ((b (make-bytevector 4 0)))
+                                    (bytevector-copy! b 0 bv dir (+ dir 4))
+                                    (utf8->string b))))
+                        (cond ((string=? tag "head")
+                               (let* ((head-off (%u32 bv (+ dir 8)))
+                                      (file-cs
+                                       (%ttf-table-checksum
+                                        bv
+                                        (bytevector-length bv)))
+                                      (adj
+                                       (modulo (- #xB1B0AFBA file-cs)
+                                               #x100000000)))
+                                 (%u32be! bv (+ head-off 8) adj)))
+                              (else (find (+ i 1))))))))))
 
     (define (%ttf-subset bv used-codepoints)
       ;; Build a subset TTF that keeps only GIDs needed to render the
@@ -2684,79 +2815,73 @@ Example:
       ;; Returns (cons subset-bytes new-num-glyphs).
       (let* ((tables (%ttf-tables bv))
              (head-off (car (%ttf-table-required tables "head")))
-             (loc-fmt  (%s16 bv (+ head-off 50)))
+             (loc-fmt (%s16 bv (+ head-off 50)))
              (maxp-info (%ttf-table-required tables "maxp"))
              (maxp-off (car maxp-info))
              (maxp-len (cdr maxp-info))
              (orig-num (%u16 bv (+ maxp-off 4)))
              (loca-off (car (%ttf-table-required tables "loca")))
              (glyf-off (car (%ttf-table-required tables "glyf")))
-             (loca     (%loca-read bv loca-off orig-num loc-fmt))
+             (loca (%loca-read bv loca-off orig-num loc-fmt))
              ;; Initial used set: GID 0 + everything in used-codepoints.
-             (used     (let ((s (make-vector orig-num #f)))
-                         (vector-set! s 0 #t)
-                         (let loop ((i 0))
-                           (cond
-                             ((= i orig-num) s)
-                             (else
-                              (when (vector-ref used-codepoints i)
-                                (vector-set! s i #t))
-                              (loop (+ i 1)))))))
-             (closed   (%ttf-close-composites bv loca glyf-off used orig-num))
+             (used (let ((s (make-vector orig-num #f)))
+                     (vector-set! s 0 #t)
+                     (let loop ((i 0))
+                       (cond ((= i orig-num) s)
+                             (else (when (vector-ref used-codepoints i)
+                                     (vector-set! s i #t))
+                                   (loop (+ i 1)))))))
+             (closed (%ttf-close-composites bv loca glyf-off used orig-num))
              ;; Highest used GID. Preserve numbering up to this index;
              ;; gaps inside become zero-length glyphs.
-             (max-gid  (let scan ((i (- orig-num 1)))
-                         (cond
-                           ((< i 0) 0)
-                           ((vector-ref closed i) i)
-                           (else (scan (- i 1))))))
-             (new-num  (+ max-gid 1))
+             (max-gid (let scan ((i (- orig-num 1)))
+                        (cond ((< i 0) 0)
+                              ((vector-ref closed i) i)
+                              (else (scan (- i 1))))))
+             (new-num (+ max-gid 1))
              ;; Rewrite glyf as compacted bytes; loca records the new
              ;; offsets in lock-step.
              (new-loca (make-vector (+ new-num 1) 0)))
-        (let* ((chunks-rev '())
-               (cur 0))
+        (let* ((chunks-rev '()) (cur 0))
           (let gloop ((g 0))
-            (cond
-              ((= g new-num)
-               (vector-set! new-loca g cur))
-              (else
-               (vector-set! new-loca g cur)
-               (cond
-                 ((vector-ref closed g)
-                  (let* ((start (vector-ref loca g))
-                         (end   (vector-ref loca (+ g 1)))
-                         (len   (- end start))
-                         ;; Pad to even length (TTF glyf convention).
-                         (pad   (if (odd? len) 1 0))
-                         (chunk (make-bytevector (+ len pad) 0)))
-                    (when (> len 0)
-                      (bytevector-copy! chunk 0 bv (+ glyf-off start)
-                                        (+ glyf-off end)))
-                    (set! chunks-rev (cons chunk chunks-rev))
-                    (set! cur (+ cur len pad))))
-                 (else #t))
-               (gloop (+ g 1)))))
+            (cond ((= g new-num) (vector-set! new-loca g cur))
+                  (else (vector-set! new-loca g cur)
+                        (cond ((vector-ref closed g)
+                               (let* ((start (vector-ref loca g))
+                                      (end (vector-ref loca (+ g 1)))
+                                      (len (- end start))
+                                      ;; Pad to even length (TTF glyf convention).
+                                      (pad (if (odd? len) 1 0))
+                                      (chunk (make-bytevector (+ len pad) 0)))
+                                 (when (> len 0)
+                                   (bytevector-copy! chunk 0 bv
+                                                     (+ glyf-off start)
+                                                     (+ glyf-off end)))
+                                 (set! chunks-rev (cons chunk chunks-rev))
+                                 (set! cur (+ cur len pad))))
+                              (else #t))
+                        (gloop (+ g 1)))))
           (let* ((new-glyf (bytevector-concat (reverse chunks-rev)))
-                 (max-off  (vector-ref new-loca new-num))
+                 (max-off (vector-ref new-loca new-num))
                  ;; Short loca format uses offset/2 stored as u16, so
                  ;; valid only if max offset is even and fits in u16*2.
-                 (long?    (> max-off 131070))
+                 (long? (> max-off 131070))
                  (new-loca-bv (%ttf-pack-loca new-loca long?))
                  (hhea-off (car (%ttf-table-required tables "hhea")))
                  (hmtx-off (car (%ttf-table-required tables "hmtx")))
-                 (orig-nh  (%u16 bv (+ hhea-off 34)))
+                 (orig-nh (%u16 bv (+ hhea-off 34)))
                  (new-hmtx (%ttf-build-new-hmtx bv hmtx-off orig-nh new-num))
                  ;; Build cmap pairs from used-codepoints (cp → gid).
-                 (pairs    (let loop ((g 0) (acc '()))
-                             (cond
-                               ((= g orig-num) (reverse acc))
-                               (else
-                                (let ((cp (vector-ref used-codepoints g)))
-                                  (cond
-                                    (cp (loop (+ g 1)
-                                              (cons (cons cp g) acc)))
-                                    (else (loop (+ g 1) acc))))))))
+                 (pairs (let loop ((g 0) (acc '()))
+                          (cond ((= g orig-num) (reverse acc))
+                                (else (let
+                                          ((cp
+                                            (vector-ref used-codepoints g)))
+                                        (cond
+                                         (cp
+                                          (loop (+ g 1)
+                                                (cons (cons cp g) acc)))
+                                         (else (loop (+ g 1) acc))))))))
                  (new-cmap (%ttf-build-new-cmap pairs))
                  (new-head (%ttf-patch-head bv head-off long?))
                  (new-hhea (%ttf-patch-hhea bv hhea-off new-num))
@@ -2765,30 +2890,31 @@ Example:
                  ;; everything else (DSIG/GSUB/GPOS/cvt/fpgm/prep/kern…)
                  ;; is dropped to minimize size and avoid stale GID
                  ;; references in those tables.
-                 (passthrough
-                  (let walk ((rest tables) (acc '()))
-                    (cond
-                      ((null? rest) acc)
-                      (else
-                       (let ((tag (car (car rest))))
-                         (cond
-                           ((member tag '("name" "post" "OS/2"))
-                            (let* ((info (cdr (car rest)))
-                                   (o (car info))
-                                   (l (cdr info))
-                                   (b (make-bytevector l 0)))
-                              (bytevector-copy! b 0 bv o (+ o l))
-                              (walk (cdr rest) (cons (cons tag b) acc))))
-                           (else (walk (cdr rest) acc))))))))
-                 (alist (append
-                          (list (cons "head" new-head)
-                                (cons "hhea" new-hhea)
-                                (cons "maxp" new-maxp)
-                                (cons "hmtx" new-hmtx)
-                                (cons "loca" new-loca-bv)
-                                (cons "glyf" new-glyf)
-                                (cons "cmap" new-cmap))
-                          passthrough))
+                 (passthrough (let walk ((rest tables) (acc '()))
+                                (cond ((null? rest) acc)
+                                      (else
+                                       (let ((tag (car (car rest))))
+                                         (cond
+                                          ((member tag
+                                                   '("name" "post" "OS/2"))
+                                           (let*
+                                               ((info (cdr (car rest)))
+                                                (o (car info))
+                                                (l (cdr info))
+                                                (b (make-bytevector l 0)))
+                                             (bytevector-copy! b 0 bv o
+                                                               (+ o l))
+                                             (walk (cdr rest)
+                                                   (cons (cons tag b) acc))))
+                                          (else (walk (cdr rest) acc))))))))
+                 (alist (append (list (cons "head" new-head)
+                                      (cons "hhea" new-hhea)
+                                      (cons "maxp" new-maxp)
+                                      (cons "hmtx" new-hmtx)
+                                      (cons "loca" new-loca-bv)
+                                      (cons "glyf" new-glyf)
+                                      (cons "cmap" new-cmap))
+                                passthrough))
                  (packed (%ttf-pack-tables alist)))
             (%ttf-fix-checksum-adjustment! packed)
             (cons packed new-num)))))
@@ -2799,87 +2925,113 @@ Example:
       ;; the font's resource name (F1, F2, …) so the tag is consistent
       ;; across saves of the same document.
       (let* ((suffix (substring font-resource-name 1
-                                 (string-length font-resource-name)))
-             (idx    (- (or (string->number suffix) 1) 1)))
+                                (string-length font-resource-name)))
+             (idx (- (or (string->number suffix) 1) 1)))
         (let loop ((n idx) (i 0) (acc '()))
-          (cond
-            ((= i 6) (list->string acc))
-            (else
-             (loop (quotient n 26) (+ i 1)
-                   (cons (integer->char (+ 65 (modulo n 26))) acc)))))))
+          (cond ((= i 6) (list->string acc))
+                (else (loop (quotient n 26)
+                            (+ i 1)
+                            (cons (integer->char (+ 65 (modulo n 26)))
+                                  acc)))))))
 
     (define (%emit-truetype-font! w font font-id)
-      (let* ((desc-id  (pdf-writer-allocate-id! w))
-             (fd-id    (pdf-writer-allocate-id! w))
-             (ff2-id   (pdf-writer-allocate-id! w))
-             (tu-id    (pdf-writer-allocate-id! w))
+      (let* ((desc-id (pdf-writer-allocate-id! w))
+             (fd-id (pdf-writer-allocate-id! w))
+             (ff2-id (pdf-writer-allocate-id! w))
+             (tu-id (pdf-writer-allocate-id! w))
              (orig-base (pdf-font-base-name font))
-             (meta     (pdf-font-descriptor-meta font))
-             (italic?  (cdr (assq 'italic? meta)))
-             (bbox     (cdr (assq 'font-bbox meta)))
-             (flags    (+ 4 (if italic? 64 0)))
+             (meta (pdf-font-descriptor-meta font))
+             (italic? (cdr (assq 'italic? meta)))
+             (bbox (cdr (assq 'font-bbox meta)))
+             (flags (+ 4 (if italic? 64 0)))
              ;; Build the subset font from the populated used-codepoints
              ;; vector. The original full TTF stays on the font record
              ;; (so subsequent saves can re-subset with more glyphs).
              (subset-pair (%ttf-subset (pdf-font-ttf-bytes font)
-                                        (pdf-font-used-codepoints font)))
-             (subset-bv   (car subset-pair))
-             (subset-num  (cdr subset-pair))
+                                       (pdf-font-used-codepoints font)))
+             (subset-bv (car subset-pair))
+             (subset-num (cdr subset-pair))
              ;; PDF convention: prefix subsetted font names with a 6-char
              ;; tag + '+'. The tag is purely informational for readers.
-             (base        (string-append (%subset-tag
-                                           (pdf-font-resource-name font))
-                                          "+" orig-base))
+             (base (string-append (%subset-tag (pdf-font-resource-name font))
+                                  "+"
+                                  orig-base))
              ;; Width array covers only the subset's GIDs.
-             (widths      (let* ((src (pdf-font-gid-widths font))
-                                 (v   (make-vector subset-num 0)))
-                            (let copy ((i 0))
-                              (cond
-                                ((= i subset-num) v)
-                                (else
-                                 (vector-set! v i (vector-ref src i))
-                                 (copy (+ i 1))))))))
+             (widths (let* ((src (pdf-font-gid-widths font))
+                            (v (make-vector subset-num 0)))
+                       (let copy ((i 0))
+                         (cond ((= i subset-num) v)
+                               (else (vector-set! v i (vector-ref src i))
+                                     (copy (+ i 1))))))))
         (pdf-writer-define-object! w font-id
-          (pdf/dict
-            "Type"            (pdf/name "Font")
-            "Subtype"         (pdf/name "Type0")
-            "BaseFont"        (pdf/name base)
-            "Encoding"        (pdf/name "Identity-H")
-            "DescendantFonts" (pdf/array (list (pdf/ref desc-id)))
-            "ToUnicode"       (pdf/ref tu-id)))
+                                   (pdf/dict
+                                    "Type"
+                                    (pdf/name "Font")
+                                    "Subtype"
+                                    (pdf/name "Type0")
+                                    "BaseFont"
+                                    (pdf/name base)
+                                    "Encoding"
+                                    (pdf/name "Identity-H")
+                                    "DescendantFonts"
+                                    (pdf/array (list (pdf/ref desc-id)))
+                                    "ToUnicode"
+                                    (pdf/ref tu-id)))
         (pdf-writer-define-object! w desc-id
-          (pdf/dict
-            "Type"           (pdf/name "Font")
-            "Subtype"        (pdf/name "CIDFontType2")
-            "BaseFont"       (pdf/name base)
-            "CIDSystemInfo"  (pdf/dict "Registry"   "Adobe"
-                                       "Ordering"   "Identity"
-                                       "Supplement" 0)
-            "FontDescriptor" (pdf/ref fd-id)
-            "DW"             1000
-            "W"              (pdf/literal (%ttf-build-w-array widths subset-num))
-            "CIDToGIDMap"    (pdf/name "Identity")))
+                                   (pdf/dict
+                                    "Type"
+                                    (pdf/name "Font")
+                                    "Subtype"
+                                    (pdf/name "CIDFontType2")
+                                    "BaseFont"
+                                    (pdf/name base)
+                                    "CIDSystemInfo"
+                                    (pdf/dict "Registry" "Adobe" "Ordering"
+                                              "Identity" "Supplement" 0)
+                                    "FontDescriptor"
+                                    (pdf/ref fd-id)
+                                    "DW"
+                                    1000
+                                    "W"
+                                    (pdf/literal
+                                     (%ttf-build-w-array widths subset-num))
+                                    "CIDToGIDMap"
+                                    (pdf/name "Identity")))
         (pdf-writer-define-object! w fd-id
-          (pdf/dict
-            "Type"        (pdf/name "FontDescriptor")
-            "FontName"    (pdf/name base)
-            "Flags"       flags
-            "FontBBox"    (pdf/array bbox)
-            "ItalicAngle" (if italic? -12 0)
-            "Ascent"      (cdr (assq 'ascender   meta))
-            "Descent"     (cdr (assq 'descender  meta))
-            "CapHeight"   (cdr (assq 'cap-height meta))
-            "StemV"       (if (cdr (assq 'bold? meta)) 120 80)
-            "FontFile2"   (pdf/ref ff2-id)))
+                                   (pdf/dict
+                                    "Type"
+                                    (pdf/name "FontDescriptor")
+                                    "FontName"
+                                    (pdf/name base)
+                                    "Flags"
+                                    flags
+                                    "FontBBox"
+                                    (pdf/array bbox)
+                                    "ItalicAngle"
+                                    (if italic? -12 0)
+                                    "Ascent"
+                                    (cdr (assq 'ascender meta))
+                                    "Descent"
+                                    (cdr (assq 'descender meta))
+                                    "CapHeight"
+                                    (cdr (assq 'cap-height meta))
+                                    "StemV"
+                                    (if (cdr (assq 'bold? meta)) 120 80)
+                                    "FontFile2"
+                                    (pdf/ref ff2-id)))
         (let ((compressed (zlib-compress subset-bv)))
           (pdf-writer-define-object! w ff2-id
-            (pdf/stream
-              (pdf/dict "Filter"  (pdf/name "FlateDecode")
-                        "Length1" (bytevector-length subset-bv))
-              compressed)))
+                                     (pdf/stream
+                                      (pdf/dict "Filter"
+                                                (pdf/name "FlateDecode")
+                                                "Length1"
+                                                (bytevector-length subset-bv))
+                                      compressed)))
         (pdf-writer-define-object! w tu-id
-          (let ((cmap-bytes (%ttf-build-tounicode font)))
-            (pdf/stream (pdf/dict) cmap-bytes)))))
+                                   (let
+                                       ((cmap-bytes
+                                         (%ttf-build-tounicode font)))
+                                     (pdf/stream (pdf/dict) cmap-bytes)))))
 
     (define (%ttf-build-w-array widths num-glyphs)
       ;; Emit a single contiguous run: "[0 [w0 w1 w2 ... w_{N-1}]]".
@@ -2892,15 +3044,14 @@ Example:
             (let ((w (vector-ref widths i)))
               ;; Round to one decimal place to keep the file compact.
               ;; Integer widths print without a decimal.
-              (display
-                (cond
-                  ((integer? w) (number->string (exact w)))
-                  (else
-                   (let ((r (/ (round (* w 10)) 10)))
-                     (number->string (if (integer? r) (exact r) (inexact r))))))
-                out))
-            (when (< i (- num-glyphs 1))
-              (display " " out))
+              (display (cond ((integer? w) (number->string (exact w)))
+                             (else (let ((r (/ (round (* w 10)) 10)))
+                                     (number->string
+                                      (if (integer? r)
+                                          (exact r)
+                                          (inexact r))))))
+                       out))
+            (when (< i (- num-glyphs 1)) (display " " out))
             (loop (+ i 1))))
         (display "] ]" out)
         (string->utf8 (get-output-string out))))
@@ -2910,62 +3061,69 @@ Example:
       ;; pairs collected during drawing. Surrogate-pair-encoded for
       ;; codepoints outside the BMP.
       (let* ((used (pdf-font-used-codepoints font))
-             (n    (vector-length used))
-             (out  (open-output-string)))
+             (n (vector-length used))
+             (out (open-output-string)))
         (display "/CIDInit /ProcSet findresource begin\n" out)
         (display "12 dict begin\nbegincmap\n" out)
-        (display "/CIDSystemInfo << /Registry (Adobe) /Ordering (UCS) /Supplement 0 >> def\n" out)
+        (display
+         "/CIDSystemInfo << /Registry (Adobe) /Ordering (UCS) /Supplement 0 >> def\n"
+         out)
         (display "/CMapName /Adobe-Identity-UCS def\n" out)
         (display "/CMapType 2 def\n" out)
-        (display "1 begincodespacerange\n<0000> <FFFF>\nendcodespacerange\n" out)
-        (let* ((entries
-                (let loop ((i 0) (acc '()))
-                  (cond
-                    ((= i n) (reverse acc))
-                    (else
-                     (let ((cp (vector-ref used i)))
-                       (loop (+ i 1)
-                             (if cp (cons (cons i cp) acc) acc)))))))
+        (display "1 begincodespacerange\n<0000> <FFFF>\nendcodespacerange\n"
+                 out)
+        (let* ((entries (let loop ((i 0) (acc '()))
+                          (cond ((= i n) (reverse acc))
+                                (else (let ((cp (vector-ref used i)))
+                                        (loop
+                                         (+ i 1)
+                                         (if cp
+                                             (cons (cons i cp) acc)
+                                             acc)))))))
                (count (length entries)))
           (when (positive? count)
             ;; bfchar groups are capped at 100 entries per the CMap spec.
             (let chunks ((rest entries))
-              (cond
-                ((null? rest) #t)
-                (else
-                 (let* ((take (if (> (length rest) 100) 100 (length rest)))
-                        (this (let loop ((r rest) (n take) (acc '()))
-                                (cond
-                                  ((zero? n) (reverse acc))
-                                  (else (loop (cdr r) (- n 1) (cons (car r) acc))))))
-                        (next (let loop ((r rest) (n take))
-                                (cond ((zero? n) r)
-                                      (else (loop (cdr r) (- n 1)))))))
-                   (display (number->string take) out)
-                   (display " beginbfchar\n" out)
-                   (for-each
-                     (lambda (e)
-                       (display "<" out)
-                       (display (%pad-hex (car e) 4) out)
-                       (display "> <" out)
-                       (display (%cp-to-utf16-hex (cdr e)) out)
-                       (display ">\n" out))
-                     this)
-                   (display "endbfchar\n" out)
-                   (chunks next)))))))
-        (display "endcmap\nCMapName currentdict /CMap defineresource pop\n" out)
+              (cond ((null? rest) #t)
+                    (else (let* ((take (if (> (length rest) 100)
+                                           100
+                                           (length rest)))
+                                 (this (let loop ((r rest) (n take) (acc '()))
+                                         (cond
+                                          ((zero? n) (reverse acc))
+                                          (else
+                                           (loop (cdr r)
+                                                 (- n 1)
+                                                 (cons (car r) acc))))))
+                                 (next (let loop ((r rest) (n take))
+                                         (cond
+                                          ((zero? n) r)
+                                          (else (loop (cdr r) (- n 1)))))))
+                            (display (number->string take) out)
+                            (display " beginbfchar\n" out)
+                            (for-each (lambda (e)
+                                        (display "<" out)
+                                        (display (%pad-hex (car e) 4) out)
+                                        (display "> <" out)
+                                        (display (%cp-to-utf16-hex (cdr e))
+                                                 out)
+                                        (display ">\n" out))
+                                      this)
+                            (display "endbfchar\n" out)
+                            (chunks next)))))))
+        (display "endcmap\nCMapName currentdict /CMap defineresource pop\n"
+                 out)
         (display "end\nend\n" out)
         (string->utf8 (get-output-string out))))
 
     (define (%cp-to-utf16-hex cp)
-      (cond
-        ((< cp #x10000) (%pad-hex cp 4))
-        (else
-         ;; Surrogate pair.
-         (let* ((c   (- cp #x10000))
-                (hi  (+ #xD800 (quotient c 1024)))
-                (lo  (+ #xDC00 (modulo c 1024))))
-           (string-append (%pad-hex hi 4) (%pad-hex lo 4))))))
+      (cond ((< cp #x10000) (%pad-hex cp 4))
+            (else
+             ;; Surrogate pair.
+             (let* ((c (- cp #x10000))
+                    (hi (+ #xD800 (quotient c 1024)))
+                    (lo (+ #xDC00 (modulo c 1024))))
+               (string-append (%pad-hex hi 4) (%pad-hex lo 4))))))
 
     ;; ──────────────────────────────────────────────────────────────────────
     ;; Images (phase 5)
@@ -2985,28 +3143,29 @@ Example:
       (%make-pdf-image resource-name object-id width height color-space
                        bits-per-component filter decode-parms data smask)
       pdf-image?
-      (resource-name      pdf-image-resource-name)
-      (object-id          pdf-image-object-id      set-pdf-image-object-id!)
-      (width              pdf-image-width)
-      (height             pdf-image-height)
-      (color-space        pdf-image-color-space)        ; pdf-name
+      (resource-name pdf-image-resource-name)
+      (object-id pdf-image-object-id set-pdf-image-object-id!)
+      (width pdf-image-width)
+      (height pdf-image-height)
+      (color-space pdf-image-color-space) ; pdf-name
       (bits-per-component pdf-image-bits-per-component) ; integer
-      (filter             pdf-image-filter)             ; pdf-name
-      (decode-parms       pdf-image-decode-parms)       ; pdf-dict or #f
-      (data               pdf-image-data)               ; bytevector
+      (filter pdf-image-filter) ; pdf-name
+      (decode-parms pdf-image-decode-parms) ; pdf-dict or #f
+      (data pdf-image-data) ; bytevector
       ;; Optional pdf-image holding the alpha mask. Not registered on
       ;; the document; emitted as a side-effect of the parent and
       ;; referenced through the parent's /SMask entry.
-      (smask              pdf-image-smask))             ; pdf-image or #f
+      (smask pdf-image-smask)) ; pdf-image or #f
 
     (define (%register-image! doc img)
       (set-pdf-document-images! doc
-        (append (pdf-document-images doc) (list img)))
+                                (append (pdf-document-images doc) (list img)))
       img)
 
     (define (%next-image-resource-name doc)
       (string-append "Im"
-                     (number->string (+ 1 (length (pdf-document-images doc))))))
+                     (number->string (+ 1
+                                        (length (pdf-document-images doc))))))
 
     ;; ── JPEG ──────────────────────────────────────────────────────────────
 
@@ -3014,34 +3173,36 @@ Example:
       ;; Returns (list width height components). Scans markers from the
       ;; SOI until a Start-Of-Frame marker (SOFn, n in 0..F except
       ;; 4=DHT, 8=JPG, 12=DAC) is found.
-      (unless (and (>= (bytevector-length bv) 4)
-                   (= (bytevector-u8-ref bv 0) #xFF)
-                   (= (bytevector-u8-ref bv 1) #xD8))
+      (unless
+          (and (>= (bytevector-length bv) 4)
+               (= (bytevector-u8-ref bv 0) #xFF)
+               (= (bytevector-u8-ref bv 1) #xD8))
         (error "pdf-embed-jpeg: not a JPEG (bad SOI)"))
       (let loop ((i 2))
-        (cond
-          ((>= i (- (bytevector-length bv) 1))
-           (error "pdf-embed-jpeg: no SOF marker found"))
-          ((not (= (bytevector-u8-ref bv i) #xFF))
-           (loop (+ i 1)))
-          (else
-           (let ((m (bytevector-u8-ref bv (+ i 1))))
-             (cond
-               ((= m #xFF) (loop (+ i 1)))      ; fill byte
-               ;; Standalone (no length): SOI, EOI, RSTn, TEM
-               ((or (= m 0) (= m #xD8) (= m #xD9) (= m #x01)
-                    (and (>= m #xD0) (<= m #xD7)))
-                (loop (+ i 2)))
-               ;; SOF markers: C0..CF excluding C4 (DHT), C8 (JPG), CC (DAC)
-               ((and (>= m #xC0) (<= m #xCF)
-                     (not (= m #xC4)) (not (= m #xC8)) (not (= m #xCC)))
-                (let ((h (%u16 bv (+ i 5)))
-                      (w (%u16 bv (+ i 7)))
-                      (c (%u8  bv (+ i 9))))
-                  (list w h c)))
-               (else
-                (let ((len (%u16 bv (+ i 2))))
-                  (loop (+ i 2 len))))))))))
+        (cond ((>= i (- (bytevector-length bv) 1))
+               (error "pdf-embed-jpeg: no SOF marker found"))
+              ((not (= (bytevector-u8-ref bv i) #xFF)) (loop (+ i 1)))
+              (else (let ((m (bytevector-u8-ref bv (+ i 1))))
+                      (cond ((= m #xFF) (loop (+ i 1))) ; fill byte
+                            ;; Standalone (no length): SOI, EOI, RSTn, TEM
+                            ((or (= m 0)
+                                 (= m #xD8)
+                                 (= m #xD9)
+                                 (= m #x01)
+                                 (and (>= m #xD0) (<= m #xD7)))
+                             (loop (+ i 2)))
+                            ;; SOF markers: C0..CF excluding C4 (DHT), C8 (JPG), CC (DAC)
+                            ((and (>= m #xC0)
+                                  (<= m #xCF)
+                                  (not (= m #xC4))
+                                  (not (= m #xC8))
+                                  (not (= m #xCC)))
+                             (let ((h (%u16 bv (+ i 5)))
+                                   (w (%u16 bv (+ i 7)))
+                                   (c (%u8 bv (+ i 9))))
+                               (list w h c)))
+                            (else (let ((len (%u16 bv (+ i 2))))
+                                    (loop (+ i 2 len))))))))))
 
     (define (pdf-embed-jpeg doc bv)
       "Syntax: (pdf-embed-jpeg doc jpeg-bytevector)
@@ -3061,30 +3222,36 @@ Example:
              (cs (cond ((= c 1) (pdf/name "DeviceGray"))
                        ((= c 3) (pdf/name "DeviceRGB"))
                        ((= c 4) (pdf/name "DeviceCMYK"))
-                       (else (error "pdf-embed-jpeg: unsupported component count" c))))
+                       (else (error
+                              "pdf-embed-jpeg: unsupported component count"
+                              c))))
              (rname (%next-image-resource-name doc))
              (img (%make-pdf-image rname #f w h cs 8
-                                   (pdf/name "DCTDecode") #f bv #f)))
+                                   (pdf/name "DCTDecode")
+                                   #f
+                                   bv
+                                   #f)))
         (%register-image! doc img)))
 
     ;; ── PNG ───────────────────────────────────────────────────────────────
 
     (define (%png-walk-chunks bv)
       ;; Returns alist of tag-string → list of (offset . length).
-      (unless (and (>= (bytevector-length bv) 8)
-                   (= (%u8 bv 0) #x89) (= (%u8 bv 1) #x50)
-                   (= (%u8 bv 2) #x4E) (= (%u8 bv 3) #x47))
+      (unless
+          (and (>= (bytevector-length bv) 8)
+               (= (%u8 bv 0) #x89)
+               (= (%u8 bv 1) #x50)
+               (= (%u8 bv 2) #x4E)
+               (= (%u8 bv 3) #x47))
         (error "pdf-embed-png: not a PNG (bad signature)"))
       (let loop ((i 8) (acc '()))
-        (cond
-          ((>= (+ i 8) (bytevector-length bv)) (reverse acc))
-          (else
-           (let* ((len (%u32 bv i))
-                  (tag (let ((s (make-bytevector 4 0)))
-                         (bytevector-copy! s 0 bv (+ i 4) (+ i 8))
-                         (utf8->string s))))
-             (loop (+ i 8 len 4)
-                   (cons (list tag (+ i 8) len) acc)))))))
+        (cond ((>= (+ i 8) (bytevector-length bv)) (reverse acc))
+              (else (let* ((len (%u32 bv i))
+                           (tag (let ((s (make-bytevector 4 0)))
+                                  (bytevector-copy! s 0 bv (+ i 4) (+ i 8))
+                                  (utf8->string s))))
+                      (loop (+ i 8 len 4)
+                            (cons (list tag (+ i 8) len) acc)))))))
 
     (define (pdf-embed-png doc bv)
       "Syntax: (pdf-embed-png doc png-bytevector)
@@ -3102,52 +3269,54 @@ Example:
   (define p (pdf-embed-png doc (pdf-read-binary-file \"logo.png\")))
   (pdf-draw-image page p 50 600 100 100)"
       (let* ((chunks (%png-walk-chunks bv))
-             (ihdr   (assoc "IHDR" chunks)))
-        (unless ihdr
-          (error "pdf-embed-png: missing IHDR chunk"))
-        (let* ((ihdr-off  (list-ref ihdr 1))
-               (width     (%u32 bv ihdr-off))
-               (height    (%u32 bv (+ ihdr-off 4)))
-               (bit-depth (%u8  bv (+ ihdr-off 8)))
-               (color-typ (%u8  bv (+ ihdr-off 9))))
+             (ihdr (assoc "IHDR" chunks)))
+        (unless ihdr (error "pdf-embed-png: missing IHDR chunk"))
+        (let* ((ihdr-off (list-ref ihdr 1))
+               (width (%u32 bv ihdr-off))
+               (height (%u32 bv (+ ihdr-off 4)))
+               (bit-depth (%u8 bv (+ ihdr-off 8)))
+               (color-typ (%u8 bv (+ ihdr-off 9))))
           (unless (= bit-depth 8)
             (error "pdf-embed-png: only 8-bit depth supported" bit-depth))
           (case color-typ
-            ((0) (%png-embed-verbatim doc bv chunks width height
-                                      (pdf/name "DeviceGray") 1))
-            ((2) (%png-embed-verbatim doc bv chunks width height
-                                      (pdf/name "DeviceRGB")  3))
+            ((0)
+             (%png-embed-verbatim doc bv chunks width height
+                                  (pdf/name "DeviceGray")
+                                  1))
+            ((2)
+             (%png-embed-verbatim doc bv chunks width height
+                                  (pdf/name "DeviceRGB")
+                                  3))
             ((4) (%png-embed-with-alpha doc bv chunks width height 1))
             ((6) (%png-embed-with-alpha doc bv chunks width height 3))
-            (else
-             (error "pdf-embed-png: unsupported color type (only 0,2,4,6 with bit-depth 8)"
-                    color-typ))))))
+            (else (error
+                   "pdf-embed-png: unsupported color type (only 0,2,4,6 with bit-depth 8)"
+                   color-typ))))))
 
     (define (%png-collect-idat bv chunks)
       (let loop ((rest chunks) (acc '()))
-        (cond
-          ((null? rest)
-           (bytevector-concat (reverse acc)))
-          ((string=? (car (car rest)) "IDAT")
-           (let* ((c (car rest))
-                  (off (list-ref c 1))
-                  (len (list-ref c 2))
-                  (b (make-bytevector len 0)))
-             (bytevector-copy! b 0 bv off (+ off len))
-             (loop (cdr rest) (cons b acc))))
-          (else (loop (cdr rest) acc)))))
+        (cond ((null? rest) (bytevector-concat (reverse acc)))
+              ((string=? (car (car rest)) "IDAT")
+               (let* ((c (car rest))
+                      (off (list-ref c 1))
+                      (len (list-ref c 2))
+                      (b (make-bytevector len 0)))
+                 (bytevector-copy! b 0 bv off (+ off len))
+                 (loop (cdr rest) (cons b acc))))
+              (else (loop (cdr rest) acc)))))
 
     (define (%png-embed-verbatim doc bv chunks width height cs components)
       ;; Fast path for non-alpha PNGs: hand the IDAT zlib stream
       ;; straight to PDF and let the reader apply Predictor 15.
-      (let* ((idat  (%png-collect-idat bv chunks))
-             (parms (pdf/dict "Predictor"        15
-                              "Columns"          width
-                              "Colors"           components
-                              "BitsPerComponent" 8))
+      (let* ((idat (%png-collect-idat bv chunks))
+             (parms (pdf/dict "Predictor" 15 "Columns" width "Colors"
+                              components "BitsPerComponent" 8))
              (rname (%next-image-resource-name doc))
-             (img   (%make-pdf-image rname #f width height cs 8
-                                     (pdf/name "FlateDecode") parms idat #f)))
+             (img (%make-pdf-image rname #f width height cs 8
+                                   (pdf/name "FlateDecode")
+                                   parms
+                                   idat
+                                   #f)))
         (%register-image! doc img)))
 
     ;; ── PNGs with alpha ──────────────────────────────────────────────────
@@ -3163,23 +3332,28 @@ Example:
       ;; For color types 4 (gray+alpha) and 6 (RGB+alpha): a color XObject,
       ;; plus a grayscale /SMask XObject unless the image is opaque.
       (let* ((decoded (%image-decode-rgba bv (* width height)))
-             (parts   (%rgba-split (car (cddr decoded)) color-comps))
-             (alpha   (cadr parts))
-             (cs      (if (= color-comps 1)
-                          (pdf/name "DeviceGray")
-                          (pdf/name "DeviceRGB")))
+             (parts (%rgba-split (car (cddr decoded)) color-comps))
+             (alpha (cadr parts))
+             (cs (if (= color-comps 1)
+                     (pdf/name "DeviceGray")
+                     (pdf/name "DeviceRGB")))
              ;; SMask isn't registered on the document — it lives on
              ;; the parent image's smask slot and gets an object id
              ;; allocated at write time.
-             (smask   (and alpha
-                           (%make-pdf-image "" #f width height
-                                            (pdf/name "DeviceGray") 8
-                                            (pdf/name "FlateDecode") #f
-                                            (zlib-compress alpha) #f)))
-             (rname   (%next-image-resource-name doc))
-             (img     (%make-pdf-image rname #f width height cs 8
-                                       (pdf/name "FlateDecode") #f
-                                       (zlib-compress (car parts)) smask)))
+             (smask (and alpha
+                         (%make-pdf-image "" #f width height
+                                          (pdf/name "DeviceGray")
+                                          8
+                                          (pdf/name "FlateDecode")
+                                          #f
+                                          (zlib-compress alpha)
+                                          #f)))
+             (rname (%next-image-resource-name doc))
+             (img (%make-pdf-image rname #f width height cs 8
+                                   (pdf/name "FlateDecode")
+                                   #f
+                                   (zlib-compress (car parts))
+                                   smask)))
         (%register-image! doc img)))
 
     ;; ── Emit + draw ──────────────────────────────────────────────────────
@@ -3188,29 +3362,32 @@ Example:
       ;; If the image carries an /SMask sibling, allocate its object id
       ;; now and emit it after the parent. The sibling does not appear
       ;; in any page's /XObject resources.
-      (let* ((smask    (pdf-image-smask img))
+      (let* ((smask (pdf-image-smask img))
              (smask-id (and smask (pdf-writer-allocate-id! w)))
-             (dict-entries
-              (list (cons "Type"             (pdf/name "XObject"))
-                    (cons "Subtype"          (pdf/name "Image"))
-                    (cons "Width"            (pdf-image-width  img))
-                    (cons "Height"           (pdf-image-height img))
-                    (cons "ColorSpace"       (pdf-image-color-space img))
-                    (cons "BitsPerComponent" (pdf-image-bits-per-component img))
-                    (cons "Filter"           (pdf-image-filter img)))))
+             (dict-entries (list (cons "Type" (pdf/name "XObject"))
+                                 (cons "Subtype" (pdf/name "Image"))
+                                 (cons "Width" (pdf-image-width img))
+                                 (cons "Height" (pdf-image-height img))
+                                 (cons "ColorSpace"
+                                       (pdf-image-color-space img))
+                                 (cons "BitsPerComponent"
+                                       (pdf-image-bits-per-component img))
+                                 (cons "Filter" (pdf-image-filter img)))))
         (when (pdf-image-decode-parms img)
           (set! dict-entries
-            (append dict-entries
-                    (list (cons "DecodeParms" (pdf-image-decode-parms img))))))
+                (append dict-entries
+                        (list (cons "DecodeParms"
+                                    (pdf-image-decode-parms img))))))
         (when smask-id
           (set-pdf-image-object-id! smask smask-id)
           (set! dict-entries
-            (append dict-entries
-                    (list (cons "SMask" (pdf/ref smask-id))))))
-        (pdf-writer-define-object! w (pdf-image-object-id img)
-          (pdf/stream (%make-pdf-dict dict-entries) (pdf-image-data img)))
-        (when smask
-          (%emit-image! w smask))))
+                (append dict-entries
+                        (list (cons "SMask" (pdf/ref smask-id))))))
+        (pdf-writer-define-object! w
+                                   (pdf-image-object-id img)
+                                   (pdf/stream (%make-pdf-dict dict-entries)
+                                               (pdf-image-data img)))
+        (when smask (%emit-image! w smask))))
 
     (define (pdf-draw-image page img x y w h)
       "Syntax: (pdf-draw-image page image x y width height)
@@ -3245,48 +3422,46 @@ Example:
                          'author \"Damian\"
                          'creator \"(scm pdf)\")"
       (let loop ((args pairs))
-        (cond
-          ((null? args) doc)
-          ((null? (cdr args))
-           (error "pdf-set-metadata!: odd number of arguments"))
-          (else
-           (let* ((key (car args))
-                  (val (cadr args))
-                  (md  (pdf-document-metadata doc))
-                  (existing (assq key md)))
-             (set-pdf-document-metadata! doc
-               (cond
-                 (existing
-                  (map (lambda (e)
-                         (if (eq? (car e) key) (cons key val) e))
-                       md))
-                 (else (append md (list (cons key val))))))
-             (loop (cddr args)))))))
+        (cond ((null? args) doc)
+              ((null? (cdr args))
+               (error "pdf-set-metadata!: odd number of arguments"))
+              (else (let* ((key (car args))
+                           (val (cadr args))
+                           (md (pdf-document-metadata doc))
+                           (existing (assq key md)))
+                      (set-pdf-document-metadata!
+                       doc
+                       (cond (existing (map
+                                        (lambda (e)
+                                          (if (eq? (car e) key)
+                                              (cons key val)
+                                              e))
+                                        md))
+                             (else (append md (list (cons key val))))))
+                      (loop (cddr args)))))))
 
     (define (%build-info-dict metadata)
-      (let ((key->name
-             (lambda (k)
-               (case k
-                 ((title)         "Title")
-                 ((author)        "Author")
-                 ((subject)       "Subject")
-                 ((keywords)      "Keywords")
-                 ((creator)       "Creator")
-                 ((producer)      "Producer")
-                 ((creation-date) "CreationDate")
-                 ((mod-date)      "ModDate")
-                 (else (symbol->string k))))))
-        (%make-pdf-dict
-          (map (lambda (e) (cons (key->name (car e)) (cdr e)))
-               metadata))))
+      (let ((key->name (lambda (k)
+                         (case k
+                           ((title) "Title")
+                           ((author) "Author")
+                           ((subject) "Subject")
+                           ((keywords) "Keywords")
+                           ((creator) "Creator")
+                           ((producer) "Producer")
+                           ((creation-date) "CreationDate")
+                           ((mod-date) "ModDate")
+                           (else (symbol->string k))))))
+        (%make-pdf-dict (map (lambda (e) (cons (key->name (car e)) (cdr e)))
+                             metadata))))
 
     ;; ── Annotations (link annotations) ───────────────────────────────────
 
     (define-record-type pdf-annotation
       (%make-pdf-annotation kind rect payload)
       pdf-annotation?
-      (kind    pdf-annotation-kind)     ; symbol: 'link
-      (rect    pdf-annotation-rect)     ; (list llx lly urx ury)
+      (kind pdf-annotation-kind) ; symbol: 'link
+      (rect pdf-annotation-rect) ; (list llx lly urx ury)
       (payload pdf-annotation-payload)) ; alist of (key . value) for /A etc.
 
     (define (pdf-add-link page rect uri)
@@ -3301,34 +3476,44 @@ Example:
   (pdf-add-link page '(100 695 200 712) \"https://example.com\")"
       (let ((a (%make-pdf-annotation 'link rect (list (cons 'uri uri)))))
         (set-pdf-page-annotations! page
-          (append (pdf-page-annotations page) (list a)))
+                                   (append (pdf-page-annotations page)
+                                           (list a)))
         a))
 
     (define (%emit-annotation! w a id)
       (case (pdf-annotation-kind a)
         ((link)
-         (let* ((uri  (cdr (assq 'uri (pdf-annotation-payload a))))
+         (let* ((uri (cdr (assq 'uri (pdf-annotation-payload a))))
                 (rect (pdf-annotation-rect a)))
            (pdf-writer-define-object! w id
-             (pdf/dict
-               "Type"    (pdf/name "Annot")
-               "Subtype" (pdf/name "Link")
-               "Rect"    (pdf/array rect)
-               "Border"  (pdf/array (list 0 0 0))
-               "A"       (pdf/dict "Type" (pdf/name "Action")
-                                   "S"    (pdf/name "URI")
-                                   "URI"  uri)))))
-        (else (error "pdf: unknown annotation kind" (pdf-annotation-kind a)))))
+                                      (pdf/dict
+                                       "Type"
+                                       (pdf/name "Annot")
+                                       "Subtype"
+                                       (pdf/name "Link")
+                                       "Rect"
+                                       (pdf/array rect)
+                                       "Border"
+                                       (pdf/array (list 0 0 0))
+                                       "A"
+                                       (pdf/dict "Type"
+                                                 (pdf/name "Action")
+                                                 "S"
+                                                 (pdf/name "URI")
+                                                 "URI"
+                                                 uri)))))
+        (else (error "pdf: unknown annotation kind"
+                     (pdf-annotation-kind a)))))
 
     ;; ── Outlines (bookmarks) ─────────────────────────────────────────────
 
     (define-record-type pdf-outline
       (%make-pdf-outline title page-ref y children object-id)
       pdf-outline?
-      (title     pdf-outline-title)
-      (page-ref  pdf-outline-page-ref)
-      (y         pdf-outline-y)
-      (children  pdf-outline-children  set-pdf-outline-children!)
+      (title pdf-outline-title)
+      (page-ref pdf-outline-page-ref)
+      (y pdf-outline-y)
+      (children pdf-outline-children set-pdf-outline-children!)
       (object-id pdf-outline-object-id set-pdf-outline-object-id!))
 
     (define (pdf-add-outline! doc page title . opts)
@@ -3345,15 +3530,14 @@ Example:
   (define ch1 (pdf-add-outline! doc page1 \"Chapter 1\"))
   (pdf-add-outline! doc page1 \"Section 1.1\" 'parent ch1)"
       (let* ((parent (%plist-ref opts 'parent #f))
-             (y      (%plist-ref opts 'y      #f))
-             (out    (%make-pdf-outline title page y '() #f)))
-        (cond
-          (parent
-           (set-pdf-outline-children! parent
-             (append (pdf-outline-children parent) (list out))))
-          (else
-           (set-pdf-document-outlines! doc
-             (append (pdf-document-outlines doc) (list out)))))
+             (y (%plist-ref opts 'y #f))
+             (out (%make-pdf-outline title page y '() #f)))
+        (cond (parent (set-pdf-outline-children!
+                       parent
+                       (append (pdf-outline-children parent) (list out))))
+              (else (set-pdf-document-outlines!
+                     doc
+                     (append (pdf-document-outlines doc) (list out)))))
         out))
 
     (define (%outlines-allocate-ids! w items)
@@ -3361,74 +3545,84 @@ Example:
       ;; depth-first order. Returns the input items list unchanged (ids
       ;; are stored on the records themselves).
       (let walk ((items items))
-        (for-each
-          (lambda (o)
-            (set-pdf-outline-object-id! o (pdf-writer-allocate-id! w))
-            (walk (pdf-outline-children o)))
-          items))
+        (for-each (lambda (o)
+                    (set-pdf-outline-object-id! o (pdf-writer-allocate-id! w))
+                    (walk (pdf-outline-children o)))
+                  items))
       items)
 
     (define (%outlines-count items)
       ;; Total visible descendant count (== children since we don't
       ;; collapse anything in this phase).
       (let loop ((xs items) (n 0))
-        (cond
-          ((null? xs) n)
-          (else
-           (loop (cdr xs)
-                 (+ n 1 (%outlines-count (pdf-outline-children (car xs)))))))))
+        (cond ((null? xs) n)
+              (else (loop (cdr xs)
+                          (+ n 1
+                             (%outlines-count
+                              (pdf-outline-children (car xs)))))))))
 
     (define (%emit-outlines! w top-items root-id)
       ;; Emit the root /Outlines dict, then each item.
-      (let* ((first  (car top-items))
-             (last   (car (reverse top-items)))
-             (count  (%outlines-count top-items)))
+      (let* ((first (car top-items))
+             (last (car (reverse top-items)))
+             (count (%outlines-count top-items)))
         (pdf-writer-define-object! w root-id
-          (pdf/dict "Type"  (pdf/name "Outlines")
-                    "First" (pdf/ref (pdf-outline-object-id first))
-                    "Last"  (pdf/ref (pdf-outline-object-id last))
-                    "Count" count))
+                                   (pdf/dict
+                                    "Type"
+                                    (pdf/name "Outlines")
+                                    "First"
+                                    (pdf/ref (pdf-outline-object-id first))
+                                    "Last"
+                                    (pdf/ref (pdf-outline-object-id last))
+                                    "Count"
+                                    count))
         (let recurse ((parent-id root-id) (items top-items))
           (let* ((prev-ids (cons #f (map pdf-outline-object-id items)))
                  (next-ids (append (cdr (map pdf-outline-object-id items))
                                    (list #f))))
-            (for-each
-              (lambda (item prev-id next-id)
-                (%emit-outline-item! w item parent-id prev-id next-id)
-                (when (not (null? (pdf-outline-children item)))
-                  (recurse (pdf-outline-object-id item)
-                           (pdf-outline-children item))))
-              items prev-ids next-ids)))))
+            (for-each (lambda (item prev-id next-id)
+                        (%emit-outline-item! w item parent-id prev-id next-id)
+                        (when (not (null? (pdf-outline-children item)))
+                          (recurse (pdf-outline-object-id item)
+                                   (pdf-outline-children item))))
+                      items
+                      prev-ids
+                      next-ids)))))
 
     (define (%emit-outline-item! w item parent-id prev-id next-id)
-      (let* ((page     (pdf-outline-page-ref item))
-             (page-id  (pdf-page-object-id page))
+      (let* ((page (pdf-outline-page-ref item))
+             (page-id (pdf-page-object-id page))
              (children (pdf-outline-children item))
-             (y        (or (pdf-outline-y item) (pdf-page-height page)))
+             (y (or (pdf-outline-y item) (pdf-page-height page)))
              ;; /Dest [page /XYZ 0 y null] — null = retain current zoom.
-             (dest     (pdf/array
-                         (list (pdf/ref page-id)
-                               (pdf/name "XYZ") 0 y 'null)))
-             (entries
-              (list (cons "Title"  (pdf-outline-title item))
-                    (cons "Parent" (pdf/ref parent-id))
-                    (cons "Dest"   dest))))
+             (dest (pdf/array (list (pdf/ref page-id)
+                                    (pdf/name "XYZ")
+                                    0
+                                    y
+                                    'null)))
+             (entries (list (cons "Title" (pdf-outline-title item))
+                            (cons "Parent" (pdf/ref parent-id))
+                            (cons "Dest" dest))))
         (when prev-id
           (set! entries
-            (append entries (list (cons "Prev" (pdf/ref prev-id))))))
+                (append entries (list (cons "Prev" (pdf/ref prev-id))))))
         (when next-id
           (set! entries
-            (append entries (list (cons "Next" (pdf/ref next-id))))))
+                (append entries (list (cons "Next" (pdf/ref next-id))))))
         (when (not (null? children))
           (set! entries
-            (append entries
-                    (list (cons "First" (pdf/ref (pdf-outline-object-id
-                                                   (car children))))
-                          (cons "Last"  (pdf/ref (pdf-outline-object-id
-                                                   (car (reverse children)))))
-                          (cons "Count" (%outlines-count children))))))
-        (pdf-writer-define-object! w (pdf-outline-object-id item)
-          (%make-pdf-dict entries))))
+                (append entries
+                        (list (cons "First"
+                                    (pdf/ref
+                                     (pdf-outline-object-id (car children))))
+                              (cons "Last"
+                                    (pdf/ref
+                                     (pdf-outline-object-id
+                                      (car (reverse children)))))
+                              (cons "Count" (%outlines-count children))))))
+        (pdf-writer-define-object! w
+                                   (pdf-outline-object-id item)
+                                   (%make-pdf-dict entries))))
 
     (define (pdf-save doc path)
       "Syntax: (pdf-save doc path)
@@ -3439,9 +3633,7 @@ Example:
   (define doc (make-pdf))
   (pdf-add-page! doc)
   (pdf-save doc \"blank.pdf\")"
-      (let ((bv   (pdf->bytevector doc))
+      (let ((bv (pdf->bytevector doc))
             (port (open-binary-output-file path)))
         (write-bytevector bv port)
-        (close-output-port port)))
-
-    ))
+        (close-output-port port)))))

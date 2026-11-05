@@ -5,4 +5,5 @@
 
 (define-library (srfi 271)
   (import (srfi 271 randomized))
-  (export make-random-port random-port?))
+  (export make-random-port
+          random-port?))

@@ -1,14 +1,15 @@
 (define-library (scm string)
-  (import (scm core) (scheme base))
-  (export string-matches
+  (import (scheme base)
+          (scm core))
+  (export string-contains-from
+          string-matches
           string-replace-all
           string-replace-all-regex
           string-split
-          string-split-vector
-          symbol-starts-with?
           string-split-char
           string-split-lines
-          string-contains-from)
+          string-split-vector
+          symbol-starts-with?)
   (begin
     (define string-matches (%primitive "string-matches"))
     (define string-replace-all (%primitive "string-replace-all"))
@@ -28,13 +29,10 @@ Example:
   (string-split-char \"\" #\\,) => (\"\")"
       (let* ((n (string-length s)))
         (let loop ((i 0) (start 0) (acc '()))
-          (cond
-            ((= i n)
-             (reverse (cons (substring s start n) acc)))
-            ((char=? (string-ref s i) ch)
-             (loop (+ i 1) (+ i 1)
-                   (cons (substring s start i) acc)))
-            (else (loop (+ i 1) start acc))))))
+          (cond ((= i n) (reverse (cons (substring s start n) acc)))
+                ((char=? (string-ref s i) ch)
+                 (loop (+ i 1) (+ i 1) (cons (substring s start i) acc)))
+                (else (loop (+ i 1) start acc))))))
 
     (define (string-split-lines s)
       "Syntax: (string-split-lines s)
@@ -46,17 +44,15 @@ Example:
   (string-split-lines \"a\\r\\nb\") => (\"a\" \"b\")"
       (let* ((n (string-length s)))
         (let loop ((i 0) (start 0) (acc '()))
-          (cond
-            ((= i n)
-             (reverse (cons (substring s start n) acc)))
-            ((char=? (string-ref s i) #\newline)
-             (let ((end (if (and (> i start)
-                                 (char=? (string-ref s (- i 1)) #\return))
-                            (- i 1)
-                            i)))
-               (loop (+ i 1) (+ i 1)
-                     (cons (substring s start end) acc))))
-            (else (loop (+ i 1) start acc))))))
+          (cond ((= i n) (reverse (cons (substring s start n) acc)))
+                ((char=? (string-ref s i) #\newline)
+                 (let
+                     ((end (if (and (> i start)
+                                    (char=? (string-ref s (- i 1)) #\return))
+                               (- i 1)
+                               i)))
+                   (loop (+ i 1) (+ i 1) (cons (substring s start end) acc))))
+                (else (loop (+ i 1) start acc))))))
 
     (define (string-contains-from haystack needle start)
       "Syntax: (string-contains-from haystack needle start)
@@ -71,22 +67,17 @@ Example:
       (let* ((hn (string-length haystack))
              (nn (string-length needle))
              (limit (- hn nn)))
-        (cond
-          ((= nn 0) start)
-          ((< limit 0) #f)
-          (else
-           (let ((n0 (string-ref needle 0)))
-             (let outer ((i start))
-               (cond
-                 ((> i limit) #f)
-                 ((not (char=? (string-ref haystack i) n0))
-                  (outer (+ i 1)))
-                 (else
-                  (let inner ((j 1))
-                    (cond
-                      ((= j nn) i)
-                      ((char=? (string-ref haystack (+ i j))
-                               (string-ref needle j))
-                       (inner (+ j 1)))
-                      (else (outer (+ i 1))))))))))))))
-)
+        (cond ((= nn 0) start)
+              ((< limit 0) #f)
+              (else (let ((n0 (string-ref needle 0)))
+                      (let outer ((i start))
+                        (cond ((> i limit) #f)
+                              ((not (char=? (string-ref haystack i) n0))
+                               (outer (+ i 1)))
+                              (else (let inner ((j 1))
+                                      (cond
+                                       ((= j nn) i)
+                                       ((char=? (string-ref haystack (+ i j))
+                                                (string-ref needle j))
+                                        (inner (+ j 1)))
+                                       (else (outer (+ i 1)))))))))))))))

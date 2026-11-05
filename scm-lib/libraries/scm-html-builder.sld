@@ -1,11 +1,14 @@
 (define-library (scm html builder)
-  (import (scm core) (scheme base) (scheme write) (scm html))
-  (export html->string
-          html->port
+  (import (scheme base)
+          (scheme write)
+          (scm core)
+          (scm html))
+  (export html->port
+          html->string
+          html5
           raw
-          raw?
           raw-value
-          html5)
+          raw?)
   (begin
 
     ;; --------------------------------------------------------------
@@ -64,78 +67,67 @@ Example:
     (define void-elements
       '(area base br col embed hr img input link meta source track wbr))
 
-    (define (void-element? sym)
-      (memq sym void-elements))
+    (define (void-element? sym) (memq sym void-elements))
 
     ;; --- attribute writing ---
 
     (define (write-attr-value v out)
       (write-char #\" out)
-      (cond
-        ((string? v) (write-string (html-attr-escape v) out))
-        ((number? v) (write-string (number->string v) out))
-        ((raw? v)    (write-string (raw-value v) out))
-        (else (error "html: bad attribute value" v)))
+      (cond ((string? v) (write-string (html-attr-escape v) out))
+            ((number? v) (write-string (number->string v) out))
+            ((raw? v) (write-string (raw-value v) out))
+            (else (error "html: bad attribute value" v)))
       (write-char #\" out))
 
     (define (write-attrs attrs out)
       (let loop ((as attrs))
-        (cond
-          ((null? as) #f)
-          (else
-           (let* ((pair (car as))
-                  (name (car pair))
-                  (val  (cond ((pair? (cdr pair)) (cadr pair))
-                              (else (error "html: bad attribute pair" pair)))))
-             (cond
-               ((eq? val #f) #f)
-               ((eq? val #t)
-                (write-char #\space out)
-                (write-string (symbol->string name) out))
-               (else
-                (write-char #\space out)
-                (write-string (symbol->string name) out)
-                (write-char #\= out)
-                (write-attr-value val out)))
-             (loop (cdr as)))))))
+        (cond ((null? as) #f)
+              (else (let* ((pair (car as))
+                           (name (car pair))
+                           (val (cond ((pair? (cdr pair)) (cadr pair))
+                                      (else
+                                       (error "html: bad attribute pair"
+                                              pair)))))
+                      (cond ((eq? val #f) #f)
+                            ((eq? val #t)
+                             (write-char #\space out)
+                             (write-string (symbol->string name) out))
+                            (else (write-char #\space out)
+                                  (write-string (symbol->string name) out)
+                                  (write-char #\= out)
+                                  (write-attr-value val out)))
+                      (loop (cdr as)))))))
 
     (define (split-attrs body)
       ;; If the first item of body is (@ ...), return two values
       ;; (attrs rest); else ('() body).
-      (cond
-        ((and (pair? body) (pair? (car body)) (eq? (caar body) '@))
-         (values (cdr (car body)) (cdr body)))
-        (else (values '() body))))
+      (cond ((and (pair? body) (pair? (car body)) (eq? (caar body) '@))
+             (values (cdr (car body)) (cdr body)))
+            (else (values '() body))))
 
     ;; --- main walker ---
 
     (define (walk-children xs out)
       (let loop ((xs xs))
-        (cond
-          ((null? xs) #f)
-          (else (walk (car xs) out) (loop (cdr xs))))))
+        (cond ((null? xs) #f)
+              (else (walk (car xs) out) (loop (cdr xs))))))
 
     (define (walk node out)
-      (cond
-        ((not node) #f)              ; #f → nothing
-        ((null? node) #f)            ; () → nothing
-        ((string? node)
-         (write-string (html-escape node) out))
-        ((number? node)
-         (write-string (number->string node) out))
-        ((raw? node)
-         (write-string (raw-value node) out))
-        ((symbol? node)
-         ;; A bare symbol in content position: render its name (escaped).
-         ;; Useful enough for things like ,some-symbol in attributes; rare
-         ;; in content but harmless.
-         (write-string (html-escape (symbol->string node)) out))
-        ((pair? node)
-         (cond
-           ((symbol? (car node)) (emit-element (car node) (cdr node) out))
-           (else                 (walk-children node out))))
-        (else
-         (error "html: cannot render" node))))
+      (cond ((not node) #f) ; #f → nothing
+            ((null? node) #f) ; () → nothing
+            ((string? node) (write-string (html-escape node) out))
+            ((number? node) (write-string (number->string node) out))
+            ((raw? node) (write-string (raw-value node) out))
+            ((symbol? node)
+             ;; A bare symbol in content position: render its name (escaped).
+             ;; Useful enough for things like ,some-symbol in attributes; rare
+             ;; in content but harmless.
+             (write-string (html-escape (symbol->string node)) out))
+            ((pair? node)
+             (cond ((symbol? (car node))
+                    (emit-element (car node) (cdr node) out))
+                   (else (walk-children node out))))
+            (else (error "html: cannot render" node))))
 
     (define (emit-element tag body out)
       (call-with-values (lambda () (split-attrs body))
@@ -143,15 +135,12 @@ Example:
           (write-char #\< out)
           (write-string (symbol->string tag) out)
           (write-attrs attrs out)
-          (cond
-            ((void-element? tag)
-             (write-char #\> out))
-            (else
-             (write-char #\> out)
-             (walk-children children out)
-             (write-string "</" out)
-             (write-string (symbol->string tag) out)
-             (write-char #\> out))))))
+          (cond ((void-element? tag) (write-char #\> out))
+                (else (write-char #\> out)
+                      (walk-children children out)
+                      (write-string "</" out)
+                      (write-string (symbol->string tag) out)
+                      (write-char #\> out))))))
 
     ;; --- public entry points ---
 
@@ -190,6 +179,4 @@ Example:
     (html5 '(head (title \"hi\"))
            '(body (p \"hello\"))))
   ;; → \"<!doctype html>\\n<html><head><title>hi</title></head>...\""
-      (list (raw "<!doctype html>\n")
-            (cons 'html body)))
-))
+      (list (raw "<!doctype html>\n") (cons 'html body)))))

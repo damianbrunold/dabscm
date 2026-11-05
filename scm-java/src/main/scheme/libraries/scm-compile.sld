@@ -41,9 +41,7 @@ Description: Returns #t if obj is a macro (a pair whose car is the symbol
 Example:
   (macro? (list 'macro (lambda (x) x))) => #t
   (macro? car) => #f"
-      (and (pair? obj)
-           (eq? (car obj) 'macro)
-           (lambda? (cadr obj))))
+      (and (pair? obj) (eq? (car obj) 'macro) (lambda? (cadr obj))))
 
     (define (atom? obj)
       "Syntax: (atom? obj)

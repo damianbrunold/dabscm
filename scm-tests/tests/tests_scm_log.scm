@@ -1,4 +1,6 @@
-(import (scheme base) (scm log) (scm test))
+(import (scheme base)
+        (scm log)
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 
@@ -11,16 +13,14 @@
 
 (define (capture thunk)
   (let ((p (open-output-string)))
-    (parameterize ((log-port p))
-      (thunk))
+    (parameterize ((log-port p)) (thunk))
     (get-output-string p)))
 
 (define (line-tail s)
   ;; Drop the leading "YYYY-MM-DD HH:MM:SS " (20 chars including the space)
   ;; and any trailing newline.
   (let* ((n (string-length s))
-         (end (if (and (> n 0)
-                       (char=? (string-ref s (- n 1)) #\newline))
+         (end (if (and (> n 0) (char=? (string-ref s (- n 1)) #\newline))
                   (- n 1)
                   n)))
     (substring s 20 end)))

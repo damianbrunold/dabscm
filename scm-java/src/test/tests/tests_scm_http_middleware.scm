@@ -1,11 +1,11 @@
 (import (scheme base)
         (scheme file)
         (scm fs)
-        (scm string)
         (scm log)
+        (scm net http middleware)
         (scm net http request)
         (scm net http response)
-        (scm net http middleware)
+        (scm string)
         (scm test))
 
 (test-runner-factory scm-test-runner)
@@ -26,43 +26,63 @@
 (define (ok r) (http-ok "fine"))
 
 (test-group "with-error-handler"
-  (let* ((out (with-log (lambda () ((with-error-handler boom) (req "/x?token=abc")))))
+  (let* ((out (with-log
+                  (lambda ()
+                    ((with-error-handler boom) (req "/x?token=abc")))))
          (resp (car out)))
     (test-equal 500 (http-response-status resp))
     (test-equal "Internal Server Error" (http-response-body resp))
-    (test-assert "logged" (contains? (cdr out) "ERROR [http] GET /x raised: db password is \"hunter2\""))
+    (test-assert "logged"
+                 (contains? (cdr out)
+                            "ERROR [http] GET /x raised: db password is \"hunter2\""))
     (test-assert "no query in log" (not (contains? (cdr out) "token=abc"))))
   ;; custom error page keeps its body and headers but is always a 500
-  (let ((resp (car (with-log
-                    (lambda ()
-                      ((with-error-handler boom (lambda (r) (html-response "<h1>Oops</h1>")))
-                       (req "/")))))))
+  (let
+      ((resp (car (with-log
+                      (lambda ()
+                        ((with-error-handler boom
+                           (lambda (r) (html-response "<h1>Oops</h1>")))
+                         (req "/")))))))
     (test-equal 500 (http-response-status resp))
     (test-equal "<h1>Oops</h1>" (http-response-body resp)))
   ;; a failing error page falls back to the plain 500
   (test-equal "Internal Server Error"
-    (http-response-body
-     (car (with-log (lambda () ((with-error-handler boom boom) (req "/")))))))
+              (http-response-body (car (with-log
+                                           (lambda ()
+                                             ((with-error-handler boom boom)
+                                              (req "/")))))))
   ;; non-response return values
-  (let ((out (with-log (lambda () ((with-error-handler (lambda (r) 'oops)) (req "/y"))))))
+  (let
+      ((out (with-log
+                (lambda ()
+                  ((with-error-handler (lambda (r) 'oops)) (req "/y"))))))
     (test-equal 500 (http-response-status (car out)))
     (test-assert (contains? (cdr out) "did not return an http-response")))
   ;; raising a non-condition
-  (test-equal 500 (http-response-status
-                   (car (with-log (lambda () ((with-error-handler (lambda (r) (raise 'x))) (req "/")))))))
+  (test-equal 500
+              (http-response-status (car
+                                     (with-log
+                                         (lambda ()
+                                           ((with-error-handler
+                                                (lambda (r) (raise 'x)))
+                                            (req "/")))))))
   ;; normal responses pass through, nothing logged
   (let ((out (with-log (lambda () ((with-error-handler ok) (req "/"))))))
     (test-equal "fine" (http-response-body (car out)))
     (test-equal "" (cdr out))))
 
 (test-group "with-access-log"
-  (let ((out (with-log (lambda () ((with-access-log ok) (req "/a/b?q=secret"))))))
+  (let
+      ((out (with-log
+                (lambda () ((with-access-log ok) (req "/a/b?q=secret"))))))
     (test-equal "fine" (http-response-body (car out)))
     (test-assert (contains? (cdr out) "INFO  [http] GET /a/b -> 200 ("))
     (test-assert (not (contains? (cdr out) "secret"))))
-  (let ((out (with-log (lambda ()
-                         ((with-access-log ok `((log-url . ,(lambda (u) u))))
-                          (req "/a?q=1"))))))
+  (let
+      ((out (with-log
+                (lambda ()
+                  ((with-access-log ok `((log-url . ,(lambda (u) u))))
+                   (req "/a?q=1"))))))
     (test-assert (contains? (cdr out) "GET /a?q=1 -> 200")))
   ;; inner raise: logged as 500, re-raised
   (let* ((p (open-output-string))
@@ -72,37 +92,56 @@
     (test-equal 'reraised raised)
     (test-assert (contains? (get-output-string p) "GET /z -> 500")))
   ;; the intended nesting: error handler inside the access log
-  (let ((out (with-log (lambda () ((with-access-log (with-error-handler boom)) (req "/n"))))))
+  (let
+      ((out (with-log
+                (lambda ()
+                  ((with-access-log (with-error-handler boom)) (req "/n"))))))
     (test-equal 500 (http-response-status (car out)))
     (test-assert (contains? (cdr out) "GET /n -> 500"))))
 
 (test-group "with-response-headers / with-security-headers"
   (let ((resp ((with-security-headers ok) (req "/"))))
-    (test-assert (contains? (http-response-header resp "Content-Security-Policy")
+    (test-assert (contains? (http-response-header resp
+                                                  "Content-Security-Policy")
                             "frame-ancestors 'none'"))
-    (test-equal "nosniff" (http-response-header resp "X-Content-Type-Options"))
+    (test-equal "nosniff"
+                (http-response-header resp "X-Content-Type-Options"))
     (test-equal "DENY" (http-response-header resp "X-Frame-Options"))
     (test-equal "same-origin" (http-response-header resp "Referrer-Policy"))
     (test-equal "fine" (http-response-body resp)))
   ;; a header the handler set wins (case-insensitive)
-  (let ((resp ((with-security-headers
-                (lambda (r) (make-http-response 200 '(("content-security-policy" . "mine")) "")))
-               (req "/"))))
+  (let
+      ((resp ((with-security-headers
+                  (lambda (r)
+                    (make-http-response
+                     200
+                     '(("content-security-policy" . "mine"))
+                     "")))
+              (req "/"))))
     (test-equal "mine" (http-response-header resp "Content-Security-Policy")))
   ;; custom CSP
   (test-equal "default-src 'none'"
-    (http-response-header ((with-security-headers ok "default-src 'none'") (req "/"))
-                          "Content-Security-Policy"))
+              (http-response-header ((with-security-headers ok
+                                       "default-src 'none'")
+                                     (req "/"))
+                                    "Content-Security-Policy"))
   (test-equal 4 (length security-headers))
   (test-equal "no-store"
-    (http-response-header ((with-response-headers ok '(("Cache-Control" . "no-store"))) (req "/"))
-                          "Cache-Control")))
+              (http-response-header ((with-response-headers ok
+                                       '(("Cache-Control" . "no-store")))
+                                     (req "/"))
+                                    "Cache-Control")))
 
 (test-group "headers are added without touching the body"
   (let* ((path (mktemp '(prefix . "mw-file")))
-         (_ (call-with-output-file path (lambda (p) (write-string "abcdef" p))))
-         (file-handler (lambda (r) (make-http-file-response 200 '() path 1 3)))
-         (stream-handler (lambda (r) (make-http-stream-response 200 '() (lambda (port) #t))))
+         (_ (call-with-output-file path
+              (lambda (p) (write-string "abcdef" p))))
+         (file-handler (lambda (r)
+                         (make-http-file-response 200 '() path 1 3)))
+         (stream-handler (lambda (r)
+                           (make-http-stream-response 200
+                                                      '()
+                                                      (lambda (port) #t))))
          (f ((with-security-headers file-handler) (req "/")))
          (s ((with-security-headers stream-handler) (req "/"))))
     ;; the file part is still there (read here only by the test)

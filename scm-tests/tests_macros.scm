@@ -1,10 +1,7 @@
 ;; -------------------------------
 ;; simple macro, no hygiene needed
 
-(define-syntax when
-  (syntax-rules ()
-    [(when test expr)
-     (if test expr)]))
+(define-syntax when (syntax-rules () ((when test expr) (if test expr))))
 
 ;; Test:
 (when #t (display "hello"))
@@ -18,13 +15,10 @@
 ;; Hygiene with introduced identifiers
 
 (define-syntax unless
-  (syntax-rules ()
-    [(unless test expr)
-     (if (not test) expr)]))
+  (syntax-rules () ((unless test expr) (if (not test) expr))))
 
 ;; Test:
-(let ([not #f])
-  (unless #f (display "world")))
+(let ((not #f)) (unless #f (display "world")))
 
 ;; Expected expansion:
 (if (not #f) (display "world"))
@@ -36,19 +30,16 @@
 
 (define-syntax my-or
   (syntax-rules ()
-    [(my-or) #f]
-    [(my-or expr) expr]
-    [(my-or expr1 expr2 ...)
-     (let ([temp expr1])
-       (if temp temp (my-or expr2 ...)))]))
+    ((my-or) #f)
+    ((my-or expr) expr)
+    ((my-or expr1 expr2 ...)
+     (let ((temp expr1)) (if temp temp (my-or expr2 ...))))))
 
 ;; Test:
 (my-or #f #f "found")
 
 ;; Expected expansion:
-(let ([temp #f])
-  (if temp temp (let ([temp #f])
-                  (if temp temp "found"))))
+(let ((temp #f)) (if temp temp (let ((temp #f)) (if temp temp "found"))))
 
 ;; Expected output: "found"
 
@@ -60,16 +51,13 @@
 
 (define x 10)
 
-(define-syntax get-x
-  (syntax-rules ()
-    [(get-x) x]))
+(define-syntax get-x (syntax-rules () ((get-x) x)))
 
 ;; Test:
-(let ([x 20])
-  (get-x))
+(let ((x 20)) (get-x))
 
 ;; Expected expansion:
-(let ([x 20]) x)
+(let ((x 20)) x)
 
 ;; Expected output: 20
 
@@ -81,19 +69,13 @@
 ;; Macro-introduced bindings
 
 (define-syntax with
-  (syntax-rules ()
-    [(with name value body)
-     (let ([name value])
-       body)]))
+  (syntax-rules () ((with name value body) (let ((name value)) body))))
 
 ;; Test:
-(let ([x 1])
-  (with x 2 (+ x 10)))
+(let ((x 1)) (with x 2 (+ x 10)))
 
 ;; Expected expansion:
-(let ([x 1])
-  (let ([x 2])
-    (+ x 10)))
+(let ((x 1)) (let ((x 2)) (+ x 10)))
 
 ;; Expected output: 12
 
@@ -105,9 +87,8 @@
 
 (define-syntax list*
   (syntax-rules ()
-    [(list* last) last]
-    [(list* first rest ...)
-     (cons first (list* rest ...))]))
+    ((list* last) last)
+    ((list* first rest ...) (cons first (list* rest ...)))))
 
 ;; Test:
 (list* 1 2 3 '())
@@ -128,9 +109,7 @@
   (export my-when)
   (begin
     (define-syntax my-when
-      (syntax-rules ()
-        [(my-when test expr)
-         (if test expr)]))))
+      (syntax-rules () ((my-when test expr) (if test expr))))))
 
 ;; In the REPL:
 (import (mylib))
@@ -150,9 +129,7 @@
   (export unless)
   (begin
     (define-syntax unless
-      (syntax-rules ()
-        [(unless test expr)
-         (if (not test) expr)]))))
+      (syntax-rules () ((unless test expr) (if (not test) expr))))))
 
 ;; In file "lib2.sls":
 (define-library (lib2)
@@ -160,9 +137,7 @@
   (export my-unless)
   (begin
     (define-syntax my-unless
-      (syntax-rules ()
-        [(my-unless test expr)
-         (unless test expr)]))))
+      (syntax-rules () ((my-unless test expr) (unless test expr))))))
 
 ;; In the REPL:
 (import (lib2))
@@ -181,21 +156,15 @@
 
 (define-syntax define-alias
   (syntax-rules ()
-    [(define-alias new old)
-     (define-syntax new
-       (syntax-rules ()
-         [(new arg ...)
-          (old arg ...)]))]))
+    ((define-alias new old)
+     (define-syntax new (syntax-rules () ((new arg ...) (old arg ...)))))))
 
 ;; Test:
 (define-alias print display)
 (print "macro-generated macro")
 
 ;; Expected expansion:
-(define-syntax print
-  (syntax-rules ()
-    [(print arg ...)
-     (display arg ...)]))
+(define-syntax print (syntax-rules () ((print arg ...) (display arg ...))))
 (print "macro-generated macro")
 
 ;; Expected output: "macro-generated macro"
@@ -208,20 +177,21 @@
 
 (define counter 0)
 (define-syntax next
-  (syntax-rules ()
-    [(next)
-     (begin
-       (set! counter (+ counter 1))
-       counter)]))
+  (syntax-rules () ((next) (begin (set! counter (+ counter 1)) counter))))
 
 ;; Test:
 (list (next) (next) (next))
 
 ;; Expected expansion:
-(list
-  (begin (set! counter (+ counter 1)) counter)
-  (begin (set! counter (+ counter 1)) counter)
-  (begin (set! counter (+ counter 1)) counter))
+(list (begin
+        (set! counter (+ counter 1))
+        counter)
+      (begin
+        (set! counter (+ counter 1))
+        counter)
+      (begin
+        (set! counter (+ counter 1))
+        counter))
 
 ;; Expected output: (1 2 3)
 
@@ -234,23 +204,21 @@
 
 (define-syntax for
   (syntax-rules ()
-    [(for i in list body ...)
-     (let loop ([lst list])
-       (if (null? lst)
-           'done
-           (let ([i (car lst)])
-             body ...
-             (loop (cdr lst)))))]))
+    ((for i in list body ...)
+     (let loop
+          ((lst list))
+          (if (null? lst)
+              'done
+              (let ((i (car lst))) body ... (loop (cdr lst))))))))
 
 ;; Test:
-(for x in '(1 2 3)
-     (display x))
+(for x in '(1 2 3) (display x))
 
 ;; Expected expansion:
-(let loop ([lst '(1 2 3)])
+(let loop ((lst '(1 2 3)))
   (if (null? lst)
       'done
-      (let ([x (car lst)])
+      (let ((x (car lst)))
         (display x)
         (loop (cdr lst)))))
 
@@ -269,13 +237,12 @@
   (begin
     (define-syntax my-let
       (syntax-rules ()
-        [(my-let ([name value]) body ...)
-         ((lambda (name) body ...) value)]))))
+        ((my-let ((name value)) body ...)
+         ((lambda (name) body ...) value))))))
 
 ;; In the REPL:
 (import (lib3))
-(my-let ([x 100])
-  (+ x 200))
+(my-let ((x 100)) (+ x 200))
 
 ;; Expected expansion:
 ((lambda (x) (+ x 200)) 100)
@@ -289,21 +256,17 @@
 ;; -------------------------------
 ;; Macro expanding to another macro
 
-(define-syntax twice
-  (syntax-rules ()
-    [(twice expr)
-     (begin expr expr)]))
+(define-syntax twice (syntax-rules () ((twice expr) (begin expr expr))))
 
-(define-syntax run-twice
-  (syntax-rules ()
-    [(run-twice expr)
-     (twice expr)]))
+(define-syntax run-twice (syntax-rules () ((run-twice expr) (twice expr))))
 
 ;; Test:
 (run-twice (display "expand "))
 
 ;; Expected expansion:
-(begin (display "expand ") (display "expand "))
+(begin
+  (display "expand ")
+  (display "expand "))
 
 ;; Expected output: "expand expand "
 
@@ -314,10 +277,7 @@
 ;; -------------------------------
 ;; Macro with ill-formed output
 
-(define-syntax bad
-  (syntax-rules ()
-    [(bad expr)
-     (expr 1 2)])) ; Intentionally wrong: expr is not a procedure
+(define-syntax bad (syntax-rules () ((bad expr) (expr 1 2)))) ; Intentionally wrong: expr is not a procedure
 
 ;; Test:
 (bad 3)

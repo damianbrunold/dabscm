@@ -1,5 +1,7 @@
 (define-library (scm list)
-  (import (scm core) (scheme base) (scheme cxr))
+  (import (scheme base)
+          (scheme cxr)
+          (scm core))
   (export get-property
           get-property-list
           nil
@@ -37,11 +39,9 @@ Example:
   (split '(a b c d e)) => (a c e) (b d)"
       (if (or (null? ls) (null? (cdr ls)))
           (values ls '())
-          (call-with-values
-              (lambda () (split (cddr ls)))
+          (call-with-values (lambda () (split (cddr ls)))
             (lambda (odds evens)
-              (values (cons (car ls) odds)
-                      (cons (cadr ls) evens))))))
+              (values (cons (car ls) odds) (cons (cadr ls) evens))))))
 
     (define (zip-alist a b)
       "Syntax: (zip-alist a b)
@@ -55,10 +55,8 @@ Example:
              (if (null? b)
                  '()
                  (error 'zip-alist "lists have different lengths")))
-            ((null? b)
-             (error 'zip-alist "lists have different lengths"))
-            (else
-             (cons (cons (car a) (car b)) (zip-alist (cdr a) (cdr b))))))
+            ((null? b) (error 'zip-alist "lists have different lengths"))
+            (else (cons (cons (car a) (car b)) (zip-alist (cdr a) (cdr b))))))
 
     (define (uniq list)
       "Syntax: (uniq list)
@@ -70,10 +68,9 @@ Example:
       (let loop ((list list) (result '()))
         (cond ((null? list) (reverse result))
               ((null? result) (loop (cdr list) (cons (car list) result)))
-              (else
-               (if (eq? (car list) (car result))
-                   (loop (cdr list) result)
-                   (loop (cdr list) (cons (car list) result)))))))
+              (else (if (eq? (car list) (car result))
+                        (loop (cdr list) result)
+                        (loop (cdr list) (cons (car list) result)))))))
 
     (define (univ list)
       "Syntax: (univ list)
@@ -85,10 +82,9 @@ Example:
       (let loop ((list list) (result '()))
         (cond ((null? list) (reverse result))
               ((null? result) (loop (cdr list) (cons (car list) result)))
-              (else
-               (if (eqv? (car list) (car result))
-                   (loop (cdr list) result)
-                   (loop (cdr list) (cons (car list) result)))))))
+              (else (if (eqv? (car list) (car result))
+                        (loop (cdr list) result)
+                        (loop (cdr list) (cons (car list) result)))))))
 
     (define (unique list)
       "Syntax: (unique list)
@@ -100,7 +96,6 @@ Example:
       (let loop ((list list) (result '()))
         (cond ((null? list) (reverse result))
               ((null? result) (loop (cdr list) (cons (car list) result)))
-              (else
-               (if (equal? (car list) (car result))
-                   (loop (cdr list) result)
-                   (loop (cdr list) (cons (car list) result)))))))))
+              (else (if (equal? (car list) (car result))
+                        (loop (cdr list) result)
+                        (loop (cdr list) (cons (car list) result)))))))))

@@ -6,9 +6,9 @@
           (srfi 13)
           (scm bytevector)
           (scm geo))
-  (export read-shapefile
-          shapefile->features
-          dbf->records)
+  (export dbf->records
+          read-shapefile
+          shapefile->features)
   (begin
 
     (define (read-file-bytevector path)
@@ -37,13 +37,19 @@ Example:
       (let* ((cpg (sibling path ".cpg"))
              (enc (cond ((pair? encoding) (car encoding))
                         ((file-exists? cpg)
-                         (let ((s (string-downcase
-                                   (string-trim-both (utf8->string (read-file-bytevector cpg))))))
-                           (if (member s '("utf-8" "utf8" "65001")) 'utf-8 'latin-1)))
+                         (let
+                             ((s (string-downcase
+                                  (string-trim-both
+                                   (utf8->string
+                                    (read-file-bytevector cpg))))))
+                           (if (member s '("utf-8" "utf8" "65001"))
+                               'utf-8
+                               'latin-1)))
                         (else 'utf-8)))
              (dbf (sibling path ".dbf")))
         (shapefile->features (read-file-bytevector path)
-                             (and (file-exists? dbf) (read-file-bytevector dbf))
+                             (and (file-exists? dbf)
+                                  (read-file-bytevector dbf))
                              enc)))
 
     (define (shapefile->features shp dbf . encoding)
@@ -57,21 +63,34 @@ Description: Returns the features of a shapefile given as bytevectors: shp the
   geometry #f. Attributes are as returned by dbf->records.
 Example:
   (length (shapefile->features shp-bytes dbf-bytes 'utf-8)) => 26"
-      (let ((records (if dbf (dbf->records dbf (if (pair? encoding) (car encoding) 'utf-8)) #f)))
-        (let loop ((shapes (read-shapes shp)) (records records) (out '()))
+      (let
+          ((records (if dbf
+                        (dbf->records dbf
+                                      (if (pair? encoding)
+                                          (car encoding)
+                                          'utf-8))
+                        #f)))
+        (let loop ((shapes (read-shapes shp))
+                   (records records)
+                   (out '()))
           (if (null? shapes)
               (reverse out)
               (loop (cdr shapes)
                     (and (pair? records) (cdr records))
-                    (cons (make-feature (if (pair? records) (car records) '()) (car shapes))
+                    (cons (make-feature (if (pair? records) (car records) '())
+                                        (car shapes))
                           out))))))
 
     ;; --- .shp --------------------------------------------------------
 
     (define (read-shapes bv)
-      (unless (and (>= (bytevector-length bv) 100) (= (bytevector-u32-ref bv 0 'big) 9994))
+      (unless
+          (and (>= (bytevector-length bv) 100)
+               (= (bytevector-u32-ref bv 0 'big) 9994))
         (error "shapefile->features: not a shapefile"))
-      (let ((n (min (bytevector-length bv) (* 2 (bytevector-u32-ref bv 24 'big)))))
+      (let
+          ((n (min (bytevector-length bv)
+                   (* 2 (bytevector-u32-ref bv 24 'big)))))
         (let loop ((o 100) (out '()))
           (if (> (+ o 12) n)
               (reverse out)
@@ -84,29 +103,46 @@ Example:
         (case type
           ((0) #f)
           ((1 11 21)
-           (make-multipoint (list (vector (bytevector-ieee-double-ref bv (+ c 4) 'little)
-                                          (bytevector-ieee-double-ref bv (+ c 12) 'little)))))
+           (make-multipoint (list (vector
+                                   (bytevector-ieee-double-ref bv
+                                                               (+ c 4)
+                                                               'little)
+                                   (bytevector-ieee-double-ref bv
+                                                               (+ c 12)
+                                                               'little)))))
           ((8 18 28)
            (let ((np (bytevector-s32-ref bv (+ c 36) 'little)))
-             (make-multipoint
-              (list-tabulate np (lambda (i)
-                                  (let ((p (+ c 40 (* 16 i))))
-                                    (vector (bytevector-ieee-double-ref bv p 'little)
-                                            (bytevector-ieee-double-ref bv (+ p 8) 'little))))))))
+             (make-multipoint (list-tabulate
+                               np
+                               (lambda (i)
+                                 (let ((p (+ c 40 (* 16 i))))
+                                   (vector
+                                    (bytevector-ieee-double-ref bv p 'little)
+                                    (bytevector-ieee-double-ref
+                                     bv
+                                     (+ p 8)
+                                     'little))))))))
           ((3 13 23 5 15 25)
            (let* ((nparts (bytevector-s32-ref bv (+ c 36) 'little))
                   (np (bytevector-s32-ref bv (+ c 40) 'little))
                   (p0 (+ c 44 (* 4 nparts)))
-                  (starts (append (list-tabulate nparts
-                                                 (lambda (i)
-                                                   (bytevector-s32-ref bv (+ c 44 (* 4 i)) 'little)))
+                  (starts (append (list-tabulate
+                                   nparts
+                                   (lambda (i)
+                                     (bytevector-s32-ref bv
+                                                         (+ c 44 (* 4 i))
+                                                         'little)))
                                   (list np)))
                   (parts (let loop ((s starts) (out '()))
                            (if (null? (cdr s))
                                (reverse out)
-                               (loop (cdr s) (cons (read-points bv p0 (car s) (cadr s)) out))))))
+                               (loop (cdr s)
+                                     (cons
+                                      (read-points bv p0 (car s) (cadr s))
+                                      out))))))
              (if (memv type '(5 15 25))
-                 (make-polygon (filter (lambda (r) (>= (vector-length r) 8)) parts))
+                 (make-polygon (filter (lambda (r) (>= (vector-length r) 8))
+                                       parts))
                  (make-polyline parts))))
           (else (error "shapefile->features: unsupported shape type" type)))))
 
@@ -115,7 +151,9 @@ Example:
         (do ((i from (+ i 1)) (j 0 (+ j 2))) ((= i to) v)
           (let ((p (+ p0 (* 16 i))))
             (vector-set! v j (bytevector-ieee-double-ref bv p 'little))
-            (vector-set! v (+ j 1) (bytevector-ieee-double-ref bv (+ p 8) 'little))))))
+            (vector-set! v
+                         (+ j 1)
+                         (bytevector-ieee-double-ref bv (+ p 8) 'little))))))
 
     ;; --- .dbf --------------------------------------------------------
 
@@ -139,11 +177,16 @@ Example:
                        (if (or (>= o header) (= (bytevector-u8-ref bv o) 13))
                            (reverse out)
                            (let ((len (bytevector-u8-ref bv (+ o 16))))
-                             (loop (+ o 32) (+ pos len)
-                                   (cons (list (field-name bv o)
-                                               (integer->char (bytevector-u8-ref bv (+ o 11)))
-                                               pos len)
-                                         out)))))))
+                             (loop (+ o 32)
+                                   (+ pos len)
+                                   (cons
+                                    (list
+                                     (field-name bv o)
+                                     (integer->char
+                                      (bytevector-u8-ref bv (+ o 11)))
+                                     pos
+                                     len)
+                                    out)))))))
         (let loop ((i 0) (out '()))
           (if (= i n)
               (reverse out)
@@ -153,8 +196,13 @@ Example:
                               (= (bytevector-u8-ref bv r) 42)) ; * marks deleted
                           out
                           (cons (map (lambda (f)
-                                       (cons (car f)
-                                             (field-value bv (+ r (caddr f)) (cadddr f) (cadr f) enc)))
+                                       (cons
+                                        (car f)
+                                        (field-value bv
+                                                     (+ r (caddr f))
+                                                     (cadddr f)
+                                                     (cadr f)
+                                                     enc)))
                                      fields)
                                 out))))))))
 
@@ -167,20 +215,26 @@ Example:
 
     (define (decode bv start end enc)
       (if (eq? enc 'latin-1)
-          (let loop ((i (- end 1)) (cs '()))
-            (if (< i start) (list->string cs)
-                (loop (- i 1) (cons (integer->char (bytevector-u8-ref bv i)) cs))))
+          (let loop ((i (- end 1))
+                     (cs '()))
+            (if (< i start)
+                (list->string cs)
+                (loop (- i 1)
+                      (cons (integer->char (bytevector-u8-ref bv i)) cs))))
           (utf8->string bv start end)))
 
     (define (field-value bv o len type enc)
       (let* ((end (let loop ((e (+ o len)))
-                    (if (and (> e o) (memv (bytevector-u8-ref bv (- e 1)) '(0 32)))
+                    (if (and (> e o)
+                             (memv (bytevector-u8-ref bv (- e 1)) '(0 32)))
                         (loop (- e 1))
                         e)))
              (start (if (char=? type #\C)
                         o
                         (let loop ((s o))
-                          (if (and (< s end) (= (bytevector-u8-ref bv s) 32)) (loop (+ s 1)) s)))))
+                          (if (and (< s end) (= (bytevector-u8-ref bv s) 32))
+                              (loop (+ s 1))
+                              s)))))
         (if (= start end)
             'null
             (case type
@@ -189,14 +243,25 @@ Example:
                (let* ((s (decode bv start end 'latin-1))
                       (x (string->number s)))
                  (cond ((not x) 'null)
-                       ((and (inexact? x) (integer? x) (not (string-index s #\.))) (exact x))
+                       ((and (inexact? x)
+                             (integer? x)
+                             (not (string-index s #\.)))
+                        (exact x))
                        ((and (exact? x) (not (integer? x))) (inexact x))
                        (else x))))
-              ((#\L) (if (memv (bytevector-u8-ref bv start) '(84 116 89 121)) #t
-                         (if (memv (bytevector-u8-ref bv start) '(70 102 78 110)) #f 'null)))
+              ((#\L)
+               (if (memv (bytevector-u8-ref bv start) '(84 116 89 121))
+                   #t
+                   (if (memv (bytevector-u8-ref bv start) '(70 102 78 110))
+                       #f
+                       'null)))
               ((#\D)
                (let ((s (decode bv start end 'latin-1)))
                  (if (= (string-length s) 8)
-                     (string-append (substring s 0 4) "-" (substring s 4 6) "-" (substring s 6 8))
+                     (string-append (substring s 0 4)
+                                    "-"
+                                    (substring s 4 6)
+                                    "-"
+                                    (substring s 6 8))
                      s)))
               (else (decode bv start end enc))))))))

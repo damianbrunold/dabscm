@@ -1,7 +1,7 @@
 (import (scheme base)
         (scheme write)
-        (scm test)
-        (scm qr))
+        (scm qr)
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 
@@ -16,21 +16,20 @@
   ;; Version selection grows with data length.
   (let ((qm (qr-encode (make-string 100 #\x) 'M)))
     (test-assert (>= (qr-matrix-version qm) 6))
-    (test-equal (+ 17 (* 4 (qr-matrix-version qm)))
-                (qr-matrix-size qm))))
+    (test-equal (+ 17 (* 4 (qr-matrix-version qm))) (qr-matrix-size qm))))
 
 (test-group "finder patterns present"
   ;; The 7x7 finder pattern must appear at the three corners.
   (let ((qm (qr-encode "hello" 'M)))
     (define (finder-ok? y x)
       (and
-        ;; outer ring dark
-        (= 1 (qr-matrix-ref qm y x))
-        (= 1 (qr-matrix-ref qm y (+ x 6)))
-        (= 1 (qr-matrix-ref qm (+ y 6) x))
-        (= 1 (qr-matrix-ref qm (+ y 6) (+ x 6)))
-        ;; centre 3x3 dark
-        (= 1 (qr-matrix-ref qm (+ y 3) (+ x 3)))))
+       ;; outer ring dark
+       (= 1 (qr-matrix-ref qm y x))
+       (= 1 (qr-matrix-ref qm y (+ x 6)))
+       (= 1 (qr-matrix-ref qm (+ y 6) x))
+       (= 1 (qr-matrix-ref qm (+ y 6) (+ x 6)))
+       ;; centre 3x3 dark
+       (= 1 (qr-matrix-ref qm (+ y 3) (+ x 3)))))
     (test-assert (finder-ok? 0 0))
     (test-assert (finder-ok? 0 (- (qr-matrix-size qm) 7)))
     (test-assert (finder-ok? (- (qr-matrix-size qm) 7) 0))))
@@ -62,11 +61,10 @@
       (test-assert (> (string-length s) 0)))))
 
 (test-group "error correction levels"
-  (for-each
-    (lambda (ec)
-      (let ((qm (qr-encode "data" ec)))
-        (test-assert (qr-matrix? qm))))
-    '(L M Q H)))
+  (for-each (lambda (ec)
+              (let ((qm (qr-encode "data" ec)))
+                (test-assert (qr-matrix? qm))))
+            '(L M Q H)))
 
 (test-group "round-trip via bytevector"
   (let* ((bv (bytevector 1 2 3 4 5))

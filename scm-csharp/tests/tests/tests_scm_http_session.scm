@@ -1,8 +1,8 @@
 (import (scheme base)
         (scm crypto)
-        (scm string)
         (scm net http request)
         (scm net http session)
+        (scm string)
         (scm test))
 
 (test-runner-factory scm-test-runner)
@@ -11,8 +11,9 @@
 
 (define secret (base64-encode (random-bytes 32)))
 (define cfg (make-session-config "app_session" secret 3600))
-(define dev (make-session-config "app_session" secret 3600
-                                 '((path . "/app/") (secure? . #f))))
+(define dev
+  (make-session-config "app_session" secret 3600
+                       '((path . "/app/") (secure? . #f))))
 
 ;; "name=value; attr; ..." -> value
 (define (cookie-value header)
@@ -22,7 +23,11 @@
     (substring first (+ eq 1) (string-length first))))
 
 (define (request-with-cookie value)
-  (make-http-request "GET" "/" (list (cons "Cookie" (string-append "other=1; app_session=" value))) #f))
+  (make-http-request "GET" "/"
+                     (list (cons "Cookie"
+                                 (string-append "other=1; app_session="
+                                                value)))
+                     #f))
 
 (test-group "set-cookie header"
   (let ((h (session-set-cookie cfg '((uid . 7)))))
@@ -40,12 +45,16 @@
   (let ((value (cookie-value (cdr (session-set-cookie cfg '((uid . 7)))))))
     (test-equal '((uid . 7)) (session-ref cfg (request-with-cookie value)))
     ;; another secret, or another purpose, rejects it
-    (test-equal #f (session-ref (make-session-config "app_session"
-                                                     (base64-encode (random-bytes 32)) 3600)
-                                (request-with-cookie value)))
-    (test-equal #f (session-ref (make-session-config "app_session" secret 3600
-                                                     '((purpose . "other")))
-                                (request-with-cookie value))))
+    (test-equal #f
+                (session-ref (make-session-config
+                              "app_session"
+                              (base64-encode (random-bytes 32))
+                              3600)
+                             (request-with-cookie value)))
+    (test-equal #f
+                (session-ref (make-session-config "app_session" secret 3600
+                                                  '((purpose . "other")))
+                             (request-with-cookie value))))
   (test-equal #f (session-ref cfg (make-http-request "GET" "/" '() #f)))
   (test-equal #f (session-ref cfg (request-with-cookie "forged.value"))))
 

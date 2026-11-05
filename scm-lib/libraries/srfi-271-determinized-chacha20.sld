@@ -16,11 +16,11 @@
           (rename (only (srfi 271 randomized) make-random-port)
                   (make-random-port make-randomized-port)))
   (export make-random-port
-          random-port?
+          random-port-initialization-error?
           random-port-state
-          random-port-state?
           random-port-state=?
-          random-port-initialization-error?)
+          random-port-state?
+          random-port?)
   (begin
 
     (define %make-chacha20-port (%primitive "make-chacha20-port"))
@@ -54,8 +54,7 @@ Example:
     (define (zero-bytevector? bv)
       (let loop ((i 0))
         (or (= i (bytevector-length bv))
-            (and (zero? (bytevector-u8-ref bv i))
-                 (loop (+ i 1))))))
+            (and (zero? (bytevector-u8-ref bv i)) (loop (+ i 1))))))
 
     (define (random-port-state? obj)
       "Syntax: (random-port-state? obj)
@@ -94,8 +93,7 @@ Example:
                 (cons state states))
       (let loop ((states states))
         (or (null? states)
-            (and (equal? state (car states))
-                 (loop (cdr states))))))
+            (and (equal? state (car states)) (loop (cdr states))))))
 
     (define (random-port-state port)
       "Syntax: (random-port-state random-port)
@@ -111,7 +109,10 @@ Example:
       (unless (%chacha20-port? port)
         (error "random-port-state: not a determinized random port" port))
       (let ((s (%chacha20-port-state port)))
-        (vector 'chacha20 (vector-ref s 0) (vector-ref s 1) (vector-ref s 2))))
+        (vector 'chacha20
+                (vector-ref s 0)
+                (vector-ref s 1)
+                (vector-ref s 2))))
 
     (define (random-port? obj)
       "Syntax: (random-port? obj)
@@ -133,7 +134,8 @@ Example:
       (let ((key (read-bytevector key-length port)))
         (when (or (eof-object? key) (< (bytevector-length key) key-length))
           (raise (make-initialization-error
-                  (string-append who ": not enough data to initialize the random port")
+                  (string-append who
+                                 ": not enough data to initialize the random port")
                   (list port))))
         (when (zero-bytevector? key)
           (raise (make-initialization-error
@@ -144,7 +146,8 @@ Example:
     (define make-random-port
       (case-lambda
         (()
-         (state->port (port->state "make-random-port" (make-randomized-port))))
+         (state->port (port->state "make-random-port"
+                                   (make-randomized-port))))
         ((initializer)
          "Syntax: (make-random-port)
        (make-random-port initializer)
@@ -159,10 +162,9 @@ Description: Returns a new deterministic random port: a binary input port
 Example:
   (read-u8 (make-random-port (open-input-bytevector (make-bytevector 32 7))))
     => 244"
-         (cond ((random-port-state? initializer)
-                (state->port initializer))
+         (cond ((random-port-state? initializer) (state->port initializer))
                ((and (input-port? initializer) (binary-port? initializer))
                 (state->port (port->state "make-random-port" initializer)))
-               (else
-                (error "make-random-port: expected a random port state or a binary input port"
-                       initializer))))))))
+               (else (error
+                      "make-random-port: expected a random port state or a binary input port"
+                      initializer))))))))

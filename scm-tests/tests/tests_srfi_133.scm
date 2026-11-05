@@ -1,6 +1,6 @@
 (import (except (scheme base) vector-copy vector-fill!)
-        (scm test)
-        (srfi 133))
+        (srfi 133)
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 
@@ -17,14 +17,17 @@
 ;; Constructors - vector-unfold
 (test-group "constructors - vector-unfold"
   (test-equal #(0 1 2 3 4) (vector-unfold (lambda (i) i) 5))
-  (test-equal #(0 1 2 3 4) (vector-unfold (lambda (i x) (values x (+ x 1))) 5 0))
-  (test-equal #(1 2 4 8 16) (vector-unfold (lambda (i x) (values x (* x 2))) 5 1))
+  (test-equal #(0 1 2 3 4)
+              (vector-unfold (lambda (i x) (values x (+ x 1))) 5 0))
+  (test-equal #(1 2 4 8 16)
+              (vector-unfold (lambda (i x) (values x (* x 2))) 5 1))
   (test-equal #() (vector-unfold (lambda (i) i) 0)))
 
 ;; Constructors - vector-unfold-right
 (test-group "constructors - vector-unfold-right"
   (test-equal #(0 1 2 3 4) (vector-unfold-right (lambda (i) i) 5))
-  (test-equal #(4 3 2 1 0) (vector-unfold-right (lambda (i x) (values x (+ x 1))) 5 0))
+  (test-equal #(4 3 2 1 0)
+              (vector-unfold-right (lambda (i x) (values x (+ x 1))) 5 0))
   (test-equal #() (vector-unfold-right (lambda (i) i) 0)))
 
 ;; Constructors - vector-copy
@@ -46,7 +49,8 @@
   (test-equal #(a b c) (vector-append '#(a) '#() '#(b c)))
   (test-equal #(a b c d) (vector-concatenate '(#(a b) #(c d))))
   (test-equal #() (vector-concatenate '()))
-  (test-equal #(a b g h) (vector-append-subvectors '#(a b c d e) 0 2 '#(f g h) 1 3))
+  (test-equal #(a b g h)
+              (vector-append-subvectors '#(a b c d e) 0 2 '#(f g h) 1 3))
   (test-equal #(a b c) (vector-append-subvectors '#(a b c) 0 3)))
 
 ;; Predicates
@@ -72,40 +76,57 @@
 ;; Iteration - vector-fold
 (test-group "iteration - vector-fold"
   (test-equal 15 (vector-fold (lambda (sum x) (+ sum x)) 0 '#(1 2 3 4 5)))
-  (test-equal '(c b a) (vector-fold (lambda (acc x) (cons x acc)) '() '#(a b c)))
-  (test-equal 2 (vector-fold (lambda (count x y) (if (equal? x y) (+ count 1) count))
-                 0 '#(a b c) '#(a x c)))
+  (test-equal '(c b a)
+              (vector-fold (lambda (acc x) (cons x acc)) '() '#(a b c)))
+  (test-equal 2
+              (vector-fold (lambda (count x y)
+                             (if (equal? x y) (+ count 1) count))
+                           0
+                           '#(a b c)
+                           '#(a x c)))
   (test-equal 0 (vector-fold (lambda (sum x) (+ sum x)) 0 '#()))
   ;; SRFI 133, not SRFI 43: kons gets no index
-  (test-equal 3 (vector-fold (lambda (len str) (max len (string-length str)))
-                             0 '#("a" "abc" "ab")))
-  (test-equal '(5 7 9) (reverse (vector-fold (lambda (acc x y) (cons (+ x y) acc))
-                                             '() '#(1 2 3) '#(4 5 6)))))
+  (test-equal 3
+              (vector-fold (lambda (len str) (max len (string-length str)))
+                           0
+                           '#("a" "abc" "ab")))
+  (test-equal '(5 7 9)
+              (reverse (vector-fold (lambda (acc x y) (cons (+ x y) acc))
+                                    '()
+                                    '#(1 2 3)
+                                    '#(4 5 6)))))
 
 ;; Iteration - vector-fold-right
 (test-group "iteration - vector-fold-right"
-  (test-equal '(a b c) (vector-fold-right (lambda (tail x) (cons x tail)) '() '#(a b c)))
+  (test-equal '(a b c)
+              (vector-fold-right (lambda (tail x) (cons x tail))
+                                 '()
+                                 '#(a b c)))
   (test-equal 6 (vector-fold-right (lambda (sum x) (+ sum x)) 0 '#(1 2 3)))
   (test-equal '() (vector-fold-right (lambda (acc x) (cons x acc)) '() '#()))
-  (test-equal '((1 . 4) (2 . 5)) (vector-fold-right (lambda (acc x y) (cons (cons x y) acc))
-                                                    '() '#(1 2 3) '#(4 5))))
+  (test-equal '((1 . 4) (2 . 5))
+              (vector-fold-right (lambda (acc x y) (cons (cons x y) acc))
+                                 '()
+                                 '#(1 2 3)
+                                 '#(4 5))))
 
 ;; Iteration - vector-map, vector-map!, vector-for-each
 (test-group "iteration - vector-map and friends"
   (test-equal #(11 22 33) (vector-map + '#(1 2 3) '#(10 20 30)))
   (test-equal #(1 4 9 16) (vector-map (lambda (x) (* x x)) '#(1 2 3 4)))
   (test-equal #(1 4 9)
-    (let ((v (vector 1 2 3)))
-      (vector-map! (lambda (x) (* x x)) v)
-      v))
+              (let ((v (vector 1 2 3)))
+                (vector-map! (lambda (x) (* x x)) v)
+                v))
   (test-equal #(11 22 33)
-    (let ((v (vector 1 2 3)))
-      (vector-map! + v '#(10 20 30))
-      v))
+              (let ((v (vector 1 2 3)))
+                (vector-map! + v '#(10 20 30))
+                v))
   (test-equal '(c b a)
-    (let ((acc '()))
-      (vector-for-each (lambda (x) (set! acc (cons x acc))) '#(a b c))
-      acc)))
+              (let ((acc '()))
+                (vector-for-each (lambda (x) (set! acc (cons x acc)))
+                                 '#(a b c))
+                acc)))
 
 ;; Iteration - vector-count
 (test-group "iteration - vector-count"
@@ -142,7 +163,8 @@
 ;; Searching - vector-binary-search
 (test-group "searching - vector-binary-search"
   (test-equal 2 (vector-binary-search '#(1 3 5 7 9) 5 (lambda (a b) (- a b))))
-  (test-equal #f (vector-binary-search '#(1 3 5 7 9) 4 (lambda (a b) (- a b))))
+  (test-equal #f
+              (vector-binary-search '#(1 3 5 7 9) 4 (lambda (a b) (- a b))))
   (test-equal 0 (vector-binary-search '#(1 3 5 7 9) 1 (lambda (a b) (- a b))))
   (test-equal 4 (vector-binary-search '#(1 3 5 7 9) 9 (lambda (a b) (- a b))))
   (test-equal #f (vector-binary-search '#() 1 (lambda (a b) (- a b)))))
@@ -159,79 +181,82 @@
 ;; Searching - vector-partition
 (test-group "searching - vector-partition"
   (test-equal '(#(2 4) #(1 3 5))
-    (call-with-values (lambda () (vector-partition even? '#(1 2 3 4 5))) list))
+              (call-with-values
+                  (lambda () (vector-partition even? '#(1 2 3 4 5)))
+                list))
   (test-equal '(#() #())
-    (call-with-values (lambda () (vector-partition even? '#())) list)))
+              (call-with-values (lambda () (vector-partition even? '#()))
+                list)))
 
 ;; Mutators - vector-set!, vector-swap!
 (test-group "mutators - vector-set! and vector-swap!"
   (test-equal #(a x c)
-    (let ((v (vector 'a 'b 'c)))
-      (vector-set! v 1 'x)
-      v))
+              (let ((v (vector 'a 'b 'c)))
+                (vector-set! v 1 'x)
+                v))
   (test-equal #(c b a)
-    (let ((v (vector 'a 'b 'c)))
-      (vector-swap! v 0 2)
-      v)))
+              (let ((v (vector 'a 'b 'c)))
+                (vector-swap! v 0 2)
+                v)))
 
 ;; Mutators - vector-fill!
 (test-group "mutators - vector-fill!"
   (test-equal #(0 0 0 0 0)
-    (let ((v (vector 1 2 3 4 5)))
-      (vector-fill! v 0)
-      v))
+              (let ((v (vector 1 2 3 4 5)))
+                (vector-fill! v 0)
+                v))
   (test-equal #(1 0 0 0 5)
-    (let ((v (vector 1 2 3 4 5)))
-      (vector-fill! v 0 1 4)
-      v)))
+              (let ((v (vector 1 2 3 4 5)))
+                (vector-fill! v 0 1 4)
+                v)))
 
 ;; Mutators - vector-reverse!
 (test-group "mutators - vector-reverse!"
   (test-equal #(5 4 3 2 1)
-    (let ((v (vector 1 2 3 4 5)))
-      (vector-reverse! v)
-      v))
+              (let ((v (vector 1 2 3 4 5)))
+                (vector-reverse! v)
+                v))
   (test-equal #(1 4 3 2 5)
-    (let ((v (vector 1 2 3 4 5)))
-      (vector-reverse! v 1 4)
-      v))
+              (let ((v (vector 1 2 3 4 5)))
+                (vector-reverse! v 1 4)
+                v))
   (test-equal #(1)
-    (let ((v (vector 1)))
-      (vector-reverse! v)
-      v)))
+              (let ((v (vector 1)))
+                (vector-reverse! v)
+                v)))
 
 ;; Mutators - vector-copy!
 (test-group "mutators - vector-copy!"
   (test-equal #(a x y d e)
-    (let ((v (vector 'a 'b 'c 'd 'e)))
-      (vector-copy! v 1 '#(x y z) 0 2)
-      v)))
+              (let ((v (vector 'a 'b 'c 'd 'e)))
+                (vector-copy! v 1 '#(x y z) 0 2)
+                v)))
 
 ;; Mutators - vector-reverse-copy!
 (test-group "mutators - vector-reverse-copy!"
   (test-equal #(x c b a x)
-    (let ((v (vector 'x 'x 'x 'x 'x)))
-      (vector-reverse-copy! v 1 '#(a b c) 0 3)
-      v))
+              (let ((v (vector 'x 'x 'x 'x 'x)))
+                (vector-reverse-copy! v 1 '#(a b c) 0 3)
+                v))
   (test-equal #(c b a)
-    (let ((v (vector 'x 'x 'x)))
-      (vector-reverse-copy! v 0 '#(a b c))
-      v)))
+              (let ((v (vector 'x 'x 'x)))
+                (vector-reverse-copy! v 0 '#(a b c))
+                v)))
 
 ;; Mutators - vector-unfold!, vector-unfold-right!
 (test-group "mutators - vector-unfold! and vector-unfold-right!"
   (test-equal #(0 1 4 9 0)
-    (let ((v (make-vector 5 0)))
-      (vector-unfold! (lambda (i) (* i i)) v 1 4)
-      v))
+              (let ((v (make-vector 5 0)))
+                (vector-unfold! (lambda (i) (* i i)) v 1 4)
+                v))
   (test-equal #(100 110 120 130 140)
-    (let ((v (make-vector 5 0)))
-      (vector-unfold! (lambda (i x) (values x (+ x 10))) v 0 5 100)
-      v))
+              (let ((v (make-vector 5 0)))
+                (vector-unfold! (lambda (i x) (values x (+ x 10))) v 0 5 100)
+                v))
   (test-equal #(0 1 4 9 0)
-    (let ((v (make-vector 5 0)))
-      (vector-unfold-right! (lambda (i) (* i i)) v 1 4)
-      v)))
+              (let ((v (make-vector 5 0)))
+                (vector-unfold-right! (lambda (i) (* i i)) v 1 4)
+                v)))
 
 ;; Conversion
 (test-group "conversion"

@@ -5,9 +5,9 @@
           (srfi 1)
           (srfi 132)
           (scm fs))
-  (export run-migrations!
-          migrations-applied
-          migrations-pending)
+  (export migrations-applied
+          migrations-pending
+          run-migrations!)
   (begin
 
     ;; ============================================================
@@ -36,11 +36,9 @@
     ;; option below; the value should be a complete CREATE TABLE
     ;; statement and is interpolated only once.
     (define (default-create-table-sql table-name)
-      (string-append
-        "CREATE TABLE IF NOT EXISTS " table-name " (\n"
-        "  filename text PRIMARY KEY,\n"
-        "  applied_at timestamptz NOT NULL DEFAULT now()\n"
-        ")"))
+      (string-append "CREATE TABLE IF NOT EXISTS " table-name " (\n"
+                     "  filename text PRIMARY KEY,\n"
+                     "  applied_at timestamptz NOT NULL DEFAULT now()\n" ")"))
 
     ;; --- file helpers ---
 
@@ -50,9 +48,8 @@
           (let ((out (open-output-string)))
             (let loop ()
               (let ((c (read-char port)))
-                (cond
-                  ((eof-object? c) (get-output-string out))
-                  (else (write-char c out) (loop)))))))))
+                (cond ((eof-object? c) (get-output-string out))
+                      (else (write-char c out) (loop)))))))))
 
     (define (sql-files dir)
       ;; Sorted list of "NNNN_name.sql" filenames (no path).
@@ -60,7 +57,8 @@
              (sql (filter (lambda (f)
                             (let ((n (string-length f)))
                               (and (>= n 4)
-                                   (string=? (substring f (- n 4) n) ".sql"))))
+                                   (string=? (substring f (- n 4) n)
+                                             ".sql"))))
                           all)))
         (list-sort string<? sql)))
 
@@ -68,12 +66,15 @@
 
     (define (opt opts key default)
       (let ((p (assq key opts)))
-        (cond (p (cadr p)) (else default))))
+        (cond (p (cadr p))
+              (else default))))
 
     (define (resolve-options opts)
       (let* ((table (opt opts 'table-name default-table-name))
-             (ddl   (opt opts 'create-table-sql (default-create-table-sql table)))
-             (log   (opt opts 'log-proc (lambda (msg) #f))))
+             (ddl (opt opts
+                       'create-table-sql
+                       (default-create-table-sql table)))
+             (log (opt opts 'log-proc (lambda (msg) #f))))
         (values table ddl log)))
 
     ;; --- SQL string-literal escape used only for filenames ---
@@ -86,13 +87,11 @@
              (out (open-output-string)))
         (write-char #\' out)
         (let loop ((i 0))
-          (cond
-            ((= i n) (write-char #\' out) (get-output-string out))
-            (else
-             (let ((c (string-ref s i)))
-               (cond ((char=? c #\') (write-string "''" out))
-                     (else           (write-char c out)))
-               (loop (+ i 1))))))))
+          (cond ((= i n) (write-char #\' out) (get-output-string out))
+                (else (let ((c (string-ref s i)))
+                        (cond ((char=? c #\') (write-string "''" out))
+                              (else (write-char c out)))
+                        (loop (+ i 1))))))))
 
     ;; --- public API ---
 
@@ -110,11 +109,13 @@ Example:
     (lambda (sql) (pg-exec conn sql))
     (lambda (sql) (pg-result-rows (pg-query conn sql))))
   => (\"0001_init.sql\" \"0002_users.sql\")"
-      (call-with-values (lambda () (resolve-options (if (null? opts) '() (car opts))))
+      (call-with-values
+          (lambda () (resolve-options (if (null? opts) '() (car opts))))
         (lambda (table ddl log)
           (exec-sql! ddl)
-          (let ((rows (query-rows
-                        (string-append "SELECT filename FROM " table))))
+          (let
+              ((rows (query-rows (string-append "SELECT filename FROM "
+                                                table))))
             (map (lambda (row) (vector-ref row 0)) rows)))))
 
     (define (migrations-pending exec-sql! query-rows dir . opts)
@@ -127,7 +128,7 @@ Example:
   (migrations-pending exec-sql! query-rows \"./migrations\")
   => (\"0003_add_index.sql\")"
       (let ((applied (apply migrations-applied exec-sql! query-rows opts))
-            (files   (sql-files dir)))
+            (files (sql-files dir)))
         (filter (lambda (f) (not (member f applied string=?))) files)))
 
     (define (run-migrations! exec-sql! query-rows dir . opts)
@@ -151,33 +152,38 @@ Example:
     '((log-proc ,(lambda (m) (display m) (newline)))))"
       (when (not (directory-exists? dir))
         (error "run-migrations!: migrations directory does not exist" dir))
-      (call-with-values (lambda () (resolve-options (if (null? opts) '() (car opts))))
+      (call-with-values
+          (lambda () (resolve-options (if (null? opts) '() (car opts))))
         (lambda (table ddl log)
           (exec-sql! ddl)
-          (let ((applied (let ((rows (query-rows
-                                       (string-append "SELECT filename FROM " table))))
+          (let ((applied (let
+                             ((rows (query-rows
+                                     (string-append "SELECT filename FROM "
+                                                    table))))
                            (map (lambda (row) (vector-ref row 0)) rows)))
-                (files   (sql-files dir)))
-            (for-each
-              (lambda (f)
-                (cond
-                  ((member f applied string=?) #f) ; skip silently
-                  (else
-                   (let ((sql (read-file-string
-                                (string-append dir "/" f))))
-                     (log (string-append "applying " f))
-                     (exec-sql! "BEGIN")
-                     (guard (exn (#t
-                                  (guard (e (#t #f)) (exec-sql! "ROLLBACK"))
-                                  (raise exn)))
-                       (exec-sql! sql)
-                       ;; Plain INSERT: the runner skips already-applied
-                       ;; files above, so we never try to re-insert.
-                       (exec-sql!
-                         (string-append
-                           "INSERT INTO " table " (filename) VALUES ("
-                           (quote-filename f) ")"))
-                       (exec-sql! "COMMIT"))))))
-              files)
-            (log "migrations complete")))))
-))
+                (files (sql-files dir)))
+            (for-each (lambda (f)
+                        (cond ((member f applied string=?) #f) ; skip silently
+                              (else (let
+                                        ((sql
+                                          (read-file-string
+                                           (string-append dir "/" f))))
+                                      (log (string-append "applying " f))
+                                      (exec-sql! "BEGIN")
+                                      (guard
+                                          (exn
+                                           (#t
+                                            (guard (e (#t #f))
+                                              (exec-sql! "ROLLBACK"))
+                                            (raise exn)))
+                                        (exec-sql! sql)
+                                        ;; Plain INSERT: the runner skips already-applied
+                                        ;; files above, so we never try to re-insert.
+                                        (exec-sql!
+                                         (string-append "INSERT INTO " table
+                                                        " (filename) VALUES ("
+                                                        (quote-filename f)
+                                                        ")"))
+                                        (exec-sql! "COMMIT"))))))
+                      files)
+            (log "migrations complete")))))))

@@ -6,36 +6,36 @@
           (srfi 13)
           (scm data core)
           (scm data format))
-  (export data-frame?
-          make-df
-          rows->df
-          alists->df
-          tibble
-          empty-df
-          df-nrow
-          df-ncol
-          df-names
-          df-has-column?
-          df-column
-          df-columns
-          df-ref
-          df-row
-          df->rows
+  (export alists->df
+          data-frame?
           df->alists
-          df-types
+          df->rows
+          df->string
+          df-column
           df-column-type
+          df-columns
+          df-drop-columns
+          df-glimpse
           df-groups
+          df-has-column?
+          df-head-string
+          df-names
+          df-ncol
+          df-nrow
+          df-print
+          df-ref
+          df-rename-columns
+          df-row
+          df-select-columns
           df-set-groups
+          df-take
+          df-types
           df-with-column
           df-with-columns
-          df-drop-columns
-          df-select-columns
-          df-rename-columns
-          df-take
-          df-print
-          df-head-string
-          df->string
-          df-glimpse)
+          empty-df
+          make-df
+          rows->df
+          tibble)
   (begin
 
     ;; ================================================================
@@ -55,10 +55,10 @@
     (define-record-type <data-frame>
       (%make-df names cols nrow groups)
       data-frame?
-      (names df-names)        ; list of symbols
-      (cols %df-cols)         ; list of vectors, same order
+      (names df-names) ; list of symbols
+      (cols %df-cols) ; list of vectors, same order
       (nrow df-nrow)
-      (groups df-groups))     ; list of symbols, '() = ungrouped
+      (groups df-groups)) ; list of symbols, '() = ungrouped
 
     (define (->symbol x)
       (cond ((symbol? x) x)
@@ -82,8 +82,11 @@
       (let ((n (if (null? cols) 0 (vector-length (car cols)))))
         (for-each (lambda (name c)
                     (unless (= (vector-length c) n)
-                      (error "column has wrong length" name (vector-length c) n)))
-                  names cols)
+                      (error "column has wrong length" name
+                             (vector-length c)
+                             n)))
+                  names
+                  cols)
         (%make-df names cols n (filter (lambda (g) (memq g names)) groups))))
 
     (define empty-df (%make-df '() '() 0 '()))
@@ -98,12 +101,19 @@ Example:
   (df-nrow (make-df '((a . #(1 2 3)) (b . (\"x\" \"y\" \"z\"))))) => 3"
       (let* ((names (map (lambda (c) (->symbol (car c))) columns))
              (vals (map (lambda (c) (cdr c)) columns))
-             (n (fold (lambda (v m) (if (or (vector? v) (list? v))
-                                        (max m (if (vector? v) (vector-length v) (length v)))
-                                        m))
-                      0 vals))
+             (n (fold (lambda (v m)
+                        (if (or (vector? v) (list? v))
+                            (max m
+                                 (if (vector? v)
+                                     (vector-length v)
+                                     (length v)))
+                            m))
+                      0
+                      vals))
              (cols (map (lambda (v)
-                          (if (or (vector? v) (list? v)) (->vector v) (make-vector n v)))
+                          (if (or (vector? v) (list? v))
+                              (->vector v)
+                              (make-vector n v)))
                         vals)))
         (build names cols '())))
 
@@ -130,7 +140,11 @@ Example:
                 (unless (null? cs)
                   (let ((len (if (vector? r) (vector-length r) (length r))))
                     (when (< j len)
-                      (vector-set! (car cs) i (if (vector? r) (vector-ref r j) (list-ref r j)))))
+                      (vector-set! (car cs)
+                                   i
+                                   (if (vector? r)
+                                       (vector-ref r j)
+                                       (list-ref r j)))))
                   (fill (+ j 1) (cdr cs)))))
             (loop (cdr rs) (+ i 1))))
         (build names cols '())))
@@ -149,18 +163,22 @@ Example:
                           (if (null? rs)
                               (reverse acc)
                               (loop (cdr rs)
-                                    (fold (lambda (p acc)
-                                            (let ((k (->symbol (car p))))
-                                              (if (memq k acc) acc (cons k acc))))
-                                          acc (car rs)))))))
+                                    (fold
+                                     (lambda (p acc)
+                                       (let ((k (->symbol (car p))))
+                                         (if (memq k acc) acc (cons k acc))))
+                                     acc
+                                     (car rs)))))))
              (n (length alists))
              (cols (map (lambda (_) (make-vector n na)) names)))
         (let loop ((rs alists) (i 0))
           (unless (null? rs)
             (for-each (lambda (p)
                         (let* ((k (->symbol (car p)))
-                               (pos (list-index (lambda (x) (eq? x k)) names)))
-                          (when pos (vector-set! (list-ref cols pos) i (cdr p)))))
+                               (pos (list-index (lambda (x) (eq? x k))
+                                                names)))
+                          (when pos
+                            (vector-set! (list-ref cols pos) i (cdr p)))))
                       (car rs))
             (loop (cdr rs) (+ i 1))))
         (build names cols '())))
@@ -177,11 +195,15 @@ Description: The vector of column name (do not mutate it).
 Example:
   (df-column (tibble (a 1 2)) 'a) => #(1 2)"
       (let ((name (->symbol name)))
-        (let loop ((ns (df-names df)) (cs (%df-cols df)))
+        (let loop ((ns (df-names df))
+                   (cs (%df-cols df)))
           (cond ((null? ns)
-                 (error (string-append "unknown column `" (symbol->string name)
+                 (error (string-append "unknown column `"
+                                       (symbol->string name)
                                        "`; columns: "
-                                       (string-join (map symbol->string (df-names df)) ", "))))
+                                       (string-join
+                                        (map symbol->string (df-names df))
+                                        ", "))))
                 ((eq? (car ns) name) (car cs))
                 (else (loop (cdr ns) (cdr cs)))))))
 
@@ -207,7 +229,9 @@ Library: (scm data frame)
 Description: Row i (0-based) as an alist ((name . value) …).
 Example:
   (df-row (tibble (a 1 2) (b 3 4)) 0) => ((a . 1) (b . 3))"
-      (map (lambda (n c) (cons n (vector-ref c i))) (df-names df) (%df-cols df)))
+      (map (lambda (n c) (cons n (vector-ref c i)))
+           (df-names df)
+           (%df-cols df)))
 
     (define (df->rows df)
       "Syntax: (df->rows df)
@@ -216,7 +240,8 @@ Description: The rows as a list of lists, cells in column order.
 Example:
   (df->rows (tibble (a 1 2) (b 3 4))) => ((1 3) (2 4))"
       (list-tabulate (df-nrow df)
-                     (lambda (i) (map (lambda (c) (vector-ref c i)) (%df-cols df)))))
+                     (lambda (i)
+                       (map (lambda (c) (vector-ref c i)) (%df-cols df)))))
 
     (define (df->alists df)
       "Syntax: (df->alists df)
@@ -226,8 +251,7 @@ Example:
   (df->alists (tibble (a 1))) => (((a . 1)))"
       (list-tabulate (df-nrow df) (lambda (i) (df-row df i))))
 
-    (define (df-column-type df name)
-      (column-type (df-column df name)))
+    (define (df-column-type df name) (column-type (df-column df name)))
 
     (define (df-types df)
       "Syntax: (df-types df)
@@ -236,7 +260,9 @@ Description: The column types as an alist ((name . type) …), see
   column-type in (scm data core).
 Example:
   (df-types (tibble (a 1 2) (b \"x\" na))) => ((a . int) (b . string))"
-      (map (lambda (n c) (cons n (column-type c))) (df-names df) (%df-cols df)))
+      (map (lambda (n c) (cons n (column-type c)))
+           (df-names df)
+           (%df-cols df)))
 
     (define (df-set-groups df groups)
       "Syntax: (df-set-groups df names)
@@ -263,7 +289,9 @@ Example:
             (build (list name) (list v) '())
             (if (memq name (df-names df))
                 (build (df-names df)
-                       (map (lambda (n c) (if (eq? n name) v c)) (df-names df) (%df-cols df))
+                       (map (lambda (n c) (if (eq? n name) v c))
+                            (df-names df)
+                            (%df-cols df))
                        (df-groups df))
                 (build (append (df-names df) (list name))
                        (append (%df-cols df) (list v))
@@ -284,11 +312,15 @@ Description: A frame with only the given columns, in the given order.
 Example:
   (df-names (df-select-columns (tibble (a 1) (b 2)) '(b))) => (b)"
       (let ((names (map ->symbol names)))
-        (build names (map (lambda (n) (df-column df n)) names) (df-groups df))))
+        (build names
+               (map (lambda (n) (df-column df n)) names)
+               (df-groups df))))
 
     (define (df-drop-columns df names)
       (let ((names (map ->symbol names)))
-        (df-select-columns df (remove (lambda (n) (memq n names)) (df-names df)))))
+        (df-select-columns df
+                           (remove (lambda (n) (memq n names))
+                                   (df-names df)))))
 
     (define (df-rename-columns df renames)
       "Syntax: (df-rename-columns df renames)
@@ -296,10 +328,14 @@ Library: (scm data frame)
 Description: Renames columns; renames is an alist ((old . new) …).
 Example:
   (df-names (df-rename-columns (tibble (a 1)) '((a . x)))) => (x)"
-      (let ((rn (map (lambda (p) (cons (->symbol (car p)) (->symbol (cdr p)))) renames)))
+      (let
+          ((rn (map (lambda (p) (cons (->symbol (car p)) (->symbol (cdr p))))
+                    renames)))
         (for-each (lambda (p) (df-column df (car p))) rn)
         (let ((f (lambda (n) (let ((p (assq n rn))) (if p (cdr p) n)))))
-          (build (map f (df-names df)) (%df-cols df) (map f (df-groups df))))))
+          (build (map f (df-names df))
+                 (%df-cols df)
+                 (map f (df-groups df))))))
 
     (define (df-take df idx)
       "Syntax: (df-take df indices)
@@ -310,7 +346,8 @@ Example:
   (df-column (df-take (tibble (a 10 20 30)) #(2 0)) 'a) => #(30 10)"
       (let ((idx (->vector idx)))
         (%make-df (df-names df)
-                  (map (lambda (c) (vector-map (lambda (i) (vector-ref c i)) idx))
+                  (map (lambda (c)
+                         (vector-map (lambda (i) (vector-ref c i)) idx))
                        (%df-cols df))
                   (vector-length idx)
                   (df-groups df))))
@@ -318,13 +355,22 @@ Example:
     ;; --- printing ---------------------------------------------------
 
     (define type-abbrev
-      '((int . "<int>") (real . "<dbl>") (string . "<chr>") (bool . "<lgl>")
-        (date . "<date>") (symbol . "<sym>") (list . "<list>") (mixed . "<mix>")
-        (na . "<na>") (other . "<obj>")))
+      '((int . "<int>")
+        (real . "<dbl>")
+        (string . "<chr>")
+        (bool . "<lgl>")
+        (date . "<date>")
+        (symbol . "<sym>")
+        (list . "<list>")
+        (mixed . "<mix>")
+        (na . "<na>")
+        (other . "<obj>")))
 
     (define (one-line s)
       (if (or (string-index s #\newline) (string-index s #\return))
-          (string-map (lambda (c) (if (memv c '(#\newline #\return)) #\space c)) s)
+          (string-map (lambda (c)
+                        (if (memv c '(#\newline #\return)) #\space c))
+                      s)
           s))
 
     (define (cell->string x max-width)
@@ -338,29 +384,45 @@ Example:
              (names (df-names df))
              (types (map (lambda (c) (column-type c)) (%df-cols df)))
              (cells (map (lambda (c)
-                           (list-tabulate rows (lambda (i) (cell->string (vector-ref c i) max-width))))
+                           (list-tabulate
+                            rows
+                            (lambda (i)
+                              (cell->string (vector-ref c i) max-width))))
                          (%df-cols df)))
              (headers (map symbol->string names))
-             (tstrs (map (lambda (t) (cdr (or (assq t type-abbrev) '(x . "?")))) types))
+             (tstrs (map (lambda (t)
+                           (cdr (or (assq t type-abbrev) '(x . "?"))))
+                         types))
              (widths (map (lambda (h t cs)
                             (fold (lambda (s m) (max m (string-length s)))
-                                  (max (string-length h) (string-length t)) cs))
-                          headers tstrs cells))
+                                  (max (string-length h) (string-length t))
+                                  cs))
+                          headers
+                          tstrs
+                          cells))
              (right? (map (lambda (t) (memq t '(int real))) types))
-             (pad (lambda (s w r?) (if r? (string-pad s w) (string-pad-right s w))))
+             (pad (lambda (s w r?)
+                    (if r? (string-pad s w) (string-pad-right s w))))
              (rowno-w (string-length (number->string (max rows 1))))
              (line (lambda (prefix strs)
-                     (string-append
-                      (string-pad-right prefix rowno-w) " "
-                      (string-join (map pad strs widths right?) "  ")
-                      "\n")))
+                     (string-append (string-pad-right prefix rowno-w)
+                                    " "
+                                    (string-join (map pad strs widths right?)
+                                                 "  ")
+                                    "\n")))
              (out (open-output-string)))
-        (write-string (string-append "# A data frame: " (number->string (df-nrow df))
-                                     " × " (number->string (df-ncol df))
-                                     (if (null? (df-groups df))
-                                         ""
-                                         (string-append ", groups: "
-                                                        (string-join (map symbol->string (df-groups df)) ", ")))
+        (write-string (string-append "# A data frame: "
+                                     (number->string (df-nrow df))
+                                     " × "
+                                     (number->string (df-ncol df))
+                                     (if
+                                      (null? (df-groups df))
+                                      ""
+                                      (string-append
+                                       ", groups: "
+                                       (string-join
+                                        (map symbol->string (df-groups df))
+                                        ", ")))
                                      "\n")
                       out)
         (unless (null? names)
@@ -371,7 +433,8 @@ Example:
                                 (map (lambda (cs) (list-ref cs i)) cells))
                           out)))
         (when (> (df-nrow df) rows)
-          (write-string (string-append "# … " (number->string (- (df-nrow df) rows))
+          (write-string (string-append "# … "
+                                       (number->string (- (df-nrow df) rows))
                                        " more rows\n")
                         out))
         (get-output-string out)))
@@ -399,20 +462,36 @@ Description: Prints one line per column: name, type and the first values,
 Example:
   (df-glimpse (tibble (a 1 2)))"
       (let* ((port (if (pair? port) (car port) (current-output-port)))
-             (w (fold (lambda (n m) (max m (string-length (symbol->string n)))) 0 (df-names df))))
-        (write-string (string-append "Rows: " (number->string (df-nrow df))
-                                     "\nColumns: " (number->string (df-ncol df)) "\n")
+             (w (fold (lambda (n m)
+                        (max m (string-length (symbol->string n))))
+                      0
+                      (df-names df))))
+        (write-string (string-append "Rows: "
+                                     (number->string (df-nrow df))
+                                     "\nColumns: "
+                                     (number->string (df-ncol df))
+                                     "\n")
                       port)
-        (for-each
-         (lambda (n c)
-           (let* ((t (cdr (or (assq (column-type c) type-abbrev) '(x . "?"))))
-                  (vals (string-join
-                         (list-tabulate (min 8 (vector-length c))
-                                        (lambda (i) (cell->string (vector-ref c i) 20)))
-                         ", "))
-                  (s (string-append "$ " (string-pad-right (symbol->string n) w) " "
-                                    (string-pad-right t 6) " " vals)))
-             (write-string (if (> (string-length s) 100) (string-append (substring s 0 99) "…") s)
-                           port)
-             (newline port)))
-         (df-names df) (%df-cols df))))))
+        (for-each (lambda (n c)
+                    (let* ((t (cdr (or (assq (column-type c) type-abbrev)
+                                       '(x . "?"))))
+                           (vals (string-join
+                                  (list-tabulate
+                                   (min 8 (vector-length c))
+                                   (lambda (i)
+                                     (cell->string (vector-ref c i) 20)))
+                                  ", "))
+                           (s (string-append
+                               "$ "
+                               (string-pad-right (symbol->string n) w)
+                               " "
+                               (string-pad-right t 6)
+                               " "
+                               vals)))
+                      (write-string (if (> (string-length s) 100)
+                                        (string-append (substring s 0 99) "…")
+                                        s)
+                                    port)
+                      (newline port)))
+                  (df-names df)
+                  (%df-cols df))))))

@@ -1,10 +1,13 @@
 (define-library (scm log)
-  (import (scm core) (scheme base) (scheme write) (srfi 19))
-  (export log-info
-          log-warn
+  (import (scheme base)
+          (scheme write)
+          (srfi 19)
+          (scm core))
+  (export log-access
           log-error
-          log-access
-          log-port)
+          log-info
+          log-port
+          log-warn)
   (begin
 
     ;; ============================================================
@@ -19,22 +22,26 @@
     ;; reconfigure for stdout/file sinks without changing call sites.
     ;; ============================================================
 
-    (define log-port
-      (make-parameter (current-error-port)))
+    (define log-port (make-parameter (current-error-port)))
 
     (define (pad2 n)
       (let ((s (number->string n)))
-        (cond ((< n 10) (string-append "0" s)) (else s))))
+        (cond ((< n 10) (string-append "0" s))
+              (else s))))
 
     (define (timestamp)
       (let ((d (current-date)))
-        (string-append
-          (number->string (date-year d)) "-"
-          (pad2 (date-month d)) "-"
-          (pad2 (date-day d)) " "
-          (pad2 (date-hour d)) ":"
-          (pad2 (date-minute d)) ":"
-          (pad2 (date-second d)))))
+        (string-append (number->string (date-year d))
+                       "-"
+                       (pad2 (date-month d))
+                       "-"
+                       (pad2 (date-day d))
+                       " "
+                       (pad2 (date-hour d))
+                       ":"
+                       (pad2 (date-minute d))
+                       ":"
+                       (pad2 (date-second d)))))
 
     (define (emit level module msg)
       (let ((out (log-port)))
@@ -81,7 +88,8 @@ Description: Writes a single access log line: an INFO line in the http
 Example:
   (log-access \"GET\" \"/notes/42\" 200 14)"
       (emit "INFO " "http"
-            (string-append method " " url
-                           " -> " (number->string status)
-                           " (" (number->string duration-ms) "ms)")))
-))
+            (string-append method " " url " -> "
+                           (number->string status)
+                           " ("
+                           (number->string duration-ms)
+                           "ms)")))))

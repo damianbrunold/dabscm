@@ -1,15 +1,15 @@
 (define-library (scm net http session)
-  (import (scm core)
-          (scheme base)
+  (import (scheme base)
+          (scm core)
           (scm crypto token)
-          (scm net http request)
-          (scm net http cookies))
+          (scm net http cookies)
+          (scm net http request))
   (export make-session-config
-          session-config?
+          session-clear-cookie
           session-config-max-age
+          session-config?
           session-ref
-          session-set-cookie
-          session-clear-cookie)
+          session-set-cookie)
   (begin
 
     ;; Stateless sessions: the cookie holds a (scm crypto token) token,
@@ -20,16 +20,15 @@
     (define-record-type session-config
       (%make-session-config name keys max-age path secure? purpose)
       session-config?
-      (name    session-config-name)
-      (keys    session-config-keys)
+      (name session-config-name)
+      (keys session-config-keys)
       (max-age session-config-max-age)
-      (path    session-config-path)
+      (path session-config-path)
       (secure? session-config-secure?)
       (purpose session-config-purpose))
 
     (define (opt-ref opts key default)
-      (let ((p (assq key opts)))
-        (if p (cdr p) default)))
+      (let ((p (assq key opts))) (if p (cdr p) default)))
 
     (define (make-session-config cookie-name secret max-age . opts)
       "Syntax: (make-session-config cookie-name secret max-age [opts])
@@ -60,15 +59,22 @@ Description: Returns the datum stored in req's session cookie, or #f if
   there is no cookie or it is invalid or expired.
 Example:
   (session-ref cfg req) => ((uid . 42) (name . \"alice\"))"
-      (let ((tok (cookie-ref (parse-cookie-header (http-request-header req "Cookie"))
-                             (session-config-name cfg))))
+      (let
+          ((tok (cookie-ref (parse-cookie-header
+                             (http-request-header req "Cookie"))
+                            (session-config-name cfg))))
         (and tok
-             (token-verify (session-config-keys cfg) tok
-                           (list (cons 'purpose (session-config-purpose cfg)))))))
+             (token-verify (session-config-keys cfg)
+                           tok
+                           (list (cons 'purpose
+                                       (session-config-purpose cfg)))))))
 
     (define (cookie-header cfg value max-age)
       (cons "Set-Cookie"
-            (apply format-set-cookie (session-config-name cfg) value max-age
+            (apply format-set-cookie
+                   (session-config-name cfg)
+                   value
+                   max-age
                    (session-config-path cfg)
                    (if (session-config-secure? cfg) '() '(no-secure)))))
 
@@ -83,9 +89,11 @@ Example:
     (list (cons \"Location\" \"/\") (session-set-cookie cfg '((uid . 42))))
     \"\")"
       (cookie-header cfg
-                     (token-sign (session-config-keys cfg) datum
+                     (token-sign (session-config-keys cfg)
+                                 datum
                                  (session-config-max-age cfg)
-                                 (list (cons 'purpose (session-config-purpose cfg))))
+                                 (list (cons 'purpose
+                                             (session-config-purpose cfg))))
                      (session-config-max-age cfg)))
 
     (define (session-clear-cookie cfg)
@@ -96,5 +104,4 @@ Description: Returns a (\"Set-Cookie\" . value) header pair that removes
 Example:
   (make-http-response 303
     (list (cons \"Location\" \"/login\") (session-clear-cookie cfg)) \"\")"
-      (cookie-header cfg "" 0))
-))
+      (cookie-header cfg "" 0))))

@@ -1,35 +1,35 @@
 (define-library (scm ooxml word)
-  (export make-document
+  (export call-with-document
+          document-add-heading!
+          document-add-index!
+          document-add-named-style!
+          document-add-page-break!
           document-add-paragraph!
+          document-add-table-of-contents!
           document-define-style!
           document-save
           document-save-to-bytevector
-          paragraph-add-run!
-          paragraph-add-tab!
+          document-set-footer!
+          document-set-header!
+          document-set-page-size!
+          document-set-properties!
+          make-document
+          make-run-style
           paragraph-add-break!
           paragraph-add-image!
-          paragraph-set-style!
-          paragraph-set-alignment!
-          paragraph-set-spacing!
-          paragraph-set-tab-stops!
-          paragraph-set-indent!
-          make-run-style
-          paragraph-add-styled-run!
-          resolve-color
-          register-color!
-          call-with-document
-          document-add-named-style!
-          document-add-heading!
-          document-add-table-of-contents!
-          document-add-index!
           paragraph-add-index-entry!
-          document-add-page-break!
+          paragraph-add-page-number!
+          paragraph-add-run!
+          paragraph-add-styled-run!
+          paragraph-add-tab!
+          paragraph-set-alignment!
+          paragraph-set-indent!
           paragraph-set-page-break-before!
-          document-set-page-size!
-          document-set-header!
-          document-set-footer!
-          document-set-properties!
-          paragraph-add-page-number!)
+          paragraph-set-spacing!
+          paragraph-set-style!
+          paragraph-set-tab-stops!
+          register-color!
+          resolve-color)
   (import (scheme base)
           (scheme cxr)
           (scheme file)
@@ -47,23 +47,23 @@
     ;; ── Color table ──────────────────────────────────────────────────────────
 
     (define *word-color-table*
-      '((black      . "FF000000")
-        (white      . "FFFFFFFF")
-        (red        . "FFFF0000")
-        (darkred    . "FF8B0000")
-        (lightred   . "FFFF8080")
-        (green      . "FF00B050")
-        (darkgreen  . "FF008000")
+      '((black . "FF000000")
+        (white . "FFFFFFFF")
+        (red . "FFFF0000")
+        (darkred . "FF8B0000")
+        (lightred . "FFFF8080")
+        (green . "FF00B050")
+        (darkgreen . "FF008000")
         (lightgreen . "FF90EE90")
-        (blue       . "FF0070C0")
-        (darkblue   . "FF00008B")
-        (lightblue  . "FFADD8E6")
-        (yellow     . "FFFFFF00")
-        (orange     . "FFFF8000")
-        (purple     . "FF800080")
-        (gray       . "FF808080")
-        (darkgray   . "FF404040")
-        (lightgray  . "FFD3D3D3")))
+        (blue . "FF0070C0")
+        (darkblue . "FF00008B")
+        (lightblue . "FFADD8E6")
+        (yellow . "FFFFFF00")
+        (orange . "FFFF8000")
+        (purple . "FF800080")
+        (gray . "FF808080")
+        (darkgray . "FF404040")
+        (lightgray . "FFD3D3D3")))
 
     (define (register-color! name hex-string)
       "Syntax: (register-color! name hex-string)
@@ -72,7 +72,8 @@ Description: Registers a new named color. name is a symbol; hex-string is an
 8-character ARGB hex string (e.g. \"FFFF0000\").
 Example:
   (register-color! 'salmon \"FFFA8072\")"
-      (set! *word-color-table* (cons (cons name hex-string) *word-color-table*)))
+      (set! *word-color-table*
+            (cons (cons name hex-string) *word-color-table*)))
 
     (define (resolve-color color)
       "Syntax: (resolve-color color)
@@ -85,9 +86,7 @@ Example:
       (if (string? color)
           color
           (let ((entry (assq color *word-color-table*)))
-            (if entry
-                (cdr entry)
-                (error "unknown color" color)))))
+            (if entry (cdr entry) (error "unknown color" color)))))
 
     ;; Strip alpha prefix: 8-char ARGB -> 6-char RGB for Word XML w:val
     (define (argb->rgb argb) (substring argb 2 8))
@@ -95,7 +94,8 @@ Example:
     ;; ── XML helpers ──────────────────────────────────────────────────────────
 
     (define (xml-escape str)
-      (let loop ((chars (string->list str)) (acc '()))
+      (let loop ((chars (string->list str))
+                 (acc '()))
         (if (null? chars)
             (list->string (reverse acc))
             (let* ((c (car chars))
@@ -103,14 +103,15 @@ Example:
                                       ((char=? c #\<) (string->list "&lt;"))
                                       ((char=? c #\>) (string->list "&gt;"))
                                       ((char=? c #\") (string->list "&quot;"))
-                                      (else           (list c)))))
+                                      (else (list c)))))
               (loop (cdr chars) (append (reverse replacement) acc))))))
 
     ;; ── Style ID ─────────────────────────────────────────────────────────────
 
     (define (style-id-from-name name)
       ;; Remove spaces: "Heading 1" -> "Heading1"
-      (let loop ((chars (string->list name)) (acc '()))
+      (let loop ((chars (string->list name))
+                 (acc '()))
         (if (null? chars)
             (list->string (reverse acc))
             (if (char=? (car chars) #\space)
@@ -129,21 +130,23 @@ Example:
     (rs 'set-bold #t)
     (rs 'set-color (resolve-color 'red))
     (paragraph-add-styled-run! para \"text\" rs))"
-      (let ((font-name #f)
-            (font-size #f)
-            (bold      #f)
-            (italic    #f)
-            (underline #f)
-            (color     #f))
+      (let
+          ((font-name #f)
+           (font-size #f)
+           (bold #f)
+           (italic #f)
+           (underline #f)
+           (color #f))
         (lambda (action . args)
           (case action
             ((set-font-name) (set! font-name (car args)))
             ((set-font-size) (set! font-size (car args)))
-            ((set-bold)      (set! bold (car args)))
-            ((set-italic)    (set! italic (car args)))
+            ((set-bold) (set! bold (car args)))
+            ((set-italic) (set! italic (car args)))
             ((set-underline) (set! underline (car args)))
-            ((set-color)     (set! color (car args)))
-            ((get) (vector font-name font-size bold italic underline color))))))
+            ((set-color) (set! color (car args)))
+            ((get)
+             (vector font-name font-size bold italic underline color))))))
 
     ;; ── Document data structure ───────────────────────────────────────────────
     ;; (vector 'doc paragraphs named-styles images next-image-id page-size header footer props)
@@ -159,21 +162,21 @@ Example:
     (document-save doc \"out.docx\"))"
       (vector 'doc '() '() '() 2 #f #f #f '()))
 
-    (define (doc-paragraphs doc)       (vector-ref doc 1))
-    (define (doc-named-styles doc)     (vector-ref doc 2))
-    (define (doc-images doc)           (vector-ref doc 3))
-    (define (doc-next-image-id doc)    (vector-ref doc 4))
-    (define (doc-page-size doc)        (vector-ref doc 5))
-    (define (doc-header doc)           (vector-ref doc 6))
-    (define (doc-footer doc)           (vector-ref doc 7))
-    (define (doc-set-paragraphs! doc v)    (vector-set! doc 1 v))
-    (define (doc-set-named-styles! doc v)  (vector-set! doc 2 v))
-    (define (doc-set-images! doc v)        (vector-set! doc 3 v))
+    (define (doc-paragraphs doc) (vector-ref doc 1))
+    (define (doc-named-styles doc) (vector-ref doc 2))
+    (define (doc-images doc) (vector-ref doc 3))
+    (define (doc-next-image-id doc) (vector-ref doc 4))
+    (define (doc-page-size doc) (vector-ref doc 5))
+    (define (doc-header doc) (vector-ref doc 6))
+    (define (doc-footer doc) (vector-ref doc 7))
+    (define (doc-set-paragraphs! doc v) (vector-set! doc 1 v))
+    (define (doc-set-named-styles! doc v) (vector-set! doc 2 v))
+    (define (doc-set-images! doc v) (vector-set! doc 3 v))
     (define (doc-set-next-image-id! doc v) (vector-set! doc 4 v))
-    (define (doc-set-page-size! doc v)     (vector-set! doc 5 v))
-    (define (doc-set-header*! doc v)       (vector-set! doc 6 v))
-    (define (doc-set-footer*! doc v)       (vector-set! doc 7 v))
-    (define (doc-properties doc)           (vector-ref doc 8))
+    (define (doc-set-page-size! doc v) (vector-set! doc 5 v))
+    (define (doc-set-header*! doc v) (vector-set! doc 6 v))
+    (define (doc-set-footer*! doc v) (vector-set! doc 7 v))
+    (define (doc-properties doc) (vector-ref doc 8))
 
     (define (document-set-properties! doc props)
       "Syntax: (document-set-properties! doc props)
@@ -198,22 +201,22 @@ Example:
     (define (make-para doc style-name)
       (vector 'para doc style-name #f #f '() #f '() #f #f))
 
-    (define (para-doc para)         (vector-ref para 1))
-    (define (para-style para)       (vector-ref para 2))
-    (define (para-alignment para)   (vector-ref para 3))
-    (define (para-spacing para)     (vector-ref para 4))
-    (define (para-tab-stops para)   (vector-ref para 5))
-    (define (para-indent para)      (vector-ref para 6))
-    (define (para-runs para)        (vector-ref para 7))
-    (define (para-set-style! para v)     (vector-set! para 2 v))
+    (define (para-doc para) (vector-ref para 1))
+    (define (para-style para) (vector-ref para 2))
+    (define (para-alignment para) (vector-ref para 3))
+    (define (para-spacing para) (vector-ref para 4))
+    (define (para-tab-stops para) (vector-ref para 5))
+    (define (para-indent para) (vector-ref para 6))
+    (define (para-runs para) (vector-ref para 7))
+    (define (para-set-style! para v) (vector-set! para 2 v))
     (define (para-set-alignment! para v) (vector-set! para 3 v))
-    (define (para-set-spacing! para v)   (vector-set! para 4 v))
+    (define (para-set-spacing! para v) (vector-set! para 4 v))
     (define (para-set-tab-stops! para v) (vector-set! para 5 v))
-    (define (para-set-indent! para v)    (vector-set! para 6 v))
-    (define (para-set-runs! para v)      (vector-set! para 7 v))
-    (define (para-outline-level para)        (vector-ref para 8))
+    (define (para-set-indent! para v) (vector-set! para 6 v))
+    (define (para-set-runs! para v) (vector-set! para 7 v))
+    (define (para-outline-level para) (vector-ref para 8))
     (define (para-set-outline-level! para v) (vector-set! para 8 v))
-    (define (para-page-break-before para)        (vector-ref para 9))
+    (define (para-page-break-before para) (vector-ref para 9))
     (define (para-set-page-break-before*! para v) (vector-set! para 9 v))
     (define (para-append-run! para run)
       (para-set-runs! para (append (para-runs para) (list run))))
@@ -252,9 +255,9 @@ Example:
     ;; Named page sizes: (width-twips . height-twips)
     (define *page-sizes*
       '((letter . (12240 . 15840))
-        (a4     . (11906 . 16838))
-        (a5     . ( 8391 . 11906))
-        (legal  . (12240 . 20163))))
+        (a4 . (11906 . 16838))
+        (a5 . (8391 . 11906))
+        (legal . (12240 . 20163))))
 
     (define (document-set-page-size! doc size)
       "Syntax: (document-set-page-size! doc size)
@@ -345,9 +348,11 @@ a field code that Word/LibreOffice updates on open. title defaults to
 Example:
   (document-add-table-of-contents! doc)
   (document-add-table-of-contents! doc \"Contents\" 2)"
-      (let* ((title     (if (null? rest) "Table of Contents" (car rest)))
-             (max-level (if (or (null? rest) (null? (cdr rest))) 3 (cadr rest)))
-             (block     (vector 'toc title max-level)))
+      (let* ((title (if (null? rest) "Table of Contents" (car rest)))
+             (max-level (if (or (null? rest) (null? (cdr rest)))
+                            3
+                            (cadr rest)))
+             (block (vector 'toc title max-level)))
         (doc-set-paragraphs! doc (append (doc-paragraphs doc) (list block)))
         block))
 
@@ -383,25 +388,33 @@ Example:
     ;; rpr: (vector font-name font-size bold italic underline color)
     ;;              0         1         2    3      4         5
 
-    (define (document-add-named-style! doc name based-on
-                                   font-name font-size color
-                                   bold italic underline
-                                   alignment
+    (define
+        (document-add-named-style! doc name based-on font-name font-size color
+                                   bold italic underline alignment
                                    spacing-before spacing-after line-spacing)
       (let* ((sid (style-id-from-name name))
-             (ppr (vector alignment spacing-before spacing-after line-spacing '() #f))
+             (ppr (vector alignment spacing-before spacing-after line-spacing
+                          '()
+                          #f))
              (rpr (vector font-name font-size bold italic underline color)))
         (doc-set-named-styles! doc
-          (append (doc-named-styles doc)
-                  (list (vector sid name based-on ppr rpr))))))
+                               (append (doc-named-styles doc)
+                                       (list
+                                        (vector sid name based-on ppr
+                                                rpr))))))
 
-    (define (document-define-style-impl! doc name bo fn sz co bd it ul al sb sa ls)
+    (define
+        (document-define-style-impl! doc name bo fn sz co bd it ul al sb sa
+                                     ls)
       (document-add-named-style! doc name bo fn sz
-        (if co (resolve-color co) #f)
-        bd it ul al
-        (if sb (* sb 20) #f)
-        (if sa (* sa 20) #f)
-        (if ls (* ls 20) #f)))
+                                 (if co (resolve-color co) #f)
+                                 bd
+                                 it
+                                 ul
+                                 al
+                                 (if sb (* sb 20) #f)
+                                 (if sa (* sa 20) #f)
+                                 (if ls (* ls 20) #f)))
 
     (define-syntax document-define-style!
       "Syntax: (document-define-style! doc name [based-on: s] [font: n] [size: n] [color: c] [bold] [italic] [underline] [alignment: a] [spacing-before: n] [spacing-after: n] [line-spacing: n])
@@ -415,8 +428,9 @@ Example:
          (dds-aux doc name #f #f #f #f #f #f #f #f #f #f #f rest ...))))
 
     (define-syntax dds-aux
-      (syntax-rules (based-on: font: size: color: bold italic underline
-                     alignment: spacing-before: spacing-after: line-spacing:)
+      (syntax-rules
+          (based-on: font: size: color: bold italic underline alignment:
+           spacing-before: spacing-after: line-spacing:)
         ((_ doc name bo fn sz co bd it ul al sb sa ls based-on: val rest ...)
          (dds-aux doc name val fn sz co bd it ul al sb sa ls rest ...))
         ((_ doc name bo fn sz co bd it ul al sb sa ls font: val rest ...)
@@ -427,11 +441,14 @@ Example:
          (dds-aux doc name bo fn sz val bd it ul al sb sa ls rest ...))
         ((_ doc name bo fn sz co bd it ul al sb sa ls alignment: val rest ...)
          (dds-aux doc name bo fn sz co bd it ul val sb sa ls rest ...))
-        ((_ doc name bo fn sz co bd it ul al sb sa ls spacing-before: val rest ...)
+        ((_ doc name bo fn sz co bd it ul al sb sa ls spacing-before: val rest
+          ...)
          (dds-aux doc name bo fn sz co bd it ul al val sa ls rest ...))
-        ((_ doc name bo fn sz co bd it ul al sb sa ls spacing-after: val rest ...)
+        ((_ doc name bo fn sz co bd it ul al sb sa ls spacing-after: val rest
+          ...)
          (dds-aux doc name bo fn sz co bd it ul al sb val ls rest ...))
-        ((_ doc name bo fn sz co bd it ul al sb sa ls line-spacing: val rest ...)
+        ((_ doc name bo fn sz co bd it ul al sb sa ls line-spacing: val rest
+          ...)
          (dds-aux doc name bo fn sz co bd it ul al sb sa val rest ...))
         ((_ doc name bo fn sz co bd it ul al sb sa ls bold rest ...)
          (dds-aux doc name bo fn sz co #t it ul al sb sa ls rest ...))
@@ -440,7 +457,8 @@ Example:
         ((_ doc name bo fn sz co bd it ul al sb sa ls underline rest ...)
          (dds-aux doc name bo fn sz co bd it #t al sb sa ls rest ...))
         ((_ doc name bo fn sz co bd it ul al sb sa ls)
-         (document-define-style-impl! doc name bo fn sz co bd it ul al sb sa ls))))
+         (document-define-style-impl! doc name bo fn sz co bd it ul al sb sa
+          ls))))
 
     ;; ── Paragraph mutation ────────────────────────────────────────────────────
 
@@ -472,9 +490,9 @@ Example:
   (paragraph-set-spacing! para 0 0 14)"
       (let ((line-pt (if (null? rest) #f (car rest))))
         (para-set-spacing! para
-          (list (* before-pt 20)
-                (* after-pt 20)
-                (if line-pt (* line-pt 20) #f)))))
+                           (list (* before-pt 20)
+                                 (* after-pt 20)
+                                 (if line-pt (* line-pt 20) #f)))))
 
     (define (paragraph-set-tab-stops! para stops)
       "Syntax: (paragraph-set-tab-stops! para stops)
@@ -485,10 +503,10 @@ where pos-pt is in points and alignment is a symbol ('left 'center 'right
 Example:
   (paragraph-set-tab-stops! para '((2.5 left) (5.0 center)))"
       (para-set-tab-stops! para
-        (map (lambda (stop)
-               (list (* (car stop) 20)
-                     (symbol->string (cadr stop))))
-             stops)))
+                           (map (lambda (stop)
+                                  (list (* (car stop) 20)
+                                        (symbol->string (cadr stop))))
+                                stops)))
 
     (define (paragraph-set-indent! para left-pt . rest)
       "Syntax: (paragraph-set-indent! para left-pt [right-pt [first-pt]])
@@ -498,9 +516,13 @@ Example:
   (paragraph-set-indent! para 1.0)
   (paragraph-set-indent! para 0.5 0 -0.5)"
       (let* ((right-pt (if (null? rest) 0 (car rest)))
-             (first-pt (if (or (null? rest) (null? (cdr rest))) 0 (cadr rest))))
+             (first-pt (if (or (null? rest) (null? (cdr rest)))
+                           0
+                           (cadr rest))))
         (para-set-indent! para
-          (list (* left-pt 20) (* right-pt 20) (* first-pt 20)))))
+                          (list (* left-pt 20)
+                                (* right-pt 20)
+                                (* first-pt 20)))))
 
     ;; ── Run mutation ─────────────────────────────────────────────────────────
 
@@ -581,11 +603,11 @@ Example:
               (else (loop (- i 1))))))
 
     (define (ext->mime ext)
-      (cond ((string=? ext "png")  "image/png")
-            ((string=? ext "jpg")  "image/jpeg")
+      (cond ((string=? ext "png") "image/png")
+            ((string=? ext "jpg") "image/jpeg")
             ((string=? ext "jpeg") "image/jpeg")
-            ((string=? ext "gif")  "image/gif")
-            ((string=? ext "bmp")  "image/bmp")
+            ((string=? ext "gif") "image/gif")
+            ((string=? ext "bmp") "image/bmp")
             (else "image/png")))
 
     (define (paragraph-add-image! para filename width-pt height-pt)
@@ -595,63 +617,70 @@ Description: Embeds an image from filename into para. width-pt and height-pt
 are the display dimensions in points (1 pt = 12700 EMU).
 Example:
   (paragraph-add-image! para \"logo.png\" 100 50)"
-      (let* ((doc     (para-doc para))
-             (images  (doc-images doc))
+      (let* ((doc (para-doc para))
+             (images (doc-images doc))
              (img-num (+ 1 (length images)))
              ;; rId1=styles, rId2=settings, rId3=header, rId4=footer; images start rId5
-             (rel-id  (string-append "rId" (number->string (+ 4 img-num))))
-             (ext     (image-ext filename))
-             (mime    (ext->mime ext))
-             (w-emu   (* width-pt 12700))
-             (h-emu   (* height-pt 12700)))
+             (rel-id (string-append "rId" (number->string (+ 4 img-num))))
+             (ext (image-ext filename))
+             (mime (ext->mime ext))
+             (w-emu (* width-pt 12700))
+             (h-emu (* height-pt 12700)))
         (doc-set-images! doc
-          (append images (list (list rel-id img-num ext mime filename))))
+                         (append images
+                                 (list (list rel-id img-num ext mime
+                                             filename))))
         (para-append-run! para (vector 'image rel-id w-emu h-emu))))
 
     ;; ── XML rendering ─────────────────────────────────────────────────────────
 
-    (define ns-w   "http://schemas.openxmlformats.org/wordprocessingml/2006/main")
-    (define ns-r   "http://schemas.openxmlformats.org/officeDocument/2006/relationships")
-    (define ns-wp  "http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing")
-    (define ns-a   "http://schemas.openxmlformats.org/drawingml/2006/main")
+    (define ns-w
+      "http://schemas.openxmlformats.org/wordprocessingml/2006/main")
+    (define ns-r
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships")
+    (define ns-wp
+      "http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing")
+    (define ns-a "http://schemas.openxmlformats.org/drawingml/2006/main")
     (define ns-pic "http://schemas.openxmlformats.org/drawingml/2006/picture")
-    (define ns-pkg "http://schemas.openxmlformats.org/package/2006/relationships")
+    (define ns-pkg
+      "http://schemas.openxmlformats.org/package/2006/relationships")
 
     (define ns-rel-base
       "http://schemas.openxmlformats.org/officeDocument/2006/relationships")
 
-    (define ct-base
-      "application/vnd.openxmlformats-officedocument")
+    (define ct-base "application/vnd.openxmlformats-officedocument")
 
     (define (render-alignment alignment)
       (case alignment
-        ((left)    "left")
-        ((center)  "center")
-        ((right)   "right")
+        ((left) "left")
+        ((center) "center")
+        ((right) "right")
         ((justify) "both")
-        (else      (if (string? alignment) alignment "left"))))
+        (else (if (string? alignment) alignment "left"))))
 
     (define (render-ppr port para)
-      (let ((style     (para-style para))
+      (let ((style (para-style para))
             (alignment (para-alignment para))
-            (spacing   (para-spacing para))
+            (spacing (para-spacing para))
             (tab-stops (para-tab-stops para))
-            (indent    (para-indent para))
-            (pgbrk    (para-page-break-before para)))
-        (when (or style alignment spacing (not (null? tab-stops)) indent pgbrk)
+            (indent (para-indent para))
+            (pgbrk (para-page-break-before para)))
+        (when
+            (or style alignment spacing (not (null? tab-stops)) indent pgbrk)
           (display "<w:pPr>" port)
           (when style
-            (format port "<w:pStyle w:val=\"~a\"/>" (style-id-from-name style)))
-          (when pgbrk
-            (display "<w:pageBreakBefore/>" port))
+            (format port "<w:pStyle w:val=\"~a\"/>"
+                    (style-id-from-name style)))
+          (when pgbrk (display "<w:pageBreakBefore/>" port))
           (when alignment
             (format port "<w:jc w:val=\"~a\"/>" (render-alignment alignment)))
           (when spacing
             (let ((before (car spacing))
-                  (after  (cadr spacing))
-                  (line   (caddr spacing)))
+                  (after (cadr spacing))
+                  (line (caddr spacing)))
               (if line
-                  (format port "<w:spacing w:before=\"~a\" w:after=\"~a\" w:line=\"~a\" w:lineRule=\"atLeast\"/>"
+                  (format port
+                          "<w:spacing w:before=\"~a\" w:after=\"~a\" w:line=\"~a\" w:lineRule=\"atLeast\"/>"
                           before after line)
                   (format port "<w:spacing w:before=\"~a\" w:after=\"~a\"/>"
                           before after))))
@@ -659,117 +688,138 @@ Example:
             (display "<w:tabs>" port)
             (for-each (lambda (ts)
                         (format port "<w:tab w:val=\"~a\" w:pos=\"~a\"/>"
-                                (cadr ts) (car ts)))
+                                (cadr ts)
+                                (car ts)))
                       tab-stops)
             (display "</w:tabs>" port))
           (when indent
-            (format port "<w:ind w:left=\"~a\" w:right=\"~a\" w:firstLine=\"~a\"/>"
-                    (car indent) (cadr indent) (caddr indent)))
+            (format port
+                    "<w:ind w:left=\"~a\" w:right=\"~a\" w:firstLine=\"~a\"/>"
+                    (car indent)
+                    (cadr indent)
+                    (caddr indent)))
           (display "</w:pPr>" port))))
 
     (define (render-rpr port rdata)
       ;; rdata is (vector font-name font-size bold italic underline color)
-      (let ((fname  (vector-ref rdata 0))
-            (fsize  (vector-ref rdata 1))
-            (bold   (vector-ref rdata 2))
+      (let ((fname (vector-ref rdata 0))
+            (fsize (vector-ref rdata 1))
+            (bold (vector-ref rdata 2))
             (italic (vector-ref rdata 3))
-            (ul     (vector-ref rdata 4))
-            (color  (vector-ref rdata 5)))
+            (ul (vector-ref rdata 4))
+            (color (vector-ref rdata 5)))
         (when (or fname fsize bold italic ul color)
           (display "<w:rPr>" port)
           (when fname
-            (format port "<w:rFonts w:ascii=\"~a\" w:hAnsi=\"~a\"/>" fname fname))
+            (format port "<w:rFonts w:ascii=\"~a\" w:hAnsi=\"~a\"/>" fname
+                    fname))
           (when fsize
             (format port "<w:sz w:val=\"~a\"/><w:szCs w:val=\"~a\"/>"
-                    (* fsize 2) (* fsize 2)))
-          (when bold    (display "<w:b/>" port))
-          (when italic  (display "<w:i/>" port))
-          (when ul      (display "<w:u w:val=\"single\"/>" port))
+                    (* fsize 2)
+                    (* fsize 2)))
+          (when bold (display "<w:b/>" port))
+          (when italic (display "<w:i/>" port))
+          (when ul (display "<w:u w:val=\"single\"/>" port))
           (when color
             (format port "<w:color w:val=\"~a\"/>" (argb->rgb color)))
           (display "</w:rPr>" port))))
 
     (define (render-run port run)
       (let ((tag (vector-ref run 0)))
-        (cond
-          ((eq? tag 'run)
-           (let* ((text  (vector-ref run 1))
-                  (rs    (vector-ref run 2))
-                  (rdata (if rs (rs 'get) #f))
-                  (need-preserve (and (string? text)
+        (cond ((eq? tag 'run)
+               (let* ((text (vector-ref run 1))
+                      (rs (vector-ref run 2))
+                      (rdata (if rs (rs 'get) #f))
+                      (need-preserve (and
+                                      (string? text)
                                       (> (string-length text) 0)
-                                      (or (char=? (string-ref text 0) #\space)
-                                          (char=? (string-ref text
-                                                              (- (string-length text) 1))
-                                                  #\space)))))
-             (display "<w:r>" port)
-             (when rdata (render-rpr port rdata))
-             (if need-preserve
-                 (format port "<w:t xml:space=\"preserve\">~a</w:t>"
-                         (xml-escape text))
-                 (format port "<w:t>~a</w:t>" (xml-escape text)))
-             (display "</w:r>" port)))
-          ((eq? tag 'tab)
-           (display "<w:r><w:tab/></w:r>" port))
-          ((eq? tag 'break)
-           (display "<w:r><w:br/></w:r>" port))
-          ((eq? tag 'image)
-           (let* ((rel-id  (vector-ref run 1))
-                  (w-emu   (vector-ref run 2))
-                  (h-emu   (vector-ref run 3))
-                  (img-id  1))   ;; drawing id (unique per document, simplified)
-             (display "<w:r><w:drawing>" port)
-             (display "<wp:inline xmlns:wp=\"" port)
-             (display ns-wp port)
-             (display "\">" port)
-             (format port "<wp:extent cx=\"~a\" cy=\"~a\"/>" w-emu h-emu)
-             (format port "<wp:docPr id=\"~a\" name=\"~a\"/>" img-id rel-id)
-             (format port "<a:graphic xmlns:a=\"~a\">" ns-a)
-             (format port "<a:graphicData uri=\"~a\">" ns-pic)
-             (format port "<pic:pic xmlns:pic=\"~a\">" ns-pic)
-             (display "<pic:nvPicPr>" port)
-             (format port "<pic:cNvPr id=\"0\" name=\"~a\"/>" rel-id)
-             (display "<pic:cNvPicPr/>" port)
-             (display "</pic:nvPicPr>" port)
-             (display "<pic:blipFill>" port)
-             (format port "<a:blip r:embed=\"~a\" xmlns:r=\"~a\"/>" rel-id ns-r)
-             (display "<a:stretch><a:fillRect/></a:stretch>" port)
-             (display "</pic:blipFill>" port)
-             (display "<pic:spPr>" port)
-             (display "<a:xfrm><a:off x=\"0\" y=\"0\"/>" port)
-             (format port "<a:ext cx=\"~a\" cy=\"~a\"/>" w-emu h-emu)
-             (display "</a:xfrm>" port)
-             (display "<a:prstGeom prst=\"rect\"><a:avLst/></a:prstGeom>" port)
-             (display "</pic:spPr>" port)
-             (display "</pic:pic></a:graphicData></a:graphic>" port)
-             (display "</wp:inline></w:drawing></w:r>" port)))
-          ((eq? tag 'xe)
-           (let ((term (vector-ref run 1)))
-             (display "<w:r><w:fldChar w:fldCharType=\"begin\"/></w:r>" port)
-             (format port "<w:r><w:instrText xml:space=\"preserve\"> XE \"~a\" </w:instrText></w:r>"
-                     (xml-escape term))
-             (display "<w:r><w:fldChar w:fldCharType=\"end\"/></w:r>" port)))
-          ((eq? tag 'page-number)
-           (display "<w:r><w:fldChar w:fldCharType=\"begin\"/></w:r>" port)
-           (display "<w:r><w:instrText xml:space=\"preserve\"> PAGE </w:instrText></w:r>" port)
-           (display "<w:r><w:fldChar w:fldCharType=\"end\"/></w:r>" port)))))
+                                      (or
+                                       (char=? (string-ref text 0) #\space)
+                                       (char=?
+                                        (string-ref
+                                         text
+                                         (- (string-length text) 1))
+                                        #\space)))))
+                 (display "<w:r>" port)
+                 (when rdata (render-rpr port rdata))
+                 (if need-preserve
+                     (format port "<w:t xml:space=\"preserve\">~a</w:t>"
+                             (xml-escape text))
+                     (format port "<w:t>~a</w:t>" (xml-escape text)))
+                 (display "</w:r>" port)))
+              ((eq? tag 'tab) (display "<w:r><w:tab/></w:r>" port))
+              ((eq? tag 'break) (display "<w:r><w:br/></w:r>" port))
+              ((eq? tag 'image)
+               (let* ((rel-id (vector-ref run 1))
+                      (w-emu (vector-ref run 2))
+                      (h-emu (vector-ref run 3))
+                      (img-id 1)) ;; drawing id (unique per document, simplified)
+                 (display "<w:r><w:drawing>" port)
+                 (display "<wp:inline xmlns:wp=\"" port)
+                 (display ns-wp port)
+                 (display "\">" port)
+                 (format port "<wp:extent cx=\"~a\" cy=\"~a\"/>" w-emu h-emu)
+                 (format port "<wp:docPr id=\"~a\" name=\"~a\"/>" img-id
+                         rel-id)
+                 (format port "<a:graphic xmlns:a=\"~a\">" ns-a)
+                 (format port "<a:graphicData uri=\"~a\">" ns-pic)
+                 (format port "<pic:pic xmlns:pic=\"~a\">" ns-pic)
+                 (display "<pic:nvPicPr>" port)
+                 (format port "<pic:cNvPr id=\"0\" name=\"~a\"/>" rel-id)
+                 (display "<pic:cNvPicPr/>" port)
+                 (display "</pic:nvPicPr>" port)
+                 (display "<pic:blipFill>" port)
+                 (format port "<a:blip r:embed=\"~a\" xmlns:r=\"~a\"/>" rel-id
+                         ns-r)
+                 (display "<a:stretch><a:fillRect/></a:stretch>" port)
+                 (display "</pic:blipFill>" port)
+                 (display "<pic:spPr>" port)
+                 (display "<a:xfrm><a:off x=\"0\" y=\"0\"/>" port)
+                 (format port "<a:ext cx=\"~a\" cy=\"~a\"/>" w-emu h-emu)
+                 (display "</a:xfrm>" port)
+                 (display "<a:prstGeom prst=\"rect\"><a:avLst/></a:prstGeom>"
+                          port)
+                 (display "</pic:spPr>" port)
+                 (display "</pic:pic></a:graphicData></a:graphic>" port)
+                 (display "</wp:inline></w:drawing></w:r>" port)))
+              ((eq? tag 'xe)
+               (let ((term (vector-ref run 1)))
+                 (display "<w:r><w:fldChar w:fldCharType=\"begin\"/></w:r>"
+                          port)
+                 (format port
+                         "<w:r><w:instrText xml:space=\"preserve\"> XE \"~a\" </w:instrText></w:r>"
+                         (xml-escape term))
+                 (display "<w:r><w:fldChar w:fldCharType=\"end\"/></w:r>"
+                          port)))
+              ((eq? tag 'page-number)
+               (display "<w:r><w:fldChar w:fldCharType=\"begin\"/></w:r>"
+                        port)
+               (display
+                "<w:r><w:instrText xml:space=\"preserve\"> PAGE </w:instrText></w:r>"
+                port)
+               (display "<w:r><w:fldChar w:fldCharType=\"end\"/></w:r>"
+                        port)))))
 
     ;; ── TOC / Index field rendering ─────────────────────────────────────────
 
     (define (render-toc-field port toc)
-      (let ((title     (vector-ref toc 1))
+      (let ((title (vector-ref toc 1))
             (max-level (vector-ref toc 2)))
         (when title
           (display "<w:p>" port)
-          (display "<w:r><w:rPr><w:b/><w:sz w:val=\"28\"/><w:szCs w:val=\"28\"/></w:rPr>" port)
+          (display
+           "<w:r><w:rPr><w:b/><w:sz w:val=\"28\"/><w:szCs w:val=\"28\"/></w:rPr>"
+           port)
           (format port "<w:t>~a</w:t></w:r>" (xml-escape title))
           (display "</w:p>" port))
         (display "<w:p>" port)
         (display "<w:r><w:fldChar w:fldCharType=\"begin\"/></w:r>" port)
-        (format port "<w:r><w:instrText xml:space=\"preserve\"> TOC \\o \"1-~a\" \\h \\z </w:instrText></w:r>"
+        (format port
+                "<w:r><w:instrText xml:space=\"preserve\"> TOC \\o \"1-~a\" \\h \\z </w:instrText></w:r>"
                 max-level)
         (display "<w:r><w:fldChar w:fldCharType=\"separate\"/></w:r>" port)
-        (display "<w:r><w:t>[Update field to see Table of Contents]</w:t></w:r>" port)
+        (display
+         "<w:r><w:t>[Update field to see Table of Contents]</w:t></w:r>" port)
         (display "<w:r><w:fldChar w:fldCharType=\"end\"/></w:r>" port)
         (display "</w:p>" port)))
 
@@ -777,12 +827,16 @@ Example:
       (let ((title (vector-ref idx 1)))
         (when title
           (display "<w:p>" port)
-          (display "<w:r><w:rPr><w:b/><w:sz w:val=\"28\"/><w:szCs w:val=\"28\"/></w:rPr>" port)
+          (display
+           "<w:r><w:rPr><w:b/><w:sz w:val=\"28\"/><w:szCs w:val=\"28\"/></w:rPr>"
+           port)
           (format port "<w:t>~a</w:t></w:r>" (xml-escape title))
           (display "</w:p>" port))
         (display "<w:p>" port)
         (display "<w:r><w:fldChar w:fldCharType=\"begin\"/></w:r>" port)
-        (display "<w:r><w:instrText xml:space=\"preserve\"> INDEX \\e \" \" \\h \"A\" </w:instrText></w:r>" port)
+        (display
+         "<w:r><w:instrText xml:space=\"preserve\"> INDEX \\e \" \" \\h \"A\" </w:instrText></w:r>"
+         port)
         (display "<w:r><w:fldChar w:fldCharType=\"separate\"/></w:r>" port)
         (display "<w:r><w:t>[Update field to see Index]</w:t></w:r>" port)
         (display "<w:r><w:fldChar w:fldCharType=\"end\"/></w:r>" port)
@@ -799,240 +853,269 @@ Example:
 
     (define (render-header-xml doc)
       (call-with-output-string
-       (lambda (port)
-         (display xml-preamble port)
-         (format port "<w:hdr xmlns:w=\"~a\" xmlns:r=\"~a\">" ns-w ns-r)
-         (render-hdr-ftr-paras port (doc-header doc))
-         (display "</w:hdr>" port))))
+        (lambda (port)
+          (display xml-preamble port)
+          (format port "<w:hdr xmlns:w=\"~a\" xmlns:r=\"~a\">" ns-w ns-r)
+          (render-hdr-ftr-paras port (doc-header doc))
+          (display "</w:hdr>" port))))
 
     (define (render-footer-xml doc)
       (call-with-output-string
-       (lambda (port)
-         (display xml-preamble port)
-         (format port "<w:ftr xmlns:w=\"~a\" xmlns:r=\"~a\">" ns-w ns-r)
-         (render-hdr-ftr-paras port (doc-footer doc))
-         (display "</w:ftr>" port))))
+        (lambda (port)
+          (display xml-preamble port)
+          (format port "<w:ftr xmlns:w=\"~a\" xmlns:r=\"~a\">" ns-w ns-r)
+          (render-hdr-ftr-paras port (doc-footer doc))
+          (display "</w:ftr>" port))))
 
     (define (render-document doc)
       (call-with-output-string
-       (lambda (port)
-         (display xml-preamble port)
-         (format port "<w:document xmlns:w=\"~a\" xmlns:r=\"~a\">" ns-w ns-r)
-         (display "<w:body>" port)
-         (for-each (lambda (elem)
-                     (let ((tag (vector-ref elem 0)))
-                       (cond
-                         ((eq? tag 'para)
-                          (display "<w:p>" port)
-                          (render-ppr port elem)
-                          (for-each (lambda (run) (render-run port run))
-                                    (para-runs elem))
-                          (display "</w:p>" port))
-                         ((eq? tag 'toc)
-                          (render-toc-field port elem))
-                         ((eq? tag 'index)
-                          (render-index-field port elem)))))
-                   (doc-paragraphs doc))
-         ;; Required final empty paragraph
-         (display "<w:p/>" port)
-         ;; Section properties (page size, header/footer references)
-         (let ((ps (doc-page-size doc))
-               (hdr (doc-header doc))
-               (ftr (doc-footer doc)))
-           (when (or ps hdr ftr)
-             (display "<w:sectPr>" port)
-             (when hdr
-               (display "<w:headerReference w:type=\"default\" r:id=\"rId3\"/>" port))
-             (when ftr
-               (display "<w:footerReference w:type=\"default\" r:id=\"rId4\"/>" port))
-             (when ps
-               (format port "<w:pgSz w:w=\"~a\" w:h=\"~a\"/>"
-                       (car ps) (cdr ps)))
-             (display "</w:sectPr>" port)))
-         (display "</w:body></w:document>" port))))
+        (lambda (port)
+          (display xml-preamble port)
+          (format port "<w:document xmlns:w=\"~a\" xmlns:r=\"~a\">" ns-w ns-r)
+          (display "<w:body>" port)
+          (for-each (lambda (elem)
+                      (let ((tag (vector-ref elem 0)))
+                        (cond ((eq? tag 'para)
+                               (display "<w:p>" port)
+                               (render-ppr port elem)
+                               (for-each (lambda (run) (render-run port run))
+                                         (para-runs elem))
+                               (display "</w:p>" port))
+                              ((eq? tag 'toc) (render-toc-field port elem))
+                              ((eq? tag 'index)
+                               (render-index-field port elem)))))
+                    (doc-paragraphs doc))
+          ;; Required final empty paragraph
+          (display "<w:p/>" port)
+          ;; Section properties (page size, header/footer references)
+          (let ((ps (doc-page-size doc))
+                (hdr (doc-header doc))
+                (ftr (doc-footer doc)))
+            (when (or ps hdr ftr)
+              (display "<w:sectPr>" port)
+              (when hdr
+                (display
+                 "<w:headerReference w:type=\"default\" r:id=\"rId3\"/>"
+                 port))
+              (when ftr
+                (display
+                 "<w:footerReference w:type=\"default\" r:id=\"rId4\"/>"
+                 port))
+              (when ps
+                (format port "<w:pgSz w:w=\"~a\" w:h=\"~a\"/>"
+                        (car ps)
+                        (cdr ps)))
+              (display "</w:sectPr>" port)))
+          (display "</w:body></w:document>" port))))
 
     (define (render-styles doc)
       (call-with-output-string
-       (lambda (port)
-         (display xml-preamble port)
-         (format port "<w:styles xmlns:w=\"~a\">" ns-w)
-         (display "<w:docDefaults><w:rPrDefault><w:rPr>" port)
-         (display "<w:sz w:val=\"20\"/><w:szCs w:val=\"20\"/>" port)
-         (display "</w:rPr></w:rPrDefault></w:docDefaults>" port)
-         ;; Default Normal style
-         (display "<w:style w:type=\"paragraph\" w:default=\"1\" w:styleId=\"Normal\">" port)
-         (display "<w:name w:val=\"Normal\"/></w:style>" port)
-         ;; Built-in heading styles
-         (for-each
-           (lambda (def)
-             (let ((level (car def))
-                   (size  (cadr def))
-                   (sb    (caddr def))
-                   (sa    (cadddr def)))
-               (format port "<w:style w:type=\"paragraph\" w:styleId=\"Heading~a\">" level)
-               (format port "<w:name w:val=\"Heading ~a\"/>" level)
-               (display "<w:basedOn w:val=\"Normal\"/>" port)
-               (format port "<w:pPr><w:outlineLvl w:val=\"~a\"/>" (- level 1))
-               (format port "<w:spacing w:before=\"~a\" w:after=\"~a\"/>" sb sa)
-               (display "</w:pPr>" port)
-               (format port "<w:rPr><w:b/><w:sz w:val=\"~a\"/><w:szCs w:val=\"~a\"/></w:rPr>"
-                       (* size 2) (* size 2))
-               (display "</w:style>" port)))
-           '((1 24 480 240)
-             (2 18 360 160)
-             (3 14 280 120)
-             (4 12 240 80)
-             (5 11 200 80)
-             (6 10 160 80)))
-         ;; Named styles
-         (for-each (lambda (ns)
-                     (let* ((sid      (vector-ref ns 0))
-                            (sname    (vector-ref ns 1))
-                            (based-on (vector-ref ns 2))
-                            (ppr      (vector-ref ns 3))
-                            (rpr      (vector-ref ns 4))
-                            (align    (vector-ref ppr 0))
-                            (sbefore  (vector-ref ppr 1))
-                            (safter   (vector-ref ppr 2))
-                            (sline    (vector-ref ppr 3)))
-                       (format port "<w:style w:type=\"paragraph\" w:styleId=\"~a\">" sid)
-                       (format port "<w:name w:val=\"~a\"/>" (xml-escape sname))
-                       (when based-on
-                         (format port "<w:basedOn w:val=\"~a\"/>"
-                                 (style-id-from-name based-on)))
-                       ;; pPr
-                       (when (or align sbefore safter sline)
-                         (display "<w:pPr>" port)
-                         (when align
-                           (format port "<w:jc w:val=\"~a\"/>" (render-alignment align)))
-                         (when (or sbefore safter sline)
-                           (cond
-                             ((and sbefore safter sline)
-                              (format port "<w:spacing w:before=\"~a\" w:after=\"~a\" w:line=\"~a\" w:lineRule=\"atLeast\"/>"
-                                      sbefore safter sline))
-                             ((and sbefore safter)
-                              (format port "<w:spacing w:before=\"~a\" w:after=\"~a\"/>"
-                                      sbefore safter))
-                             (sbefore
-                              (format port "<w:spacing w:before=\"~a\"/>" sbefore))
-                             (safter
-                              (format port "<w:spacing w:after=\"~a\"/>" safter))
-                             (sline
-                              (format port "<w:spacing w:line=\"~a\" w:lineRule=\"atLeast\"/>" sline))))
-                         (display "</w:pPr>" port))
-                       ;; rPr
-                       (render-rpr port rpr)
-                       (display "</w:style>" port)))
-                   (doc-named-styles doc))
-         (display "</w:styles>" port))))
+        (lambda (port)
+          (display xml-preamble port)
+          (format port "<w:styles xmlns:w=\"~a\">" ns-w)
+          (display "<w:docDefaults><w:rPrDefault><w:rPr>" port)
+          (display "<w:sz w:val=\"20\"/><w:szCs w:val=\"20\"/>" port)
+          (display "</w:rPr></w:rPrDefault></w:docDefaults>" port)
+          ;; Default Normal style
+          (display
+           "<w:style w:type=\"paragraph\" w:default=\"1\" w:styleId=\"Normal\">"
+           port)
+          (display "<w:name w:val=\"Normal\"/></w:style>" port)
+          ;; Built-in heading styles
+          (for-each (lambda (def)
+                      (let ((level (car def))
+                            (size (cadr def))
+                            (sb (caddr def))
+                            (sa (cadddr def)))
+                        (format port
+                                "<w:style w:type=\"paragraph\" w:styleId=\"Heading~a\">"
+                                level)
+                        (format port "<w:name w:val=\"Heading ~a\"/>" level)
+                        (display "<w:basedOn w:val=\"Normal\"/>" port)
+                        (format port "<w:pPr><w:outlineLvl w:val=\"~a\"/>"
+                                (- level 1))
+                        (format port
+                                "<w:spacing w:before=\"~a\" w:after=\"~a\"/>"
+                                sb sa)
+                        (display "</w:pPr>" port)
+                        (format port
+                                "<w:rPr><w:b/><w:sz w:val=\"~a\"/><w:szCs w:val=\"~a\"/></w:rPr>"
+                                (* size 2)
+                                (* size 2))
+                        (display "</w:style>" port)))
+                    '((1 24 480 240)
+                      (2 18 360 160)
+                      (3 14 280 120)
+                      (4 12 240 80)
+                      (5 11 200 80)
+                      (6 10 160 80)))
+          ;; Named styles
+          (for-each (lambda (ns)
+                      (let* ((sid (vector-ref ns 0))
+                             (sname (vector-ref ns 1))
+                             (based-on (vector-ref ns 2))
+                             (ppr (vector-ref ns 3))
+                             (rpr (vector-ref ns 4))
+                             (align (vector-ref ppr 0))
+                             (sbefore (vector-ref ppr 1))
+                             (safter (vector-ref ppr 2))
+                             (sline (vector-ref ppr 3)))
+                        (format port
+                                "<w:style w:type=\"paragraph\" w:styleId=\"~a\">"
+                                sid)
+                        (format port "<w:name w:val=\"~a\"/>"
+                                (xml-escape sname))
+                        (when based-on
+                          (format port "<w:basedOn w:val=\"~a\"/>"
+                                  (style-id-from-name based-on)))
+                        ;; pPr
+                        (when (or align sbefore safter sline)
+                          (display "<w:pPr>" port)
+                          (when align
+                            (format port "<w:jc w:val=\"~a\"/>"
+                                    (render-alignment align)))
+                          (when (or sbefore safter sline)
+                            (cond ((and sbefore safter sline)
+                                   (format port
+                                           "<w:spacing w:before=\"~a\" w:after=\"~a\" w:line=\"~a\" w:lineRule=\"atLeast\"/>"
+                                           sbefore safter sline))
+                                  ((and sbefore safter)
+                                   (format port
+                                           "<w:spacing w:before=\"~a\" w:after=\"~a\"/>"
+                                           sbefore safter))
+                                  (sbefore
+                                   (format port "<w:spacing w:before=\"~a\"/>"
+                                           sbefore))
+                                  (safter
+                                   (format port "<w:spacing w:after=\"~a\"/>"
+                                           safter))
+                                  (sline
+                                   (format port
+                                           "<w:spacing w:line=\"~a\" w:lineRule=\"atLeast\"/>"
+                                           sline))))
+                          (display "</w:pPr>" port))
+                        ;; rPr
+                        (render-rpr port rpr)
+                        (display "</w:style>" port)))
+                    (doc-named-styles doc))
+          (display "</w:styles>" port))))
 
     (define (render-rels doc)
       (call-with-output-string
-       (lambda (port)
-         (display xml-preamble port)
-         (format port "<Relationships xmlns=\"~a\">" ns-pkg)
-         (format port "<Relationship Id=\"rId1\" Type=\"~a/officeDocument\" Target=\"word/document.xml\"/>"
-                 ns-rel-base)
-         (display (docprops-relationships (doc-properties doc)) port)
-         (display "</Relationships>" port))))
+        (lambda (port)
+          (display xml-preamble port)
+          (format port "<Relationships xmlns=\"~a\">" ns-pkg)
+          (format port
+                  "<Relationship Id=\"rId1\" Type=\"~a/officeDocument\" Target=\"word/document.xml\"/>"
+                  ns-rel-base)
+          (display (docprops-relationships (doc-properties doc)) port)
+          (display "</Relationships>" port))))
 
     (define (render-content-types doc)
       (call-with-output-string
-       (lambda (port)
-         (display xml-preamble port)
-         (format port "<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\">")
-         (display "<Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/>" port)
-         (display "<Default Extension=\"xml\" ContentType=\"application/xml\"/>" port)
-         (format port "<Override PartName=\"/word/document.xml\" ContentType=\"~a.wordprocessingml.document.main+xml\"/>"
-                 ct-base)
-         (format port "<Override PartName=\"/word/styles.xml\" ContentType=\"~a.wordprocessingml.styles+xml\"/>"
-                 ct-base)
-         (format port "<Override PartName=\"/word/settings.xml\" ContentType=\"~a.wordprocessingml.settings+xml\"/>"
-                 ct-base)
-         (when (doc-header doc)
-           (format port "<Override PartName=\"/word/header1.xml\" ContentType=\"~a.wordprocessingml.header+xml\"/>"
-                   ct-base))
-         (when (doc-footer doc)
-           (format port "<Override PartName=\"/word/footer1.xml\" ContentType=\"~a.wordprocessingml.footer+xml\"/>"
-                   ct-base))
-         (for-each (lambda (img)
-                     (let ((img-num (cadr img))
-                           (ext     (caddr img))
-                           (mime    (list-ref img 3)))
-                       (format port "<Override PartName=\"/word/media/image~a.~a\" ContentType=\"~a\"/>"
-                               img-num ext mime)))
-                   (doc-images doc))
-         (display (docprops-content-types (doc-properties doc)) port)
-         (display "</Types>" port))))
+        (lambda (port)
+          (display xml-preamble port)
+          (format port
+                  "<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\">")
+          (display
+           "<Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/>"
+           port)
+          (display
+           "<Default Extension=\"xml\" ContentType=\"application/xml\"/>"
+           port)
+          (format port
+                  "<Override PartName=\"/word/document.xml\" ContentType=\"~a.wordprocessingml.document.main+xml\"/>"
+                  ct-base)
+          (format port
+                  "<Override PartName=\"/word/styles.xml\" ContentType=\"~a.wordprocessingml.styles+xml\"/>"
+                  ct-base)
+          (format port
+                  "<Override PartName=\"/word/settings.xml\" ContentType=\"~a.wordprocessingml.settings+xml\"/>"
+                  ct-base)
+          (when (doc-header doc)
+            (format port
+                    "<Override PartName=\"/word/header1.xml\" ContentType=\"~a.wordprocessingml.header+xml\"/>"
+                    ct-base))
+          (when (doc-footer doc)
+            (format port
+                    "<Override PartName=\"/word/footer1.xml\" ContentType=\"~a.wordprocessingml.footer+xml\"/>"
+                    ct-base))
+          (for-each (lambda (img)
+                      (let ((img-num (cadr img))
+                            (ext (caddr img))
+                            (mime (list-ref img 3)))
+                        (format port
+                                "<Override PartName=\"/word/media/image~a.~a\" ContentType=\"~a\"/>"
+                                img-num ext mime)))
+                    (doc-images doc))
+          (display (docprops-content-types (doc-properties doc)) port)
+          (display "</Types>" port))))
 
     (define (render-doc-rels doc)
       (call-with-output-string
-       (lambda (port)
-         (display xml-preamble port)
-         (format port "<Relationships xmlns=\"~a\">" ns-pkg)
-         (format port "<Relationship Id=\"rId1\" Type=\"~a/styles\" Target=\"styles.xml\"/>"
-                 ns-rel-base)
-         (format port "<Relationship Id=\"rId2\" Type=\"~a/settings\" Target=\"settings.xml\"/>"
-                 ns-rel-base)
-         (when (doc-header doc)
-           (format port "<Relationship Id=\"rId3\" Type=\"~a/header\" Target=\"header1.xml\"/>"
-                   ns-rel-base))
-         (when (doc-footer doc)
-           (format port "<Relationship Id=\"rId4\" Type=\"~a/footer\" Target=\"footer1.xml\"/>"
-                   ns-rel-base))
-         (for-each (lambda (img)
-                     (let ((rel-id  (car img))
-                           (img-num (cadr img))
-                           (ext     (caddr img)))
-                       (format port "<Relationship Id=\"~a\" Type=\"~a/image\" Target=\"media/image~a.~a\"/>"
-                               rel-id ns-rel-base img-num ext)))
-                   (doc-images doc))
-         (display "</Relationships>" port))))
+        (lambda (port)
+          (display xml-preamble port)
+          (format port "<Relationships xmlns=\"~a\">" ns-pkg)
+          (format port
+                  "<Relationship Id=\"rId1\" Type=\"~a/styles\" Target=\"styles.xml\"/>"
+                  ns-rel-base)
+          (format port
+                  "<Relationship Id=\"rId2\" Type=\"~a/settings\" Target=\"settings.xml\"/>"
+                  ns-rel-base)
+          (when (doc-header doc)
+            (format port
+                    "<Relationship Id=\"rId3\" Type=\"~a/header\" Target=\"header1.xml\"/>"
+                    ns-rel-base))
+          (when (doc-footer doc)
+            (format port
+                    "<Relationship Id=\"rId4\" Type=\"~a/footer\" Target=\"footer1.xml\"/>"
+                    ns-rel-base))
+          (for-each (lambda (img)
+                      (let ((rel-id (car img))
+                            (img-num (cadr img))
+                            (ext (caddr img)))
+                        (format port
+                                "<Relationship Id=\"~a\" Type=\"~a/image\" Target=\"media/image~a.~a\"/>"
+                                rel-id ns-rel-base img-num ext)))
+                    (doc-images doc))
+          (display "</Relationships>" port))))
 
     (define (render-settings)
       (call-with-output-string
-       (lambda (port)
-         (display xml-preamble port)
-         (format port "<w:settings xmlns:w=\"~a\">" ns-w)
-         (display "<w:updateFields w:val=\"true\"/>" port)
-         (display "</w:settings>" port))))
+        (lambda (port)
+          (display xml-preamble port)
+          (format port "<w:settings xmlns:w=\"~a\">" ns-w)
+          (display "<w:updateFields w:val=\"true\"/>" port)
+          (display "</w:settings>" port))))
 
     ;; ── document-save ────────────────────────────────────────────────────────
 
     (define (document-write-zip doc zp)
       (define (add-entry name contents)
-        (call-with-output-zip-entry
-         zp name
-         (lambda (port) (display contents port))
-         0))
-      (add-entry "_rels/.rels"
-                 (render-rels doc))
+        (call-with-output-zip-entry zp
+          name
+          (lambda (port) (display contents port))
+          0))
+      (add-entry "_rels/.rels" (render-rels doc))
       (for-each (lambda (e) (add-entry (car e) (cdr e)))
                 (docprops-parts (doc-properties doc)))
-      (add-entry "[Content_Types].xml"
-                 (render-content-types doc))
-      (add-entry "word/_rels/document.xml.rels"
-                 (render-doc-rels doc))
-      (add-entry "word/document.xml"
-                 (render-document doc))
-      (add-entry "word/settings.xml"
-                 (render-settings))
-      (add-entry "word/styles.xml"
-                 (render-styles doc))
+      (add-entry "[Content_Types].xml" (render-content-types doc))
+      (add-entry "word/_rels/document.xml.rels" (render-doc-rels doc))
+      (add-entry "word/document.xml" (render-document doc))
+      (add-entry "word/settings.xml" (render-settings))
+      (add-entry "word/styles.xml" (render-styles doc))
       ;; Write header/footer files
       (when (doc-header doc)
-        (add-entry "word/header1.xml"
-                   (render-header-xml doc)))
+        (add-entry "word/header1.xml" (render-header-xml doc)))
       (when (doc-footer doc)
-        (add-entry "word/footer1.xml"
-                   (render-footer-xml doc)))
+        (add-entry "word/footer1.xml" (render-footer-xml doc)))
       ;; Write image files
       (for-each (lambda (img)
-                  (let* ((img-num  (cadr img))
-                         (ext      (caddr img))
+                  (let* ((img-num (cadr img))
+                         (ext (caddr img))
                          (img-path (list-ref img 4))
-                         (entry    (format #f "word/media/image~a.~a"
-                                           img-num ext)))
+                         (entry (format #f "word/media/image~a.~a" img-num
+                                        ext)))
                     (let ((bin-port (zip-add-binary-entry zp entry 0)))
                       (let ((in-port (open-binary-input-file img-path)))
                         (let loop ()
@@ -1052,7 +1135,8 @@ Example:
          (p   (document-add-paragraph! doc)))
     (paragraph-add-run! p \"Hello, World!\")
     (document-save doc \"/tmp/out.docx\"))"
-      (call-with-output-zip filename (lambda (zp) (document-write-zip doc zp)))
+      (call-with-output-zip filename
+        (lambda (zp) (document-write-zip doc zp)))
       'ok)
 
     (define (document-save-to-bytevector doc)
@@ -1066,7 +1150,8 @@ Example:
          (p   (document-add-paragraph! doc)))
     (paragraph-add-run! p \"Hello, World!\")
     (document-save-to-bytevector doc))"
-      (call-with-output-zip-bytevector (lambda (zp) (document-write-zip doc zp))))
+      (call-with-output-zip-bytevector
+          (lambda (zp) (document-write-zip doc zp))))
 
     ;; ── call-with-document ───────────────────────────────────────────────────
 
@@ -1082,5 +1167,4 @@ Example:
         (paragraph-add-run! p \"Hello\"))))"
       (let ((doc (make-document)))
         (proc doc)
-        (document-save doc filename)))
-))
+        (document-save doc filename)))))

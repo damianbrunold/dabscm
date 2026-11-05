@@ -15,12 +15,12 @@
           (scm crypto password)
           (scm crypto token)
           (app users))
-  (export make-auth
-          auth-max-age
-          sign-in
+  (export auth-max-age
           issue-token
-          token-user
-          min-password-length)
+          make-auth
+          min-password-length
+          sign-in
+          token-user)
   (begin
 
     (define min-password-length 8)
@@ -44,7 +44,9 @@ Description: Token settings: secret (base64, or a list for key rotation),
 
     ;; Changes whenever the password (and so the hash) changes.
     (define (password-stamp hash)
-      (base64-encode (bytevector-copy (sha256-hash (string->utf8 hash)) 0 12)))
+      (base64-encode (bytevector-copy (sha256-hash (string->utf8 hash))
+                                      0
+                                      12)))
 
     (define (sign-in auth username password)
       "Syntax: (sign-in auth username password)
@@ -53,12 +55,12 @@ Description: The user entry if password is right for username, else #f.
   Upgrades an outdated password hash on success."
       (let* ((path (auth-users-file auth))
              (user (find-user path username)))
-        (cond
-          ((not (password-verify password (and user (user-hash user)))) #f)
-          ((password-needs-rehash? (user-hash user))
-           (save-user! path username (password-hash password))
-           (find-user path username))
-          (else user))))
+        (cond ((not (password-verify password (and user (user-hash user))))
+               #f)
+              ((password-needs-rehash? (user-hash user))
+               (save-user! path username (password-hash password))
+               (find-user path username))
+              (else user))))
 
     (define (issue-token auth user)
       "Syntax: (issue-token auth user)
@@ -75,11 +77,14 @@ Description: A bearer token for user, valid for the configured lifetime."
 Library: (app auth)
 Description: The user entry for a valid, unexpired token, or #f (also when
   the user was deleted or changed the password since)."
-      (let ((t (and token (token-verify (auth-keys auth) token token-options))))
+      (let
+          ((t (and token
+                   (token-verify (auth-keys auth) token token-options))))
         (and (pair? t)
              (let* ((sub (assq 'sub t))
                     (stamp (assq 'stamp t))
-                    (user (and sub (string? (cdr sub))
+                    (user (and sub
+                               (string? (cdr sub))
                                (find-user (auth-users-file auth) (cdr sub)))))
                (and user stamp
                     (equal? (cdr stamp) (password-stamp (user-hash user)))

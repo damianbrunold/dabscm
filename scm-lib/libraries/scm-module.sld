@@ -9,8 +9,8 @@
           %module-import-bindings
           %module-ref
           %reset-modules
-          import
           current-module
+          import
           module-search-path
           module-search-path!
           modules

@@ -5,21 +5,22 @@
 (import (scheme base)
         (scheme file)
         (scheme process-context)
-        (scm module)
-        (scm fs)
-        (scm log)
-        (scm string)
-        (scm test)
         (scm crypto)
         (scm crypto password)
+        (scm fs)
+        (scm log)
+        (scm module)
         (scm net http request)
-        (scm net http response))
+        (scm net http response)
+        (scm string)
+        (scm test))
 
 (define root
   (directory-name (directory-name (absolute-path (car (command-line))))))
 (module-search-path! (cons (string-append root "/src") (module-search-path)))
 
-(import (app users) (app web))
+(import (app users)
+        (app web))
 
 (test-runner-factory scm-test-runner)
 (test-begin "starter-login web")
@@ -43,19 +44,21 @@
 (define (send app method url cookie . form)
   (parameterize ((log-port (open-output-string))
                  (password-pbkdf2-iterations fast-iterations))
-    (app (make-http-request
-          method url
-          (append (if cookie (list (cons "Cookie" cookie)) '())
-                  (if (pair? form)
-                      '(("Content-Type" . "application/x-www-form-urlencoded"))
-                      '()))
-          (if (pair? form) (car form) #f)))))
+    (app (make-http-request method url
+                            (append (if cookie
+                                        (list (cons "Cookie" cookie))
+                                        '())
+                                    (if
+                                     (pair? form)
+                                     '(("Content-Type" .
+                                        "application/x-www-form-urlencoded"))
+                                     '()))
+                            (if (pair? form) (car form) #f)))))
 
 (define (status r) (http-response-status r))
 (define (location r) (http-response-header r "Location"))
 (define (body r)
-  (let ((b (http-response-body r)))
-    (if (bytevector? b) (utf8->string b) b)))
+  (let ((b (http-response-body r))) (if (bytevector? b) (utf8->string b) b)))
 (define (has? s part) (and (string? s) (string-contains-from s part 0) #t))
 
 ;; "name=value" from the response's Set-Cookie header, for the next request.
@@ -80,11 +83,14 @@
     (test-assert (has? (body r) "Invalid username or password"))
     (test-equal #f (http-response-header r "Set-Cookie")))
   (test-assert "unknown user"
-    (has? (body (send app "POST" "/login" #f "username=bob&password=x"))
-          "Invalid username or password")))
+               (has? (body (send app "POST" "/login" #f
+                                 "username=bob&password=x"))
+                     "Invalid username or password")))
 
 (define cookie
-  (let ((r (send app "POST" "/login" #f "username=alice&password=correct+horse")))
+  (let
+      ((r (send app "POST" "/login" #f
+                "username=alice&password=correct+horse")))
     (test-equal "sign-in redirects home" "/" (location r))
     (let ((h (http-response-header r "Set-Cookie")))
       (test-assert "HttpOnly" (has? h "HttpOnly"))
@@ -100,34 +106,41 @@
     (test-assert "no style attribute" (not (has? (body r) " style="))))
   (test-equal "/" (location (send app "GET" "/login" cookie)))
   (test-equal 200 (status (send app "GET" "/profile" cookie)))
-  (test-equal 303 (status (send app "GET" "/" "starter_login_session=forged.token"))))
+  (test-equal 303
+              (status (send app "GET" "/"
+                            "starter_login_session=forged.token"))))
 
 (test-group "change password"
   (test-assert "wrong current password"
-    (has? (body (send app "POST" "/profile/password" cookie
-                      "current=nope&new=newpassword&confirm=newpassword"))
-          "Current password is incorrect"))
+               (has? (body (send app "POST" "/profile/password" cookie
+                                 "current=nope&new=newpassword&confirm=newpassword"))
+                     "Current password is incorrect"))
   (test-assert "too short"
-    (has? (body (send app "POST" "/profile/password" cookie
-                      "current=correct+horse&new=short&confirm=short"))
-          "at least 8"))
+               (has? (body (send app "POST" "/profile/password" cookie
+                                 "current=correct+horse&new=short&confirm=short"))
+                     "at least 8"))
   (test-assert "mismatch"
-    (has? (body (send app "POST" "/profile/password" cookie
-                      "current=correct+horse&new=newpassword&confirm=other"))
-          "do not match"))
+               (has? (body (send app "POST" "/profile/password" cookie
+                                 "current=correct+horse&new=newpassword&confirm=other"))
+                     "do not match"))
   (let* ((r (send app "POST" "/profile/password" cookie
                   "current=correct+horse&new=newpassword&confirm=newpassword"))
          (fresh (cookie-of r)))
     (test-equal "/profile?updated" (location r))
-    (test-assert "old session ended" (equal? "/login" (location (send app "GET" "/" cookie))))
+    (test-assert "old session ended"
+                 (equal? "/login" (location (send app "GET" "/" cookie))))
     (test-equal "new session works" 200 (status (send app "GET" "/" fresh)))
-    (test-assert (has? (body (send app "GET" "/profile?updated" fresh)) "Password updated"))
+    (test-assert (has? (body (send app "GET" "/profile?updated" fresh))
+                       "Password updated"))
     (test-equal "new password signs in" "/"
-      (location (send app "POST" "/login" #f "username=alice&password=newpassword")))
+                (location (send app "POST" "/login" #f
+                                "username=alice&password=newpassword")))
     (test-group "sign out"
       (let ((r (send app "POST" "/logout" fresh)))
         (test-equal "/login" (location r))
-        (test-assert "cookie cleared" (has? (http-response-header r "Set-Cookie") "Max-Age=0"))))
+        (test-assert "cookie cleared"
+                     (has? (http-response-header r "Set-Cookie")
+                           "Max-Age=0"))))
     (test-group "deleted user"
       (delete-user! users-file "alice")
       (test-equal "/login" (location (send app "GET" "/" fresh))))))
@@ -135,17 +148,21 @@
 (test-group "outdated hashes are upgraded at sign-in"
   (parameterize ((password-pbkdf2-iterations 500))
     (save-user! users-file "carol" (password-hash "carols password")))
-  (test-assert (password-needs-rehash? (user-hash (find-user users-file "carol"))))
+  (test-assert (password-needs-rehash? (user-hash
+                                        (find-user users-file "carol"))))
   (send app "POST" "/login" #f "username=carol&password=carols+password")
-  (test-assert (not (parameterize ((password-pbkdf2-iterations fast-iterations))
-                      (password-needs-rehash? (user-hash (find-user users-file "carol")))))))
+  (test-assert (not (parameterize
+                        ((password-pbkdf2-iterations fast-iterations))
+                      (password-needs-rehash?
+                       (user-hash (find-user users-file "carol")))))))
 
 (test-group "url prefix"
   (let* ((app (app-with "/team"))
-         (r (send app "POST" "/team/login" #f "username=carol&password=carols+password")))
+         (r (send app "POST" "/team/login" #f
+                  "username=carol&password=carols+password")))
     (test-equal "/team/" (location r))
     (test-assert "cookie scoped to the prefix"
-      (has? (http-response-header r "Set-Cookie") "Path=/team/"))
+                 (has? (http-response-header r "Set-Cookie") "Path=/team/"))
     (test-equal "/team/login" (location (send app "GET" "/team/" #f)))
     (test-assert (has? (body (send app "GET" "/team/" (cookie-of r)))
                        "href=\"/team/static/css/app.css?v="))

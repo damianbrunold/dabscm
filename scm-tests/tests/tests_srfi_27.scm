@@ -1,8 +1,8 @@
 (import (scheme base)
         (scheme read)
         (scheme write)
-        (scm test)
-        (srfi 27))
+        (srfi 27)
+        (scm test))
 
 (test-runner-factory scm-test-runner)
 
@@ -27,10 +27,11 @@
 ;; and the reference implementation's initial state A^16.
 (test-group "reference sequence"
   (let ((s (make-random-source)))
-    (test-equal '(lecuyer-mrg32k3a 1062452522 2961816100 342112271
-                                   2854655037 3321940838 3542344109)
+    (test-equal '(lecuyer-mrg32k3a 1062452522 2961816100 342112271 2854655037
+                  3321940838 3542344109)
                 (random-source-state-ref s))
-    (test-equal '(85 28 73) (draw-list (random-source-make-integers s) 100 3))))
+    (test-equal '(85 28 73)
+                (draw-list (random-source-make-integers s) 100 3))))
 
 (test-group "random-integer"
   (test-assert (let loop ((i 0))
@@ -43,7 +44,9 @@
     (test-assert (let loop ((i 0))
                    (or (= i 100)
                        (let ((x (random-integer big)))
-                         (and (exact-integer? x) (<= 0 x) (< x big)
+                         (and (exact-integer? x)
+                              (<= 0 x)
+                              (< x big)
                               (loop (+ i 1)))))))
     ;; values above the generator's range m1 must actually occur
     (test-assert (let loop ((i 0))
@@ -55,8 +58,7 @@
   (test-error (random-integer 2.0))
   ;; every value of a small range shows up
   (let ((seen (make-vector 6 #f)))
-    (do ((i 0 (+ i 1))) ((= i 600))
-      (vector-set! seen (random-integer 6) #t))
+    (do ((i 0 (+ i 1))) ((= i 600)) (vector-set! seen (random-integer 6) #t))
     (test-equal #(#t #t #t #t #t #t) seen)))
 
 (test-group "random-real"
@@ -64,8 +66,9 @@
                  (or (= i 1000)
                      (let ((x (random-real)))
                        (and (inexact? x) (< 0 x 1) (loop (+ i 1)))))))
-  (let ((sum (let loop ((i 0) (sum 0.0))
-               (if (= i 10000) sum (loop (+ i 1) (+ sum (random-real)))))))
+  (let
+      ((sum (let loop ((i 0) (sum 0.0))
+              (if (= i 10000) sum (loop (+ i 1) (+ sum (random-real)))))))
     (test-assert (< 0.48 (/ sum 10000) 0.52))))
 
 (test-group "random-source-make-reals with unit"
@@ -75,8 +78,7 @@
       (test-assert (< 0 (coarse) 1))
       (test-assert (let loop ((i 0))
                      (or (= i 100)
-                         (let ((x (fine)))
-                           (and (< 0 x 1) (loop (+ i 1))))))))
+                         (let ((x (fine))) (and (< 0 x 1) (loop (+ i 1))))))))
     (test-error (random-source-make-reals s 0))
     (test-error (random-source-make-reals s 1))
     (test-error (random-source-make-reals s 1.5))))
@@ -95,12 +97,15 @@
       ;; a state can be transferred to another source
       (let ((t (make-random-source)))
         (random-source-state-set! t state)
-        (test-equal a (draw-list (random-source-make-integers t) 1000000 5)))))
+        (test-equal a
+                    (draw-list (random-source-make-integers t) 1000000 5)))))
   (let ((s (make-random-source)))
     (test-error (random-source-state-set! s 'nonsense))
     (test-error (random-source-state-set! s '(lecuyer-mrg32k3a 0 0 0 1 1 1)))
     (test-error (random-source-state-set! s '(lecuyer-mrg32k3a 1 1 1 1 1)))
-    (test-error (random-source-state-set! s '(lecuyer-mrg32k3a 4294967087 1 1 1 1 1)))
+    (test-error (random-source-state-set!
+                 s
+                 '(lecuyer-mrg32k3a 4294967087 1 1 1 1 1)))
     (test-error (random-source-state-set! s '(other 1 1 1 1 1 1)))))
 
 (test-group "generators share the source state"
@@ -117,8 +122,8 @@
   (let ((a (make-random-source))
         (b (make-random-source)))
     (random-source-pseudo-randomize! a 1 2)
-    (test-equal '(lecuyer-mrg32k3a 1250826159 3004357423 431373563
-                                   3322526864 623307378 2983662421)
+    (test-equal '(lecuyer-mrg32k3a 1250826159 3004357423 431373563 3322526864
+                  623307378 2983662421)
                 (random-source-state-ref a))
     (random-source-pseudo-randomize! b 1 2)
     (test-equal (draw-list (random-source-make-integers a) 1000000 10)
@@ -142,7 +147,8 @@
     (test-assert (not (equal? (random-source-state-ref a)
                               (random-source-state-ref b))))
     (test-assert (not (equal? (random-source-state-ref a)
-                              (random-source-state-ref (make-random-source)))))
+                              (random-source-state-ref
+                               (make-random-source)))))
     ;; the randomized state is valid
     (let ((c (make-random-source)))
       (random-source-state-set! c (random-source-state-ref a))
