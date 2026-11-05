@@ -1,6 +1,7 @@
 (define-library (scm data verbs)
   (import (scheme base)
           (scheme case-lambda)
+          (scheme write)
           (srfi 1)
           (except (srfi 13) string-hash)
           (srfi 27)

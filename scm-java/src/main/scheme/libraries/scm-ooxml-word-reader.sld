@@ -293,9 +293,9 @@ Example:
 Library: (scm ooxml word-reader)
 Description: Returns the heading level (1..n) of a heading paragraph, or #f if
   the paragraph is not a heading. The level is determined from the paragraph's
-  style: a Heading<n> style id, or the style's built-in "heading N" name or
+  style: a Heading<n> style id, or the style's built-in \"heading N\" name or
   outline level as defined in word/styles.xml (so localised heading styles such
-  as the German "berschrift1" are recognised), or the paragraph's own outline
+  as the German \"berschrift1\" are recognised), or the paragraph's own outline
   level.
 Example:
   (paragraph-heading-level p) => 1"

@@ -54,8 +54,8 @@ Example:
   (atom? 42)   => #t
   (atom? 'x)   => #t
   (atom? '(1)) => #f"
-      (or (number? obj)
-          (boolean? obj)
-          (char? obj)
-          (string? obj)
-          (symbol? obj)))))
+      (or ((%primitive "number?") obj)
+          ((%primitive "boolean?") obj)
+          ((%primitive "char?") obj)
+          ((%primitive "string?") obj)
+          ((%primitive "symbol?") obj)))))

@@ -97,6 +97,21 @@
   (test-assert (not (has? 'set-imported
                           (prog "(define x 1)" "(set! x 2)" "(display x)")))))
 
+(test-group "cond-expand"
+  ;; the clause for this implementation is checked, the others are not
+  (test-assert (has? 'unbound-identifier
+                     (prog
+                      "(cond-expand (guile (guile-only)) (else (display (nope))))")))
+  (test-assert (not (has? 'unbound-identifier
+                          (prog
+                           "(cond-expand (guile (guile-only)) (else (display 1)))"))))
+  (test-assert (has? 'unbound-identifier
+                     (prog
+                      "(cond-expand ((and r7rs (not guile)) (nope)) (else (other)))")))
+  (test-assert (not (has? 'unbound-identifier
+                          (prog
+                           "(cond-expand ((library (scheme base)) (display 1)) (else (nope)))")))))
+
 (test-group "arity and form shapes"
   (test-equal '(arity-mismatch)
               (rules (prog "(define (g a b) (+ a b))" "(display (g 1))")))

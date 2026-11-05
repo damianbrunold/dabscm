@@ -1,5 +1,6 @@
 (define-library (scm io)
-  (import (scheme base)
+  (import (only (scm core) set-current-input-port)
+          (scheme base)
           (scheme file))
   (export call-with-input-string
           call-with-output-bytevector

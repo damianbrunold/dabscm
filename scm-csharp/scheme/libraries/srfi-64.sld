@@ -1,6 +1,8 @@
 (define-library (srfi 64)
   (import (only (scm core) current-source-location)
           (scheme base)
+          (scheme eval)
+          (scheme read)
           (scheme write)
           (scheme cxr)
           (scheme inexact)

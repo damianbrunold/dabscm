@@ -1,5 +1,6 @@
 (define-library (scheme complex)
-  (import (scheme base))
+  (import (scheme base)
+          (scheme inexact))
   (export angle imag-part magnitude make-polar make-rectangular real-part)
   (begin
 

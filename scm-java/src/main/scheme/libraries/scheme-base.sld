@@ -453,8 +453,6 @@ Example:
     (define number->string (%primitive "number->string"))
     (define string->number (%primitive "string->number"))
     (define exact? (%primitive "exact?"))
-    (define inexact (%primitive "inexact"))
-    (define exact (%primitive "exact"))
     (define integer? (%primitive "integer?"))
     (define number? (%primitive "number?"))
     (define real? (%primitive "real?"))

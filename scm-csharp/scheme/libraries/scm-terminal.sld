@@ -1,5 +1,6 @@
 (define-library (scm terminal)
-  (import (scheme base) (scheme write) (scheme char) (scheme cxr) (scheme time))
+  (import (scheme base) (scheme write) (scheme char) (scheme cxr) (scheme time)
+          (srfi 151))
   (export
     ;; Primitives
     terminal?
