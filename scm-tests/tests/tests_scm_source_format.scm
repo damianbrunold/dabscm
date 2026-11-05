@@ -132,6 +132,27 @@
               (fmt "(import (srfi 13) (scheme base))"
                    '((sort-imports . #f)))))
 
+(test-group "sorting keeps end-of-line comments working"
+  ;; the commented entry moves last: the closing parenthesis must not end
+  ;; up inside its comment
+  (test-equal (lines "(define-library (x y)" "  (export a" "          b"
+                     "          z) ; last" "  (import (scheme base))"
+                     "  (begin (define a 1)))")
+              (fmt
+               "(define-library (x y) (export z ; last\n b a) (import (scheme base)) (begin (define a 1)))"))
+  (test-equal (lines "(define-library (x y)" "  (export a ; first"
+                     "          b)" "  (import (scheme base))"
+                     "  (begin (define a 1)))")
+              (fmt
+               "(define-library (x y) (export b a ; first\n) (import (scheme base)) (begin (define a 1)))"))
+  ;; two end-of-line comments brought onto one line: the second gets a line
+  ;; of its own (and stays there when formatted again)
+  (test-equal (lines "(define-library (x y)" "  (import (scheme base) ; base"
+                     "          (scheme char)) ; char" "  ; after"
+                     "  (begin (define a 1)))")
+              (fmt
+               "(define-library (x y) (import (scheme char) ; char\n (scheme base) ; base\n) ; after\n (begin (define a 1)))")))
+
 (test-group "width"
   (test-equal (lines "(foo aaaa" "     bbbb)")
               (fmt "(foo aaaa bbbb)" '((width . 12))))

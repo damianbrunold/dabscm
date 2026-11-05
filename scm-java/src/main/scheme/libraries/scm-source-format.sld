@@ -579,7 +579,7 @@ Example:
               (unless (null? ks)
                 (let ((k (car ks)))
                   (cond ((eq? (cst-kind k) 'comment)
-                         (if (cst-trailing-comment? k)
+                         (if (and (cst-trailing-comment? k) (not pending))
                              (trailing! (cst-text k))
                              (begin
                                (newline! c)
@@ -697,7 +697,7 @@ Example:
                   (cond ((eq? kind 'comment)
                          ;; an end-of-line comment stays at the end of the line
                          ;; it was on (after the opening delimiter if first)
-                         (if (cst-trailing-comment? k)
+                         (if (and (cst-trailing-comment? k) (not pending))
                              (trailing! (cst-text k))
                              (begin
                                (break! indent (and blank? (not first?)))
@@ -815,7 +815,8 @@ Example:
             (let ((k (car ks)))
               (cond ((and (eq? (cst-kind k) 'comment)
                           (not first?)
-                          (= (cst-newlines-before k) 0))
+                          (= (cst-newlines-before k) 0)
+                          (not pending))
                      (trailing! (cst-text k)))
                     (else (unless first?
                             (if (and keep?
@@ -929,7 +930,9 @@ Example:
                                     (cons (with-pre (car it) pre) (cdr it)))
                                   sorted
                                   pres)))))
-          (cond ((null? ks) (with-children node (cons head (flush))))
+          (cond ((null? ks)
+                 (comments-end-lines (with-children node
+                                       (cons head (flush)))))
                 ((and (eq? (cst-kind (car ks)) 'comment)
                       (cst-trailing-comment? (car ks))
                       (pair? group))
@@ -940,6 +943,36 @@ Example:
                        '(comment block-comment directive datum-comment))
                  (loop (cdr ks) '() (append (flush) (list (car ks)))))
                 (else (loop (cdr ks) (cons (list (car ks)) group) out))))))
+
+    ;; After reordering, an end-of-line comment may be followed by an
+    ;; entry or the closing delimiter that was on the same line; give them
+    ;; a line of their own so the comment does not swallow them.
+    (define (comments-end-lines node)
+      (let loop ((ks (cst-children node))
+                 (prev #f)
+                 (acc '()))
+        (if (null? ks)
+            (let ((close (cst-close node))
+                  (kids (reverse acc)))
+              (make-cst-node (cst-kind node)
+                             (cst-text node)
+                             (cst-line node)
+                             (cst-col node)
+                             (cst-pre node)
+                             kids
+                             (if (and prev
+                                      (eq? (cst-kind prev) 'comment)
+                                      (not (string-has-newline? (car close))))
+                                 (cons (string-append "\n" (car close))
+                                       (cdr close))
+                                 close)))
+            (let* ((k (car ks))
+                   (k (if (and prev
+                               (eq? (cst-kind prev) 'comment)
+                               (not (string-has-newline? (cst-pre k))))
+                          (with-pre k (string-append "\n" (cst-pre k)))
+                          k)))
+              (loop (cdr ks) k (cons k acc))))))
 
     ;; -- import conflict check --
 
