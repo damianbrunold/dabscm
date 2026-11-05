@@ -150,6 +150,9 @@
 | [`(scm repl)`](libraries/scm-repl.md) | REPL support — completions, syntax info, core form names |
 | [`(scm scaffold starters)`](libraries/scm-scaffold-starters.md) | The starter applications' files (generated) |
 | [`(scm scaffold)`](libraries/scm-scaffold.md) | New applications from the starters: scm new-app |
+| [`(scm source format)`](libraries/scm-source-format.md) | Source formatter behind scm fmt — Emacs indentation, import/export sorting |
+| [`(scm source lint)`](libraries/scm-source-lint.md) | Static checker behind scm lint — bindings, imports, arity, idioms, conventions |
+| [`(scm source)`](libraries/scm-source.md) | Lossless Scheme source reader (CST with comments), import resolution, tool config |
 | [`(scm store)`](libraries/scm-store.md) | Immutable on-disk indexed record store |
 | [`(scm string)`](libraries/scm-string.md) | Extended string operations — search, split, trim, convert |
 | [`(scm svg core)`](libraries/scm-svg-core.md) | SVG parsing shared by the renderers — XML, CSS cascade, transforms, paths, paints |

@@ -1,0 +1,18 @@
+# Settings for `scm fmt` and `scm lint` in this repository.
+
+# The Java and C# trees hold copies made by update-scheme-files.scm; the
+# font and starter libraries are generated.
+exclude = [
+  "scm-java/**",
+  "scm-csharp/**",
+  "dist/**",
+  "scm-lib/libraries/scm-fonts-*.sld",
+  "scm-lib/libraries/scm-scaffold-starters.sld",
+]
+
+[format]
+width = 78
+
+[lint]
+# exported procedures of (scm ...) libraries need Syntax:/Library: docstrings
+docstring-libraries = ["scm"]

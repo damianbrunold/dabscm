@@ -354,6 +354,19 @@ public class Scheme implements IEvaluator {
         return Paths.get(home, ".dabscm-history");
     }
 
+    /**
+     * The Scheme code that runs a built-in tool on script-arguments and
+     * returns its exit code, or null if name is not a built-in tool.
+     */
+    static String builtinTool(String name) {
+        switch (name) {
+            case "new-app": return "(import (scm scaffold)) (new-app-command script-arguments)";
+            case "fmt": return "(import (scm source format)) (fmt-command script-arguments)";
+            case "lint": return "(import (scm source lint)) (lint-command script-arguments)";
+            default: return null;
+        }
+    }
+
     public static void main(String... args) throws IOException {
         List<String> filteredArgs = new ArrayList<>();
         boolean sysadmin = false;
@@ -461,10 +474,11 @@ public class Scheme implements IEvaluator {
                 }
                 scheme.bind("script-name", script.toCharArray());
                 scheme.bind("script-arguments", arguments);
-                // `scm new-app <starter> <dir> [name]`, unless there is a
-                // script of that name: see (scm scaffold).
-                var result = script.equals("new-app") && !new File(script).exists()
-                    ? scheme.evalString("(import (scm scaffold)) (new-app-command script-arguments)", "{new-app}")
+                // Built-in tools (`scm new-app ...`, `scm fmt ...`,
+                // `scm lint ...`), unless there is a script of that name.
+                var tool = builtinTool(script);
+                var result = tool != null && !new File(script).exists()
+                    ? scheme.evalString(tool, "{" + script + "}")
                     : scheme.evalFile(new File(script));
                 // A deferred exit code (set via set-exit-code!) takes precedence
                 // so a script can signal failure without terminating; otherwise

@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm source lint) — Dabscm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="toc">
+  <h2>Bindings</h2>
+  <a href="#e0" data-name="lint-command">lint-command</a>
+  <a href="#e1" data-name="lint-file">lint-file</a>
+  <a href="#e2" data-name="lint-finding-col">lint-finding-col</a>
+  <a href="#e3" data-name="lint-finding-file">lint-finding-file</a>
+  <a href="#e4" data-name="lint-finding-line">lint-finding-line</a>
+  <a href="#e5" data-name="lint-finding-message">lint-finding-message</a>
+  <a href="#e6" data-name="lint-finding-rule">lint-finding-rule</a>
+  <a href="#e7" data-name="lint-finding-severity">lint-finding-severity</a>
+  <a href="#e8" data-name="lint-finding?">lint-finding?</a>
+  <a href="#e9" data-name="lint-findings-&gt;json">lint-findings-&gt;json</a>
+  <a href="#e10" data-name="lint-findings-&gt;text">lint-findings-&gt;text</a>
+  <a href="#e11" data-name="lint-options">lint-options</a>
+  <a href="#e12" data-name="lint-rules">lint-rules</a>
+  <a href="#e13" data-name="lint-string">lint-string</a>
+</nav>
+
+<main>
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="index.html">All libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="index.html#sec-scm">Scm Extensions</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm source lint)</span>
+</nav>
+
+<div class="lib-title scm">(scm source lint)</div>
+<p class="lib-sub">Static checker behind scm lint — bindings, imports, arity, idioms, conventions</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><a class="xref" href="scm-source-lint.html"><code>(scm source lint)</code></a> is the static checker behind <code>scm lint</code>. It reads a file with <a href="scm-source.md">(scm source)</a> and walks the code with a scope analysis that knows the core and derived forms of R7RS. The global environment is what the file imports, with the exports of built-in libraries loaded and project libraries read statically from their <code>.sld</code> files (<code>[format] library-path</code> in <code>scm-tools.toml</code>, plus the file's own directory), and the file's own definitions.</p>
+<p>Uses of macros the linter does not know are not looked into: every identifier in them counts as used and none is reported as unbound, so they cause no false positives. When an imported library cannot be resolved, or the file includes, loads or requires other files, unbound identifiers are not reported. The names the compiler inlines (<code>car</code>, <code>cadr</code>, <code>+</code>, <code>vector-ref</code>, ...) count as bound in call position without an import, as they are at run time.</p>
+<p>Findings are printed as <code>file:line:column: severity: [rule] message</code>. Run <code>scm lint --list-rules</code> for the full list. The main groups are:</p>
+<p>| Group | Rules | |---|---| | Errors | <code>read-error</code>, <code>unbound-identifier</code>, <code>export-undefined</code>, <code>duplicate-definition</code>, <code>set-imported</code>, <code>arity-mismatch</code> (procedures and records defined in the file), <code>malformed-form</code> | | Imports | <code>unused-import</code> (also redundant imports, whose used names all come from another import), <code>unused-only-name</code>, <code>import-conflict</code>, <code>duplicate-import</code>, <code>unsorted-imports</code> | | Names | <code>unused-local</code>, <code>unused-definition</code>, <code>unused-parameter</code> (off), <code>shadowed-import</code> (off), <code>duplicate-export</code>, <code>unsorted-exports</code> | | Forms | <code>definition-context</code>, <code>duplicate-case-datum</code>, <code>unreachable-clause</code>, <code>eq-literal</code> | | Idioms (info) | <code>if-boolean</code>, <code>if-without-else</code>, <code>nested-if</code>, <code>cxr</code>, <code>null-compare</code>, <code>length-zero</code>, <code>append-list</code>, <code>redundant-call</code>, <code>begin-single</code>, <code>empty-let</code>, <code>eta-lambda</code>, <code>define-lambda</code> (off), <code>predicate-naming</code> (off) | | Conventions | <code>missing-docstring</code>, <code>docstring-syntax-mismatch</code>, <code>docstring-library-mismatch</code> (exported procedures of the <code>docstring-libraries</code>, default <code>(scm ...)</code>), <a class="xref" href="scm-source.html#e20"><code>library-file-name</code></a> | | Text (info) | <code>line-too-long</code> (long strings and comments are exempt), <code>trailing-whitespace</code>, <code>tab-character</code>, <code>missing-final-newline</code>, <code>not-formatted</code> (with <code>--fmt-check</code>) |</p>
+<h2>Command line</h2>
+<pre><code class="language-bash">scm lint src/                      # all *.scm and *.sld below src
+scm lint --fail-on warning .       # CI: exit 1 on warnings too
+scm lint --disable cxr,eta-lambda app.sld
+scm lint --enable unused-parameter --format json src/ &gt; lint.json
+scm lint --fmt-check .             # also report files scm fmt would change</code></pre>
+<p>Other options: <code>--width N</code>, <code>--exclude GLOB</code>, <code>--quiet</code>, <code>--list-rules</code>. Settings come from the <code>[lint]</code> table of <code>scm-tools.toml</code> (<code>enable</code>, <code>disable</code>, <code>docstring-libraries</code>, <code>exclude</code>). Exit codes: 0 ok, 1 findings at the <code>--fail-on</code> level (default <a class="xref" href="scheme-base.html#e70"><code>error</code></a>), 2 usage error.</p>
+<h2>Suppressing findings</h2>
+<pre><code class="language-scheme">;; lint: disable if-without-else cxr      ; for the whole file
+
+(if done? (finish)) ; lint: ignore        ; every rule on this line
+
+; lint: ignore unused-local               ; this rule on the next line
+(let ((unused (setup!))) (run))</code></pre>
+<p>Names starting with <code>_</code> are never reported as unused.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scm source lint))
+
+(define findings (lint-file "src/app.sld"))
+(display (lint-findings-&gt;text findings))
+
+(for-each (lambda (f)
+            (when (eq? (lint-finding-severity f) 'error)
+              (display (lint-finding-message f))
+              (newline)))
+          (lint-string "(import (scheme base))\n(car (cdr x))\n" "x.scm"))</code></pre>
+</div>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">14 bindings</p>
+
+<div class="entry" id="e0" data-name="lint-command">
+  <div class="entry-name">lint-command</div>
+  <pre class="entry-doc">Syntax: (lint-command args)
+Library: (scm source lint)
+Description: Runs `scm lint` with the list of argument strings args (the
+  command line after "lint") and returns the exit code. See `scm lint
+  --help`.
+Example:
+  (lint-command '("src")) =&gt; 0</pre>
+</div>
+<div class="entry" id="e1" data-name="lint-file">
+  <div class="entry-name">lint-file</div>
+  <pre class="entry-doc">Syntax: (lint-file path [options])
+Library: (scm source lint)
+Description: Checks the Scheme source file at path, like lint-string;
+  options default to (lint-options path).
+Example:
+  (lint-findings-&gt;text (lint-file "src/app.sld"))</pre>
+</div>
+<div class="entry" id="e2" data-name="lint-finding-col">
+  <div class="entry-name">lint-finding-col</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e3" data-name="lint-finding-file">
+  <div class="entry-name">lint-finding-file</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e4" data-name="lint-finding-line">
+  <div class="entry-name">lint-finding-line</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e5" data-name="lint-finding-message">
+  <div class="entry-name">lint-finding-message</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e6" data-name="lint-finding-rule">
+  <div class="entry-name">lint-finding-rule</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e7" data-name="lint-finding-severity">
+  <div class="entry-name">lint-finding-severity</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e8" data-name="lint-finding?">
+  <div class="entry-name">lint-finding?</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e9" data-name="lint-findings-&gt;json">
+  <div class="entry-name">lint-findings-&gt;json</div>
+  <pre class="entry-doc">Syntax: (lint-findings-&gt;json findings)
+Library: (scm source lint)
+Description: Formats a list of findings as a JSON array of objects with
+  the keys file, line, column (both from 1), severity, rule and message.
+Example:
+  (lint-findings-&gt;json '()) =&gt; "[]"</pre>
+</div>
+<div class="entry" id="e10" data-name="lint-findings-&gt;text">
+  <div class="entry-name">lint-findings-&gt;text</div>
+  <pre class="entry-doc">Syntax: (lint-findings-&gt;text findings)
+Library: (scm source lint)
+Description: Formats a list of findings one per line as
+  file:line:column: severity: [rule] message (line and column from 1),
+  the format compilers use, so editors can jump to the places.
+Example:
+  (lint-findings-&gt;text (lint-string "(define (f x) 1)" "a.scm"))
+    =&gt; ""</pre>
+</div>
+<div class="entry" id="e11" data-name="lint-options">
+  <div class="entry-name">lint-options</div>
+  <pre class="entry-doc">Syntax: (lint-options path [overrides])
+Library: (scm source lint)
+Description: Returns the linter options for the file path: the defaults,
+  overridden by the [lint] table (and the width and library-path of the
+  [format] table) of the nearest scm-tools.toml, overridden by the alist
+  overrides. Keys: enable and disable (lists of rule id symbols, added to
+  or removed from the rules enabled by default), width (78),
+  docstring-libraries (list of first parts of library names whose
+  exported procedures need docstrings, default ("scm")), library-path
+  (directories with the .sld files of project libraries) and fmt-check
+  (#f; #t adds the not-formatted rule).
+Example:
+  (cdr (assq 'width (lint-options "src/a.sld"))) =&gt; 78</pre>
+</div>
+<div class="entry" id="e12" data-name="lint-rules">
+  <div class="entry-name">lint-rules</div>
+  <pre class="entry-doc">Syntax: (lint-rules)
+Library: (scm source lint)
+Description: Returns the linter's rules as a list of (id severity
+  enabled-by-default? description), id and severity being symbols.
+Example:
+  (car (lint-rules))
+    =&gt; (read-error error #t "the file cannot be read ...")</pre>
+</div>
+<div class="entry" id="e13" data-name="lint-string">
+  <div class="entry-name">lint-string</div>
+  <pre class="entry-doc">Syntax: (lint-string text file [options])
+Library: (scm source lint)
+Description: Checks the Scheme source text (named file in the findings
+  and used to find sibling libraries) and returns the findings, a list of
+  lint-finding records sorted by position. options is an alist as
+  returned by lint-options (missing keys take the defaults). Accessors:
+  lint-finding-rule, lint-finding-severity, lint-finding-file,
+  lint-finding-line (from 1), lint-finding-col (from 0),
+  lint-finding-message.
+Example:
+  (map lint-finding-rule
+       (lint-string "(import (scheme base))\n(define (f x) (car (cdr x)))\n"
+                    "a.scm"))
+    =&gt; (cxr)</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

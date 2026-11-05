@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm source) — Dabscm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="toc">
+  <h2>Bindings</h2>
+  <a href="#e0" data-name="collect-source-files">collect-source-files</a>
+  <a href="#e1" data-name="cst-&gt;datum">cst-&gt;datum</a>
+  <a href="#e2" data-name="cst-&gt;string">cst-&gt;string</a>
+  <a href="#e3" data-name="cst-children">cst-children</a>
+  <a href="#e4" data-name="cst-close">cst-close</a>
+  <a href="#e5" data-name="cst-code?">cst-code?</a>
+  <a href="#e6" data-name="cst-col">cst-col</a>
+  <a href="#e7" data-name="cst-comment?">cst-comment?</a>
+  <a href="#e8" data-name="cst-container?">cst-container?</a>
+  <a href="#e9" data-name="cst-kind">cst-kind</a>
+  <a href="#e10" data-name="cst-line">cst-line</a>
+  <a href="#e11" data-name="cst-newlines-before">cst-newlines-before</a>
+  <a href="#e12" data-name="cst-node?">cst-node?</a>
+  <a href="#e13" data-name="cst-pre">cst-pre</a>
+  <a href="#e14" data-name="cst-text">cst-text</a>
+  <a href="#e15" data-name="cst-trailing-comment?">cst-trailing-comment?</a>
+  <a href="#e16" data-name="import-binding-kind">import-binding-kind</a>
+  <a href="#e17" data-name="import-binding-library">import-binding-library</a>
+  <a href="#e18" data-name="import-binding-name">import-binding-name</a>
+  <a href="#e19" data-name="import-set-bindings">import-set-bindings</a>
+  <a href="#e20" data-name="library-file-name">library-file-name</a>
+  <a href="#e21" data-name="make-cst-node">make-cst-node</a>
+  <a href="#e22" data-name="make-import-cache">make-import-cache</a>
+  <a href="#e23" data-name="same-import-binding?">same-import-binding?</a>
+  <a href="#e24" data-name="source-read-error-position">source-read-error-position</a>
+  <a href="#e25" data-name="source-read-file">source-read-file</a>
+  <a href="#e26" data-name="source-read-string">source-read-string</a>
+  <a href="#e27" data-name="tools-config">tools-config</a>
+  <a href="#e28" data-name="tools-config-ref">tools-config-ref</a>
+  <a href="#e29" data-name="tools-excluded?">tools-excluded?</a>
+</nav>
+
+<main>
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="index.html">All libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="index.html#sec-scm">Scm Extensions</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm source)</span>
+</nav>
+
+<div class="lib-title scm">(scm source)</div>
+<p class="lib-sub">Lossless Scheme source reader (CST with comments), import resolution, tool config</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><a class="xref" href="scm-source.html"><code>(scm source)</code></a> reads Scheme source text into a concrete syntax tree (CST) that keeps everything the ordinary reader throws away: <code>;</code>, <code>#| |#</code> and <code>#;</code> comments, the exact spelling of every atom (<code>#x1F</code>, <code>|a b|</code>, <code>#\space</code>, here-strings), bracket style and the whitespace in front of each node. Writing the tree back with <a class="xref" href="#e2"><code>cst-&gt;string</code></a> gives the original text byte for byte. It is the basis of <code>scm fmt</code> (<a href="scm-source-format.md">(scm source format)</a>) and <code>scm lint</code> (<a href="scm-source-lint.md">(scm source lint)</a>), and also offers what both tools share: finding source files, reading <code>scm-tools.toml</code> and resolving what an import set makes visible.</p>
+<p>Every node has a kind (<code>file</code>, <code>list</code>, <code>vector</code>, <a class="xref" href="scheme-base.html#e20"><code>bytevector</code></a>, <code>prefix</code>, <code>label</code>, <code>datum-comment</code>, <code>atom</code>, <code>dot</code>, <code>comment</code>, <code>block-comment</code>, <code>directive</code>), its own text, a start position (line from 1, column from 0), the whitespace before it, its children and, for containers, the closing delimiter with the whitespace before it.</p>
+<h2>Common uses</h2>
+<p>Walk the top-level forms of a file with their positions and comments:</p>
+<pre><code class="language-scheme">(import (scm source))
+
+(for-each (lambda (node)
+            (display (list (cst-kind node) (cst-line node) (cst-col node)))
+            (newline))
+          (cst-children (source-read-file "app.sld")))</code></pre>
+<p>Get the datums back, exactly as <code>read</code> would see them:</p>
+<pre><code class="language-scheme">(cst-&gt;datum (source-read-string "(a #;b c) ; done"))  ;; =&gt; ((a c))</code></pre>
+<p>Read errors carry the position:</p>
+<pre><code class="language-scheme">(guard (e ((source-read-error-position e) =&gt; (lambda (pos) pos)))
+  (source-read-string "(define (f x)" "f.scm"))
+;; =&gt; ("f.scm" 1 0)</code></pre>
+<p>What an import makes visible (built-in libraries are loaded, project libraries are read statically from their <code>.sld</code> files):</p>
+<pre><code class="language-scheme">(define cache (make-import-cache '("src")))
+(map import-binding-name
+     (import-set-bindings '(only (scheme base) car cdr) cache))
+;; =&gt; (car cdr)</code></pre>
+<h2>Tool configuration: scm-tools.toml</h2>
+<p><code>scm fmt</code> and <code>scm lint</code> take their settings from the nearest <code>scm-tools.toml</code> in the file's directory or a parent directory (<a class="xref" href="#e27"><code>tools-config</code></a>). Paths in it are relative to the file's directory:</p>
+<pre><code class="language-toml">exclude = ["generated/**", "vendor/**"]   # both tools skip these
+
+[format]
+width = 78
+keep-breaks = false
+sort-imports = true
+sort-exports = true
+library-path = ["src"]          # where project libraries' .sld files are
+
+[format.indent]                 # body indentation of your own macros
+"with-db-tx" = 1                # 1 distinguished argument, then the body
+"router-add!" = 3
+
+[lint]
+disable = ["if-without-else"]
+enable = ["unused-parameter"]
+docstring-libraries = ["scm"]   # (scm ...) exports need docstrings
+exclude = ["tests/fixtures/**"]</code></pre>
+</div>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">30 bindings</p>
+
+<div class="entry" id="e0" data-name="collect-source-files">
+  <div class="entry-name">collect-source-files</div>
+  <pre class="entry-doc">Syntax: (collect-source-files paths [excludes])
+Library: (scm source)
+Description: Expands the list paths into the Scheme source files a tool
+  should process. A file is taken as it is; a directory is searched
+  recursively for *.scm and *.sld files, skipping hidden directories and
+  build, dist, node_modules, bin and obj. excludes is a list of glob
+  patterns matched against the path relative to the directory given and
+  against the base name; matching files and directories are left out.
+  The result keeps the order of paths, each directory's files sorted.
+Example:
+  (collect-source-files '("src" "main.scm") '("*-generated.sld"))
+    =&gt; ("src/a.sld" "src/sub/b.scm" "main.scm")</pre>
+</div>
+<div class="entry" id="e1" data-name="cst-&gt;datum">
+  <div class="entry-name">cst-&gt;datum</div>
+  <pre class="entry-doc">Syntax: (cst-&gt;datum node)
+Library: (scm source)
+Description: Returns the datum node denotes, as the ordinary reader would
+  read it. For a file node, returns the list of its top-level datums.
+  Comment nodes have no datum; for them the result is the eof object.
+Example:
+  (cst-&gt;datum (car (cst-children (source-read-string "'(a #;b c)"))))
+    =&gt; (quote (a c))</pre>
+</div>
+<div class="entry" id="e2" data-name="cst-&gt;string">
+  <div class="entry-name">cst-&gt;string</div>
+  <pre class="entry-doc">Syntax: (cst-&gt;string node)
+Library: (scm source)
+Description: Writes node back as source text. For a file node read by
+  source-read-string this is exactly the original text. The node's own
+  pre whitespace is not included; that of its children is.
+Example:
+  (cst-&gt;string (source-read-string "(a  [b] ; c\n)")) =&gt; "(a  [b] ; c\n)"</pre>
+</div>
+<div class="entry" id="e3" data-name="cst-children">
+  <div class="entry-name">cst-children</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e4" data-name="cst-close">
+  <div class="entry-name">cst-close</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e5" data-name="cst-code?">
+  <div class="entry-name">cst-code?</div>
+  <pre class="entry-doc">Syntax: (cst-code? node)
+Library: (scm source)
+Description: Returns #t if node denotes a datum (anything but a comment,
+  a directive or the dot of a dotted list).
+Example:
+  (cst-code? (car (cst-children (source-read-string "42")))) =&gt; #t</pre>
+</div>
+<div class="entry" id="e6" data-name="cst-col">
+  <div class="entry-name">cst-col</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e7" data-name="cst-comment?">
+  <div class="entry-name">cst-comment?</div>
+  <pre class="entry-doc">Syntax: (cst-comment? node)
+Library: (scm source)
+Description: Returns #t if node is a comment of any kind (; comment,
+  #| |# block comment, #; datum comment) or a #! directive, that is a
+  node with no datum of its own.
+Example:
+  (cst-comment? (car (cst-children (source-read-string "; x")))) =&gt; #t</pre>
+</div>
+<div class="entry" id="e8" data-name="cst-container?">
+  <div class="entry-name">cst-container?</div>
+  <pre class="entry-doc">Syntax: (cst-container? node)
+Library: (scm source)
+Description: Returns #t if node is a list, vector or bytevector.
+Example:
+  (cst-container? (car (cst-children (source-read-string "#(1 2)")))) =&gt; #t</pre>
+</div>
+<div class="entry" id="e9" data-name="cst-kind">
+  <div class="entry-name">cst-kind</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e10" data-name="cst-line">
+  <div class="entry-name">cst-line</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e11" data-name="cst-newlines-before">
+  <div class="entry-name">cst-newlines-before</div>
+  <pre class="entry-doc">Syntax: (cst-newlines-before node)
+Library: (scm source)
+Description: Returns the number of line breaks in the whitespace in front
+  of node: 0 if it is on the same line as what precedes it, 2 or more if
+  a blank line separates them.
+Example:
+  (map cst-newlines-before
+       (cst-children (source-read-string "a b\n\nc")))
+    =&gt; (0 0 2)</pre>
+</div>
+<div class="entry" id="e12" data-name="cst-node?">
+  <div class="entry-name">cst-node?</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e13" data-name="cst-pre">
+  <div class="entry-name">cst-pre</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e14" data-name="cst-text">
+  <div class="entry-name">cst-text</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e15" data-name="cst-trailing-comment?">
+  <div class="entry-name">cst-trailing-comment?</div>
+  <pre class="entry-doc">Syntax: (cst-trailing-comment? node)
+Library: (scm source)
+Description: Returns #t if node is a ; comment that follows other code on
+  the same line (an end-of-line comment), #f for a comment on a line of
+  its own and for every other node.
+Example:
+  (map cst-trailing-comment?
+       (cst-children (source-read-string "(a) ; x\n; y")))
+    =&gt; (#f #t #f)</pre>
+</div>
+<div class="entry" id="e16" data-name="import-binding-kind">
+  <div class="entry-name">import-binding-kind</div>
+  <pre class="entry-doc">Syntax: (import-binding-kind binding)
+Library: (scm source)
+Description: Returns what an import binding (from import-set-bindings)
+  is: syntax (a macro or core form), procedure, value or unknown.
+Example:
+  (import-binding-kind (car (import-set-bindings '(only (scheme base) when)
+                                                  (make-import-cache '()))))
+    =&gt; syntax</pre>
+</div>
+<div class="entry" id="e17" data-name="import-binding-library">
+  <div class="entry-name">import-binding-library</div>
+  <pre class="entry-doc">Syntax: (import-binding-library binding)
+Library: (scm source)
+Description: Returns the name of the library that defines an import
+  binding (from import-set-bindings); for a re-exported name this is the
+  library it comes from originally, when that is known.
+Example:
+  (import-binding-library (car (import-set-bindings '(only (scheme base) car)
+                                                     (make-import-cache '()))))
+    =&gt; (scheme base)</pre>
+</div>
+<div class="entry" id="e18" data-name="import-binding-name">
+  <div class="entry-name">import-binding-name</div>
+  <pre class="entry-doc">Syntax: (import-binding-name binding)
+Library: (scm source)
+Description: Returns the name an import binding (from
+  import-set-bindings) makes visible, a symbol.
+Example:
+  (import-binding-name (car (import-set-bindings '(only (scheme base) car)
+                                                  (make-import-cache '()))))
+    =&gt; car</pre>
+</div>
+<div class="entry" id="e19" data-name="import-set-bindings">
+  <div class="entry-name">import-set-bindings</div>
+  <pre class="entry-doc">Syntax: (import-set-bindings import-set cache)
+Library: (scm source)
+Description: Returns the bindings an import set (a datum such as
+  (scheme base) or (only (srfi 1) fold)) makes visible, as a list of
+  vectors #(name library original-name kind), kind being syntax,
+  procedure, value or unknown. Returns #f when the library cannot be
+  found or its exports cannot be determined statically. cache comes from
+  make-import-cache.
+Example:
+  (map import-binding-name
+       (import-set-bindings '(only (scheme base) car) (make-import-cache '())))
+    =&gt; (car)</pre>
+</div>
+<div class="entry" id="e20" data-name="library-file-name">
+  <div class="entry-name">library-file-name</div>
+  <pre class="entry-doc">Syntax: (library-file-name name)
+Library: (scm source)
+Description: Returns the file name a library name maps to: its parts
+  joined with - plus .sld.
+Example:
+  (library-file-name '(scm net http)) =&gt; "scm-net-http.sld"</pre>
+</div>
+<div class="entry" id="e21" data-name="make-cst-node">
+  <div class="entry-name">make-cst-node</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e22" data-name="make-import-cache">
+  <div class="entry-name">make-import-cache</div>
+  <pre class="entry-doc">Syntax: (make-import-cache lib-dirs)
+Library: (scm source)
+Description: Returns a cache for import-set-bindings that finds the
+  .sld files of non-built-in libraries in the list of directories
+  lib-dirs (the module search path is searched as well).
+Example:
+  (make-import-cache '("src"))</pre>
+</div>
+<div class="entry" id="e23" data-name="same-import-binding?">
+  <div class="entry-name">same-import-binding?</div>
+  <pre class="entry-doc">Syntax: (same-import-binding? a b)
+Library: (scm source)
+Description: Returns #t if the import bindings a and b (from
+  import-set-bindings) certainly denote the same binding: the same
+  library and original name, or for built-in libraries the identical
+  value. #f means different or unknown.
+Example:
+  (let ((c (make-import-cache '())))
+    (same-import-binding? (car (import-set-bindings '(only (scheme base) car) c))
+                          (car (import-set-bindings '(only (scm core) car) c))))
+    =&gt; #t</pre>
+</div>
+<div class="entry" id="e24" data-name="source-read-error-position">
+  <div class="entry-name">source-read-error-position</div>
+  <pre class="entry-doc">Syntax: (source-read-error-position obj)
+Library: (scm source)
+Description: Returns (file line col) when obj is an error raised by
+  source-read-string or source-read-file, otherwise #f. line counts from
+  1, col from 0.
+Example:
+  (guard (e (#t (source-read-error-position e)))
+    (source-read-string "(a" "x.scm"))
+    =&gt; ("x.scm" 1 0)</pre>
+</div>
+<div class="entry" id="e25" data-name="source-read-file">
+  <div class="entry-name">source-read-file</div>
+  <pre class="entry-doc">Syntax: (source-read-file path)
+Library: (scm source)
+Description: Reads the Scheme source file at path (UTF-8) into a CST and
+  returns its file node, like source-read-string. Read errors name path.
+Example:
+  (cst-&gt;string (source-read-file "lib.sld")) ; the file's text, unchanged</pre>
+</div>
+<div class="entry" id="e26" data-name="source-read-string">
+  <div class="entry-name">source-read-string</div>
+  <pre class="entry-doc">Syntax: (source-read-string str [file])
+Library: (scm source)
+Description: Reads all of the Scheme source text str into a CST and
+  returns its file node. Nothing is lost: comments, whitespace and the
+  exact spelling of every atom are kept, so (cst-&gt;string (source-read-string
+  s)) is s again. file (default "&lt;string&gt;") is only used in error
+  messages. A malformed text (an unclosed list, an unexpected closing
+  bracket, an unterminated string or comment) raises an error whose
+  position source-read-error-position returns.
+Example:
+  (map cst-kind (cst-children (source-read-string "(a b) ; c")))
+    =&gt; (list comment)</pre>
+</div>
+<div class="entry" id="e27" data-name="tools-config">
+  <div class="entry-name">tools-config</div>
+  <pre class="entry-doc">Syntax: (tools-config path)
+Library: (scm source)
+Description: Returns the configuration for the source tools (scm fmt,
+  scm lint) that applies to the file or directory path: the parsed TOML
+  of the nearest scm-tools.toml in path's directory or one of its
+  parents, as an alist with string keys (see (scm toml)), plus the entry
+  ("dir" . directory-of-the-config-file). Without a config file the
+  result is (). Results are cached per directory.
+Example:
+  (tools-config-ref (tools-config "src/a.sld") '("format" "width") 78)
+    =&gt; 78</pre>
+</div>
+<div class="entry" id="e28" data-name="tools-config-ref">
+  <div class="entry-name">tools-config-ref</div>
+  <pre class="entry-doc">Syntax: (tools-config-ref cfg keys default)
+Library: (scm source)
+Description: Looks up the path of string keys in the alist cfg returned
+  by tools-config and returns the value found, or default. TOML arrays
+  come back as lists.
+Example:
+  (tools-config-ref '(("lint" ("disable" . #("x")))) '("lint" "disable") '())
+    =&gt; ("x")</pre>
+</div>
+<div class="entry" id="e29" data-name="tools-excluded?">
+  <div class="entry-name">tools-excluded?</div>
+  <pre class="entry-doc">Syntax: (tools-excluded? file section)
+Library: (scm source)
+Description: Returns #t if the scm-tools.toml that applies to file
+  excludes it: the top-level exclude list or the one in the table named
+  section ("format" or "lint"). Patterns are globs matched against
+  the path relative to the config file's directory; "dir/**" excludes
+  everything under dir.
+Example:
+  (tools-excluded? "scm-java/src/x.sld" "lint") =&gt; #t ; with exclude = ["scm-java/**"]</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

@@ -86,6 +86,29 @@ scm script.scm      # run a script (in `user program`, no auto-imports)
 scm                 # start a REPL (in `user main`, REPL auto-imports)
 ```
 
+### Built-in tools
+
+Besides scripts, `scm` runs a few tools written in Scheme and shipped in
+the jar / executable (a script file of the same name takes precedence):
+
+```bash
+scm fmt src/            # format *.scm / *.sld files in place
+scm fmt --check src/    # list files that would change (exit 1 if any)
+scm fmt --diff app.sld  # show the changes as a unified diff
+scm lint src/           # report problems as file:line:col: severity: [rule] message
+scm lint --list-rules   # the rules and whether they are on by default
+scm new-app ...         # a new application from a starter
+```
+
+`scm fmt` lays code out with Emacs scheme-mode indentation within 78
+columns (`--keep-breaks` keeps the existing line breaks), sorts imports
+((scheme ...), (srfi ...), (scm ...), others) and exports, and never
+changes what the code reads as. `scm lint` checks unbound and unused
+names, unused and conflicting imports, arity, malformed forms,
+non-idiomatic code and the docstring conventions. Both read their
+settings from the nearest `scm-tools.toml`; see `(scm source format)` and
+`(scm source lint)` in the documentation.
+
 ### JIT
 
 Both implementations compile a procedure to the platform's own code

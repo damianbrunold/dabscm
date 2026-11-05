@@ -666,7 +666,7 @@ public class Tokenizer {
                 putback = false;
             }
         }
-        if (state == 0 && (token == null || token.length() == 0)) return null;
+        if ((state == 0 || state == 7) && (token == null || token.length() == 0)) return null;
         if (state == 1) {
             if (token.toString().equals("+") || token.toString().equals("-")) {
                 return new Token(maybeFold(in, token.toString()), TokenType.SYMBOL, pos);

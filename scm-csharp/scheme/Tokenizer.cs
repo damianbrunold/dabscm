@@ -930,7 +930,7 @@ public class Tokenizer
                 putback = false;
             }
         }
-        if (state == 0 && (token == null || token.Length == 0)) return null;
+        if ((state == 0 || state == 7) && (token == null || token.Length == 0)) return null;
         if (state == 1)
         {
             if (token.ToString().Equals("+") || token.ToString().Equals("-"))

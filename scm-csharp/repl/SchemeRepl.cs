@@ -84,6 +84,21 @@ static class InteractiveRepl
 
 class SchemeRepl
 {
+    /// <summary>
+    /// The Scheme code that runs a built-in tool on script-arguments and
+    /// returns its exit code, or null if name is not a built-in tool.
+    /// </summary>
+    static string BuiltinTool(string name)
+    {
+        switch (name)
+        {
+            case "new-app": return "(import (scm scaffold)) (new-app-command script-arguments)";
+            case "fmt": return "(import (scm source format)) (fmt-command script-arguments)";
+            case "lint": return "(import (scm source lint)) (lint-command script-arguments)";
+            default: return null;
+        }
+    }
+
     static int Main(string[] args)
     {
         try
@@ -198,10 +213,11 @@ class SchemeRepl
                     }
                     scheme.Bind("script-name", script.ToCharArray());
                     scheme.Bind("script-arguments", arguments);
-                    // `scm new-app <starter> <dir> [name]`, unless there is
-                    // a script of that name: see (scm scaffold).
-                    var result = script == "new-app" && !System.IO.File.Exists(script)
-                        ? scheme.EvalString("(import (scm scaffold)) (new-app-command script-arguments)", "{new-app}")
+                    // Built-in tools (`scm new-app ...`, `scm fmt ...`,
+                    // `scm lint ...`), unless there is a script of that name.
+                    var tool = BuiltinTool(script);
+                    var result = tool != null && !System.IO.File.Exists(script)
+                        ? scheme.EvalString(tool, "{" + script + "}")
                         : scheme.EvalFile(script);
                     //scheme.DumpCallCounts();
                     // A deferred exit code (set via set-exit-code!) takes
