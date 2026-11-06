@@ -15,18 +15,40 @@ public class PrimitiveTcpHttpServe : Primitive
     // Connections that may wait for a worker, per worker thread.
     private const int DefaultQueuePerThread = 4;
 
+    private static readonly byte[] B503 = Encoding.UTF8.GetBytes(
+        "HTTP/1.1 503 Service Unavailable\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+
+    // Answers 503 and closes gracefully, off the calling thread. The request
+    // is still unread: closing a socket with unread input sends a reset, and
+    // on Windows a reset makes the client drop the 503 it has not read yet.
+    // So: send, shut down the sending side (FIN), drain what the client sent
+    // (bounded in time and bytes), then close.
     private static void Reject503(TcpClient client)
     {
-        try
+        _ = Task.Run(() =>
         {
-            using (client)
+            try
             {
-                var b503 = Encoding.UTF8.GetBytes(
-                    "HTTP/1.1 503 Service Unavailable\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
-                client.GetStream().Write(b503, 0, b503.Length);
+                using (client)
+                {
+                    var s = client.Client;
+                    s.SendTimeout = 1000;
+                    s.Send(B503);
+                    s.Shutdown(SocketShutdown.Send);
+                    s.ReceiveTimeout = 200;
+                    var buf = new byte[4096];
+                    long deadline = Environment.TickCount64 + 500;
+                    int total = 0;
+                    while (Environment.TickCount64 < deadline && total < 64 * 1024)
+                    {
+                        int n = s.Receive(buf);
+                        if (n <= 0) break;
+                        total += n;
+                    }
+                }
             }
-        }
-        catch { }
+            catch { }
+        });
     }
     private const string DefaultHost = "0.0.0.0";
     private const int DefaultReadTimeoutMs = 30_000;

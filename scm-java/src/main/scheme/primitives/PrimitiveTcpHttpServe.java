@@ -22,8 +22,36 @@ public class PrimitiveTcpHttpServe extends Primitive {
     // Connections that may wait for a worker, per worker thread.
     private static final int DEFAULT_QUEUE_PER_THREAD = 4;
 
-    private static final String R503 =
-        "HTTP/1.1 503 Service Unavailable\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+    private static final byte[] R503 =
+        "HTTP/1.1 503 Service Unavailable\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+            .getBytes(StandardCharsets.UTF_8);
+
+    // Answers 503 and closes gracefully, on a short-lived thread. The request
+    // is still unread: closing a socket with unread input sends a reset, and
+    // on Windows a reset makes the client drop the 503 it has not read yet.
+    // So: send, shut down the sending side (FIN), drain what the client sent
+    // (bounded in time and bytes), then close.
+    private static void reject503(Socket client) {
+        Thread t = new Thread(() -> {
+            try (Socket cc = client) {
+                cc.getOutputStream().write(R503);
+                cc.getOutputStream().flush();
+                cc.shutdownOutput();
+                cc.setSoTimeout(200);
+                InputStream in = cc.getInputStream();
+                byte[] buf = new byte[4096];
+                long deadline = System.nanoTime() + 500_000_000L;
+                int total = 0;
+                while (System.nanoTime() < deadline && total < 64 * 1024) {
+                    int n = in.read(buf);
+                    if (n < 0) break;
+                    total += n;
+                }
+            } catch (Exception ignored) {}
+        }, "http-reject-503");
+        t.setDaemon(true);
+        t.start();
+    }
 
     private Modules modules;
 
@@ -109,9 +137,7 @@ public class PrimitiveTcpHttpServe extends Primitive {
                         catch (java.net.SocketException e) { break; }
 
                         if (!sem.tryAcquire()) {
-                            try (Socket cc = client) {
-                                cc.getOutputStream().write(R503.getBytes(StandardCharsets.UTF_8));
-                            } catch (Exception ignored) {}
+                            reject503(client);
                             continue;
                         }
 
@@ -121,12 +147,8 @@ public class PrimitiveTcpHttpServe extends Primitive {
                             // Queued for longer than a client is expected to wait:
                             // a 503 now, rather than work for one that has left.
                             if (System.nanoTime() - acceptedAt > maxWaitNs) {
-                                try (Socket cc = client) {
-                                    cc.getOutputStream().write(R503.getBytes(StandardCharsets.UTF_8));
-                                } catch (Exception ignored) {
-                                } finally {
-                                    sem.release();
-                                }
+                                sem.release();
+                                reject503(client);
                                 return;
                             }
                             try (Socket c = client) {
