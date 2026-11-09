@@ -47,9 +47,22 @@ HTTPS server certificates are verified against the platform's trusted root
 certificates. On Windows both implementations accept certificates trusted by
 the Windows certificate store (e.g. corporate root CAs deployed by group
 policy); the Java implementation additionally accepts certificates trusted by
-the JDK's own trust store. Like Windows itself, the Java implementation on
-Windows also downloads intermediate certificates that the server does not
-send, from the CA issuer URL in the certificate (AIA).
+the JDK's own trust store.
+
+On Linux and other systems the Java implementation trusts, besides the JDK's
+store, the system CA bundle that curl and OpenSSL use: the PEM file named by
+`SSL_CERT_FILE`, else the distribution's bundle
+(`/etc/ssl/certs/ca-certificates.crt`, `/etc/pki/tls/certs/ca-bundle.crt`,
+`/etc/ssl/ca-bundle.pem` or `/etc/ssl/cert.pem`). A CA added with
+`update-ca-certificates` (or `update-ca-trust`) is therefore trusted whichever
+JDK runs. Under WSL it also reads the Windows host's certificate stores
+(Root, AuthRoot and the CA intermediates, through `powershell.exe`) when a
+certificate is rejected by the others, so corporate CAs deployed to Windows
+are trusted inside WSL as well.
+
+Like Windows itself, the Java implementation also downloads intermediate
+certificates that the server does not send, from the CA issuer URL in the
+certificate (AIA).
 
 Setting the environment variable `SCM_TLS_INSECURE=1` (or `true` / `yes`)
 disables certificate and host name verification for all requests of this

@@ -1,10 +1,14 @@
 package scheme.primitives;
+import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.Socket;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
@@ -12,7 +16,11 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.net.ssl.*;
 
 // Shared TLS trust configuration for the HTTP client and verifying TLS sockets.
@@ -21,10 +29,16 @@ import javax.net.ssl.*;
 // Windows use the Windows certificate store, which holds corporate root CAs
 // deployed by group policy. To behave like the C# implementation, on Windows
 // a certificate is accepted when either the JDK default trust store or one of
-// the Windows root stores trusts it. Like Windows, intermediate certificates
-// the server does not send are then downloaded from the CA issuer URL in the
-// certificate's AIA extension. (The JDK's own AIA support is no use here:
-// recent JDKs deny every URL not listed in com.sun.security.allowedAIALocations.)
+// the Windows root stores trusts it. Elsewhere the system CA bundle (the PEM
+// file curl and OpenSSL use: SSL_CERT_FILE, else the distribution's bundle) is
+// trusted besides the JDK store, so a CA added with update-ca-certificates
+// works whichever JDK runs. Under WSL the Windows certificate stores are read
+// as well (via powershell.exe, only when the other stores reject a chain), so
+// corporate CAs deployed to the Windows host are trusted inside WSL too.
+// Like Windows, intermediate certificates the server does not send are then
+// looked up (Windows CA store under WSL) or downloaded from the CA issuer URL
+// in the certificate's AIA extension. (The JDK's own AIA support is no use
+// here: recent JDKs deny every URL not listed in com.sun.security.allowedAIALocations.)
 //
 // SCM_TLS_INSECURE=1 (or true/yes) disables certificate and host name
 // verification for the HTTP client (insecure; for broken intranet setups only).
@@ -115,7 +129,18 @@ public final class TlsTrust {
         return insecureContext();
     }
 
-    // SSLContext trusting the JDK default store plus, on Windows, the Windows root stores.
+    // System CA bundles of common distributions (Debian/Ubuntu, Fedora/RHEL,
+    // openSUSE, Alpine/macOS); the first existing one is used.
+    private static final String[] SYSTEM_BUNDLES = {
+        "/etc/ssl/certs/ca-certificates.crt",
+        "/etc/pki/tls/certs/ca-bundle.crt",
+        "/etc/ssl/ca-bundle.pem",
+        "/etc/ssl/cert.pem"
+    };
+
+    // SSLContext trusting the JDK default store plus the platform's stores:
+    // the Windows root stores on Windows, the system CA bundle elsewhere, and
+    // under WSL (on demand) the Windows host's stores.
     public static SSLContext verifyingContext() throws Exception {
         SSLContext ctx = verifyingContext;
         if (ctx == null) {
@@ -137,9 +162,12 @@ public final class TlsTrust {
                                 debugLog(type + " not available: " + e);
                             }
                         }
+                    } else {
+                        addSystemBundle(tms);
                     }
                     ctx = SSLContext.getInstance("TLS");
-                    ctx.init(null, new TrustManager[]{ new CompositeTrustManager(tms, isWindows()) }, null);
+                    LateStores late = isWsl() ? TlsTrust::loadWslWindowsStores : null;
+                    ctx.init(null, new TrustManager[]{ new CompositeTrustManager(tms, late) }, null);
                     verifyingContext = ctx;
                 }
             }
@@ -155,6 +183,147 @@ public final class TlsTrust {
 
     private static boolean isWindows() {
         return System.getProperty("os.name", "").toLowerCase().startsWith("windows");
+    }
+
+    // WSL: WSL_DISTRO_NAME / WSL_INTEROP are set in WSL sessions; the kernel
+    // release names Microsoft also where they are not (e.g. under sudo).
+    private static boolean isWsl() {
+        if (isWindows()) return false;
+        if (System.getenv("WSL_DISTRO_NAME") != null || System.getenv("WSL_INTEROP") != null) return true;
+        try {
+            String r = Files.readString(Path.of("/proc/sys/kernel/osrelease"));
+            return r.toLowerCase().contains("microsoft");
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private static void addSystemBundle(List<Named> tms) {
+        String file = System.getenv("SSL_CERT_FILE");
+        if (file == null || file.isBlank()) {
+            file = null;
+            for (String f : SYSTEM_BUNDLES) {
+                if (new File(f).isFile()) { file = f; break; }
+            }
+        }
+        if (file == null) {
+            debugLog("no system CA bundle found");
+            return;
+        }
+        try {
+            List<X509Certificate> certs = parsePem(Files.readString(Path.of(file), StandardCharsets.ISO_8859_1));
+            if (certs.isEmpty()) {
+                debugLog("system CA bundle " + file + ": no certificates");
+                return;
+            }
+            addTrustManagers(tms, "system " + file, keyStoreOf(certs));
+        } catch (Exception e) {
+            debugLog("cannot load system CA bundle " + file + ": " + e);
+        }
+    }
+
+    private static final Pattern PEM_CERT = Pattern.compile(
+        "-----BEGIN (?:TRUSTED )?CERTIFICATE-----([A-Za-z0-9+/=\\s]+?)-----END (?:TRUSTED )?CERTIFICATE-----");
+
+    // Certificates of a PEM text; comments between blocks and unparsable
+    // blocks are skipped.
+    static List<X509Certificate> parsePem(String text) {
+        List<X509Certificate> out = new ArrayList<>();
+        Matcher m = PEM_CERT.matcher(text);
+        while (m.find()) {
+            X509Certificate c = parseDer(Base64.getMimeDecoder().decode(m.group(1)));
+            if (c != null) out.add(c);
+        }
+        return out;
+    }
+
+    static X509Certificate parseDer(byte[] der) {
+        try {
+            return (X509Certificate) CertificateFactory.getInstance("X.509")
+                .generateCertificate(new ByteArrayInputStream(der));
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    static KeyStore keyStoreOf(List<X509Certificate> certs) throws Exception {
+        KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
+        ks.load(null, null);
+        int i = 0;
+        for (X509Certificate c : certs) ks.setCertificateEntry("ca" + (i++), c);
+        return ks;
+    }
+
+    // Stores loaded on first need; fills the trust managers and the pool of
+    // intermediate certificates used to complete server chains.
+    interface LateStores {
+        void load(List<Named> trust, List<X509Certificate> intermediates);
+    }
+
+    // Lists the Windows host's certificate stores through powershell.exe
+    // (WSL interop): roots (Root, AuthRoot) become a trust store, the CA store
+    // (intermediates) completes chains. Takes about a second, hence on demand.
+    private static final String WSL_PS_SCRIPT =
+        "$ErrorActionPreference = 'SilentlyContinue'\n"
+        + "foreach ($s in 'Root', 'AuthRoot', 'CA') {\n"
+        + "  foreach ($l in 'LocalMachine', 'CurrentUser') {\n"
+        + "    Get-ChildItem -Path ('Cert:\\' + $l + '\\' + $s) | ForEach-Object {\n"
+        + "      $s + ' ' + [Convert]::ToBase64String($_.RawData) } } }\n";
+
+    static void loadWslWindowsStores(List<Named> trust, List<X509Certificate> intermediates) {
+        String ps = null;
+        for (String dir : System.getenv().getOrDefault("PATH", "").split(":")) {
+            if (!dir.isEmpty() && new File(dir, "powershell.exe").isFile()) {
+                ps = new File(dir, "powershell.exe").getPath();
+                break;
+            }
+        }
+        if (ps == null) {
+            String std = "/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe";
+            if (new File(std).isFile()) ps = std;
+        }
+        if (ps == null) {
+            debugLog("WSL: powershell.exe not found, Windows certificate stores not used");
+            return;
+        }
+        File out = null;
+        try {
+            out = File.createTempFile("scm-tls", ".txt");
+            // -EncodedCommand (UTF-16LE base64) avoids quoting through WSL interop.
+            String enc = Base64.getEncoder().encodeToString(WSL_PS_SCRIPT.getBytes(StandardCharsets.UTF_16LE));
+            ProcessBuilder pb = new ProcessBuilder(ps, "-NoProfile", "-NonInteractive", "-EncodedCommand", enc);
+            pb.redirectInput(ProcessBuilder.Redirect.from(new File("/dev/null")));
+            pb.redirectError(ProcessBuilder.Redirect.DISCARD);
+            pb.redirectOutput(out);
+            debugLog("WSL: reading Windows certificate stores via " + ps);
+            Process p = pb.start();
+            if (!p.waitFor(30, TimeUnit.SECONDS)) {
+                p.destroyForcibly();
+                debugLog("WSL: powershell.exe timed out");
+                return;
+            }
+            List<X509Certificate> roots = new ArrayList<>();
+            for (String line : Files.readAllLines(out.toPath(), StandardCharsets.ISO_8859_1)) {
+                int sp = line.indexOf(' ');
+                if (sp < 0) continue;
+                X509Certificate c;
+                try {
+                    c = parseDer(Base64.getDecoder().decode(line.substring(sp + 1).trim()));
+                } catch (IllegalArgumentException e) {
+                    continue;
+                }
+                if (c == null) continue;
+                if (line.startsWith("CA ")) intermediates.add(c);
+                else roots.add(c);
+            }
+            debugLog("WSL: Windows stores: " + roots.size() + " root, "
+                + intermediates.size() + " intermediate certificates");
+            if (!roots.isEmpty()) addTrustManagers(trust, "windows-host (WSL)", keyStoreOf(roots));
+        } catch (Exception e) {
+            debugLog("WSL: cannot read Windows certificate stores: " + e);
+        } finally {
+            if (out != null) out.delete();
+        }
     }
 
     static final class Named {
@@ -177,17 +346,42 @@ public final class TlsTrust {
     }
 
     // Accepts a chain when any delegate accepts it. Delegates also perform the
-    // host name check (endpoint identification), so that stays on. With
-    // fetchAia, a server chain rejected by all delegates is completed with
-    // intermediates downloaded via AIA and checked once more.
+    // host name check (endpoint identification), so that stays on. A server
+    // chain rejected by all delegates is retried with the late stores (loaded
+    // once, on the first rejection), then completed with intermediates from
+    // the late stores' pool or downloaded via AIA and checked once more.
     static final class CompositeTrustManager extends X509ExtendedTrustManager {
         private static final int MAX_AIA_DOWNLOADS = 4;
         private final List<Named> delegates;
-        private final boolean fetchAia;
+        private final LateStores lateStores;
+        private volatile List<Named> lateTrust;
+        private volatile List<X509Certificate> lateIntermediates = List.of();
 
-        CompositeTrustManager(List<Named> delegates, boolean fetchAia) {
+        CompositeTrustManager(List<Named> delegates, LateStores lateStores) {
             this.delegates = delegates;
-            this.fetchAia = fetchAia;
+            this.lateStores = lateStores;
+        }
+
+        // True when the late stores were loaded just now (so are worth a retry).
+        private boolean loadLate() {
+            if (lateStores == null || lateTrust != null) return false;
+            synchronized (this) {
+                if (lateTrust != null) return false;
+                List<Named> t = new ArrayList<>();
+                List<X509Certificate> i = new ArrayList<>();
+                lateStores.load(t, i);
+                lateIntermediates = i;
+                lateTrust = t;
+                return true;
+            }
+        }
+
+        private List<Named> all() {
+            List<Named> late = lateTrust;
+            if (late == null || late.isEmpty()) return delegates;
+            List<Named> a = new ArrayList<>(delegates);
+            a.addAll(late);
+            return a;
         }
 
         private interface Check {
@@ -196,31 +390,33 @@ public final class TlsTrust {
 
         private void anyServer(X509Certificate[] chain, Check check) throws CertificateException {
             List<String> reasons = new ArrayList<>();
-            CertificateException first = tryAll(chain, check, reasons);
+            CertificateException first = tryAll(all(), chain, check, reasons);
             if (first == null) return;
             if (debug()) logChain("certificate chain sent by the server:", chain);
-            if (fetchAia) {
-                X509Certificate[] completed = completeChain(chain);
-                if (completed.length > chain.length) {
-                    if (debug()) logChain("chain completed via AIA:", completed);
-                    List<String> aiaReasons = new ArrayList<>();
-                    if (tryAll(completed, check, aiaReasons) == null) return;
-                    for (String r : aiaReasons) reasons.add(r + " (after AIA download)");
-                }
+            if (loadLate() && !lateTrust.isEmpty()) {
+                if (tryAll(lateTrust, chain, check, reasons) == null) return;
+            }
+            X509Certificate[] completed = completeChain(chain, lateIntermediates);
+            if (completed.length > chain.length) {
+                if (debug()) logChain("chain completed with issuer certificates:", completed);
+                List<String> aiaReasons = new ArrayList<>();
+                if (tryAll(all(), completed, check, aiaReasons) == null) return;
+                for (String r : aiaReasons) reasons.add(r + " (after completing the chain)");
             }
             fail(first, reasons);
         }
 
         private void anyClient(X509Certificate[] chain, Check check) throws CertificateException {
             List<String> reasons = new ArrayList<>();
-            CertificateException first = tryAll(chain, check, reasons);
+            CertificateException first = tryAll(delegates, chain, check, reasons);
             if (first != null) fail(first, reasons);
         }
 
         // Returns null when some delegate accepts the chain, else the first rejection.
-        private CertificateException tryAll(X509Certificate[] chain, Check check, List<String> reasons) {
+        private static CertificateException tryAll(List<Named> ds, X509Certificate[] chain, Check check,
+                                                   List<String> reasons) {
             CertificateException first = null;
-            for (Named d : delegates) {
+            for (Named d : ds) {
                 try {
                     check.run(d.tm, chain);
                     return null;
@@ -258,7 +454,7 @@ public final class TlsTrust {
         }
         public X509Certificate[] getAcceptedIssuers() {
             List<X509Certificate> all = new ArrayList<>();
-            for (Named d : delegates) {
+            for (Named d : all()) {
                 for (X509Certificate c : d.tm.getAcceptedIssuers()) all.add(c);
             }
             return all.toArray(new X509Certificate[0]);
@@ -274,15 +470,17 @@ public final class TlsTrust {
         }
     }
 
-    // Appends issuer certificates downloaded from the CA issuer URLs (AIA) of
-    // the chain's last certificate, until a self-issued one is reached.
-    static X509Certificate[] completeChain(X509Certificate[] chain) {
+    // Appends issuer certificates of the chain's last certificate, from the
+    // pool or else downloaded from its CA issuer URLs (AIA), until a
+    // self-issued one is reached.
+    static X509Certificate[] completeChain(X509Certificate[] chain, List<X509Certificate> pool) {
         List<X509Certificate> out = new ArrayList<>(Arrays.asList(chain));
         for (int n = 0; n < CompositeTrustManager.MAX_AIA_DOWNLOADS && !out.isEmpty(); n++) {
             X509Certificate last = out.get(out.size() - 1);
             if (last.getSubjectX500Principal().equals(last.getIssuerX500Principal())) break;
-            X509Certificate issuer = null;
-            for (String url : caIssuerUrls(last)) {
+            X509Certificate issuer = fromPool(pool, last);
+            if (issuer != null) debugLog("issuer from certificate store: " + issuer.getSubjectX500Principal());
+            if (issuer == null) for (String url : caIssuerUrls(last)) {
                 issuer = download(url, last);
                 if (issuer != null) break;
             }
@@ -290,6 +488,19 @@ public final class TlsTrust {
             out.add(issuer);
         }
         return out.toArray(new X509Certificate[0]);
+    }
+
+    private static X509Certificate fromPool(List<X509Certificate> pool, X509Certificate child) {
+        for (X509Certificate c : pool) {
+            if (!c.getSubjectX500Principal().equals(child.getIssuerX500Principal())) continue;
+            try {
+                child.verify(c.getPublicKey());
+                return c;
+            } catch (Exception e) {
+                // same name, other key: keep looking
+            }
+        }
+        return null;
     }
 
     private static X509Certificate download(String url, X509Certificate child) {
