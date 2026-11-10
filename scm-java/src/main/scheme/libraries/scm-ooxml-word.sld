@@ -1080,12 +1080,23 @@ Example:
                     (doc-images doc))
           (display "</Relationships>" port))))
 
-    (define (render-settings)
+    ;; updateFields makes Word ask "This document contains fields that may
+    ;; refer to other files. Update the fields?" on every open, so it is set
+    ;; only when a TOC or index needs filling in. PAGE fields (footers) are
+    ;; recalculated by Word anyway.
+    (define (doc-needs-field-update? doc)
+      (let loop ((elems (doc-paragraphs doc)))
+        (and (pair? elems)
+             (or (memq (vector-ref (car elems) 0) '(toc index))
+                 (loop (cdr elems))))))
+
+    (define (render-settings doc)
       (call-with-output-string
         (lambda (port)
           (display xml-preamble port)
           (format port "<w:settings xmlns:w=\"~a\">" ns-w)
-          (display "<w:updateFields w:val=\"true\"/>" port)
+          (when (doc-needs-field-update? doc)
+            (display "<w:updateFields w:val=\"true\"/>" port))
           (display "</w:settings>" port))))
 
     ;; ── document-save ────────────────────────────────────────────────────────
@@ -1102,7 +1113,7 @@ Example:
       (add-entry "[Content_Types].xml" (render-content-types doc))
       (add-entry "word/_rels/document.xml.rels" (render-doc-rels doc))
       (add-entry "word/document.xml" (render-document doc))
-      (add-entry "word/settings.xml" (render-settings))
+      (add-entry "word/settings.xml" (render-settings doc))
       (add-entry "word/styles.xml" (render-styles doc))
       ;; Write header/footer files
       (when (doc-header doc)

@@ -443,3 +443,25 @@
         (test-equal #f (member "docProps/core.xml" (zip-entry-names z)))))))
 
 (test-end "word")
+
+;; updateFields (Word's "fields may refer to other files" prompt) only when a
+;; TOC or index needs filling in
+(test-group "settings-update-fields"
+  (define (settings-of doc name)
+    (let ((path (join-path (special-folder-temp) name)))
+      (document-save doc path)
+      (call-with-input-zip path
+        (lambda (z)
+          (utf8->string (zip-read-entry-bytevector z "word/settings.xml"))))))
+  (let ((doc (make-document)))
+    (paragraph-add-run! (document-add-paragraph! doc) "plain")
+    (let ((f (document-add-paragraph! doc)))
+      (paragraph-add-page-number! f)
+      (document-set-footer! doc f))
+    (test-assert (not (string-contains (settings-of doc "test-scm-word-uf0.docx")
+                                       "updateFields"))))
+  (let ((doc (make-document)))
+    (document-add-table-of-contents! doc)
+    (document-add-heading! doc 1 "Intro")
+    (test-assert (string-contains (settings-of doc "test-scm-word-uf1.docx")
+                                  "updateFields"))))
