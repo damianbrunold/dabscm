@@ -103,7 +103,8 @@
 | [`(scm geo)`](libraries/scm-geo.md) | Planar geometry of features — rings, areas, simplification, label points, GeoJSON |
 | [`(scm glob)`](libraries/scm-glob.md) | Filename globbing and pattern matching |
 | [`(scm html builder)`](libraries/scm-html-builder.md) | SXML-shaped HTML5 builder with automatic escaping |
-| [`(scm html)`](libraries/scm-html.md) | HTML escaping and tag stripping |
+| [`(scm html parser)`](libraries/scm-html-parser.md) | Forgiving HTML parser producing SXML, as browsers read pages |
+| [`(scm html)`](libraries/scm-html.md) | HTML escaping, unescaping and tag stripping |
 | [`(scm image)`](libraries/scm-image.md) | Image decoding (PNG, JPEG), resizing, cropping, EXIF orientation, PNG and JPEG encoding |
 | [`(scm io)`](libraries/scm-io.md) | Extended I/O — formatting, port utilities, property lists |
 | [`(scm json simple)`](libraries/scm-json-simple.md) | High-level JSON codec — parse and serialize JSON as Scheme data |

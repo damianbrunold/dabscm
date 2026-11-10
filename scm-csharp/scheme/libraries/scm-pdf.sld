@@ -2253,52 +2253,42 @@ Example:
              (end-off (+ off 14))
              (start-off (+ end-off (* 2 seg-count) 2)) ; +2 reservedPad
              (delta-off (+ start-off (* 2 seg-count)))
-             (rangeoff-off (+ delta-off (* 2 seg-count)))
-             (glyph-off (+ rangeoff-off (* 2 seg-count))))
+             (rangeoff-off (+ delta-off (* 2 seg-count))))
+        ;; Segments are sorted by end code: binary search for the first
+        ;; one ending at or after cp (a linear scan made text measuring
+        ;; slow with fonts of several hundred segments).
+        (define (segment cp)
+          (let search ((lo 0) (hi seg-count))
+            (if (= lo hi)
+                lo
+                (let ((mid (quotient (+ lo hi) 2)))
+                  (if (< (%u16 bv (+ end-off (* 2 mid))) cp)
+                      (search (+ mid 1) hi)
+                      (search lo mid))))))
         (lambda (cp)
-          (cond ((> cp #xFFFF) 0)
-                (else
-                 ;; Linear scan: simple and bounded by seg-count (typically
-                 ;; < 200). Binary search would be faster but adds code.
-                 (let loop ((i 0))
-                   (cond ((= i seg-count) 0)
-                         (else (let ((endc (%u16 bv (+ end-off (* 2 i)))))
-                                 (cond ((< endc cp) (loop (+ i 1)))
-                                       (else
-                                        (let
-                                            ((startc
-                                              (%u16 bv
-                                                    (+ start-off (* 2 i)))))
-                                          (cond
-                                           ((> startc cp) 0)
-                                           (else
-                                            (let*
-                                                ((delta
-                                                  (%s16
-                                                   bv
-                                                   (+ delta-off (* 2 i))))
-                                                 (ro
-                                                  (%u16
-                                                   bv
-                                                   (+ rangeoff-off (* 2 i)))))
-                                              (cond
-                                               ((zero? ro)
-                                                (modulo (+ cp delta) 65536))
-                                               (else
-                                                (let*
-                                                    ((glyph-addr
-                                                      (+
-                                                       (+ rangeoff-off
-                                                          (* 2 i))
-                                                       ro
-                                                       (* 2 (- cp startc))))
-                                                     (g (%u16 bv glyph-addr)))
-                                                  (if
-                                                   (zero? g)
-                                                   0
-                                                   (modulo
-                                                    (+ g delta)
-                                                    65536))))))))))))))))))))
+          (if (> cp #xFFFF)
+              0
+              (let ((i (segment cp)))
+                (if (= i seg-count)
+                    0
+                    (let ((startc (%u16 bv (+ start-off (* 2 i)))))
+                      (if (> startc cp)
+                          0
+                          (let ((delta (%s16 bv (+ delta-off (* 2 i))))
+                                (ro (%u16 bv (+ rangeoff-off (* 2 i)))))
+                            (if (zero? ro)
+                                (modulo (+ cp delta) 65536)
+                                (let
+                                    ((g
+                                      (%u16
+                                       bv
+                                       (+ rangeoff-off
+                                          (* 2 i)
+                                          ro
+                                          (* 2 (- cp startc))))))
+                                  (if (zero? g)
+                                      0
+                                      (modulo (+ g delta) 65536)))))))))))))
 
     (define (%ttf-cmap12-lookup bv off)
       ;; Format 12: full Unicode via 32-bit ranges.
@@ -2382,8 +2372,9 @@ Description: Parses the TrueType font in ttf-bytes (a bytevector, e.g.
   from pdf-read-binary-file), registers it on doc as an embedded Type0
   composite font with /Encoding /Identity-H, and returns a font handle
   usable with pdf-draw-text, pdf-text-width and pdf-flow-text. Supports
-  the full Unicode BMP (cmap format 4) or beyond (format 12). The whole
-  TTF is embedded — no subsetting; expect a few hundred KB per font.
+  the full Unicode BMP (cmap format 4) or beyond (format 12). The font
+  is subset when the document is written: only the glyphs the document
+  uses are embedded.
   An optional base-name overrides the PostScript name used for the
   PDF /BaseFont entry (defaults to \"EmbeddedTTF<n>\").
 Example:

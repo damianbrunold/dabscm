@@ -250,8 +250,9 @@ Description: Parses the TrueType font in ttf-bytes (a bytevector, e.g.
   from pdf-read-binary-file), registers it on doc as an embedded Type0
   composite font with /Encoding /Identity-H, and returns a font handle
   usable with pdf-draw-text, pdf-text-width and pdf-flow-text. Supports
-  the full Unicode BMP (cmap format 4) or beyond (format 12). The whole
-  TTF is embedded — no subsetting; expect a few hundred KB per font.
+  the full Unicode BMP (cmap format 4) or beyond (format 12). The font
+  is subset when the document is written: only the glyphs the document
+  uses are embedded.
   An optional base-name overrides the PostScript name used for the
   PDF /BaseFont entry (defaults to "EmbeddedTTF<n>").
 Example:

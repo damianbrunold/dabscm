@@ -196,48 +196,58 @@ Example:
                (lambda (o) (cons 4 o)))
               (else (error "read-truetype: no usable cmap")))))
 
+    ;; segments are sorted by end code: binary search for the first one
+    ;; ending at or after c
     (define (cmap4 bv o)
       (let* ((segs (/ (u16 bv (+ o 6)) 2))
              (ends (+ o 14))
              (starts (+ ends (* 2 segs) 2))
              (deltas (+ starts (* 2 segs)))
              (ranges (+ deltas (* 2 segs))))
+        (define (segment c)
+          (let search ((lo 0) (hi segs))
+            (if (= lo hi)
+                lo
+                (let ((mid (quotient (+ lo hi) 2)))
+                  (if (> c (u16 bv (+ ends (* 2 mid))))
+                      (search (+ mid 1) hi)
+                      (search lo mid))))))
         (lambda (c)
-          (let loop ((i 0))
-            (cond ((= i segs) 0)
-                  ((> c (u16 bv (+ ends (* 2 i)))) (loop (+ i 1)))
-                  (else (let ((start (u16 bv (+ starts (* 2 i)))))
-                          (if (< c start)
-                              0
-                              (let ((ro (u16 bv (+ ranges (* 2 i))))
-                                    (delta (u16 bv (+ deltas (* 2 i)))))
-                                (if (= ro 0)
-                                    (modulo (+ c delta) 65536)
-                                    (let
-                                        ((g
-                                          (u16
-                                           bv
-                                           (+ ranges
-                                              (* 2 i)
-                                              ro
-                                              (* 2 (- c start))))))
-                                      (if
-                                       (= g 0)
-                                       0
-                                       (modulo (+ g delta) 65536)))))))))))))
+          (let ((i (segment c)))
+            (if (= i segs)
+                0
+                (let ((start (u16 bv (+ starts (* 2 i)))))
+                  (if (< c start)
+                      0
+                      (let ((ro (u16 bv (+ ranges (* 2 i))))
+                            (delta (u16 bv (+ deltas (* 2 i)))))
+                        (if (= ro 0)
+                            (modulo (+ c delta) 65536)
+                            (let
+                                ((g (u16
+                                     bv
+                                     (+ ranges
+                                        (* 2 i)
+                                        ro
+                                        (* 2 (- c start))))))
+                              (if (= g 0)
+                                  0
+                                  (modulo (+ g delta) 65536))))))))))))
 
+    ;; groups are sorted by start code: binary search
     (define (cmap12 bv o)
       (let ((n (u32 bv (+ o 12))))
         (lambda (c)
-          (let loop ((i 0))
-            (if (= i n)
+          (let search ((lo 0)
+                       (hi (- n 1)))
+            (if (> lo hi)
                 0
-                (let* ((g (+ o 16 (* 12 i)))
-                       (start (u32 bv g))
-                       (end (u32 bv (+ g 4))))
-                  (cond ((< c start) 0)
-                        ((<= c end) (+ (u32 bv (+ g 8)) (- c start)))
-                        (else (loop (+ i 1))))))))))
+                (let* ((mid (quotient (+ lo hi) 2))
+                       (g (+ o 16 (* 12 mid)))
+                       (start (u32 bv g)))
+                  (cond ((< c start) (search lo (- mid 1)))
+                        ((> c (u32 bv (+ g 4))) (search (+ mid 1) hi))
+                        (else (+ (u32 bv (+ g 8)) (- c start))))))))))
 
     ;; --- glyf -----------------------------------------------------------
 
@@ -671,18 +681,30 @@ Example:
              (long-loca? (= 1 (s16 bv (+ head 50))))
              (subst (gsub-singles bv tables features))
              (cmap-offset (table tables "cmap"))
-             (gid-of (let ((cmap (cmap-lookup bv cmap-offset)))
-                       (if (= 0 (hash-table-size subst))
-                           cmap
-                           (lambda (c)
-                             (let ((g (cmap c)))
-                               (hash-table-ref/default subst g g))))))
+             (gid-of (let* ((cmap (cmap-lookup bv cmap-offset))
+                            (lookup (if
+                                     (= 0 (hash-table-size subst))
+                                     cmap
+                                     (lambda (c)
+                                       (let ((g (cmap c)))
+                                         (hash-table-ref/default subst g
+                                                                 g)))))
+                            (gids (make-hash-table eqv?)))
+                       ;; text uses few characters, each many times
+                       (lambda (c)
+                         (or (hash-table-ref/default gids c #f)
+                             (let ((g (lookup c)))
+                               (hash-table-set! gids c g)
+                               g)))))
              (advance (lambda (gid)
                         (u16 bv (+ hmtx (* 4 (min gid (- nmetrics 1)))))))
              (cache (make-hash-table eqv?))
              (pairs (kern-pairs bv tables))
              (gpos (and (= 0 (hash-table-size pairs))
-                        (gpos-kerning bv tables))))
+                        (gpos-kerning bv tables)))
+             ;; GPOS adjustments are looked up through coverage and class
+             ;; tables, so each pair is worked out once
+             (gpos-cache (make-hash-table eqv?)))
         (%make-font (u16 bv (+ head 18))
                     (s16 bv (+ hhea 4))
                     (s16 bv (+ hhea 6))
@@ -702,7 +724,11 @@ Example:
                       (let ((l (gid-of (char->integer left)))
                             (r (gid-of (char->integer right))))
                         (if gpos
-                            (gpos l r)
+                            (let ((key (+ (* l 65536) r)))
+                              (or (hash-table-ref/default gpos-cache key #f)
+                                  (let ((v (gpos l r)))
+                                    (hash-table-set! gpos-cache key v)
+                                    v)))
                             (hash-table-ref/default pairs (cons l r) 0))))
                     (delay
                       (let loop ((cps (reverse

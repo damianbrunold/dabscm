@@ -24,7 +24,8 @@
   <h2>Bindings</h2>
   <a href="#e0" data-name="html-attr-escape">html-attr-escape</a>
   <a href="#e1" data-name="html-escape">html-escape</a>
-  <a href="#e2" data-name="strip-html-tags">strip-html-tags</a>
+  <a href="#e2" data-name="html-unescape">html-unescape</a>
+  <a href="#e3" data-name="strip-html-tags">strip-html-tags</a>
 </nav>
 
 <main>
@@ -38,10 +39,10 @@
 </nav>
 
 <div class="lib-title scm">(scm html)</div>
-<p class="lib-sub">HTML escaping and tag stripping</p>
+<p class="lib-sub">HTML escaping, unescaping and tag stripping</p>
 <div class="lib-preamble">
 <h2>Overview</h2>
-<p><a class="xref" href="scm-html.html"><code>(scm html)</code></a> provides the small, safety-critical HTML string operations: escaping text and attribute values, and stripping tags from a fragment. For building HTML from a tree see <a class="xref" href="scm-html-builder.html"><code>(scm html builder)</code></a>.</p>
+<p><a class="xref" href="scm-html.html"><code>(scm html)</code></a> provides the small, safety-critical HTML string operations: escaping text and attribute values, decoding character references, and stripping tags from a fragment. For building HTML from a tree see <a class="xref" href="scm-html-builder.html"><code>(scm html builder)</code></a>, for reading HTML into a tree <a class="xref" href="scm-html-parser.html"><code>(scm html parser)</code></a>.</p>
 <h2>Common uses</h2>
 <pre><code class="language-scheme">(import (scm html))
 
@@ -49,11 +50,14 @@
 (html-attr-escape "x\"y")     ;; =&gt; escaped for use in an attribute value
 
 (strip-html-tags "&lt;p&gt;hello   &lt;b&gt;world&lt;/b&gt;&lt;/p&gt;")   ;; =&gt; "hello world"
-(strip-html-tags "plain")                          ;; =&gt; "plain"</code></pre>
-<p><a class="xref" href="#e2"><code>strip-html-tags</code></a> removes tags and collapses whitespace, but does not decode HTML entities — escape again with <a class="xref" href="#e1"><code>html-escape</code></a> if you re-emit the result into HTML.</p>
+(strip-html-tags "plain")                          ;; =&gt; "plain"
+
+(html-unescape "a &amp;amp; b &amp;auml; &amp;#8364;")   ;; =&gt; "a &amp; b ä €"</code></pre>
+<p><a class="xref" href="#e3"><code>strip-html-tags</code></a> removes tags and collapses whitespace, but does not decode HTML entities — decode them with <a class="xref" href="#e2"><code>html-unescape</code></a>, and escape again with <a class="xref" href="#e1"><code>html-escape</code></a> if you re-emit the result into HTML.</p>
+<p><a class="xref" href="#e2"><code>html-unescape</code></a> decodes references as browsers do: all HTML5 named references, numeric ones, and the legacy names that work without a semicolon (<code>&amp;copy 2024</code>). For attribute values pass <code>#t</code> as a second argument, which leaves <code>&amp;copy=1</code> in a URL alone.</p>
 </div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
-<p class="export-count">3 bindings</p>
+<p class="export-count">4 bindings</p>
 
 <div class="entry" id="e0" data-name="html-attr-escape">
   <div class="entry-name">html-attr-escape</div>
@@ -71,14 +75,32 @@ Description: Escapes the five HTML metacharacters (&amp;, &lt;, &gt;, ", ') in s
 Example:
   (html-escape "a &lt; b &amp; c") =&gt; "a &amp;lt; b &amp;amp; c"</pre>
 </div>
-<div class="entry" id="e2" data-name="strip-html-tags">
+<div class="entry" id="e2" data-name="html-unescape">
+  <div class="entry-name">html-unescape</div>
+  <pre class="entry-doc">Syntax: (html-unescape s [attribute?])
+Library: (scm html)
+Description: Decodes the character references in s as a browser does:
+  all 2125 HTML5 named references (&amp;amp; &amp;auml; &amp;rarr; ...), decimal
+  and hexadecimal ones (&amp;#228; &amp;#xE4;; 128 to 159 as Windows-1252, 0,
+  surrogates and values beyond U+10FFFF as U+FFFD), and the legacy names
+  that work without a semicolon (&amp;copy 2024). Anything else is left as
+  it is. With attribute? true, s is an attribute value: a legacy name
+  without semicolon followed by a letter, digit or = is not decoded
+  (so &amp;copy=1 in a URL stays).
+Example:
+  (html-unescape "a &amp;amp; b &amp;lt;&amp;#228;&amp;#xE4;&amp;auml") =&gt; "a &amp; b &lt;äää"
+  (html-unescape "&amp;notin; &amp;notit;") =&gt; "∉ ¬it;"
+  (html-unescape "?a=1&amp;copy=2" #t) =&gt; "?a=1&amp;copy=2"</pre>
+</div>
+<div class="entry" id="e3" data-name="strip-html-tags">
   <div class="entry-name">strip-html-tags</div>
   <pre class="entry-doc">Syntax: (strip-html-tags s)
 Library: (scm html)
 Description: Removes anything that looks like an HTML tag (text from &lt; to &gt;)
   and collapses runs of whitespace into single spaces. Intended for plain-text
   contexts like tooltip values where you want a readable string. Does NOT
-  decode HTML entities — call html-escape afterwards if you re-emit into HTML.
+  decode HTML entities (html-unescape does) — call html-escape afterwards if
+  you re-emit into HTML.
 Example:
   (strip-html-tags "&lt;p&gt;hello   &lt;b&gt;world&lt;/b&gt;&lt;/p&gt;") =&gt; "hello world"
   (strip-html-tags "plain") =&gt; "plain"</pre>

@@ -69,7 +69,9 @@ Example:
   (percent-decode \"a+b\" #f) => \"a+b\""
       (let* ((plus-as-space? (if (null? opt) #t (car opt)))
              (n (string-length s))
-             (bv (make-bytevector n 0)))
+             ;; the UTF-8 length of s bounds the decoded length: an escape
+             ;; gives one byte for three, any other character its own bytes
+             (bv (make-bytevector (bytevector-length (string->utf8 s)) 0)))
         (let loop ((i 0) (j 0))
           (cond ((= i n) (utf8->string bv 0 j))
                 ((and (char=? (string-ref s i) #\%)

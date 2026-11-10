@@ -193,8 +193,9 @@
      .
      "TopoJSON: writing with shared arcs, simplification and quantization; reading")
     ((scm glob) . "Filename globbing and pattern matching")
-    ((scm html) . "HTML escaping and tag stripping")
+    ((scm html) . "HTML escaping, unescaping and tag stripping")
     ((scm html builder) . "SXML-shaped HTML5 builder with automatic escaping")
+    ((scm html parser) . "Forgiving HTML parser producing SXML, as browsers read pages")
     ((scm io) . "Extended I/O — formatting, port utilities, property lists")
     ((scm json) . "JSON file reading")
     ((scm json simple)

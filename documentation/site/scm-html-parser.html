@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm html parser) — Dabscm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="toc">
+  <h2>Bindings</h2>
+  <a href="#e0" data-name="html-&gt;sxml">html-&gt;sxml</a>
+  <a href="#e1" data-name="html-fragment-&gt;sxml">html-fragment-&gt;sxml</a>
+  <a href="#e2" data-name="sxml-attribute">sxml-attribute</a>
+  <a href="#e3" data-name="sxml-attributes">sxml-attributes</a>
+  <a href="#e4" data-name="sxml-children">sxml-children</a>
+  <a href="#e5" data-name="sxml-find">sxml-find</a>
+  <a href="#e6" data-name="sxml-tag">sxml-tag</a>
+  <a href="#e7" data-name="sxml-text">sxml-text</a>
+</nav>
+
+<main>
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="index.html">All libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="index.html#sec-scm">Scm Extensions</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm html parser)</span>
+</nav>
+
+<div class="lib-title scm">(scm html parser)</div>
+<p class="lib-sub">Forgiving HTML parser producing SXML, as browsers read pages</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p><a class="xref" href="scm-html-parser.html"><code>(scm html parser)</code></a> reads HTML into SXML the way browsers read real pages: end tags the markup leaves out are implied (<code>&lt;p&gt;</code>, <code>&lt;li&gt;</code>, <code>&lt;td&gt;</code>, <code>&lt;option&gt;</code> …), stray end tags are ignored, void elements need no end tag, and the contents of <code>&lt;script&gt;</code>, <code>&lt;style&gt;</code>, <code>&lt;title&gt;</code> and <code>&lt;textarea&gt;</code> are read as text. Character references are decoded with the complete HTML5 list (see <a class="xref" href="scm-html.html#e2"><code>html-unescape</code></a> in <a class="xref" href="scm-html.html"><code>(scm html)</code></a>). It accepts any input without raising an error.</p>
+<p>The tree has the shape <a class="xref" href="scm-html-builder.html"><code>(scm html builder)</code></a> renders, so a parsed page can be changed and written back with <a class="xref" href="scm-html-builder.html#e1"><code>html-&gt;string</code></a>:</p>
+<ul>
+<li><code>"text"</code> — text, references decoded</li>
+<li><code>(tag (@ (name "value") ...) child ...)</code> — an element; tag and attribute names</li>
+</ul>
+<p>are lower-case symbols, the <code>(@ ...)</code> list is left out when there are no attributes</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">(import (scm html parser))
+
+(html-&gt;sxml "&lt;title&gt;T&lt;/title&gt;&lt;p class=x&gt;a&lt;br&gt;b&lt;p&gt;c &amp;amp; d")
+;; =&gt; (html (head (title "T"))
+;;          (body (p (@ (class "x")) "a" (br) "b") (p "c &amp; d")))
+
+(html-fragment-&gt;sxml "Hello &lt;b&gt;world&lt;/b&gt;&lt;ul&gt;&lt;li&gt;a&lt;li&gt;b&lt;/ul&gt;")
+;; =&gt; ("Hello " (b "world") (ul (li "a") (li "b")))</code></pre>
+<p>A document always comes back as <code>(html (head ...) (body ...))</code>: head elements before the content go into <code>head</code>, everything else into <code>body</code>. A fragment (the content of an element, such as a comment or an e-mail body) comes back as the list of its top-level nodes.</p>
+<p>The tree helpers find elements and read them:</p>
+<pre><code class="language-scheme">(define doc (html-&gt;sxml page))
+
+(map (lambda (a) (sxml-attribute a 'href)) (sxml-find doc 'a))   ;; all links
+(sxml-text (car (sxml-find doc 'title)))                           ;; the title
+(sxml-find doc (lambda (e) (equal? (sxml-attribute e 'id) "main")))
+(sxml-children (car (sxml-find doc 'ul)))                          ;; its items</code></pre>
+<p><a class="xref" href="#e7"><code>sxml-text</code></a> leaves out the contents of <code>script</code> and <code>style</code>, so it gives the text a reader sees (white space as it is in the source).</p>
+<h2>Limits</h2>
+<p>The parser follows the HTML5 tree construction rules where pages depend on them, not in full: formatting elements closed in the wrong order (<code>&lt;b&gt;&lt;p&gt;x&lt;/b&gt;y&lt;/p&gt;</code>) are not reopened, tables get no implied <code>&lt;tbody&gt;</code> and content misplaced in a table is not moved before it, and SVG names are not restored to camel case (<code>viewBox</code> comes out as <code>viewbox</code>). A <code>/</code> before <code>&gt;</code> closes an element only in SVG and MathML, as in browsers.</p>
+</div>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">8 bindings</p>
+
+<div class="entry" id="e0" data-name="html-&gt;sxml">
+  <div class="entry-name">html-&gt;sxml</div>
+  <pre class="entry-doc">Syntax: (html-&gt;sxml string)
+Library: (scm html parser)
+Description: Parses the HTML document in string and returns it as SXML,
+  in the shape (scm html builder) renders: (tag (@ (name "value") ...)
+  child ...), tag and attribute names as lower-case symbols, attribute
+  values and text as strings with character references decoded. Like a
+  browser it always returns (html (head ...) (body ...)), puts head
+  elements before the content into head, closes elements that the
+  markup leaves open (&lt;p&gt;, &lt;li&gt;, &lt;td&gt; ...) and ignores stray end tags.
+  The contents of script and style are kept as text; comments and the
+  doctype are dropped. It accepts any input without raising an error.
+Example:
+  (html-&gt;sxml "&lt;title&gt;T&lt;/title&gt;&lt;p class=x&gt;a&lt;br&gt;b&lt;p&gt;c &amp;amp; d")
+  =&gt; (html (head (title "T"))
+           (body (p (@ (class "x")) "a" (br) "b") (p "c &amp; d")))</pre>
+</div>
+<div class="entry" id="e1" data-name="html-fragment-&gt;sxml">
+  <div class="entry-name">html-fragment-&gt;sxml</div>
+  <pre class="entry-doc">Syntax: (html-fragment-&gt;sxml string)
+Library: (scm html parser)
+Description: Parses a piece of HTML (the content of an element, such as
+  a comment someone wrote or an e-mail body) and returns the list of its
+  top-level nodes: elements as in html-&gt;sxml, and strings. html, head
+  and body tags in it are ignored. The list renders back with
+  html-&gt;string.
+Example:
+  (html-fragment-&gt;sxml "Hello &lt;b&gt;world&lt;/b&gt;&lt;ul&gt;&lt;li&gt;a&lt;li&gt;b&lt;/ul&gt;")
+  =&gt; ("Hello " (b "world") (ul (li "a") (li "b")))</pre>
+</div>
+<div class="entry" id="e2" data-name="sxml-attribute">
+  <div class="entry-name">sxml-attribute</div>
+  <pre class="entry-doc">Syntax: (sxml-attribute node name)
+Library: (scm html parser)
+Description: The value of attribute name (a symbol or string) of the
+  SXML element node, or #f when it has no such attribute.
+Example:
+  (sxml-attribute '(a (@ (href "/x")) "z") 'href) =&gt; "/x"
+  (sxml-attribute '(a "z") "href") =&gt; #f</pre>
+</div>
+<div class="entry" id="e3" data-name="sxml-attributes">
+  <div class="entry-name">sxml-attributes</div>
+  <pre class="entry-doc">Syntax: (sxml-attributes node)
+Library: (scm html parser)
+Description: The attributes of the SXML element node as a list of (name
+  value) lists, () when it has none.
+Example:
+  (sxml-attributes '(a (@ (href "/x") (id "y")) "z"))
+  =&gt; ((href "/x") (id "y"))</pre>
+</div>
+<div class="entry" id="e4" data-name="sxml-children">
+  <div class="entry-name">sxml-children</div>
+  <pre class="entry-doc">Syntax: (sxml-children node)
+Library: (scm html parser)
+Description: The children (elements and strings) of the SXML element
+  node, without its attributes; () for text.
+Example:
+  (sxml-children '(p (@ (class "x")) "a" (b "c"))) =&gt; ("a" (b "c"))</pre>
+</div>
+<div class="entry" id="e5" data-name="sxml-find">
+  <div class="entry-name">sxml-find</div>
+  <pre class="entry-doc">Syntax: (sxml-find node which)
+Library: (scm html parser)
+Description: The elements in node (an element or a list of nodes),
+  node itself included, in document order, that which selects: which is
+  a tag (symbol or string) or a predicate on elements.
+Example:
+  (sxml-find (html-&gt;sxml "&lt;p&gt;a &lt;a href=x&gt;b&lt;/a&gt;&lt;/p&gt;&lt;a href=y&gt;c&lt;/a&gt;") 'a)
+  =&gt; ((a (@ (href "x")) "b") (a (@ (href "y")) "c"))
+  (sxml-find doc (lambda (e) (sxml-attribute e 'id)))</pre>
+</div>
+<div class="entry" id="e6" data-name="sxml-tag">
+  <div class="entry-name">sxml-tag</div>
+  <pre class="entry-doc">Syntax: (sxml-tag node)
+Library: (scm html parser)
+Description: The tag of the SXML element node as a symbol, or #f when
+  node is text (a string) or not an element.
+Example:
+  (sxml-tag '(p (@ (class "x")) "a")) =&gt; p
+  (sxml-tag "a") =&gt; #f</pre>
+</div>
+<div class="entry" id="e7" data-name="sxml-text">
+  <div class="entry-name">sxml-text</div>
+  <pre class="entry-doc">Syntax: (sxml-text node)
+Library: (scm html parser)
+Description: The text of node: a string itself, an element the text of
+  all its descendants in order (without the contents of script and
+  style), a list of nodes their texts joined. White space is kept as it
+  is.
+Example:
+  (sxml-text '(p "a " (b "b") (script "x()") " c")) =&gt; "a b c"</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

@@ -28,6 +28,11 @@
   ;; lowercase hex is also accepted
   (test-equal "a/b" (percent-decode "a%2fb"))
   (test-equal "ä" (percent-decode "%C3%A4"))
+  ;; non-ASCII characters left as they are (they used to overflow the
+  ;; buffer, which was sized by the number of characters)
+  (test-equal "Ölbäume" (percent-decode "Ölbäume" #f))
+  (test-equal "Ölbäume ä" (percent-decode "%C3%96lbäume+%C3%A4"))
+  (test-equal "日本語 x" (percent-decode "日本語%20x"))
   ;; malformed % at end is passed through literally
   (test-equal "a%" (percent-decode "a%")))
 
