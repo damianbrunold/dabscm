@@ -41,17 +41,18 @@
   <a href="#e16" data-name="import-binding-kind">import-binding-kind</a>
   <a href="#e17" data-name="import-binding-library">import-binding-library</a>
   <a href="#e18" data-name="import-binding-name">import-binding-name</a>
-  <a href="#e19" data-name="import-set-bindings">import-set-bindings</a>
-  <a href="#e20" data-name="library-file-name">library-file-name</a>
-  <a href="#e21" data-name="make-cst-node">make-cst-node</a>
-  <a href="#e22" data-name="make-import-cache">make-import-cache</a>
-  <a href="#e23" data-name="same-import-binding?">same-import-binding?</a>
-  <a href="#e24" data-name="source-read-error-position">source-read-error-position</a>
-  <a href="#e25" data-name="source-read-file">source-read-file</a>
-  <a href="#e26" data-name="source-read-string">source-read-string</a>
-  <a href="#e27" data-name="tools-config">tools-config</a>
-  <a href="#e28" data-name="tools-config-ref">tools-config-ref</a>
-  <a href="#e29" data-name="tools-excluded?">tools-excluded?</a>
+  <a href="#e19" data-name="import-binding-original-name">import-binding-original-name</a>
+  <a href="#e20" data-name="import-set-bindings">import-set-bindings</a>
+  <a href="#e21" data-name="library-file-name">library-file-name</a>
+  <a href="#e22" data-name="make-cst-node">make-cst-node</a>
+  <a href="#e23" data-name="make-import-cache">make-import-cache</a>
+  <a href="#e24" data-name="same-import-binding?">same-import-binding?</a>
+  <a href="#e25" data-name="source-read-error-position">source-read-error-position</a>
+  <a href="#e26" data-name="source-read-file">source-read-file</a>
+  <a href="#e27" data-name="source-read-string">source-read-string</a>
+  <a href="#e28" data-name="tools-config">tools-config</a>
+  <a href="#e29" data-name="tools-config-ref">tools-config-ref</a>
+  <a href="#e30" data-name="tools-excluded?">tools-excluded?</a>
 </nav>
 
 <main>
@@ -90,7 +91,7 @@
      (import-set-bindings '(only (scheme base) car cdr) cache))
 ;; =&gt; (car cdr)</code></pre>
 <h2>Tool configuration: scm-tools.toml</h2>
-<p><code>scm fmt</code> and <code>scm lint</code> take their settings from the nearest <code>scm-tools.toml</code> in the file's directory or a parent directory (<a class="xref" href="#e27"><code>tools-config</code></a>). Paths in it are relative to the file's directory:</p>
+<p><code>scm fmt</code> and <code>scm lint</code> take their settings from the nearest <code>scm-tools.toml</code> in the file's directory or a parent directory (<a class="xref" href="#e28"><code>tools-config</code></a>). Paths in it are relative to the file's directory:</p>
 <pre><code class="language-toml">exclude = ["generated/**", "vendor/**"]   # both tools skip these
 
 [format]
@@ -112,7 +113,7 @@ definers = ["define-command"]   # macros that define their first argument
 exclude = ["tests/fixtures/**"]</code></pre>
 </div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
-<p class="export-count">30 bindings</p>
+<p class="export-count">31 bindings</p>
 
 <div class="entry" id="e0" data-name="collect-source-files">
   <div class="entry-name">collect-source-files</div>
@@ -267,7 +268,21 @@ Example:
                                                   (make-import-cache '()))))
     =&gt; car</pre>
 </div>
-<div class="entry" id="e19" data-name="import-set-bindings">
+<div class="entry" id="e19" data-name="import-binding-original-name">
+  <div class="entry-name">import-binding-original-name</div>
+  <pre class="entry-doc">Syntax: (import-binding-original-name binding)
+Library: (scm source)
+Description: Returns the name an import binding (from
+  import-set-bindings) has in the library that defines it: the name
+  before any rename or prefix of the import set (and of re-exports, when
+  known).
+Example:
+  (import-binding-original-name
+   (car (import-set-bindings '(rename (only (scheme base) car) (car first))
+                             (make-import-cache '()))))
+    =&gt; car</pre>
+</div>
+<div class="entry" id="e20" data-name="import-set-bindings">
   <div class="entry-name">import-set-bindings</div>
   <pre class="entry-doc">Syntax: (import-set-bindings import-set cache)
 Library: (scm source)
@@ -282,7 +297,7 @@ Example:
        (import-set-bindings '(only (scheme base) car) (make-import-cache '())))
     =&gt; (car)</pre>
 </div>
-<div class="entry" id="e20" data-name="library-file-name">
+<div class="entry" id="e21" data-name="library-file-name">
   <div class="entry-name">library-file-name</div>
   <pre class="entry-doc">Syntax: (library-file-name name)
 Library: (scm source)
@@ -291,11 +306,11 @@ Description: Returns the file name a library name maps to: its parts
 Example:
   (library-file-name '(scm net http)) =&gt; "scm-net-http.sld"</pre>
 </div>
-<div class="entry" id="e21" data-name="make-cst-node">
+<div class="entry" id="e22" data-name="make-cst-node">
   <div class="entry-name">make-cst-node</div>
   <div class="nodoc">(no documentation)</div>
 </div>
-<div class="entry" id="e22" data-name="make-import-cache">
+<div class="entry" id="e23" data-name="make-import-cache">
   <div class="entry-name">make-import-cache</div>
   <pre class="entry-doc">Syntax: (make-import-cache lib-dirs)
 Library: (scm source)
@@ -305,7 +320,7 @@ Description: Returns a cache for import-set-bindings that finds the
 Example:
   (make-import-cache '("src"))</pre>
 </div>
-<div class="entry" id="e23" data-name="same-import-binding?">
+<div class="entry" id="e24" data-name="same-import-binding?">
   <div class="entry-name">same-import-binding?</div>
   <pre class="entry-doc">Syntax: (same-import-binding? a b)
 Library: (scm source)
@@ -319,7 +334,7 @@ Example:
                           (car (import-set-bindings '(only (scm core) car) c))))
     =&gt; #t</pre>
 </div>
-<div class="entry" id="e24" data-name="source-read-error-position">
+<div class="entry" id="e25" data-name="source-read-error-position">
   <div class="entry-name">source-read-error-position</div>
   <pre class="entry-doc">Syntax: (source-read-error-position obj)
 Library: (scm source)
@@ -331,7 +346,7 @@ Example:
     (source-read-string "(a" "x.scm"))
     =&gt; ("x.scm" 1 0)</pre>
 </div>
-<div class="entry" id="e25" data-name="source-read-file">
+<div class="entry" id="e26" data-name="source-read-file">
   <div class="entry-name">source-read-file</div>
   <pre class="entry-doc">Syntax: (source-read-file path)
 Library: (scm source)
@@ -340,7 +355,7 @@ Description: Reads the Scheme source file at path (UTF-8) into a CST and
 Example:
   (cst-&gt;string (source-read-file "lib.sld")) ; the file's text, unchanged</pre>
 </div>
-<div class="entry" id="e26" data-name="source-read-string">
+<div class="entry" id="e27" data-name="source-read-string">
   <div class="entry-name">source-read-string</div>
   <pre class="entry-doc">Syntax: (source-read-string str [file])
 Library: (scm source)
@@ -355,7 +370,7 @@ Example:
   (map cst-kind (cst-children (source-read-string "(a b) ; c")))
     =&gt; (list comment)</pre>
 </div>
-<div class="entry" id="e27" data-name="tools-config">
+<div class="entry" id="e28" data-name="tools-config">
   <div class="entry-name">tools-config</div>
   <pre class="entry-doc">Syntax: (tools-config path)
 Library: (scm source)
@@ -369,7 +384,7 @@ Example:
   (tools-config-ref (tools-config "src/a.sld") '("format" "width") 78)
     =&gt; 78</pre>
 </div>
-<div class="entry" id="e28" data-name="tools-config-ref">
+<div class="entry" id="e29" data-name="tools-config-ref">
   <div class="entry-name">tools-config-ref</div>
   <pre class="entry-doc">Syntax: (tools-config-ref cfg keys default)
 Library: (scm source)
@@ -380,7 +395,7 @@ Example:
   (tools-config-ref '(("lint" ("disable" . #("x")))) '("lint" "disable") '())
     =&gt; ("x")</pre>
 </div>
-<div class="entry" id="e29" data-name="tools-excluded?">
+<div class="entry" id="e30" data-name="tools-excluded?">
   <div class="entry-name">tools-excluded?</div>
   <pre class="entry-doc">Syntax: (tools-excluded? file section)
 Library: (scm source)

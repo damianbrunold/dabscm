@@ -263,6 +263,22 @@ Example:
     => car
 ```
 
+### `import-binding-original-name`
+
+```
+Syntax: (import-binding-original-name binding)
+Library: (scm source)
+Description: Returns the name an import binding (from
+  import-set-bindings) has in the library that defines it: the name
+  before any rename or prefix of the import set (and of re-exports, when
+  known).
+Example:
+  (import-binding-original-name
+   (car (import-set-bindings '(rename (only (scheme base) car) (car first))
+                             (make-import-cache '()))))
+    => car
+```
+
 ### `import-set-bindings`
 
 ```

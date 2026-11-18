@@ -28,6 +28,7 @@
           import-binding-kind
           import-binding-library
           import-binding-name
+          import-binding-original-name
           import-set-bindings
           library-file-name
           make-cst-node
@@ -763,6 +764,20 @@ Example:
                                                   (make-import-cache '()))))
     => car"
       (vector-ref b 0))
+
+    (define (import-binding-original-name b)
+      "Syntax: (import-binding-original-name binding)
+Library: (scm source)
+Description: Returns the name an import binding (from
+  import-set-bindings) has in the library that defines it: the name
+  before any rename or prefix of the import set (and of re-exports, when
+  known).
+Example:
+  (import-binding-original-name
+   (car (import-set-bindings '(rename (only (scheme base) car) (car first))
+                             (make-import-cache '()))))
+    => car"
+      (vector-ref b 2))
 
     (define (import-binding-library b)
       "Syntax: (import-binding-library binding)

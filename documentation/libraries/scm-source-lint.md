@@ -69,6 +69,41 @@ reference, e.g. as quoted symbols.
 
 Names starting with `_` are never reported as unused.
 
+## Cross references
+
+`source-xref` returns what the scope analysis of the linter knows about
+the names of a file, for editor features such as jump to definition and
+find references. Each xref record has a role, the name and its position
+(line from 1, column from 0) and a target saying where the name is bound:
+
+| Role | Meaning |
+|---|---|
+| `definition` | a top-level definition (also by a configured definer macro) |
+| `local-definition` | a parameter or local binding |
+| `reference` | a use the analysis resolved |
+| `mention` | a name inside a macro use the linter cannot look into; usually a reference, but it may be a pattern variable or a name the macro binds |
+| `quoted` | a symbol in quoted data, such as a command name in a keymap |
+| `export` | a name in the export list |
+
+The target is `(here line col)` for a binding in the file (for a
+definition its own position), `(import library name)` for an import,
+naming the library that originally defines it (through re-exports and
+renames), or `#f`. All uses of one binding have equal targets, so the
+references to a definition of a project are the entries whose target
+names its library and name, or its position in its own file.
+
+```scheme
+(for-each (lambda (x)
+            (write (list (xref-role x) (xref-name x) (xref-target x)))
+            (newline))
+          (source-xref "(import (scheme base))\n(define (f x) (car x))\n"
+                       "a.scm"))
+;; (definition f (here 2 9))
+;; (local-definition x (here 2 11))
+;; (reference car (import (scheme base) car))
+;; (reference x (here 2 11))
+```
+
 ## Common uses
 
 ```scheme
@@ -213,4 +248,64 @@ Example:
                     "a.scm"))
     => (cxr)
 ```
+
+### `source-xref`
+
+```
+Syntax: (source-xref text file [options])
+Library: (scm source lint)
+Description: Returns the cross references of the Scheme source text (file
+  names it and is used to find sibling libraries), from the scope
+  analysis of the linter: a list of xref records sorted by position, or
+  #f when the text cannot be read. options are as for lint-string (the
+  library-path and definers matter). Accessors: xref-role, xref-name (a
+  symbol), xref-line (from 1), xref-col (from 0), xref-kind and
+  xref-target. Roles: definition (a top-level definition of the file),
+  local-definition (a parameter or local binding), reference (a resolved
+  use), mention (a name inside a macro use the linter cannot look into;
+  possibly not a reference), quoted (a symbol in quoted data) and export
+  (a name in an export list). xref-kind is the kind of a definition
+  (define, macro, record-type, record, definer, local, param, loop) and #f
+  otherwise. xref-target is where the name is bound: (here line col) for
+  a definition in the text (the definition's own position for a
+  definition), (import library name) for an import (the library that
+  originally defines it, and its name there), or #f when it is unbound or
+  quoted. Uses of one binding have equal targets.
+Example:
+  (map (lambda (x) (list (xref-role x) (xref-name x) (xref-target x)))
+       (source-xref "(import (scheme base))\n(define (f x) (car x))\n"
+                    "a.scm"))
+    => ((definition f (here 2 9))
+        (local-definition x (here 2 11))
+        (reference car (import (scheme base) car))
+        (reference x (here 2 11)))
+```
+
+### `xref-col`
+
+*(no documentation)*
+
+### `xref-kind`
+
+*(no documentation)*
+
+### `xref-line`
+
+*(no documentation)*
+
+### `xref-name`
+
+*(no documentation)*
+
+### `xref-role`
+
+*(no documentation)*
+
+### `xref-target`
+
+*(no documentation)*
+
+### `xref?`
+
+*(no documentation)*
 

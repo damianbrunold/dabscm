@@ -20,7 +20,15 @@
           lint-findings->text
           lint-options
           lint-rules
-          lint-string)
+          lint-string
+          source-xref
+          xref-col
+          xref-kind
+          xref-line
+          xref-name
+          xref-role
+          xref-target
+          xref?)
   (begin
 
     ;; ================================================================
@@ -466,9 +474,6 @@ Example:
       (arity b-arity set-b-arity!) ; (min . max-or-#f) or #f
       (calls b-calls set-b-calls!))
 
-    (define (new-binding name kind node)
-      (make-binding name kind node #f #f #f '()))
-
     (define (make-frame) (make-hash-table eq?))
 
     ;; ---- the analysis ----------------------------------------------
@@ -525,6 +530,37 @@ Example:
                 (if node (cst-col node) 0)
                 message))
 
+        ;; -- cross references (source-xref) --
+        ;; xref-sink, when given, is called as (sink role name node target)
+        ;; for definitions, references, mentions, quoted symbols and
+        ;; exports; target is a binding, (import . entries) or #f.
+        (define xref-sink (opt opts 'xref #f))
+
+        (define (xref-note! role name node r)
+          (when (and xref-sink node)
+            (xref-sink role name node
+                       (xref-target r)
+                       (and (binding? r)
+                            (memq role '(definition top))
+                            (b-kind r)))))
+
+        ;; (here line col), (import library original-name) or #f
+        (define (xref-target r)
+          (cond ((binding? r)
+                 (let ((n (b-node r))) (list 'here (cst-line n) (cst-col n))))
+                ((and (pair? r) (eq? (car r) 'import) (pair? (cdr r)))
+                 (let ((ib (cdr (best-import (cdr r)))))
+                   (list 'import
+                         (import-binding-library ib)
+                         (import-binding-original-name ib))))
+                (else #f)))
+
+        ;; every binding of the analysis is created here
+        (define (new-binding name kind node)
+          (let ((b (make-binding name kind node #f #f #f '())))
+            (xref-note! 'definition name node b)
+            b))
+
         ;; -- resolution --
         (define (lookup-local name env)
           (let loop ((fs env))
@@ -543,18 +579,23 @@ Example:
         ;; (scheme ...) before (srfi ...) before (scm ...) before others,
         ;; then the earlier import, so redundant imports show as unused.
         (define (mark-import-used! entries name)
-          (let loop ((es entries) (best #f))
-            (cond ((null? es)
-                   (when best
-                     (hash-table-set! (vector-ref (car best) 3) name #t)
-                     ;; the others could have provided it: remember who did
-                     (for-each (lambda (e)
-                                 (unless (eq? (car e) (car best))
-                                   (hash-table-set! (vector-ref (car e) 5)
-                                                    (vector-ref (car best) 0)
-                                                    #t)))
-                               entries)))
-                  ((or (not best) (import-before? (caar es) (car best)))
+          (when (pair? entries)
+            (let ((best (best-import entries)))
+              (hash-table-set! (vector-ref (car best) 3) name #t)
+              ;; the others could have provided it: remember who did
+              (for-each (lambda (e)
+                          (unless (eq? (car e) (car best))
+                            (hash-table-set! (vector-ref (car e) 5)
+                                             (vector-ref (car best) 0)
+                                             #t)))
+                        entries))))
+
+        ;; the entry a name several imports provide is credited to
+        (define (best-import entries)
+          (let loop ((es (cdr entries))
+                     (best (car entries)))
+            (cond ((null? es) best)
+                  ((import-before? (caar es) (car best))
                    (loop (cdr es) (car es)))
                   (else (loop (cdr es) best)))))
 
@@ -566,6 +607,7 @@ Example:
 
         (define (ref! name node env . call?)
           (let ((r (resolve name env)))
+            (xref-note! 'reference name node r)
             (cond ((binding? r) (set-b-used! r #t) r)
                   ((pair? r) (mark-import-used! (cdr r) name) r)
                   (else (when
@@ -589,6 +631,7 @@ Example:
             ((atom)
              (when (symbol-node? node)
                (let ((r (resolve (node-symbol node) env)))
+                 (xref-note! 'mention (node-symbol node) node r)
                  (cond ((binding? r) (set-b-used! r #t))
                        ((pair? r)
                         (mark-import-used! (cdr r) (node-symbol node)))))))
@@ -1049,7 +1092,7 @@ Example:
             ((prefix)
              (let ((t (cst-text node))
                    (kids (code-items node)))
-               (cond ((member t '("'" "#'")) #t)
+               (cond ((member t '("'" "#'")) (for-each quoted! kids))
                      ((member t '("`" "#`"))
                       (for-each (lambda (k) (walk-qq k env 1)) kids))
                      (else (walk-exprs kids env)))))
@@ -1078,7 +1121,19 @@ Example:
                       (walk-exprs (cdr (code-items node)) env))
                      (else (for-each (lambda (k) (walk-qq k env depth))
                                      (code-items node))))))
+            ((atom) (quoted! node))
             (else #t)))
+
+        ;; the symbols of quoted data, for xref
+        (define (quoted! node)
+          (when xref-sink
+            (case (cst-kind node)
+              ((atom)
+               (when (symbol-node? node)
+                 (xref-note! 'quoted (node-symbol node) node #f)))
+              ((list vector prefix label)
+               (for-each quoted! (cst-children node)))
+              (else #t))))
 
         (define (walk-list node env)
           (let ((items (code-items node)))
@@ -1088,6 +1143,7 @@ Example:
                           (local (resolve-local-or-def name env)))
                      (cond ((and local (eq? (b-kind local) 'macro))
                             (set-b-used! local #t)
+                            (xref-note! 'reference name (car items) local)
                             (for-each (lambda (k) (opaque! k env))
                                       (cdr items)))
                            (local (walk-call node items env))
@@ -1095,7 +1151,12 @@ Example:
                             (let
                                 ((imps (hash-table-ref/default import-table
                                                                name #f)))
-                              (cond (imps (mark-import-used! imps name))
+                              (cond (imps
+                                     (xref-note! 'reference
+                                                 name
+                                                 (car items)
+                                                 (cons 'import imps))
+                                     (mark-import-used! imps name))
                                     ((and
                                       complete?
                                       (not (memq name core-forms))
@@ -1119,6 +1180,10 @@ Example:
                                    (if (and imps
                                             (eq? (import-kind imps) 'syntax))
                                        (begin
+                                         (xref-note! 'reference
+                                                     name
+                                                     (car items)
+                                                     (cons 'import imps))
                                          (mark-import-used! imps name)
                                          (for-each
                                           (lambda (k) (opaque! k env))
@@ -1140,7 +1205,7 @@ Example:
         (define (walk-special name node items env)
           (let ((args (cdr items)))
             (case name
-              ((quote) #t)
+              ((quote) (for-each quoted! args))
               ((quasiquote) (for-each (lambda (k) (walk-qq k env 1)) args))
               ((lambda)
                (if (null? args)
@@ -2060,6 +2125,7 @@ Example:
                           (let ((int (cadr ex)))
                             (if (symbol? int)
                                 (let ((r (resolve int '())))
+                                  (xref-note! 'export int (caddr ex) r)
                                   (cond
                                    ((binding? r) (set-b-used! r 'exported))
                                    ((pair? r) (mark-import-used! (cdr r) int))
@@ -2266,6 +2332,10 @@ Example:
                  ;; no imports: a fragment or data file, the environment is unknown
                  (set! complete? #f)
                  #t))
+          (when xref-sink
+            (hash-table-walk top-defs
+                             (lambda (name b)
+                               (xref-note! 'top name (b-node b) b))))
           (when
               (or lib (any? (lambda (f) (eq? (head-symbol f) 'import)) forms))
             (check-unused-imports!)
@@ -2650,6 +2720,102 @@ Example:
               (if (null? l)
                   (merge (loop (reverse a)) (loop (reverse b)))
                   (split (cdr l) (cons (car l) b) a))))))
+
+    ;; ---- cross references ------------------------------------------
+
+    (define-record-type xref
+      (make-xref role name line col kind target)
+      xref?
+      (role xref-role)
+      (name xref-name)
+      (line xref-line)
+      (col xref-col)
+      (kind xref-kind)
+      (target xref-target))
+
+    (define (source-xref text file . maybe-opts)
+      "Syntax: (source-xref text file [options])
+Library: (scm source lint)
+Description: Returns the cross references of the Scheme source text (file
+  names it and is used to find sibling libraries), from the scope
+  analysis of the linter: a list of xref records sorted by position, or
+  #f when the text cannot be read. options are as for lint-string (the
+  library-path and definers matter). Accessors: xref-role, xref-name (a
+  symbol), xref-line (from 1), xref-col (from 0), xref-kind and
+  xref-target. Roles: definition (a top-level definition of the file),
+  local-definition (a parameter or local binding), reference (a resolved
+  use), mention (a name inside a macro use the linter cannot look into;
+  possibly not a reference), quoted (a symbol in quoted data) and export
+  (a name in an export list). xref-kind is the kind of a definition
+  (define, macro, record-type, record, definer, local, param, loop) and #f
+  otherwise. xref-target is where the name is bound: (here line col) for
+  a definition in the text (the definition's own position for a
+  definition), (import library name) for an import (the library that
+  originally defines it, and its name there), or #f when it is unbound or
+  quoted. Uses of one binding have equal targets.
+Example:
+  (map (lambda (x) (list (xref-role x) (xref-name x) (xref-target x)))
+       (source-xref \"(import (scheme base))\\n(define (f x) (car x))\\n\"
+                    \"a.scm\"))
+    => ((definition f (here 2 9))
+        (local-definition x (here 2 11))
+        (reference car (import (scheme base) car))
+        (reference x (here 2 11)))"
+      (let* ((opts (if (pair? maybe-opts) (car maybe-opts) '()))
+             (found '())
+             (tops (make-hash-table equal?))
+             (seen (make-hash-table equal?)))
+        (define (sink role name node target kind)
+          (let ((key (list role (cst-line node) (cst-col node))))
+            (if (eq? role 'top)
+                (hash-table-set! tops target #t)
+                (unless (or (hash-table-ref/default seen key #f)
+                            ;; a definer's name, seen again inside its use
+                            (and (memq role '(reference mention))
+                                 (equal?
+                                  target
+                                  (list 'here
+                                        (cst-line node)
+                                        (cst-col node)))))
+                  (hash-table-set! seen key #t)
+                  (set! found
+                        (cons (make-xref role name
+                                         (cst-line node)
+                                         (cst-col node)
+                                         kind
+                                         target)
+                              found))))))
+        (let
+            ((cst (guard (e ((source-read-error-position e) #f))
+                    (source-read-string text file))))
+          (and cst
+               (begin
+                 (analyze cst file
+                          (cons (cons 'xref sink) opts)
+                          (lambda (rule line col message) #f))
+                 (sort-xrefs (map (lambda (x)
+                                    (if
+                                     (and
+                                      (eq? (xref-role x) 'definition)
+                                      (not
+                                       (hash-table-ref/default tops
+                                                               (xref-target x)
+                                                               #f)))
+                                     (make-xref 'local-definition
+                                                (xref-name x)
+                                                (xref-line x)
+                                                (xref-col x)
+                                                (xref-kind x)
+                                                (xref-target x))
+                                     x))
+                                  found)))))))
+
+    (define (sort-xrefs xs)
+      (merge-sort xs
+                  (lambda (a b)
+                    (or (< (xref-line a) (xref-line b))
+                        (and (= (xref-line a) (xref-line b))
+                             (< (xref-col a) (xref-col b)))))))
 
     (define (lint-file path . maybe-opts)
       "Syntax: (lint-file path [options])

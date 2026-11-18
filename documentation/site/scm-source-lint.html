@@ -36,6 +36,14 @@
   <a href="#e11" data-name="lint-options">lint-options</a>
   <a href="#e12" data-name="lint-rules">lint-rules</a>
   <a href="#e13" data-name="lint-string">lint-string</a>
+  <a href="#e14" data-name="source-xref">source-xref</a>
+  <a href="#e15" data-name="xref-col">xref-col</a>
+  <a href="#e16" data-name="xref-kind">xref-kind</a>
+  <a href="#e17" data-name="xref-line">xref-line</a>
+  <a href="#e18" data-name="xref-name">xref-name</a>
+  <a href="#e19" data-name="xref-role">xref-role</a>
+  <a href="#e20" data-name="xref-target">xref-target</a>
+  <a href="#e21" data-name="xref?">xref?</a>
 </nav>
 
 <main>
@@ -55,7 +63,7 @@
 <p><a class="xref" href="scm-source-lint.html"><code>(scm source lint)</code></a> is the static checker behind <code>scm lint</code>. It reads a file with <a href="scm-source.md">(scm source)</a> and walks the code with a scope analysis that knows the core and derived forms of R7RS. The global environment is what the file imports, with the exports of built-in libraries loaded and project libraries read statically from their <code>.sld</code> files (<code>[format] library-path</code> in <code>scm-tools.toml</code>, plus the file's own directory), and the file's own definitions.</p>
 <p>Uses of macros the linter does not know are not looked into: every identifier in them counts as used and none is reported as unbound, so they cause no false positives. When an imported library cannot be resolved, or the file includes, loads or requires other files, unbound identifiers are not reported. The names the compiler inlines (<code>car</code>, <code>cadr</code>, <code>+</code>, <code>vector-ref</code>, ...) count as bound in call position without an import, as they are at run time.</p>
 <p>Findings are printed as <code>file:line:column: severity: [rule] message</code>. Run <code>scm lint --list-rules</code> for the full list. The main groups are:</p>
-<p>| Group | Rules | |---|---| | Errors | <code>read-error</code>, <code>unbound-identifier</code>, <code>export-undefined</code>, <code>duplicate-definition</code>, <code>set-imported</code>, <code>arity-mismatch</code> (procedures and records defined in the file), <code>malformed-form</code> | | Imports | <code>unused-import</code> (also redundant imports, whose used names all come from another import), <code>unused-only-name</code>, <code>import-conflict</code>, <code>duplicate-import</code>, <code>unsorted-imports</code> | | Names | <code>unused-local</code>, <code>unused-definition</code>, <code>unused-parameter</code> (off), <code>shadowed-import</code> (off), <code>duplicate-export</code>, <code>unsorted-exports</code> | | Forms | <code>definition-context</code>, <code>duplicate-case-datum</code>, <code>unreachable-clause</code>, <code>eq-literal</code> | | Idioms (info) | <code>if-boolean</code>, <code>if-without-else</code>, <code>nested-if</code>, <code>cxr</code>, <code>null-compare</code>, <code>length-zero</code>, <code>append-list</code>, <code>redundant-call</code>, <code>begin-single</code>, <code>empty-let</code>, <code>eta-lambda</code>, <code>define-lambda</code> (off), <code>predicate-naming</code> (off) | | Conventions | <code>missing-docstring</code>, <code>docstring-syntax-mismatch</code>, <code>docstring-library-mismatch</code> (exported procedures of the <code>docstring-libraries</code>, default <code>(scm ...)</code>), <a class="xref" href="scm-source.html#e20"><code>library-file-name</code></a> | | Text (info) | <code>line-too-long</code> (long strings and comments are exempt), <code>trailing-whitespace</code>, <code>tab-character</code>, <code>missing-final-newline</code>, <code>not-formatted</code> (with <code>--fmt-check</code>) |</p>
+<p>| Group | Rules | |---|---| | Errors | <code>read-error</code>, <code>unbound-identifier</code>, <code>export-undefined</code>, <code>duplicate-definition</code>, <code>set-imported</code>, <code>arity-mismatch</code> (procedures and records defined in the file), <code>malformed-form</code> | | Imports | <code>unused-import</code> (also redundant imports, whose used names all come from another import), <code>unused-only-name</code>, <code>import-conflict</code>, <code>duplicate-import</code>, <code>unsorted-imports</code> | | Names | <code>unused-local</code>, <code>unused-definition</code>, <code>unused-parameter</code> (off), <code>shadowed-import</code> (off), <code>duplicate-export</code>, <code>unsorted-exports</code> | | Forms | <code>definition-context</code>, <code>duplicate-case-datum</code>, <code>unreachable-clause</code>, <code>eq-literal</code> | | Idioms (info) | <code>if-boolean</code>, <code>if-without-else</code>, <code>nested-if</code>, <code>cxr</code>, <code>null-compare</code>, <code>length-zero</code>, <code>append-list</code>, <code>redundant-call</code>, <code>begin-single</code>, <code>empty-let</code>, <code>eta-lambda</code>, <code>define-lambda</code> (off), <code>predicate-naming</code> (off) | | Conventions | <code>missing-docstring</code>, <code>docstring-syntax-mismatch</code>, <code>docstring-library-mismatch</code> (exported procedures of the <code>docstring-libraries</code>, default <code>(scm ...)</code>), <a class="xref" href="scm-source.html#e21"><code>library-file-name</code></a> | | Text (info) | <code>line-too-long</code> (long strings and comments are exempt), <code>trailing-whitespace</code>, <code>tab-character</code>, <code>missing-final-newline</code>, <code>not-formatted</code> (with <code>--fmt-check</code>) |</p>
 <h2>Command line</h2>
 <pre><code class="language-bash">scm lint src/                      # all *.scm and *.sld below src
 scm lint --fail-on warning .       # CI: exit 1 on warnings too
@@ -72,6 +80,19 @@ scm lint --fmt-check .             # also report files scm fmt would change</cod
 ; lint: ignore unused-local               ; this rule on the next line
 (let ((unused (setup!))) (run))</code></pre>
 <p>Names starting with <code>_</code> are never reported as unused.</p>
+<h2>Cross references</h2>
+<p><a class="xref" href="#e14"><code>source-xref</code></a> returns what the scope analysis of the linter knows about the names of a file, for editor features such as jump to definition and find references. Each xref record has a role, the name and its position (line from 1, column from 0) and a target saying where the name is bound:</p>
+<p>| Role | Meaning | |---|---| | <code>definition</code> | a top-level definition (also by a configured definer macro) | | <code>local-definition</code> | a parameter or local binding | | <code>reference</code> | a use the analysis resolved | | <code>mention</code> | a name inside a macro use the linter cannot look into; usually a reference, but it may be a pattern variable or a name the macro binds | | <code>quoted</code> | a symbol in quoted data, such as a command name in a keymap | | <code>export</code> | a name in the export list |</p>
+<p>The target is <code>(here line col)</code> for a binding in the file (for a definition its own position), <code>(import library name)</code> for an import, naming the library that originally defines it (through re-exports and renames), or <code>#f</code>. All uses of one binding have equal targets, so the references to a definition of a project are the entries whose target names its library and name, or its position in its own file.</p>
+<pre><code class="language-scheme">(for-each (lambda (x)
+            (write (list (xref-role x) (xref-name x) (xref-target x)))
+            (newline))
+          (source-xref "(import (scheme base))\n(define (f x) (car x))\n"
+                       "a.scm"))
+;; (definition f (here 2 9))
+;; (local-definition x (here 2 11))
+;; (reference car (import (scheme base) car))
+;; (reference x (here 2 11))</code></pre>
 <h2>Common uses</h2>
 <pre><code class="language-scheme">(import (scm source lint))
 
@@ -85,7 +106,7 @@ scm lint --fmt-check .             # also report files scm fmt would change</cod
           (lint-string "(import (scheme base))\n(car (cdr x))\n" "x.scm"))</code></pre>
 </div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
-<p class="export-count">14 bindings</p>
+<p class="export-count">22 bindings</p>
 
 <div class="entry" id="e0" data-name="lint-command">
   <div class="entry-name">lint-command</div>
@@ -199,6 +220,64 @@ Example:
        (lint-string "(import (scheme base))\n(define (f x) (car (cdr x)))\n"
                     "a.scm"))
     =&gt; (cxr)</pre>
+</div>
+<div class="entry" id="e14" data-name="source-xref">
+  <div class="entry-name">source-xref</div>
+  <pre class="entry-doc">Syntax: (source-xref text file [options])
+Library: (scm source lint)
+Description: Returns the cross references of the Scheme source text (file
+  names it and is used to find sibling libraries), from the scope
+  analysis of the linter: a list of xref records sorted by position, or
+  #f when the text cannot be read. options are as for lint-string (the
+  library-path and definers matter). Accessors: xref-role, xref-name (a
+  symbol), xref-line (from 1), xref-col (from 0), xref-kind and
+  xref-target. Roles: definition (a top-level definition of the file),
+  local-definition (a parameter or local binding), reference (a resolved
+  use), mention (a name inside a macro use the linter cannot look into;
+  possibly not a reference), quoted (a symbol in quoted data) and export
+  (a name in an export list). xref-kind is the kind of a definition
+  (define, macro, record-type, record, definer, local, param, loop) and #f
+  otherwise. xref-target is where the name is bound: (here line col) for
+  a definition in the text (the definition's own position for a
+  definition), (import library name) for an import (the library that
+  originally defines it, and its name there), or #f when it is unbound or
+  quoted. Uses of one binding have equal targets.
+Example:
+  (map (lambda (x) (list (xref-role x) (xref-name x) (xref-target x)))
+       (source-xref "(import (scheme base))\n(define (f x) (car x))\n"
+                    "a.scm"))
+    =&gt; ((definition f (here 2 9))
+        (local-definition x (here 2 11))
+        (reference car (import (scheme base) car))
+        (reference x (here 2 11)))</pre>
+</div>
+<div class="entry" id="e15" data-name="xref-col">
+  <div class="entry-name">xref-col</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e16" data-name="xref-kind">
+  <div class="entry-name">xref-kind</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e17" data-name="xref-line">
+  <div class="entry-name">xref-line</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e18" data-name="xref-name">
+  <div class="entry-name">xref-name</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e19" data-name="xref-role">
+  <div class="entry-name">xref-role</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e20" data-name="xref-target">
+  <div class="entry-name">xref-target</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e21" data-name="xref?">
+  <div class="entry-name">xref?</div>
+  <div class="nodoc">(no documentation)</div>
 </div>
 
 </main>

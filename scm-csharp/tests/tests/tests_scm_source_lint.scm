@@ -223,6 +223,48 @@
                       "(def x 1)" "(display x)")
                      '((definers def) (disable unused-import)))))
 
+(test-group "source-xref"
+  (define (xs text . opts)
+    (map (lambda (x)
+           (list (xref-role x)
+                 (xref-name x)
+                 (xref-line x)
+                 (xref-col x)
+                 (xref-target x)))
+         (apply source-xref text "t.scm" opts)))
+  (test-equal '((definition f 2 9 (here 2 9))
+                (local-definition x 2 11 (here 2 11))
+                (reference car 2 15 (import (scheme base) car))
+                (reference x 2 19 (here 2 11)))
+              (xs "(import (scheme base))\n(define (f x) (car x))\n"))
+  (test-equal '(define param #f)
+              (map xref-kind
+                   (source-xref "(import (scheme base))\n(define (f x) x)\n"
+                                "t.scm")))
+  ;; renamed imports name the original; quoted symbols and macro
+  ;; arguments are told apart from references
+  (test-equal '((definition m 3 22 (here 3 22))
+                (quoted f 4 12 #f)
+                (reference m 4 17 (here 3 22))
+                (mention first 4 20 (import (scheme base) car))
+                (export m 5 8 (here 3 22)))
+              (filter (lambda (x) (memq (cadr x) '(m f first)))
+                      (xs (string-append
+                           "(define-library (t)\n(import (scheme base) "
+                           "(rename (only (scheme base) car) (car first)))\n"
+                           "(begin (define-syntax m (syntax-rules () ((_ a) a)))\n"
+                           "(define v '(f)) (m (first v)))\n"
+                           "(export m))\n"))))
+  ;; definers define their first argument, also locally in a body
+  (test-equal '((definition cmd 2 13 (here 2 13))
+                (reference cmd 3 1 (here 2 13)))
+              (filter (lambda (x) (eq? (cadr x) 'cmd))
+                      (xs (string-append "(import (scheme base))\n"
+                                         "(define-cmd (cmd x) x)\n"
+                                         "(cmd 1)\n")
+                          '((definers define-cmd)))))
+  (test-equal #f (source-xref "(foo" "t.scm")))
+
 (test-group "library file names"
   (test-equal '(library-file-name)
               (map lint-finding-rule

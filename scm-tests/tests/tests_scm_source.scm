@@ -123,4 +123,15 @@
               '("scm-source.sld" "scm-toml.sld" "srfi-14.sld" "scm-data-r.sld"
                 "scm-net-http-server.sld" "scheme-base.sld"))))
 
+(test-group "import bindings"
+  (let* ((c (make-import-cache '()))
+         (bs (import-set-bindings '(prefix
+                                    (rename (only (scheme base) car cdr)
+                                            (car first))
+                                    p:)
+                                  c)))
+    (test-equal '(p:first p:cdr) (map import-binding-name bs))
+    (test-equal '(car cdr) (map import-binding-original-name bs))
+    (test-equal '(scheme base) (import-binding-library (car bs)))))
+
 (test-end "scm source")

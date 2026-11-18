@@ -65,6 +65,41 @@ reference, e.g. as quoted symbols.
 
 Names starting with `_` are never reported as unused.
 
+## Cross references
+
+`source-xref` returns what the scope analysis of the linter knows about
+the names of a file, for editor features such as jump to definition and
+find references. Each xref record has a role, the name and its position
+(line from 1, column from 0) and a target saying where the name is bound:
+
+| Role | Meaning |
+|---|---|
+| `definition` | a top-level definition (also by a configured definer macro) |
+| `local-definition` | a parameter or local binding |
+| `reference` | a use the analysis resolved |
+| `mention` | a name inside a macro use the linter cannot look into; usually a reference, but it may be a pattern variable or a name the macro binds |
+| `quoted` | a symbol in quoted data, such as a command name in a keymap |
+| `export` | a name in the export list |
+
+The target is `(here line col)` for a binding in the file (for a
+definition its own position), `(import library name)` for an import,
+naming the library that originally defines it (through re-exports and
+renames), or `#f`. All uses of one binding have equal targets, so the
+references to a definition of a project are the entries whose target
+names its library and name, or its position in its own file.
+
+```scheme
+(for-each (lambda (x)
+            (write (list (xref-role x) (xref-name x) (xref-target x)))
+            (newline))
+          (source-xref "(import (scheme base))\n(define (f x) (car x))\n"
+                       "a.scm"))
+;; (definition f (here 2 9))
+;; (local-definition x (here 2 11))
+;; (reference car (import (scheme base) car))
+;; (reference x (here 2 11))
+```
+
 ## Common uses
 
 ```scheme
