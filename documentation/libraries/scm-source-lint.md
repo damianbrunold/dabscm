@@ -45,8 +45,16 @@ scm lint --fmt-check .             # also report files scm fmt would change
 
 Other options: `--width N`, `--exclude GLOB`, `--quiet`, `--list-rules`.
 Settings come from the `[lint]` table of `scm-tools.toml` (`enable`,
-`disable`, `docstring-libraries`, `exclude`). Exit codes: 0 ok, 1 findings
-at the `--fail-on` level (default `error`), 2 usage error.
+`disable`, `docstring-libraries`, `definers`, `exclude`). Exit codes: 0 ok,
+1 findings at the `--fail-on` level (default `error`), 2 usage error.
+
+The linter does not expand macros it does not know. A project macro that
+defines a name, like `(define-command (name args ...) ...)`, can be listed
+in `definers`: the name given as its first argument, `name` or
+`(name . args)`, then counts as defined in the library or body, so
+exporting it is not reported by `export-undefined`. Such names are not
+reported by `unused-definition`, since they are often only used by
+reference, e.g. as quoted symbols.
 
 ## Suppressing findings
 
@@ -165,7 +173,10 @@ Description: Returns the linter options for the file path: the defaults,
   overrides. Keys: enable and disable (lists of rule id symbols, added to
   or removed from the rules enabled by default), width (78),
   docstring-libraries (list of first parts of library names whose
-  exported procedures need docstrings, default ("scm")), library-path
+  exported procedures need docstrings, default ("scm")), definers
+  (list of symbols: macros that define the name given as their first
+  argument, as (definer name ...) or (definer (name . args) ...), such as
+  a project's own define-command; default ()), library-path
   (directories with the .sld files of project libraries) and fmt-check
   (#f; #t adds the not-formatted rule).
 Example:

@@ -62,7 +62,8 @@ scm lint --fail-on warning .       # CI: exit 1 on warnings too
 scm lint --disable cxr,eta-lambda app.sld
 scm lint --enable unused-parameter --format json src/ &gt; lint.json
 scm lint --fmt-check .             # also report files scm fmt would change</code></pre>
-<p>Other options: <code>--width N</code>, <code>--exclude GLOB</code>, <code>--quiet</code>, <code>--list-rules</code>. Settings come from the <code>[lint]</code> table of <code>scm-tools.toml</code> (<code>enable</code>, <code>disable</code>, <code>docstring-libraries</code>, <code>exclude</code>). Exit codes: 0 ok, 1 findings at the <code>--fail-on</code> level (default <a class="xref" href="scheme-base.html#e70"><code>error</code></a>), 2 usage error.</p>
+<p>Other options: <code>--width N</code>, <code>--exclude GLOB</code>, <code>--quiet</code>, <code>--list-rules</code>. Settings come from the <code>[lint]</code> table of <code>scm-tools.toml</code> (<code>enable</code>, <code>disable</code>, <code>docstring-libraries</code>, <code>definers</code>, <code>exclude</code>). Exit codes: 0 ok, 1 findings at the <code>--fail-on</code> level (default <a class="xref" href="scheme-base.html#e70"><code>error</code></a>), 2 usage error.</p>
+<p>The linter does not expand macros it does not know. A project macro that defines a name, like <code>(define-command (name args ...) ...)</code>, can be listed in <code>definers</code>: the name given as its first argument, <code>name</code> or <code>(name . args)</code>, then counts as defined in the library or body, so exporting it is not reported by <code>export-undefined</code>. Such names are not reported by <code>unused-definition</code>, since they are often only used by reference, e.g. as quoted symbols.</p>
 <h2>Suppressing findings</h2>
 <pre><code class="language-scheme">;; lint: disable if-without-else cxr      ; for the whole file
 
@@ -163,7 +164,10 @@ Description: Returns the linter options for the file path: the defaults,
   overrides. Keys: enable and disable (lists of rule id symbols, added to
   or removed from the rules enabled by default), width (78),
   docstring-libraries (list of first parts of library names whose
-  exported procedures need docstrings, default ("scm")), library-path
+  exported procedures need docstrings, default ("scm")), definers
+  (list of symbols: macros that define the name given as their first
+  argument, as (definer name ...) or (definer (name . args) ...), such as
+  a project's own define-command; default ()), library-path
   (directories with the .sld files of project libraries) and fmt-check
   (#f; #t adds the not-formatted rule).
 Example:

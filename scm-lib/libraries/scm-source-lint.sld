@@ -249,7 +249,10 @@ Description: Returns the linter options for the file path: the defaults,
   overrides. Keys: enable and disable (lists of rule id symbols, added to
   or removed from the rules enabled by default), width (78),
   docstring-libraries (list of first parts of library names whose
-  exported procedures need docstrings, default (\"scm\")), library-path
+  exported procedures need docstrings, default (\"scm\")), definers
+  (list of symbols: macros that define the name given as their first
+  argument, as (definer name ...) or (definer (name . args) ...), such as
+  a project's own define-command; default ()), library-path
   (directories with the .sld files of project libraries) and fmt-check
   (#f; #t adds the not-formatted rule).
 Example:
@@ -292,6 +295,11 @@ Example:
                          (tools-config-ref cfg
                                            '("lint" "docstring-libraries")
                                            '("scm"))))
+              (cons 'definers
+                    (get 'definers
+                         (sym-list (tools-config-ref cfg
+                                                     '("lint" "definers")
+                                                     '()))))
               (cons 'library-path
                     (get 'library-path
                          (append (abs-dirs
@@ -451,7 +459,7 @@ Example:
       (make-binding name kind node used assigned arity calls)
       binding?
       (name b-name)
-      (kind b-kind) ; local param define loop macro record-type record
+      (kind b-kind) ; local param define loop macro record-type record definer
       (node b-node)
       (used b-used set-b-used!)
       (assigned b-assigned set-b-assigned!)
@@ -710,8 +718,39 @@ Example:
                            (collect-definitions! (cdr (code-items f))
                                                  frame
                                                  top?))
-                          (else #t))))
+                          (else
+                           ;; a configured definer macro defines the name
+                           ;; given as its first argument
+                           (when (and h (memq h definers))
+                             (let ((n (definer-name f)))
+                               (when
+                                   (and
+                                    n
+                                    (not
+                                     (hash-table-ref/default frame
+                                                             (node-symbol n)
+                                                             #f)))
+                                 (hash-table-set!
+                                  frame
+                                  (node-symbol n)
+                                  (new-binding (node-symbol n)
+                                               'definer
+                                               n)))))))))
                     forms))
+
+        (define definers (opt opts 'definers '()))
+
+        ;; the name node of (definer name ...) or (definer (name . args) ...)
+        (define (definer-name f)
+          (let ((items (code-items f)))
+            (and (>= (length items) 2)
+                 (let ((target (cadr items)))
+                   (cond ((symbol-node? target) target)
+                         ((and (list-node? target)
+                               (pair? (code-items target))
+                               (symbol-node? (car (code-items target))))
+                          (car (code-items target)))
+                         (else #f))))))
 
         ;; -> list of (name node kind arity)
         (define (definition-names f)

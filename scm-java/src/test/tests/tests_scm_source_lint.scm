@@ -190,6 +190,39 @@
                        '((docstring-libraries "other")
                          (disable unused-import))))))
 
+(test-group "definer macros"
+  (let ((lib (string-append "(define-library (a b)\n  (export cmd run var)\n"
+                            "  (import (scheme base))\n  (begin\n"
+                            "    (define-syntax define-cmd\n"
+                            "      (syntax-rules () ((_ (n . a) b ...) (define (n . a) b ...))))\n"
+                            "    (define-syntax define-var\n"
+                            "      (syntax-rules () ((_ n v) (define n v))))\n"
+                            "    (define-cmd (cmd x) (+ x 1))\n"
+                            "    (define-cmd (helper) 1)\n"
+                            "    (define-var var 2)\n"
+                            "    (define (run) (cmd var))))\n"))
+        (opts (lambda (ds)
+                (list (cons 'definers ds) '(disable unused-import)))))
+    ;; unknown macros define nothing: the exports are undefined and the
+    ;; uses unbound
+    (test-equal '(export-undefined export-undefined unbound-identifier
+                  unbound-identifier)
+                (rules lib (opts '())))
+    ;; listed definers define their first argument, (name . args) or name;
+    ;; helper, defined but only referenced by name, is not reported
+    (test-equal '() (rules lib (opts '(define-cmd define-var))))
+    (test-equal '(export-undefined unbound-identifier)
+                (rules lib (opts '(define-cmd))))
+    (test-equal '(define-cmd)
+                (cdr (assq 'definers
+                           (lint-options "t.scm" '((definers define-cmd)))))))
+  ;; in a program body, uses of the defined name are not unbound
+  (test-equal '()
+              (rules (prog
+                      "(define-syntax def (syntax-rules () ((_ n v) (define n v))))"
+                      "(def x 1)" "(display x)")
+                     '((definers def) (disable unused-import)))))
+
 (test-group "library file names"
   (test-equal '(library-file-name)
               (map lint-finding-rule

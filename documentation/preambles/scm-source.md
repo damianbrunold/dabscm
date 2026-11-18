@@ -77,5 +77,6 @@ library-path = ["src"]          # where project libraries' .sld files are
 disable = ["if-without-else"]
 enable = ["unused-parameter"]
 docstring-libraries = ["scm"]   # (scm ...) exports need docstrings
+definers = ["define-command"]   # macros that define their first argument
 exclude = ["tests/fixtures/**"]
 ```
