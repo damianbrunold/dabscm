@@ -15,7 +15,9 @@ public class PrimitiveTerminalSize extends Primitive {
         return "Syntax: (terminal-size)\n" +
                "Library: (scm terminal)\n" +
                "Description: Returns the terminal dimensions as a pair (cols . rows),\n" +
-               "or #f if the terminal size cannot be determined.\n" +
+               "or #f if the terminal size cannot be determined. While resize tracking\n" +
+               "is active (see terminal-resize-count) the size is cached until the\n" +
+               "next resize.\n" +
                "Example:\n" +
                "  (terminal-size) => (80 . 24)";
     }
@@ -25,6 +27,9 @@ public class PrimitiveTerminalSize extends Primitive {
         checkArgs(pos, arguments, 0, 0);
         if (System.console() == null)
             return false;
+        Object cached = TerminalState.cachedSize;
+        if (cached != null && TerminalState.resizeTracked())
+            return cached;
         try {
             String osName = System.getProperty("os.name").toLowerCase();
             if (osName.contains("windows")) {
@@ -54,7 +59,10 @@ public class PrimitiveTerminalSize extends Primitive {
         int cols = Integer.parseInt(parts[1]);
         if (rows <= 0 || cols <= 0)
             return false;
-        return new Pair((long) cols, (long) rows);
+        Object size = new Pair((long) cols, (long) rows);
+        if (TerminalState.resizeTracked())
+            TerminalState.cachedSize = size;
+        return size;
     }
 
     private Object getSizeWindows() throws Exception {

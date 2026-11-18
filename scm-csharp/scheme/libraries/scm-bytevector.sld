@@ -11,7 +11,10 @@
           bytevector-u16-ref
           bytevector-u16-set!
           bytevector-u32-ref
-          bytevector-u32-set!)
+          bytevector-u32-set!
+          latin1->string
+          string->latin1
+          utf8-valid?)
   (begin
     (define bytevector-u16-ref (%primitive "bytevector-u16-ref"))
     (define bytevector-u16-set! (%primitive "bytevector-u16-set!"))
@@ -28,4 +31,7 @@
     (define bytevector-ieee-double-ref
       (%primitive "bytevector-ieee-double-ref"))
     (define bytevector-ieee-double-set!
-      (%primitive "bytevector-ieee-double-set!"))))
+      (%primitive "bytevector-ieee-double-set!"))
+    (define utf8-valid? (%primitive "utf8-valid?"))
+    (define latin1->string (%primitive "latin1->string"))
+    (define string->latin1 (%primitive "string->latin1"))))

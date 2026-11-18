@@ -119,4 +119,38 @@
   (test-equal #t (boolean? (console-echo! #f)))
   (test-equal #t (boolean? (console-echo! #t))))
 
+(test-group "char-width"
+  (test-equal 1 (char-width #\a))
+  (test-equal 1 (char-width #\xE4))
+  (test-equal 2 (char-width #\x4E2D))
+  (test-equal 2 (char-width #\xAC00))
+  (test-equal 2 (char-width #\xFF21))
+  (test-equal 0 (char-width #\x301))
+  (test-equal 0 (char-width #\x200B))
+  (test-equal 0 (char-width #\x200D))
+  (test-equal -1 (char-width #\x1))
+  (test-equal -1 (char-width #\x7F))
+  (test-equal 2 (char-width #x1F600))
+  (test-equal 1 (char-width #x1F100))
+  (test-equal 97 (char->integer #\a))
+  (test-equal 1 (char-width 97))
+  (test-error (char-width -1))
+  (test-error (char-width #x110000)))
+
+(test-group "string-width"
+  (test-equal 0 (string-width ""))
+  (test-equal 3 (string-width "abc"))
+  (test-equal 4 (string-width "\x4E2D;\x6587;"))
+  (test-equal 1 (string-width "e\x301;"))
+  (test-equal 2 (string-width (utf8->string (bytevector #xF0 #x9F #x98 #x80))))
+  (test-equal 3 (string-width (string-append "a" (utf8->string (bytevector #xF0 #x9F #x98 #x80)))))
+  (test-equal 2 (string-width "a\x4E2D;b" 1 2))
+  (test-equal 2 (string-width "a\tb"))
+  (test-error (string-width "abc" 2 5)))
+
+(test-group "terminal-byte-ready? timeout and resize count"
+  (test-equal #t (boolean? (terminal-byte-ready? 5)))
+  (let ((n (terminal-resize-count)))
+    (test-equal #t (or (not n) (and (integer? n) (>= n 0))))))
+
 (test-end "terminal")

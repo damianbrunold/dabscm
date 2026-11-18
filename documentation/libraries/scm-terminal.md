@@ -61,6 +61,24 @@ Example:
   (alternate-screen-enable)
 ```
 
+### `char-width`
+
+```
+Syntax: (char-width c)
+Library: (scm terminal)
+Description: Returns the number of terminal columns the character or
+code point c occupies: 2 for East Asian wide and fullwidth characters
+and wide emoji, 0 for combining marks, format characters and other
+zero-width characters, -1 for C0 and C1 control characters, and 1
+otherwise. c may be a char or an integer code point (needed above
+#xFFFF, which a single char cannot hold); a lone surrogate counts as 1.
+Example:
+  (char-width #\a) => 1
+  (char-width (integer->char #x4E2D)) => 2
+  (char-width #x1F600) => 2
+  (char-width (integer->char #x301)) => 0
+```
+
 ### `clear-line`
 
 ```
@@ -381,17 +399,33 @@ Example:
   (display (string-append (sgr-underline) "hello" (sgr-reset)))
 ```
 
+### `string-width`
+
+```
+Syntax: (string-width s [start [end]])
+Library: (scm terminal)
+Description: Returns the number of terminal columns the string s (or
+its substring from start to end) occupies, summing char-width over its
+code points. Surrogate pairs count as one code point; control
+characters count as 0.
+Example:
+  (string-width "abc") => 3
+  (string-width "\x4E2D;\x6587;") => 4
+```
+
 ### `terminal-byte-ready?`
 
 ```
-Syntax: (terminal-byte-ready?)
+Syntax: (terminal-byte-ready? [timeout-ms])
 Library: (scm terminal)
 Description: Returns #t if a byte is available for reading from
-standard input without blocking, #f otherwise.
+standard input without blocking, #f otherwise. With timeout-ms,
+waits up to that many milliseconds for a byte to arrive.
 Intended for use in raw terminal mode to detect multi-byte
 escape sequences.
 Example:
   (terminal-byte-ready?) => #f
+  (terminal-byte-ready? 50) => #t  ; a key arrived within 50 ms
 ```
 
 ### `terminal-enable-ansi!`
@@ -416,8 +450,10 @@ Example:
 Syntax: (terminal-raw! enable)
 Library: (scm terminal)
 Description: Enables or disables raw terminal mode.
-When enable is #t, disables line buffering, echo, and signal
-processing so that individual keypresses can be read.
+When enable is #t, disables line buffering, echo, signal processing,
+flow control (Ctrl-S/Ctrl-Q), CR/NL translation of input and output
+post-processing, so that individual keypresses can be read; write
+"\r\n" to start a new line at column 1.
 When enable is #f, restores the original terminal settings.
 Returns #t on success, #f if raw mode is not supported.
 On Windows with Java, raw mode is not supported and returns #f.
@@ -446,6 +482,8 @@ Syntax: (terminal-read-key)
 Library: (scm terminal)
 Description: Reads a single keypress from the terminal in raw mode.
 Returns a character for printable keys, or a symbol for special keys.
+A character above #xFFFF (e.g. an emoji) is returned as a string holding
+its surrogate pair.
 
 Special key symbols: up, down, left, right, home, end, page-up,
 page-down, insert, delete, f1 through f12, escape, enter, tab,
@@ -467,13 +505,29 @@ Example:
             (else (display key) (display " ") (loop)))))))
 ```
 
+### `terminal-resize-count`
+
+```
+Syntax: (terminal-resize-count)
+Library: (scm terminal)
+Description: Returns the number of terminal resize events (SIGWINCH)
+seen since resize tracking started, or #f if resize events cannot be
+observed on this platform. The first call starts tracking and returns 0.
+Compare successive results to find out whether the terminal changed
+size; while tracking is active, terminal-size is cached between resizes.
+Example:
+  (terminal-resize-count) => 0
+```
+
 ### `terminal-size`
 
 ```
 Syntax: (terminal-size)
 Library: (scm terminal)
 Description: Returns the terminal dimensions as a pair (cols . rows),
-or #f if the terminal size cannot be determined.
+or #f if the terminal size cannot be determined. While resize tracking
+is active (see terminal-resize-count) the size is cached until the
+next resize.
 Example:
   (terminal-size) => (80 . 24)
 ```

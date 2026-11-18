@@ -2,6 +2,7 @@
   (import (scheme base)
           (scm core))
   (export string-contains-from
+          regex-search
           string-matches
           string-replace-all
           string-replace-all-regex
@@ -11,6 +12,7 @@
           string-split-vector
           symbol-starts-with?)
   (begin
+    (define regex-search (%primitive "regex-search"))
     (define string-matches (%primitive "string-matches"))
     (define string-replace-all (%primitive "string-replace-all"))
     (define string-replace-all-regex (%primitive "string-replace-all-regex"))

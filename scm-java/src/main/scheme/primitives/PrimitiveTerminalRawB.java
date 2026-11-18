@@ -19,8 +19,10 @@ public class PrimitiveTerminalRawB extends Primitive {
         return "Syntax: (terminal-raw! enable)\n" +
                "Library: (scm terminal)\n" +
                "Description: Enables or disables raw terminal mode.\n" +
-               "When enable is #t, disables line buffering, echo, and signal\n" +
-               "processing so that individual keypresses can be read.\n" +
+               "When enable is #t, disables line buffering, echo, signal processing,\n" +
+               "flow control (Ctrl-S/Ctrl-Q), CR/NL translation of input and output\n" +
+               "post-processing, so that individual keypresses can be read; write\n" +
+               "\"\\r\\n\" to start a new line at column 1.\n" +
                "When enable is #f, restores the original terminal settings.\n" +
                "Returns #t on success, #f if raw mode is not supported.\n" +
                "On Windows with Java, raw mode is not supported and returns #f.\n" +

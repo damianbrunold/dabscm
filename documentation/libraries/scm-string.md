@@ -39,6 +39,28 @@ Replace every occurrence of a literal substring:
 
 ## Exports
 
+### `regex-search`
+
+```
+Syntax: (regex-search s pattern [start])
+Library: (scm string)
+Description: Searches s for the first match of the regular expression
+pattern at or after index start (default 0). Returns a vector with one
+entry per group, the whole match first: each entry is a pair
+(start . end) of string indexes, or #f for a group that does not take
+part in the match. Returns #f if there is no match. Lookbehind, \b and
+^ see the characters before start, so ^ only matches at index 0 unless
+the pattern enables multi-line mode with (?m). The pattern syntax is
+that of the host regex engine (java.util.regex or .NET Regex); the
+common subset (classes, quantifiers, groups, (?i), (?m), lookaround)
+behaves the same in both.
+Example:
+  (regex-search "abc123" "([a-z]+)([0-9]+)") => #((0 . 6) (0 . 3) (3 . 6))
+  (regex-search "ab ab" "ab" 1) => #((3 . 5))
+  (regex-search "b" "(x)?b") => #((0 . 1) #f)
+  (regex-search "hello" "xyz") => #f
+```
+
 ### `string-contains-from`
 
 ```
@@ -58,7 +80,7 @@ Example:
 ```
 Syntax: (string-matches s pattern)
 Library: (scm string)
-Description: Matches the string s against the regular expression pattern. Returns a list of match strings (the full match followed by any groups) if successful, or #f if there is no match.
+Description: Matches the string s against the regular expression pattern. Returns a list of match strings (the full match followed by any groups) if successful, or #f if there is no match. A group that does not take part in the match is #f.
 Example:
   (string-matches "hello" "hel+o") => ("hello")
   (string-matches "abc123" "([a-z]+)([0-9]+)") => ("abc123" "abc" "123")

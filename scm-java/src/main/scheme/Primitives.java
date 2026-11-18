@@ -456,6 +456,12 @@ public class Primitives {
         bind(new PrimitiveStringLessEqP());
         bind(new PrimitiveStringLessP());
         bind(new PrimitiveStringMatches());
+        bind(new PrimitiveRegexSearch());
+        bind(new PrimitiveCharWidth());
+        bind(new PrimitiveStringWidth());
+        bind(new PrimitiveUtf8ValidP());
+        bind(new PrimitiveLatin1ToString());
+        bind(new PrimitiveStringToLatin1());
         bind(new PrimitiveStringP());
         bind(new PrimitiveStringPrefixP());
         bind(new PrimitiveStringRef());
@@ -501,6 +507,7 @@ public class Primitives {
         bind(new PrimitiveTerminalP());
         bind(new PrimitiveTerminalRawB());
         bind(new PrimitiveTerminalReadByte());
+        bind(new PrimitiveTerminalResizeCount());
         bind(new PrimitiveTerminalSize());
         bind(new PrimitiveTerminatedThreadExceptionP());
         bind(new PrimitiveTextualPortP());

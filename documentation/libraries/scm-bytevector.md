@@ -171,3 +171,43 @@ Example:
   (let ((bv (make-bytevector 4 0))) (bytevector-u32-set! bv 0 256 'little) bv) => #u8(0 1 0 0)
 ```
 
+### `latin1->string`
+
+```
+Syntax: (latin1->string bv [start [end]])
+Library: (scm bytevector)
+Description: Decodes the bytes of bv (or its range from start to end)
+as ISO-8859-1 (Latin-1): each byte becomes the character with the same
+code. Never fails.
+Example:
+  (latin1->string (bytevector #x61 #xE4)) => "a\xE4;"
+```
+
+### `string->latin1`
+
+```
+Syntax: (string->latin1 s [replacement [start [end]]])
+Library: (scm bytevector)
+Description: Encodes the string s (or its range from start to end) as
+ISO-8859-1 (Latin-1) and returns a bytevector. A character above #xFF
+(a surrogate pair counts as one character) is an error unless
+replacement is given: a byte value 0-255 written in its place.
+Example:
+  (string->latin1 "a\xE4;") => #u8(97 228)
+  (string->latin1 "a\x20AC;" 63) => #u8(97 63)
+```
+
+### `utf8-valid?`
+
+```
+Syntax: (utf8-valid? bv [start [end]])
+Library: (scm bytevector)
+Description: Returns #t if the bytes of bv (or its range from start to
+end) are well-formed UTF-8, #f otherwise. Use it to decide whether
+utf8->string would replace any bytes with U+FFFD, for example to tell
+UTF-8 files from Latin-1 ones.
+Example:
+  (utf8-valid? (bytevector #xC3 #xA4)) => #t
+  (utf8-valid? (bytevector #xE4)) => #f
+```
+

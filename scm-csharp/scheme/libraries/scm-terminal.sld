@@ -2,7 +2,6 @@
   (import (scheme base)
           (scheme char)
           (scheme cxr)
-          (scheme time)
           (scheme write)
           (srfi 151))
   (export
@@ -13,8 +12,13 @@
    terminal-enable-ansi!
    terminal-raw!
    terminal-read-byte
+   terminal-resize-count
    terminal-size
    terminal?
+
+   ;; Display width
+   char-width
+   string-width
 
    ;; Raw mode convenience
    with-terminal-raw
@@ -67,6 +71,9 @@
     (define terminal-raw! (%primitive "terminal-raw!"))
     (define terminal-read-byte (%primitive "terminal-read-byte"))
     (define terminal-byte-ready? (%primitive "terminal-byte-ready?"))
+    (define terminal-resize-count (%primitive "terminal-resize-count"))
+    (define char-width (%primitive "char-width"))
+    (define string-width (%primitive "string-width"))
     (define terminal-enable-ansi! (%primitive "terminal-enable-ansi!"))
     (define console-echo! (%primitive "console-echo!"))
     (define console-read-password (%primitive "console-read-password"))
@@ -461,11 +468,7 @@ Example:
     (define (%wait-for-byte timeout-us)
       ;; Wait up to timeout-us microseconds for a byte to become available.
       ;; Returns #t if a byte is ready, #f if timeout expired.
-      (let ((deadline (+ (current-jiffy) timeout-us)))
-        (let loop ()
-          (cond ((terminal-byte-ready?) #t)
-                ((>= (current-jiffy) deadline) #f)
-                (else (loop))))))
+      (terminal-byte-ready? (max 1 (quotient timeout-us 1000))))
 
     (define (%read-csi-sequence)
       ;; Read a CSI sequence after ESC [ has been consumed.
@@ -636,13 +639,23 @@ Example:
                    (b2 (read-continuation))
                    (b3 (read-continuation))
                    (b4 (read-continuation)))
-               (integer->char (+ (* b1 262144) (* b2 4096) (* b3 64) b4))))))
+               ;; Above #xFFFF: a char holds one UTF-16 code unit, so
+               ;; return the surrogate pair as a two-character string.
+               (let ((cp (- (+ (* b1 262144) (* b2 4096) (* b3 64) b4)
+                            #x10000)))
+                 (if (or (< cp 0) (> cp #xFFFFF))
+                     (integer->char #xFFFD)
+                     (string (integer->char (+ #xD800 (quotient cp 1024)))
+                             (integer->char
+                              (+ #xDC00 (remainder cp 1024))))))))))
 
     (define (terminal-read-key)
       "Syntax: (terminal-read-key)
 Library: (scm terminal)
 Description: Reads a single keypress from the terminal in raw mode.
 Returns a character for printable keys, or a symbol for special keys.
+A character above #xFFFF (e.g. an emoji) is returned as a string holding
+its surrogate pair.
 
 Special key symbols: up, down, left, right, home, end, page-up,
 page-down, insert, delete, f1 through f12, escape, enter, tab,

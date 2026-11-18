@@ -11,6 +11,9 @@ public class PrimitiveTerminalRawB : Primitive
     [DllImport("libc", SetLastError = true)]
     private static extern int tcsetattr(int fd, int optional_actions, byte[] termios);
 
+    [DllImport("libc")]
+    private static extern void cfmakeraw(byte[] termios);
+
     // Windows console P/Invoke
     [DllImport("kernel32.dll", SetLastError = true)]
     private static extern IntPtr GetStdHandle(int nStdHandle);
@@ -24,19 +27,9 @@ public class PrimitiveTerminalRawB : Primitive
     private const int STDIN_FILENO = 0;
     private const int TCSANOW = 0;
 
-    // Linux termios flags
-    private const uint ICANON = 0x00000002;
-    private const uint ECHO   = 0x00000008;
-    private const uint ISIG   = 0x00000001;
-
-    // Offsets into the termios struct for x86-64 Linux
-    // c_iflag: 0, c_oflag: 4, c_cflag: 8, c_lflag: 12
-    // c_line: 16, c_cc[32]: 17, c_ispeed: 52, c_ospeed: 56
-    private const int LFLAG_OFFSET = 12;
-    private const int CC_OFFSET = 17;
-    private const int VMIN_INDEX = 6;
-    private const int VTIME_INDEX = 5;
-    private const int TERMIOS_SIZE = 60;
+    // Big enough for struct termios on Linux (60 bytes) and macOS (72 bytes);
+    // the layout is left to libc (tcgetattr/cfmakeraw/tcsetattr).
+    private const int TERMIOS_SIZE = 256;
 
     // Windows console constants
     private const int STD_INPUT_HANDLE = -10;
@@ -61,8 +54,10 @@ public class PrimitiveTerminalRawB : Primitive
             "Syntax: (terminal-raw! enable)\n" +
             "Library: (scm terminal)\n" +
             "Description: Enables or disables raw terminal mode.\n" +
-            "When enable is #t, disables line buffering, echo, and signal\n" +
-            "processing so that individual keypresses can be read.\n" +
+            "When enable is #t, disables line buffering, echo, signal processing,\n" +
+            "flow control (Ctrl-S/Ctrl-Q), CR/NL translation of input and output\n" +
+            "post-processing, so that individual keypresses can be read; write\n" +
+            "\"\\r\\n\" to start a new line at column 1.\n" +
             "When enable is #f, restores the original terminal settings.\n" +
             "Returns #t on success, #f if raw mode is not supported.\n" +
             "Example:\n" +
@@ -110,14 +105,11 @@ public class PrimitiveTerminalRawB : Primitive
 
             byte[] raw = (byte[])savedTermios.Clone();
 
-            // Clear ICANON, ECHO, ISIG in c_lflag
-            uint lflag = BitConverter.ToUInt32(raw, LFLAG_OFFSET);
-            lflag &= ~(ICANON | ECHO | ISIG);
-            BitConverter.GetBytes(lflag).CopyTo(raw, LFLAG_OFFSET);
-
-            // Set VMIN=1, VTIME=0
-            raw[CC_OFFSET + VMIN_INDEX] = 1;
-            raw[CC_OFFSET + VTIME_INDEX] = 0;
+            // Same mode as `stty raw -echo -isig` on Java: no echo, no line
+            // editing, no signals, no flow control (IXON), no CR/NL input
+            // translation, no output post-processing (write "\r\n"),
+            // VMIN=1/VTIME=0.
+            cfmakeraw(raw);
 
             if (tcsetattr(STDIN_FILENO, TCSANOW, raw) != 0)
                 return false;

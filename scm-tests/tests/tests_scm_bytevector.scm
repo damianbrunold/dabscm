@@ -70,4 +70,30 @@
   (test-error (bytevector-u32-set! (make-bytevector 4 0) 0 1.5 'big))
   (test-error (bytevector-ieee-double-set! (make-bytevector 8 0) 1 1.0 'big)))
 
+(test-group "utf8-valid?"
+  (test-equal #t (utf8-valid? (bytevector)))
+  (test-equal #t (utf8-valid? (bytevector #x61 #xC3 #xA4)))
+  (test-equal #t (utf8-valid? (bytevector #xF0 #x9F #x98 #x80)))
+  (test-equal #f (utf8-valid? (bytevector #xE4)))
+  (test-equal #f (utf8-valid? (bytevector #x61 #xFF)))
+  (test-equal #f (utf8-valid? (bytevector #xC3)))
+  (test-equal #t (utf8-valid? (bytevector #x61 #xE4) 0 1))
+  (test-equal #f (utf8-valid? (bytevector #x61 #xE4) 1))
+  (test-error (utf8-valid? (bytevector 1 2) 1 3)))
+
+(test-group "latin1"
+  (test-equal "a\xE4;\xFF;" (latin1->string (bytevector #x61 #xE4 #xFF)))
+  (test-equal "" (latin1->string (bytevector)))
+  (test-equal "\xE4;" (latin1->string (bytevector #x61 #xE4 #xFF) 1 2))
+  (test-equal (bytevector 97 228) (string->latin1 "a\xE4;"))
+  (test-equal (bytevector 98) (string->latin1 "abc" #f 1 2))
+  (test-error (string->latin1 "a\x20AC;"))
+  (test-equal (bytevector 97 63) (string->latin1 "a\x20AC;" 63))
+  ;; a surrogate pair is replaced by one byte
+  (test-equal (bytevector 63 97)
+              (string->latin1 (utf8->string (bytevector #xF0 #x9F #x98 #x80 #x61)) 63))
+  (test-error (string->latin1 "a" 256))
+  (test-equal "a\xE4;b"
+              (latin1->string (string->latin1 "a\xE4;b"))))
+
 (test-end "scm bytevector")

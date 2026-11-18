@@ -34,6 +34,9 @@
   <a href="#e9" data-name="bytevector-u16-set!">bytevector-u16-set!</a>
   <a href="#e10" data-name="bytevector-u32-ref">bytevector-u32-ref</a>
   <a href="#e11" data-name="bytevector-u32-set!">bytevector-u32-set!</a>
+  <a href="#e12" data-name="latin1-&gt;string">latin1-&gt;string</a>
+  <a href="#e13" data-name="string-&gt;latin1">string-&gt;latin1</a>
+  <a href="#e14" data-name="utf8-valid?">utf8-valid?</a>
 </nav>
 
 <main>
@@ -62,7 +65,7 @@
 (bytevector-ieee-double-ref bv 36 'little) ;; =&gt; the bounding box's xmin</code></pre>
 </div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
-<p class="export-count">12 bindings</p>
+<p class="export-count">15 bindings</p>
 
 <div class="entry" id="e0" data-name="bytevector-ieee-double-ref">
   <div class="entry-name">bytevector-ieee-double-ref</div>
@@ -183,6 +186,40 @@ Description: Stores the exact integer n, which must be in [0, 4294967295], as
   within bv; endianness is the symbol big or little.
 Example:
   (let ((bv (make-bytevector 4 0))) (bytevector-u32-set! bv 0 256 'little) bv) =&gt; #u8(0 1 0 0)</pre>
+</div>
+<div class="entry" id="e12" data-name="latin1-&gt;string">
+  <div class="entry-name">latin1-&gt;string</div>
+  <pre class="entry-doc">Syntax: (latin1-&gt;string bv [start [end]])
+Library: (scm bytevector)
+Description: Decodes the bytes of bv (or its range from start to end)
+as ISO-8859-1 (Latin-1): each byte becomes the character with the same
+code. Never fails.
+Example:
+  (latin1-&gt;string (bytevector #x61 #xE4)) =&gt; "a\xE4;"</pre>
+</div>
+<div class="entry" id="e13" data-name="string-&gt;latin1">
+  <div class="entry-name">string-&gt;latin1</div>
+  <pre class="entry-doc">Syntax: (string-&gt;latin1 s [replacement [start [end]]])
+Library: (scm bytevector)
+Description: Encodes the string s (or its range from start to end) as
+ISO-8859-1 (Latin-1) and returns a bytevector. A character above #xFF
+(a surrogate pair counts as one character) is an error unless
+replacement is given: a byte value 0-255 written in its place.
+Example:
+  (string-&gt;latin1 "a\xE4;") =&gt; #u8(97 228)
+  (string-&gt;latin1 "a\x20AC;" 63) =&gt; #u8(97 63)</pre>
+</div>
+<div class="entry" id="e14" data-name="utf8-valid?">
+  <div class="entry-name">utf8-valid?</div>
+  <pre class="entry-doc">Syntax: (utf8-valid? bv [start [end]])
+Library: (scm bytevector)
+Description: Returns #t if the bytes of bv (or its range from start to
+end) are well-formed UTF-8, #f otherwise. Use it to decide whether
+utf8-&gt;string would replace any bytes with U+FFFD, for example to tell
+UTF-8 files from Latin-1 ones.
+Example:
+  (utf8-valid? (bytevector #xC3 #xA4)) =&gt; #t
+  (utf8-valid? (bytevector #xE4)) =&gt; #f</pre>
 </div>
 
 </main>

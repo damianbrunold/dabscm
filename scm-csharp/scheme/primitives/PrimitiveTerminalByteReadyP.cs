@@ -25,19 +25,24 @@ public class PrimitiveTerminalByteReadyP : Primitive
     public override string Info()
     {
         return
-            "Syntax: (terminal-byte-ready?)\n" +
+            "Syntax: (terminal-byte-ready? [timeout-ms])\n" +
             "Library: (scm terminal)\n" +
             "Description: Returns #t if a byte is available for reading from\n" +
-            "standard input without blocking, #f otherwise.\n" +
+            "standard input without blocking, #f otherwise. With timeout-ms,\n" +
+            "waits up to that many milliseconds for a byte to arrive.\n" +
             "Intended for use in raw terminal mode to detect multi-byte\n" +
             "escape sequences.\n" +
             "Example:\n" +
-            "  (terminal-byte-ready?) => #f";
+            "  (terminal-byte-ready?) => #f\n" +
+            "  (terminal-byte-ready? 50) => #t  ; a key arrived within 50 ms";
     }
 
     public override object Apply(SourcePos? pos, object[] arguments)
     {
-        CheckArgs(pos, arguments, 0, 0);
+        CheckArgs(pos, arguments, 0, 1);
+        long timeout = arguments.Length > 0 ? IntegerMath.ToLong(arguments[0]) : 0;
+        if (timeout < 0) timeout = 0;
+        if (timeout > int.MaxValue) timeout = int.MaxValue;
         try
         {
             // On Unix, Console.KeyAvailable initializes .NET's own terminal
@@ -47,10 +52,28 @@ public class PrimitiveTerminalByteReadyP : Primitive
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 var fds = new[] { new PollFd { fd = 0, events = POLLIN } };
-                return (object)(poll(fds, 1, 0) > 0 && (fds[0].revents & POLLIN) != 0);
+                var deadline = Environment.TickCount64 + timeout;
+                while (true)
+                {
+                    int wait = (int)Math.Max(0, deadline - Environment.TickCount64);
+                    int r = poll(fds, 1, wait);
+                    if (r > 0) return (object)((fds[0].revents & POLLIN) != 0);
+                    if (r == 0) return (object)false;
+                    // EINTR (e.g. SIGWINCH): retry with the remaining time
+                    if (Marshal.GetLastWin32Error() != 4) return (object)false;
+                    fds[0].revents = 0;
+                }
             }
             if (!Console.IsInputRedirected)
-                return (object)Console.KeyAvailable;
+            {
+                var until = Environment.TickCount64 + timeout;
+                while (!Console.KeyAvailable)
+                {
+                    if (Environment.TickCount64 >= until) return (object)false;
+                    Thread.Sleep(3);
+                }
+                return (object)true;
+            }
             return (object)(Console.In.Peek() != -1);
         }
         catch

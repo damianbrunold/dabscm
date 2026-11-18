@@ -448,6 +448,12 @@ public class Primitives
         Bind(new PrimitiveStringLessEqP());
         Bind(new PrimitiveStringLessP());
         Bind(new PrimitiveStringMatches());
+        Bind(new PrimitiveRegexSearch());
+        Bind(new PrimitiveCharWidth());
+        Bind(new PrimitiveStringWidth());
+        Bind(new PrimitiveUtf8ValidP());
+        Bind(new PrimitiveLatin1ToString());
+        Bind(new PrimitiveStringToLatin1());
         Bind(new PrimitiveStringP());
         Bind(new PrimitiveStringPrefixP());
         Bind(new PrimitiveStringRef());
@@ -493,6 +499,7 @@ public class Primitives
         Bind(new PrimitiveTerminalP());
         Bind(new PrimitiveTerminalRawB());
         Bind(new PrimitiveTerminalReadByte());
+        Bind(new PrimitiveTerminalResizeCount());
         Bind(new PrimitiveTerminalSize());
         Bind(new PrimitiveTerminatedThreadExceptionP());
         Bind(new PrimitiveTextualPortP());
