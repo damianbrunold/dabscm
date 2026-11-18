@@ -1,5 +1,6 @@
 (define-library (scm fs)
   (import (scheme base)
+          (scheme write)
           (scm core))
   (export absolute-path
           base-name
@@ -138,20 +139,33 @@ Description: Joins one or more path component strings into a single path
   string using the platform's path separator character. No separator is
   added where a part already ends (or the next one starts) with one, so
   joining a directory name with a trailing separator gives no doubled
-  separator.
+  separator. Parts that are not strings (symbols, numbers, ...) are
+  converted as display would show them.
 Example:
   (join-path \"/usr\" \"local\" \"bin\") => \"/usr/local/bin\"  ; on Unix
   (join-path \"/usr/\" \"local\") => \"/usr/local\""
+      ;; parts that are not strings (symbols, numbers, ...) are converted
+      ;; as display shows them, as before
+      (define (part->string p)
+        (cond ((string? p) p)
+              ((symbol? p) (symbol->string p))
+              ((number? p) (number->string p))
+              ((char? p) (string p))
+              ((eq? p #t) "#t")
+              ((eq? p #f) "#f")
+              (else (let ((out (open-output-string)))
+                      (display p out)
+                      (get-output-string out)))))
       (define (sep? c) (or (char=? c #\/) (char=? c (string-ref path-sep 0))))
       (define (ends-with-sep? s)
         (and (> (string-length s) 0) (sep? (string-ref s (- (string-length s) 1)))))
       (define (starts-with-sep? s) (and (> (string-length s) 0) (sep? (string-ref s 0))))
       (if (null? parts)
           ""
-          (let loop ((acc (car parts)) (rest (cdr parts)))
+          (let loop ((acc (part->string (car parts))) (rest (cdr parts)))
             (if (null? rest)
                 acc
-                (let ((next (car rest)))
+                (let ((next (part->string (car rest))))
                   (loop (cond ((string=? acc "") (string-append path-sep next))
                               ((and (ends-with-sep? acc) (starts-with-sep? next))
                                (string-append acc (substring next 1 (string-length next))))

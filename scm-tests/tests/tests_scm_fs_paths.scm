@@ -28,6 +28,10 @@
   (test-equal "/usr/local" (join-path "/usr/" "/local"))
   (test-equal "a" (join-path "a"))
   (test-equal "/x" (join-path "" "x"))
-  (test-equal "" (join-path)))
+  (test-equal "" (join-path))
+  ;; parts that are not strings are converted as display shows them
+  (test-equal "cfg/A_2026" (join-path "cfg" 'A_2026))
+  (test-equal "a/12/x/#f" (join-path "a" 12 #\x #f))
+  (test-equal "x/y" (join-path 'x "y")))
 
 (test-end "scm-fs-paths")
