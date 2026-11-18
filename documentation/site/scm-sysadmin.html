@@ -797,9 +797,13 @@ Example:
   <pre class="entry-doc">Syntax: (join-path part ...)
 Library: (scm fs)
 Description: Joins one or more path component strings into a single path
-  string using the platform's path separator character.
+  string using the platform's path separator character. No separator is
+  added where a part already ends (or the next one starts) with one, so
+  joining a directory name with a trailing separator gives no doubled
+  separator.
 Example:
-  (join-path "/usr" "local" "bin") =&gt; "/usr/local/bin"  ; on Unix</pre>
+  (join-path "/usr" "local" "bin") =&gt; "/usr/local/bin"  ; on Unix
+  (join-path "/usr/" "local") =&gt; "/usr/local"</pre>
 </div>
 <div class="entry" id="e56" data-name="json-attribute">
   <div class="entry-name">json-attribute</div>

@@ -49,7 +49,6 @@
           which)
   (begin
     (define path-sep (%primitive "path-sep"))
-    (define string-join (%primitive "string-join"))
 
     (define absolute-path (%primitive "absolute-path"))
     (define base-name (%primitive "base-name"))
@@ -136,10 +135,30 @@
       "Syntax: (join-path part ...)
 Library: (scm fs)
 Description: Joins one or more path component strings into a single path
-  string using the platform's path separator character.
+  string using the platform's path separator character. No separator is
+  added where a part already ends (or the next one starts) with one, so
+  joining a directory name with a trailing separator gives no doubled
+  separator.
 Example:
-  (join-path \"/usr\" \"local\" \"bin\") => \"/usr/local/bin\"  ; on Unix"
-      (string-join parts path-sep))
+  (join-path \"/usr\" \"local\" \"bin\") => \"/usr/local/bin\"  ; on Unix
+  (join-path \"/usr/\" \"local\") => \"/usr/local\""
+      (define (sep? c) (or (char=? c #\/) (char=? c (string-ref path-sep 0))))
+      (define (ends-with-sep? s)
+        (and (> (string-length s) 0) (sep? (string-ref s (- (string-length s) 1)))))
+      (define (starts-with-sep? s) (and (> (string-length s) 0) (sep? (string-ref s 0))))
+      (if (null? parts)
+          ""
+          (let loop ((acc (car parts)) (rest (cdr parts)))
+            (if (null? rest)
+                acc
+                (let ((next (car rest)))
+                  (loop (cond ((string=? acc "") (string-append path-sep next))
+                              ((and (ends-with-sep? acc) (starts-with-sep? next))
+                               (string-append acc (substring next 1 (string-length next))))
+                              ((or (ends-with-sep? acc) (starts-with-sep? next))
+                               (string-append acc next))
+                              (else (string-append acc path-sep next)))
+                        (cdr rest)))))))
 
     (define (touch path . opts)
       "Syntax: (touch path [option ...])

@@ -289,9 +289,13 @@ Example:
 Syntax: (join-path part ...)
 Library: (scm fs)
 Description: Joins one or more path component strings into a single path
-  string using the platform's path separator character.
+  string using the platform's path separator character. No separator is
+  added where a part already ends (or the next one starts) with one, so
+  joining a directory name with a trailing separator gives no doubled
+  separator.
 Example:
   (join-path "/usr" "local" "bin") => "/usr/local/bin"  ; on Unix
+  (join-path "/usr/" "local") => "/usr/local"
 ```
 
 ### `ln`

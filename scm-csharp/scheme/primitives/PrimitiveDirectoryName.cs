@@ -20,7 +20,9 @@ public class PrimitiveDirectoryName : Primitive
     public override object Apply(SourcePos? pos, object[] arguments)
     {
         CheckArgs(pos, arguments, 1, 1);
-        var path = new String(Value.AsString(arguments[0]));
+        // A trailing separator does not count as a path component (as with
+        // POSIX dirname and on Java): the parent of "/a/b/" is "/a".
+        var path = PrimitiveBaseName.TrimTrailingSeparators(new String(Value.AsString(arguments[0])));
         var dirinfo = Directory.GetParent(path);
         if (dirinfo == null) return Value.F;
         return dirinfo.FullName.ToCharArray();

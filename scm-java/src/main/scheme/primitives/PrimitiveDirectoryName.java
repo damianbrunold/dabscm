@@ -24,6 +24,8 @@ public class PrimitiveDirectoryName extends Primitive {
         checkArgs(pos, arguments, 1, 1);
         var path = new File(new String(Value.asString(arguments[0])));
         path = new File(path.getAbsolutePath());
-        return path.getParent().toCharArray();
+        String parent = path.getParent();
+        // the root has no parent
+        return parent == null ? Value.F : parent.toCharArray();
     }
 }
