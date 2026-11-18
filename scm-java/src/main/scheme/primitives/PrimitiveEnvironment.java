@@ -2,6 +2,7 @@ package scheme.primitives;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import scheme.Expander;
 import scheme.Module;
 import scheme.Modules;
 import scheme.Primitive;
@@ -53,9 +54,11 @@ public class PrimitiveEnvironment extends Primitive {
         Module originalModule = modules.getCurrentModule();
         try {
             modules.setCurrentModule(name);  // creates module if needed
-            PrimitiveDoImportSet importSet = new PrimitiveDoImportSet(modules);
+            // Import like (import ...) does, so that macros of the libraries
+            // are registered in the binding table and expand in eval.
+            Expander expander = new Expander(modules);
             for (Object arg : arguments) {
-                importSet.apply(pos, new Object[] { arg });
+                expander.doImportSet(pos, arg);
             }
         } finally {
             modules.setCurrentModule(originalModule.getName());

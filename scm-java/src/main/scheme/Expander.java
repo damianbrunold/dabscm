@@ -1157,7 +1157,11 @@ public class Expander {
      * Process a single import set: load the module, register bindings in both
      * Module.bindings (for VM runtime) and the binding table (for expansion/compilation).
      */
-    void doImportSet(SourcePos pos, Object importSpec) {
+    /**
+     * Import an import set into the current module: binds the values for the
+     * VM and registers the names (macros included) in the binding table.
+     */
+    public void doImportSet(SourcePos pos, Object importSpec) {
         PrimitiveDoImportSet importer = (PrimitiveDoImportSet) modules.primitives.getPrimitive("%do-import-set");
         ImportResult importResult = importer.doImportSet(pos, importSpec);
         Module module = modules.getCurrentModule();

@@ -47,10 +47,12 @@ public class PrimitiveEnvironment : Primitive
         try
         {
             modules.SetCurrentModule(name);  // creates module if needed
-            var importSet = new PrimitiveDoImportSet(modules);
+            // Import like (import ...) does, so that macros of the libraries
+            // are registered in the binding table and expand in eval.
+            var expander = new Expander(modules);
             foreach (var arg in arguments)
             {
-                importSet.Apply(pos, new object[] { arg });
+                expander.DoImportSet(pos, arg);
             }
         }
         finally

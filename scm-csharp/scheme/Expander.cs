@@ -1296,7 +1296,9 @@ public class Expander
     /// Process a single import set: load the module, register bindings in both
     /// Module.Bindings (for VM runtime) and the binding table (for expansion/compilation).
     /// </summary>
-    private void DoImportSet(SourcePos? pos, object importSpec)
+    /// Import an import set into the current module: binds the values for the
+    /// VM and registers the names (macros included) in the binding table.
+    public void DoImportSet(SourcePos? pos, object importSpec)
     {
         var importer = (PrimitiveDoImportSet)modules.primitives.GetPrimitive("%do-import-set");
         var importResult = importer.DoImportSet(pos, importSpec);
