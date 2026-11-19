@@ -28,8 +28,8 @@ Run `scm lint --list-rules` for the full list. The main groups are:
 | Errors | `read-error`, `unbound-identifier`, `export-undefined`, `duplicate-definition`, `set-imported`, `arity-mismatch` (procedures and records defined in the file), `malformed-form` |
 | Imports | `unused-import` (also redundant imports, whose used names all come from another import), `unused-only-name`, `import-conflict`, `duplicate-import`, `unsorted-imports` |
 | Names | `unused-local`, `unused-definition`, `unused-parameter` (off), `shadowed-import` (off), `duplicate-export`, `unsorted-exports` |
-| Forms | `definition-context`, `duplicate-case-datum`, `unreachable-clause`, `eq-literal` |
-| Idioms (info) | `if-boolean`, `if-without-else`, `nested-if`, `cxr`, `null-compare`, `length-zero`, `append-list`, `redundant-call`, `begin-single`, `empty-let`, `eta-lambda`, `define-lambda` (off), `predicate-naming` (off) |
+| Forms | `definition-context`, `duplicate-case-datum`, `unreachable-clause`, `eq-literal`, `constant-test` (a constant test, so one branch is dead; also `(if #f #f)`), `if-same-branches` |
+| Idioms (info) | `if-boolean`, `if-without-else`, `if-and-or`, `when-not`, `true-clause`, `nested-if`, `cxr`, `null-compare`, `false-compare`, `length-zero`, `append-list`, `redundant-call`, `begin-single`, `empty-let`, `let-identity`, `eta-lambda`, `identity-lambda`, `define-lambda` (off), `predicate-naming` (off) |
 | Conventions | `missing-docstring`, `docstring-syntax-mismatch`, `docstring-library-mismatch` (exported procedures of the `docstring-libraries`, default `(scm ...)`), `library-file-name` |
 | Text (info) | `line-too-long` (long strings and comments are exempt), `trailing-whitespace`, `tab-character`, `missing-final-newline`, `not-formatted` (with `--fmt-check`) |
 
@@ -41,6 +41,7 @@ scm lint --fail-on warning .       # CI: exit 1 on warnings too
 scm lint --disable cxr,eta-lambda app.sld
 scm lint --enable unused-parameter --format json src/ > lint.json
 scm lint --fmt-check .             # also report files scm fmt would change
+scm lint --fix src/                # correct what can be corrected, report the rest
 ```
 
 Other options: `--width N`, `--exclude GLOB`, `--quiet`, `--list-rules`.
@@ -55,6 +56,38 @@ in `definers`: the name given as its first argument, `name` or
 exporting it is not reported by `export-undefined`. Such names are not
 reported by `unused-definition`, since they are often only used by
 reference, e.g. as quoted symbols.
+
+## Fixing findings
+
+`scm lint --fix` (or `lint-fix-string`) rewrites the code of findings that
+have a rewrite with the same meaning, in place, and reports what is left.
+The rewrites keep the text of the parts they keep, comments included; a
+fix that would drop a comment is not made. Fixes are applied in rounds, so
+`(if c (begin a b))` becomes `(when c a b)`. A file that was formatted as
+`scm fmt` does it is formatted again afterwards; other files keep their
+layout outside the rewritten code. Disabled rules and suppressed lines are
+not fixed. `lint-finding-fixable?` tells which findings a fix would
+correct.
+
+| Rule | Fix |
+|---|---|
+| `if-without-else` | `(if c x)` → `(when c x)`, `(if (not c) x)` → `(unless c x)` |
+| `when-not` | `(when (not c) ...)` → `(unless c ...)`, and the reverse |
+| `true-clause` | `(#t ...)` as the last `cond` or `guard` clause → `(else ...)` |
+| `if-and-or` | `(if c x #f)` → `(and c x)`, `(if x x y)` → `(or x y)` |
+| `if-boolean` | `(if c #f #t)` → `(not c)` (not `(if c #t #f)`, which is `c` only for booleans) |
+| `false-compare`, `null-compare` | `(eq? x #f)` → `(not x)`, `(eq? x '())` → `(null? x)` |
+| `eq-literal` | `eq?` → `eqv?` or `equal?`, `memq` → `memv` or `member`, `assq` → `assv` or `assoc` |
+| `cxr` | `(car (cdr x))` → `(cadr x)` |
+| `append-list` | `(append (list x) y)` → `(cons x y)` |
+| `redundant-call` | `(and x)`, `(or x)`, `(append x)`, `(+ x)`, `(* x)` → `x` (not `string-append`, which copies) |
+| `begin-single` | `(begin e)` → `e`, `(when c (begin a b))` → `(when c a b)` |
+| `empty-let`, `let-identity` | `(let () e)`, `(let ((x e)) x)` → `e` |
+| `trailing-whitespace`, `missing-final-newline` | removed, added |
+
+The other rules need a decision (`constant-test`, `if-same-branches`) or
+their rewrite can change the meaning (`eta-lambda` looks the procedure up
+earlier), so they are only reported.
 
 ## Suppressing findings
 
@@ -153,6 +186,20 @@ Example:
 
 *(no documentation)*
 
+### `lint-finding-fixable?`
+
+```
+Syntax: (lint-finding-fixable? finding)
+Library: (scm source lint)
+Description: Returns #t when lint-fix-string (and scm lint --fix) can
+  correct the finding by itself.
+Example:
+  (map lint-finding-fixable?
+       (lint-string "(import (scheme base))\n(define (f x) (car (cdr x)))\n"
+                    "a.scm"))
+    => (#t)
+```
+
 ### `lint-finding-line`
 
 *(no documentation)*
@@ -195,6 +242,25 @@ Description: Formats a list of findings one per line as
 Example:
   (lint-findings->text (lint-string "(define (f x) 1)" "a.scm"))
     => ""
+```
+
+### `lint-fix-string`
+
+```
+Syntax: (lint-fix-string text file [options])
+Library: (scm source lint)
+Description: Corrects the findings of lint-string that have a safe
+  rewrite (lint-finding-fixable?) and returns two values: the new text
+  and the number of fixes made. Fixes are applied in rounds until none is
+  left, since one fix can make another possible. Rules that are not
+  enabled and suppressed findings are not fixed. When the text was
+  formatted as scm fmt does it before, the result is formatted again, so
+  moved code is indented as before. A fix after which the text cannot be
+  read any more is not made.
+Example:
+  (lint-fix-string "(import (scheme base))\n(define (f x) (if x (car x)))\n"
+                   "a.scm")
+    => "(import (scheme base))\n(define (f x) (when x (car x)))\n" 1
 ```
 
 ### `lint-options`

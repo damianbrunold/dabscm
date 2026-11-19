@@ -1,5 +1,6 @@
 (import (scheme base)
         (srfi 1)
+        (scm source format)
         (scm source lint)
         (scm test))
 
@@ -168,6 +169,135 @@
                      (prog "(define (even x) (= 0 (remainder x 2)))"
                            "(even 1)")
                      '((enable predicate-naming)))))
+
+(test-group "redundant and dead code"
+  (define (f . body)
+    ;; body as the body of (define (f c x y l) ...), called once
+    (apply prog
+           (append (list "(define (f c x y l)")
+                   body
+                   (list ")" "(f #t 1 2 '(1))"))))
+  (test-assert (has? 'constant-test (f "(if #f #f)")))
+  (test-assert (has? 'constant-test (f "(if #t x y)")))
+  (test-assert (has? 'constant-test (f "(if \"s\" x y)")))
+  (test-assert (has? 'constant-test (f "(when #f (display x))")))
+  (test-assert (has? 'constant-test (f "(unless '() (display x))")))
+  (test-assert (has? 'constant-test (f "(cond (#f 1) (else 2))")))
+  (test-assert (not (has? 'constant-test (f "(if c x y)"))))
+  (test-assert (has? 'if-same-branches (f "(if c (car x) (car x))")))
+  (test-assert (not (has? 'if-same-branches (f "(if c (car x) (cdr x))"))))
+  (test-assert (has? 'if-and-or (f "(if c (car l) #f)")))
+  (test-assert (has? 'if-and-or (f "(if x x y)")))
+  (test-assert (not (has? 'if-and-or (f "(if x y x)"))))
+  (test-assert (has? 'when-not (f "(when (not c) (display x))")))
+  (test-assert (has? 'when-not (f "(unless (not c) (display x))")))
+  (test-assert (has? 'true-clause (f "(cond (c 1) (#t 2))")))
+  (test-assert (has? 'true-clause (f "(guard (e (#t #f)) (car l))")))
+  (test-assert (not (has? 'true-clause (f "(cond (c 1) (else 2))"))))
+  (test-assert (has? 'false-compare (f "(eq? x #f)")))
+  (test-assert (not (has? 'false-compare (f "(eq? x #t)"))))
+  (test-assert (has? 'redundant-call (f "(and x)")))
+  (test-assert (has? 'redundant-call (f "(or x)")))
+  (test-assert (has? 'redundant-call (f "(* x)")))
+  (test-assert (not (has? 'redundant-call (f "(and x y)"))))
+  (test-assert (has? 'let-identity (f "(let ((z (car l))) z)")))
+  (test-assert (not (has? 'let-identity (f "(let ((z (car l))) (display z) z)"))))
+  (test-assert (has? 'identity-lambda (f "(map (lambda (e) e) l)")))
+  (test-assert (has? 'identity-lambda
+                     (f "(cond ((assq x l) => (lambda (p) p)) (else #f))")))
+  (test-assert (not (has? 'identity-lambda (f "(map (lambda (e) (car e)) l)"))))
+  ;; a local named map is not the standard map
+  (test-assert (not (has? 'identity-lambda
+                          (f "(let ((map (lambda (g k) k))) (map (lambda (e) e) l))")))))
+
+(test-group "fixes"
+  ;; (fixed body) is the fixed text of (define (f c x y l) body) after
+  ;; prog's import line, as (text . number-of-fixes)
+  (define (fixed body)
+    (let-values (((t n) (lint-fix-string
+                         (prog (string-append "(define (f c x y l) " body ")")
+                               "(f #t 1 2 '(1))")
+                         "t.scm"
+                         '((disable unused-import)))))
+      (let* ((head "(import (scheme base) (scheme write))\n(define (f c x y l) ")
+             (tail ")\n(f #t 1 2 '(1))\n"))
+        (cons (if (and (> (string-length t) (+ (string-length head)
+                                               (string-length tail)))
+                       (string=? head (substring t 0 (string-length head))))
+                  (substring t (string-length head)
+                             (- (string-length t) (string-length tail)))
+                  t)
+              n))))
+  (define (fix body) (car (fixed body)))
+  (test-equal "(when c (display x))" (fix "(if c (display x))"))
+  (test-equal "(unless c (display x))" (fix "(if (not c) (display x))"))
+  (test-equal "(unless c (display x))" (fix "(when (not c) (display x))"))
+  (test-equal "(when c (display x))" (fix "(unless (not c) (display x))"))
+  (test-equal "(cond (c 1) (else 2))" (fix "(cond (c 1) (#t 2))"))
+  (test-equal "(guard (e (else #f)) (car l))" (fix "(guard (e (#t #f)) (car l))"))
+  (test-equal "(and c (car l))" (fix "(if c (car l) #f)"))
+  (test-equal "(and c x (car l))" (fix "(if (and c x) (car l) #f)"))
+  (test-equal "(or x y)" (fix "(if x x y)"))
+  (test-equal "(not (pair? l))" (fix "(if (pair? l) #f #t)"))
+  (test-equal "(not x)" (fix "(eq? x #f)"))
+  (test-equal "(not x)" (fix "(eq? #f x)"))
+  (test-equal "(null? l)" (fix "(equal? l '())"))
+  (test-equal "(eqv? x 1)" (fix "(eq? x 1)"))
+  (test-equal "(member \"a\" l)" (fix "(memq \"a\" l)"))
+  (test-equal "(cadr l)" (fix "(car (cdr l))"))
+  (test-equal "(cddr l)" (fix "(cdr (cdr l))"))
+  (test-equal "(cons x l)" (fix "(append (list x) l)"))
+  (test-equal "l" (fix "(append l)"))
+  (test-equal "x" (fix "(and x)"))
+  (test-equal "x" (fix "(+ x)"))
+  (test-equal "(list (car l))" (fix "(list (begin (car l)))"))
+  (test-equal "(when c (display x) (newline))"
+              (fix "(when c (begin (display x) (newline)))"))
+  (test-equal "(car l)" (fix "(let () (car l))"))
+  (test-equal "(car l)" (fix "(let ((z (car l))) z)"))
+  ;; nested fixes are made in rounds
+  (test-equal '("(when c x)" . 2) (fixed "(if c (begin x))"))
+  ;; a comment between the parts that would be dropped blocks the fix
+  (test-equal "(if c x ; why\n #f)" (fix "(if c x ; why\n #f)"))
+  ;; ... a comment that stays is kept
+  (test-equal "(when c ; why\n x)" (fix "(if c ; why\n x)"))
+  ;; no fix for findings without a safe rewrite
+  (test-equal '("(if c x x)" . 0) (fixed "(if c x x)"))
+  (test-equal '("(string-append x)" . 0) (fixed "(string-append x)"))
+  (test-equal '("(if x #t #f)" . 0) (fixed "(if x #t #f)"))
+  ;; disabled rules and suppressed lines are not fixed
+  (test-equal "(if c x)"
+              (car (let-values (((t n) (lint-fix-string "(import (scheme base))\n(define (f c x) (if c x))\n(f 1 2)\n"
+                                                        "t.scm"
+                                                        '((disable if-without-else unused-import)))))
+                     (list (substring t 39 47) n))))
+  (test-equal 0
+              (let-values (((t n) (lint-fix-string "(import (scheme base))\n(define (f c x) (if c x)) ; lint: ignore\n(f 1 2)\n"
+                                                   "t.scm"
+                                                   '((disable unused-import)))))
+                n))
+  ;; text fixes
+  (test-equal "(import (scheme base))\n(display 1)\n"
+              (let-values (((t n) (lint-fix-string "(import (scheme base))  \n(display 1)"
+                                                   "t.scm"
+                                                   '((disable unused-import)))))
+                t))
+  ;; a formatted file is formatted again after the fixes
+  (let-values (((t n) (lint-fix-string
+                       (string-append "(import (scheme base)\n        (scheme write))\n"
+                                      "(define (f c x)\n  (if c\n      (begin\n"
+                                      "        (display x)\n        (newline))))\n"
+                                      "(f 1 2)\n")
+                       "t.scm"
+                       '((disable unused-import)))))
+    (test-equal 2 n)
+    (test-equal t (format-source-string t))
+    (test-assert (not (let loop ((k 0))
+                        (and (<= (+ k 5) (string-length t))
+                             (or (string=? "begin" (substring t k (+ k 5)))
+                                 (loop (+ k 1))))))))
+  (test-assert (lint-finding-fixable?
+                (car (findings (prog "(define (f x) (car (cdr x)))" "(f 1)"))))))
 
 (test-group "docstring conventions"
   (let

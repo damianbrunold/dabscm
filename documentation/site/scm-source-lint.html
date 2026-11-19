@@ -26,24 +26,26 @@
   <a href="#e1" data-name="lint-file">lint-file</a>
   <a href="#e2" data-name="lint-finding-col">lint-finding-col</a>
   <a href="#e3" data-name="lint-finding-file">lint-finding-file</a>
-  <a href="#e4" data-name="lint-finding-line">lint-finding-line</a>
-  <a href="#e5" data-name="lint-finding-message">lint-finding-message</a>
-  <a href="#e6" data-name="lint-finding-rule">lint-finding-rule</a>
-  <a href="#e7" data-name="lint-finding-severity">lint-finding-severity</a>
-  <a href="#e8" data-name="lint-finding?">lint-finding?</a>
-  <a href="#e9" data-name="lint-findings-&gt;json">lint-findings-&gt;json</a>
-  <a href="#e10" data-name="lint-findings-&gt;text">lint-findings-&gt;text</a>
-  <a href="#e11" data-name="lint-options">lint-options</a>
-  <a href="#e12" data-name="lint-rules">lint-rules</a>
-  <a href="#e13" data-name="lint-string">lint-string</a>
-  <a href="#e14" data-name="source-xref">source-xref</a>
-  <a href="#e15" data-name="xref-col">xref-col</a>
-  <a href="#e16" data-name="xref-kind">xref-kind</a>
-  <a href="#e17" data-name="xref-line">xref-line</a>
-  <a href="#e18" data-name="xref-name">xref-name</a>
-  <a href="#e19" data-name="xref-role">xref-role</a>
-  <a href="#e20" data-name="xref-target">xref-target</a>
-  <a href="#e21" data-name="xref?">xref?</a>
+  <a href="#e4" data-name="lint-finding-fixable?">lint-finding-fixable?</a>
+  <a href="#e5" data-name="lint-finding-line">lint-finding-line</a>
+  <a href="#e6" data-name="lint-finding-message">lint-finding-message</a>
+  <a href="#e7" data-name="lint-finding-rule">lint-finding-rule</a>
+  <a href="#e8" data-name="lint-finding-severity">lint-finding-severity</a>
+  <a href="#e9" data-name="lint-finding?">lint-finding?</a>
+  <a href="#e10" data-name="lint-findings-&gt;json">lint-findings-&gt;json</a>
+  <a href="#e11" data-name="lint-findings-&gt;text">lint-findings-&gt;text</a>
+  <a href="#e12" data-name="lint-fix-string">lint-fix-string</a>
+  <a href="#e13" data-name="lint-options">lint-options</a>
+  <a href="#e14" data-name="lint-rules">lint-rules</a>
+  <a href="#e15" data-name="lint-string">lint-string</a>
+  <a href="#e16" data-name="source-xref">source-xref</a>
+  <a href="#e17" data-name="xref-col">xref-col</a>
+  <a href="#e18" data-name="xref-kind">xref-kind</a>
+  <a href="#e19" data-name="xref-line">xref-line</a>
+  <a href="#e20" data-name="xref-name">xref-name</a>
+  <a href="#e21" data-name="xref-role">xref-role</a>
+  <a href="#e22" data-name="xref-target">xref-target</a>
+  <a href="#e23" data-name="xref?">xref?</a>
 </nav>
 
 <main>
@@ -63,15 +65,20 @@
 <p><a class="xref" href="scm-source-lint.html"><code>(scm source lint)</code></a> is the static checker behind <code>scm lint</code>. It reads a file with <a href="scm-source.md">(scm source)</a> and walks the code with a scope analysis that knows the core and derived forms of R7RS. The global environment is what the file imports, with the exports of built-in libraries loaded and project libraries read statically from their <code>.sld</code> files (<code>[format] library-path</code> in <code>scm-tools.toml</code>, plus the file's own directory), and the file's own definitions.</p>
 <p>Uses of macros the linter does not know are not looked into: every identifier in them counts as used and none is reported as unbound, so they cause no false positives. When an imported library cannot be resolved, or the file includes, loads or requires other files, unbound identifiers are not reported. The names the compiler inlines (<code>car</code>, <code>cadr</code>, <code>+</code>, <code>vector-ref</code>, ...) count as bound in call position without an import, as they are at run time.</p>
 <p>Findings are printed as <code>file:line:column: severity: [rule] message</code>. Run <code>scm lint --list-rules</code> for the full list. The main groups are:</p>
-<p>| Group | Rules | |---|---| | Errors | <code>read-error</code>, <code>unbound-identifier</code>, <code>export-undefined</code>, <code>duplicate-definition</code>, <code>set-imported</code>, <code>arity-mismatch</code> (procedures and records defined in the file), <code>malformed-form</code> | | Imports | <code>unused-import</code> (also redundant imports, whose used names all come from another import), <code>unused-only-name</code>, <code>import-conflict</code>, <code>duplicate-import</code>, <code>unsorted-imports</code> | | Names | <code>unused-local</code>, <code>unused-definition</code>, <code>unused-parameter</code> (off), <code>shadowed-import</code> (off), <code>duplicate-export</code>, <code>unsorted-exports</code> | | Forms | <code>definition-context</code>, <code>duplicate-case-datum</code>, <code>unreachable-clause</code>, <code>eq-literal</code> | | Idioms (info) | <code>if-boolean</code>, <code>if-without-else</code>, <code>nested-if</code>, <code>cxr</code>, <code>null-compare</code>, <code>length-zero</code>, <code>append-list</code>, <code>redundant-call</code>, <code>begin-single</code>, <code>empty-let</code>, <code>eta-lambda</code>, <code>define-lambda</code> (off), <code>predicate-naming</code> (off) | | Conventions | <code>missing-docstring</code>, <code>docstring-syntax-mismatch</code>, <code>docstring-library-mismatch</code> (exported procedures of the <code>docstring-libraries</code>, default <code>(scm ...)</code>), <a class="xref" href="scm-source.html#e21"><code>library-file-name</code></a> | | Text (info) | <code>line-too-long</code> (long strings and comments are exempt), <code>trailing-whitespace</code>, <code>tab-character</code>, <code>missing-final-newline</code>, <code>not-formatted</code> (with <code>--fmt-check</code>) |</p>
+<p>| Group | Rules | |---|---| | Errors | <code>read-error</code>, <code>unbound-identifier</code>, <code>export-undefined</code>, <code>duplicate-definition</code>, <code>set-imported</code>, <code>arity-mismatch</code> (procedures and records defined in the file), <code>malformed-form</code> | | Imports | <code>unused-import</code> (also redundant imports, whose used names all come from another import), <code>unused-only-name</code>, <code>import-conflict</code>, <code>duplicate-import</code>, <code>unsorted-imports</code> | | Names | <code>unused-local</code>, <code>unused-definition</code>, <code>unused-parameter</code> (off), <code>shadowed-import</code> (off), <code>duplicate-export</code>, <code>unsorted-exports</code> | | Forms | <code>definition-context</code>, <code>duplicate-case-datum</code>, <code>unreachable-clause</code>, <code>eq-literal</code>, <code>constant-test</code> (a constant test, so one branch is dead; also <code>(if #f #f)</code>), <code>if-same-branches</code> | | Idioms (info) | <code>if-boolean</code>, <code>if-without-else</code>, <code>if-and-or</code>, <code>when-not</code>, <code>true-clause</code>, <code>nested-if</code>, <code>cxr</code>, <code>null-compare</code>, <code>false-compare</code>, <code>length-zero</code>, <code>append-list</code>, <code>redundant-call</code>, <code>begin-single</code>, <code>empty-let</code>, <code>let-identity</code>, <code>eta-lambda</code>, <code>identity-lambda</code>, <code>define-lambda</code> (off), <code>predicate-naming</code> (off) | | Conventions | <code>missing-docstring</code>, <code>docstring-syntax-mismatch</code>, <code>docstring-library-mismatch</code> (exported procedures of the <code>docstring-libraries</code>, default <code>(scm ...)</code>), <a class="xref" href="scm-source.html#e21"><code>library-file-name</code></a> | | Text (info) | <code>line-too-long</code> (long strings and comments are exempt), <code>trailing-whitespace</code>, <code>tab-character</code>, <code>missing-final-newline</code>, <code>not-formatted</code> (with <code>--fmt-check</code>) |</p>
 <h2>Command line</h2>
 <pre><code class="language-bash">scm lint src/                      # all *.scm and *.sld below src
 scm lint --fail-on warning .       # CI: exit 1 on warnings too
 scm lint --disable cxr,eta-lambda app.sld
 scm lint --enable unused-parameter --format json src/ &gt; lint.json
-scm lint --fmt-check .             # also report files scm fmt would change</code></pre>
+scm lint --fmt-check .             # also report files scm fmt would change
+scm lint --fix src/                # correct what can be corrected, report the rest</code></pre>
 <p>Other options: <code>--width N</code>, <code>--exclude GLOB</code>, <code>--quiet</code>, <code>--list-rules</code>. Settings come from the <code>[lint]</code> table of <code>scm-tools.toml</code> (<code>enable</code>, <code>disable</code>, <code>docstring-libraries</code>, <code>definers</code>, <code>exclude</code>). Exit codes: 0 ok, 1 findings at the <code>--fail-on</code> level (default <a class="xref" href="scheme-base.html#e70"><code>error</code></a>), 2 usage error.</p>
 <p>The linter does not expand macros it does not know. A project macro that defines a name, like <code>(define-command (name args ...) ...)</code>, can be listed in <code>definers</code>: the name given as its first argument, <code>name</code> or <code>(name . args)</code>, then counts as defined in the library or body, so exporting it is not reported by <code>export-undefined</code>. Such names are not reported by <code>unused-definition</code>, since they are often only used by reference, e.g. as quoted symbols.</p>
+<h2>Fixing findings</h2>
+<p><code>scm lint --fix</code> (or <a class="xref" href="#e12"><code>lint-fix-string</code></a>) rewrites the code of findings that have a rewrite with the same meaning, in place, and reports what is left. The rewrites keep the text of the parts they keep, comments included; a fix that would drop a comment is not made. Fixes are applied in rounds, so <code>(if c (begin a b))</code> becomes <code>(when c a b)</code>. A file that was formatted as <code>scm fmt</code> does it is formatted again afterwards; other files keep their layout outside the rewritten code. Disabled rules and suppressed lines are not fixed. <a class="xref" href="#e4"><code>lint-finding-fixable?</code></a> tells which findings a fix would correct.</p>
+<p>| Rule | Fix | |---|---| | <code>if-without-else</code> | <code>(if c x)</code> → <code>(when c x)</code>, <code>(if (not c) x)</code> → <code>(unless c x)</code> | | <code>when-not</code> | <code>(when (not c) ...)</code> → <code>(unless c ...)</code>, and the reverse | | <code>true-clause</code> | <code>(#t ...)</code> as the last <code>cond</code> or <a class="xref" href="scheme-base.html#e91"><code>guard</code></a> clause → <code>(else ...)</code> | | <code>if-and-or</code> | <code>(if c x #f)</code> → <code>(and c x)</code>, <code>(if x x y)</code> → <code>(or x y)</code> | | <code>if-boolean</code> | <code>(if c #f #t)</code> → <code>(not c)</code> (not <code>(if c #t #f)</code>, which is <code>c</code> only for booleans) | | <code>false-compare</code>, <code>null-compare</code> | <code>(eq? x #f)</code> → <code>(not x)</code>, <code>(eq? x '())</code> → <code>(null? x)</code> | | <code>eq-literal</code> | <code>eq?</code> → <code>eqv?</code> or <code>equal?</code>, <code>memq</code> → <code>memv</code> or <code>member</code>, <code>assq</code> → <code>assv</code> or <code>assoc</code> | | <code>cxr</code> | <code>(car (cdr x))</code> → <code>(cadr x)</code> | | <code>append-list</code> | <code>(append (list x) y)</code> → <code>(cons x y)</code> | | <code>redundant-call</code> | <code>(and x)</code>, <code>(or x)</code>, <code>(append x)</code>, <code>(+ x)</code>, <code>(* x)</code> → <code>x</code> (not <code>string-append</code>, which copies) | | <code>begin-single</code> | <code>(begin e)</code> → <code>e</code>, <code>(when c (begin a b))</code> → <code>(when c a b)</code> | | <code>empty-let</code>, <code>let-identity</code> | <code>(let () e)</code>, <code>(let ((x e)) x)</code> → <code>e</code> | | <code>trailing-whitespace</code>, <code>missing-final-newline</code> | removed, added |</p>
+<p>The other rules need a decision (<code>constant-test</code>, <code>if-same-branches</code>) or their rewrite can change the meaning (<code>eta-lambda</code> looks the procedure up earlier), so they are only reported.</p>
 <h2>Suppressing findings</h2>
 <pre><code class="language-scheme">;; lint: disable if-without-else cxr      ; for the whole file
 
@@ -81,7 +88,7 @@ scm lint --fmt-check .             # also report files scm fmt would change</cod
 (let ((unused (setup!))) (run))</code></pre>
 <p>Names starting with <code>_</code> are never reported as unused.</p>
 <h2>Cross references</h2>
-<p><a class="xref" href="#e14"><code>source-xref</code></a> returns what the scope analysis of the linter knows about the names of a file, for editor features such as jump to definition and find references. Each xref record has a role, the name and its position (line from 1, column from 0) and a target saying where the name is bound:</p>
+<p><a class="xref" href="#e16"><code>source-xref</code></a> returns what the scope analysis of the linter knows about the names of a file, for editor features such as jump to definition and find references. Each xref record has a role, the name and its position (line from 1, column from 0) and a target saying where the name is bound:</p>
 <p>| Role | Meaning | |---|---| | <code>definition</code> | a top-level definition (also by a configured definer macro) | | <code>local-definition</code> | a parameter or local binding | | <code>reference</code> | a use the analysis resolved | | <code>mention</code> | a name inside a macro use the linter cannot look into; usually a reference, but it may be a pattern variable or a name the macro binds | | <code>quoted</code> | a symbol in quoted data, such as a command name in a keymap | | <code>export</code> | a name in the export list |</p>
 <p>The target is <code>(here line col)</code> for a binding in the file (for a definition its own position), <code>(import library name)</code> for an import, naming the library that originally defines it (through re-exports and renames), or <code>#f</code>. All uses of one binding have equal targets, so the references to a definition of a project are the entries whose target names its library and name, or its position in its own file.</p>
 <pre><code class="language-scheme">(for-each (lambda (x)
@@ -106,7 +113,7 @@ scm lint --fmt-check .             # also report files scm fmt would change</cod
           (lint-string "(import (scheme base))\n(car (cdr x))\n" "x.scm"))</code></pre>
 </div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
-<p class="export-count">22 bindings</p>
+<p class="export-count">24 bindings</p>
 
 <div class="entry" id="e0" data-name="lint-command">
   <div class="entry-name">lint-command</div>
@@ -135,27 +142,39 @@ Example:
   <div class="entry-name">lint-finding-file</div>
   <div class="nodoc">(no documentation)</div>
 </div>
-<div class="entry" id="e4" data-name="lint-finding-line">
+<div class="entry" id="e4" data-name="lint-finding-fixable?">
+  <div class="entry-name">lint-finding-fixable?</div>
+  <pre class="entry-doc">Syntax: (lint-finding-fixable? finding)
+Library: (scm source lint)
+Description: Returns #t when lint-fix-string (and scm lint --fix) can
+  correct the finding by itself.
+Example:
+  (map lint-finding-fixable?
+       (lint-string "(import (scheme base))\n(define (f x) (car (cdr x)))\n"
+                    "a.scm"))
+    =&gt; (#t)</pre>
+</div>
+<div class="entry" id="e5" data-name="lint-finding-line">
   <div class="entry-name">lint-finding-line</div>
   <div class="nodoc">(no documentation)</div>
 </div>
-<div class="entry" id="e5" data-name="lint-finding-message">
+<div class="entry" id="e6" data-name="lint-finding-message">
   <div class="entry-name">lint-finding-message</div>
   <div class="nodoc">(no documentation)</div>
 </div>
-<div class="entry" id="e6" data-name="lint-finding-rule">
+<div class="entry" id="e7" data-name="lint-finding-rule">
   <div class="entry-name">lint-finding-rule</div>
   <div class="nodoc">(no documentation)</div>
 </div>
-<div class="entry" id="e7" data-name="lint-finding-severity">
+<div class="entry" id="e8" data-name="lint-finding-severity">
   <div class="entry-name">lint-finding-severity</div>
   <div class="nodoc">(no documentation)</div>
 </div>
-<div class="entry" id="e8" data-name="lint-finding?">
+<div class="entry" id="e9" data-name="lint-finding?">
   <div class="entry-name">lint-finding?</div>
   <div class="nodoc">(no documentation)</div>
 </div>
-<div class="entry" id="e9" data-name="lint-findings-&gt;json">
+<div class="entry" id="e10" data-name="lint-findings-&gt;json">
   <div class="entry-name">lint-findings-&gt;json</div>
   <pre class="entry-doc">Syntax: (lint-findings-&gt;json findings)
 Library: (scm source lint)
@@ -164,7 +183,7 @@ Description: Formats a list of findings as a JSON array of objects with
 Example:
   (lint-findings-&gt;json '()) =&gt; "[]"</pre>
 </div>
-<div class="entry" id="e10" data-name="lint-findings-&gt;text">
+<div class="entry" id="e11" data-name="lint-findings-&gt;text">
   <div class="entry-name">lint-findings-&gt;text</div>
   <pre class="entry-doc">Syntax: (lint-findings-&gt;text findings)
 Library: (scm source lint)
@@ -175,7 +194,24 @@ Example:
   (lint-findings-&gt;text (lint-string "(define (f x) 1)" "a.scm"))
     =&gt; ""</pre>
 </div>
-<div class="entry" id="e11" data-name="lint-options">
+<div class="entry" id="e12" data-name="lint-fix-string">
+  <div class="entry-name">lint-fix-string</div>
+  <pre class="entry-doc">Syntax: (lint-fix-string text file [options])
+Library: (scm source lint)
+Description: Corrects the findings of lint-string that have a safe
+  rewrite (lint-finding-fixable?) and returns two values: the new text
+  and the number of fixes made. Fixes are applied in rounds until none is
+  left, since one fix can make another possible. Rules that are not
+  enabled and suppressed findings are not fixed. When the text was
+  formatted as scm fmt does it before, the result is formatted again, so
+  moved code is indented as before. A fix after which the text cannot be
+  read any more is not made.
+Example:
+  (lint-fix-string "(import (scheme base))\n(define (f x) (if x (car x)))\n"
+                   "a.scm")
+    =&gt; "(import (scheme base))\n(define (f x) (when x (car x)))\n" 1</pre>
+</div>
+<div class="entry" id="e13" data-name="lint-options">
   <div class="entry-name">lint-options</div>
   <pre class="entry-doc">Syntax: (lint-options path [overrides])
 Library: (scm source lint)
@@ -194,7 +230,7 @@ Description: Returns the linter options for the file path: the defaults,
 Example:
   (cdr (assq 'width (lint-options "src/a.sld"))) =&gt; 78</pre>
 </div>
-<div class="entry" id="e12" data-name="lint-rules">
+<div class="entry" id="e14" data-name="lint-rules">
   <div class="entry-name">lint-rules</div>
   <pre class="entry-doc">Syntax: (lint-rules)
 Library: (scm source lint)
@@ -204,7 +240,7 @@ Example:
   (car (lint-rules))
     =&gt; (read-error error #t "the file cannot be read ...")</pre>
 </div>
-<div class="entry" id="e13" data-name="lint-string">
+<div class="entry" id="e15" data-name="lint-string">
   <div class="entry-name">lint-string</div>
   <pre class="entry-doc">Syntax: (lint-string text file [options])
 Library: (scm source lint)
@@ -221,7 +257,7 @@ Example:
                     "a.scm"))
     =&gt; (cxr)</pre>
 </div>
-<div class="entry" id="e14" data-name="source-xref">
+<div class="entry" id="e16" data-name="source-xref">
   <div class="entry-name">source-xref</div>
   <pre class="entry-doc">Syntax: (source-xref text file [options])
 Library: (scm source lint)
@@ -251,31 +287,31 @@ Example:
         (reference car (import (scheme base) car))
         (reference x (here 2 11)))</pre>
 </div>
-<div class="entry" id="e15" data-name="xref-col">
+<div class="entry" id="e17" data-name="xref-col">
   <div class="entry-name">xref-col</div>
   <div class="nodoc">(no documentation)</div>
 </div>
-<div class="entry" id="e16" data-name="xref-kind">
+<div class="entry" id="e18" data-name="xref-kind">
   <div class="entry-name">xref-kind</div>
   <div class="nodoc">(no documentation)</div>
 </div>
-<div class="entry" id="e17" data-name="xref-line">
+<div class="entry" id="e19" data-name="xref-line">
   <div class="entry-name">xref-line</div>
   <div class="nodoc">(no documentation)</div>
 </div>
-<div class="entry" id="e18" data-name="xref-name">
+<div class="entry" id="e20" data-name="xref-name">
   <div class="entry-name">xref-name</div>
   <div class="nodoc">(no documentation)</div>
 </div>
-<div class="entry" id="e19" data-name="xref-role">
+<div class="entry" id="e21" data-name="xref-role">
   <div class="entry-name">xref-role</div>
   <div class="nodoc">(no documentation)</div>
 </div>
-<div class="entry" id="e20" data-name="xref-target">
+<div class="entry" id="e22" data-name="xref-target">
   <div class="entry-name">xref-target</div>
   <div class="nodoc">(no documentation)</div>
 </div>
-<div class="entry" id="e21" data-name="xref?">
+<div class="entry" id="e23" data-name="xref?">
   <div class="entry-name">xref?</div>
   <div class="nodoc">(no documentation)</div>
 </div>

@@ -1,6 +1,7 @@
 (define-library (scm source lint)
   (import (scheme base)
           (scheme char)
+          (scheme file)
           (scheme write)
           (srfi 69)
           (scm fs)
@@ -11,6 +12,7 @@
           lint-file
           lint-finding-col
           lint-finding-file
+          lint-finding-fixable?
           lint-finding-line
           lint-finding-message
           lint-finding-rule
@@ -18,6 +20,7 @@
           lint-finding?
           lint-findings->json
           lint-findings->text
+          lint-fix-string
           lint-options
           lint-rules
           lint-string
@@ -93,20 +96,32 @@
          "a cond clause after one whose test is always true")
         (eq-literal warning #t
          "eq?/memq/assq on a number, character or string literal (use eqv?, equal?, string=?)")
+        (constant-test warning #t
+         "an if, when, unless or cond test that is a constant, so a branch is dead ((if #f #f) included)")
+        (if-same-branches warning #t
+         "an if whose two branches are the same")
         (if-boolean info #t "(if c #t #f) is c, (if c #f #t) is (not c)")
         (if-without-else info #t "a one-armed if (use when or unless)")
+        (if-and-or info #t "(if c x #f) is (and c x), (if x x y) is (or x y)")
+        (when-not info #t "(when (not c) ...) is (unless c ...), and vice versa")
+        (true-clause info #t "a last cond or guard clause with the test #t (use else)")
         (nested-if info #t
          "an if nested three levels deep in else branches (use cond)")
         (cxr info #t
          "a car/cdr composition with a standard name (cadr, cddr, ...)")
         (null-compare info #t "a comparison with '() (use null?)")
+        (false-compare info #t "a comparison with #f (use not)")
         (length-zero info #t
          "a length compared with 0 (use null? or pair?, which do not walk the list)")
         (append-list info #t "(append (list x) y) is (cons x y)")
         (redundant-call info #t
-         "string-append or append with a single argument")
-        (begin-single info #t "(begin e) in expression position is e")
+         "string-append, append, and, or, + or * with a single argument")
+        (begin-single info #t
+         "(begin e) in expression position is e, (when c (begin e ...)) is (when c e ...)")
         (empty-let info #t "(let () e) without definitions is e")
+        (let-identity info #t "(let ((x e)) x) is e")
+        (identity-lambda info #t
+         "(lambda (x) x) as the receiver of => or the procedure of map")
         (eta-lambda info #t "(lambda (x) (f x)) is f")
         (define-lambda info #f
          "(define f (lambda (x) ...)) can be written (define (f x) ...)")
@@ -146,14 +161,33 @@ Example:
     ;; ---- findings --------------------------------------------------
 
     (define-record-type lint-finding
-      (make-lint-finding rule severity file line col message)
+      (make-lint-finding* rule severity file line col message fix)
       lint-finding?
       (rule lint-finding-rule)
       (severity lint-finding-severity)
       (file lint-finding-file)
       (line lint-finding-line)
       (col lint-finding-col)
-      (message lint-finding-message))
+      (message lint-finding-message)
+      ;; '() or a list of edits (from to text); from and to are positions:
+      ;; an offset in the text, or (line col delta) for the offset of
+      ;; line:col plus delta (so a node's end is (line col length))
+      (fix lint-finding-fix))
+
+    (define (make-lint-finding rule severity file line col message)
+      (make-lint-finding* rule severity file line col message '()))
+
+    (define (lint-finding-fixable? f)
+      "Syntax: (lint-finding-fixable? finding)
+Library: (scm source lint)
+Description: Returns #t when lint-fix-string (and scm lint --fix) can
+  correct the finding by itself.
+Example:
+  (map lint-finding-fixable?
+       (lint-string \"(import (scheme base))\\n(define (f x) (car (cdr x)))\\n\"
+                    \"a.scm\"))
+    => (#t)"
+      (pair? (lint-finding-fix f)))
 
     (define (severity-rank s)
       (case s
@@ -442,6 +476,32 @@ Example:
       (and (eq? (cst-kind node) 'atom)
            (member (cst-text node) '("#f" "#false"))))
 
+    (define (constant-test-kind node)
+      ;; true or false for a test whose value is known, else #f
+      (cond ((false-literal? node) 'false)
+            ((or (true-literal? node)
+                 (literal-kind node)
+                 (and (eq? (cst-kind node) 'prefix)
+                      (string=? (cst-text node) "'")))
+             'true)
+            (else #f)))
+
+    (define (same-code? a b)
+      (guard (e (#t #f)) (equal? (cst->datum a) (cst->datum b))))
+
+    (define (identity-lambda? node)
+      ;; (lambda (x) x)
+      (and (eq? (head-symbol node) 'lambda)
+           (let ((items (code-items node)))
+             (and (= (length items) 3)
+                  (list-node? (cadr items))
+                  (let ((fs (code-items (cadr items))))
+                    (and (= (length fs) 1)
+                         (symbol-node? (car fs))
+                         (symbol-node? (caddr items))
+                         (eq? (node-symbol (car fs))
+                              (node-symbol (caddr items)))))))))
+
     (define (formals->names node)
       ;; -> (values names-with-nodes rest-node-or-#f ok?)
       (case (cst-kind node)
@@ -460,6 +520,35 @@ Example:
                  ((symbol-node? (car ks)) (loop (cdr ks) (cons (car ks) acc)))
                  (else (values (reverse acc) #f #f)))))
         (else (values '() #f #f))))
+
+    ;; ---- fixes -----------------------------------------------------
+
+    ;; Edits for lint-finding-fix: (from to text) with positions as
+    ;; described at the record.
+    (define (node-start n) (list (cst-line n) (cst-col n) 0))
+    (define (node-end n)
+      (list (cst-line n) (cst-col n) (string-length (cst->string n))))
+    (define (node-text n) (cst->string n))
+    (define (replace-node n text) (list (node-start n) (node-end n) text))
+    (define (head-node n) (car (code-items n)))
+
+    (define (clean-node? n)
+      ;; no comments among the node's own children, so text between
+      ;; them can be dropped
+      (every? (lambda (k)
+                (not (memq (cst-kind k)
+                           '(comment block-comment datum-comment directive))))
+              (cst-children n)))
+
+    (define (unwrap-fix node inner)
+      ;; replace node by the text of inner, which it contains
+      (if (clean-node? node) (list (replace-node node (node-text inner))) '()))
+
+    (define (single-arg-not node)
+      ;; the argument of (not x), or #f
+      (and (eq? (head-symbol node) 'not)
+           (= (length (code-items node)) 2)
+           (cadr (code-items node))))
 
     ;; ---- bindings and scopes ---------------------------------------
 
@@ -524,11 +613,12 @@ Example:
                                            (absolute-path file)))
                                          '())))))
 
-        (define (report! rule node message)
+        (define (report! rule node message . fix)
           (emit rule
                 (if node (cst-line node) 1)
                 (if node (cst-col node) 0)
-                message))
+                message
+                (if (pair? fix) (car fix) '())))
 
         ;; -- cross references (source-xref) --
         ;; xref-sink, when given, is called as (sink role name node target)
@@ -1307,13 +1397,25 @@ Example:
                             (string-append (symbol->string name)
                                            " without a test"))
                    (begin
+                     (check-when-idioms node name (car args))
+                     (when (and (= (length args) 2)
+                                (eq? (head-symbol (cadr args)) 'begin)
+                                (pair? (cdr (code-items (cadr args)))))
+                       (report! 'begin-single
+                                (cadr args)
+                                (string-append "(" (symbol->string name)
+                                               " c (begin e ...)) is ("
+                                               (symbol->string name)
+                                               " c e ...)")
+                                (splice-fix (cadr args) 'begin)))
                      (walk-expr (car args) env)
                      (walk-seq (cdr args) env))))
               ((begin)
                (when (= (length args) 1)
                  (report! 'begin-single
                           node
-                          "(begin e) with a single expression is e"))
+                          "(begin e) with a single expression is e"
+                          (unwrap-fix node (car args))))
                (walk-seq args env))
               ((set!)
                (if (not (and (= (length args) 2) (symbol-node? (car args))))
@@ -1332,12 +1434,16 @@ Example:
                                       (symbol->string (node-symbol target)))))
                            (else (ref! (node-symbol target) target env)))
                      (walk-expr (cadr args) env))))
-              ((delay
-                 delay-force
-                 make-promise
-                 and
-                 or)
+              ((and or)
+               (when (= (length args) 1)
+                 (report! 'redundant-call
+                          node
+                          (string-append "("
+                                         (symbol->string name)
+                                         " x) with one argument is x")
+                          (unwrap-fix node (car args))))
                (walk-exprs args env))
+              ((delay delay-force make-promise) (walk-exprs args env))
               ((include include-ci) (set! complete? #f))
               ((cond-expand) (walk-cond-expand args env))
               ((define-library import export) #t)
@@ -1473,7 +1579,19 @@ Example:
                                  (= (length (cdr args)) 1))
                           (report! 'empty-let
                                    node
-                                   "(let () e) without definitions is e"))
+                                   "(let () e) without definitions is e"
+                                   (unwrap-fix node (cadr args))))
+                        (when (and (= (length pairs) 1)
+                                   (= (length (cdr args)) 1)
+                                   (symbol-node? (cadr args))
+                                   (eq? (node-symbol (cadr args))
+                                        (node-symbol (car (car pairs)))))
+                          (report! 'let-identity
+                                   node
+                                   "(let ((x e)) x) is e"
+                                   (if (clean-node? (car args))
+                                       (unwrap-fix node (cadr (car pairs)))
+                                       '())))
                         (for-each (lambda (p)
                                     (when (cadr p) (walk-expr (cadr p) env)))
                                   pairs)
@@ -1649,11 +1767,28 @@ Example:
                                      (eq? (node-symbol test) 'else)
                                      (not (resolve-local-or-def 'else env)))))
                               (unless else? (walk-expr test env))
+                              (cond ((false-literal? test)
+                                     (report! 'constant-test
+                                              c
+                                              "the clause test is always false: the clause is never taken"))
+                                    ((and (true-literal? test) (null? (cdr cs)))
+                                     (report! 'true-clause
+                                              c
+                                              "a last clause with the test #t: use else"
+                                              (if (resolve-local-or-def 'else env)
+                                                  '()
+                                                  (list (replace-node test "else"))))))
                               (let ((rest (cdr ci)))
                                 (if (and (pair? rest)
                                          (symbol-node? (car rest))
                                          (eq? (node-symbol (car rest)) '=>))
-                                    (walk-exprs (cdr rest) env)
+                                    (begin
+                                      (when (and (pair? (cdr rest))
+                                                 (identity-lambda? (cadr rest)))
+                                        (report! 'identity-lambda
+                                                 (cadr rest)
+                                                 "(test => (lambda (x) x)) is (test)"))
+                                      (walk-exprs (cdr rest) env))
                                     (walk-seq rest env)))
                               (loop (cdr cs)
                                     (or after-else else?)
@@ -1714,14 +1849,72 @@ Example:
           (and (hash-table-ref/default import-table name #f)
                (not (hash-table-ref/default top-defs name #f))))
 
+        (define (check-when-idioms node name test)
+          (let ((k (constant-test-kind test)))
+            (cond (k (report! 'constant-test
+                              node
+                              (if (eq? (eq? k 'true) (eq? name 'when))
+                                  (string-append "the test is always "
+                                                 (if (eq? k 'true) "true" "false")
+                                                 ": the "
+                                                 (symbol->string name)
+                                                 " is not needed")
+                                  (string-append "the test is always "
+                                                 (if (eq? k 'true) "true" "false")
+                                                 ": the body is never run"))))
+                  ((single-arg-not test)
+                   =>
+                   (lambda (inner)
+                     (report! 'when-not
+                              node
+                              (if (eq? name 'when)
+                                  "(when (not c) ...) is (unless c ...)"
+                                  "(unless (not c) ...) is (when c ...)")
+                              (list (replace-node (head-node node)
+                                                  (if (eq? name 'when)
+                                                      "unless"
+                                                      "when"))
+                                    (replace-node test (node-text inner)))))))))
+
+        (define (splice-and-fix c) (splice-fix c 'and))
+
+        (define (splice-fix c head)
+          ;; edits that turn (head a ...) into a ... where it stands
+          (let ((items (code-items c)))
+            (if (and (eq? (head-symbol c) head)
+                     (pair? (cdr items))
+                     (clean-node? c))
+                (list (list (node-start c) (node-start (cadr items)) "")
+                      (list (node-end (list-ref items (- (length items) 1)))
+                            (node-end c)
+                            ""))
+                '())))
+
         (define (check-if-idioms node args)
-          (let ((c (car args)))
-            (cond ((= (length args) 2)
-                   (report! 'if-without-else
+          (let ((c (car args))
+                (k (constant-test-kind (car args))))
+            (cond ((and (= (length args) 2)
+                        (false-literal? c)
+                        (false-literal? (cadr args)))
+                   (report! 'constant-test
                             node
-                            (if (eq? (head-symbol c) 'not)
-                                "one-armed if: use unless"
-                                "one-armed if: use when")))
+                            "(if #f #f) only makes the unspecified value: use a meaningful value (such as #f) or handle the case"))
+                  (k (report! 'constant-test
+                              node
+                              (if (eq? k 'true)
+                                  "the test is always true: the else branch is never taken"
+                                  "the test is always false: the then branch is never taken")))
+                  ((= (length args) 2)
+                   (let ((inner (single-arg-not c)))
+                     (report! 'if-without-else
+                              node
+                              (if inner
+                                  "one-armed if: use unless"
+                                  "one-armed if: use when")
+                              (if inner
+                                  (list (replace-node (head-node node) "unless")
+                                        (replace-node c (node-text inner)))
+                                  (list (replace-node (head-node node) "when"))))))
                   ((and (true-literal? (cadr args))
                         (false-literal? (caddr args)))
                    (report! 'if-boolean
@@ -1729,7 +1922,39 @@ Example:
                             "(if c #t #f) is c (when c is a boolean)"))
                   ((and (false-literal? (cadr args))
                         (true-literal? (caddr args)))
-                   (report! 'if-boolean node "(if c #f #t) is (not c)"))
+                   (report! 'if-boolean
+                            node
+                            "(if c #f #t) is (not c)"
+                            (if (clean-node? node)
+                                (list (replace-node (head-node node) "not")
+                                      (list (node-end c) (node-end (caddr args)) ""))
+                                '())))
+                  ((same-code? (cadr args) (caddr args))
+                   (report! 'if-same-branches
+                            node
+                            "both branches are the same: the test decides nothing"))
+                  ((false-literal? (caddr args))
+                   (report! 'if-and-or
+                            node
+                            "(if c x #f) is (and c x)"
+                            (if (clean-node? node)
+                                (append
+                                 (list (replace-node (head-node node) "and")
+                                       (list (node-end (cadr args))
+                                             (node-end (caddr args))
+                                             ""))
+                                 (splice-and-fix c))
+                                '())))
+                  ((and (symbol-node? c)
+                        (symbol-node? (cadr args))
+                        (eq? (node-symbol c) (node-symbol (cadr args))))
+                   (report! 'if-and-or
+                            node
+                            "(if x x y) is (or x y)"
+                            (if (clean-node? node)
+                                (list (replace-node (head-node node) "or")
+                                      (list (node-end c) (node-end (cadr args)) ""))
+                                '())))
                   (else (let loop ((e (caddr args))
                                    (depth 1))
                           (if (and (eq? (head-symbol e) 'if)
@@ -1755,6 +1980,15 @@ Example:
                         (cons (if (eq? h 'car) #\a #\d) letters))
                   (cons (reverse letters) n)))))
 
+        (define (drop-arg-fix node head first? args)
+          ;; (f a b) -> (head x), dropping the literal a (first?) or b
+          (if (clean-node? node)
+              (list (replace-node (head-node node) head)
+                    (if first?
+                        (list (node-start (car args)) (node-start (cadr args)) "")
+                        (list (node-end (car args)) (node-end (cadr args)) "")))
+              '()))
+
         (define (check-call-idioms node name args env)
           (let ((n (length args)))
             (case name
@@ -1771,22 +2005,50 @@ Example:
                                   (list->string (list-head* letters len))
                                   "r"))))
                        (when (visible? sugg)
-                         ;; mark the inner calls so they are not reported again
-                         (let mark ((m node) (k 0))
-                           (when (< k len)
-                             (hash-table-set! reported m #t)
-                             (mark (cadr (code-items m)) (+ k 1))))
-                         (report! 'cxr
-                                  node
-                                  (string-append "use "
-                                                 (symbol->string sugg)))))))))
+                         ;; mark the inner calls so they are not reported
+                         ;; again; the argument of the innermost marked
+                         ;; call is what the cxr applies to
+                         (let mark ((m node) (k 0) (clean? #t))
+                           (if (< k len)
+                               (begin
+                                 (hash-table-set! reported m #t)
+                                 (mark (cadr (code-items m))
+                                       (+ k 1)
+                                       (and clean? (clean-node? m))))
+                               (report! 'cxr
+                                        node
+                                        (string-append "use "
+                                                       (symbol->string sugg))
+                                        (if clean?
+                                            (list (replace-node
+                                                   node
+                                                   (string-append
+                                                    "("
+                                                    (symbol->string sugg)
+                                                    " "
+                                                    (node-text m)
+                                                    ")")))
+                                            '()))))))))))
               ((eq? eqv? equal?)
                (when (= n 2)
                  (cond ((or (empty-list-literal? (car args))
                             (empty-list-literal? (cadr args)))
                         (report! 'null-compare
                                  node
-                                 "comparison with '(): use null?"))
+                                 "comparison with '(): use null?"
+                                 (drop-arg-fix node
+                                               "null?"
+                                               (empty-list-literal? (car args))
+                                               args)))
+                       ((or (false-literal? (car args))
+                            (false-literal? (cadr args)))
+                        (report! 'false-compare
+                                 node
+                                 "comparison with #f: use not"
+                                 (drop-arg-fix node
+                                               "not"
+                                               (false-literal? (car args))
+                                               args)))
                        ((and (eq? name 'eq?)
                              (or (literal-kind (car args))
                                  (literal-kind (cadr args))))
@@ -1796,25 +2058,31 @@ Example:
                                    node
                                    (if (eq? k 'string)
                                        "eq? on a string literal: use string=? or equal?"
-                                       "eq? on a number or character: use eqv?")))))))
+                                       "eq? on a number or character: use eqv?")
+                                   (list (replace-node (head-node node)
+                                                       (if (eq? k 'string)
+                                                           "equal?"
+                                                           "eqv?")))))))))
               ((memq assq)
                (when (= n 2)
                  (let
                      ((k (or (literal-kind (car args))
                              (quoted-literal-elements-kind (cadr args)))))
                    (when k
-                     (report! 'eq-literal
-                              node
-                              (string-append
-                               (symbol->string name)
-                               " with "
-                               (if (eq? k 'string)
-                                   "strings"
-                                   "numbers or characters")
-                               ": use "
-                               (if (eq? name 'memq)
-                                   (if (eq? k 'string) "member" "memv")
-                                   (if (eq? k 'string) "assoc" "assv"))))))))
+                     (let ((sugg (if (eq? name 'memq)
+                                     (if (eq? k 'string) "member" "memv")
+                                     (if (eq? k 'string) "assoc" "assv"))))
+                       (report! 'eq-literal
+                                node
+                                (string-append
+                                 (symbol->string name)
+                                 " with "
+                                 (if (eq? k 'string)
+                                     "strings"
+                                     "numbers or characters")
+                                 ": use "
+                                 sugg)
+                                (list (replace-node (head-node node) sugg))))))))
               ((= > positive? zero?)
                (let ((len-arg? (lambda (a) (eq? (head-symbol a) 'length)))
                      (zero-lit? (lambda (a)
@@ -1840,13 +2108,33 @@ Example:
                (cond ((= n 1)
                       (report! 'redundant-call
                                node
-                               "append with one argument is that argument"))
+                               "append with one argument is that argument"
+                               (unwrap-fix node (car args))))
                      ((and (= n 2)
                            (eq? (head-symbol (car args)) 'list)
                            (= (length (code-items (car args))) 2))
                       (report! 'append-list
                                node
-                               "(append (list x) y) is (cons x y)"))))
+                               "(append (list x) y) is (cons x y)"
+                               (if (clean-node? (car args))
+                                   (list (replace-node (head-node node) "cons")
+                                         (replace-node
+                                          (car args)
+                                          (node-text
+                                           (cadr (code-items (car args))))))
+                                   '())))))
+              ((+ *)
+               (when (= n 1)
+                 (report! 'redundant-call
+                          node
+                          (string-append (symbol->string name)
+                                         " with one argument is that argument")
+                          (unwrap-fix node (car args)))))
+              ((map)
+               (when (and (= n 2) (identity-lambda? (car args)))
+                 (report! 'identity-lambda
+                          node
+                          "(map (lambda (x) x) l) only copies l: use l, or list-copy")))
               ((string-append)
                (when (= n 1)
                  (report! 'redundant-call
@@ -2509,10 +2797,21 @@ Example:
                 (when
                     (and (> len 0)
                          (memv (string-ref ln (- len 1)) '(#\space #\tab)))
-                  (emit 'trailing-whitespace
-                        line
-                        (- len 1)
-                        "trailing whitespace"))
+                  (let ((ws (let back ((k (- len 1)))
+                              (if (and (> k 0)
+                                       (memv (string-ref ln (- k 1))
+                                             '(#\space #\tab)))
+                                  (back (- k 1))
+                                  k))))
+                    (emit 'trailing-whitespace
+                          line
+                          (- len 1)
+                          "trailing whitespace"
+                          ;; not where a string starts (the spaces would be
+                          ;; part of it)
+                          (if (in-span? (- len 1))
+                              '()
+                              (list (list (+ start ws) (+ start len) ""))))))
                 (let tab ((k 0))
                   (when (< k len)
                     (if (and (char=? (string-ref ln k) #\tab)
@@ -2524,7 +2823,8 @@ Example:
           (emit 'missing-final-newline
                 1
                 0
-                "the file does not end with a newline"))))
+                "the file does not end with a newline"
+                (list (list n n "\n"))))))
 
     ;; ---- sorting checks --------------------------------------------
 
@@ -2653,15 +2953,16 @@ Example:
                                        (pair? ign)
                                        (memq (lint-finding-rule f) ign))))))
                             found))))
-        (define (emit rule line col message)
+        (define (emit rule line col message . fix)
           (when (memq rule enabled)
             (set! found
-                  (cons (make-lint-finding rule
-                                           (rule-severity rule)
-                                           file
-                                           line
-                                           col
-                                           message)
+                  (cons (make-lint-finding* rule
+                                            (rule-severity rule)
+                                            file
+                                            line
+                                            col
+                                            message
+                                            (if (pair? fix) (car fix) '()))
                         found))))
         (let ((cst (guard (e ((source-read-error-position e)
                               =>
@@ -2720,6 +3021,97 @@ Example:
               (if (null? l)
                   (merge (loop (reverse a)) (loop (reverse b)))
                   (split (cdr l) (cons (car l) b) a))))))
+
+    ;; ---- fixing ----------------------------------------------------
+
+    (define (line-starts text)
+      ;; vector of the offsets where the lines start (line 1 at index 0)
+      (let loop ((k 0) (acc '(0)))
+        (cond ((= k (string-length text)) (list->vector (reverse acc)))
+              ((char=? (string-ref text k) #\newline)
+               (loop (+ k 1) (cons (+ k 1) acc)))
+              (else (loop (+ k 1) acc)))))
+
+    (define (position->offset pos starts)
+      (if (pair? pos)
+          (+ (vector-ref starts (- (car pos) 1)) (cadr pos) (caddr pos))
+          pos))
+
+    (define (apply-edits text edits)
+      ;; edits: (from to text) with offsets, not overlapping
+      (let loop ((es (merge-sort edits (lambda (a b) (> (car a) (car b)))))
+                 (t text))
+        (if (null? es)
+            t
+            (let ((e (car es)))
+              (loop (cdr es)
+                    (string-append (substring t 0 (car e))
+                                   (caddr e)
+                                   (substring t (cadr e) (string-length t))))))))
+
+    (define (choose-fixes findings starts)
+      ;; -> list of edit lists, one per finding, whose spans do not overlap;
+      ;; of nested fixes the outer one is taken (the inner one comes in the
+      ;; next round)
+      (let* ((groups
+              (map (lambda (f)
+                     (let ((es (map (lambda (e)
+                                      (list (position->offset (car e) starts)
+                                            (position->offset (cadr e) starts)
+                                            (caddr e)))
+                                    (lint-finding-fix f))))
+                       (cons (cons (apply min (map car es))
+                                   (apply max (map cadr es)))
+                             es)))
+                   (filter-nodes lint-finding-fixable? findings)))
+             (sorted (merge-sort groups
+                                 (lambda (a b)
+                                   (or (< (caar a) (caar b))
+                                       (and (= (caar a) (caar b))
+                                            (> (cdar a) (cdar b))))))))
+        (let loop ((gs sorted) (end -1) (acc '()))
+          (cond ((null? gs) (reverse acc))
+                ((and (>= (caar (car gs)) end)
+                      ;; two insertions at the same place: only one
+                      (not (and (= (caar (car gs)) end)
+                                (= (cdar (car gs)) end))))
+                 (loop (cdr gs) (cdar (car gs)) (cons (cdr (car gs)) acc)))
+                (else (loop (cdr gs) end acc))))))
+
+    (define (lint-fix-string text file . maybe-opts)
+      "Syntax: (lint-fix-string text file [options])
+Library: (scm source lint)
+Description: Corrects the findings of lint-string that have a safe
+  rewrite (lint-finding-fixable?) and returns two values: the new text
+  and the number of fixes made. Fixes are applied in rounds until none is
+  left, since one fix can make another possible. Rules that are not
+  enabled and suppressed findings are not fixed. When the text was
+  formatted as scm fmt does it before, the result is formatted again, so
+  moved code is indented as before. A fix after which the text cannot be
+  read any more is not made.
+Example:
+  (lint-fix-string \"(import (scheme base))\\n(define (f x) (if x (car x)))\\n\"
+                   \"a.scm\")
+    => \"(import (scheme base))\\n(define (f x) (when x (car x)))\\n\" 1"
+      (let* ((opts (if (pair? maybe-opts) (car maybe-opts) '()))
+             (fopts (opt opts 'format-options '()))
+             (formatted? (guard (e (#t #f))
+                           (string=? text (format-source-string text fopts)))))
+        (define (readable? t)
+          (guard (e (#t #f)) (source-read-string t file) #t))
+        (let loop ((t text) (round 0) (count 0))
+          (let* ((chosen (if (< round 20)
+                             (choose-fixes (lint-string t file opts)
+                                           (line-starts t))
+                             '()))
+                 (new (and (pair? chosen)
+                           (apply-edits t (apply append chosen)))))
+            (if (and new (readable? new) (not (string=? new t)))
+                (loop new (+ round 1) (+ count (length chosen)))
+                (values (if (and formatted? (> count 0))
+                            (guard (e (#t t)) (format-source-string t fopts))
+                            t)
+                        count))))))
 
     ;; ---- cross references ------------------------------------------
 
@@ -2792,7 +3184,7 @@ Example:
                (begin
                  (analyze cst file
                           (cons (cons 'xref sink) opts)
-                          (lambda (rule line col message) #f))
+                          (lambda (rule line col message . fix) #f))
                  (sort-xrefs (map (lambda (x)
                                     (if
                                      (and
@@ -2845,10 +3237,17 @@ directory (searched for *.scm and *.sld).
   --format FORMAT     text (default) or json
   --width N           line width for line-too-long (default 78)
   --fmt-check         also report files scm fmt would change
+  --fix               correct the findings that have a safe rewrite in
+                      place and report the rest
   --exclude GLOB      skip matching files and directories (repeatable)
   --quiet             no summary line
   --list-rules        list the rules and exit
   --help              this text
+
+Fixable rules: if-without-else, when-not, true-clause, if-and-or,
+if-boolean ((if c #f #t) only), false-compare, null-compare, eq-literal,
+cxr, append-list, redundant-call (not string-append), begin-single,
+empty-let, let-identity, trailing-whitespace, missing-final-newline.
 
 Settings come from the nearest scm-tools.toml ([lint] table); options
 given here are added. A `;; lint: disable RULE ...` comment switches rules
@@ -2930,6 +3329,14 @@ Example:
                                    fail-on
                                    excludes
                                    #t))
+                            ((string=? a "--fix")
+                             (loop (cdr as)
+                                   (cons '(fix . #t) over)
+                                   paths
+                                   fmt
+                                   fail-on
+                                   excludes
+                                   quiet?))
                             ((string=? a "--fmt-check")
                              (loop (cdr as)
                                    (cons '(fmt-check . #t) over)
@@ -3023,8 +3430,23 @@ Example:
                                         excludes
                                         quiet?))))))))
 
+    (define (fix-file! file opts quiet?)
+      ;; -> the findings left after fixing file in place
+      (let ((text (read-file-string file)))
+        (let-values (((new count) (lint-fix-string text file opts)))
+          (when (> count 0)
+            (call-with-output-file file (lambda (p) (write-string new p)))
+            (unless quiet?
+              (write-string (string-append file
+                                           ": "
+                                           (number->string count)
+                                           (if (= count 1) " fix" " fixes")
+                                           "\n")
+                            (current-error-port))))
+          (lint-string new file opts))))
+
     (define (run-lint paths over fmt fail-on excludes quiet?)
-      (let ((all '()) (files 0) (missing 0))
+      (let ((all '()) (files 0) (missing 0) (fix? (opt over 'fix #f)))
         (for-each (lambda (path)
                     (if (or (file-exists? path) (directory-exists? path))
                         (for-each (lambda (file)
@@ -3050,10 +3472,15 @@ Example:
                                                      "cannot check: "
                                                      (error-object-message e))
                                                     "cannot check")))))
-                                             (lint-string
-                                              (read-file-string file)
-                                              file
-                                              (lint-options file over))))))
+                                             (if fix?
+                                                 (fix-file!
+                                                  file
+                                                  (lint-options file over)
+                                                  quiet?)
+                                                 (lint-string
+                                                  (read-file-string file)
+                                                  file
+                                                  (lint-options file over)))))))
                                       (when (eq? fmt 'text)
                                         (write-string
                                          (lint-findings->text fs)))
