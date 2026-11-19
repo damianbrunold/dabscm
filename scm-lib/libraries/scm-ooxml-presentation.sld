@@ -212,8 +212,7 @@ Description: The speaker notes of the slide (paragraphs as for text)."
                                         (list key name source content-type))))
               name))))
 
-    (define (media-key source key)
-      (or key (if (string? source) source source)))
+    (define (media-key source key) (or key source))
 
     ;; --- text -----------------------------------------------------------
 
@@ -445,8 +444,8 @@ Description: The speaker notes of the slide (paragraphs as for text)."
       "Syntax: (slide-add-shape! slide kind x y w h [options])
 Library: (scm ooxml presentation)
 Description: Adds a shape: kind is rect, rounded, ellipse, triangle,
-  arrow (pointing right), chevron, or text (a rectangle without fill or
-  outline, for text boxes). options is an alist: (fill . color),
+  arrow (pointing right), chevron, or text (a rectangle for text boxes).
+  Like the other kinds it has no fill or outline unless given. options is an alist: (fill . color),
   (fill-alpha . 0..1), (line . color), (line-width . emu), (rotation .
   degrees), (text . paragraphs), (anchor . top | middle | bottom),
   (insets . (left top right bottom)) the space in EMU between the edge
@@ -476,11 +475,8 @@ Example:
                         "<p:nvPr/></p:nvSpPr><p:spPr>"
                         (xfrm x y w h (opt opts 'rotation 0))
                         (geometry (if text-box? 'rect kind) w h)
-                        (if text-box?
-                            (color-fill (opt opts 'fill #f)
-                                        (opt opts 'fill-alpha #f))
-                            (color-fill (opt opts 'fill #f)
-                                        (opt opts 'fill-alpha #f)))
+                        (color-fill (opt opts 'fill #f)
+                                    (opt opts 'fill-alpha #f))
                         (line-xml (opt opts 'line #f)
                                   (opt opts 'line-width #f))
                         "</p:spPr>"

@@ -125,8 +125,8 @@ Description: Adds a picture: source is a bytevector or the path of a
 Syntax: (slide-add-shape! slide kind x y w h [options])
 Library: (scm ooxml presentation)
 Description: Adds a shape: kind is rect, rounded, ellipse, triangle,
-  arrow (pointing right), chevron, or text (a rectangle without fill or
-  outline, for text boxes). options is an alist: (fill . color),
+  arrow (pointing right), chevron, or text (a rectangle for text boxes).
+  Like the other kinds it has no fill or outline unless given. options is an alist: (fill . color),
   (fill-alpha . 0..1), (line . color), (line-width . emu), (rotation .
   degrees), (text . paragraphs), (anchor . top | middle | bottom),
   (insets . (left top right bottom)) the space in EMU between the edge

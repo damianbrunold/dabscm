@@ -1246,11 +1246,9 @@ Example:
                        (exact? (if (eq? exact-opt 'auto)
                                    (and (< n 50) (null? ties) (not zeros?))
                                    exact-opt))
-                       (method (if paired
-                                   "Wilcoxon signed rank"
-                                   "Wilcoxon signed rank"))
+                       ;; one sample, or paired (x - y, as R does)
                        (method (string-append
-                                method
+                                "Wilcoxon signed rank"
                                 (if exact?
                                     " exact test"
                                     (if correct
