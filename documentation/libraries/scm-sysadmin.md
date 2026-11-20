@@ -1269,7 +1269,7 @@ Example:
 ```
 Syntax: (run-program cmd [options])
 Library: (scm system)
-Description: Executes the external program specified as a list (program arg1 arg2 ...), waits for it to complete, and returns its exit code as an exact integer. options is an alist with optional keys: 'work-dir <path>, 'env <alist of (name value) string pairs added to the child environment>. Returns #f on failure.
+Description: Executes the external program specified as a list (program arg1 arg2 ...), waits for it to complete, and returns its exit code as an exact integer. The program inherits the caller's standard input, output and error (so it can use the terminal; start-program gives it a private stdin instead). options is an alist with optional keys: 'work-dir <path>, 'env <alist of (name value) string pairs added to the child environment>. Returns #f on failure.
 Example:
   (run-program '("echo" "hello")) => 0
 ```

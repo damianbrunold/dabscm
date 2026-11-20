@@ -18,7 +18,7 @@ public class PrimitiveRunProgram extends Primitive {
     public String info() {
         return "Syntax: (run-program cmd [options])\n" +
                "Library: (scm system)\n" +
-               "Description: Executes the external program specified as a list (program arg1 arg2 ...), waits for it to complete, and returns its exit code as an exact integer. options is an alist with optional keys: 'work-dir <path>, 'env <alist of (name value) string pairs added to the child environment>. Returns #f on failure.\n" +
+               "Description: Executes the external program specified as a list (program arg1 arg2 ...), waits for it to complete, and returns its exit code as an exact integer. The program inherits the caller's standard input, output and error (so it can use the terminal; start-program gives it a private stdin instead). options is an alist with optional keys: 'work-dir <path>, 'env <alist of (name value) string pairs added to the child environment>. Returns #f on failure.\n" +
                "Example:\n" +
                "  (run-program '(\"echo\" \"hello\")) => 0";
     }
@@ -54,6 +54,11 @@ public class PrimitiveRunProgram extends Primitive {
                 ProcessUtil.applyEnv(pb, options);
             }
 
+            // The child runs in the foreground: it shares our stdin as well
+            // (the JDK's default is a private pipe, so a child never saw the
+            // terminal and e.g. a TUI started via run-program fell back to
+            // plain output). start-program keeps the private pipe.
+            pb.redirectInput(Redirect.INHERIT);
             pb.redirectOutput(Redirect.INHERIT);
             pb.redirectError(Redirect.INHERIT);
             var process = pb.start();
