@@ -168,12 +168,14 @@ pub const @"%cdr" = WD("cdr", cdrImpl, 1, 1);
 
 fn setCarImpl(t: *Thread) Err!Word {
     rt.ptr(try checkPair(t, "set-car!", arg(t, 0)))[1] = arg(t, 1);
+    rt.barrier(t, arg(t, 0), arg(t, 1));
     return rt.UNSPEC;
 }
 pub const @"%set-car!" = WD("set-car!", setCarImpl, 2, 2);
 
 fn setCdrImpl(t: *Thread) Err!Word {
     rt.ptr(try checkPair(t, "set-cdr!", arg(t, 0)))[2] = arg(t, 1);
+    rt.barrier(t, arg(t, 0), arg(t, 1));
     return rt.UNSPEC;
 }
 pub const @"%set-cdr!" = WD("set-cdr!", setCdrImpl, 2, 2);
@@ -552,6 +554,7 @@ pub const @"%vector-ref" = WD("vector-ref", vectorRef, 2, 2);
 fn vectorSet(t: *Thread) Err!Word {
     const v = try vectorArg(t, 0);
     data.vectorItems(v)[try vectorIndex(t, "vector-set!", v)] = arg(t, 2);
+    rt.barrier(t, v, arg(t, 2));
     return rt.UNSPEC;
 }
 pub const @"%vector-set!" = WD("vector-set!", vectorSet, 3, 3);
@@ -563,6 +566,7 @@ pub const @"%vector-length" = WD("vector-length", vectorLength, 1, 1);
 
 fn vectorFill(t: *Thread) Err!Word {
     @memset(data.vectorItems(try vectorArg(t, 0)), arg(t, 1));
+    rt.barrier(t, arg(t, 0), arg(t, 1));
     return rt.UNSPEC;
 }
 pub const @"%vector-fill!" = WD("vector-fill!", vectorFill, 2, 2);

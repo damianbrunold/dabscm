@@ -97,6 +97,12 @@ pub const F_LARGE: u8 = 1; // in the large-object space
 pub const F_MARK: u8 = 2; // large object reached during this collection
 pub const F_PRIM: u8 = 4; // closure of a primitive
 pub const F_PERM: u8 = 8; // large object that is never freed (a constant)
+pub const F_ESCAPE: u8 = 32; // closure whose one parameter is only called (an escape-only receiver)
+
+/// Mark a procedure as an escape-only receiver (compiled code)
+pub inline fn markEscapeOnly(w: Word) void {
+    ptr(w)[0] |= @as(Word, F_ESCAPE) << 8;
+}
 
 pub inline fn hdr(ty: u8, len: u64) Word {
     return (len << 16) | ty;
@@ -177,6 +183,9 @@ pub const Thread = extern struct {
     prim_name_ptr: [*]const u8 = "",
     prim_name_len: usize = 0,
     exit_code: u8 = 0,
+    /// set by allocations outside the nursery: a collection is due at the
+    /// next poll (or reserve)
+    gc_requested: u8 = 0,
 
     /// Make sure `n` words can be pushed.
     pub inline fn ensureStack(t: *Thread, n: usize) void {
@@ -186,6 +195,11 @@ pub const Thread = extern struct {
     /// Make sure there is room for `n` arguments.
     pub inline fn ensureArgs(t: *Thread, n: usize) void {
         if (n > t.args_len) impl.scm_grow_args(t, n);
+    }
+
+    /// A safepoint: collect if a collection was requested
+    pub inline fn poll(t: *Thread) void {
+        if (t.gc_requested != 0) impl.scm_gc(t, 0);
     }
 
     /// Make sure `n` words can be bump-allocated without a collection.
@@ -314,6 +328,7 @@ pub const impl = if (@hasDecl(root, "scm_runtime")) root.scm_runtime else struct
     pub extern fn scm_missing_primitive(name: [*]const u8, len: usize) Word;
     pub extern fn scm_not_procedure_code(t: *Thread) callconv(.c) void;
     pub extern fn scm_error_code(t: *Thread) callconv(.c) void;
+    pub extern fn scm_remember(obj: Word) void;
 };
 
 /// Prepare a call of procedure `p` and return its code.
@@ -337,6 +352,16 @@ pub inline fn enterCell(t: *Thread, cell: *const Word, comptime name: []const u8
 pub inline fn retCode(t: *Thread) Code {
     const info: *const RetInfo = @ptrFromInt(t.stack[t.sp - 1]);
     return info.code;
+}
+
+/// The write barrier: after storing val into obj (a mutation), an old obj
+/// holding a young val is remembered (see the collector in rt.zig)
+pub inline fn barrier(t: *const Thread, obj: Word, val: Word) void {
+    if (isYoung(t, val) and !isYoung(t, obj)) impl.scm_remember(obj);
+}
+
+pub inline fn isYoung(t: *const Thread, w: Word) bool {
+    return isPtr(w) and (w -% @intFromPtr(t.heap)) < t.heap_len * 8;
 }
 
 /// Use a value whose result is not needed (compiled code).

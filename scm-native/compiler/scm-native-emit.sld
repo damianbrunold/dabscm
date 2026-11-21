@@ -91,6 +91,10 @@
     (define (globals-array sym) (cat "scml_" sym "_g"))
 
     (define (implemented? name) (assq name primitive-names))
+    (define (allocating-leaf? name)
+      (let ((p (assq name primitive-names)))
+        (and p (or (string=? (cadr p) "prims_num")
+                   (memq name '(sin cos tan asin acos atan log gensym string->symbol))))))
     (define (value-primitive? name) (eq? (caddr (assq name primitive-names)) 'value))
 
     ;; The runtime's symbol of an implemented primitive (declared extern)
@@ -120,15 +124,19 @@
     ;; --- blocks ------------------------------------------------------------
 
     (define-record-type block
-      (%make-block name prologue lines alloc dyn-alloc)
+      (%make-block name prologue lines alloc dyn-alloc unreserved)
       block?
       (name block-name)
       (prologue block-prologue set-block-prologue!)
       (lines block-lines set-block-lines!)
       (alloc block-alloc set-block-alloc!)
-      (dyn-alloc block-dyn-alloc set-block-dyn-alloc!))
+      (dyn-alloc block-dyn-alloc set-block-dyn-alloc!)
+      ;; may allocate outside the nursery (arithmetic, leaf primitives): such
+      ;; allocation requests a collection, which the block's entry checks
+      (unreserved block-unreserved? set-block-unreserved!))
 
-    (define (make-block name) (%make-block name '() '() 0 #f))
+    (define (make-block name) (%make-block name '() '() 0 #f #f))
+    (define (unreserved! b) (set-block-unreserved! b #t))
 
     (define (emit! b . pieces)
       (set-block-lines! b (cons (apply cat "    " pieces) (block-lines b))))
@@ -144,6 +152,11 @@
              (reserve (cond ((and dyn (> n 0)) (list (cat "    t.reserve(" dyn " + " n ");")))
                             (dyn (list (cat "    t.reserve(" dyn ");")))
                             ((> n 0) (list (cat "    t.reserve(" n ");")))
+                            ;; a requested collection happens at the next
+                            ;; procedure entry (or loop head): every unbounded
+                            ;; computation passes through one
+                            ((and (block-unreserved? b) (char=? (string-ref (block-name b) 0) #\L))
+                             (list "    t.poll();"))
                             (else '()))))
         (set! blocks
               (cons (apply cat
@@ -253,6 +266,7 @@
         ((lset)
          (let ((a (cg-simple (caddr e) b env)))
            (emit! b "rt.ptr(" (lookup env (cadr e)) ")[1] = " a ";")
+           (emit! b "rt.barrier(t, " (lookup env (cadr e)) ", " a ");")
            ;; set! returns the value (as the JVM implementation)
            a))
         ((gset)
@@ -375,8 +389,33 @@
         (unless (member name statics-made)
           (set! statics-made (cons name statics-made))
           (add-static! (cat "var " name ": Word = undefined;"))
-          (add-init! (cat "    " name " = rt.staticProc(&" (gen-lambda l) ");")))
+          (add-init! (cat "    " name " = rt.staticProc(&" (gen-lambda l) ");"))
+          (when (escape-only? l) (add-init! (cat "    rt.markEscapeOnly(" name ");"))))
         name))
+
+    ;; An escape-only receiver (as the JVM implementation's Jit.escapeOnly):
+    ;; one parameter, which the body only calls directly; nested lambdas do
+    ;; not refer to it. call/cc gives such a receiver an escape continuation.
+    (define (escape-only? l)
+      (and (= (length (lam-params l)) 1)
+           (not (lam-rest l))
+           (let ((k (car (lam-params l))))
+             (and (not (var-assigned? k)) (only-called? (lam-body l) k)))))
+
+    (define (only-called? e k)
+      (case (node-kind e)
+        ((const gref primref) #t)
+        ((lref) (not (eq? (cadr e) k)))
+        ((lambda) (not (memq k (lam-free (cadr e)))))
+        ((call) (and (or (and (eq? (node-kind (cadr e)) 'lref) (eq? (cadr (cadr e)) k))
+                         (only-called? (cadr e) k))
+                     (every (lambda (a) (only-called? a k)) (cddr e))))
+        ((prim) (every (lambda (a) (only-called? a k)) (cddr e)))
+        ((if seq) (every (lambda (a) (only-called? a k)) (cdr e)))
+        ((lset gset gdef) (only-called? (caddr e) k))
+        ((let letrec) (and (every (lambda (b) (only-called? (cadr b) k)) (cadr e))
+                           (only-called? (caddr e) k)))
+        (else #f)))
     (define statics-made '())
 
     (define (cg-closure l b env)
@@ -386,7 +425,9 @@
             (alloc! b (+ 2 (length (lam-free l))))
             (emit! b "const " c " = t.closure(&" (gen-lambda l) ", " (length (lam-free l)) ");")
             (fill-closure! c l b env)
-            (temp! b (cat "rt.tagPtr(" c ")")))))
+            (let ((v (temp! b (cat "rt.tagPtr(" c ")"))))
+              (when (escape-only? l) (emit! b "rt.markEscapeOnly(" v ");"))
+              v))))
 
     ;; --- open-coded primitives ---------------------------------------------
 
@@ -402,6 +443,7 @@
         (cat "return @call(.always_tail, rt.arithError(t, \"" name "\", " (a 0) ", " (a 1) "), .{t})"))
       ;; a flonum result needs no reservation (rt.safeFlo)
       (define (arith fn name)
+        (unreserved! b)
         (temp! b (cat "rt.num." fn "(t, " (a 0) ", " (a 1) ") orelse " (arith-fail name))))
       (define (cmp c name)
         (pred (cat "rt.num.cmp(" (a 0) ", " (a 1) ", ." c ") orelse " (arith-fail name))))
@@ -415,6 +457,7 @@
         ((set-car! set-cdr!)
          (emit! b "if (!rt.isPair(" (a 0) ")) " (type-fail (symbol->string op)) ";")
          (emit! b "rt.ptr(" (a 0) ")[" (if (eq? op 'set-car!) 1 2) "] = " (a 1) ";")
+         (emit! b "rt.barrier(t, " (a 0) ", " (a 1) ");")
          "rt.UNSPEC")
         ((pair?) (pred (cat "rt.isPair(" (a 0) ")")))
         ((null?) (pred (cat (a 0) " == rt.NIL")))
@@ -434,6 +477,7 @@
          (temp! b (cat "rt.data.vref(" (a 0) ", " (a 1) ") orelse " (vector-fail "vector-ref"))))
         ((vector-set!)
          (emit! b "if (!rt.data.vset(" (a 0) ", " (a 1) ", " (a 2) ")) " (vector-fail "vector-set!") ";")
+         (emit! b "rt.barrier(t, " (a 0) ", " (a 2) ");")
          "rt.UNSPEC")
         ((vector-length)
          (emit! b "if (!rt.data.isVector(" (a 0) ")) " (type-fail "vector-length") ";")
@@ -454,6 +498,7 @@
                 "return @call(.always_tail, rt.fail(t, \"modifier applied to bad value\", &.{"
                 (a 2) ", " (a 4) ", " (a 0) "}), .{t});")
          (emit! b "rt.ptr(" (a 0) ")[1 + " (record-index (list-ref args-nodes 3)) "] = " (a 1) ";")
+         (emit! b "rt.barrier(t, " (a 0) ", " (a 1) ");")
          "rt.UNSPEC")
         ((%record-is)
          (pred (cat "rt.isObj(" (a 0) ", rt.T_RECORD) and rt.ptr(" (a 0) ")[1] == " (a 1))))
@@ -482,6 +527,8 @@
     ;; A direct call of a leaf primitive: arguments in t.args, the value
     ;; returned (UNBOUND for an error, which is pending in the thread)
     (define (cg-leaf-call name as b)
+      ;; numeric leaf primitives may make flonums and bignums
+      (when (allocating-leaf? name) (unreserved! b))
       (let ((n (length as))
             (sym (mangle "scmd_" (symbol->string name))))
         (add-extern! (cat "extern fn " sym "(t: *Thread) callconv(.c) Word;"))

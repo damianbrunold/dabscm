@@ -127,9 +127,22 @@ The emitter adds:
   bignums from the large-object space; neither collects. An allocation outside the nursery
   requests a collection by lowering `hlimit` to the heap base, and a loop's heap check notices
   that.
-- **Heap sizing:** after a collection, two thirds of the nursery stay free (about three times
-  the live data). `SCM_NATIVE_GC_STATS=1` prints the number of collections and the heap size
-  at exit.
+- **A generational collector** (`rt.zig`):
+  - **Nursery:** 8 MB, its top quarter for flonums; compiled code bump-allocates in it.
+  - **Minor collections** promote the nursery's survivors into the old space. Their roots
+    include the remembered set: old objects into which a young pointer was stored, kept by a
+    write barrier (`abi.barrier`) at every mutation.
+  - **Major collections** copy everything live into a new old space of about three times the
+    live data, and sweep the large-object space.
+  - **Requested collections:** allocations outside the nursery request a collection, which
+    happens at the next procedure entry (`t.poll()`), loop head or reservation; every
+    unbounded computation passes through one.
+  - `SCM_NATIVE_GC_STATS=1` prints the numbers of collections at exit.
+- **Escape continuations:** a `call/cc` receiver with one parameter that it only calls
+  directly (the JVM implementation's escape-only rule) is marked by the compiler.
+  `library.scm`'s `call/cc` then gives it an escape continuation: a marker frame with a stamp,
+  where invoking the continuation cuts the stack back to the marker instead of copying the
+  stack. At a stack depth of 10,000, 10,000 escapes take 1.2 ms instead of 83 ms.
 - **Loops:** a named `let` whose name is only called in tail position, in a body without
   non-tail calls, becomes a Zig `while` loop. The parameters become variables, and a self
   call becomes assignments and `continue`. If the body allocates, every iteration checks the
@@ -141,17 +154,17 @@ The emitter adds:
 
 | benchmark | JVM | native | speedup |
 |---|---|---|---|
-| fib30 | 37.4 ms | 14.8 ms | 3× |
+| fib30 | 37.4 ms | 14.9 ms | 3× |
 | tak | 1.05 ms | 0.44 ms | 2× |
-| ctak (call/cc) | 122 ms | 13.8 ms | 9× |
-| nqueens8 | 1.92 ms | 0.36 ms | 5× |
-| loops (named let, do, vectors) | 359 ms | 7.1 ms | 50× |
-| lists (map, filter, for-each, apply) | 791 ms | 67 ms | 12× |
-| strings (string ports, chars) | 222 ms | 53.8 ms | 4× |
-| records (define-record-type) | 569 ms | 13.3 ms | 43× |
-| sorting (list-sort) | 487 ms | 69.9 ms | 7× |
+| ctak (call/cc) | 122 ms | 6.9 ms | 18× |
+| nqueens8 | 1.92 ms | 0.32 ms | 6× |
+| loops (named let, do, vectors) | 359 ms | 5.8 ms | 62× |
+| lists (map, filter, for-each, apply) | 791 ms | 46.5 ms | 17× |
+| strings (string ports, chars) | 222 ms | 51 ms | 4× |
+| records (define-record-type) | 569 ms | 8.0 ms | 71× |
+| sorting (list-sort) | 487 ms | 71 ms | 7× |
 | assocs (assv) | 99.8 ms | 30.8 ms | 3× |
-| floats | 223 ms | 38.8 ms | 6× |
+| floats | 223 ms | 37.4 ms | 6× |
 
 Times vary between runs by 10 to 20%.
 

@@ -282,6 +282,8 @@ pub fn makeRect(t: *Thread, re: Word, im: Word) Word {
     q[0] = rt.hdr(rt.T_COMPNUM, 2) | (@as(Word, rt.F_LARGE) << 8);
     q[1] = re;
     q[2] = im;
+    // the parts may be young flonums
+    rt.remember(rt.tagPtr(q));
     return rt.tagPtr(q);
 }
 

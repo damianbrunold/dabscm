@@ -43,9 +43,10 @@ pub const @"%%winders-set!" = WD("%winders-set!", windersSet, 1, 1);
 pub const @"%%exception-handlers-get" = WD("%exception-handlers-get", handlersGet, 0, 0);
 pub const @"%%exception-handlers-set!" = WD("%exception-handlers-set!", handlersSet, 1, 1);
 
-pub const @"%%call-with-escape-continuation" = &rt.callccCode;
-fn escapeOnly(_: *Thread) Err!Word {
-    return rt.FALSE;
+pub const @"%%call-with-escape-continuation" = &rt.callEscapeCode;
+fn escapeOnly(t: *Thread) Err!Word {
+    const f = arg(t, 0);
+    return rt.boolean(rt.isProcedure(f) and rt.hdrFlags(rt.ptr(f)[0]) & rt.F_ESCAPE != 0);
 }
 pub const @"%%escape-only-receiver?" = WD("%escape-only-receiver?", escapeOnly, 1, 1);
 
@@ -106,6 +107,7 @@ fn parameterCode(t: *Thread) callconv(.c) void {
         0 => t.val = b[1],
         1 => {
             b[1] = t.args[0];
+            rt.barrier(t, t.free(0), t.args[0]);
             t.val = rt.UNSPEC;
         },
         else => return @call(.always_tail, rt.arityError(t), .{t}),
@@ -133,6 +135,7 @@ fn recordSet(t: *Thread) Err!Word {
     const r = arg(t, 0);
     if (!data.isRecord(r)) return raise(t, "record-set!: not a record", &.{r});
     data.recordSlots(r)[try P.index(t, arg(t, 1), data.recordSize(r))] = arg(t, 2);
+    rt.barrier(t, r, arg(t, 2));
     return rt.UNSPEC;
 }
 pub const @"%make-record" = WN("make-record", makeRecordImpl, 1, 1);
@@ -205,6 +208,7 @@ fn recordModifierCode(t: *Thread) callconv(.c) void {
     const x = t.args[0];
     if (!isInstance(x, t.free(0))) return @call(.always_tail, rt.fail(t, "modifier applied to bad value", &.{ t.free(0), t.free(2), x }), .{t});
     data.recordSlots(x)[@intCast(unfix(t.free(1)))] = t.args[1];
+    rt.barrier(t, x, t.args[1]);
     t.val = rt.UNSPEC;
     return @call(.always_tail, rt.retCode(t), .{t});
 }

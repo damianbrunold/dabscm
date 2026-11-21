@@ -70,6 +70,7 @@ pub fn widen(t: *Thread, s: Word) void {
     const src = bytes8(s);
     for (0..n) |i| dst[i] = src[i];
     ptr(s)[2] = tagPtr(b);
+    rt.barrier(t, s, tagPtr(b));
 }
 
 /// Append the UTF-8 encoding of string s to buf.

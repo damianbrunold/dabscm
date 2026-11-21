@@ -63,6 +63,7 @@ pub const F_LARGE = abi.F_LARGE;
 pub const F_MARK = abi.F_MARK;
 pub const F_PRIM = abi.F_PRIM;
 pub const F_PERM = abi.F_PERM;
+pub const F_ESCAPE = abi.F_ESCAPE;
 pub const hdr = abi.hdr;
 pub const hdrType = abi.hdrType;
 pub const hdrFlags = abi.hdrFlags;
@@ -81,6 +82,7 @@ pub const Special = abi.Special;
 pub const retCode = abi.retCode;
 pub const enter = abi.enter;
 pub const ignore = abi.ignore;
+pub const barrier = abi.barrier;
 
 // ---------------------------------------------------------------------------
 // Static objects: constants, symbols and primitive procedures. They never
@@ -106,7 +108,7 @@ var large: std.ArrayList([*]Word) = .empty;
 
 pub fn newThread() *Thread {
     const pa = std.heap.c_allocator;
-    const heap = pa.alloc(Word, 1 << 20) catch oom();
+    const heap = pa.alloc(Word, nursery_words) catch oom();
     const stack = pa.alloc(Word, 1 << 12) catch oom();
     const args = pa.alloc(Word, 256) catch oom();
     @memset(args, fix(0));
@@ -131,8 +133,13 @@ pub fn allocLarge(t: *Thread, n: usize) [*]Word {
     const mem = std.heap.c_allocator.alloc(Word, n) catch oom();
     large.append(std.heap.c_allocator, mem.ptr) catch oom();
     t.large_words += n;
-    // the collection happens at the next reserve
-    if (t.large_words > t.heap_len) t.hlimit = t.heap; // collect at the next check
+    large_since_major += n;
+    // a major collection (which sweeps this space) at the next check
+    if (large_since_major > @max(old_space.len, nursery_words)) {
+        major_requested = true;
+        t.hlimit = t.heap - 1;
+        t.gc_requested = 1;
+    }
     return mem.ptr;
 }
 
@@ -148,9 +155,9 @@ pub fn gcEntry(t: *Thread, need: usize) void {
     gc(t, need);
 }
 
-/// The nursery is the heap without its top eighth (the flonum area)
+/// The nursery is the heap without its top quarter (the flonum area)
 fn nurseryEnd(heap: []Word) [*]Word {
-    return heap.ptr + (heap.len - heap.len / 8);
+    return heap.ptr + (heap.len - heap.len / 4);
 }
 
 /// A flonum made where no words were reserved (arithmetic slow paths): from
@@ -164,7 +171,8 @@ pub fn safeFlo(t: *Thread, f: f64) Word {
     } else {
         q = allocLarge(t, 2);
         q[0] = hdr(T_FLONUM, 1) | (@as(Word, F_LARGE) << 8);
-        t.hlimit = t.heap; // collect at the next check (even reserve(0))
+        t.hlimit = t.heap - 1; // collect at the next check (even reserve(0))
+        t.gc_requested = 1;
     }
     q[1] = @bitCast(f);
     return tagPtr(q);
@@ -465,6 +473,48 @@ fn contCode(t: *Thread) callconv(.c) void {
     return @call(.always_tail, retCode(t), .{t});
 }
 
+// ---------------------------------------------------------------------------
+// Escape continuations: for receivers whose continuation is only called,
+// directly, in their own code (the compiler marks them, F_ESCAPE; see
+// %escape-only-receiver?). Capturing pushes a marker frame with a unique
+// stamp; calling the continuation cuts the stack back to the marker and
+// returns through it: no copying.
+
+var escape_stamp: i64 = 0;
+
+fn escapeMarkerReturn(t: *Thread) callconv(.c) void {
+    t.sp -= 2;
+    return @call(.always_tail, retCode(t), .{t});
+}
+const escape_marker: RetInfo = .{ .code = &escapeMarkerReturn, .size = 1 };
+
+pub fn callEscapeCode(t: *Thread) callconv(.c) void {
+    if (t.argc != 1) return @call(.always_tail, arityError(t), .{t});
+    t.reserve(4);
+    escape_stamp += 1;
+    t.ensureStack(2);
+    t.push(fix(escape_stamp));
+    t.pushRet(&escape_marker);
+    const k = t.closure(&escapeContCode, 2);
+    k[2] = fix(@intCast(t.sp));
+    k[3] = fix(escape_stamp);
+    const f = t.args[0];
+    t.args[0] = tagPtr(k);
+    t.argc = 1;
+    return @call(.always_tail, enter(t, f), .{t});
+}
+
+fn escapeContCode(t: *Thread) callconv(.c) void {
+    const at: usize = @intCast(unfix(t.free(0)));
+    const stamp = t.free(1);
+    if (at > t.sp or at < 2 or t.stack[at - 2] != stamp or t.stack[at - 1] != @intFromPtr(&escape_marker))
+        return @call(.always_tail, fail(t, "escape continuation called outside its extent", &.{}), .{t});
+    t.reserve(1 + t.argc);
+    t.val = valuesOf(t);
+    t.sp = at;
+    return @call(.always_tail, retCode(t), .{t});
+}
+
 /// (apply f arg ... list)
 pub fn applyCode(t: *Thread) callconv(.c) void {
     if (t.argc < 2) return @call(.always_tail, arityError(t), .{t});
@@ -484,16 +534,78 @@ pub fn applyCode(t: *Thread) callconv(.c) void {
 }
 
 // ---------------------------------------------------------------------------
-// Garbage collection: Cheney semispace copying for the heap, mark and sweep
-// for the large-object space.
+// Garbage collection: generational.
+//
+//   * The nursery (t.heap .. t.heap + t.heap_len, its top eighth the flonum
+//     area) holds new objects; compiled code bump-allocates in it.
+//   * A minor collection copies the nursery's survivors to the end of the old
+//     space (promotion) and empties the nursery. Its roots are the thread's
+//     roots, the module globals, the static objects, and the remembered set:
+//     old objects into which a young pointer was stored (the write barrier,
+//     abi.barrier, remembers them).
+//   * A major collection copies everything live (nursery and old space) into
+//     a new old space, Cheney style, and marks and sweeps the large-object
+//     space. It runs when the old space cannot take a nursery's promotion, or
+//     when the large-object space has grown (a collection request).
+
+const nursery_words = 1 << 20; // 8 MB
+
+var old_space: []Word = &.{};
+var old_hp: usize = 0; // index of the old space's free part
+var remembered: std.ArrayList([*]Word) = .empty;
+var major_requested = false;
+var large_since_major: usize = 0;
+pub var minor_count: u64 = 0;
+pub var major_count: u64 = 0;
+
+pub const F_REMEMBERED: u8 = 16;
+
+/// The write barrier's slow path: obj (not young) now holds a young pointer
+pub fn remember(obj: Word) void {
+    const q = ptr(obj);
+    if (hdrFlags(q[0]) & F_REMEMBERED != 0) return;
+    q[0] |= @as(Word, F_REMEMBERED) << 8;
+    remembered.append(std.heap.c_allocator, q) catch oom();
+}
 
 fn gc(t: *Thread, need: usize) void {
     t.gc_count += 1;
-    const from = t.heap[0..t.heap_len];
-    // Everything allocated fits into a space of the same size.
-    const to = std.heap.c_allocator.alloc(Word, @max(from.len, t.heap_target)) catch oom();
-    var g = Gc{ .from = from, .to = to, .free = 0 };
+    t.gc_requested = 0;
+    const used = (@intFromPtr(t.hp) - @intFromPtr(t.heap)) / 8 + (@intFromPtr(t.flo_ptr) - @intFromPtr(nurseryEnd(t.heap[0..t.heap_len]))) / 8;
+    if (major_requested or old_hp + used > old_space.len) {
+        major(t);
+    } else {
+        minor(t);
+    }
+    // a request larger than the nursery: a larger nursery (it is empty now)
+    if (need > nurseryCapacity(t)) {
+        const pa = std.heap.c_allocator;
+        pa.free(t.heap[0..t.heap_len]);
+        const n = @max(nursery_words, 2 * need + need / 4);
+        const heap = pa.alloc(Word, n) catch oom();
+        t.heap = heap.ptr;
+        t.heap_len = heap.len;
+    }
+    resetNursery(t);
+}
 
+fn nurseryCapacity(t: *Thread) usize {
+    return t.heap_len - t.heap_len / 4;
+}
+
+fn resetNursery(t: *Thread) void {
+    const heap = t.heap[0..t.heap_len];
+    t.hp = heap.ptr;
+    t.hlimit = nurseryEnd(heap);
+    t.flo_ptr = nurseryEnd(heap);
+}
+
+fn clearRemembered() void {
+    for (remembered.items) |q| q[0] &= ~(@as(Word, F_REMEMBERED) << 8);
+    remembered.clearRetainingCapacity();
+}
+
+fn scanRoots(t: *Thread, g: *Gc) void {
     for (t.args[0..t.args_len]) |*w| w.* = g.copy(w.*);
     t.self = g.copy(t.self);
     t.val = g.copy(t.val);
@@ -505,7 +617,35 @@ fn gc(t: *Thread, need: usize) void {
     for (t.err_irritants[0..t.err_n]) |*w| w.* = g.copy(w.*);
     g.scanFrames(t.stack[0..t.sp]);
     for (static_scan.items) |q| g.scanObject(q);
+}
 
+fn minor(t: *Thread) void {
+    minor_count += 1;
+    var g = Gc{ .young = t.heap[0..t.heap_len], .old = &.{}, .to = old_space, .free = old_hp, .major = false };
+    const promoted = old_hp;
+    scanRoots(t, &g);
+    for (remembered.items) |q| g.scanObject(q);
+    var scan = promoted;
+    while (scan < g.free) {
+        const q = old_space.ptr + scan;
+        g.scanObject(q);
+        scan += 1 + hdrLen(q[0]);
+    }
+    old_hp = g.free;
+    clearRemembered();
+}
+
+fn major(t: *Thread) void {
+    major_count += 1;
+    major_requested = false;
+    large_since_major = 0;
+    const pa = std.heap.c_allocator;
+    // the old space for everything live: as large as both spaces (the whole
+    // nursery: its flonum area too)
+    const size = @max(old_space.len + t.heap_len, t.heap_target);
+    const to = pa.alloc(Word, size) catch oom();
+    var g = Gc{ .young = t.heap[0..t.heap_len], .old = old_space, .to = to, .free = 0, .major = true };
+    scanRoots(t, &g);
     var scan: usize = 0;
     while (true) {
         if (scan < g.free) {
@@ -516,6 +656,8 @@ fn gc(t: *Thread, need: usize) void {
             g.scanObject(q);
         } else break;
     }
+    g.large_todo.deinit(pa);
+    clearRemembered();
 
     // sweep the large-object space
     var kept: usize = 0;
@@ -527,44 +669,51 @@ fn gc(t: *Thread, need: usize) void {
             kept += 1;
             words += 1 + hdrLen(q[0]);
         } else {
-            std.heap.c_allocator.free(q[0 .. 1 + hdrLen(q[0])]);
+            pa.free(q[0 .. 1 + hdrLen(q[0])]);
         }
     }
     large.items.len = kept;
     t.large_words = words;
-    g.large_todo.deinit(std.heap.c_allocator);
 
-    std.heap.c_allocator.free(from);
-    t.heap = to.ptr;
-    t.heap_len = to.len;
-    t.hp = to.ptr + g.free;
-    t.hlimit = nurseryEnd(to);
-    t.flo_ptr = nurseryEnd(to);
-    // Keep two thirds of the nursery free after a collection (a heap of
-    // about three times the live data): if not, collect again right away
-    // into a larger space.
-    if ((g.free + need) * 3 > to.len - to.len / 8) {
-        t.heap_target = 4 * (g.free + need) + to.len;
-        gc(t, need);
+    if (old_space.len > 0) pa.free(old_space);
+    old_space = to;
+    old_hp = g.free;
+    // keep the old space at about three times the live data, and room for a
+    // nursery's promotion
+    const want = 3 * g.free + 2 * nurseryCapacity(t);
+    if (want > t.heap_target) t.heap_target = want;
+    if (old_space.len - old_hp < nurseryCapacity(t)) {
+        // too small already: grow now (the nursery is empty: nothing moves into it)
+        major_requested = false;
+        resetNursery(t);
+        major(t);
     }
 }
 
 const Gc = struct {
-    from: []Word,
+    young: []Word,
+    old: []Word, // empty for a minor collection
     to: []Word,
     free: usize,
+    major: bool,
     large_todo: std.ArrayList([*]Word) = .empty,
+
+    inline fn in(region: []Word, a: usize) bool {
+        return a >= @intFromPtr(region.ptr) and a < @intFromPtr(region.ptr + region.len);
+    }
 
     fn copy(g: *Gc, w: Word) Word {
         if (!isPtr(w)) return w;
         const q = ptr(w);
         const a = @intFromPtr(q);
-        if (a < @intFromPtr(g.from.ptr) or a >= @intFromPtr(g.from.ptr + g.from.len)) {
-            // static or large
-            const flags = hdrFlags(q[0]);
-            if (flags & F_LARGE != 0 and flags & (F_MARK | F_PERM) == 0) {
-                q[0] |= @as(Word, F_MARK) << 8;
-                g.large_todo.append(std.heap.c_allocator, q) catch oom();
+        if (!in(g.young, a) and !(g.major and in(g.old, a))) {
+            // old (in a minor collection), static or large
+            if (g.major) {
+                const flags = hdrFlags(q[0]);
+                if (flags & F_LARGE != 0 and flags & (F_MARK | F_PERM) == 0) {
+                    q[0] |= @as(Word, F_MARK) << 8;
+                    g.large_todo.append(std.heap.c_allocator, q) catch oom();
+                }
             }
             return w;
         }
@@ -572,6 +721,7 @@ const Gc = struct {
         const n = 1 + hdrLen(q[0]);
         const dst = g.to.ptr + g.free;
         @memcpy(dst[0..n], q[0..n]);
+        dst[0] &= ~(@as(Word, F_REMEMBERED) << 8);
         g.free += n;
         const nw = tagPtr(dst);
         q[0] = hdr(T_FWD, hdrLen(q[0]));
@@ -628,7 +778,7 @@ pub fn start(list: abi.ModuleList, args: []const [:0]const u8) u8 {
     ports.flushAll();
     os.flush();
     if (os.getEnv("SCM_NATIVE_GC_STATS") != null)
-        os.eprint("gc: {d} collections, heap {d} words, large objects {d} words\n", .{ t.gc_count, t.heap_len, t.large_words });
+        os.eprint("gc: {d} minor, {d} major collections; old space {d} words ({d} used), large objects {d} words\n", .{ minor_count, major_count, old_space.len, old_hp, t.large_words });
     return t.exit_code;
 }
 

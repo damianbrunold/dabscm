@@ -1,0 +1,32 @@
+(import (scheme base) (scheme write))
+;; The write barrier: old objects (promoted by earlier collections) get
+;; young values; after many more collections, those must still be intact.
+(define (garbage n) (let loop ((i 0) (l '())) (if (= i n) (length l) (loop (+ i 1) (cons i l)))))
+(define v (make-vector 1000 #f))
+(define pairs (let loop ((i 0) (l '())) (if (= i 1000) l (loop (+ i 1) (cons (cons i i) l)))))
+(define-record-type box3 (make-box3 a) box3? (a box3-a set-box3-a!))
+(define r (make-box3 'old))
+(define counter
+  (let ((items '()))
+    (lambda (msg . x)
+      (if (eq? msg 'add) (set! items (cons (car x) items)) items))))
+(define p (make-parameter 'old))
+(define s (make-string 5 #\a))
+(garbage 2000000)                       ; promote everything above
+(let loop ((round 0))
+  (when (< round 50)
+    (vector-set! v (* round 10) (list 'v round (make-string 3 #\x)))
+    (set-car! (list-ref pairs round) (vector 'car round))
+    (set-cdr! (list-ref pairs round) (list 'cdr round))
+    (set-box3-a! r (list 'record round))
+    (counter 'add (cons 'closure round))
+    (p (list 'param round))
+    (string-set! s (remainder round 5) (integer->char (+ 955 round)))
+    (garbage 200000)                    ; several minor collections
+    (loop (+ round 1))))
+(write (list (vector-ref v 0) (vector-ref v 490) (list-ref pairs 49) (list-ref pairs 0)))
+(newline)
+(write (list (box3-a r) (length (counter 'get)) (car (counter 'get)) (p)))
+(newline)
+(write (map char->integer (string->list s)))
+(newline)
