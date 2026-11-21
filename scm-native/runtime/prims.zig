@@ -33,7 +33,8 @@ pub fn W(comptime f: fn (*Thread) Err!Word, comptime min: u64, comptime max: u64
 pub fn WN(comptime name: []const u8, comptime f: fn (*Thread) Err!Word, comptime min: u64, comptime max: u64) Code {
     const S = struct {
         fn code(t: *Thread) callconv(.c) void {
-            t.prim_name = name;
+            t.prim_name_ptr = name.ptr;
+            t.prim_name_len = name.len;
             if (t.argc < min or t.argc > max) return @call(.always_tail, rt.arityErrorN(t, if (t.argc < min) min else max, min != max and t.argc < min), .{t});
             t.val = f(t) catch return @call(.always_tail, rt.errorCode, .{t});
             return @call(.always_tail, rt.retCode(t), .{t});
@@ -59,7 +60,7 @@ pub fn typeError(t: *Thread, who: []const u8) Err {
 
 /// typeError for the running primitive
 pub fn argTypeError(t: *Thread) Err {
-    return typeError(t, t.prim_name);
+    return typeError(t, t.primName());
 }
 
 pub fn index(t: *Thread, w: Word, len: usize) Err!usize {
@@ -111,7 +112,7 @@ fn errorImpl(t: *Thread) Err!Word {
     const msg = arg(t, 0);
     var buf: std.ArrayList(u8) = .empty;
     printer.print(&buf, msg, false);
-    t.err_msg = buf.items;
+    t.setErrMsg(buf.items);
     t.err_n = @min(t.argc - 1, t.err_irritants.len);
     for (0..t.err_n) |i| t.err_irritants[i] = arg(t, i + 1);
     return error.Scheme;

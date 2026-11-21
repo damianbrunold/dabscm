@@ -59,16 +59,20 @@
     ;; --- modules -----------------------------------------------------------
 
     (define-record-type module
-      (%make-module name scope globals exports)
+      (%make-module name scope globals exports body)
       module?
       (name module-name)
       (scope module-scope)
+      (body module-body set-module-body!)            ; Core IR forms, reversed
       (globals module-globals set-module-globals!)   ; alist sym -> glob
       (exports module-exports set-module-exports!))  ; alist sym -> binding
 
     (define modules '())            ; name -> module, in load order
     (define scope->module '())      ; module scope -> module
-    (define init-forms '())         ; Core IR of all module bodies, reversed
+    (define completed '())          ; modules in initialization order, reversed
+
+    (define (add-body! m forms)
+      (set-module-body! m (append (reverse forms) (module-body m))))
     (define all-globs '())
     (define loading '())
     (define search-path '())
@@ -80,7 +84,7 @@
     (define (missing-primitives) missing)
 
     (define (new-module name)
-      (let ((m (%make-module name (fresh-scope) '() '())))
+      (let ((m (%make-module name (fresh-scope) '() '() '())))
         (set! scope->module (cons (cons (module-scope m) m) scope->module))
         (for-each (lambda (b) (bind! (car b) (list (module-scope m)) (cdr b))) core-bindings)
         m))
@@ -522,9 +526,10 @@
         (set! loading (cons '(scm core) loading))
         (let ((forms (append-map (lambda (f) (toplevel (wrap f (list (module-scope m)))))
                                  (read-file core-library-file))))
-          (set! init-forms (append (reverse forms) init-forms)))
+          (add-body! m forms))
         (set! loading (cdr loading))
         (set! modules (cons (cons '(scm core) m) modules))
+        (set! completed (cons m completed))
         (set! current saved)
         m))
 
@@ -541,7 +546,7 @@
               ((begin)
                (let ((forms (append-map (lambda (f) (toplevel (wrap f (list (module-scope m)))))
                                         (cdr d))))
-                 (set! init-forms (append (reverse forms) init-forms))))
+                 (add-body! m forms)))
               ((include include-ci)
                (for-each (lambda (f)
                            (decl! (cons 'begin (read-file (include-path f file)))))
@@ -565,7 +570,8 @@
                       ;; such as else) are not exported
                       (and b (cons dst b)))))
                 exports))
-          (set! modules (cons (cons name m) modules)))))
+          (set! modules (cons (cons name m) modules))
+          (set! completed (cons m completed)))))
 
     (define (define-library! form)
       (define-library-file! (strip form) #f))
@@ -619,5 +625,8 @@
                                   (set! current m)
                                   (toplevel (wrap f (list (module-scope m)))))
                                 (read-file file))))
-        (values `(seq ,@(reverse init-forms) ,@forms ,unspecified)
+        ;; the modules in initialization order: (name . body), the program last
+        (values (append (map (lambda (m) (cons (module-name m) `(seq ,@(reverse (module-body m)) ,unspecified)))
+                             (reverse completed))
+                        (list (cons 'program `(seq ,@forms ,unspecified))))
                 (reverse all-globs))))))

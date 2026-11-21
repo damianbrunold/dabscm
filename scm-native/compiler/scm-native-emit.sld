@@ -1,11 +1,13 @@
 (define-library (scm native emit)
-  (export emit-program)
+  (export emit-modules
+          mangle)
   (import (scheme base)
           (scheme char)
           (scheme cxr)
           (scheme inexact)
           (scheme write)
           (srfi 1)
+          (srfi 69)
           (scm native ast)
           (scm native anf)
           (scm native expand))
@@ -22,6 +24,12 @@
     ;;
     ;; Zig rejects unused and shadowed locals, so the emitter loads exactly
     ;; the variables a block refers to, and names every value uniquely.
+    ;;
+    ;; Every module (library or the program) becomes a Zig file of its own,
+    ;; compiled to an object separately (and cached by Zig). Its globals are
+    ;; the array scml_<module>_g; other modules refer to it as extern.
+    ;; Names within a module are numbered per module, so that a library's
+    ;; Zig code does not depend on the program it is compiled for.
 
     (define (cat . xs)
       (apply string-append
@@ -37,9 +45,14 @@
     (define blocks '())        ; finished block functions (strings)
     (define statics '())       ; file-level declarations (strings)
     (define init-lines '())    ; statements of init()
-    (define globals '())       ; (glob . index)
-    (define primitive-names '())
+    (define primitive-names '()) ; (name module kind): kind code or value
     (define primitive-procs '()) ; (name . zig-var) static procedures
+    (define module-sym #f)       ; the module being emitted, mangled
+    (define own-globals 0)       ; number of globals of the module so far
+    (define global-table (make-hash-table eq?)) ; glob -> (module-sym . index)
+    (define module-sizes '())    ; module-sym -> number of globals (finished)
+    (define externs '())         ; extern declarations of the module
+    (define local-ids (make-hash-table eq?))    ; var or lam -> number in the module
     (define constants '())     ; (datum . zig-name)
     (define counter 0)
 
@@ -50,14 +63,42 @@
     (define (add-static! s) (set! statics (cons s statics)))
     (define (add-init! s) (set! init-lines (cons s init-lines)))
 
-    (define (global-index g)
-      (cond ((assq g globals) => cdr)
-            (else
-             (let ((i (length globals)))
-               (set! globals (cons (cons g i) globals))
-               i))))
+    (define (add-extern! s) (unless (member s externs) (set! externs (cons s externs))))
+
+    ;; A per-module number for a variable or lambda (deterministic names)
+    (define (local-id x)
+      (or (hash-table-ref/default local-ids x #f)
+          (let ((n (next!)))
+            (hash-table-set! local-ids x n)
+            n)))
+
+    ;; The Zig place of global g: scml_<module>_g[index]
+    (define (global-place g)
+      (let ((entry (hash-table-ref/default global-table g #f)))
+        (cond (entry
+               (unless (string=? (car entry) module-sym)
+                 (add-extern! (cat "extern var " (globals-array (car entry)) ": ["
+                                   (max 1 (cdr (assoc (car entry) module-sizes))) "]Word;")))
+               (cat (globals-array (car entry)) "[" (cdr entry) "]"))
+              ((string=? (module-symbol (glob-lib g)) module-sym)
+               (let ((i own-globals))
+                 (set! own-globals (+ i 1))
+                 (hash-table-set! global-table g (cons module-sym i))
+                 (cat (globals-array module-sym) "[" i "]")))
+              (else (error "emit: global of a module not emitted yet" (glob-name g))))))
+
+    (define (globals-array sym) (cat "scml_" sym "_g"))
 
     (define (implemented? name) (assq name primitive-names))
+    (define (value-primitive? name) (eq? (caddr (assq name primitive-names)) 'value))
+
+    ;; The runtime's symbol of an implemented primitive (declared extern)
+    (define (prim-symbol name)
+      (let ((sym (mangle (if (value-primitive? name) "scmv_" "scmp_") (symbol->string name))))
+        (add-extern! (if (value-primitive? name)
+                         (cat "extern fn " sym "() callconv(.c) Word;")
+                         (cat "extern fn " sym "(t: *Thread) callconv(.c) void;")))
+        sym))
 
     ;; The static procedure object of a primitive (a file-level variable)
     (define (primitive-proc name)
@@ -66,15 +107,14 @@
              (let ((v (cat "p" (next!))))
                (set! primitive-procs (cons (cons name v) primitive-procs))
                (add-static! (cat "var " v ": Word = undefined;"))
-               (add-init! (if (implemented? name)
-                              (cat "    " v " = rt.primitive(" (prim-code name) ", \""
-                                   (zig-escape (symbol->string name)) "\");")
-                              (cat "    " v " = rt.missingPrimitive(\"" (zig-escape (symbol->string name)) "\");")))
+               (add-init! (cond ((not (implemented? name))
+                                 (cat "    " v " = rt.missingPrimitive(\"" (zig-escape (symbol->string name)) "\");"))
+                                ((value-primitive? name)
+                                 (cat "    " v " = " (prim-symbol name) "();"))
+                                (else
+                                 (cat "    " v " = rt.primitive(&" (prim-symbol name) ", \""
+                                      (zig-escape (symbol->string name)) "\");"))))
                v))))
-
-    ;; primitive-names: alist name -> runtime module
-    (define (prim-code name)
-      (cat "rt." (cdr (assq name primitive-names)) ".@\"%" (zig-escape (symbol->string name)) "\""))
 
     ;; --- blocks ------------------------------------------------------------
 
@@ -130,7 +170,7 @@
       (cond ((assq v env) => cadr)
             (else (error "emit: variable not in scope" (var-name v) (var-id v)))))
 
-    (define (local-name v) (cat "v" (var-id v)))
+    (define (local-name v) (cat "v" (local-id v)))
 
     (define (bind env v expr local?) (cons (list v expr local?) env))
 
@@ -203,11 +243,11 @@
            a))
         ((gset)
          (let ((a (cg-simple (caddr e) b env)))
-           (emit! b "t.globals[" (global-index (cadr e)) "] = " a ";")
+           (emit! b (global-place (cadr e)) " = " a ";")
            a))
         ((gdef)
          (let ((a (cg-simple (caddr e) b env)))
-           (emit! b "t.globals[" (global-index (cadr e)) "] = " a ";")
+           (emit! b (global-place (cadr e)) " = " a ";")
            "rt.UNSPEC"))
         ((lambda) (cg-closure (cadr e) b env))
         ((prim) (cg-prim (cadr e) (map (lambda (a) (cg-simple a b env)) (cddr e)) b))
@@ -252,8 +292,7 @@
            (when (local-expr? a) (emit! b "rt.ignore(" a ");"))))))
 
     (define (cg-gref g b)
-      (let* ((i (global-index g))
-             (v (temp! b (cat "t.globals[" i "]"))))
+      (let* ((v (temp! b (global-place g))))
         (emit! b "if (" v " == rt.UNBOUND) return @call(.always_tail, rt.unboundError(t, \""
                (zig-escape (glob-name g)) "\"), .{t});")
         v))
@@ -296,7 +335,7 @@
                                   (l (cadr (cadr bd))))
                              (if (null? (lam-free l))
                                  (bind env2 v (static-closure l) #f)
-                                 (let ((c (cat "cl" (var-id v))))
+                                 (let ((c (cat "cl" (local-id v))))
                                    (alloc! b (+ 2 (length (lam-free l))))
                                    (emit! b "const " c " = t.closure(&" (gen-lambda l) ", "
                                           (length (lam-free l)) ");")
@@ -306,7 +345,7 @@
         (for-each (lambda (bd)
                     (let ((l (cadr (cadr bd))))
                       (unless (null? (lam-free l))
-                        (fill-closure! (cat "cl" (var-id (car bd))) l b env2))))
+                        (fill-closure! (cat "cl" (local-id (car bd))) l b env2))))
                   live)
         env2))
 
@@ -317,7 +356,7 @@
           (loop (cdr fs) (+ i 1)))))
 
     (define (static-closure l)
-      (let ((name (cat "s" (lam-id l))))
+      (let ((name (cat "s" (local-id l))))
         (unless (member name statics-made)
           (set! statics-made (cons name statics-made))
           (add-static! (cat "var " name ": Word = undefined;"))
@@ -430,10 +469,13 @@
             (emit! b "t.args[" i "] = " (car as) ";")
             (loop (cdr as) (+ i 1))))
         (emit! b "t.argc = " n ";")
-        (cond (direct
-               (emit! b "return @call(.always_tail, rt.primCode(" (prim-code (cadr f)) "), .{t});"))
+        (cond ((and direct (value-primitive? (cadr f)))
+               (emit! b "return @call(.always_tail, rt.notProcedureCode, .{t});"))
+              (direct
+               (emit! b "return @call(.always_tail, " (prim-symbol (cadr f)) ", .{t});"))
               (global
-               (emit! b "return @call(.always_tail, rt.enterGlobal(t, " (global-index (cadr f)) "), .{t});"))
+               (emit! b "return @call(.always_tail, rt.enterCell(t, &" (global-place (cadr f)) ", \""
+                      (zig-escape (glob-name (cadr f))) "\"), .{t});"))
               (else
                (emit! b "return @call(.always_tail, rt.enter(t, " fa "), .{t});")))))
 
@@ -474,7 +516,7 @@
     ;; --- lambdas -----------------------------------------------------------
 
     (define (gen-lambda l)
-      (let ((name (cat "L" (lam-id l))))
+      (let ((name (cat "L" (local-id l))))
         (unless (member name lambdas-made)
           (set! lambdas-made (cons name lambdas-made))
           (let* ((b (make-block name))
@@ -517,46 +559,130 @@
           (emit! b "const " (local-name v) " = " expr ";"))
       (bind env v (local-name v) #t))
 
-    ;; --- program -----------------------------------------------------------
+    ;; --- modules -----------------------------------------------------------
 
-    ;; ast: the program as Core IR in ANF with free variables computed.
-    ;; Returns the Zig source of the program module.
-    (define (emit-program ast prims)
+    ;; The symbol part for a module: (scheme base) -> scheme_base
+    (define (module-symbol name)
+      (if (eq? name 'program)
+          "program"
+          (let loop ((parts name) (acc ""))
+            (if (null? parts)
+                acc
+                (loop (cdr parts)
+                      (cat acc (if (string=? acc "") "" "_")
+                           (mangle "" (let ((p (car parts)))
+                                        (if (symbol? p) (symbol->string p) (number->string p))))))))))
+
+    ;; prefix and s with every character that is not an ASCII letter or digit
+    ;; as _xx (as exports.zig mangles primitive names)
+    (define (mangle prefix s)
+      (let ((out (open-output-string)))
+        (write-string prefix out)
+        (string-for-each
+         (lambda (c)
+           (if (or (char<=? #\a c #\z) (char<=? #\A c #\Z) (char<=? #\0 c #\9))
+               (write-char c out)
+               (let ((b (char->integer c)))
+                 (if (< b 128)
+                     (begin (write-char #\_ out)
+                            (write-char (string-ref hex (quotient b 16)) out)
+                            (write-char (string-ref hex (remainder b 16)) out))
+                     ;; beyond ASCII: each UTF-8 byte
+                     (let ((bv (string->utf8 (string c))))
+                       (let loop ((i 0))
+                         (when (< i (bytevector-length bv))
+                           (let ((x (bytevector-u8-ref bv i)))
+                             (write-char #\_ out)
+                             (write-char (string-ref hex (quotient x 16)) out)
+                             (write-char (string-ref hex (remainder x 16)) out))
+                           (loop (+ i 1)))))))))
+         s)
+        (get-output-string out)))
+
+    (define (reset-module! sym)
+      (set! module-sym sym)
       (set! blocks '())
       (set! statics '())
       (set! init-lines '())
-      (set! globals '())
       (set! constants '())
       (set! statics-made '())
       (set! lambdas-made '())
-      (set! primitive-names prims)
       (set! primitive-procs '())
-      (let* ((main (make-lam '() #f ast 'toplevel))
-             (entry (gen-lambda main))
-             (names (map (lambda (g) (glob-name (car g))) (sort-by-index globals))))
-        ;; tell the runtime where the globals are that it uses itself
-        (for-each (lambda (g)
-                    (let ((s (assoc (list (glob-lib (car g)) (glob-sym (car g))) special-globals)))
-                      (when s
-                        (add-init! (cat "    t.specials[@intFromEnum(rt.Special." (cadr s) ")] = " (cdr g) ";")))))
-                  globals)
+      (set! externs '())
+      (set! own-globals 0)
+      (set! counter 0)
+      (set! local-ids (make-hash-table eq?)))
+
+    ;; modules: list of (name . body) in initialization order, the program
+    ;; last; bodies in ANF with free variables computed.
+    ;; Returns a list of (module-symbol . zig-source).
+    (define (emit-modules modules prims)
+      (set! primitive-names prims)
+      (set! global-table (make-hash-table eq?))
+      (set! module-sizes '())
+      (map (lambda (m)
+             (let ((sym (module-symbol (car m))))
+               (reset-module! sym)
+               (let* ((entry (gen-lambda (make-lam '() #f (cdr m) 'toplevel)))
+                      (extra (if (eq? (car m) 'program) (program-tables modules entry) "")))
+                 (set! module-sizes (cons (cons sym own-globals) module-sizes))
+                 (cons sym (module-source sym entry extra)))))
+           modules))
+
+    (define (module-source sym entry extra)
+      (apply cat
+             "//! Generated by scmc (dabscm native). Do not edit.\n"
+             "const std = @import(\"std\");\n"
+             "const rt = @import(\"rt\");\n"
+             "const Thread = rt.Thread;\n"
+             "const Word = rt.Word;\n\n"
+             (append
+              (map (lambda (s) (cat s "\n")) (reverse externs))
+              (list "\nexport var " (globals-array sym) ": [" (max 1 own-globals) "]Word = @splat(rt.UNBOUND);\n\n")
+              (map (lambda (s) (cat s "\n")) (reverse statics))
+              (list "\nexport fn scml_" sym "_init(t: *Thread) callconv(.c) void {\n"
+                    "    @setEvalBranchQuota(100000000);\n    const t_ = t; // init may not use t\n    _ = t_;\n"
+                    (apply cat (map (lambda (l) (cat l "\n")) (reverse init-lines)))
+                    "}\n\n"
+                    "comptime {\n    @export(&" entry ", .{ .name = \"scml_" sym "_entry\" });\n}\n\n"
+                    extra)
+              (map (lambda (s) (cat s "\n")) (reverse blocks)))))
+
+    ;; The program's tables: its modules, and where the specials are
+    (define (program-tables modules entry)
+      (let* ((syms (map (lambda (m) (module-symbol (car m))) modules))
+             (descs
+              (map (lambda (sym)
+                     (unless (string=? sym "program")
+                       (add-extern! (cat "extern fn scml_" sym "_init(t: *Thread) callconv(.c) void;"))
+                       (add-extern! (cat "extern fn scml_" sym "_entry(t: *Thread) callconv(.c) void;"))
+                       (add-extern! (cat "extern var " (globals-array sym) ": ["
+                                         (max 1 (cdr (assoc sym module-sizes))) "]Word;")))
+                     (cat "    .{ .init = &scml_" sym "_init, .entry = "
+                          (if (string=? sym "program") (cat "&" entry) (cat "&scml_" sym "_entry"))
+                          ", .globals = &" (globals-array sym) ", .nglobals = "
+                          (if (string=? sym "program") (cat (globals-array "program") ".len")
+                              (max 1 (cdr (assoc sym module-sizes))))
+                          " },\n"))
+                   syms))
+             (specials
+              (filter-map
+               (lambda (s)
+                 (let ((g (find (lambda (g) (and (equal? (glob-lib g) (car (car s)))
+                                                 (eq? (glob-sym g) (cadr (car s)))))
+                                (hash-table-keys global-table))))
+                   (and g (cat "    t.specials[@intFromEnum(rt.Special." (cadr s) ")] = &" (global-place g) ";\n"))))
+               special-globals)))
         (apply cat
-               "//! Generated by scmc (dabscm native). Do not edit.\n"
-               "const std = @import(\"std\");\n"
-               "const rt = @import(\"rt\");\n"
-               "const Thread = rt.Thread;\n"
-               "const Word = rt.Word;\n\n"
-               "pub const program: rt.Program = .{ .names = &names, .init = &init, .entry = &" entry " };\n"
-               "const names = [_][]const u8{ "
-               (join (map (lambda (n) (cat "\"" (zig-escape n) "\"")) names) ", ")
-               " };\n\n"
-               (append
-                (map (lambda (s) (cat s "\n")) (reverse statics))
-                (list "\nfn init(t: *Thread) void {\n"
-                      "    @setEvalBranchQuota(100000000);\n    const t_ = t; // init may not use t\n    _ = t_;\n"
-                      (apply cat (map (lambda (l) (cat l "\n")) (reverse init-lines)))
-                      "}\n\n")
-                (map (lambda (s) (cat s "\n")) (reverse blocks))))))
+               "const modules = [_]rt.Module{\n"
+               (append descs
+                       (list "};\n\n"
+                             "export fn scm_program_modules() callconv(.c) rt.ModuleList {\n"
+                             "    return .{ .modules = &modules, .count = modules.len };\n}\n\n"
+                             "export fn scm_program_specials(t: *Thread) callconv(.c) void {\n"
+                             "    const t_ = t;\n    _ = t_;\n")
+                       specials
+                       (list "}\n\n")))))
 
     (define special-globals
       '((((scheme base) raise) raise)
@@ -564,11 +690,6 @@
         (((scm core) *output-port*) output_port)
         (((scm core) *error-port*) error_port)))
 
-    (define (sort-by-index gs)
-      (let loop ((i 0) (acc '()))
-        (if (= i (length gs))
-            (reverse acc)
-            (loop (+ i 1) (cons (find (lambda (g) (= (cdr g) i)) gs) acc)))))
 
     ;; --- strings -----------------------------------------------------------
 

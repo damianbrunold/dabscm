@@ -14,7 +14,29 @@ pub fn init(the_io: std.Io, env: *std.process.Environ.Map) void {
     environ = env;
 }
 
-pub fn args(a: std.process.Args) []const [:0]const u8 {
+var threaded: std.Io.Threaded = undefined;
+var environ_map: std.process.Environ.Map = undefined;
+
+/// Set up the process from the C main (as std.start does): the Io
+/// implementation, the environment; returns the command line.
+pub fn initProcess(argc: usize, argv: [*][*:0]u8, envp: [*:null]?[*:0]u8) []const [:0]const u8 {
+    const builtin = @import("builtin");
+    const gpa = std.heap.c_allocator;
+    var env_count: usize = 0;
+    while (envp[env_count] != null) : (env_count += 1) {}
+    const env_block: std.process.Environ.Block = if (builtin.os.tag == .windows) .global else .{ .slice = envp[0..env_count :null] };
+    const vector: std.process.Args.Vector = if (builtin.os.tag == .windows)
+        std.os.windows.peb().ProcessParameters.CommandLine.slice()
+    else
+        @ptrCast(argv[0..argc]);
+    threaded = .init(gpa, .{
+        .argv0 = .init(.{ .vector = vector }),
+        .environ = .{ .block = env_block },
+    });
+    io = threaded.io();
+    environ_map = std.process.Environ.createMap(.{ .block = env_block }, gpa) catch std.process.Environ.Map.init(gpa);
+    environ = &environ_map;
+    const a = std.process.Args{ .vector = vector };
     return a.toSlice(pa) catch &.{};
 }
 

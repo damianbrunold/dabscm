@@ -26,7 +26,7 @@ fn pathArg(t: *Thread, i: usize) Err![]const u8 {
 
 const sep = if (builtin.os.tag == .windows) "\\" else "/";
 
-fn makePathSep() Word {
+fn makePathSep() callconv(.c) Word {
     return data.constString(sep);
 }
 pub const @"%path-sep" = rt.ValuePrim{ .make = &makePathSep };

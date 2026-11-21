@@ -21,13 +21,13 @@ const Port = ports.Port;
 
 const pa = std.heap.page_allocator;
 
-fn makeStdin() Word {
+fn makeStdin() callconv(.c) Word {
     return ports.stdinObject();
 }
-fn makeStdout() Word {
+fn makeStdout() callconv(.c) Word {
     return ports.stdoutObject();
 }
-fn makeStderr() Word {
+fn makeStderr() callconv(.c) Word {
     return ports.stderrObject();
 }
 pub const @"%*input-port*" = rt.ValuePrim{ .make = &makeStdin };

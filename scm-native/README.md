@@ -18,10 +18,32 @@ java -jar scm-java/scm.jar scm-native/core-tests.scm [tests_r7rs ...]
 - `scmc` compiles a program together with every library it imports, from `scm-lib` (the
   same sources the JVM and .NET implementations use), into one executable. It warns about
   primitives the native runtime does not implement yet; calling one is an error at run time.
+  On Linux the default target is `x86_64-linux-musl`: a static executable that needs nothing
+  installed.
 - `test.scm` compiles each program in `tests/`, runs it, and compares its output and exit
   code with the JVM implementation's.
 - `core-tests.scm` runs `scm-tests/core` natively, with the assertions of the JVM harness
   (`SchemeTests.runCoreTest`).
+
+## Build structure
+
+- **The runtime is one object** (`runtime/rtmain.zig`). It exports the runtime functions,
+  every primitive (`scmp_<name>`, `scmv_<name>` for values) and the C `main`.
+- **Every library and the program is an object of its own.**
+  - Each owns its globals as `scml_<module>_g`; other modules declare that array `extern`.
+  - Each module exports `scml_<module>_init` (its constants) and `scml_<module>_entry` (its
+    body).
+  - The program object lists the modules in initialization order (`scm_program_modules`) and
+    tells the runtime where `raise` and the current ports are (`scm_program_specials`).
+- **Compiled code imports only `runtime/abi.zig`.** It holds the value representation, the
+  thread (an `extern struct`), inline fast paths, and the runtime functions as `extern`.
+  Inside the runtime object, the same calls are direct.
+- **Names are numbered per module,** so a library's Zig code is the same for every program
+  that uses it.
+- **The Zig command line does not cache,** so `build/objects/` holds the objects under the
+  hash of what goes into them. A program whose libraries are built already compiles in about
+  2 s (most of it the expansion on the JVM); the core tests take about a minute.
+- **`zig build-exe` only links** the objects with libc (statically, for musl).
 
 ## Structure
 
@@ -58,8 +80,10 @@ java -jar scm-java/scm.jar scm-native/core-tests.scm [tests_r7rs ...]
   - `chars.zig`: character classes.
   - `prims*.zig`: primitive procedures, named `@"%name"` for the Scheme name.
   - `os.zig`: the only user of version-sensitive `std` APIs.
-  - `main.zig`: the entry point.
-  - `zig test -fllvm runtime/check.zig` compiles every primitive (Zig compiles lazily).
+  - `abi.zig`: the interface to compiled code.
+  - `exports.zig`: the runtime functions compiled code calls.
+  - `rtmain.zig`: the runtime object's root and the C `main`. Building it compiles every
+    primitive, since all of them are exported.
 
 Behavior kept from the JVM implementation:
 - Unbound identifiers resolve in the module being expanded.

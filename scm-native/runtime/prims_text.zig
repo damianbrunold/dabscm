@@ -307,7 +307,7 @@ fn atanImpl(t: *Thread) Err!Word {
 }
 pub const @"%atan" = WN("atan", atanImpl, 1, 2);
 
-fn makeE() Word {
+fn makeE() callconv(.c) Word {
     return data.constFlonum(std.math.e);
 }
 pub const @"%E" = rt.ValuePrim{ .make = &makeE };

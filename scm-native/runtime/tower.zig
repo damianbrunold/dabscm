@@ -77,7 +77,7 @@ fn fromConst(t: *Thread, c: Const) Word {
     }
     var n = c.limbs.len;
     while (n > 1 and c.limbs[n - 1] == 0) n -= 1;
-    const q = t.allocLarge(2 + n);
+    const q = rt.allocLarge(t, 2 + n);
     q[0] = rt.hdr(rt.T_BIGNUM, 1 + n) | (@as(Word, rt.F_LARGE) << 8);
     q[1] = (@as(Word, n) << 1) | @intFromBool(!c.positive);
     const dst: [*]Limb = @ptrCast(q + 2);
@@ -201,7 +201,7 @@ pub fn makeRational(t: *Thread, n0: Word, d0: Word) Word {
         d = intDiv(t, d, g, .trunc)[0];
     }
     if (d == fix(1)) return n;
-    const q = t.allocLarge(3);
+    const q = rt.allocLarge(t, 3);
     q[0] = rt.hdr(rt.T_RATNUM, 2) | (@as(Word, rt.F_LARGE) << 8);
     q[1] = n;
     q[2] = d;
@@ -278,7 +278,7 @@ pub fn floatToExact(t: *Thread, f: f64) ?Word {
 
 pub fn makeRect(t: *Thread, re: Word, im: Word) Word {
     if (im == fix(0)) return re;
-    const q = t.allocLarge(3);
+    const q = rt.allocLarge(t, 3);
     q[0] = rt.hdr(rt.T_COMPNUM, 2) | (@as(Word, rt.F_LARGE) << 8);
     q[1] = re;
     q[2] = im;
@@ -293,7 +293,7 @@ pub fn imagPart(w: Word) Word {
 }
 
 fn floWord(t: *Thread, f: f64) Word {
-    const q = t.allocLarge(2);
+    const q = rt.allocLarge(t, 2);
     q[0] = rt.hdr(rt.T_FLONUM, 1) | (@as(Word, rt.F_LARGE) << 8);
     q[1] = @bitCast(f);
     return rt.tagPtr(q);

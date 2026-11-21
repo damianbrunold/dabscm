@@ -26,9 +26,10 @@
       (let ((p (assq op open-coded)))
         (and p (cdr p))))
 
-    (define (optimize ast)
-      (let ((aliases (primitive-aliases ast)))
-        (rewrite ast aliases)))
+    ;; modules: list of (name . body); the aliases are found over all of them
+    (define (optimize modules)
+      (let ((aliases (primitive-aliases `(seq ,@(map cdr modules)))))
+        (map (lambda (m) (cons (car m) (rewrite (cdr m) aliases))) modules)))
 
     ;; glob -> primitive name, for globals that are constant primitives
     (define (primitive-aliases ast)
