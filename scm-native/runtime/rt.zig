@@ -658,7 +658,36 @@ fn scanRoots(t: *Thread, g: *Gc) void {
     for (static_scan.items) |q| g.scanObject(q);
 }
 
+/// SCM_NATIVE_GC_VERIFY=1: before each minor collection, look for old
+/// objects that point into the nursery without being remembered (a missing
+/// write barrier)
+var verify: ?bool = null;
+
+fn verifyBarriers(t: *Thread) void {
+    var scan: usize = 0;
+    while (scan < old_hp) {
+        const q = old_space.ptr + scan;
+        const len = hdrLen(q[0]);
+        const ty = hdrType(q[0]);
+        const first: usize = switch (ty) {
+            T_PAIR, T_VECTOR, T_BOX, T_STRING, T_VALUES, T_RECORD, T_ERROR, T_RATNUM, T_COMPNUM, T_HASHTABLE => 1,
+            T_CLOSURE => 2,
+            else => 1 + len,
+        };
+        if (hdrFlags(q[0]) & F_REMEMBERED == 0) {
+            var i = first;
+            while (i < 1 + len) : (i += 1) if (abi.isYoung(t, q[i])) {
+                os.eprint("gc verify: old object type {d} (length {d}) slot {d} points into the nursery\n", .{ ty, len, i });
+                break;
+            };
+        }
+        scan += 1 + len;
+    }
+}
+
 fn minor(t: *Thread) void {
+    if (verify == null) verify = os.getEnv("SCM_NATIVE_GC_VERIFY") != null;
+    if (verify.?) verifyBarriers(t);
     minor_count += 1;
     var g = Gc{ .young = t.heap[0..t.heap_len], .old = &.{}, .to = old_space, .free = old_hp, .major = false };
     const promoted = old_hp;
@@ -729,6 +758,11 @@ fn major(t: *Thread) void {
     }
 }
 
+/// The new location of a forwarded object (its header: T_FWD, address / 8)
+inline fn forwardee(h: Word) Word {
+    return tagPtr(@as([*]Word, @ptrFromInt(hdrLen(h) << 3)));
+}
+
 const Gc = struct {
     young: []Word,
     old: []Word, // empty for a minor collection
@@ -756,15 +790,16 @@ const Gc = struct {
             }
             return w;
         }
-        if (hdrType(q[0]) == T_FWD) return q[1];
+        if (hdrType(q[0]) == T_FWD) return forwardee(q[0]);
         const n = 1 + hdrLen(q[0]);
         const dst = g.to.ptr + g.free;
         @memcpy(dst[0..n], q[0..n]);
         dst[0] &= ~(@as(Word, F_REMEMBERED) << 8);
         g.free += n;
         const nw = tagPtr(dst);
-        q[0] = hdr(T_FWD, hdrLen(q[0]));
-        q[1] = nw;
+        // the new address in the header itself: an object without payload
+        // (an empty vector, a record without fields) has no second word
+        q[0] = hdr(T_FWD, @intFromPtr(dst) >> 3);
         return nw;
     }
 
@@ -804,6 +839,8 @@ var modules: []const abi.Module = &.{};
 pub var command_line: []const [:0]const u8 = &.{};
 
 pub fn start(list: abi.ModuleList, args: []const [:0]const u8) u8 {
+    // SCM_NATIVE_SEGV=1: a stack trace on a crash (for debugging the runtime)
+    if (os.getEnv("SCM_NATIVE_SEGV") != null) std.debug.attachSegfaultHandler();
     command_line = args;
     modules = list.modules[0..list.count];
     const t = newThread();
@@ -847,3 +884,4 @@ pub const prims_crypto = @import("prims_crypto.zig");
 pub const prims_json = @import("prims_json.zig");
 pub const prims_xml = @import("prims_xml.zig");
 pub const prims_image = @import("prims_image.zig");
+pub const prims_module = @import("prims_module.zig");

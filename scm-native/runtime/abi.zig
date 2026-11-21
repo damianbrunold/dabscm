@@ -93,7 +93,7 @@ pub const T_RATNUM: u8 = 17; // [numerator] [denominator] (scanned)
 pub const T_COMPNUM: u8 = 18; // [real] [imaginary] (scanned)
 pub const T_HASHTABLE: u8 = 19; // [mode] [count] [buckets] [comparator] [epoch] [flags] (scanned)
 pub const T_NATIVE: u8 = 20; // [kind (raw)] [pointer (raw)]: processes, file locks
-pub const T_FWD: u8 = 0xff; // forwarded during GC, payload[0] = new pointer
+pub const T_FWD: u8 = 0xff; // forwarded during GC: the length field holds the new address / 8
 
 pub const F_LARGE: u8 = 1; // in the large-object space
 pub const F_MARK: u8 = 2; // large object reached during this collection

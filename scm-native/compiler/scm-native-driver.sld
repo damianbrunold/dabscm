@@ -132,6 +132,19 @@
                   (unless (eof-object? v) (set-program-version! v)))))
             (emit-modules modules prims)))))
 
+    ;; run-parallel over at most as many jobs at a time as there are cores
+    ;; (each Zig compilation of a large module takes a lot of memory)
+    (define (run-batched fn jobs)
+      (let ((n (max 1 (sys-num-cpu-cores))))
+        (let loop ((jobs jobs) (acc '()))
+          (if (null? jobs)
+              (reverse acc)
+              (let* ((k (min n (length jobs)))
+                     (results (run-parallel fn (list-head jobs k))))
+                (loop (list-tail jobs k) (append (reverse results) acc)))))))
+
+    (define (list-head l k) (if (= k 0) '() (cons (car l) (list-head (cdr l) (- k 1)))))
+
     ;; The default target: a static (musl) executable on Linux
     (define (default-target)
       (if (eq? (sys-platform) 'linux) "x86_64-linux-musl" #f))
@@ -174,10 +187,13 @@
                                           ,(join-path runtime-dir "rtmain.zig")
                                           ,(string-append "-femit-bin=" rt-obj)))
                       (map (lambda (m)
+                             ;; the source file is named by the hash as well: compilations
+                             ;; running at the same time in one build directory must not
+                             ;; overwrite each other's source
                              (let* ((sym (car m))
-                                    (zig-file (join-path cfg-dir (string-append sym ".zig")))
-                                    (obj (join-path objects-dir
-                                                    (string-append sym "-" (content-hash (string-append (cdr m) abi-text) flags) ".o"))))
+                                    (hash (content-hash (string-append (cdr m) abi-text) flags))
+                                    (zig-file (join-path cfg-dir (string-append sym "-" hash ".zig")))
+                                    (obj (join-path objects-dir (string-append sym "-" hash ".o"))))
                                (write-if-changed zig-file (cdr m))
                                (list obj `(,zig "build-obj" ,@common
                                                 "--dep" "rt"
@@ -188,8 +204,8 @@
           (unless (directory-exists? objects-dir) (make-directory objects-dir))
           ;; build the missing objects in parallel, then link
           (for-each (lambda (r) (check-run "zig build-obj" r))
-                    (run-parallel (lambda (job) (run-program/capture (cadr job)))
-                                  (filter (lambda (job) (not (file-exists? (car job)))) jobs)))
+                    (run-batched (lambda (job) (run-program/capture (cadr job)))
+                                 (filter (lambda (job) (not (file-exists? (car job)))) jobs)))
           (check-run "zig build-exe"
                      (run-program/capture `(,zig "build-exe" ,@common "-lc"
                                                  ,@(map car jobs)

@@ -180,6 +180,9 @@ pub const Lit = union(enum) {
     /// an exact integer beyond the fixnum range, or a rational: the text
     /// (without prefixes) and its radix; made by the numeric tower
     exact: struct { text: []const u8, radix: u8 },
+    /// a complex number (rectangular a+bi or polar r@angle): the whole
+    /// text, prefixes included; made by exactFromLit
+    complex: struct { text: []const u8, radix: u8 },
 };
 
 /// Parse a number in Scheme syntax; null if text is not a number.
@@ -200,12 +203,14 @@ pub fn parseNumber(text0: []const u8, default_radix: u8) ?Lit {
         text = text[2..];
     }
     if (text.len == 0) return null;
+    if (complexParts(text, radix) != null) return .{ .complex = .{ .text = text0, .radix = default_radix } };
     const lit = parseReal(text, radix) orelse return null;
     return switch (exactness) {
         'i' => switch (lit) {
             .fix => |n| .{ .flo = @floatFromInt(n) },
             .flo => lit,
             .exact => |e| .{ .flo = exactTextToFloat(e.text, e.radix) orelse return null },
+            .complex => unreachable,
         },
         'e' => switch (lit) {
             .flo => |f| blk: {
@@ -300,7 +305,84 @@ pub fn exactFromLit(t: *Thread, lit: Lit) ?Word {
         .fix => |n| rt.fix(n),
         .flo => null,
         .exact => |e| tower.fromText(t, e.text, e.radix),
+        .complex => |c| complexFromText(t, c.text, c.radix),
     };
+}
+
+const Parts = struct { re: []const u8, im: []const u8, polar: bool };
+
+/// The real and imaginary parts (or magnitude and angle) of a complex
+/// number's text without prefixes; null if it is not one
+fn complexParts(text: []const u8, radix: u8) ?Parts {
+    if (std.mem.indexOfScalar(u8, text, '@')) |at| {
+        if (at == 0 or at + 1 == text.len) return null;
+        if (parseReal(text[0..at], radix) == null or parseReal(text[at + 1 ..], radix) == null) return null;
+        return .{ .re = text[0..at], .im = text[at + 1 ..], .polar = true };
+    }
+    if (text.len < 2 or (text[text.len - 1] != 'i' and text[text.len - 1] != 'I')) return null;
+    const body = text[0 .. text.len - 1];
+    // the sign that starts the imaginary part: the last + or - not at the
+    // start and not in an exponent (nor in inf.0/nan.0 of the real part)
+    var k: ?usize = null;
+    var i = body.len;
+    while (i > 1) {
+        i -= 1;
+        const c = body[i];
+        if (c != '+' and c != '-') continue;
+        const prev = body[i - 1];
+        if (radix == 10 and (prev == 'e' or prev == 'E')) continue;
+        k = i;
+        break;
+    }
+    const re: []const u8 = if (k) |x| body[0..x] else "0";
+    const im = if (k) |x| body[x..] else body;
+    if (im.len == 0 or (im[0] != '+' and im[0] != '-')) return null;
+    if (k) |x| if (parseReal(body[0..x], radix) == null) return null;
+    if (im.len > 1 and parseReal(im, radix) == null) return null;
+    return .{ .re = re, .im = im, .polar = false };
+}
+
+/// A complex number from its text (with prefixes)
+fn complexFromText(t: *Thread, text0: []const u8, default_radix: u8) ?Word {
+    var text = text0;
+    var radix = default_radix;
+    var exactness: u8 = 0;
+    while (text.len >= 2 and text[0] == '#') {
+        switch (std.ascii.toLower(text[1])) {
+            'x' => radix = 16,
+            'b' => radix = 2,
+            'o' => radix = 8,
+            'd' => radix = 10,
+            'e' => exactness = 'e',
+            'i' => exactness = 'i',
+            else => return null,
+        }
+        text = text[2..];
+    }
+    const p = complexParts(text, radix) orelse return null;
+    const re = partValue(t, p.re, radix, exactness) orelse return null;
+    const im = if (std.mem.eql(u8, p.im, "+")) rt.fix(1) else if (std.mem.eql(u8, p.im, "-")) rt.fix(-1) else partValue(t, p.im, radix, exactness) orelse return null;
+    const im2 = if (exactness == 'i' and !rt.isFlonum(im)) rt.safeFlo(t, toF(im).?) else im;
+    if (p.polar) {
+        const m = toF(re).?;
+        const a = toF(im2).?;
+        if (a == 0 and !rt.isFlonum(im2)) return re;
+        return tower.makeRect(t, rt.safeFlo(t, m * @cos(a)), rt.safeFlo(t, m * @sin(a)));
+    }
+    return tower.makeRect(t, re, im2);
+}
+
+fn partValue(t: *Thread, text: []const u8, radix: u8, exactness: u8) ?Word {
+    const lit = parseReal(text, radix) orelse return null;
+    const w = switch (lit) {
+        .fix => |n| rt.fix(n),
+        .flo => |f| rt.safeFlo(t, f),
+        .exact => |e| tower.fromText(t, e.text, e.radix) orelse return null,
+        .complex => return null,
+    };
+    if (exactness == 'i' and !rt.isFlonum(w)) return rt.safeFlo(t, toF(w).?);
+    if (exactness == 'e' and rt.isFlonum(w)) return tower.floatToExact(t, rt.flo(w));
+    return w;
 }
 
 /// Exact b^e beyond the fixnums or with a negative exponent (bignum,

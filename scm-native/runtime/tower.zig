@@ -232,12 +232,60 @@ fn ratToFloat(w: Word) f64 {
     const d = ratDen(w);
     const fnum = intToFloat(n);
     const fden = intToFloat(d);
-    if (std.math.isFinite(fnum) and std.math.isFinite(fden)) return fnum / fden;
-    // huge terms: scale down by the bit length difference
-    const nb: i64 = @intCast(if (isFix(n)) 64 else bigConst(n).bitCountAbs());
-    const db: i64 = @intCast(if (isFix(d)) 64 else bigConst(d).bitCountAbs());
-    const shift = @max(nb, db) - 900;
-    return std.math.ldexp(shrinkToFloat(n, shift) / shrinkToFloat(d, shift), 0);
+    // exact terms: one correctly rounded division
+    if (@abs(fnum) < 9007199254740992.0 and fden < 9007199254740992.0) return fnum / fden;
+    return divideRounded(n, d);
+}
+
+/// n / d (d > 0) correctly rounded to the nearest double (ties to even),
+/// subnormals and overflow included
+fn divideRounded(nw: Word, dw: Word) f64 {
+    var n = toManaged(nw);
+    defer n.deinit();
+    var d = toManaged(dw);
+    defer d.deinit();
+    const negative = !n.isPositive() and !n.eqlZero();
+    n.abs();
+    if (n.eqlZero()) return 0.0;
+    const k: i64 = @as(i64, @intCast(n.bitCountAbs())) - @as(i64, @intCast(d.bitCountAbs()));
+    // the value lies in [2^(k-1), 2^(k+1)): the last place first assuming 2^(k-1)
+    var u: i64 = @max(k - 54, -1074);
+    var q = Managed.init(pa) catch oom();
+    defer q.deinit();
+    var r = Managed.init(pa) catch oom();
+    defer r.deinit();
+    var a = Managed.init(pa) catch oom();
+    defer a.deinit();
+    var b = Managed.init(pa) catch oom();
+    defer b.deinit();
+    while (true) {
+        // q = floor(n * 2^-u / d)
+        if (u < 0) {
+            a.shiftLeft(&n, @intCast(-u)) catch oom();
+            b.copy(d.toConst()) catch oom();
+        } else {
+            a.copy(n.toConst()) catch oom();
+            b.shiftLeft(&d, @intCast(u)) catch oom();
+        }
+        q.divFloor(&r, &a, &b) catch oom();
+        if (q.bitCountAbs() > 53 and u < 2000) {
+            u += @as(i64, @intCast(q.bitCountAbs())) - 53;
+            continue;
+        }
+        break;
+    }
+    // round half to even on the remainder
+    r.shiftLeft(&r, 1) catch oom();
+    const cmp = r.order(b);
+    const odd = q.isOdd();
+    if (cmp == .gt or (cmp == .eq and odd)) {
+        var one = Managed.initSet(pa, 1) catch oom();
+        defer one.deinit();
+        q.add(&q, &one) catch oom();
+    }
+    const m = q.toConst().toFloat(f64, .nearest_even)[0]; // exact: at most 2^53
+    const x = std.math.ldexp(m, @intCast(@max(@min(u, 4000), -4000)));
+    return if (negative) -x else x;
 }
 
 fn shrinkToFloat(w: Word, shift: i64) f64 {
@@ -479,11 +527,12 @@ pub fn format(buf: *std.ArrayList(u8), w: Word, radix: u8) void {
     } else if (isComp(w)) {
         const re = realPart(w);
         const im = imagPart(w);
-        if (!(isExactInteger(re) and re == fix(0))) format(buf, re, radix);
+        // both parts, always (as the JVM implementation: 0+1i)
+        format(buf, re, radix);
         const im_neg = sign(im) < 0 or (rt.isFlonum(im) and std.math.signbit(rt.flo(im)));
         const im_special = rt.isFlonum(im) and !std.math.isFinite(rt.flo(im));
         if (!im_neg and !im_special) buf.append(pa, '+') catch oom();
-        if (im == fix(1)) {} else if (im == fix(-1)) buf.append(pa, '-') catch oom() else format(buf, im, radix);
+        format(buf, im, radix);
         buf.append(pa, 'i') catch oom();
     }
 }
@@ -645,4 +694,114 @@ pub fn integerLength(a: Word) i64 {
     var x = nonNegative(a);
     defer x.deinit();
     return @intCast(x.bitCountAbs());
+}
+
+// --- exact of a flonum: the simplest rational that reads back as it ------------------
+
+/// x (finite, >= 0) as num / den (as the JVM implementation's exactParts)
+fn exactParts(x: f64) [2]Managed {
+    const bits: u64 = @bitCast(x);
+    var biased: i64 = @intCast((bits >> 52) & 0x7FF);
+    var mantissa: u64 = bits & 0xFFFFFFFFFFFFF;
+    if (biased != 0) mantissa |= @as(u64, 1) << 52 else biased = 1;
+    const exp = biased - 1023 - 52;
+    var num = Managed.initSet(pa, mantissa) catch oom();
+    var den = Managed.initSet(pa, 1) catch oom();
+    if (exp >= 0) num.shiftLeft(&num, @intCast(exp)) catch oom() else den.shiftLeft(&den, @intCast(-exp)) catch oom();
+    return .{ num, den };
+}
+
+fn bigInt(v: i64) Managed {
+    return Managed.initSet(pa, v) catch oom();
+}
+
+/// The simplest rational (smallest denominator) in the rounding interval of
+/// f (halfway to the neighbouring doubles, both ends included on a
+/// tie-to-even): (exact 0.1) is 1/10, as in the JVM implementation
+pub fn floatToSimplest(t: *Thread, f: f64) ?Word {
+    if (!std.math.isFinite(f)) return null;
+    if (@floor(f) == f) return floatToExact(t, f);
+    const negative = f < 0;
+    const x = @abs(f);
+    var v = exactParts(x);
+    var prev = exactParts(std.math.nextAfter(f64, x, 0));
+    var next = exactParts(std.math.nextAfter(f64, x, std.math.inf(f64)));
+    defer for ([_]*[2]Managed{ &v, &prev, &next }) |p| {
+        p[0].deinit();
+        p[1].deinit();
+    };
+    var tmp = bigInt(0);
+    defer tmp.deinit();
+    // lo = (v + prev) / 2, hi = (v + next) / 2
+    var loN = bigInt(0);
+    var loD = bigInt(0);
+    var hiN = bigInt(0);
+    var hiD = bigInt(0);
+    defer for ([_]*Managed{ &loN, &loD, &hiN, &hiD }) |p| p.deinit();
+    loN.mul(&v[0], &prev[1]) catch oom();
+    tmp.mul(&prev[0], &v[1]) catch oom();
+    loN.add(&loN, &tmp) catch oom();
+    loD.mul(&v[1], &prev[1]) catch oom();
+    loD.shiftLeft(&loD, 1) catch oom();
+    hiN.mul(&v[0], &next[1]) catch oom();
+    tmp.mul(&next[0], &v[1]) catch oom();
+    hiN.add(&hiN, &tmp) catch oom();
+    hiD.mul(&v[1], &next[1]) catch oom();
+    hiD.shiftLeft(&hiD, 1) catch oom();
+    const bits: u64 = @bitCast(x);
+    const closed = bits & 1 == 0;
+
+    var terms: std.ArrayList(Managed) = .empty;
+    defer {
+        for (terms.items) |*m| m.deinit();
+        terms.deinit(pa);
+    }
+    var fl = bigInt(0);
+    defer fl.deinit();
+    var rem = bigInt(0);
+    defer rem.deinit();
+    var c = bigInt(0);
+    defer c.deinit();
+    var one = bigInt(1);
+    defer one.deinit();
+    while (true) {
+        fl.divFloor(&rem, &loN, &loD) catch oom();
+        if (closed and rem.eqlZero()) c.copy(fl.toConst()) catch oom() else c.add(&fl, &one) catch oom();
+        const cmp: std.math.Order = if (hiD.eqlZero()) .lt else blk: {
+            tmp.mul(&c, &hiD) catch oom();
+            break :blk tmp.order(hiN);
+        };
+        if (cmp == .lt or (closed and cmp == .eq)) {
+            terms.append(pa, c.clone() catch oom()) catch oom();
+            break;
+        }
+        terms.append(pa, fl.clone() catch oom()) catch oom();
+        // lo' = 1 / (hi - fl), hi' = 1 / (lo - fl)
+        var nLoD = bigInt(0);
+        tmp.mul(&fl, &hiD) catch oom();
+        nLoD.sub(&hiN, &tmp) catch oom();
+        var nHiD = bigInt(0);
+        tmp.mul(&fl, &loD) catch oom();
+        nHiD.sub(&loN, &tmp) catch oom();
+        hiN.swap(&loD); // hi' numerator = old loD
+        loN.swap(&hiD); // lo' numerator = old hiD
+        loD.swap(&nLoD);
+        hiD.swap(&nHiD);
+        nLoD.deinit();
+        nHiD.deinit();
+    }
+    var p = terms.items[terms.items.len - 1].clone() catch oom();
+    var q = bigInt(1);
+    var i = terms.items.len - 1;
+    while (i > 0) {
+        i -= 1;
+        var np = bigInt(0);
+        np.mul(&terms.items[i], &p) catch oom();
+        np.add(&np, &q) catch oom();
+        q.deinit();
+        q = p;
+        p = np;
+    }
+    if (negative) p.negate();
+    return makeRational(t, fromManaged(t, &p), fromManaged(t, &q));
 }

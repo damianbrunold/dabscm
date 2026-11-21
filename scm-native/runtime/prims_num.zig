@@ -23,17 +23,17 @@ const pa = std.heap.c_allocator;
 
 fn numArg(t: *Thread, comptime who: []const u8, i: usize) Err!Word {
     const w = arg(t, i);
-    if (!num.isNumber(w)) return raise(t, who ++ ": not a number", &.{w});
+    if (!num.isNumber(w)) return raise(t, "Failed in " ++ who ++ ": wrong argument type", &.{w});
     return w;
 }
 fn realArg(t: *Thread, comptime who: []const u8, i: usize) Err!Word {
     const w = arg(t, i);
-    if (!tower.isReal(w)) return raise(t, who ++ ": not a real number", &.{w});
+    if (!tower.isReal(w)) return raise(t, "Failed in " ++ who ++ ": wrong argument type", &.{w});
     return w;
 }
 fn integerArg(t: *Thread, comptime who: []const u8, i: usize) Err!Word {
     const w = arg(t, i);
-    if (!num.isInteger(w)) return raise(t, who ++ ": not an integer", &.{w});
+    if (!num.isInteger(w)) return raise(t, "Failed in " ++ who ++ ": wrong argument type", &.{w});
     return w;
 }
 
@@ -125,11 +125,14 @@ fn intDivision(t: *Thread, comptime who: []const u8, comptime kind: tower.DivKin
     if (rt.isFlonum(a) or rt.isFlonum(b)) {
         const x = num.toF(a).?;
         const y = num.toF(b).?;
-        const q = switch (kind) {
+        if (which == 0) return flo(t, switch (kind) {
             .trunc => @trunc(x / y),
             .floor => @floor(x / y),
-        };
-        return flo(t, if (which == 0) q else x - q * y);
+        });
+        // the remainder exactly (fmod), not x - q * y
+        var r = @rem(x, y);
+        if (kind == .floor and r != 0 and (r < 0) != (y < 0)) r += y;
+        return flo(t, r);
     }
     return tower.intDiv(t, a, b, kind)[which];
 }
@@ -164,11 +167,15 @@ fn integerP(t: *Thread) Err!Word {
 fn exactIntegerP(t: *Thread) Err!Word {
     return rt.boolean(tower.isExactInteger(arg(t, 0)));
 }
+/// as the JVM implementation: #f for a non-number (and inexact? is its
+/// negation)
 fn exactP(t: *Thread) Err!Word {
-    return rt.boolean(tower.isExact(try numArg(t, "exact?", 0)));
+    const w = arg(t, 0);
+    return rt.boolean(num.isNumber(w) and tower.isExact(w));
 }
 fn inexactP(t: *Thread) Err!Word {
-    return rt.boolean(!tower.isExact(try numArg(t, "inexact?", 0)));
+    const w = arg(t, 0);
+    return rt.boolean(!(num.isNumber(w) and tower.isExact(w)));
 }
 fn zeroP(t: *Thread) Err!Word {
     return rt.boolean(tower.numEq(t, try numArg(t, "zero?", 0), fix(0)).?);
@@ -197,12 +204,12 @@ fn inexactImpl(t: *Thread) Err!Word {
 }
 fn exactImpl(t: *Thread) Err!Word {
     const w = try numArg(t, "exact", 0);
-    if (rt.isFlonum(w)) return tower.floatToExact(t, rt.flo(w)) orelse raise(t, "exact: not a finite number", &.{w});
+    if (rt.isFlonum(w)) return tower.floatToSimplest(t, rt.flo(w)) orelse raise(t, "exact: no exact representation for ~a", &.{w});
     if (tower.isComp(w)) {
         const re = tower.realPart(w);
         const im = tower.imagPart(w);
-        const ere = if (rt.isFlonum(re)) tower.floatToExact(t, rt.flo(re)) orelse return raise(t, "exact: not finite", &.{w}) else re;
-        const eim = if (rt.isFlonum(im)) tower.floatToExact(t, rt.flo(im)) orelse return raise(t, "exact: not finite", &.{w}) else im;
+        const ere = if (rt.isFlonum(re)) tower.floatToSimplest(t, rt.flo(re)) orelse return raise(t, "exact: no exact representation for ~a", &.{w}) else re;
+        const eim = if (rt.isFlonum(im)) tower.floatToSimplest(t, rt.flo(im)) orelse return raise(t, "exact: no exact representation for ~a", &.{w}) else im;
         return tower.makeRect(t, ere, eim);
     }
     return w;

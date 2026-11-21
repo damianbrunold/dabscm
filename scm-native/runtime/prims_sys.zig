@@ -42,7 +42,7 @@ fn pair(t: *Thread, a: i64, b: i64) Word {
 
 // --- native objects (processes, file locks) ----------------------------------------------
 
-pub const NativeKind = enum(u64) { process = 1, file_lock = 2, zip_in = 3, zip_out = 4, json_reader = 5, json_object = 6, xml_reader = 7, random_access = 8 };
+pub const NativeKind = enum(u64) { process = 1, file_lock = 2, zip_in = 3, zip_out = 4, json_reader = 5, json_object = 6, xml_reader = 7, random_access = 8, macro_standin = 9 };
 
 fn wrapNative(t: *Thread, kind: NativeKind, p: *anyopaque) Word {
     t.reserve(3);
@@ -82,6 +82,7 @@ pub fn nativeName(w: Word) []const u8 {
         },
         7 => "#<xml-reader>",
         8 => "#<random-access-file>",
+        9 => "#<macro>",
         else => "#<native>",
     };
 }

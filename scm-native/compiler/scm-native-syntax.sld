@@ -253,7 +253,10 @@
 
     ;; The expansions of tmpl followed by depth ellipses, as a list
     (define (instantiate-ellipsis t tmpl b depth)
-      (let* ((vars (filter (lambda (e) (and (> (cadr e) 0) (occurs? (car e) tmpl))) b)))
+      ;; the innermost binding of each variable (b also holds the shadowed
+      ;; bindings of the enclosing ellipsis levels)
+      (let* ((vars (filter (lambda (e) (and (> (cadr e) 0) (occurs? (car e) tmpl)))
+                           (innermost b))))
         (when (null? vars)
           (error "no pattern variable with ellipsis depth in template" (strip tmpl)))
         (let* ((len (apply min (map (lambda (e) (length (cddr e))) vars)))
@@ -266,6 +269,12 @@
           (if (= depth 1)
               (map (lambda (b2) (instantiate t tmpl b2)) items)
               (append-map (lambda (b2) (instantiate-ellipsis t tmpl b2 (- depth 1))) items)))))
+
+    (define (innermost b)
+      (let loop ((b b) (acc '()))
+        (cond ((null? b) (reverse acc))
+              ((find (lambda (e) (bound-identifier=? (car e) (car (car b)))) acc) (loop (cdr b) acc))
+              (else (loop (cdr b) (cons (car b) acc))))))
 
     (define (occurs? v tmpl)
       (cond ((ident? tmpl) (bound-identifier=? v tmpl))

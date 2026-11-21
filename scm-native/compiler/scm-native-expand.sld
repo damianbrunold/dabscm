@@ -322,8 +322,12 @@
     ;; Expand a body: leading definitions (after macro expansion, with begin
     ;; spliced) become letrec*. A leading string followed by more forms is a
     ;; docstring.
-    (define (expand-body forms)
-      (let* ((forms (append-map partial-expand forms))
+    (define (expand-body forms0)
+      ;; the body's scope goes on the forms before they are partially
+      ;; expanded, so that a define-syntax binds its name inside the body
+      ;; only; and again after, for definitions introduced by macros
+      (let* ((s (fresh-scope))
+             (forms (append-map partial-expand (add-scope forms0 s)))
              (forms (if (and (pair? forms) (string? (car forms)) (pair? (cdr forms)))
                         (cdr forms)
                         forms)))
@@ -336,7 +340,6 @@
                 (if (null? defs)
                     (expand-seq fs)
                     (let* ((defs (reverse defs))
-                           (s (fresh-scope))
                            (names (map (lambda (d) (add-scope (car d) s)) defs))
                            (vars (bind-locals names s))
                            (inits (map (lambda (d n) (expand-named (add-scope (cadr d) s) (ident-sym n)))
@@ -619,6 +622,31 @@
 
     ;; --- program -------------------------------------------------------------
 
+    ;; As the JVM implementation binds them for a program: script-name (the
+    ;; executable here) and script-arguments, unless the program defines
+    ;; them; after the leading imports
+    (define (with-script-globals forms)
+      (define (defines? name)
+        (any (lambda (f)
+               (and (pair? f) (eq? (car f) 'define) (pair? (cdr f))
+                    (or (eq? (cadr f) name)
+                        (and (pair? (cadr f)) (eq? (car (cadr f)) name)))))
+             forms))
+      (let* ((imports (let loop ((fs forms) (acc '()))
+                        (if (and (pair? fs) (pair? (car fs)) (eq? (car (car fs)) 'import))
+                            (loop (cdr fs) (cons (car fs) acc))
+                            (reverse acc))))
+             (rest (list-tail forms (length imports)))
+             (globals
+              (append
+               (if (defines? 'script-name)
+                   '()
+                   '((define script-name ((%primitive "car") ((%primitive "command-line"))))))
+               (if (defines? 'script-arguments)
+                   '()
+                   '((define script-arguments ((%primitive "cdr") ((%primitive "command-line")))))))))
+        (append imports globals rest)))
+
     (define (expand-program file paths feature-list prims core-file)
       ;; a fresh library registry per program: the modules of an earlier
       ;; program (in the same process) must not end up in this one
@@ -637,7 +665,7 @@
              (forms (append-map (lambda (f)
                                   (set! current m)
                                   (toplevel (wrap f (list (module-scope m)))))
-                                (read-file file))))
+                                (with-script-globals (read-file file)))))
         ;; the modules in initialization order: (name . body), the program last
         (values (append (map (lambda (m) (cons (module-name m) `(seq ,@(reverse (module-body m)) ,unspecified)))
                              (reverse completed))

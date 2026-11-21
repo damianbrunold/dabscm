@@ -187,7 +187,7 @@ fn stringToNumber(t: *Thread) Err!Word {
             t.reserve(2);
             break :blk t.makeFlo(f);
         },
-        .exact => num.exactFromLit(t, lit) orelse rt.FALSE,
+        .exact, .complex => num.exactFromLit(t, lit) orelse rt.FALSE,
     };
 }
 pub const @"%string->number" = WN("string->number", stringToNumber, 1, 2);

@@ -249,9 +249,44 @@ pub const Reader = struct {
         return .{ .string = cps.items };
     }
 
+    /// #<<MARKER here-strings (as the JVM implementation): the lines after
+    /// the marker line up to a line that is exactly the marker, each with
+    /// its newline; carriage returns are dropped
+    fn hereString(r: *Reader) Error!Node {
+        if (r.next() != '<') return r.fail("tokenizer: expected #<< for heredoc");
+        var marker: std.ArrayList(u8) = .empty;
+        while (true) {
+            const c = r.next() orelse return r.fail("tokenizer: end of file in heredoc");
+            if (c == '\r') continue;
+            if (c == '\n') break;
+            appendCp(&marker, c);
+        }
+        var out: std.ArrayList(u21) = .empty;
+        var line: std.ArrayList(u21) = .empty;
+        var line8: std.ArrayList(u8) = .empty;
+        while (true) {
+            const c = r.next() orelse return r.fail("tokenizer: end of file in heredoc");
+            if (c == '\r') continue;
+            if (c == '\n') {
+                if (std.mem.eql(u8, line8.items, marker.items)) return .{ .string = out.items };
+                out.appendSlice(pa, line.items) catch rt.oom();
+                out.append(pa, '\n') catch rt.oom();
+                line.clearRetainingCapacity();
+                line8.clearRetainingCapacity();
+            } else {
+                line.append(pa, c) catch rt.oom();
+                appendCp(&line8, c);
+            }
+        }
+    }
+
     fn hash(r: *Reader) Error!Node {
         const c = r.peek() orelse return r.fail("end of file after #");
         switch (c) {
+            '<' => {
+                _ = r.next();
+                return r.hereString();
+            },
             '(' => {
                 _ = r.next();
                 const l = try r.list(')');
@@ -334,8 +369,9 @@ pub const Reader = struct {
         if (num.parseNumber(tok, 10)) |lit| return switch (lit) {
             .fix => |n| .{ .word = rt.fix(n) },
             .flo => |f| .{ .flo = f },
-            .exact => .{ .exact = lit },
+            .exact, .complex => .{ .exact = lit },
         };
+        if (tok.len > 1 and tok[0] == '#') return r.fail(std.fmt.allocPrint(pa, "tokenizer: Unknown # sequence: {s}", .{tok[0..@min(tok.len, 2)]}) catch rt.oom());
         if (tok.len > 0 and tok[0] == '#') return r.fail("bad # syntax");
         if (r.fold_case) for (tok) |*b| {
             b.* = std.ascii.toLower(b.*);

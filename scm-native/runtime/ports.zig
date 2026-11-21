@@ -94,10 +94,9 @@ pub const Port = struct {
         if (!p.fill(1)) return null;
         const b0 = p.in.items[p.pos];
         const len = std.unicode.utf8ByteSequenceLength(b0) catch 1;
-        if (!p.fill(len)) return .{ .cp = 0xFFFD, .len = 1 };
-        const cp = std.unicode.utf8Decode(p.in.items[p.pos .. p.pos + len]) catch
-            return .{ .cp = 0xFFFD, .len = 1 };
-        return .{ .cp = cp, .len = len };
+        _ = p.fill(len); // as much of the sequence as there is
+        const d = @import("data.zig").utf8Next(p.in.items, p.pos);
+        return .{ .cp = d.cp, .len = d.len };
     }
 
     pub fn peekChar(p: *Port) ?u21 {

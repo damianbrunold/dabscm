@@ -270,16 +270,53 @@ pub fn constFlonum(f: f64) Word {
 
 pub const Utf8Info = struct { n: usize, wide: bool };
 
+pub const Decoded = struct { cp: u21, len: usize };
+
+/// The character at utf8[i..]. A malformed sequence is replaced by U+FFFD
+/// for its maximal valid prefix (one byte at least), as the JVM's decoder
+/// does (and the Unicode recommendation; an encoded surrogate counts as one
+/// sequence there): byte offsets and character indexes then agree for
+/// binary data, as in the JVM implementation.
+pub fn utf8Next(utf8: []const u8, i: usize) Decoded {
+    const bad = Decoded{ .cp = 0xFFFD, .len = 1 };
+    const b0 = utf8[i];
+    if (b0 < 0x80) return .{ .cp = b0, .len = 1 };
+    if (b0 == 0xED and i + 2 < utf8.len and utf8[i + 1] >= 0xA0 and utf8[i + 1] <= 0xBF and utf8[i + 2] >= 0x80 and utf8[i + 2] <= 0xBF)
+        return .{ .cp = 0xFFFD, .len = 3 };
+    const need: usize, const lo: u8, const hi: u8 = switch (b0) {
+        0xC2...0xDF => .{ 1, 0x80, 0xBF },
+        0xE0 => .{ 2, 0xA0, 0xBF },
+        0xE1...0xEC, 0xEE, 0xEF => .{ 2, 0x80, 0xBF },
+        0xED => .{ 2, 0x80, 0x9F },
+        0xF0 => .{ 3, 0x90, 0xBF },
+        0xF1...0xF3 => .{ 3, 0x80, 0xBF },
+        0xF4 => .{ 3, 0x80, 0x8F },
+        else => return bad,
+    };
+    var cp: u21 = switch (need) {
+        1 => b0 & 0x1F,
+        2 => b0 & 0x0F,
+        else => b0 & 0x07,
+    };
+    var k: usize = 1;
+    while (k <= need) : (k += 1) {
+        if (i + k >= utf8.len) return .{ .cp = 0xFFFD, .len = k };
+        const b = utf8[i + k];
+        const ok = if (k == 1) b >= lo and b <= hi else b >= 0x80 and b <= 0xBF;
+        if (!ok) return .{ .cp = 0xFFFD, .len = k };
+        cp = (cp << 6) | (b & 0x3F);
+    }
+    return .{ .cp = cp, .len = need + 1 };
+}
+
 pub fn utf8Info(utf8: []const u8) Utf8Info {
     var n: usize = 0;
     var wide = false;
     var i: usize = 0;
-    while (i < utf8.len) {
-        const len = std.unicode.utf8ByteSequenceLength(utf8[i]) catch 1;
-        const cp: u21 = if (i + len <= utf8.len) (std.unicode.utf8Decode(utf8[i .. i + len]) catch 0xFFFD) else 0xFFFD;
-        if (cp > 255) wide = true;
-        n += 1;
-        i += if (i + len <= utf8.len) len else 1;
+    while (i < utf8.len) : (n += 1) {
+        const d = utf8Next(utf8, i);
+        if (d.cp > 255) wide = true;
+        i += d.len;
     }
     return .{ .n = n, .wide = wide };
 }
@@ -292,14 +329,9 @@ pub fn heapStringUtf8(t: *Thread, utf8: []const u8) Word {
     var i: usize = 0;
     var k: usize = 0;
     while (i < utf8.len) : (k += 1) {
-        const len = std.unicode.utf8ByteSequenceLength(utf8[i]) catch 1;
-        if (i + len <= utf8.len) {
-            stringSetFits(s, k, std.unicode.utf8Decode(utf8[i .. i + len]) catch 0xFFFD);
-            i += len;
-        } else {
-            stringSetFits(s, k, 0xFFFD);
-            i += 1;
-        }
+        const d = utf8Next(utf8, i);
+        stringSetFits(s, k, d.cp);
+        i += d.len;
     }
     return s;
 }
@@ -371,7 +403,7 @@ pub fn constNumber(t: *Thread, text: []const u8) Word {
     const w = switch (lit) {
         .fix => |n| rt.fix(n),
         .flo => |f| constFlonum(f),
-        .exact => num.exactFromLit(t, lit) orelse rt.os.fatal("bad number constant {s}", .{text}),
+        .exact, .complex => num.exactFromLit(t, lit) orelse rt.os.fatal("bad number constant {s}", .{text}),
     };
     makePermanent(w);
     return w;
@@ -384,8 +416,11 @@ fn makePermanent(w: Word) void {
     q[0] |= @as(Word, rt.F_PERM) << 8;
     switch (rt.hdrType(q[0])) {
         rt.T_RATNUM, rt.T_COMPNUM => {
-            makePermanent(q[1]);
-            makePermanent(q[2]);
+            // flonum parts come from the nursery: a static copy, as the
+            // constant is not a root and so is not updated by a collection
+            for (q[1..3]) |*part| {
+                if (rt.isFlonum(part.*)) part.* = constFlonum(rt.flo(part.*)) else makePermanent(part.*);
+            }
         },
         else => {},
     }

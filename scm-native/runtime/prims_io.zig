@@ -371,7 +371,8 @@ pub const @"%input-port-open?" = portPredD(isInOpen);
 pub const @"%output-port-open?" = portPredD(isOutOpen);
 
 fn fileExists(t: *Thread) Err!Word {
-    return rt.boolean(rt.os.fileExists(data.toUtf8(try P.stringArg(t, 0))));
+    // a regular file (symbolic links followed), as the JVM implementation
+    return rt.boolean(rt.os.kindOf(data.toUtf8(try P.stringArg(t, 0)), true) == .file);
 }
 pub const @"%file-exists?" = WD("file-exists?", fileExists, 1, 1);
 
