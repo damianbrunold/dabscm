@@ -10,7 +10,7 @@ const ports = @import("ports.zig");
 const Word = rt.Word;
 const Thread = rt.Thread;
 
-const pa = std.heap.page_allocator;
+const pa = std.heap.c_allocator;
 
 const Node = union(enum) {
     eof,

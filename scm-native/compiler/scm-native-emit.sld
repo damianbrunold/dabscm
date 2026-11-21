@@ -10,7 +10,8 @@
           (srfi 69)
           (scm native ast)
           (scm native anf)
-          (scm native expand))
+          (scm native expand)
+          (scm native optimize))
   (begin
     ;; Zig code generation from ANF Core IR (see scm-native/README.md for
     ;; the runtime model).
@@ -146,7 +147,10 @@
                             (else '()))))
         (set! blocks
               (cons (apply cat
-                           (cat "fn " (block-name b) "(t: *Thread) callconv(.c) void {\n")
+                           (cat "fn " (block-name b) "(t: *Thread) callconv(.c) void {\n"
+                                ;; inline helpers with constant arguments are
+                                ;; evaluated at comptime: large blocks need more
+                                (if (> (length (block-lines b)) 200) "    @setEvalBranchQuota(100000000);\n" ""))
                            (append (map (lambda (l) (cat l "\n"))
                                         (append (reverse (block-prologue b))
                                                 reserve
@@ -173,6 +177,16 @@
     (define (local-name v) (cat "v" (local-id v)))
 
     (define (bind env v expr local?) (cons (list v expr local?) env))
+
+    ;; a variable bound to a known lambda (letrec): calls jump to its code
+    (define (bind-known env v expr local? l) (cons (list v expr local? l) env))
+
+    (define (known-lam env v)
+      (let ((e (assq v env)))
+        (and e (pair? (cdddr e)) (cadddr e))))
+
+    (define (arity-ok? l n)
+      (if (lam-rest l) (>= n (length (lam-params l))) (= n (length (lam-params l)))))
 
     (define (temp! b expr)
       (let ((name (cat "t" (next!))))
@@ -250,7 +264,8 @@
            (emit! b (global-place (cadr e)) " = " a ";")
            "rt.UNSPEC"))
         ((lambda) (cg-closure (cadr e) b env))
-        ((prim) (cg-prim (cadr e) (map (lambda (a) (cg-simple a b env)) (cddr e)) b))
+        ((prim) (cg-prim (cadr e) (map (lambda (a) (cg-simple a b env)) (cddr e)) b (cddr e)))
+        ((call) (cg-leaf-call (cadr (cadr e)) (map (lambda (a) (cg-simple a b env)) (cddr e)) b))
         ((if)
          (let ((test (cg-simple (cadr e) b env))
                (r (cat "t" (next!))))
@@ -334,13 +349,13 @@
                            (let* ((v (car bd))
                                   (l (cadr (cadr bd))))
                              (if (null? (lam-free l))
-                                 (bind env2 v (static-closure l) #f)
+                                 (bind-known env2 v (static-closure l) #f l)
                                  (let ((c (cat "cl" (local-id v))))
                                    (alloc! b (+ 2 (length (lam-free l))))
                                    (emit! b "const " c " = t.closure(&" (gen-lambda l) ", "
                                           (length (lam-free l)) ");")
                                    (emit! b "const " (local-name v) " = rt.tagPtr(" c ");")
-                                   (bind env2 v (local-name v) #t)))))
+                                   (bind-known env2 v (local-name v) #t l)))))
                          env live)))
         (for-each (lambda (bd)
                     (let ((l (cadr (cadr bd))))
@@ -375,7 +390,7 @@
 
     ;; --- open-coded primitives ---------------------------------------------
 
-    (define (cg-prim op as b)
+    (define (cg-prim op as b args-nodes)
       (define (a i) (list-ref as i))
       (define (pred expr) (temp! b (cat "rt.boolean(" expr ")")))
       (define (check! test msg . atoms)
@@ -385,8 +400,8 @@
              (join atoms ", ") "}), .{t})"))
       (define (arith-fail name)
         (cat "return @call(.always_tail, rt.arithError(t, \"" name "\", " (a 0) ", " (a 1) "), .{t})"))
+      ;; a flonum result needs no reservation (rt.safeFlo)
       (define (arith fn name)
-        (alloc! b 2)
         (temp! b (cat "rt.num." fn "(t, " (a 0) ", " (a 1) ") orelse " (arith-fail name))))
       (define (cmp c name)
         (pred (cat "rt.num.cmp(" (a 0) ", " (a 1) ", ." c ") orelse " (arith-fail name))))
@@ -426,7 +441,59 @@
         ((char->integer)
          (emit! b "if (!rt.isChar(" (a 0) ")) " (type-fail "char->integer") ";")
          (temp! b (cat "rt.fix(rt.charCode(" (a 0) "))")))
+        ;; records (from define-record-type, see (scm native optimize))
+        ((%record-get)
+         ;; x type index tag
+         (emit! b "if (!(rt.isObj(" (a 0) ", rt.T_RECORD) and rt.ptr(" (a 0) ")[1] == " (a 1) ")) "
+                "return @call(.always_tail, rt.fail(t, \"accessor applied to bad value\", &.{"
+                (a 1) ", " (a 3) ", " (a 0) "}), .{t});")
+         (temp! b (cat "rt.ptr(" (a 0) ")[1 + " (record-index (list-ref args-nodes 2)) "]")))
+        ((%record-set)
+         ;; x value type index tag
+         (emit! b "if (!(rt.isObj(" (a 0) ", rt.T_RECORD) and rt.ptr(" (a 0) ")[1] == " (a 2) ")) "
+                "return @call(.always_tail, rt.fail(t, \"modifier applied to bad value\", &.{"
+                (a 2) ", " (a 4) ", " (a 0) "}), .{t});")
+         (emit! b "rt.ptr(" (a 0) ")[1 + " (record-index (list-ref args-nodes 3)) "] = " (a 1) ";")
+         "rt.UNSPEC")
+        ((%record-is)
+         (pred (cat "rt.isObj(" (a 0) ", rt.T_RECORD) and rt.ptr(" (a 0) ")[1] == " (a 1))))
+        ((%record-make)
+         ;; type size (index ...) arg ...
+         (let* ((size (cadr (list-ref args-nodes 1)))
+                (indexes (cadr (list-ref args-nodes 2)))
+                (q (cat "rec" (next!))))
+           (alloc! b (+ 1 size))
+           (emit! b "const " q " = t.allocRaw(" (+ 1 size) ");")
+           (emit! b q "[0] = rt.hdr(rt.T_RECORD, " size ");")
+           (emit! b q "[1] = " (a 0) ";")
+           (let loop ((i 2))
+             (when (<= i size)
+               (emit! b q "[" i "] = rt.FALSE;")
+               (loop (+ i 1))))
+           (let loop ((is indexes) (k 3))
+             (unless (null? is)
+               (emit! b q "[" (+ 1 (car is)) "] = " (a k) ";")
+               (loop (cdr is) (+ k 1))))
+           (temp! b (cat "rt.tagPtr(" q ")"))))
         (else (error "cg-prim: unknown primitive" op))))
+
+    (define (record-index node) (cadr node))
+
+    ;; A direct call of a leaf primitive: arguments in t.args, the value
+    ;; returned (UNBOUND for an error, which is pending in the thread)
+    (define (cg-leaf-call name as b)
+      (let ((n (length as))
+            (sym (mangle "scmd_" (symbol->string name))))
+        (add-extern! (cat "extern fn " sym "(t: *Thread) callconv(.c) Word;"))
+        (when (> n 256) (emit! b "t.ensureArgs(" n ");"))
+        (let loop ((as as) (i 0))
+          (unless (null? as)
+            (emit! b "t.args[" i "] = " (car as) ";")
+            (loop (cdr as) (+ i 1))))
+        (emit! b "t.argc = " n ";")
+        (let ((r (temp! b (cat sym "(t)"))))
+          (emit! b "if (" r " == rt.UNBOUND) return @call(.always_tail, rt.errorCode, .{t});")
+          r)))
 
     ;; --- tail position -----------------------------------------------------
 
@@ -451,7 +518,11 @@
                (cg-nontail-call (car (car bindings)) (cadr (car bindings)) body b env)
                (cg-tail body b (cg-let-bindings bindings body b env)))))
         ((letrec) (cg-tail (caddr e) b (cg-letrec (cadr e) (caddr e) b env)))
-        ((call) (cg-call (cadr e) (cddr e) b env))
+        ((call) (if (simple? e)
+                    (let ((a (cg-simple e b env)))
+                      (emit! b "t.val = " a ";")
+                      (emit! b tail-call-ret))
+                    (cg-call (cadr e) (cddr e) b env)))
         (else
          (let ((a (cg-simple e b env)))
            (emit! b "t.val = " a ";")
@@ -459,10 +530,22 @@
 
     (define (cg-call f args b env)
       (let* ((direct (and (eq? (node-kind f) 'primref) (implemented? (cadr f))))
-             (global (eq? (node-kind f) 'gref))
-             (fa (and (not direct) (not global) (cg-simple f b env)))
-             (as (map (lambda (a) (cg-simple a b env)) args))
-             (n (length as)))
+             (n (length args))
+             ;; a known lambda: a letrec-bound one, or a global of this module
+             (known (cond ((and (eq? (node-kind f) 'lref) (known-lam env (cadr f)))
+                           => (lambda (l) (and (arity-ok? l n) l)))
+                          ((and (eq? (node-kind f) 'gref) (known-global-lambda (cadr f)))
+                           => (lambda (l)
+                                (and (arity-ok? l n)
+                                     (string=? (module-symbol (glob-lib (cadr f))) module-sym)
+                                     l)))
+                          (else #f)))
+             (global (and (not known) (eq? (node-kind f) 'gref)))
+             (fa (cond (direct #f)
+                       (global #f)
+                       ((and known (eq? (node-kind f) 'gref)) (static-closure known))
+                       (else (cg-simple f b env))))
+             (as (map (lambda (a) (cg-simple a b env)) args)))
         (when (> n 256) (emit! b "t.ensureArgs(" n ");"))
         (let loop ((as as) (i 0))
           (unless (null? as)
@@ -473,6 +556,9 @@
                (emit! b "return @call(.always_tail, rt.notProcedureCode, .{t});"))
               (direct
                (emit! b "return @call(.always_tail, " (prim-symbol (cadr f)) ", .{t});"))
+              (known
+               (emit! b "t.self = " fa ";")
+               (emit! b "return @call(.always_tail, " (gen-lambda known) ", .{t});"))
               (global
                (emit! b "return @call(.always_tail, rt.enterCell(t, &" (global-place (cadr f)) ", \""
                       (zig-escape (glob-name (cadr f))) "\"), .{t});"))

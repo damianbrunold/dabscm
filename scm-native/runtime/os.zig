@@ -7,7 +7,7 @@ var environ: ?*std.process.Environ.Map = null;
 var out_buf: [8192]u8 = undefined;
 var out_len: usize = 0;
 
-const pa = std.heap.page_allocator;
+const pa = std.heap.c_allocator;
 
 pub fn init(the_io: std.Io, env: *std.process.Environ.Map) void {
     io = the_io;

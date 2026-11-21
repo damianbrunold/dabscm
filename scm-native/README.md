@@ -105,6 +105,42 @@ continuation captured in a top-level form therefore ends with that form there, b
 with the rest of the program in a native executable (the R7RS program semantics).
 `core-tests.scm` emulates the JVM behavior for the core tests.
 
+## Phase 3: optimizer
+
+`(scm native optimize)` rewrites the whole program's Core IR before ANF:
+- **Constant primitives:** globals that are constant primitives become the primitive, and
+  primitive calls are open-coded.
+- **Records:** `define-record-type` procedures become open-coded record operations with a
+  type check (the record type is recognized from `make-record-type` with constant fields).
+- **Inlining:** calls of small known global procedures are inlined, across libraries.
+- **Folding:** `if` with a constant test, and `(if (not e) ...)`, are folded.
+
+The emitter adds:
+- **Known calls:** calls of known procedures (`letrec` and named-`let` bindings, and globals of
+  the same module defined once to a lambda) jump to their code directly.
+- **Direct leaf calls:** leaf primitives (those that never collect and never call Scheme:
+  `car`, `string-ref`, `assv`, `display`, ...; made with `WD` in the runtime) are called
+  directly as Zig functions, with no frame and no block split.
+- **Flonums without reservation:** arithmetic slow paths take flonums from a separate area at
+  the top of the heap, so arithmetic reserves nothing.
+
+`bench/bench.scm`, per run, JVM implementation with the JIT after warm-up against native
+(x86-64 Linux):
+
+| benchmark | JVM | native | speedup |
+|---|---|---|---|
+| fib30 | 37.4 ms | 14.4 ms | 3× |
+| tak | 1.05 ms | 0.41 ms | 3× |
+| ctak (call/cc) | 122 ms | 11.3 ms | 11× |
+| nqueens8 | 1.92 ms | 0.35 ms | 5× |
+| loops (named let, do, vectors) | 359 ms | 11.3 ms | 32× |
+| lists (map, filter, for-each, apply) | 791 ms | 54.5 ms | 15× |
+| strings (string ports, chars) | 222 ms | 51.9 ms | 4× |
+| records (define-record-type) | 569 ms | 18.1 ms | 31× |
+| sorting (list-sort) | 487 ms | 67.8 ms | 7× |
+| assocs (assv) | 99.8 ms | 32.8 ms | 3× |
+| floats | 223 ms | 48.7 ms | 5× |
+
 Phase 1 numbers (unoptimized compiled code, per run): fib(30) 19 ms, tak 18 12 6 0.47 ms. The
 hand-written spike took 11 ms and 0.29 ms, the JVM JIT 30 ms and 0.85 ms. The difference to the
 spike is what Phase 3 (the optimizer) addresses.

@@ -11,6 +11,7 @@ const Code = rt.Code;
 const Err = P.Err;
 const W = P.W;
 const WN = P.WN;
+const WD = P.WD;
 const arg = P.arg;
 const raise = P.raise;
 const any = P.any;
@@ -18,7 +19,7 @@ const fix = rt.fix;
 const unfix = rt.unfix;
 const isFix = rt.isFix;
 
-const pa = std.heap.page_allocator;
+const pa = std.heap.c_allocator;
 
 fn numArg(t: *Thread, comptime who: []const u8, i: usize) Err!Word {
     const w = arg(t, i);
@@ -108,11 +109,11 @@ fn geImpl(t: *Thread) Err!Word {
 fn eqImpl(t: *Thread) Err!Word {
     return compareChain(t, .eq, "=");
 }
-pub const @"%<" = WN("<", ltImpl, 1, any);
-pub const @"%>" = WN(">", gtImpl, 1, any);
-pub const @"%<=" = WN("<=", leImpl, 1, any);
-pub const @"%>=" = WN(">=", geImpl, 1, any);
-pub const @"%=" = WN("=", eqImpl, 1, any);
+pub const @"%<" = WD("<", ltImpl, 1, any);
+pub const @"%>" = WD(">", gtImpl, 1, any);
+pub const @"%<=" = WD("<=", leImpl, 1, any);
+pub const @"%>=" = WD(">=", geImpl, 1, any);
+pub const @"%=" = WD("=", eqImpl, 1, any);
 
 // --- integer division ----------------------------------------------------------
 
@@ -172,15 +173,15 @@ fn inexactP(t: *Thread) Err!Word {
 fn zeroP(t: *Thread) Err!Word {
     return rt.boolean(tower.numEq(t, try numArg(t, "zero?", 0), fix(0)).?);
 }
-pub const @"%number?" = WN("number?", numberP, 1, 1);
-pub const @"%complex?" = WN("complex?", numberP, 1, 1);
-pub const @"%real?" = WN("real?", realP, 1, 1);
-pub const @"%rational?" = WN("rational?", rationalP, 1, 1);
-pub const @"%integer?" = WN("integer?", integerP, 1, 1);
-pub const @"%exact-integer?" = WN("exact-integer?", exactIntegerP, 1, 1);
-pub const @"%exact?" = WN("exact?", exactP, 1, 1);
-pub const @"%inexact?" = WN("inexact?", inexactP, 1, 1);
-pub const @"%zero?" = WN("zero?", zeroP, 1, 1);
+pub const @"%number?" = WD("number?", numberP, 1, 1);
+pub const @"%complex?" = WD("complex?", numberP, 1, 1);
+pub const @"%real?" = WD("real?", realP, 1, 1);
+pub const @"%rational?" = WD("rational?", rationalP, 1, 1);
+pub const @"%integer?" = WD("integer?", integerP, 1, 1);
+pub const @"%exact-integer?" = WD("exact-integer?", exactIntegerP, 1, 1);
+pub const @"%exact?" = WD("exact?", exactP, 1, 1);
+pub const @"%inexact?" = WD("inexact?", inexactP, 1, 1);
+pub const @"%zero?" = WD("zero?", zeroP, 1, 1);
 
 // --- exactness ---------------------------------------------------------------
 

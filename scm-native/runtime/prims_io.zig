@@ -12,6 +12,7 @@ const Code = rt.Code;
 const Err = P.Err;
 const W = P.W;
 const WN = P.WN;
+const WD = P.WD;
 const arg = P.arg;
 const raise = P.raise;
 const any = P.any;
@@ -19,7 +20,7 @@ const fix = rt.fix;
 const unfix = rt.unfix;
 const Port = ports.Port;
 
-const pa = std.heap.page_allocator;
+const pa = std.heap.c_allocator;
 
 fn makeStdin() callconv(.c) Word {
     return ports.stdinObject();
@@ -104,13 +105,13 @@ fn writeString(t: *Thread) Err!Word {
     p.write(buf.items);
     return rt.UNSPEC;
 }
-pub const @"%write" = WN("write", writeImpl, 1, 2);
-pub const @"%write-shared" = WN("write-shared", writeSharedImpl, 1, 2);
-pub const @"%write-simple" = WN("write-simple", writeImpl, 1, 2);
-pub const @"%display" = WN("display", displayImpl, 1, 2);
-pub const @"%newline" = WN("newline", newlineImpl, 0, 1);
-pub const @"%write-char" = WN("write-char", writeChar, 1, 2);
-pub const @"%write-string" = WN("write-string", writeString, 1, 4);
+pub const @"%write" = WD("write", writeImpl, 1, 2);
+pub const @"%write-shared" = WD("write-shared", writeSharedImpl, 1, 2);
+pub const @"%write-simple" = WD("write-simple", writeImpl, 1, 2);
+pub const @"%display" = WD("display", displayImpl, 1, 2);
+pub const @"%newline" = WD("newline", newlineImpl, 0, 1);
+pub const @"%write-char" = WD("write-char", writeChar, 1, 2);
+pub const @"%write-string" = WD("write-string", writeString, 1, 4);
 
 fn writeU8(t: *Thread) Err!Word {
     const b = arg(t, 0);
@@ -119,7 +120,7 @@ fn writeU8(t: *Thread) Err!Word {
     (try outPort(t, 1)).write(&byte);
     return rt.UNSPEC;
 }
-pub const @"%write-u8" = WN("write-u8", writeU8, 1, 2);
+pub const @"%write-u8" = WD("write-u8", writeU8, 1, 2);
 
 fn writeBytevector(t: *Thread) Err!Word {
     const bv = arg(t, 0);
@@ -131,13 +132,13 @@ fn writeBytevector(t: *Thread) Err!Word {
     (try outPort(t, 1)).write(data.bvBytes(bv)[start..end]);
     return rt.UNSPEC;
 }
-pub const @"%write-bytevector" = WN("write-bytevector", writeBytevector, 1, 4);
+pub const @"%write-bytevector" = WD("write-bytevector", writeBytevector, 1, 4);
 
 fn flushOutputPort(t: *Thread) Err!Word {
     (try outPort(t, 0)).flush();
     return rt.UNSPEC;
 }
-pub const @"%flush-output-port" = WN("flush-output-port", flushOutputPort, 0, 1);
+pub const @"%flush-output-port" = WD("flush-output-port", flushOutputPort, 0, 1);
 
 // --- reading ---------------------------------------------------------------------
 
@@ -157,10 +158,10 @@ fn peekU8(t: *Thread) Err!Word {
     const b = (try inPort(t, 0)).peekByte() orelse return rt.EOF;
     return fix(b);
 }
-pub const @"%read-char" = WN("read-char", readCharImpl, 0, 1);
-pub const @"%peek-char" = WN("peek-char", peekCharImpl, 0, 1);
-pub const @"%read-u8" = WN("read-u8", readU8, 0, 1);
-pub const @"%peek-u8" = WN("peek-u8", peekU8, 0, 1);
+pub const @"%read-char" = WD("read-char", readCharImpl, 0, 1);
+pub const @"%peek-char" = WD("peek-char", peekCharImpl, 0, 1);
+pub const @"%read-u8" = WD("read-u8", readU8, 0, 1);
+pub const @"%peek-u8" = WD("peek-u8", peekU8, 0, 1);
 
 fn readLine(t: *Thread) Err!Word {
     const p = try inPort(t, 0);
@@ -220,7 +221,7 @@ pub const @"%read" = WN("read", readImpl, 0, 1);
 fn charReady(_: *Thread) Err!Word {
     return rt.TRUE;
 }
-pub const @"%char-ready?" = WN("char-ready?", charReady, 0, 1);
+pub const @"%char-ready?" = WD("char-ready?", charReady, 0, 1);
 
 // --- string and bytevector ports ---------------------------------------------------
 
@@ -317,18 +318,18 @@ fn closePort(t: *Thread) Err!Word {
     (try portArg(t, 0)).close();
     return rt.UNSPEC;
 }
-pub const @"%close-input-port" = WN("close-input-port", closePort, 1, 1);
-pub const @"%close-output-port" = WN("close-output-port", closePort, 1, 1);
-pub const @"%close-port" = WN("close-port", closePort, 1, 1);
+pub const @"%close-input-port" = WD("close-input-port", closePort, 1, 1);
+pub const @"%close-output-port" = WD("close-output-port", closePort, 1, 1);
+pub const @"%close-port" = WD("close-port", closePort, 1, 1);
 
-fn portPred(comptime f: fn (*Port) bool) Code {
+fn portPredD(comptime f: fn (*Port) bool) P.Prim {
     const S = struct {
         fn g(t: *Thread) Err!Word {
             const p = ports.get(arg(t, 0)) orelse return rt.FALSE;
             return rt.boolean(f(p));
         }
     };
-    return W(S.g, 1, 1);
+    return P.WD("", S.g, 1, 1);
 }
 fn isIn(p: *Port) bool {
     return p.isInput();
@@ -348,17 +349,17 @@ fn isInOpen(p: *Port) bool {
 fn isOutOpen(p: *Port) bool {
     return !p.isInput() and p.open;
 }
-pub const @"%input-port?" = portPred(isIn);
-pub const @"%output-port?" = portPred(isOut);
-pub const @"%textual-port?" = portPred(isTextual);
-pub const @"%binary-port?" = portPred(isBinary);
-pub const @"%input-port-open?" = portPred(isInOpen);
-pub const @"%output-port-open?" = portPred(isOutOpen);
+pub const @"%input-port?" = portPredD(isIn);
+pub const @"%output-port?" = portPredD(isOut);
+pub const @"%textual-port?" = portPredD(isTextual);
+pub const @"%binary-port?" = portPredD(isBinary);
+pub const @"%input-port-open?" = portPredD(isInOpen);
+pub const @"%output-port-open?" = portPredD(isOutOpen);
 
 fn fileExists(t: *Thread) Err!Word {
     return rt.boolean(rt.os.fileExists(data.toUtf8(try P.stringArg(t, 0))));
 }
-pub const @"%file-exists?" = WN("file-exists?", fileExists, 1, 1);
+pub const @"%file-exists?" = WD("file-exists?", fileExists, 1, 1);
 
 fn deleteFile(t: *Thread) Err!Word {
     if (!rt.os.deleteFile(data.toUtf8(try P.stringArg(t, 0)))) return fileError(t, "cannot delete file", arg(t, 0));

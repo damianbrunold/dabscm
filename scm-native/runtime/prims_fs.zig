@@ -11,9 +11,10 @@ const Thread = rt.Thread;
 const Err = P.Err;
 const W = P.W;
 const WN = P.WN;
+const WD = P.WD;
 const arg = P.arg;
 
-const pa = std.heap.page_allocator;
+const pa = std.heap.c_allocator;
 
 fn str(t: *Thread, utf8: []const u8) Word {
     t.reserve(data.stringWords(utf8.len, true));

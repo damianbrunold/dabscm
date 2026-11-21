@@ -96,6 +96,10 @@ pub fn scm_primitive(code: Code, name: [*]const u8, len: usize) callconv(.c) Wor
 pub fn scm_missing_primitive(name: [*]const u8, len: usize) callconv(.c) Word {
     return rt.missingPrimitive(name[0..len]);
 }
+/// Raise the pending error (after a direct primitive call returned UNBOUND)
+pub fn scm_error_code(t: *Thread) callconv(.c) void {
+    return @call(.always_tail, rt.errorCode, .{t});
+}
 pub fn scm_not_procedure_code(t: *Thread) callconv(.c) void {
     return @call(.always_tail, rt.notProcedureCode, .{t});
 }

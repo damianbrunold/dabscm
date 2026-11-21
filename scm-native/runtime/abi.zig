@@ -157,6 +157,9 @@ pub const Thread = extern struct {
     hlimit: [*]Word,
     heap: [*]Word,
     heap_len: usize,
+    /// the top of the heap, above the nursery, holds the flonums made by
+    /// arithmetic slow paths (which reserve nothing): flo_ptr up to the end
+    flo_ptr: [*]Word,
     /// dynamic-wind winders and exception handlers (lists)
     winders: Word = NIL,
     handlers: Word = NIL,
@@ -310,6 +313,7 @@ pub const impl = if (@hasDecl(root, "scm_runtime")) root.scm_runtime else struct
     pub extern fn scm_primitive(code: Code, name: [*]const u8, len: usize) Word;
     pub extern fn scm_missing_primitive(name: [*]const u8, len: usize) Word;
     pub extern fn scm_not_procedure_code(t: *Thread) callconv(.c) void;
+    pub extern fn scm_error_code(t: *Thread) callconv(.c) void;
 };
 
 /// Prepare a call of procedure `p` and return its code.
@@ -478,3 +482,5 @@ pub fn missingPrimitive(comptime name: []const u8) Word {
     return impl.scm_missing_primitive(name.ptr, name.len);
 }
 pub const notProcedureCode: Code = &impl.scm_not_procedure_code;
+/// Raises the pending error
+pub const errorCode: Code = &impl.scm_error_code;

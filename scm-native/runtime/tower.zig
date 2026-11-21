@@ -17,7 +17,7 @@ const unfix = rt.unfix;
 const isFix = rt.isFix;
 const ptr = rt.ptr;
 
-const pa = std.heap.page_allocator;
+const pa = std.heap.c_allocator;
 const Managed = big.Managed;
 const Const = big.Const;
 const Limb = std.math.big.Limb;
@@ -293,10 +293,7 @@ pub fn imagPart(w: Word) Word {
 }
 
 fn floWord(t: *Thread, f: f64) Word {
-    const q = rt.allocLarge(t, 2);
-    q[0] = rt.hdr(rt.T_FLONUM, 1) | (@as(Word, rt.F_LARGE) << 8);
-    q[1] = @bitCast(f);
-    return rt.tagPtr(q);
+    return rt.safeFlo(t, f);
 }
 
 // --- generic operations ----------------------------------------------------------------

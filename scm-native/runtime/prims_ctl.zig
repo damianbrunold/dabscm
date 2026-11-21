@@ -13,13 +13,14 @@ const Code = rt.Code;
 const Err = P.Err;
 const W = P.W;
 const WN = P.WN;
+const WD = P.WD;
 const arg = P.arg;
 const raise = P.raise;
 const any = P.any;
 const fix = rt.fix;
 const unfix = rt.unfix;
 
-const pa = std.heap.page_allocator;
+const pa = std.heap.c_allocator;
 
 // --- dynamic state -----------------------------------------------------------
 
@@ -37,16 +38,16 @@ fn handlersSet(t: *Thread) Err!Word {
     t.handlers = arg(t, 0);
     return rt.UNSPEC;
 }
-pub const @"%%winders-get" = WN("%winders-get", windersGet, 0, 0);
-pub const @"%%winders-set!" = WN("%winders-set!", windersSet, 1, 1);
-pub const @"%%exception-handlers-get" = WN("%exception-handlers-get", handlersGet, 0, 0);
-pub const @"%%exception-handlers-set!" = WN("%exception-handlers-set!", handlersSet, 1, 1);
+pub const @"%%winders-get" = WD("%winders-get", windersGet, 0, 0);
+pub const @"%%winders-set!" = WD("%winders-set!", windersSet, 1, 1);
+pub const @"%%exception-handlers-get" = WD("%exception-handlers-get", handlersGet, 0, 0);
+pub const @"%%exception-handlers-set!" = WD("%exception-handlers-set!", handlersSet, 1, 1);
 
 pub const @"%%call-with-escape-continuation" = &rt.callccCode;
 fn escapeOnly(_: *Thread) Err!Word {
     return rt.FALSE;
 }
-pub const @"%%escape-only-receiver?" = WN("%escape-only-receiver?", escapeOnly, 1, 1);
+pub const @"%%escape-only-receiver?" = WD("%escape-only-receiver?", escapeOnly, 1, 1);
 
 pub const @"%values" = &rt.valuesCode;
 pub const @"%call-with-values" = &rt.callWithValuesCode;
@@ -64,7 +65,7 @@ pub const @"%%raise-fatal" = &rt.raiseFatalCode;
 fn errorObjectP(t: *Thread) Err!Word {
     return rt.boolean(rt.isObj(arg(t, 0), rt.T_ERROR));
 }
-pub const @"%error-object?" = WN("error-object?", errorObjectP, 1, 1);
+pub const @"%error-object?" = WD("error-object?", errorObjectP, 1, 1);
 
 fn errArg(t: *Thread) Err!Word {
     const e = arg(t, 0);
@@ -85,10 +86,10 @@ fn fileErrorP(t: *Thread) Err!Word {
     const e = arg(t, 0);
     return rt.boolean(rt.isObj(e, rt.T_ERROR) and rt.ptr(e)[3] == fix(rt.ErrorKind.file));
 }
-pub const @"%error-object-message" = WN("error-object-message", errorObjectMessage, 1, 1);
-pub const @"%error-object-irritants" = WN("error-object-irritants", errorObjectIrritants, 1, 1);
-pub const @"%read-error?" = WN("read-error?", readErrorP, 1, 1);
-pub const @"%file-error?" = WN("file-error?", fileErrorP, 1, 1);
+pub const @"%error-object-message" = WD("error-object-message", errorObjectMessage, 1, 1);
+pub const @"%error-object-irritants" = WD("error-object-irritants", errorObjectIrritants, 1, 1);
+pub const @"%read-error?" = WD("read-error?", readErrorP, 1, 1);
+pub const @"%file-error?" = WD("file-error?", fileErrorP, 1, 1);
 
 // --- parameters: a procedure over a box ----------------------------------------
 
@@ -135,9 +136,9 @@ fn recordSet(t: *Thread) Err!Word {
     return rt.UNSPEC;
 }
 pub const @"%make-record" = WN("make-record", makeRecordImpl, 1, 1);
-pub const @"%record?" = WN("record?", recordP, 1, 1);
-pub const @"%record-ref" = WN("record-ref", recordRef, 2, 2);
-pub const @"%record-set!" = WN("record-set!", recordSet, 3, 3);
+pub const @"%record?" = WD("record?", recordP, 1, 1);
+pub const @"%record-ref" = WD("record-ref", recordRef, 2, 2);
+pub const @"%record-set!" = WD("record-set!", recordSet, 3, 3);
 
 inline fn isInstance(x: Word, ty: Word) bool {
     return data.isRecord(x) and data.recordSize(x) > 0 and data.recordSlots(x)[0] == ty;
@@ -216,8 +217,8 @@ fn lambdaP(t: *Thread) Err!Word {
 fn primitiveP(t: *Thread) Err!Word {
     return rt.boolean(rt.isPrimitive(arg(t, 0)));
 }
-pub const @"%lambda?" = WN("lambda?", lambdaP, 1, 1);
-pub const @"%primitive?" = WN("primitive?", primitiveP, 1, 1);
+pub const @"%lambda?" = WD("lambda?", lambdaP, 1, 1);
+pub const @"%primitive?" = WD("primitive?", primitiveP, 1, 1);
 
 var gensym_counter: u64 = 0;
 fn gensymImpl(t: *Thread) Err!Word {
@@ -230,11 +231,11 @@ fn gensymImpl(t: *Thread) Err!Word {
     const name = std.fmt.allocPrint(pa, "{s}{d}", .{ prefix, gensym_counter }) catch rt.oom();
     return data.intern(name);
 }
-pub const @"%gensym" = WN("gensym", gensymImpl, 0, 1);
+pub const @"%gensym" = WD("gensym", gensymImpl, 0, 1);
 
 // --- lists -----------------------------------------------------------------------
 
-fn cxr(comptime path: []const u8) Code {
+fn cxrD(comptime path: []const u8) P.Prim {
     const S = struct {
         fn f(t: *Thread) Err!Word {
             var x = arg(t, 0);
@@ -247,38 +248,38 @@ fn cxr(comptime path: []const u8) Code {
             return x;
         }
     };
-    return W(S.f, 1, 1);
+    return P.WD("c" ++ path ++ "r", S.f, 1, 1);
 }
-pub const @"%caar" = cxr("aa");
-pub const @"%cadr" = cxr("ad");
-pub const @"%cdar" = cxr("da");
-pub const @"%cddr" = cxr("dd");
-pub const @"%caaar" = cxr("aaa");
-pub const @"%caadr" = cxr("aad");
-pub const @"%cadar" = cxr("ada");
-pub const @"%caddr" = cxr("add");
-pub const @"%cdaar" = cxr("daa");
-pub const @"%cdadr" = cxr("dad");
-pub const @"%cddar" = cxr("dda");
-pub const @"%cdddr" = cxr("ddd");
-pub const @"%caaaar" = cxr("aaaa");
-pub const @"%caaadr" = cxr("aaad");
-pub const @"%caadar" = cxr("aada");
-pub const @"%caaddr" = cxr("aadd");
-pub const @"%cadaar" = cxr("adaa");
-pub const @"%cadadr" = cxr("adad");
-pub const @"%caddar" = cxr("adda");
-pub const @"%cadddr" = cxr("addd");
-pub const @"%cdaaar" = cxr("daaa");
-pub const @"%cdaadr" = cxr("daad");
-pub const @"%cdadar" = cxr("dada");
-pub const @"%cdaddr" = cxr("dadd");
-pub const @"%cddaar" = cxr("ddaa");
-pub const @"%cddadr" = cxr("ddad");
-pub const @"%cdddar" = cxr("ddda");
-pub const @"%cddddr" = cxr("dddd");
-pub const @"%first" = cxr("a");
-pub const @"%second" = cxr("ad");
+pub const @"%caar" = cxrD("aa");
+pub const @"%cadr" = cxrD("ad");
+pub const @"%cdar" = cxrD("da");
+pub const @"%cddr" = cxrD("dd");
+pub const @"%caaar" = cxrD("aaa");
+pub const @"%caadr" = cxrD("aad");
+pub const @"%cadar" = cxrD("ada");
+pub const @"%caddr" = cxrD("add");
+pub const @"%cdaar" = cxrD("daa");
+pub const @"%cdadr" = cxrD("dad");
+pub const @"%cddar" = cxrD("dda");
+pub const @"%cdddr" = cxrD("ddd");
+pub const @"%caaaar" = cxrD("aaaa");
+pub const @"%caaadr" = cxrD("aaad");
+pub const @"%caadar" = cxrD("aada");
+pub const @"%caaddr" = cxrD("aadd");
+pub const @"%cadaar" = cxrD("adaa");
+pub const @"%cadadr" = cxrD("adad");
+pub const @"%caddar" = cxrD("adda");
+pub const @"%cadddr" = cxrD("addd");
+pub const @"%cdaaar" = cxrD("daaa");
+pub const @"%cdaadr" = cxrD("daad");
+pub const @"%cdadar" = cxrD("dada");
+pub const @"%cdaddr" = cxrD("dadd");
+pub const @"%cddaar" = cxrD("ddaa");
+pub const @"%cddadr" = cxrD("ddad");
+pub const @"%cdddar" = cxrD("ddda");
+pub const @"%cddddr" = cxrD("dddd");
+pub const @"%first" = cxrD("a");
+pub const @"%second" = cxrD("ad");
 
 fn listRef(t: *Thread) Err!Word {
     var x = arg(t, 0);
@@ -290,9 +291,9 @@ fn listRef(t: *Thread) Err!Word {
     if (!rt.isPair(x)) return raise(t, "list-ref: index out of range", &.{arg(t, 1)});
     return rt.car(x);
 }
-pub const @"%list-ref" = WN("list-ref", listRef, 2, 2);
+pub const @"%list-ref" = WD("list-ref", listRef, 2, 2);
 
-fn mem(comptime eq: fn (Word, Word) bool) Code {
+fn memD(comptime eq: fn (Word, Word) bool) P.Prim {
     const S = struct {
         fn f(t: *Thread) Err!Word {
             var l = arg(t, 1);
@@ -300,9 +301,9 @@ fn mem(comptime eq: fn (Word, Word) bool) Code {
             return rt.FALSE;
         }
     };
-    return W(S.f, 2, 2);
+    return P.WD("", S.f, 2, 2);
 }
-fn ass(comptime eq: fn (Word, Word) bool) Code {
+fn assD(comptime eq: fn (Word, Word) bool) P.Prim {
     const S = struct {
         fn f(t: *Thread) Err!Word {
             var l = arg(t, 1);
@@ -314,17 +315,17 @@ fn ass(comptime eq: fn (Word, Word) bool) Code {
             return rt.FALSE;
         }
     };
-    return W(S.f, 2, 2);
+    return P.WD("", S.f, 2, 2);
 }
 fn eqFn(a: Word, b: Word) bool {
     return a == b;
 }
-pub const @"%memq" = mem(eqFn);
-pub const @"%memv" = mem(data.eqv);
-pub const @"%member" = mem(data.equal);
-pub const @"%assq" = ass(eqFn);
-pub const @"%assv" = ass(data.eqv);
-pub const @"%assoc" = ass(data.equal);
+pub const @"%memq" = memD(eqFn);
+pub const @"%memv" = memD(data.eqv);
+pub const @"%member" = memD(data.equal);
+pub const @"%assq" = assD(eqFn);
+pub const @"%assv" = assD(data.eqv);
+pub const @"%assoc" = assD(data.equal);
 
 fn eofObject(_: *Thread) Err!Word {
     return rt.EOF;
@@ -332,8 +333,8 @@ fn eofObject(_: *Thread) Err!Word {
 fn eofObjectP(t: *Thread) Err!Word {
     return rt.boolean(arg(t, 0) == rt.EOF);
 }
-pub const @"%eof-object" = WN("eof-object", eofObject, 0, 0);
-pub const @"%eof-object?" = WN("eof-object?", eofObjectP, 1, 1);
+pub const @"%eof-object" = WD("eof-object", eofObject, 0, 0);
+pub const @"%eof-object?" = WD("eof-object?", eofObjectP, 1, 1);
 
 // --- process context ---------------------------------------------------------------
 
@@ -388,18 +389,18 @@ fn setExitCode(t: *Thread) Err!Word {
     t.exit_code = exitCode(arg(t, 0));
     return rt.UNSPEC;
 }
-pub const @"%set-exit-code!" = WN("set-exit-code!", setExitCode, 1, 1);
+pub const @"%set-exit-code!" = WD("set-exit-code!", setExitCode, 1, 1);
 
 fn jiffy(_: *Thread) Err!Word {
     return fix(rt.os.jiffy());
 }
-pub const @"%current-jiffy" = WN("current-jiffy", jiffy, 0, 0);
-pub const @"%%jiffy" = WN("%jiffy", jiffy, 0, 0);
+pub const @"%current-jiffy" = WD("current-jiffy", jiffy, 0, 0);
+pub const @"%%jiffy" = WD("%jiffy", jiffy, 0, 0);
 
 fn currentSourceLocation(_: *Thread) Err!Word {
     return rt.FALSE;
 }
-pub const @"%current-source-location" = WN("current-source-location", currentSourceLocation, 0, 0);
+pub const @"%current-source-location" = WD("current-source-location", currentSourceLocation, 0, 0);
 
 fn features(t: *Thread) Err!Word {
     const os_features: []const []const u8 = switch (builtin.os.tag) {

@@ -1,0 +1,108 @@
+;; Benchmarks for the native compiler (Phase 3). Each one runs a few times
+;; after a warm-up (the JVM JIT); the time is per run, in milliseconds.
+;; Usage: run natively and on the JVM, compare (scm-native/bench/run.scm).
+(import (scheme base) (scheme write) (scheme time) (scheme char) (srfi 1) (srfi 132))
+
+(define (bench name reps thunk)
+  (thunk)
+  (let ((t0 (current-jiffy)))
+    (let loop ((i 0) (r #f))
+      (if (< i reps)
+          (loop (+ i 1) (thunk))
+          (let ((ms (/ (* 1000.0 (- (current-jiffy) t0)) (* reps (jiffies-per-second)))))
+            (display name) (display " ")
+            (display (/ (round (* ms 100)) 100))
+            (display " ms ") (write r) (newline))))))
+
+;; --- kernels
+(define (fib n) (if (< n 2) n (+ (fib (- n 1)) (fib (- n 2)))))
+(define (tak x y z) (if (not (< y x)) z (tak (tak (- x 1) y z) (tak (- y 1) z x) (tak (- z 1) x y))))
+(define (ctak x y z) (call/cc (lambda (k) (ctak-aux k x y z))))
+(define (ctak-aux k x y z)
+  (if (not (< y x)) (k z)
+      (call/cc (lambda (k)
+        (ctak-aux k (call/cc (lambda (k) (ctak-aux k (- x 1) y z)))
+                    (call/cc (lambda (k) (ctak-aux k (- y 1) z x)))
+                    (call/cc (lambda (k) (ctak-aux k (- z 1) x y))))))))
+(define (queens board-size)
+  (define (ok? row dist placed)
+    (or (null? placed)
+        (and (not (= (car placed) (+ row dist)))
+             (not (= (car placed) (- row dist)))
+             (not (= (car placed) row))
+             (ok? row (+ dist 1) (cdr placed)))))
+  (define (try-it x y z)
+    (if (null? x)
+        (if (null? y) 1 0)
+        (+ (if (ok? (car x) 1 z) (try-it (append (cdr x) y) '() (cons (car x) z)) 0)
+           (try-it (cdr x) (cons (car x) y) z))))
+  (let loop ((i board-size) (l '()))
+    (if (= i 0) (try-it l '() '()) (loop (- i 1) (cons i l)))))
+
+;; --- library-heavy code
+(define (loops n)
+  ;; named let, do, vectors
+  (let ((v (make-vector n 0)))
+    (do ((i 0 (+ i 1))) ((= i n)) (vector-set! v i (* i i)))
+    (let loop ((i 0) (s 0)) (if (= i n) s (loop (+ i 1) (+ s (vector-ref v i)))))))
+
+(define (lists n)
+  ;; map, for-each, filter, apply, closures
+  (let* ((l (let loop ((i 0) (acc '())) (if (= i n) acc (loop (+ i 1) (cons i acc)))))
+         (m (map (lambda (x) (* 2 x)) l))
+         (k 3)
+         (f (filter (lambda (x) (= 0 (remainder x k))) m))
+         (total 0))
+    (for-each (lambda (x) (set! total (+ total x))) f)
+    (+ total (apply + (map + l m)) (length (reverse l)))))
+
+(define (strings n)
+  ;; string ports, number->string, string-append, string ops, chars
+  (let ((p (open-output-string)))
+    (do ((i 0 (+ i 1))) ((= i n))
+      (write-string (number->string i) p)
+      (write-char #\space p))
+    (let* ((s (get-output-string p))
+           (u (string-upcase (string-append s "abc"))))
+      (let loop ((i 0) (digits 0))
+        (if (= i (string-length u))
+            digits
+            (loop (+ i 1) (if (char-numeric? (string-ref u i)) (+ digits 1) digits)))))))
+
+(define-record-type point (make-point x y) point? (x point-x) (y point-y set-point-y!))
+(define (records n)
+  (let loop ((i 0) (acc 0))
+    (if (= i n)
+        acc
+        (let ((p (make-point i (* 2 i))))
+          (set-point-y! p (+ (point-y p) 1))
+          (loop (+ i 1) (+ acc (point-x p) (point-y p)))))))
+
+(define (sorting n)
+  (let loop ((i 0) (l '()) (seed 12345))
+    (if (= i n)
+        (let ((s (list-sort < l))) (list (car s) (list-ref s (quotient n 2))))
+        (let ((seed2 (modulo (+ (* seed 1103515245) 12345) 2147483648)))
+          (loop (+ i 1) (cons (modulo seed2 100000) l) seed2)))))
+
+(define (assocs n)
+  (let ((al (let loop ((i 0) (acc '())) (if (= i 200) acc (loop (+ i 1) (cons (cons i (* i i)) acc))))))
+    (let loop ((i 0) (s 0))
+      (if (= i n) s (loop (+ i 1) (+ s (cdr (assv (remainder i 200) al))))))))
+
+(define (floats n)
+  (let loop ((i 0) (x 0.0))
+    (if (= i n) x (loop (+ i 1) (+ x (* 0.5 (exact->inexact* i)))))))
+(define (exact->inexact* i) (inexact i))
+
+(bench "fib30" 3 (lambda () (fib 30)))
+(bench "tak" 100 (lambda () (tak 18 12 6)))
+(bench "ctak" 10 (lambda () (ctak 18 12 6)))
+(bench "nqueens8" 20 (lambda () (queens 8)))
+(bench "loops" 10 (lambda () (loops 1000000)))
+(bench "lists" 10 (lambda () (lists 200000)))
+(bench "strings" 10 (lambda () (strings 100000)))
+(bench "records" 10 (lambda () (records 1000000)))
+(bench "sorting" 10 (lambda () (sorting 100000)))
+(bench "assocs" 10 (lambda () (assocs 200000)))
+(bench "floats" 10 (lambda () (floats 1000000)))

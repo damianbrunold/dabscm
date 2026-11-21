@@ -6,7 +6,7 @@ const num = @import("num.zig");
 const ports = @import("ports.zig");
 const Word = rt.Word;
 
-const a = std.heap.page_allocator;
+const a = std.heap.c_allocator;
 
 fn put(buf: *std.ArrayList(u8), s: []const u8) void {
     buf.appendSlice(a, s) catch rt.oom();

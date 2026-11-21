@@ -43,6 +43,28 @@ pub fn WN(comptime name: []const u8, comptime f: fn (*Thread) Err!Word, comptime
     return &S.code;
 }
 
+/// A primitive that never collects and never calls Scheme: besides its code,
+/// compiled code can call it directly (scmd_<name>), as a Zig function that
+/// takes its arguments in t.args and returns its value (UNBOUND on an error,
+/// which is then pending in the thread).
+pub const Direct = *const fn (*Thread) callconv(.c) Word;
+pub const Prim = struct { code: Code, direct: Direct };
+
+pub fn WD(comptime name: []const u8, comptime f: fn (*Thread) Err!Word, comptime min: u64, comptime max: u64) Prim {
+    const S = struct {
+        fn direct(t: *Thread) callconv(.c) Word {
+            t.prim_name_ptr = name.ptr;
+            t.prim_name_len = name.len;
+            if (t.argc < min or t.argc > max) {
+                _ = rt.arityErrorN(t, if (t.argc < min) min else max, min != max and t.argc < min);
+                return rt.UNBOUND;
+            }
+            return f(t) catch rt.UNBOUND;
+        }
+    };
+    return .{ .code = WN(name, f, min, max), .direct = &S.direct };
+}
+
 pub inline fn arg(t: *Thread, i: usize) Word {
     return t.args[i];
 }
@@ -124,7 +146,7 @@ pub const @"%error" = WN("error", errorImpl, 1, any);
 fn procedureP(t: *Thread) Err!Word {
     return rt.boolean(rt.isProcedure(arg(t, 0)));
 }
-pub const @"%procedure?" = WN("procedure?", procedureP, 1, 1);
+pub const @"%procedure?" = WD("procedure?", procedureP, 1, 1);
 
 // --- pairs and lists -------------------------------------------------------
 
@@ -137,39 +159,39 @@ pub const @"%cons" = WN("cons", consImpl, 2, 2);
 fn carImpl(t: *Thread) Err!Word {
     return rt.car(try checkPair(t, "car", arg(t, 0)));
 }
-pub const @"%car" = WN("car", carImpl, 1, 1);
+pub const @"%car" = WD("car", carImpl, 1, 1);
 
 fn cdrImpl(t: *Thread) Err!Word {
     return rt.cdr(try checkPair(t, "cdr", arg(t, 0)));
 }
-pub const @"%cdr" = WN("cdr", cdrImpl, 1, 1);
+pub const @"%cdr" = WD("cdr", cdrImpl, 1, 1);
 
 fn setCarImpl(t: *Thread) Err!Word {
     rt.ptr(try checkPair(t, "set-car!", arg(t, 0)))[1] = arg(t, 1);
     return rt.UNSPEC;
 }
-pub const @"%set-car!" = WN("set-car!", setCarImpl, 2, 2);
+pub const @"%set-car!" = WD("set-car!", setCarImpl, 2, 2);
 
 fn setCdrImpl(t: *Thread) Err!Word {
     rt.ptr(try checkPair(t, "set-cdr!", arg(t, 0)))[2] = arg(t, 1);
     return rt.UNSPEC;
 }
-pub const @"%set-cdr!" = WN("set-cdr!", setCdrImpl, 2, 2);
+pub const @"%set-cdr!" = WD("set-cdr!", setCdrImpl, 2, 2);
 
 fn pairP(t: *Thread) Err!Word {
     return rt.boolean(rt.isPair(arg(t, 0)));
 }
-pub const @"%pair?" = WN("pair?", pairP, 1, 1);
+pub const @"%pair?" = WD("pair?", pairP, 1, 1);
 
 fn nullP(t: *Thread) Err!Word {
     return rt.boolean(arg(t, 0) == rt.NIL);
 }
-pub const @"%null?" = WN("null?", nullP, 1, 1);
+pub const @"%null?" = WD("null?", nullP, 1, 1);
 
 fn listP(t: *Thread) Err!Word {
     return rt.boolean(listLength(arg(t, 0)) != null);
 }
-pub const @"%list?" = WN("list?", listP, 1, 1);
+pub const @"%list?" = WD("list?", listP, 1, 1);
 
 fn listImpl(t: *Thread) Err!Word {
     t.reserve(3 * t.argc);
@@ -181,7 +203,7 @@ fn lengthImpl(t: *Thread) Err!Word {
     const n = listLength(arg(t, 0)) orelse return typeError(t, "length");
     return fix(@intCast(n));
 }
-pub const @"%length" = WN("length", lengthImpl, 1, 1);
+pub const @"%length" = WD("length", lengthImpl, 1, 1);
 
 fn reverseImpl(t: *Thread) Err!Word {
     const n = listLength(arg(t, 0)) orelse return typeError(t, "reverse");
@@ -225,34 +247,34 @@ pub const @"%append" = WN("append", appendImpl, 0, any);
 fn eqP(t: *Thread) Err!Word {
     return rt.boolean(arg(t, 0) == arg(t, 1));
 }
-pub const @"%eq?" = WN("eq?", eqP, 2, 2);
+pub const @"%eq?" = WD("eq?", eqP, 2, 2);
 
 fn eqvP(t: *Thread) Err!Word {
     return rt.boolean(data.eqv(arg(t, 0), arg(t, 1)));
 }
-pub const @"%eqv?" = WN("eqv?", eqvP, 2, 2);
+pub const @"%eqv?" = WD("eqv?", eqvP, 2, 2);
 
 fn equalP(t: *Thread) Err!Word {
     return rt.boolean(data.equal(arg(t, 0), arg(t, 1)));
 }
-pub const @"%equal?" = WN("equal?", equalP, 2, 2);
+pub const @"%equal?" = WD("equal?", equalP, 2, 2);
 
 fn notImpl(t: *Thread) Err!Word {
     return rt.boolean(arg(t, 0) == rt.FALSE);
 }
-pub const @"%not" = WN("not", notImpl, 1, 1);
+pub const @"%not" = WD("not", notImpl, 1, 1);
 
 fn booleanP(t: *Thread) Err!Word {
     return rt.boolean(arg(t, 0) == rt.TRUE or arg(t, 0) == rt.FALSE);
 }
-pub const @"%boolean?" = WN("boolean?", booleanP, 1, 1);
+pub const @"%boolean?" = WD("boolean?", booleanP, 1, 1);
 
 // --- characters ------------------------------------------------------------
 
 fn charP(t: *Thread) Err!Word {
     return rt.boolean(rt.isChar(arg(t, 0)));
 }
-pub const @"%char?" = WN("char?", charP, 1, 1);
+pub const @"%char?" = WD("char?", charP, 1, 1);
 
 pub fn charArg(t: *Thread, i: usize) Err!u21 {
     const w = arg(t, i);
@@ -263,26 +285,26 @@ pub fn charArg(t: *Thread, i: usize) Err!u21 {
 fn charToInteger(t: *Thread) Err!Word {
     return fix(try charArg(t, 0));
 }
-pub const @"%char->integer" = WN("char->integer", charToInteger, 1, 1);
+pub const @"%char->integer" = WD("char->integer", charToInteger, 1, 1);
 
 fn integerToChar(t: *Thread) Err!Word {
     const n = try intArg(t, "integer->char: not an integer", 0);
     if (n < 0 or n > 0x10FFFF or (n >= 0xD800 and n <= 0xDFFF)) return raise(t, "integer->char: not a code point", &.{arg(t, 0)});
     return rt.char(@intCast(n));
 }
-pub const @"%integer->char" = WN("integer->char", integerToChar, 1, 1);
+pub const @"%integer->char" = WD("integer->char", integerToChar, 1, 1);
 
 fn charEq(t: *Thread) Err!Word {
     for (1..t.argc) |i| if (try charArg(t, i - 1) != try charArg(t, i)) return rt.FALSE;
     return rt.TRUE;
 }
-pub const @"%char=?" = WN("char=?", charEq, 1, any);
+pub const @"%char=?" = WD("char=?", charEq, 1, any);
 
 fn charLt(t: *Thread) Err!Word {
     for (1..t.argc) |i| if (!(try charArg(t, i - 1) < try charArg(t, i))) return rt.FALSE;
     return rt.TRUE;
 }
-pub const @"%char<?" = WN("char<?", charLt, 1, any);
+pub const @"%char<?" = WD("char<?", charLt, 1, any);
 
 // --- strings ---------------------------------------------------------------
 
@@ -295,19 +317,19 @@ pub fn stringArg(t: *Thread, i: usize) Err!Word {
 fn stringP(t: *Thread) Err!Word {
     return rt.boolean(data.isString(arg(t, 0)));
 }
-pub const @"%string?" = WN("string?", stringP, 1, 1);
+pub const @"%string?" = WD("string?", stringP, 1, 1);
 
 fn stringLength(t: *Thread) Err!Word {
     return fix(@intCast(data.stringLen(try stringArg(t, 0))));
 }
-pub const @"%string-length" = WN("string-length", stringLength, 1, 1);
+pub const @"%string-length" = WD("string-length", stringLength, 1, 1);
 
 fn stringRef(t: *Thread) Err!Word {
     const s = try stringArg(t, 0);
     const i = try index(t, arg(t, 1), data.stringLen(s));
     return rt.char(data.stringRef(s, i));
 }
-pub const @"%string-ref" = WN("string-ref", stringRef, 2, 2);
+pub const @"%string-ref" = WD("string-ref", stringRef, 2, 2);
 
 fn stringSet(t: *Thread) Err!Word {
     const s0 = try stringArg(t, 0);
@@ -391,14 +413,14 @@ fn stringEqImpl(t: *Thread) Err!Word {
     for (1..t.argc) |i| if (!data.stringEq(arg(t, i - 1), arg(t, i))) return rt.FALSE;
     return rt.TRUE;
 }
-pub const @"%string=?" = WN("string=?", stringEqImpl, 1, any);
+pub const @"%string=?" = WD("string=?", stringEqImpl, 1, any);
 
 fn stringLtImpl(t: *Thread) Err!Word {
     for (0..t.argc) |i| _ = try stringArg(t, i);
     for (1..t.argc) |i| if (data.stringCmp(arg(t, i - 1), arg(t, i)) != .lt) return rt.FALSE;
     return rt.TRUE;
 }
-pub const @"%string<?" = WN("string<?", stringLtImpl, 1, any);
+pub const @"%string<?" = WD("string<?", stringLtImpl, 1, any);
 
 fn stringToList(t: *Thread) Err!Word {
     const s = try stringArg(t, 0);
@@ -452,16 +474,16 @@ pub const @"%string" = WN("string", stringImpl, 0, any);
 fn symbolP(t: *Thread) Err!Word {
     return rt.boolean(data.isSymbol(arg(t, 0)));
 }
-pub const @"%symbol?" = WN("symbol?", symbolP, 1, 1);
+pub const @"%symbol?" = WD("symbol?", symbolP, 1, 1);
 
 fn stringToSymbol(t: *Thread) Err!Word {
     const s = try stringArg(t, 0);
     var buf: std.ArrayList(u8) = .empty;
-    defer buf.deinit(std.heap.page_allocator);
+    defer buf.deinit(std.heap.c_allocator);
     data.appendUtf8(&buf, s);
     return data.intern(buf.items);
 }
-pub const @"%string->symbol" = WN("string->symbol", stringToSymbol, 1, 1);
+pub const @"%string->symbol" = WD("string->symbol", stringToSymbol, 1, 1);
 
 fn symbolToString(t: *Thread) Err!Word {
     const w = arg(t, 0);
@@ -495,7 +517,7 @@ pub fn vectorArg(t: *Thread, i: usize) Err!Word {
 fn vectorP(t: *Thread) Err!Word {
     return rt.boolean(data.isVector(arg(t, 0)));
 }
-pub const @"%vector?" = WN("vector?", vectorP, 1, 1);
+pub const @"%vector?" = WD("vector?", vectorP, 1, 1);
 
 fn makeVectorImpl(t: *Thread) Err!Word {
     const n = try count(t, arg(t, 0));
@@ -525,25 +547,25 @@ fn vectorRef(t: *Thread) Err!Word {
     const v = try vectorArg(t, 0);
     return data.vectorItems(v)[try vectorIndex(t, "vector-ref", v)];
 }
-pub const @"%vector-ref" = WN("vector-ref", vectorRef, 2, 2);
+pub const @"%vector-ref" = WD("vector-ref", vectorRef, 2, 2);
 
 fn vectorSet(t: *Thread) Err!Word {
     const v = try vectorArg(t, 0);
     data.vectorItems(v)[try vectorIndex(t, "vector-set!", v)] = arg(t, 2);
     return rt.UNSPEC;
 }
-pub const @"%vector-set!" = WN("vector-set!", vectorSet, 3, 3);
+pub const @"%vector-set!" = WD("vector-set!", vectorSet, 3, 3);
 
 fn vectorLength(t: *Thread) Err!Word {
     return fix(@intCast(data.vectorLen(try vectorArg(t, 0))));
 }
-pub const @"%vector-length" = WN("vector-length", vectorLength, 1, 1);
+pub const @"%vector-length" = WD("vector-length", vectorLength, 1, 1);
 
 fn vectorFill(t: *Thread) Err!Word {
     @memset(data.vectorItems(try vectorArg(t, 0)), arg(t, 1));
     return rt.UNSPEC;
 }
-pub const @"%vector-fill!" = WN("vector-fill!", vectorFill, 2, 2);
+pub const @"%vector-fill!" = WD("vector-fill!", vectorFill, 2, 2);
 
 fn vectorToList(t: *Thread) Err!Word {
     const n = data.vectorLen(try vectorArg(t, 0));

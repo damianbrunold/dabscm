@@ -59,7 +59,7 @@ noinline fn floOp(t: *Thread, a: Word, b: Word, comptime op: Op) ?Word {
     });
     const x = toF(a).?;
     const y = toF(b).?;
-    return t.makeFlo(switch (op) {
+    return rt.safeFlo(t, switch (op) {
         .add => x + y,
         .sub => x - y,
         .mul => x * y,
@@ -133,7 +133,7 @@ pub fn isInteger(w: Word) bool {
 /// Shortest representation in the layout of Java's %.{15..17}g, as the
 /// JVM implementation prints flonums: 1.5, 3.0, 1.0e+21, 1.0e-7, +inf.0
 pub fn formatFlonum(buf: *std.ArrayList(u8), f: f64) void {
-    const a = std.heap.page_allocator;
+    const a = std.heap.c_allocator;
     if (std.math.isNan(f)) return buf.appendSlice(a, "+nan.0") catch rt.oom();
     if (std.math.isInf(f)) return buf.appendSlice(a, if (f > 0) "+inf.0" else "-inf.0") catch rt.oom();
     if (std.math.signbit(f)) buf.append(a, '-') catch rt.oom();

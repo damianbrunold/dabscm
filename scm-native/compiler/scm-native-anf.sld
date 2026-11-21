@@ -1,6 +1,8 @@
 (define-library (scm native anf)
   (export anf
-          simple?)
+          simple?
+          leaf-call?
+          set-leaf-primitives!)
   (import (scheme base)
           (scheme cxr)
           (srfi 1)
@@ -17,10 +19,20 @@
     ;; which is where the emitter splits code at a non-tail call.
     ;; Expressions without effect in a non-last seq position are dropped.
 
+    ;; Primitives that never collect and never call Scheme: the emitter calls
+    ;; them directly, so a call of one with simple arguments is simple
+    (define leaf-primitives '())
+    (define (set-leaf-primitives! names) (set! leaf-primitives names))
+    (define (leaf-call? e)
+      (and (eq? (node-kind e) 'call)
+           (eq? (node-kind (cadr e)) 'primref)
+           (memq (cadr (cadr e)) leaf-primitives)
+           #t))
+
     (define (simple? e)
       (case (node-kind e)
         ((const lref gref primref lambda) #t)
-        ((call) #f)
+        ((call) (and (leaf-call? e) (every simple? (cddr e))))
         ((prim) (every simple? (cddr e)))
         ((if seq) (every simple? (cdr e)))
         ((lset gset gdef) (simple? (caddr e)))

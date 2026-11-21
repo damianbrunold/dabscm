@@ -6,7 +6,7 @@ const os = @import("os.zig");
 const Word = rt.Word;
 const Thread = rt.Thread;
 
-const pa = std.heap.page_allocator;
+const pa = std.heap.c_allocator;
 
 pub const Kind = enum { string_in, bytes_in, file_in, stdin, string_out, bytes_out, file_out, stdout, stderr };
 

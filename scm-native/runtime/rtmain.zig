@@ -28,6 +28,9 @@ comptime {
             const v = @field(m, name);
             if (@TypeOf(v) == rt.Code) {
                 @export(v, .{ .name = exports.mangle("scmp_", name[1..]) });
+            } else if (@TypeOf(v) == @import("prims.zig").Prim) {
+                @export(v.code, .{ .name = exports.mangle("scmp_", name[1..]) });
+                @export(v.direct, .{ .name = exports.mangle("scmd_", name[1..]) });
             } else if (@TypeOf(v) == rt.ValuePrim) {
                 @export(v.make, .{ .name = exports.mangle("scmv_", name[1..]) });
             }

@@ -86,12 +86,12 @@ pub const ignore = abi.ignore;
 // Static objects: constants, symbols and primitive procedures. They never
 // move; those that can point into the heap are scanned at every collection.
 
-var static_arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
+var static_arena: std.heap.ArenaAllocator = .init(std.heap.c_allocator);
 var static_scan: std.ArrayList([*]Word) = .empty;
 
 pub fn staticAlloc(n: usize, scan: bool) [*]Word {
     const mem = static_arena.allocator().alignedAlloc(Word, .@"8", n) catch oom();
-    if (scan) static_scan.append(std.heap.page_allocator, mem.ptr) catch oom();
+    if (scan) static_scan.append(std.heap.c_allocator, mem.ptr) catch oom();
     return mem.ptr;
 }
 
@@ -105,7 +105,7 @@ pub fn oom() noreturn {
 var large: std.ArrayList([*]Word) = .empty;
 
 pub fn newThread() *Thread {
-    const pa = std.heap.page_allocator;
+    const pa = std.heap.c_allocator;
     const heap = pa.alloc(Word, 1 << 20) catch oom();
     const stack = pa.alloc(Word, 1 << 12) catch oom();
     const args = pa.alloc(Word, 256) catch oom();
@@ -117,9 +117,10 @@ pub fn newThread() *Thread {
         .stack = stack.ptr,
         .stack_len = stack.len,
         .hp = heap.ptr,
-        .hlimit = heap.ptr + heap.len,
+        .hlimit = nurseryEnd(heap),
         .heap = heap.ptr,
         .heap_len = heap.len,
+        .flo_ptr = nurseryEnd(heap),
     };
     return t;
 }
@@ -127,8 +128,8 @@ pub fn newThread() *Thread {
 /// An object of n words (header included) that is not moved by the GC;
 /// allocating it never collects, so it is safe anywhere.
 pub fn allocLarge(t: *Thread, n: usize) [*]Word {
-    const mem = std.heap.page_allocator.alloc(Word, n) catch oom();
-    large.append(std.heap.page_allocator, mem.ptr) catch oom();
+    const mem = std.heap.c_allocator.alloc(Word, n) catch oom();
+    large.append(std.heap.c_allocator, mem.ptr) catch oom();
     t.large_words += n;
     // the collection happens at the next reserve
     if (t.large_words > t.heap_len) t.hlimit = t.hp;
@@ -147,10 +148,32 @@ pub fn gcEntry(t: *Thread, need: usize) void {
     gc(t, need);
 }
 
+/// The nursery is the heap without its top eighth (the flonum area)
+fn nurseryEnd(heap: []Word) [*]Word {
+    return heap.ptr + (heap.len - heap.len / 8);
+}
+
+/// A flonum made where no words were reserved (arithmetic slow paths): from
+/// the flonum area, else from the large-object space; never collects.
+pub fn safeFlo(t: *Thread, f: f64) Word {
+    var q: [*]Word = undefined;
+    if (@intFromPtr(t.flo_ptr) + 16 <= @intFromPtr(t.heap + t.heap_len)) {
+        q = t.flo_ptr;
+        t.flo_ptr += 2;
+        q[0] = hdr(T_FLONUM, 1);
+    } else {
+        q = allocLarge(t, 2);
+        q[0] = hdr(T_FLONUM, 1) | (@as(Word, F_LARGE) << 8);
+        t.hlimit = t.hp; // collect at the next reserve
+    }
+    q[1] = @bitCast(f);
+    return tagPtr(q);
+}
+
 fn growStack(t: *Thread, need: usize) void {
     var n = t.stack_len * 2;
     while (n < need) n *= 2;
-    const s = std.heap.page_allocator.realloc(t.stack[0..t.stack_len], n) catch oom();
+    const s = std.heap.c_allocator.realloc(t.stack[0..t.stack_len], n) catch oom();
     t.stack = s.ptr;
     t.stack_len = s.len;
 }
@@ -159,7 +182,7 @@ fn growArgs(t: *Thread, need: usize) void {
     var n = t.args_len * 2;
     while (n < need) n *= 2;
     const old = t.args_len;
-    const a = std.heap.page_allocator.realloc(t.args[0..t.args_len], n) catch oom();
+    const a = std.heap.c_allocator.realloc(t.args[0..t.args_len], n) catch oom();
     @memset(a[old..], fix(0));
     t.args = a.ptr;
     t.args_len = a.len;
@@ -172,7 +195,7 @@ fn growArgs(t: *Thread, need: usize) void {
 pub fn notProcedure(t: *Thread, p: Word) Code {
     var buf: std.ArrayList(u8) = .empty;
     printer.print(&buf, p, true);
-    return fail(t, std.fmt.allocPrint(std.heap.page_allocator, "{s} is not a function, cannot apply", .{buf.items}) catch oom(), &.{});
+    return fail(t, std.fmt.allocPrint(std.heap.c_allocator, "{s} is not a function, cannot apply", .{buf.items}) catch oom(), &.{});
 }
 
 /// Record an error and return the code that raises it.
@@ -195,41 +218,41 @@ pub fn failKind(t: *Thread, kind: i64, msg: []const u8, irritants: []const Word)
 }
 
 pub fn arityError(t: *Thread) Code {
-    return fail(t, std.fmt.allocPrint(std.heap.page_allocator, "Wrong number of arguments: {d} supplied", .{t.argc}) catch oom(), &.{});
+    return fail(t, std.fmt.allocPrint(std.heap.c_allocator, "Wrong number of arguments: {d} supplied", .{t.argc}) catch oom(), &.{});
 }
 
 /// Arity error of a procedure taking n arguments (or at least n), in the
 /// JVM implementation's words
 pub fn arityErrorN(t: *Thread, n: u64, at_least: bool) Code {
     const msg = if (at_least)
-        std.fmt.allocPrint(std.heap.page_allocator, "Wrong number of arguments: at least {d} expected, {d} supplied", .{ n, t.argc })
+        std.fmt.allocPrint(std.heap.c_allocator, "Wrong number of arguments: at least {d} expected, {d} supplied", .{ n, t.argc })
     else
-        std.fmt.allocPrint(std.heap.page_allocator, "Wrong number of arguments: {d} expected, {d} supplied", .{ n, t.argc });
+        std.fmt.allocPrint(std.heap.c_allocator, "Wrong number of arguments: {d} expected, {d} supplied", .{ n, t.argc });
     return fail(t, msg catch oom(), &.{});
 }
 
 /// name: "<module>: <variable>"
 pub fn unboundError(t: *Thread, name: []const u8) Code {
-    return fail(t, std.fmt.allocPrint(std.heap.page_allocator, "{s} is not bound", .{name}) catch oom(), &.{});
+    return fail(t, std.fmt.allocPrint(std.heap.c_allocator, "{s} is not bound", .{name}) catch oom(), &.{});
 }
 
 /// "Failed in <who>: wrong argument type", with the argument that is not
 /// a number as irritant for arithmetic (as the JVM implementation)
 pub fn typeError(t: *Thread, who: []const u8, irritants: []const Word) Code {
-    const msg = std.fmt.allocPrint(std.heap.page_allocator, "Failed in {s}: wrong argument type", .{who}) catch oom();
+    const msg = std.fmt.allocPrint(std.heap.c_allocator, "Failed in {s}: wrong argument type", .{who}) catch oom();
     return fail(t, msg, irritants);
 }
 
 pub fn arithError(t: *Thread, who: []const u8, a: Word, b: Word) Code {
     if (!num.isNumber(a)) return typeError(t, who, &.{a});
     if (!num.isNumber(b)) return typeError(t, who, &.{b});
-    return fail(t, std.fmt.allocPrint(std.heap.page_allocator, "{s}: Division by zero", .{who}) catch oom(), &.{});
+    return fail(t, std.fmt.allocPrint(std.heap.c_allocator, "{s}: Division by zero", .{who}) catch oom(), &.{});
 }
 
 pub fn indexError(t: *Thread, who: []const u8, i: Word) Code {
     var buf: std.ArrayList(u8) = .empty;
     printer.print(&buf, i, true);
-    return fail(t, std.fmt.allocPrint(std.heap.page_allocator, "{s}: index out of range: {s}", .{ who, buf.items }) catch oom(), &.{});
+    return fail(t, std.fmt.allocPrint(std.heap.c_allocator, "{s}: index out of range: {s}", .{ who, buf.items }) catch oom(), &.{});
 }
 
 /// vector-ref and vector-set! errors
@@ -285,7 +308,7 @@ pub fn raiseFatalCode(t: *Thread) callconv(.c) void {
     };
     os.flush();
     var buf: std.ArrayList(u8) = .empty;
-    const a = std.heap.page_allocator;
+    const a = std.heap.c_allocator;
     const c = t.args[0];
     if (isObj(c, T_ERROR)) {
         printer.print(&buf, ptr(c)[1], false);
@@ -468,7 +491,7 @@ fn gc(t: *Thread, need: usize) void {
     t.gc_count += 1;
     const from = t.heap[0..t.heap_len];
     // Everything allocated fits into a space of the same size.
-    const to = std.heap.page_allocator.alloc(Word, @max(from.len, t.heap_target)) catch oom();
+    const to = std.heap.c_allocator.alloc(Word, @max(from.len, t.heap_target)) catch oom();
     var g = Gc{ .from = from, .to = to, .free = 0 };
 
     for (t.args[0..t.args_len]) |*w| w.* = g.copy(w.*);
@@ -504,21 +527,22 @@ fn gc(t: *Thread, need: usize) void {
             kept += 1;
             words += 1 + hdrLen(q[0]);
         } else {
-            std.heap.page_allocator.free(q[0 .. 1 + hdrLen(q[0])]);
+            std.heap.c_allocator.free(q[0 .. 1 + hdrLen(q[0])]);
         }
     }
     large.items.len = kept;
     t.large_words = words;
-    g.large_todo.deinit(std.heap.page_allocator);
+    g.large_todo.deinit(std.heap.c_allocator);
 
-    std.heap.page_allocator.free(from);
+    std.heap.c_allocator.free(from);
     t.heap = to.ptr;
     t.heap_len = to.len;
     t.hp = to.ptr + g.free;
-    t.hlimit = to.ptr + to.len;
+    t.hlimit = nurseryEnd(to);
+    t.flo_ptr = nurseryEnd(to);
     // Keep at least half of the space free after a collection: if not,
     // collect again right away into a space twice as large.
-    if ((g.free + need) * 2 > to.len) {
+    if ((g.free + need) * 2 > to.len - to.len / 8) {
         t.heap_target = 2 * (g.free + need) + to.len;
         gc(t, need);
     }
@@ -539,7 +563,7 @@ const Gc = struct {
             const flags = hdrFlags(q[0]);
             if (flags & F_LARGE != 0 and flags & (F_MARK | F_PERM) == 0) {
                 q[0] |= @as(Word, F_MARK) << 8;
-                g.large_todo.append(std.heap.page_allocator, q) catch oom();
+                g.large_todo.append(std.heap.c_allocator, q) catch oom();
             }
             return w;
         }

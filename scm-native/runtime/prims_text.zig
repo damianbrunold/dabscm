@@ -13,48 +13,49 @@ const Code = rt.Code;
 const Err = P.Err;
 const W = P.W;
 const WN = P.WN;
+const WD = P.WD;
 const arg = P.arg;
 const raise = P.raise;
 const any = P.any;
 const fix = rt.fix;
 const unfix = rt.unfix;
 
-const pa = std.heap.page_allocator;
+const pa = std.heap.c_allocator;
 
 // --- characters --------------------------------------------------------------
 
-fn charPred(comptime f: fn (u21) bool) Code {
+fn charPredD(comptime f: fn (u21) bool) P.Prim {
     const S = struct {
         fn g(t: *Thread) Err!Word {
             return rt.boolean(f(try P.charArg(t, 0)));
         }
     };
-    return W(S.g, 1, 1);
+    return P.WD("", S.g, 1, 1);
 }
-fn charMap(comptime f: fn (u21) u21) Code {
+fn charMapD(comptime f: fn (u21) u21) P.Prim {
     const S = struct {
         fn g(t: *Thread) Err!Word {
             return rt.char(f(try P.charArg(t, 0)));
         }
     };
-    return W(S.g, 1, 1);
+    return P.WD("", S.g, 1, 1);
 }
-pub const @"%char-alphabetic?" = charPred(chars.isAlphabetic);
-pub const @"%char-numeric?" = charPred(chars.isDigit);
-pub const @"%char-whitespace?" = charPred(chars.isWhitespace);
-pub const @"%char-upper-case?" = charPred(chars.isUpper);
-pub const @"%char-lower-case?" = charPred(chars.isLower);
-pub const @"%char-upcase" = charMap(chars.upcase);
-pub const @"%char-downcase" = charMap(chars.downcase);
-pub const @"%char-foldcase" = charMap(chars.foldcase);
+pub const @"%char-alphabetic?" = charPredD(chars.isAlphabetic);
+pub const @"%char-numeric?" = charPredD(chars.isDigit);
+pub const @"%char-whitespace?" = charPredD(chars.isWhitespace);
+pub const @"%char-upper-case?" = charPredD(chars.isUpper);
+pub const @"%char-lower-case?" = charPredD(chars.isLower);
+pub const @"%char-upcase" = charMapD(chars.upcase);
+pub const @"%char-downcase" = charMapD(chars.downcase);
+pub const @"%char-foldcase" = charMapD(chars.foldcase);
 
 fn digitValue(t: *Thread) Err!Word {
     const d = chars.digitValue(try P.charArg(t, 0)) orelse return rt.FALSE;
     return fix(d);
 }
-pub const @"%digit-value" = WN("digit-value", digitValue, 1, 1);
+pub const @"%digit-value" = WD("digit-value", digitValue, 1, 1);
 
-fn charCompare(comptime op: std.math.CompareOperator) Code {
+fn charCompareD(comptime op: std.math.CompareOperator) P.Prim {
     const S = struct {
         fn g(t: *Thread) Err!Word {
             for (0..t.argc) |i| _ = try P.charArg(t, i);
@@ -62,15 +63,15 @@ fn charCompare(comptime op: std.math.CompareOperator) Code {
             return rt.TRUE;
         }
     };
-    return W(S.g, 1, any);
+    return P.WD("", S.g, 1, any);
 }
-pub const @"%char<=?" = charCompare(.lte);
-pub const @"%char>?" = charCompare(.gt);
-pub const @"%char>=?" = charCompare(.gte);
+pub const @"%char<=?" = charCompareD(.lte);
+pub const @"%char>?" = charCompareD(.gt);
+pub const @"%char>=?" = charCompareD(.gte);
 
 // --- strings -----------------------------------------------------------------
 
-fn stringCompare(comptime op: std.math.CompareOperator) Code {
+fn stringCompareD(comptime op: std.math.CompareOperator) P.Prim {
     const S = struct {
         fn g(t: *Thread) Err!Word {
             for (0..t.argc) |i| _ = try P.stringArg(t, i);
@@ -78,11 +79,11 @@ fn stringCompare(comptime op: std.math.CompareOperator) Code {
             return rt.TRUE;
         }
     };
-    return W(S.g, 1, any);
+    return P.WD("", S.g, 1, any);
 }
-pub const @"%string<=?" = stringCompare(.lte);
-pub const @"%string>?" = stringCompare(.gt);
-pub const @"%string>=?" = stringCompare(.gte);
+pub const @"%string<=?" = stringCompareD(.lte);
+pub const @"%string>?" = stringCompareD(.gt);
+pub const @"%string>=?" = stringCompareD(.gte);
 
 fn stringCase(comptime f: fn (u21) u21) Code {
     const S = struct {
@@ -174,7 +175,7 @@ fn byteArg(t: *Thread, i: usize) Err!u8 {
 fn bytevectorP(t: *Thread) Err!Word {
     return rt.boolean(data.isBytevector(arg(t, 0)));
 }
-pub const @"%bytevector?" = WN("bytevector?", bytevectorP, 1, 1);
+pub const @"%bytevector?" = WD("bytevector?", bytevectorP, 1, 1);
 
 fn makeBytevector(t: *Thread) Err!Word {
     const n = try P.count(t, arg(t, 0));
@@ -198,20 +199,20 @@ pub const @"%bytevector" = WN("bytevector", bytevectorImpl, 0, any);
 fn bytevectorLength(t: *Thread) Err!Word {
     return fix(@intCast(data.bvLen(try bvArg(t, 0))));
 }
-pub const @"%bytevector-length" = WN("bytevector-length", bytevectorLength, 1, 1);
+pub const @"%bytevector-length" = WD("bytevector-length", bytevectorLength, 1, 1);
 
 fn bytevectorU8Ref(t: *Thread) Err!Word {
     const bv = try bvArg(t, 0);
     return fix(data.bvBytes(bv)[try P.index(t, arg(t, 1), data.bvLen(bv))]);
 }
-pub const @"%bytevector-u8-ref" = WN("bytevector-u8-ref", bytevectorU8Ref, 2, 2);
+pub const @"%bytevector-u8-ref" = WD("bytevector-u8-ref", bytevectorU8Ref, 2, 2);
 
 fn bytevectorU8Set(t: *Thread) Err!Word {
     const bv = try bvArg(t, 0);
     data.bvBytes(bv)[try P.index(t, arg(t, 1), data.bvLen(bv))] = try byteArg(t, 2);
     return rt.UNSPEC;
 }
-pub const @"%bytevector-u8-set!" = WN("bytevector-u8-set!", bytevectorU8Set, 3, 3);
+pub const @"%bytevector-u8-set!" = WD("bytevector-u8-set!", bytevectorU8Set, 3, 3);
 
 fn bytevectorCopy(t: *Thread) Err!Word {
     const bv0 = try bvArg(t, 0);
@@ -232,7 +233,7 @@ fn bytevectorCopyB(t: *Thread) Err!Word {
     std.mem.copyForwards(u8, data.bvBytes(to)[at .. at + r[1] - r[0]], data.bvBytes(from)[r[0]..r[1]]);
     return rt.UNSPEC;
 }
-pub const @"%bytevector-copy!" = WN("bytevector-copy!", bytevectorCopyB, 3, 5);
+pub const @"%bytevector-copy!" = WD("bytevector-copy!", bytevectorCopyB, 3, 5);
 
 fn bytevectorAppend(t: *Thread) Err!Word {
     var n: usize = 0;

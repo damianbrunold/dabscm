@@ -84,7 +84,7 @@ pub fn appendCp(buf: *std.ArrayList(u8), cp: u21) void {
         tmp[0] = '?';
         break :blk 1;
     };
-    buf.appendSlice(std.heap.page_allocator, tmp[0..len]) catch rt.oom();
+    buf.appendSlice(std.heap.c_allocator, tmp[0..len]) catch rt.oom();
 }
 
 pub fn stringEq(a: Word, b: Word) bool {
@@ -122,7 +122,7 @@ pub fn symbolName(w: Word) []const u8 {
 }
 
 pub fn intern(name: []const u8) Word {
-    const gop = symbols.getOrPut(std.heap.page_allocator, name) catch rt.oom();
+    const gop = symbols.getOrPut(std.heap.c_allocator, name) catch rt.oom();
     if (gop.found_existing) return gop.value_ptr.*;
     const p = rt.staticAlloc(2 + (name.len + 7) / 8, false);
     p[0] = hdr(rt.T_SYMBOL, 1 + (name.len + 7) / 8);
