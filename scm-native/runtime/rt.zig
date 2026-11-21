@@ -10,6 +10,8 @@
 //!   * code that allocates first calls `t.reserve(n)` while every live value
 //!     is in a root (args, self, val, stack, globals); after that it
 //!     bump-allocates without checks, so the GC never sees Zig locals
+//!   * objects of a size not known at block entry (bignums, ...) come from
+//!     the large-object space (allocLarge), which never collects
 const std = @import("std");
 pub const os = @import("os.zig");
 
@@ -48,14 +50,17 @@ pub inline fn unfix(w: Word) i64 {
 pub inline fn isFix(w: Word) bool {
     return w & 1 == 0;
 }
+pub inline fn fixFits(n: i64) bool {
+    return n >= fix_min and n <= fix_max;
+}
 pub inline fn isPtr(w: Word) bool {
     return w & 0b111 == 0b001;
 }
 pub inline fn ptr(w: Word) [*]Word {
     return @ptrFromInt(w - 1);
 }
-pub inline fn tagPtr(p: [*]Word) Word {
-    return @intFromPtr(p) + 1;
+pub inline fn tagPtr(q: [*]Word) Word {
+    return @intFromPtr(q) + 1;
 }
 pub inline fn boolean(b: bool) Word {
     return if (b) TRUE else FALSE;
@@ -73,7 +78,7 @@ pub inline fn charCode(w: Word) u21 {
     return @intCast(w >> 3);
 }
 
-// Heap object header: type in the low 8 bits, payload length (words) above.
+// Heap object header: type (8 bits), flags (8 bits), payload length in words.
 pub const T_PAIR: u8 = 1;
 pub const T_CLOSURE: u8 = 2; // payload[0] = code (raw), rest scanned
 pub const T_STACK: u8 = 3; // copied stack frames, scanned frame by frame
@@ -84,16 +89,32 @@ pub const T_STRING: u8 = 7; // [char count (fixnum)] [buffer]
 pub const T_BUF8: u8 = 8; // raw Latin-1 characters
 pub const T_BUF32: u8 = 9; // raw code points (u32)
 pub const T_SYMBOL: u8 = 10; // [byte length (raw)] [UTF-8 bytes (raw)], static
+pub const T_VALUES: u8 = 11; // multiple values (scanned)
+pub const T_RECORD: u8 = 12; // [type] [fields...] (scanned)
+pub const T_ERROR: u8 = 13; // [message] [irritants] [kind (fixnum)]
+pub const T_PORT: u8 = 14; // [*Port (raw)]
+pub const T_BYTEVECTOR: u8 = 15; // [byte length (raw)] [bytes (raw)]
+pub const T_BIGNUM: u8 = 16; // [sign and limb count (raw)] [limbs (raw)]
+pub const T_RATNUM: u8 = 17; // [numerator] [denominator] (scanned)
+pub const T_COMPNUM: u8 = 18; // [real] [imaginary] (scanned)
 pub const T_FWD: u8 = 0xff; // forwarded during GC, payload[0] = new pointer
 
+pub const F_LARGE: u8 = 1; // in the large-object space
+pub const F_MARK: u8 = 2; // large object reached during this collection
+pub const F_PRIM: u8 = 4; // closure of a primitive
+pub const F_PERM: u8 = 8; // large object that is never freed (a constant)
+
 pub inline fn hdr(ty: u8, len: u64) Word {
-    return (len << 8) | ty;
+    return (len << 16) | ty;
 }
 pub inline fn hdrType(h: Word) u8 {
     return @truncate(h);
 }
+pub inline fn hdrFlags(h: Word) u8 {
+    return @truncate(h >> 8);
+}
 pub inline fn hdrLen(h: Word) u64 {
-    return h >> 8;
+    return h >> 16;
 }
 pub inline fn objType(w: Word) u8 {
     return hdrType(ptr(w)[0]);
@@ -119,6 +140,9 @@ pub inline fn flo(w: Word) f64 {
 pub inline fn isProcedure(w: Word) bool {
     return isObj(w, T_CLOSURE);
 }
+pub inline fn isPrimitive(w: Word) bool {
+    return isProcedure(w) and hdrFlags(ptr(w)[0]) & F_PRIM != 0;
+}
 
 // ---------------------------------------------------------------------------
 // Static objects: constants, symbols and primitive procedures. They never
@@ -140,6 +164,9 @@ pub fn oom() noreturn {
 // ---------------------------------------------------------------------------
 // Thread state
 
+/// Globals the runtime itself uses; the program tells where they are.
+pub const Special = enum { raise, input_port, output_port, error_port };
+
 pub const Thread = struct {
     args: []Word,
     argc: u64 = 0,
@@ -151,12 +178,20 @@ pub const Thread = struct {
     hlimit: [*]Word,
     heap: []Word,
     globals: []Word,
+    /// dynamic-wind winders and exception handlers (lists)
+    winders: Word = NIL,
+    handlers: Word = NIL,
+    specials: [4]?usize = .{ null, null, null, null },
     gc_count: u64 = 0,
     heap_target: usize = 0,
+    large: std.ArrayList([*]Word) = .empty,
+    large_words: usize = 0,
     // the pending error, reported by errorCode
     err_msg: []const u8 = "",
-    err_irritants: [3]Word = .{ UNSPEC, UNSPEC, UNSPEC },
+    err_irritants: [4]Word = .{ UNSPEC, UNSPEC, UNSPEC, UNSPEC },
     err_n: usize = 0,
+    err_kind: i64 = 0, // 0 error, 1 read error, 2 file error
+    prim_name: []const u8 = "", // the running primitive, for error messages
     exit_code: u8 = 0,
 
     pub fn init(nglobals: usize) Thread {
@@ -164,7 +199,7 @@ pub const Thread = struct {
         const heap = pa.alloc(Word, 1 << 20) catch oom();
         const stack = pa.alloc(Word, 1 << 12) catch oom();
         const args = pa.alloc(Word, 256) catch oom();
-        const globals = pa.alloc(Word, nglobals) catch oom();
+        const globals = pa.alloc(Word, @max(nglobals, 1)) catch oom();
         @memset(args, fix(0));
         @memset(globals, UNBOUND);
         return .{
@@ -189,43 +224,55 @@ pub const Thread = struct {
 
     /// Make sure `n` words can be bump-allocated without a collection.
     pub inline fn reserve(t: *Thread, n: usize) void {
-        if (n > (@intFromPtr(t.hlimit) - @intFromPtr(t.hp)) / 8) gc(t, n);
+        // hlimit may lie below hp: allocLarge requests a collection that way
+        if (@intFromPtr(t.hp) + 8 * n > @intFromPtr(t.hlimit)) gc(t, n);
     }
 
     pub inline fn allocRaw(t: *Thread, n: usize) [*]Word {
-        const p = t.hp;
+        const q = t.hp;
         t.hp += n;
-        return p;
+        return q;
+    }
+
+    /// An object of n words (header included) that is not moved by the GC;
+    /// allocating it never collects, so it is safe anywhere.
+    pub fn allocLarge(t: *Thread, n: usize) [*]Word {
+        const mem = std.heap.page_allocator.alloc(Word, n) catch oom();
+        t.large.append(std.heap.page_allocator, mem.ptr) catch oom();
+        t.large_words += n;
+        // the collection happens at the next reserve
+        if (t.large_words > t.heap.len) t.hlimit = t.hp;
+        return mem.ptr;
     }
 
     pub inline fn cons(t: *Thread, a: Word, d: Word) Word {
-        const p = t.allocRaw(3);
-        p[0] = hdr(T_PAIR, 2);
-        p[1] = a;
-        p[2] = d;
-        return tagPtr(p);
+        const q = t.allocRaw(3);
+        q[0] = hdr(T_PAIR, 2);
+        q[1] = a;
+        q[2] = d;
+        return tagPtr(q);
     }
 
     pub inline fn box(t: *Thread, v: Word) Word {
-        const p = t.allocRaw(2);
-        p[0] = hdr(T_BOX, 1);
-        p[1] = v;
-        return tagPtr(p);
+        const q = t.allocRaw(2);
+        q[0] = hdr(T_BOX, 1);
+        q[1] = v;
+        return tagPtr(q);
     }
 
     pub inline fn makeFlo(t: *Thread, f: f64) Word {
-        const p = t.allocRaw(2);
-        p[0] = hdr(T_FLONUM, 1);
-        p[1] = @bitCast(f);
-        return tagPtr(p);
+        const q = t.allocRaw(2);
+        q[0] = hdr(T_FLONUM, 1);
+        q[1] = @bitCast(f);
+        return tagPtr(q);
     }
 
     /// A closure with `n` free variables, filled in by the caller.
     pub inline fn closure(t: *Thread, code: Code, n: usize) [*]Word {
-        const p = t.allocRaw(2 + n);
-        p[0] = hdr(T_CLOSURE, 1 + n);
-        p[1] = @intFromPtr(code);
-        return p;
+        const q = t.allocRaw(2 + n);
+        q[0] = hdr(T_CLOSURE, 1 + n);
+        q[1] = @intFromPtr(code);
+        return q;
     }
 
     pub inline fn push(t: *Thread, w: Word) void {
@@ -246,6 +293,12 @@ pub const Thread = struct {
     /// Free variable i of the running closure.
     pub inline fn free(t: *Thread, i: usize) Word {
         return ptr(t.self)[2 + i];
+    }
+
+    pub fn special(t: *Thread, s: Special) ?Word {
+        const i = t.specials[@intFromEnum(s)] orelse return null;
+        const w = t.globals[i];
+        return if (w == UNBOUND) null else w;
     }
 };
 
@@ -277,7 +330,13 @@ pub inline fn retCode(t: *Thread) Code {
 pub inline fn enter(t: *Thread, p: Word) Code {
     t.self = p;
     if (isPtr(p) and objType(p) == T_CLOSURE) return @ptrFromInt(ptr(p)[1]);
-    return fail(t, "not a procedure", &.{p});
+    return notProcedure(t, p);
+}
+
+fn notProcedure(t: *Thread, p: Word) Code {
+    var buf: std.ArrayList(u8) = .empty;
+    printer.print(&buf, p, true);
+    return fail(t, std.fmt.allocPrint(std.heap.page_allocator, "{s} is not a function, cannot apply", .{buf.items}) catch oom(), &.{});
 }
 
 /// Prepare a call of the procedure in global i and return its code.
@@ -286,14 +345,25 @@ pub inline fn enterGlobal(t: *Thread, i: usize) Code {
     t.self = p;
     if (isPtr(p) and objType(p) == T_CLOSURE) return @ptrFromInt(ptr(p)[1]);
     if (p == UNBOUND) return unboundError(t, global_names[i]);
-    return fail(t, "not a procedure", &.{p});
+    return notProcedure(t, p);
 }
 
 /// Use a value whose result is not needed (generated code).
 pub inline fn ignore(_: Word) void {}
 
-/// Record an error and return the code that reports it.
+/// Record an error and return the code that raises it.
 pub fn fail(t: *Thread, msg: []const u8, irritants: []const Word) Code {
+    return failKind(t, 0, msg, irritants);
+}
+
+pub const ErrorKind = struct {
+    pub const general = 0;
+    pub const read = 1;
+    pub const file = 2;
+};
+
+pub fn failKind(t: *Thread, kind: i64, msg: []const u8, irritants: []const Word) Code {
+    t.err_kind = kind;
     t.err_msg = msg;
     t.err_n = @min(irritants.len, t.err_irritants.len);
     for (0..t.err_n) |i| t.err_irritants[i] = irritants[i];
@@ -301,32 +371,111 @@ pub fn fail(t: *Thread, msg: []const u8, irritants: []const Word) Code {
 }
 
 pub fn arityError(t: *Thread) Code {
-    return fail(t, "wrong number of arguments", &.{ t.self, fix(@intCast(t.argc)) });
+    return fail(t, std.fmt.allocPrint(std.heap.page_allocator, "Wrong number of arguments: {d} supplied", .{t.argc}) catch oom(), &.{});
 }
 
+/// Arity error of a procedure taking n arguments (or at least n), in the
+/// JVM implementation's words
+pub fn arityErrorN(t: *Thread, n: u64, at_least: bool) Code {
+    const msg = if (at_least)
+        std.fmt.allocPrint(std.heap.page_allocator, "Wrong number of arguments: at least {d} expected, {d} supplied", .{ n, t.argc })
+    else
+        std.fmt.allocPrint(std.heap.page_allocator, "Wrong number of arguments: {d} expected, {d} supplied", .{ n, t.argc });
+    return fail(t, msg catch oom(), &.{});
+}
+
+/// name: "<module>: <variable>"
 pub fn unboundError(t: *Thread, name: []const u8) Code {
-    t.err_msg = name;
-    t.err_n = 0;
-    return &unboundCode;
+    return fail(t, std.fmt.allocPrint(std.heap.page_allocator, "{s} is not bound", .{name}) catch oom(), &.{});
 }
 
-fn unboundCode(t: *Thread) callconv(.c) void {
-    os.flush();
-    os.eprint("error: unbound variable: {s}\n", .{t.err_msg});
-    os.exit(1);
+/// "Failed in <who>: wrong argument type", with the argument that is not
+/// a number as irritant for arithmetic (as the JVM implementation)
+pub fn typeError(t: *Thread, who: []const u8, irritants: []const Word) Code {
+    const msg = std.fmt.allocPrint(std.heap.page_allocator, "Failed in {s}: wrong argument type", .{who}) catch oom();
+    return fail(t, msg, irritants);
 }
 
-/// Phase 1: errors are fatal. Phase 2 raises them to Scheme handlers.
+pub fn arithError(t: *Thread, who: []const u8, a: Word, b: Word) Code {
+    if (!num.isNumber(a)) return typeError(t, who, &.{a});
+    if (!num.isNumber(b)) return typeError(t, who, &.{b});
+    return fail(t, std.fmt.allocPrint(std.heap.page_allocator, "{s}: Division by zero", .{who}) catch oom(), &.{});
+}
+
+pub fn indexError(t: *Thread, who: []const u8, i: Word) Code {
+    var buf: std.ArrayList(u8) = .empty;
+    printer.print(&buf, i, true);
+    return fail(t, std.fmt.allocPrint(std.heap.page_allocator, "{s}: index out of range: {s}", .{ who, buf.items }) catch oom(), &.{});
+}
+
+/// vector-ref and vector-set! errors
+pub fn vectorError(t: *Thread, who: []const u8, v: Word, i: Word) Code {
+    if (!data.isVector(v) or !isFix(i)) return typeError(t, who, &.{});
+    return indexError(t, who, i);
+}
+
+/// Raise the pending error (t.err_*) as an error object, through the
+/// program's raise procedure when there is one.
 pub fn errorCode(t: *Thread) callconv(.c) void {
+    const n = t.err_n;
+    t.reserve(data.stringWords(t.err_msg.len, true) + 3 * n + 4);
+    const msg = data.heapStringUtf8(t, t.err_msg);
+    var irritants = NIL;
+    var i = n;
+    while (i > 0) {
+        i -= 1;
+        irritants = t.cons(t.err_irritants[i], irritants);
+    }
+    const e = makeError(t, msg, irritants, t.err_kind);
+    t.err_n = 0;
+    t.args[0] = e;
+    t.argc = 1;
+    if (t.special(.raise)) |r| return @call(.always_tail, enter(t, r), .{t});
+    return @call(.always_tail, raiseFatalCode, .{t});
+}
+
+/// An error object; reserve 4 words first.
+pub fn makeError(t: *Thread, msg: Word, irritants: Word, kind: i64) Word {
+    const q = t.allocRaw(4);
+    q[0] = hdr(T_ERROR, 3);
+    q[1] = msg;
+    q[2] = irritants;
+    q[3] = fix(kind);
+    return tagPtr(q);
+}
+
+/// (%raise-fatal condition): as the JVM implementation, raise the condition
+/// (as an error object) to the remaining handlers, if any; else report it
+/// and exit.
+pub fn raiseFatalCode(t: *Thread) callconv(.c) void {
+    if (t.handlers != NIL) if (t.special(.raise)) |r| {
+        if (!isObj(t.args[0], T_ERROR)) {
+            var buf: std.ArrayList(u8) = .empty;
+            printer.print(&buf, t.args[0], false);
+            t.reserve(data.stringWords(buf.items.len, true) + 4);
+            const msg = data.heapStringUtf8(t, buf.items);
+            t.args[0] = makeError(t, msg, NIL, 0);
+        }
+        t.argc = 1;
+        return @call(.always_tail, enter(t, r), .{t});
+    };
     os.flush();
     var buf: std.ArrayList(u8) = .empty;
-    buf.appendSlice(std.heap.page_allocator, "error: ") catch oom();
-    buf.appendSlice(std.heap.page_allocator, t.err_msg) catch oom();
-    for (t.err_irritants[0..t.err_n]) |w| {
-        buf.append(std.heap.page_allocator, ' ') catch oom();
-        printer.print(&buf, w, true);
+    const a = std.heap.page_allocator;
+    const c = t.args[0];
+    if (isObj(c, T_ERROR)) {
+        printer.print(&buf, ptr(c)[1], false);
+        var l = ptr(c)[2];
+        while (isPair(l)) : (l = cdr(l)) {
+            buf.append(a, ' ') catch oom();
+            printer.print(&buf, car(l), true);
+        }
+    } else {
+        buf.appendSlice(a, "uncaught exception: ") catch oom();
+        printer.print(&buf, c, true);
     }
-    buf.append(std.heap.page_allocator, '\n') catch oom();
+    buf.append(a, '\n') catch oom();
+    ports.flushAll();
     os.eprint("{s}", .{buf.items});
     os.exit(1); // as the JVM implementation
 }
@@ -346,10 +495,50 @@ pub fn run(t: *Thread, p: Word, argc: u64) Word {
 
 /// A static procedure object for code that needs no free variables.
 pub fn staticProc(code: Code) Word {
-    const p = staticAlloc(2, false);
-    p[0] = hdr(T_CLOSURE, 1);
-    p[1] = @intFromPtr(code);
-    return tagPtr(p);
+    const q = staticAlloc(2, false);
+    q[0] = hdr(T_CLOSURE, 1);
+    q[1] = @intFromPtr(code);
+    return tagPtr(q);
+}
+
+/// The value of (%primitive "name"): primitives are code, or values made at
+/// startup (ports, constants).
+pub fn primitive(comptime x: anytype, name: []const u8) Word {
+    if (@TypeOf(x) == Code) {
+        const q = staticAlloc(3, false);
+        q[0] = hdr(T_CLOSURE, 2) | (@as(Word, F_PRIM) << 8);
+        q[1] = @intFromPtr(x);
+        q[2] = data.intern(name);
+        return tagPtr(q);
+    }
+    return x.make();
+}
+
+/// The code of a primitive called directly
+pub fn primCode(comptime x: anytype) Code {
+    if (@TypeOf(x) == Code) return x;
+    return &notAProcedureCode;
+}
+
+fn notAProcedureCode(t: *Thread) callconv(.c) void {
+    return @call(.always_tail, fail(t, "not a procedure", &.{}), .{t});
+}
+
+/// A primitive that is a value
+pub const ValuePrim = struct { make: *const fn () Word };
+
+/// A procedure for a primitive the native runtime does not implement yet:
+/// calling it is an error.
+pub fn missingPrimitive(name: []const u8) Word {
+    const q = staticAlloc(3, true);
+    q[0] = hdr(T_CLOSURE, 2) | (@as(Word, F_PRIM) << 8);
+    q[1] = @intFromPtr(&missingPrimitiveCode);
+    q[2] = data.intern(name);
+    return tagPtr(q);
+}
+
+fn missingPrimitiveCode(t: *Thread) callconv(.c) void {
+    return @call(.always_tail, fail(t, "primitive not implemented in dabscm native:", &.{t.free(0)}), .{t});
 }
 
 /// The rest list of a variadic procedure: t.args[nreq..argc].
@@ -362,6 +551,50 @@ pub fn restList(t: *Thread, nreq: usize) Word {
         l = t.cons(t.args[i], l);
     }
     return l;
+}
+
+// ---------------------------------------------------------------------------
+// Multiple values
+
+/// t.val for a return of the values in t.args[0..argc]; reserve 1 + argc.
+pub fn valuesOf(t: *Thread) Word {
+    if (t.argc == 1) return t.args[0];
+    const q = t.allocRaw(1 + t.argc);
+    q[0] = hdr(T_VALUES, t.argc);
+    @memcpy(q[1 .. 1 + t.argc], t.args[0..t.argc]);
+    return tagPtr(q);
+}
+
+pub fn valuesCode(t: *Thread) callconv(.c) void {
+    t.reserve(1 + t.argc);
+    t.val = valuesOf(t);
+    return @call(.always_tail, retCode(t), .{t});
+}
+
+/// (call-with-values producer consumer)
+pub fn callWithValuesCode(t: *Thread) callconv(.c) void {
+    if (t.argc != 2) return @call(.always_tail, arityError(t), .{t});
+    t.ensureStack(2);
+    t.push(t.args[1]);
+    t.pushRet(&cwv_info);
+    t.argc = 0;
+    return @call(.always_tail, enter(t, t.args[0]), .{t});
+}
+const cwv_info: RetInfo = .{ .code = &cwvReturn, .size = 1 };
+fn cwvReturn(t: *Thread) callconv(.c) void {
+    const consumer = t.slot(1, 0);
+    t.sp -= 2;
+    const v = t.val;
+    if (isObj(v, T_VALUES)) {
+        const n = hdrLen(ptr(v)[0]);
+        t.ensureArgs(n);
+        @memcpy(t.args[0..n], ptr(v)[1 .. 1 + n]);
+        t.argc = n;
+    } else {
+        t.args[0] = v;
+        t.argc = 1;
+    }
+    return @call(.always_tail, enter(t, consumer), .{t});
 }
 
 // ---------------------------------------------------------------------------
@@ -378,18 +611,20 @@ pub fn callccCode(t: *Thread) callconv(.c) void {
     k[2] = tagPtr(s);
     const f = t.args[0];
     t.args[0] = tagPtr(k);
+    t.argc = 1;
     return @call(.always_tail, enter(t, f), .{t});
 }
 
 fn contCode(t: *Thread) callconv(.c) void {
-    if (t.argc != 1) return @call(.always_tail, fail(t, "multiple values are not supported yet", &.{}), .{t});
+    t.reserve(1 + t.argc);
+    const v = valuesOf(t);
     const s = ptr(ptr(t.self)[2]);
     const n = hdrLen(s[0]);
     t.sp = 0;
     t.ensureStack(n);
     @memcpy(t.stack[0..n], s[1 .. 1 + n]);
     t.sp = n;
-    t.val = t.args[0];
+    t.val = v;
     return @call(.always_tail, retCode(t), .{t});
 }
 
@@ -399,19 +634,21 @@ pub fn applyCode(t: *Thread) callconv(.c) void {
     const f = t.args[0];
     var n: usize = t.argc - 2;
     var l = t.args[t.argc - 1];
+    const last = l;
     std.mem.copyForwards(Word, t.args[0..n], t.args[1 .. n + 1]);
     while (isPair(l)) : (l = cdr(l)) {
         t.ensureArgs(n + 1);
         t.args[n] = car(l);
         n += 1;
     }
-    if (l != NIL) return @call(.always_tail, fail(t, "apply: not a proper list", &.{t.args[t.argc - 1]}), .{t});
+    if (l != NIL) return @call(.always_tail, fail(t, "apply: last argument must be a list", &.{last}), .{t});
     t.argc = n;
     return @call(.always_tail, enter(t, f), .{t});
 }
 
 // ---------------------------------------------------------------------------
-// Cheney semispace GC
+// Garbage collection: Cheney semispace copying for the heap, mark and sweep
+// for the large-object space.
 
 fn gc(t: *Thread, need: usize) void {
     t.gc_count += 1;
@@ -423,17 +660,40 @@ fn gc(t: *Thread, need: usize) void {
     for (t.args) |*w| w.* = g.copy(w.*);
     t.self = g.copy(t.self);
     t.val = g.copy(t.val);
+    t.winders = g.copy(t.winders);
+    t.handlers = g.copy(t.handlers);
     for (t.globals) |*w| w.* = g.copy(w.*);
     for (t.err_irritants[0..t.err_n]) |*w| w.* = g.copy(w.*);
     g.scanFrames(t.stack[0..t.sp]);
-    for (static_scan.items) |p| g.scanObject(p);
+    for (static_scan.items) |q| g.scanObject(q);
 
     var scan: usize = 0;
-    while (scan < g.free) {
-        const p = to.ptr + scan;
-        g.scanObject(p);
-        scan += 1 + hdrLen(p[0]);
+    while (true) {
+        if (scan < g.free) {
+            const q = to.ptr + scan;
+            g.scanObject(q);
+            scan += 1 + hdrLen(q[0]);
+        } else if (g.large_todo.pop()) |q| {
+            g.scanObject(q);
+        } else break;
     }
+
+    // sweep the large-object space
+    var kept: usize = 0;
+    var words: usize = 0;
+    for (t.large.items) |q| {
+        if (hdrFlags(q[0]) & (F_MARK | F_PERM) != 0) {
+            q[0] &= ~(@as(Word, F_MARK) << 8);
+            t.large.items[kept] = q;
+            kept += 1;
+            words += 1 + hdrLen(q[0]);
+        } else {
+            std.heap.page_allocator.free(q[0 .. 1 + hdrLen(q[0])]);
+        }
+    }
+    t.large.items.len = kept;
+    t.large_words = words;
+    g.large_todo.deinit(std.heap.page_allocator);
 
     std.heap.page_allocator.free(from);
     t.heap = to;
@@ -451,34 +711,43 @@ const Gc = struct {
     from: []Word,
     to: []Word,
     free: usize,
+    large_todo: std.ArrayList([*]Word) = .empty,
 
     fn copy(g: *Gc, w: Word) Word {
         if (!isPtr(w)) return w;
-        const p = ptr(w);
-        const a = @intFromPtr(p);
-        if (a < @intFromPtr(g.from.ptr) or a >= @intFromPtr(g.from.ptr + g.from.len)) return w; // static
-        if (hdrType(p[0]) == T_FWD) return p[1];
-        const n = 1 + hdrLen(p[0]);
-        const q = g.to.ptr + g.free;
-        @memcpy(q[0..n], p[0..n]);
+        const q = ptr(w);
+        const a = @intFromPtr(q);
+        if (a < @intFromPtr(g.from.ptr) or a >= @intFromPtr(g.from.ptr + g.from.len)) {
+            // static or large
+            const flags = hdrFlags(q[0]);
+            if (flags & F_LARGE != 0 and flags & (F_MARK | F_PERM) == 0) {
+                q[0] |= @as(Word, F_MARK) << 8;
+                g.large_todo.append(std.heap.page_allocator, q) catch oom();
+            }
+            return w;
+        }
+        if (hdrType(q[0]) == T_FWD) return q[1];
+        const n = 1 + hdrLen(q[0]);
+        const dst = g.to.ptr + g.free;
+        @memcpy(dst[0..n], q[0..n]);
         g.free += n;
-        const nw = tagPtr(q);
-        p[0] = hdr(T_FWD, hdrLen(p[0]));
-        p[1] = nw;
+        const nw = tagPtr(dst);
+        q[0] = hdr(T_FWD, hdrLen(q[0]));
+        q[1] = nw;
         return nw;
     }
 
-    fn scanObject(g: *Gc, p: [*]Word) void {
-        const len = hdrLen(p[0]);
-        switch (hdrType(p[0])) {
-            T_PAIR, T_VECTOR, T_BOX, T_STRING => for (p[1 .. 1 + len]) |*w| {
+    fn scanObject(g: *Gc, q: [*]Word) void {
+        const len = hdrLen(q[0]);
+        switch (hdrType(q[0])) {
+            T_PAIR, T_VECTOR, T_BOX, T_STRING, T_VALUES, T_RECORD, T_ERROR, T_RATNUM, T_COMPNUM => for (q[1 .. 1 + len]) |*w| {
                 w.* = g.copy(w.*);
             },
-            T_CLOSURE => for (p[2 .. 1 + len]) |*w| {
+            T_CLOSURE => for (q[2 .. 1 + len]) |*w| {
                 w.* = g.copy(w.*);
             },
-            T_STACK => g.scanFrames(p[1 .. 1 + len]),
-            T_FLONUM, T_BUF8, T_BUF32, T_SYMBOL => {},
+            T_STACK => g.scanFrames(q[1 .. 1 + len]),
+            T_FLONUM, T_BUF8, T_BUF32, T_SYMBOL, T_PORT, T_BYTEVECTOR, T_BIGNUM => {},
             else => unreachable,
         }
     }
@@ -506,13 +775,17 @@ pub const Program = struct {
 
 /// Names of the globals, for error messages
 var global_names: []const []const u8 = &.{};
+pub var command_line: []const [:0]const u8 = &.{};
 
-pub fn start(prog: Program) u8 {
+pub fn start(prog: Program, args: []const [:0]const u8) u8 {
     global_names = prog.names;
+    command_line = args;
     const t = std.heap.page_allocator.create(Thread) catch oom();
     t.* = Thread.init(prog.names.len);
+    num.current_thread = t;
     prog.init(t);
     _ = run(t, staticProc(prog.entry), 0);
+    ports.flushAll();
     os.flush();
     return t.exit_code;
 }
@@ -520,5 +793,11 @@ pub fn start(prog: Program) u8 {
 pub const data = @import("data.zig");
 pub const num = @import("num.zig");
 pub const printer = @import("printer.zig");
+pub const ports = @import("ports.zig");
 /// Primitive procedures by Scheme name: rt.prims.@"%string-append"
 pub const prims = @import("prims.zig");
+pub const prims_ctl = @import("prims_ctl.zig");
+pub const prims_text = @import("prims_text.zig");
+pub const prims_io = @import("prims_io.zig");
+pub const prims_num = @import("prims_num.zig");
+pub const prims_fs = @import("prims_fs.zig");

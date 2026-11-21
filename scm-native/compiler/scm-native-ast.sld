@@ -32,6 +32,7 @@
     ;;   (gref name)              (gset name e)     (gdef name e)
     ;;   (if e e e)               (seq e ...)
     ;;   (lambda lam)             (call f e ...)    (prim op e ...)
+    ;;   (primref name)           a primitive procedure
     ;;   (let ((var e) ...) e)    (letrec ((var lambda-node) ...) e)
     ;; prim nodes are open-coded operations; calls of other primitives are
     ;; (call (gref name) ...).
@@ -84,7 +85,7 @@
     ;; for nested lambdas.
     (define (refs e)
       (case (node-kind e)
-        ((const gref) '())
+        ((const gref primref) '())
         ((lref) (list (cadr e)))
         ((lset) (var-union (list (cadr e)) (refs (caddr e))))
         ((gset gdef) (refs (caddr e)))
@@ -106,7 +107,7 @@
     ;; Compute the free variables of every lambda, innermost first.
     (define (compute-free! e)
       (case (node-kind e)
-        ((const gref lref) #t)
+        ((const gref lref primref) #t)
         ((lset gset gdef) (compute-free! (caddr e)))
         ((lambda)
          (let ((l (cadr e)))

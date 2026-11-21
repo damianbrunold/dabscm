@@ -19,7 +19,7 @@
 
     (define (simple? e)
       (case (node-kind e)
-        ((const lref gref lambda) #t)
+        ((const lref gref primref lambda) #t)
         ((call) #f)
         ((prim) (every simple? (cddr e)))
         ((if seq) (every simple? (cdr e)))
@@ -31,7 +31,7 @@
 
     (define (anf e)
       (case (node-kind e)
-        ((const lref gref) e)
+        ((const lref gref primref) e)
         ((lambda)
          (let ((l (cadr e)))
            (lam-body-set! l (anf (lam-body l)))
@@ -68,7 +68,7 @@
         (else (error "anf: unknown node" e))))
 
     (define (effect-free? e)
-      (memq (node-kind e) '(const lref lambda)))
+      (memq (node-kind e) '(const lref primref lambda)))
 
     ;; Give e a name when it is complex: k receives a simple expression.
     (define (name e k)

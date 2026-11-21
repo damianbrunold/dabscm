@@ -7,7 +7,8 @@
           (scheme write)
           (srfi 1)
           (scm native ast)
-          (scm native anf))
+          (scm native anf)
+          (scm native expand))
   (begin
     ;; Zig code generation from ANF Core IR (see scm-native/README.md for
     ;; the runtime model).
@@ -36,9 +37,9 @@
     (define blocks '())        ; finished block functions (strings)
     (define statics '())       ; file-level declarations (strings)
     (define init-lines '())    ; statements of init()
-    (define globals '())       ; (name . index), program and primitive globals
-    (define program-globals '())
+    (define globals '())       ; (glob . index)
     (define primitive-names '())
+    (define primitive-procs '()) ; (name . zig-var) static procedures
     (define constants '())     ; (datum . zig-name)
     (define counter 0)
 
@@ -49,19 +50,31 @@
     (define (add-static! s) (set! statics (cons s statics)))
     (define (add-init! s) (set! init-lines (cons s init-lines)))
 
-    (define (global-index name)
-      (cond ((assq name globals) => cdr)
+    (define (global-index g)
+      (cond ((assq g globals) => cdr)
             (else
              (let ((i (length globals)))
-               (set! globals (cons (cons name i) globals))
-               (unless (memq name program-globals)
-                 (add-init! (cat "    t.globals[" i "] = rt.staticProc(" (prim-code name) ");")))
+               (set! globals (cons (cons g i) globals))
                i))))
 
-    (define (primitive-global? name)
-      (and (not (memq name program-globals)) (memq name primitive-names)))
+    (define (implemented? name) (assq name primitive-names))
 
-    (define (prim-code name) (cat "rt.prims.@\"%" (zig-escape (symbol->string name)) "\""))
+    ;; The static procedure object of a primitive (a file-level variable)
+    (define (primitive-proc name)
+      (cond ((assq name primitive-procs) => cdr)
+            (else
+             (let ((v (cat "p" (next!))))
+               (set! primitive-procs (cons (cons name v) primitive-procs))
+               (add-static! (cat "var " v ": Word = undefined;"))
+               (add-init! (if (implemented? name)
+                              (cat "    " v " = rt.primitive(" (prim-code name) ", \""
+                                   (zig-escape (symbol->string name)) "\");")
+                              (cat "    " v " = rt.missingPrimitive(\"" (zig-escape (symbol->string name)) "\");")))
+               v))))
+
+    ;; primitive-names: alist name -> runtime module
+    (define (prim-code name)
+      (cat "rt." (cdr (assq name primitive-names)) ".@\"%" (zig-escape (symbol->string name)) "\""))
 
     ;; --- blocks ------------------------------------------------------------
 
@@ -135,9 +148,11 @@
             ((eq? d #t) "rt.TRUE")
             ((eq? d #f) "rt.FALSE")
             ((null? d) "rt.NIL")
-            ((fixnum? d) (cat "rt.fix(" d ")"))
-            ((char? d) (cat "rt.char(" (char->integer d) ")"))
-            ((assoc d constants) => cdr)
+            ((fixnum? d) (word-literal (* 2 d)))
+            ((char? d) (word-literal (+ (* 8 (char->integer d)) 5)))
+            ;; literals are distinct objects (as in the JVM implementation),
+            ;; except those that cannot be mutated
+            ((and (or (symbol? d) (number? d)) (assoc d constants)) => cdr)
             (else
              (let ((name (cat "c" (next!)))
                    (init (constant-init d)))
@@ -146,13 +161,22 @@
                (add-init! (cat "    " name " = " init ";"))
                name))))
 
+    ;; A tagged word as a Zig literal (computed here: comptime evaluation of
+    ;; rt.fix in large functions exceeds Zig's branch quota)
+    (define (word-literal n)
+      (let ((u (if (< n 0) (+ n (expt 2 64)) n)))
+        (cat "@as(Word, 0x" (number->string u 16) ")")))
+
     (define (constant-init d)
       (cond ((string? d) (cat "rt.data.constString(\"" (zig-escape d) "\")"))
             ((symbol? d) (cat "rt.data.intern(\"" (zig-escape (symbol->string d)) "\")"))
             ((and (real? d) (inexact? d)) (cat "rt.data.constFlonum(" (zig-float d) ")"))
             ((pair? d) (cat "rt.data.constPair(" (constant (car d)) ", " (constant (cdr d)) ")"))
             ((vector? d) (cat "rt.data.constVector(&.{" (join (map constant (vector->list d)) ", ") "})"))
-            ((exact-integer? d) (error "integer constant out of fixnum range (no bignums yet)" d))
+            ((bytevector? d)
+             (cat "rt.data.constBytevector(&.{"
+                  (join (map number->string (bytevector->list d)) ", ") "})"))
+            ((number? d) (cat "rt.data.constNumber(t, \"" (number->string d) "\")"))
             (else (error "unsupported constant" d))))
 
     (define (zig-float x)
@@ -171,11 +195,17 @@
                (temp! b (cat "rt.ptr(" (lookup env v) ")[1]"))
                (lookup env v))))
         ((gref) (cg-gref (cadr e) b))
+        ((primref) (primitive-proc (cadr e)))
         ((lset)
          (let ((a (cg-simple (caddr e) b env)))
            (emit! b "rt.ptr(" (lookup env (cadr e)) ")[1] = " a ";")
-           "rt.UNSPEC"))
-        ((gset gdef)
+           ;; set! returns the value (as the JVM implementation)
+           a))
+        ((gset)
+         (let ((a (cg-simple (caddr e) b env)))
+           (emit! b "t.globals[" (global-index (cadr e)) "] = " a ";")
+           a))
+        ((gdef)
          (let ((a (cg-simple (caddr e) b env)))
            (emit! b "t.globals[" (global-index (cadr e)) "] = " a ";")
            "rt.UNSPEC"))
@@ -202,7 +232,11 @@
 
     (define (cg-effect e b env)
       (case (node-kind e)
-        ((const lref) #t)
+        ((const) #t)
+        ((lref)
+         ;; the variable is loaded in this block: it must be used
+         (let ((a (lookup env (cadr e))))
+           (when (local-expr? a) (emit! b "rt.ignore(" a ");"))))
         ((seq) (for-each (lambda (x) (cg-effect x b env)) (cdr e)))
         ((if)
          (let ((test (cg-simple (cadr e) b env)))
@@ -217,14 +251,12 @@
          (let ((a (cg-simple e b env)))
            (when (local-expr? a) (emit! b "rt.ignore(" a ");"))))))
 
-    (define (cg-gref name b)
-      (let ((i (global-index name)))
-        (if (primitive-global? name)
-            (temp! b (cat "t.globals[" i "]"))
-            (let ((g (temp! b (cat "t.globals[" i "]"))))
-              (emit! b "if (" g " == rt.UNBOUND) return @call(.always_tail, rt.unboundError(t, \""
-                     (zig-escape (symbol->string name)) "\"), .{t});")
-              g))))
+    (define (cg-gref g b)
+      (let* ((i (global-index g))
+             (v (temp! b (cat "t.globals[" i "]"))))
+        (emit! b "if (" v " == rt.UNBOUND) return @call(.always_tail, rt.unboundError(t, \""
+               (zig-escape (glob-name g)) "\"), .{t});")
+        v))
 
     ;; Bindings of a let whose right-hand sides are simple
     (define (cg-let-bindings bindings body b env)
@@ -264,7 +296,7 @@
                                   (l (cadr (cadr bd))))
                              (if (null? (lam-free l))
                                  (bind env2 v (static-closure l) #f)
-                                 (let ((c (cat "c" (var-id v))))
+                                 (let ((c (cat "cl" (var-id v))))
                                    (alloc! b (+ 2 (length (lam-free l))))
                                    (emit! b "const " c " = t.closure(&" (gen-lambda l) ", "
                                           (length (lam-free l)) ");")
@@ -274,7 +306,7 @@
         (for-each (lambda (bd)
                     (let ((l (cadr (cadr bd))))
                       (unless (null? (lam-free l))
-                        (fill-closure! (cat "c" (var-id (car bd))) l b env2))))
+                        (fill-closure! (cat "cl" (var-id (car bd))) l b env2))))
                   live)
         env2))
 
@@ -296,7 +328,7 @@
     (define (cg-closure l b env)
       (if (null? (lam-free l))
           (static-closure l)
-          (let ((c (cat "c" (next!))))
+          (let ((c (cat "cl" (next!))))
             (alloc! b (+ 2 (length (lam-free l))))
             (emit! b "const " c " = t.closure(&" (gen-lambda l) ", " (length (lam-free l)) ");")
             (fill-closure! c l b env)
@@ -309,21 +341,25 @@
       (define (pred expr) (temp! b (cat "rt.boolean(" expr ")")))
       (define (check! test msg . atoms)
         (emit! b "if (!(" test ")) " (fail-stmt msg atoms) ";"))
+      (define (type-fail name . atoms)
+        (cat "return @call(.always_tail, rt.typeError(t, \"" (zig-escape name) "\", &.{"
+             (join atoms ", ") "}), .{t})"))
+      (define (arith-fail name)
+        (cat "return @call(.always_tail, rt.arithError(t, \"" name "\", " (a 0) ", " (a 1) "), .{t})"))
       (define (arith fn name)
         (alloc! b 2)
-        (temp! b (cat "rt.num." fn "(t, " (a 0) ", " (a 1) ") orelse "
-                      (fail-stmt (cat name ": not a number, or integer overflow (no bignums yet)")
-                                 as))))
+        (temp! b (cat "rt.num." fn "(t, " (a 0) ", " (a 1) ") orelse " (arith-fail name))))
       (define (cmp c name)
-        (pred (cat "rt.num.cmp(" (a 0) ", " (a 1) ", ." c ") orelse "
-                   (fail-stmt (cat name ": not a number") as))))
+        (pred (cat "rt.num.cmp(" (a 0) ", " (a 1) ", ." c ") orelse " (arith-fail name))))
+      (define (vector-fail name)
+        (cat "return @call(.always_tail, rt.vectorError(t, \"" name "\", " (a 0) ", " (a 1) "), .{t})"))
       (case op
         ((car cdr)
-         (check! (cat "rt.isPair(" (a 0) ")") (cat op ": not a pair") (a 0))
+         (emit! b "if (!rt.isPair(" (a 0) ")) " (type-fail (symbol->string op)) ";")
          (temp! b (cat "rt." op "(" (a 0) ")")))
         ((cons) (alloc! b 3) (temp! b (cat "t.cons(" (a 0) ", " (a 1) ")")))
         ((set-car! set-cdr!)
-         (check! (cat "rt.isPair(" (a 0) ")") (cat op ": not a pair") (a 0))
+         (emit! b "if (!rt.isPair(" (a 0) ")) " (type-fail (symbol->string op)) ";")
          (emit! b "rt.ptr(" (a 0) ")[" (if (eq? op 'set-car!) 1 2) "] = " (a 1) ";")
          "rt.UNSPEC")
         ((pair?) (pred (cat "rt.isPair(" (a 0) ")")))
@@ -339,20 +375,17 @@
         ((<=) (cmp "le" "<="))
         ((>=) (cmp "ge" ">="))
         ((=) (cmp "eq" "="))
-        ((zero?) (pred (cat "rt.num.cmp(" (a 0) ", rt.fix(0), .eq) orelse "
-                            (fail-stmt "zero?: not a number" as))))
+        ((zero?) (pred (cat "rt.num.cmp(" (a 0) ", rt.fix(0), .eq) orelse " (type-fail "zero?" (a 0)))))
         ((vector-ref)
-         (temp! b (cat "rt.data.vref(" (a 0) ", " (a 1) ") orelse "
-                       (fail-stmt "vector-ref: not a vector or index out of range" as))))
+         (temp! b (cat "rt.data.vref(" (a 0) ", " (a 1) ") orelse " (vector-fail "vector-ref"))))
         ((vector-set!)
-         (check! (cat "rt.data.vset(" (a 0) ", " (a 1) ", " (a 2) ")")
-                 "vector-set!: not a vector or index out of range" (a 0) (a 1))
+         (emit! b "if (!rt.data.vset(" (a 0) ", " (a 1) ", " (a 2) ")) " (vector-fail "vector-set!") ";")
          "rt.UNSPEC")
         ((vector-length)
-         (check! (cat "rt.data.isVector(" (a 0) ")") "vector-length: not a vector" (a 0))
+         (emit! b "if (!rt.data.isVector(" (a 0) ")) " (type-fail "vector-length") ";")
          (temp! b (cat "rt.fix(@intCast(rt.data.vectorLen(" (a 0) ")))")))
         ((char->integer)
-         (check! (cat "rt.isChar(" (a 0) ")") "char->integer: not a character" (a 0))
+         (emit! b "if (!rt.isChar(" (a 0) ")) " (type-fail "char->integer") ";")
          (temp! b (cat "rt.fix(rt.charCode(" (a 0) "))")))
         (else (error "cg-prim: unknown primitive" op))))
 
@@ -386,8 +419,8 @@
            (emit! b tail-call-ret)))))
 
     (define (cg-call f args b env)
-      (let* ((direct (and (eq? (node-kind f) 'gref) (primitive-global? (cadr f))))
-             (global (and (eq? (node-kind f) 'gref) (not direct)))
+      (let* ((direct (and (eq? (node-kind f) 'primref) (implemented? (cadr f))))
+             (global (eq? (node-kind f) 'gref))
              (fa (and (not direct) (not global) (cg-simple f b env)))
              (as (map (lambda (a) (cg-simple a b env)) args))
              (n (length as)))
@@ -398,7 +431,7 @@
             (loop (cdr as) (+ i 1))))
         (emit! b "t.argc = " n ";")
         (cond (direct
-               (emit! b "return @call(.always_tail, " (prim-code (cadr f)) ", .{t});"))
+               (emit! b "return @call(.always_tail, rt.primCode(" (prim-code (cadr f)) "), .{t});"))
               (global
                (emit! b "return @call(.always_tail, rt.enterGlobal(t, " (global-index (cadr f)) "), .{t});"))
               (else
@@ -450,8 +483,8 @@
                  (n (length params))
                  (used (refs (lam-body l))))
             (if rest
-                (prologue! b "if (t.argc < " n ") return @call(.always_tail, rt.arityError(t), .{t});")
-                (prologue! b "if (t.argc != " n ") return @call(.always_tail, rt.arityError(t), .{t});"))
+                (prologue! b "if (t.argc < " n ") return @call(.always_tail, rt.arityErrorN(t, " n ", true), .{t});")
+                (prologue! b "if (t.argc != " n ") return @call(.always_tail, rt.arityErrorN(t, " n ", false), .{t});"))
             (let* ((env (let loop ((ps params) (i 0) (env '()))
                           (if (null? ps)
                               env
@@ -488,7 +521,7 @@
 
     ;; ast: the program as Core IR in ANF with free variables computed.
     ;; Returns the Zig source of the program module.
-    (define (emit-program ast program-global-names prims)
+    (define (emit-program ast prims)
       (set! blocks '())
       (set! statics '())
       (set! init-lines '())
@@ -496,12 +529,17 @@
       (set! constants '())
       (set! statics-made '())
       (set! lambdas-made '())
-      (set! program-globals program-global-names)
       (set! primitive-names prims)
-      (for-each global-index program-global-names)
+      (set! primitive-procs '())
       (let* ((main (make-lam '() #f ast 'toplevel))
              (entry (gen-lambda main))
-             (names (map car (sort-by-index globals))))
+             (names (map (lambda (g) (glob-name (car g))) (sort-by-index globals))))
+        ;; tell the runtime where the globals are that it uses itself
+        (for-each (lambda (g)
+                    (let ((s (assoc (list (glob-lib (car g)) (glob-sym (car g))) special-globals)))
+                      (when s
+                        (add-init! (cat "    t.specials[@intFromEnum(rt.Special." (cadr s) ")] = " (cdr g) ";")))))
+                  globals)
         (apply cat
                "//! Generated by scmc (dabscm native). Do not edit.\n"
                "const std = @import(\"std\");\n"
@@ -510,15 +548,21 @@
                "const Word = rt.Word;\n\n"
                "pub const program: rt.Program = .{ .names = &names, .init = &init, .entry = &" entry " };\n"
                "const names = [_][]const u8{ "
-               (join (map (lambda (n) (cat "\"" (zig-escape (symbol->string n)) "\"")) names) ", ")
+               (join (map (lambda (n) (cat "\"" (zig-escape n) "\"")) names) ", ")
                " };\n\n"
                (append
                 (map (lambda (s) (cat s "\n")) (reverse statics))
                 (list "\nfn init(t: *Thread) void {\n"
-                      "    const t_ = t; // init may not use t\n    _ = t_;\n"
+                      "    @setEvalBranchQuota(100000000);\n    const t_ = t; // init may not use t\n    _ = t_;\n"
                       (apply cat (map (lambda (l) (cat l "\n")) (reverse init-lines)))
                       "}\n\n")
                 (map (lambda (s) (cat s "\n")) (reverse blocks))))))
+
+    (define special-globals
+      '((((scheme base) raise) raise)
+        (((scm core) *input-port*) input_port)
+        (((scm core) *output-port*) output_port)
+        (((scm core) *error-port*) error_port)))
 
     (define (sort-by-index gs)
       (let loop ((i 0) (acc '()))
@@ -532,6 +576,10 @@
       (if (null? strs)
           ""
           (fold (lambda (s acc) (string-append acc sep s)) (car strs) (cdr strs))))
+
+    (define (bytevector->list bv)
+      (let loop ((i (- (bytevector-length bv) 1)) (acc '()))
+        (if (< i 0) acc (loop (- i 1) (cons (bytevector-u8-ref bv i) acc)))))
 
     (define hex "0123456789abcdef")
 

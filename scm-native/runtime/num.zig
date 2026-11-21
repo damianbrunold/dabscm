@@ -7,14 +7,17 @@ const rt = @import("rt.zig");
 const Word = rt.Word;
 const Thread = rt.Thread;
 const isFix = rt.isFix;
+pub const tower = @import("tower.zig");
 
 pub inline fn isNumber(w: Word) bool {
-    return isFix(w) or rt.isFlonum(w);
+    return isFix(w) or rt.isFlonum(w) or tower.isNumber(w);
 }
 
+/// A real as an f64; null if not a real
 pub inline fn toF(w: Word) ?f64 {
     if (isFix(w)) return @floatFromInt(rt.unfix(w));
     if (rt.isFlonum(w)) return rt.flo(w);
+    if (tower.isReal(w)) return tower.toFloat(w);
     return null;
 }
 
@@ -22,7 +25,7 @@ pub inline fn add(t: *Thread, a: Word, b: Word) ?Word {
     if (isFix(a | b)) {
         const r = @addWithOverflow(@as(i64, @bitCast(a)), @as(i64, @bitCast(b)));
         if (r[1] == 0) return @bitCast(r[0]);
-        return null;
+        return tower.arith(t, a, b, .add);
     }
     return floOp(t, a, b, .add);
 }
@@ -31,7 +34,7 @@ pub inline fn sub(t: *Thread, a: Word, b: Word) ?Word {
     if (isFix(a | b)) {
         const r = @subWithOverflow(@as(i64, @bitCast(a)), @as(i64, @bitCast(b)));
         if (r[1] == 0) return @bitCast(r[0]);
-        return null;
+        return tower.arith(t, a, b, .sub);
     }
     return floOp(t, a, b, .sub);
 }
@@ -40,7 +43,7 @@ pub inline fn mul(t: *Thread, a: Word, b: Word) ?Word {
     if (isFix(a | b)) {
         const r = @mulWithOverflow(rt.unfix(a), @as(i64, @bitCast(b)));
         if (r[1] == 0) return @bitCast(r[0]);
-        return null;
+        return tower.arith(t, a, b, .mul);
     }
     return floOp(t, a, b, .mul);
 }
@@ -48,8 +51,14 @@ pub inline fn mul(t: *Thread, a: Word, b: Word) ?Word {
 const Op = enum { add, sub, mul, div };
 
 noinline fn floOp(t: *Thread, a: Word, b: Word, comptime op: Op) ?Word {
-    const x = toF(a) orelse return null;
-    const y = toF(b) orelse return null;
+    if (!((isFix(a) or rt.isFlonum(a)) and (isFix(b) or rt.isFlonum(b)))) return tower.arith(t, a, b, switch (op) {
+        .add => .add,
+        .sub => .sub,
+        .mul => .mul,
+        .div => .div,
+    });
+    const x = toF(a).?;
+    const y = toF(b).?;
     return t.makeFlo(switch (op) {
         .add => x + y,
         .sub => x - y,
@@ -62,8 +71,8 @@ pub inline fn div(t: *Thread, a: Word, b: Word) ?Word {
     if (isFix(a | b) and b != rt.fix(0)) {
         const x = rt.unfix(a);
         const y = rt.unfix(b);
-        if (@rem(x, y) == 0) return rt.fix(@divTrunc(x, y));
-        return null; // rationals: Phase 2
+        if (@rem(x, y) == 0 and !(x == rt.fix_min and y == -1)) return rt.fix(@divTrunc(x, y));
+        return tower.arith(t, a, b, .div);
     }
     return floOp(t, a, b, .div);
 }
@@ -86,8 +95,20 @@ pub inline fn cmp(a: Word, b: Word, comptime c: Cmp) ?bool {
 }
 
 noinline fn cmpSlow(a: Word, b: Word, comptime c: Cmp) ?bool {
-    const x = toF(a) orelse return null;
-    const y = toF(b) orelse return null;
+    if (!((isFix(a) or rt.isFlonum(a)) and (isFix(b) or rt.isFlonum(b)))) {
+        const t = current_thread;
+        if (c == .eq) return tower.numEq(t, a, b);
+        const o = tower.order(t, a, b) orelse return if (tower.isReal(a) and tower.isReal(b)) false else null;
+        return switch (c) {
+            .lt => o == .lt,
+            .gt => o == .gt,
+            .le => o != .gt,
+            .ge => o != .lt,
+            .eq => o == .eq,
+        };
+    }
+    const x = toF(a).?;
+    const y = toF(b).?;
     return switch (c) {
         .lt => x < y,
         .gt => x > y,
@@ -97,8 +118,11 @@ noinline fn cmpSlow(a: Word, b: Word, comptime c: Cmp) ?bool {
     };
 }
 
+/// The thread, for comparisons that allocate exact intermediates
+pub var current_thread: *Thread = undefined;
+
 pub fn isInteger(w: Word) bool {
-    if (isFix(w)) return true;
+    if (isFix(w) or tower.isBig(w)) return true;
     if (rt.isFlonum(w)) {
         const f = rt.flo(w);
         return std.math.isFinite(f) and @floor(f) == f;
@@ -145,4 +169,147 @@ pub fn formatFlonum(buf: *std.ArrayList(u8), f: f64) void {
         buf.append(a, '.') catch rt.oom();
         if (nd > ip) buf.appendSlice(a, digits[ip..nd]) catch rt.oom() else buf.append(a, '0') catch rt.oom();
     }
+}
+
+// ---------------------------------------------------------------------------
+// Number syntax
+
+pub const Lit = union(enum) {
+    fix: i64,
+    flo: f64,
+    /// an exact integer beyond the fixnum range, or a rational: the text
+    /// (without prefixes) and its radix; made by the numeric tower
+    exact: struct { text: []const u8, radix: u8 },
+};
+
+/// Parse a number in Scheme syntax; null if text is not a number.
+pub fn parseNumber(text0: []const u8, default_radix: u8) ?Lit {
+    var text = text0;
+    var radix = default_radix;
+    var exactness: u8 = 0; // 'e', 'i' or 0
+    while (text.len >= 2 and text[0] == '#') {
+        switch (std.ascii.toLower(text[1])) {
+            'x' => radix = 16,
+            'b' => radix = 2,
+            'o' => radix = 8,
+            'd' => radix = 10,
+            'e' => exactness = 'e',
+            'i' => exactness = 'i',
+            else => return null,
+        }
+        text = text[2..];
+    }
+    if (text.len == 0) return null;
+    const lit = parseReal(text, radix) orelse return null;
+    return switch (exactness) {
+        'i' => switch (lit) {
+            .fix => |n| .{ .flo = @floatFromInt(n) },
+            .flo => lit,
+            .exact => |e| .{ .flo = exactTextToFloat(e.text, e.radix) orelse return null },
+        },
+        'e' => switch (lit) {
+            .flo => |f| blk: {
+                if (std.math.isFinite(f) and @floor(f) == f and @abs(f) < 4.0e18) break :blk .{ .fix = @intFromFloat(f) };
+                // other inexact-to-exact conversions need rationals
+                break :blk .{ .exact = .{ .text = text, .radix = radix } };
+            },
+            else => lit,
+        },
+        else => lit,
+    };
+}
+
+fn parseReal(text: []const u8, radix: u8) ?Lit {
+    if (std.mem.eql(u8, text, "+inf.0")) return .{ .flo = std.math.inf(f64) };
+    if (std.mem.eql(u8, text, "-inf.0")) return .{ .flo = -std.math.inf(f64) };
+    if (std.mem.eql(u8, text, "+nan.0") or std.mem.eql(u8, text, "-nan.0")) return .{ .flo = std.math.nan(f64) };
+    var i: usize = 0;
+    if (text[0] == '+' or text[0] == '-') i = 1;
+    if (i == text.len) return null;
+    // integer or rational
+    var j = i;
+    while (j < text.len and digitOf(text[j], radix) != null) j += 1;
+    if (j == text.len and j > i) {
+        const n = std.fmt.parseInt(i64, text, radix) catch return .{ .exact = .{ .text = text, .radix = radix } };
+        if (n < fix_min_num or n > fix_max_num) return .{ .exact = .{ .text = text, .radix = radix } };
+        return .{ .fix = n };
+    }
+    if (j < text.len and text[j] == '/' and j > i) {
+        var k = j + 1;
+        if (k == text.len) return null;
+        while (k < text.len and digitOf(text[k], radix) != null) k += 1;
+        if (k != text.len) return null;
+        return .{ .exact = .{ .text = text, .radix = radix } };
+    }
+    // decimal
+    if (radix != 10) return null;
+    var k = i;
+    var digits: usize = 0;
+    while (k < text.len and std.ascii.isDigit(text[k])) : (k += 1) digits += 1;
+    if (k < text.len and text[k] == '.') {
+        k += 1;
+        while (k < text.len and std.ascii.isDigit(text[k])) : (k += 1) digits += 1;
+    }
+    if (digits == 0) return null;
+    if (k < text.len and (text[k] == 'e' or text[k] == 'E')) {
+        k += 1;
+        if (k < text.len and (text[k] == '+' or text[k] == '-')) k += 1;
+        const start = k;
+        while (k < text.len and std.ascii.isDigit(text[k])) k += 1;
+        if (k == start) return null;
+    }
+    if (k != text.len) return null;
+    return .{ .flo = std.fmt.parseFloat(f64, text) catch return null };
+}
+
+const fix_min_num: i64 = -(1 << 62);
+const fix_max_num: i64 = (1 << 62) - 1;
+
+pub fn digitOf(c: u8, radix: u8) ?u8 {
+    const d: u8 = switch (c) {
+        '0'...'9' => c - '0',
+        'a'...'z' => c - 'a' + 10,
+        'A'...'Z' => c - 'A' + 10,
+        else => return null,
+    };
+    return if (d < radix) d else null;
+}
+
+fn exactTextToFloat(text: []const u8, radix: u8) ?f64 {
+    if (std.mem.indexOfScalar(u8, text, '/')) |slash| {
+        const a = exactTextToFloat(text[0..slash], radix) orelse return null;
+        const b = exactTextToFloat(text[slash + 1 ..], radix) orelse return null;
+        return a / b;
+    }
+    var f: f64 = 0;
+    var neg = false;
+    for (text, 0..) |c, i| {
+        if (i == 0 and (c == '-' or c == '+')) {
+            neg = c == '-';
+            continue;
+        }
+        f = f * @as(f64, @floatFromInt(radix)) + @as(f64, @floatFromInt(digitOf(c, radix) orelse return null));
+    }
+    return if (neg) -f else f;
+}
+
+/// An exact number beyond the fixnums (bignum, rational) from its syntax.
+/// Made by the numeric tower; null until then.
+pub fn exactFromLit(t: *Thread, lit: Lit) ?Word {
+    return switch (lit) {
+        .fix => |n| rt.fix(n),
+        .flo => null,
+        .exact => |e| tower.fromText(t, e.text, e.radix),
+    };
+}
+
+/// Exact b^e beyond the fixnums or with a negative exponent (bignum,
+/// rational). Made by the numeric tower; null until then.
+pub fn exactExpt(t: *Thread, b: Word, e: Word) ?Word {
+    return tower.exactExpt(t, b, e);
+}
+
+/// Print a bignum, ratnum or compnum (the numeric tower)
+pub fn formatExact(buf: *std.ArrayList(u8), w: Word) void {
+    tower.format(buf, w, 10);
 }

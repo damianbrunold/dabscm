@@ -32,7 +32,9 @@
   (cond ((null? args)
          (unless input (usage))
          (if emit
-             (display (compile-to-zig input (join-path native-dir "runtime")))
+             (display (compile-to-zig input (join-path native-dir "runtime")
+                                      (join-path (directory-name native-dir) "scm-lib")
+                                      (cond ((assq 'target options) => cdr) (else #f))))
              (compile-program input (or output (strip-extension input)) native-dir options)))
         ((and (string=? (car args) "-o") (pair? (cdr args)))
          (loop (cddr args) input (cadr args) options emit))

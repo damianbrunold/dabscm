@@ -3,12 +3,106 @@ const std = @import("std");
 const rt = @import("rt.zig");
 const data = @import("data.zig");
 const num = @import("num.zig");
+const ports = @import("ports.zig");
 const Word = rt.Word;
 
 const a = std.heap.page_allocator;
 
 fn put(buf: *std.ArrayList(u8), s: []const u8) void {
     buf.appendSlice(a, s) catch rt.oom();
+}
+
+// --- datum labels ----------------------------------------------------------
+// write labels cycles (#0=, #0#), write-shared all shared structure, as the
+// JVM implementation; display is also safe on cycles here.
+
+const State = enum { active, done };
+
+const Labels = struct {
+    state: std.AutoHashMapUnmanaged(Word, State) = .empty,
+    /// nodes to label, with their number once printed (-1: not yet)
+    labels: std.AutoHashMapUnmanaged(Word, i64) = .empty,
+    next: i64 = 0,
+    shared: bool,
+
+    fn deinit(l: *Labels) void {
+        l.state.deinit(a);
+        l.labels.deinit(a);
+    }
+
+    fn compound(x: Word) bool {
+        return rt.isPair(x) or (rt.isPtr(x) and rt.objType(x) == rt.T_VECTOR and data.vectorLen(x) > 0);
+    }
+
+    /// true if x was seen before (and is handled)
+    fn seen(l: *Labels, x: Word) bool {
+        if (l.state.get(x)) |st| {
+            if (st == .active or l.shared) l.labels.put(a, x, -1) catch rt.oom();
+            return true;
+        }
+        return false;
+    }
+
+    fn visit(l: *Labels, x: Word) void {
+        if (!compound(x) or l.seen(x)) return;
+        if (rt.isPair(x)) {
+            var chain: std.ArrayList(Word) = .empty;
+            defer chain.deinit(a);
+            var p = x;
+            while (true) {
+                l.state.put(a, p, .active) catch rt.oom();
+                chain.append(a, p) catch rt.oom();
+                l.visit(rt.car(p));
+                const d = rt.cdr(p);
+                if (!rt.isPair(d)) {
+                    l.visit(d);
+                    break;
+                }
+                if (l.seen(d)) break;
+                p = d;
+            }
+            for (chain.items) |q| l.state.put(a, q, .done) catch rt.oom();
+        } else {
+            l.state.put(a, x, .active) catch rt.oom();
+            for (data.vectorItems(x)) |item| l.visit(item);
+            l.state.put(a, x, .done) catch rt.oom();
+        }
+    }
+};
+
+var labels: ?*Labels = null;
+
+fn isLabeled(x: Word) bool {
+    const l = labels orelse return false;
+    return l.labels.contains(x);
+}
+
+/// Print the label prefix of x; true if x was printed already (as #n#)
+fn printLabel(buf: *std.ArrayList(u8), x: Word) bool {
+    const l = labels orelse return false;
+    const entry = l.labels.getPtr(x) orelse return false;
+    var tmp: [24]u8 = undefined;
+    if (entry.* >= 0) {
+        put(buf, std.fmt.bufPrint(&tmp, "#{d}#", .{entry.*}) catch unreachable);
+        return true;
+    }
+    entry.* = l.next;
+    l.next += 1;
+    put(buf, std.fmt.bufPrint(&tmp, "#{d}=", .{entry.*}) catch unreachable);
+    return false;
+}
+
+/// Print w (write or display), with datum labels for cycles, or for all
+/// shared structure when shared.
+pub fn printTop(buf: *std.ArrayList(u8), w: Word, write: bool, shared: bool) void {
+    if (!Labels.compound(w) or labels != null) return print(buf, w, write);
+    var l = Labels{ .shared = shared };
+    defer l.deinit();
+    l.visit(w);
+    if (l.labels.count() == 0) return print(buf, w, write);
+    labels = &l;
+    defer labels = null;
+    print(buf, w, write);
 }
 
 pub fn print(buf: *std.ArrayList(u8), w: Word, write: bool) void {
@@ -49,8 +143,9 @@ pub fn print(buf: *std.ArrayList(u8), w: Word, write: bool) void {
         rt.T_FLONUM => num.formatFlonum(buf, rt.flo(w)),
         rt.T_STRING => if (write) writeString(buf, w) else data.appendUtf8(buf, w),
         rt.T_SYMBOL => if (write) writeSymbol(buf, data.symbolName(w)) else put(buf, data.symbolName(w)),
-        rt.T_PAIR => printPair(buf, w, write),
+        rt.T_PAIR => if (!printLabel(buf, w)) printPair(buf, w, write),
         rt.T_VECTOR => {
+            if (printLabel(buf, w)) return;
             put(buf, "#(");
             for (data.vectorItems(w), 0..) |x, i| {
                 if (i > 0) put(buf, " ");
@@ -58,8 +153,41 @@ pub fn print(buf: *std.ArrayList(u8), w: Word, write: bool) void {
             }
             put(buf, ")");
         },
-        rt.T_CLOSURE => put(buf, "#<procedure>"),
+        rt.T_CLOSURE => if (rt.isPrimitive(w)) {
+            put(buf, "#<p:");
+            put(buf, data.symbolName(rt.ptr(w)[2]));
+            put(buf, ">");
+        } else put(buf, "#<lambda>"),
         rt.T_BOX => put(buf, "#<box>"),
+        rt.T_RECORD => put(buf, "#<record>"),
+        rt.T_ERROR => {
+            put(buf, "#<error-object ");
+            print(buf, rt.ptr(w)[1], true);
+            put(buf, ">");
+        },
+        rt.T_PORT => {
+            const port = ports.get(w).?;
+            put(buf, if (port.isInput())
+                (if (port.binary) "#<binary-input-port>" else "#<input-port>")
+            else if (port.binary) "#<binary-output-port>" else "#<output-port>");
+        },
+        rt.T_BYTEVECTOR => {
+            put(buf, "#u8(");
+            for (data.bvBytes(w), 0..) |b, i| {
+                if (i > 0) put(buf, " ");
+                var tmp: [4]u8 = undefined;
+                put(buf, std.fmt.bufPrint(&tmp, "{d}", .{b}) catch unreachable);
+            }
+            put(buf, ")");
+        },
+        rt.T_VALUES => {
+            const n = rt.hdrLen(rt.ptr(w)[0]);
+            for (rt.ptr(w)[1 .. 1 + n], 0..) |x, i| {
+                if (i > 0) put(buf, "\n");
+                print(buf, x, write);
+            }
+        },
+        rt.T_BIGNUM, rt.T_RATNUM, rt.T_COMPNUM => num.formatExact(buf, w),
         else => put(buf, "#<object>"),
     }
 }
@@ -89,7 +217,7 @@ fn printPair(buf: *std.ArrayList(u8), w: Word, write: bool) void {
         print(buf, rt.car(x), write);
         const d = rt.cdr(x);
         if (d == rt.NIL) break;
-        if (!rt.isPair(d)) {
+        if (!rt.isPair(d) or isLabeled(d)) {
             put(buf, " . ");
             print(buf, d, write);
             break;

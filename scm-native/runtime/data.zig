@@ -58,7 +58,7 @@ pub inline fn stringRef(s: Word, i: usize) u21 {
 
 /// Store a character that fits the buffer (caller widens first if needed).
 pub inline fn stringSetFits(s: Word, i: usize, cp: u21) void {
-    if (isWide(s)) cps32(s)[i] = cp else bytes8(s)[i] = @intCast(cp);
+    if (isWide(s)) cps32(s)[i] = cp else bytes8(s)[i] = @truncate(cp);
 }
 
 /// Replace a Latin-1 buffer by a code point buffer. Reserve 1 + bufWords(n, true) first.
@@ -249,4 +249,130 @@ pub fn constFlonum(f: f64) Word {
     p[0] = hdr(rt.T_FLONUM, 1);
     p[1] = @bitCast(f);
     return tagPtr(p);
+}
+
+// ---------------------------------------------------------------------------
+// Strings from UTF-8
+
+pub const Utf8Info = struct { n: usize, wide: bool };
+
+pub fn utf8Info(utf8: []const u8) Utf8Info {
+    var n: usize = 0;
+    var wide = false;
+    var i: usize = 0;
+    while (i < utf8.len) {
+        const len = std.unicode.utf8ByteSequenceLength(utf8[i]) catch 1;
+        const cp: u21 = if (i + len <= utf8.len) (std.unicode.utf8Decode(utf8[i .. i + len]) catch 0xFFFD) else 0xFFFD;
+        if (cp > 255) wide = true;
+        n += 1;
+        i += if (i + len <= utf8.len) len else 1;
+    }
+    return .{ .n = n, .wide = wide };
+}
+
+/// A heap string with the characters of utf8; reserve
+/// stringWords(utf8.len, true) first (an upper bound).
+pub fn heapStringUtf8(t: *Thread, utf8: []const u8) Word {
+    const info = utf8Info(utf8);
+    const s = makeString(t, info.n, info.wide);
+    var i: usize = 0;
+    var k: usize = 0;
+    while (i < utf8.len) : (k += 1) {
+        const len = std.unicode.utf8ByteSequenceLength(utf8[i]) catch 1;
+        if (i + len <= utf8.len) {
+            stringSetFits(s, k, std.unicode.utf8Decode(utf8[i .. i + len]) catch 0xFFFD);
+            i += len;
+        } else {
+            stringSetFits(s, k, 0xFFFD);
+            i += 1;
+        }
+    }
+    return s;
+}
+
+/// The UTF-8 bytes of string s (allocated with the page allocator)
+pub fn toUtf8(s: Word) []u8 {
+    var buf: std.ArrayList(u8) = .empty;
+    appendUtf8(&buf, s);
+    return buf.items;
+}
+
+// ---------------------------------------------------------------------------
+// Bytevectors: [hdr T_BYTEVECTOR] [byte length] [bytes]
+
+pub inline fn isBytevector(w: Word) bool {
+    return rt.isObj(w, rt.T_BYTEVECTOR);
+}
+pub inline fn bvLen(w: Word) usize {
+    return @intCast(ptr(w)[1]);
+}
+pub inline fn bvBytes(w: Word) []u8 {
+    const b: [*]u8 = @ptrCast(ptr(w) + 2);
+    return b[0..bvLen(w)];
+}
+pub fn bvWords(n: usize) usize {
+    return 2 + (n + 7) / 8;
+}
+/// Reserve bvWords(n) first.
+pub fn makeBytevector(t: *Thread, n: usize) Word {
+    const q = t.allocRaw(bvWords(n));
+    q[0] = hdr(rt.T_BYTEVECTOR, 1 + (n + 7) / 8);
+    q[1] = n;
+    return tagPtr(q);
+}
+pub fn constBytevector(bytes: []const u8) Word {
+    const q = rt.staticAlloc(bvWords(bytes.len), false);
+    q[0] = hdr(rt.T_BYTEVECTOR, 1 + (bytes.len + 7) / 8);
+    q[1] = bytes.len;
+    @memcpy(bvBytes(tagPtr(q)), bytes);
+    return tagPtr(q);
+}
+
+// ---------------------------------------------------------------------------
+// Records: [hdr T_RECORD] [type] [fields...], as the JVM implementation's
+// Record (slot 0 is the type).
+
+pub inline fn isRecord(w: Word) bool {
+    return rt.isObj(w, rt.T_RECORD);
+}
+pub inline fn recordSize(w: Word) usize {
+    return @intCast(rt.hdrLen(ptr(w)[0]));
+}
+pub inline fn recordSlots(w: Word) []Word {
+    return (ptr(w) + 1)[0..recordSize(w)];
+}
+/// Reserve 1 + size first.
+pub fn makeRecord(t: *Thread, size: usize) Word {
+    const q = t.allocRaw(1 + size);
+    q[0] = hdr(rt.T_RECORD, size);
+    @memset(q[1 .. 1 + size], rt.FALSE);
+    return tagPtr(q);
+}
+
+/// A number constant from its syntax (bignums, rationals, complex numbers):
+/// made once at startup and never freed.
+pub fn constNumber(t: *Thread, text: []const u8) Word {
+    const num = @import("num.zig");
+    const lit = num.parseNumber(text, 10) orelse rt.os.fatal("bad number constant {s}", .{text});
+    const w = switch (lit) {
+        .fix => |n| rt.fix(n),
+        .flo => |f| constFlonum(f),
+        .exact => num.exactFromLit(t, lit) orelse rt.os.fatal("bad number constant {s}", .{text}),
+    };
+    makePermanent(w);
+    return w;
+}
+
+fn makePermanent(w: Word) void {
+    if (!rt.isPtr(w)) return;
+    const q = ptr(w);
+    if (rt.hdrFlags(q[0]) & rt.F_LARGE == 0) return;
+    q[0] |= @as(Word, rt.F_PERM) << 8;
+    switch (rt.hdrType(q[0])) {
+        rt.T_RATNUM, rt.T_COMPNUM => {
+            makePermanent(q[1]);
+            makePermanent(q[2]);
+        },
+        else => {},
+    }
 }
