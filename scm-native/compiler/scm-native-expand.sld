@@ -221,7 +221,12 @@
          (expand-seq (let-syntax-body form)))
         ((cond-expand) (expand-seq (cond-expand-body form)))
         ((%primitive) (primitive-ref (cadr form)))
-        ((define define-syntax import define-library)
+        ;; as the JVM implementation: an import anywhere imports into the
+        ;; module being expanded
+        ((import)
+         (for-each import-set! (strip (cdr form)))
+         unspecified)
+        ((define define-syntax define-library)
          (error "definition or declaration in expression context" (strip form)))
         (else (error "unknown core form" name))))
 
@@ -615,6 +620,14 @@
     ;; --- program -------------------------------------------------------------
 
     (define (expand-program file paths feature-list prims core-file)
+      ;; a fresh library registry per program: the modules of an earlier
+      ;; program (in the same process) must not end up in this one
+      (set! modules '())
+      (set! scope->module '())
+      (set! completed '())
+      (set! all-globs '())
+      (set! loading '())
+      (set! missing '())
       (set! search-path paths)
       (set! features feature-list)
       (set! primitives prims)

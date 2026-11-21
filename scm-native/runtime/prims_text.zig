@@ -85,27 +85,92 @@ pub const @"%string<=?" = stringCompareD(.lte);
 pub const @"%string>?" = stringCompareD(.gt);
 pub const @"%string>=?" = stringCompareD(.gte);
 
-fn stringCase(comptime f: fn (u21) u21) Code {
+const CaseMode = enum { upper, lower, fold };
+
+/// The one-to-many mappings of SpecialCasing.txt and CaseFolding.txt that
+/// the JVM implementation's UnicodeCaseMap applies (unconditional ones)
+fn specialCase(cp: u21, comptime mode: CaseMode) ?[]const u21 {
+    return switch (mode) {
+        .upper => switch (cp) {
+            0xDF => &.{ 'S', 'S' },
+            0x149 => &.{ 0x2BC, 'N' },
+            0x1F0 => &.{ 'J', 0x30C },
+            0x390 => &.{ 0x399, 0x308, 0x301 },
+            0x3B0 => &.{ 0x3A5, 0x308, 0x301 },
+            0xFB00 => &.{ 'F', 'F' },
+            0xFB01 => &.{ 'F', 'I' },
+            0xFB02 => &.{ 'F', 'L' },
+            0xFB03 => &.{ 'F', 'F', 'I' },
+            0xFB04 => &.{ 'F', 'F', 'L' },
+            0xFB05, 0xFB06 => &.{ 'S', 'T' },
+            else => null,
+        },
+        .lower => switch (cp) {
+            0x130 => &.{ 'i', 0x307 },
+            else => null,
+        },
+        .fold => switch (cp) {
+            0xDF => &.{ 's', 's' },
+            0x130 => &.{ 'i', 0x307 },
+            0xFB00 => &.{ 'f', 'f' },
+            0xFB01 => &.{ 'f', 'i' },
+            0xFB02 => &.{ 'f', 'l' },
+            0xFB03 => &.{ 'f', 'f', 'i' },
+            0xFB04 => &.{ 'f', 'f', 'l' },
+            0xFB05, 0xFB06 => &.{ 's', 't' },
+            else => null,
+        },
+    };
+}
+
+fn stringCase(comptime mode: CaseMode) Code {
+    const f = switch (mode) {
+        .upper => chars.upcase,
+        .lower => chars.downcase,
+        .fold => chars.foldcase,
+    };
     const S = struct {
         fn g(t: *Thread) Err!Word {
             const s0 = try P.stringArg(t, 0);
-            const n = data.stringLen(s0);
+            const n0 = data.stringLen(s0);
+            var n: usize = 0;
             var wide = false;
-            for (0..n) |i| if (f(data.stringRef(s0, i)) > 255) {
-                wide = true;
-            };
+            for (0..n0) |i| {
+                const c = data.stringRef(s0, i);
+                if (specialCase(c, mode)) |sp| {
+                    n += sp.len;
+                    for (sp) |x| if (x > 255) {
+                        wide = true;
+                    };
+                } else {
+                    n += 1;
+                    if (f(c) > 255) wide = true;
+                }
+            }
             t.reserve(data.stringWords(n, wide));
             const s = arg(t, 0);
             const r = data.makeString(t, n, wide);
-            for (0..n) |i| data.stringSetFits(r, i, f(data.stringRef(s, i)));
+            var k: usize = 0;
+            for (0..n0) |i| {
+                const c = data.stringRef(s, i);
+                if (specialCase(c, mode)) |sp| {
+                    for (sp) |x| {
+                        data.stringSetFits(r, k, x);
+                        k += 1;
+                    }
+                } else {
+                    data.stringSetFits(r, k, f(c));
+                    k += 1;
+                }
+            }
             return r;
         }
     };
     return W(S.g, 1, 1);
 }
-pub const @"%string-upcase" = stringCase(chars.upcase);
-pub const @"%string-downcase" = stringCase(chars.downcase);
-pub const @"%string-foldcase" = stringCase(chars.foldcase);
+pub const @"%string-upcase" = stringCase(.upper);
+pub const @"%string-downcase" = stringCase(.lower);
+pub const @"%string-foldcase" = stringCase(.fold);
 
 fn stringToNumber(t: *Thread) Err!Word {
     const text = data.toUtf8(try P.stringArg(t, 0));
@@ -128,7 +193,7 @@ fn stringToNumber(t: *Thread) Err!Word {
 pub const @"%string->number" = WN("string->number", stringToNumber, 1, 2);
 
 /// optional [start [end]] arguments from position i, for length len
-fn range(t: *Thread, i: usize, len: usize) Err![2]usize {
+pub fn range(t: *Thread, i: usize, len: usize) Err![2]usize {
     const start: usize = if (t.argc > i) try P.count(t, arg(t, i)) else 0;
     const end: usize = if (t.argc > i + 1) try P.count(t, arg(t, i + 1)) else len;
     if (start > end or end > len) return raise(t, "index out of range", &.{});

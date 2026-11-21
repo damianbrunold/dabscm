@@ -8,7 +8,10 @@ const Thread = rt.Thread;
 
 const pa = std.heap.c_allocator;
 
-pub const Kind = enum { string_in, bytes_in, file_in, stdin, string_out, bytes_out, file_out, stdout, stderr };
+pub const Kind = enum { string_in, bytes_in, file_in, stdin, generator, string_out, bytes_out, file_out, stdout, stderr };
+
+/// An endless binary input port's source: fills buf
+pub const Generator = *const fn (state: *anyopaque, buf: []u8) void;
 
 pub const Port = struct {
     kind: Kind,
@@ -23,10 +26,24 @@ pub const Port = struct {
     file: ?os.File = null,
     /// output column, for fresh-line
     column: usize = 0,
+    /// for port-position: the file name, "{string}" for string ports
+    name: []const u8 = "{string}",
+    /// generator ports: the source, its state, and the bytes consumed
+    /// before the buffer (in)
+    gen: ?Generator = null,
+    gen_state: ?*anyopaque = null,
+    gen_base: u64 = 0,
+    /// what the port is for (chacha20-port?, secure-random-port?)
+    tag: u8 = 0,
+
+    /// The number of bytes read from a generator port
+    pub fn consumed(p: *const Port) u64 {
+        return p.gen_base + p.pos;
+    }
 
     pub fn isInput(p: *const Port) bool {
         return switch (p.kind) {
-            .string_in, .bytes_in, .file_in, .stdin => true,
+            .string_in, .bytes_in, .file_in, .stdin, .generator => true,
             else => false,
         };
     }
@@ -35,6 +52,19 @@ pub const Port = struct {
 
     /// Make sure byte pos is available; false at end of input
     fn fill(p: *Port, n: usize) bool {
+        if (p.kind == .generator) {
+            if (p.pos > 0 and p.pos == p.in.items.len) {
+                p.gen_base += p.pos;
+                p.in.clearRetainingCapacity();
+                p.pos = 0;
+            }
+            if (p.pos + n > p.in.items.len) {
+                const more = @max(64, p.pos + n - p.in.items.len);
+                const buf = p.in.addManyAsSlice(pa, more) catch rt.oom();
+                p.gen.?(p.gen_state.?, buf);
+            }
+            return true;
+        }
         while (p.pos + n > p.in.items.len) {
             if (p.kind != .stdin or p.eof) return false;
             var buf: [4096]u8 = undefined;

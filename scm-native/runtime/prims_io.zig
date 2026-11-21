@@ -218,6 +218,19 @@ fn readImpl(t: *Thread) Err!Word {
 }
 pub const @"%read" = WN("read", readImpl, 0, 1);
 
+/// (read-data port [max-depth]): read for untrusted data
+fn readDataImpl(t: *Thread) Err!Word {
+    const p = try inPort(t, 0);
+    var depth: usize = 1000;
+    if (t.argc > 1) {
+        const d = arg(t, 1);
+        if (!rt.isFix(d) or rt.unfix(d) < 1) return P.raise(t, "read-data: max-depth must be positive", &.{});
+        depth = @intCast(@min(rt.unfix(d), 100000));
+    }
+    return reader.readData(t, p, @min(depth, reader.Reader.default_max_depth)) orelse error.Scheme;
+}
+pub const @"%read-data" = WN("read-data", readDataImpl, 1, 2);
+
 fn charReady(_: *Thread) Err!Word {
     return rt.TRUE;
 }
@@ -285,6 +298,7 @@ fn openInput(t: *Thread, binary: bool) Err!Word {
     const bytes = rt.os.readFile(name) orelse return fileError(t, "cannot open file", arg(t, 0));
     const p = ports.newPort(.file_in, binary);
     p.in = .fromOwnedSlice(bytes);
+    p.name = name;
     t.reserve(2);
     return ports.wrap(t, p);
 }

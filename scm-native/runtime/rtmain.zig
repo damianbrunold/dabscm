@@ -15,6 +15,15 @@ const prim_modules = .{
     @import("prims_io.zig"),
     @import("prims_num.zig"),
     @import("prims_fs.zig"),
+    @import("prims_hash.zig"),
+    @import("prims_string.zig"),
+    @import("prims_format.zig"),
+    @import("prims_bytes.zig"),
+    @import("prims_sys.zig"),
+    @import("prims_crypto.zig"),
+    @import("prims_json.zig"),
+    @import("prims_xml.zig"),
+    @import("prims_image.zig"),
 };
 
 comptime {

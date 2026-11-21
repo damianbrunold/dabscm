@@ -144,9 +144,11 @@
         (%make-transformer name ellipsis literals
                            (map (lambda (r) (cons (car r) (cadr r))) (cdr spec)))))
 
+    ;; an ellipsis listed among the literals is a literal (R7RS 4.3.2)
     (define (ellipsis? t x)
       (let ((e (transformer-ellipsis t)))
         (cond ((eq? e 'none) #f)
+              ((literal? t x) #f)
               (e (and (ident? x) (bound-identifier=? x e)))
               (else (and (ident? x) (eq? (ident-sym x) '...))))))
 

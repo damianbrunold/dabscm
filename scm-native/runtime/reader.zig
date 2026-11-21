@@ -39,6 +39,21 @@ pub const Reader = struct {
     port: *ports.Port,
     msg: []const u8 = "",
     fold_case: bool = false,
+    /// nesting of lists, vectors and quote forms: limited, as the recursion
+    /// uses the machine stack (the JVM implementation catches its stack
+    /// overflow instead)
+    depth: usize = 0,
+    max_depth: usize = default_max_depth,
+    /// read-data: datum labels are rejected
+    no_labels: bool = false,
+    prefix: []const u8 = "",
+
+    pub const default_max_depth = 10000;
+
+    fn enter(r: *Reader) Error!void {
+        r.depth += 1;
+        if (r.depth > r.max_depth) return r.fail(if (r.no_labels) "nesting too deep" else "nesting too deep");
+    }
 
     fn fail(r: *Reader, msg: []const u8) Error {
         r.msg = msg;
@@ -146,6 +161,8 @@ pub const Reader = struct {
     }
 
     fn quoted(r: *Reader, name: []const u8) Error!Node {
+        try r.enter();
+        defer r.depth -= 1;
         const d = try r.datum();
         if (d == .eof) return r.fail("end of file after quote");
         const items = pa.alloc(Node, 2) catch rt.oom();
@@ -155,6 +172,8 @@ pub const Reader = struct {
     }
 
     fn list(r: *Reader, close: u21) Error!Node {
+        try r.enter();
+        defer r.depth -= 1;
         var items: std.ArrayList(Node) = .empty;
         while (true) {
             try r.skipAtmosphere();
@@ -239,6 +258,7 @@ pub const Reader = struct {
                 return .{ .vector = l.list.items };
             },
             '0'...'9' => {
+                if (r.no_labels) return r.fail("datum labels are not allowed");
                 var n: u64 = 0;
                 while (r.peek()) |d| {
                     if (d < '0' or d > '9') break;
@@ -435,9 +455,19 @@ fn build(t: *Thread, n: Node) Word {
 /// Read a datum from port p. On a syntax error, sets the thread's pending
 /// error and returns null.
 pub fn read(t: *Thread, p: *ports.Port) ?Word {
-    var r = Reader{ .port = p };
+    return readWith(t, .{ .port = p });
+}
+
+/// read-data: no datum labels, at most max_depth levels of nesting
+pub fn readData(t: *Thread, p: *ports.Port, max_depth: usize) ?Word {
+    return readWith(t, .{ .port = p, .max_depth = max_depth, .no_labels = true, .prefix = "read-data: " });
+}
+
+fn readWith(t: *Thread, r0: Reader) ?Word {
+    var r = r0;
     const node = r.datum() catch {
-        _ = rt.failKind(t, rt.ErrorKind.read, r.msg, &.{});
+        const m = if (r.prefix.len > 0) std.fmt.allocPrint(pa, "{s}{s}", .{ r.prefix, r.msg }) catch rt.oom() else r.msg;
+        _ = rt.failKind(t, rt.ErrorKind.read, m, &.{});
         return null;
     };
     t.reserve(words(node));

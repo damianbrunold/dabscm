@@ -538,3 +538,111 @@ fn exactDecimal(t: *Thread, text: []const u8) ?Word {
     const ten_p = exactExpt(t, fix(10), fix(@intCast(@abs(p)))).?;
     return if (p >= 0) intOp(t, n, ten_p, .mul) else makeRational(t, n, ten_p);
 }
+
+// --- bit operations (SRFI 151, two's complement semantics) ----------------------------
+
+pub const BitOp = enum { @"and", ior, xor };
+
+pub fn bitOp(t: *Thread, a: Word, b: Word, comptime op: BitOp) Word {
+    if (isFix(a) and isFix(b)) return switch (op) {
+        .@"and" => a & b, // tags: xxx0 & xxx0, the payloads combine directly
+        .ior => a | b,
+        .xor => a ^ b,
+    };
+    var x = toManaged(a);
+    defer x.deinit();
+    var y = toManaged(b);
+    defer y.deinit();
+    var r = Managed.init(pa) catch oom();
+    switch (op) {
+        .@"and" => r.bitAnd(&x, &y) catch oom(),
+        .ior => r.bitOr(&x, &y) catch oom(),
+        .xor => r.bitXor(&x, &y) catch oom(),
+    }
+    return fromManaged(t, &r);
+}
+
+/// ~a = -a - 1
+pub fn bitNot(t: *Thread, a: Word) Word {
+    if (isFix(a)) return fix(~unfix(a));
+    var x = toManaged(a);
+    defer x.deinit();
+    var one = Managed.initSet(pa, 1) catch oom();
+    defer one.deinit();
+    x.negate();
+    var r = Managed.init(pa) catch oom();
+    r.sub(&x, &one) catch oom();
+    return fromManaged(t, &r);
+}
+
+pub fn arithmeticShift(t: *Thread, a: Word, count: i64) Word {
+    if (count == 0) return a;
+    if (isFix(a) and count < 0) {
+        const v = unfix(a);
+        return fix(if (count <= -63) (if (v >= 0) 0 else -1) else v >> @intCast(-count));
+    }
+    if (isFix(a) and count < 62) {
+        const v = unfix(a);
+        const shifted = std.math.shlExact(i64, v, @intCast(count)) catch null;
+        if (shifted) |s| if (rt.fixFits(s)) return fix(s);
+    }
+    var x = toManaged(a);
+    defer x.deinit();
+    var r = Managed.init(pa) catch oom();
+    if (count > 0) {
+        r.shiftLeft(&x, @intCast(count)) catch oom();
+    } else {
+        // floor semantics for negative numbers: -((-x - 1) >> n) - 1
+        if (!x.isPositive() and !x.eqlZero()) {
+            var one = Managed.initSet(pa, 1) catch oom();
+            defer one.deinit();
+            x.negate();
+            var m = Managed.init(pa) catch oom();
+            defer m.deinit();
+            m.sub(&x, &one) catch oom();
+            r.shiftRight(&m, @intCast(-count)) catch oom();
+            r.negate();
+            var r2 = Managed.init(pa) catch oom();
+            r2.sub(&r, &one) catch oom();
+            r.deinit();
+            return fromManaged(t, &r2);
+        }
+        r.shiftRight(&x, @intCast(-count)) catch oom();
+    }
+    return fromManaged(t, &r);
+}
+
+/// The limbs of |a| for a >= 0, or of ~a = -a - 1 for a < 0 (the caller deinits)
+fn nonNegative(a: Word) Managed {
+    var x = toManaged(a);
+    if (!x.isPositive() and !x.eqlZero()) {
+        var one = Managed.initSet(pa, 1) catch oom();
+        defer one.deinit();
+        x.negate();
+        x.sub(&x, &one) catch oom();
+    }
+    return x;
+}
+
+pub fn bitCount(a: Word) i64 {
+    if (isFix(a)) {
+        const v = unfix(a);
+        return @popCount(if (v < 0) ~v else v);
+    }
+    var x = nonNegative(a);
+    defer x.deinit();
+    var n: i64 = 0;
+    for (x.limbs[0..x.len()]) |l| n += @popCount(l);
+    return n;
+}
+
+pub fn integerLength(a: Word) i64 {
+    if (isFix(a)) {
+        const v = unfix(a);
+        const u: u64 = @bitCast(if (v < 0) ~v else v);
+        return 64 - @as(i64, @clz(u));
+    }
+    var x = nonNegative(a);
+    defer x.deinit();
+    return @intCast(x.bitCountAbs());
+}

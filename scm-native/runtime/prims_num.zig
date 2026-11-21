@@ -410,3 +410,59 @@ fn numberToString(t: *Thread) Err!Word {
     return s;
 }
 pub const @"%number->string" = WN("number->string", numberToString, 1, 2);
+
+// --- bit operations ------------------------------------------------------------------
+
+fn intArgOf(t: *Thread, w: Word) Err!Word {
+    if (!tower.isExactInteger(w)) return P.argTypeError(t);
+    return w;
+}
+
+fn bitFold(t: *Thread, comptime op: tower.BitOp) Err!Word {
+    for (0..t.argc) |i| _ = try intArgOf(t, arg(t, i));
+    var r: Word = fix(switch (op) {
+        .@"and" => -1,
+        else => 0,
+    });
+    for (0..t.argc) |i| {
+        // a bignum result: reserve nothing, bignums live in the large-object space
+        r = tower.bitOp(t, r, arg(t, i), op);
+    }
+    return r;
+}
+fn bitwiseAnd(t: *Thread) Err!Word {
+    return bitFold(t, .@"and");
+}
+fn bitwiseIor(t: *Thread) Err!Word {
+    return bitFold(t, .ior);
+}
+fn bitwiseXor(t: *Thread) Err!Word {
+    return bitFold(t, .xor);
+}
+pub const @"%bitwise-and" = WD("bitwise-and", bitwiseAnd, 0, std.math.maxInt(u64));
+pub const @"%bitwise-ior" = WD("bitwise-ior", bitwiseIor, 0, std.math.maxInt(u64));
+pub const @"%bitwise-xor" = WD("bitwise-xor", bitwiseXor, 0, std.math.maxInt(u64));
+
+fn bitwiseNot(t: *Thread) Err!Word {
+    return tower.bitNot(t, try intArgOf(t, arg(t, 0)));
+}
+pub const @"%bitwise-not" = WD("bitwise-not", bitwiseNot, 1, 1);
+
+fn arithmeticShiftImpl(t: *Thread) Err!Word {
+    const a = try intArgOf(t, arg(t, 0));
+    const c = arg(t, 1);
+    if (!rt.isFix(c)) return raise(t, "value out of range: ~s", &.{c});
+    const n = unfix(c);
+    if (n > std.math.maxInt(i32)) return raise(t, "arithmetic-shift: shift count too large", &.{});
+    return tower.arithmeticShift(t, a, n);
+}
+pub const @"%arithmetic-shift" = WD("arithmetic-shift", arithmeticShiftImpl, 2, 2);
+
+fn bitCountImpl(t: *Thread) Err!Word {
+    return fix(tower.bitCount(try intArgOf(t, arg(t, 0))));
+}
+fn integerLengthImpl(t: *Thread) Err!Word {
+    return fix(tower.integerLength(try intArgOf(t, arg(t, 0))));
+}
+pub const @"%bit-count" = WD("bit-count", bitCountImpl, 1, 1);
+pub const @"%integer-length" = WD("integer-length", integerLengthImpl, 1, 1);

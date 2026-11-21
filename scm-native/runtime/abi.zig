@@ -91,6 +91,8 @@ pub const T_BYTEVECTOR: u8 = 15; // [byte length (raw)] [bytes (raw)]
 pub const T_BIGNUM: u8 = 16; // [sign and limb count (raw)] [limbs (raw)]
 pub const T_RATNUM: u8 = 17; // [numerator] [denominator] (scanned)
 pub const T_COMPNUM: u8 = 18; // [real] [imaginary] (scanned)
+pub const T_HASHTABLE: u8 = 19; // [mode] [count] [buckets] [comparator] [epoch] [flags] (scanned)
+pub const T_NATIVE: u8 = 20; // [kind (raw)] [pointer (raw)]: processes, file locks
 pub const T_FWD: u8 = 0xff; // forwarded during GC, payload[0] = new pointer
 
 pub const F_LARGE: u8 = 1; // in the large-object space

@@ -1,6 +1,7 @@
 (define-library (scm native emit)
   (export emit-modules
-          mangle)
+          mangle
+          set-program-version!)
   (import (scheme base)
           (scheme char)
           (scheme cxr)
@@ -936,10 +937,16 @@
                        (list "};\n\n"
                              "export fn scm_program_modules() callconv(.c) rt.ModuleList {\n"
                              "    return .{ .modules = &modules, .count = modules.len };\n}\n\n"
+                             "export fn scm_program_version() callconv(.c) [*:0]const u8 {\n"
+                             "    return \"" program-version "\";\n}\n\n"
                              "export fn scm_program_specials(t: *Thread) callconv(.c) void {\n"
                              "    const t_ = t;\n    _ = t_;\n")
                        specials
                        (list "}\n\n")))))
+
+    ;; the dabscm version, for sys-scm-version
+    (define program-version "unknown")
+    (define (set-program-version! v) (set! program-version v))
 
     (define special-globals
       '((((scheme base) raise) raise)

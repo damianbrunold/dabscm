@@ -58,6 +58,8 @@ pub const T_BYTEVECTOR = abi.T_BYTEVECTOR;
 pub const T_BIGNUM = abi.T_BIGNUM;
 pub const T_RATNUM = abi.T_RATNUM;
 pub const T_COMPNUM = abi.T_COMPNUM;
+pub const T_HASHTABLE = abi.T_HASHTABLE;
+pub const T_NATIVE = abi.T_NATIVE;
 pub const T_FWD = abi.T_FWD;
 pub const F_LARGE = abi.F_LARGE;
 pub const F_MARK = abi.F_MARK;
@@ -219,6 +221,33 @@ pub const ErrorKind = struct {
 
 pub fn failKind(t: *Thread, kind: i64, msg: []const u8, irritants: []const Word) Code {
     t.err_kind = kind;
+    if (std.mem.indexOfScalar(u8, msg, '~') != null) {
+        // as the JVM implementation's SchemeError: ~s and ~a take the
+        // arguments into the message, which then has no irritants
+        var buf: std.ArrayList(u8) = .empty;
+        var k: usize = 0;
+        var i: usize = 0;
+        while (i < msg.len) : (i += 1) {
+            if (msg[i] == '~' and i + 1 < msg.len) {
+                const d = msg[i + 1];
+                if ((d == 's' or d == 'a') and k < irritants.len) {
+                    @import("printer.zig").print(&buf, irritants[k], d == 's');
+                    k += 1;
+                    i += 1;
+                    continue;
+                }
+                if (d == '~') {
+                    buf.append(std.heap.c_allocator, '~') catch oom();
+                    i += 1;
+                    continue;
+                }
+            }
+            buf.append(std.heap.c_allocator, msg[i]) catch oom();
+        }
+        t.setErrMsg(buf.items);
+        t.err_n = 0;
+        return &errorCode;
+    }
     t.setErrMsg(msg);
     t.err_n = @min(irritants.len, t.err_irritants.len);
     for (0..t.err_n) |i| t.err_irritants[i] = irritants[i];
@@ -560,6 +589,16 @@ pub var major_count: u64 = 0;
 
 pub const F_REMEMBERED: u8 = 16;
 
+/// Is w an object the collector may move (in the nursery or the old space)?
+pub fn isMovable(w: Word) bool {
+    if (!isPtr(w)) return false;
+    const a = @intFromPtr(ptr(w));
+    const t = num.current_thread;
+    const in_young = a >= @intFromPtr(t.heap) and a < @intFromPtr(t.heap + t.heap_len);
+    const in_old = a >= @intFromPtr(old_space.ptr) and a < @intFromPtr(old_space.ptr + old_space.len);
+    return in_young or in_old;
+}
+
 /// The write barrier's slow path: obj (not young) now holds a young pointer
 pub fn remember(obj: Word) void {
     const q = ptr(obj);
@@ -732,14 +771,14 @@ const Gc = struct {
     fn scanObject(g: *Gc, q: [*]Word) void {
         const len = hdrLen(q[0]);
         switch (hdrType(q[0])) {
-            T_PAIR, T_VECTOR, T_BOX, T_STRING, T_VALUES, T_RECORD, T_ERROR, T_RATNUM, T_COMPNUM => for (q[1 .. 1 + len]) |*w| {
+            T_PAIR, T_VECTOR, T_BOX, T_STRING, T_VALUES, T_RECORD, T_ERROR, T_RATNUM, T_COMPNUM, T_HASHTABLE => for (q[1 .. 1 + len]) |*w| {
                 w.* = g.copy(w.*);
             },
             T_CLOSURE => for (q[2 .. 1 + len]) |*w| {
                 w.* = g.copy(w.*);
             },
             T_STACK => g.scanFrames(q[1 .. 1 + len]),
-            T_FLONUM, T_BUF8, T_BUF32, T_SYMBOL, T_PORT, T_BYTEVECTOR, T_BIGNUM => {},
+            T_FLONUM, T_BUF8, T_BUF32, T_SYMBOL, T_PORT, T_BYTEVECTOR, T_BIGNUM, T_NATIVE => {},
             else => unreachable,
         }
     }
@@ -799,3 +838,12 @@ pub const prims_text = @import("prims_text.zig");
 pub const prims_io = @import("prims_io.zig");
 pub const prims_num = @import("prims_num.zig");
 pub const prims_fs = @import("prims_fs.zig");
+pub const prims_hash = @import("prims_hash.zig");
+pub const prims_string = @import("prims_string.zig");
+pub const prims_format = @import("prims_format.zig");
+pub const prims_bytes = @import("prims_bytes.zig");
+pub const prims_sys = @import("prims_sys.zig");
+pub const prims_crypto = @import("prims_crypto.zig");
+pub const prims_json = @import("prims_json.zig");
+pub const prims_xml = @import("prims_xml.zig");
+pub const prims_image = @import("prims_image.zig");

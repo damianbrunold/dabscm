@@ -160,6 +160,8 @@ pub fn print(buf: *std.ArrayList(u8), w: Word, write: bool) void {
         } else put(buf, "#<lambda>"),
         rt.T_BOX => put(buf, "#<box>"),
         rt.T_RECORD => put(buf, "#<record>"),
+        rt.T_HASHTABLE => put(buf, if (rt.prims_hash.isDict(w)) "#<dict>" else "#<hash-table>"),
+        rt.T_NATIVE => put(buf, rt.prims_sys.nativeName(w)),
         rt.T_ERROR => {
             put(buf, "#<error-object ");
             print(buf, rt.ptr(w)[1], true);

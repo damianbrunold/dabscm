@@ -126,6 +126,10 @@
                                   (compute-free! body)
                                   (cons (car m) body)))
                               (optimize modules))))
+            (let ((version-file (join-path (directory-name (absolute-path lib-dir)) "VERSION")))
+              (when (file-exists? version-file)
+                (let ((v (call-with-input-file version-file read-line)))
+                  (unless (eof-object? v) (set-program-version! v)))))
             (emit-modules modules prims)))))
 
     ;; The default target: a static (musl) executable on Linux

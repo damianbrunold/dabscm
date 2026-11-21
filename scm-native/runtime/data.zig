@@ -175,8 +175,20 @@ pub fn makeVector(t: *Thread, n: usize, fill: Word) Word {
 
 pub fn eqv(a: Word, b: Word) bool {
     if (a == b) return true;
-    if (rt.isFlonum(a) and rt.isFlonum(b)) return ptr(a)[1] == ptr(b)[1];
-    return false;
+    if (!rt.isPtr(a) or !rt.isPtr(b)) return false;
+    const ty = rt.objType(a);
+    if (ty != rt.objType(b)) return false;
+    switch (ty) {
+        rt.T_FLONUM => return ptr(a)[1] == ptr(b)[1],
+        rt.T_BIGNUM => {
+            // [sign/length word] [limbs]
+            if (ptr(a)[1] != ptr(b)[1]) return false;
+            const n: usize = @intCast(ptr(a)[1] >> 1);
+            return std.mem.eql(Word, ptr(a)[2 .. 2 + n], ptr(b)[2 .. 2 + n]);
+        },
+        rt.T_RATNUM, rt.T_COMPNUM => return eqv(ptr(a)[1], ptr(b)[1]) and eqv(ptr(a)[2], ptr(b)[2]),
+        else => return false,
+    }
 }
 
 pub fn equal(a: Word, b: Word) bool {
@@ -201,6 +213,7 @@ pub fn equal(a: Word, b: Word) bool {
                 return true;
             },
             rt.T_STRING => return stringEq(x, y),
+            rt.T_BYTEVECTOR => return std.mem.eql(u8, bvBytes(x), bvBytes(y)),
             else => return false,
         }
     }
