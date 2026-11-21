@@ -37,14 +37,15 @@ fn integerArg(t: *Thread, comptime who: []const u8, i: usize) Err!Word {
     return w;
 }
 
+/// flonum results come from the flonum area (no reservation): so these
+/// primitives never collect and can be called directly (WD)
 inline fn flo(t: *Thread, f: f64) Word {
-    return t.makeFlo(f); // callers reserve 2
+    return rt.safeFlo(t, f);
 }
 
 // --- arithmetic --------------------------------------------------------------
 
 fn fold(t: *Thread, comptime op: tower.Op, comptime who: []const u8) Err!Word {
-    t.reserve(2 * (t.argc + 1));
     if (t.argc == 0) return if (op == .mul) fix(1) else fix(0);
     var acc = try numArg(t, who, 0);
     if (t.argc == 1) switch (op) {
@@ -81,10 +82,10 @@ fn mulImpl(t: *Thread) Err!Word {
 fn divImpl(t: *Thread) Err!Word {
     return fold(t, .div, "/");
 }
-pub const @"%+" = WN("+", addImpl, 0, any);
-pub const @"%-" = WN("-", subImpl, 1, any);
-pub const @"%*" = WN("*", mulImpl, 0, any);
-pub const @"%/" = WN("/", divImpl, 1, any);
+pub const @"%+" = WD("+", addImpl, 0, any);
+pub const @"%-" = WD("-", subImpl, 1, any);
+pub const @"%*" = WD("*", mulImpl, 0, any);
+pub const @"%/" = WD("/", divImpl, 1, any);
 
 fn compareChain(t: *Thread, comptime c: num.Cmp, comptime who: []const u8) Err!Word {
     for (0..t.argc) |i| _ = if (c == .eq) try numArg(t, who, i) else try realArg(t, who, i);
@@ -118,7 +119,6 @@ pub const @"%=" = WD("=", eqImpl, 1, any);
 // --- integer division ----------------------------------------------------------
 
 fn intDivision(t: *Thread, comptime who: []const u8, comptime kind: tower.DivKind, comptime which: usize) Err!Word {
-    t.reserve(2);
     const a = try integerArg(t, who, 0);
     const b = try integerArg(t, who, 1);
     if (num.toF(b).? == 0) return raise(t, who ++ ": division by zero", &.{});
@@ -142,9 +142,9 @@ fn remainderImpl(t: *Thread) Err!Word {
 fn moduloImpl(t: *Thread) Err!Word {
     return intDivision(t, "modulo", .floor, 1);
 }
-pub const @"%quotient" = WN("quotient", quotientImpl, 2, 2);
-pub const @"%remainder" = WN("remainder", remainderImpl, 2, 2);
-pub const @"%modulo" = WN("modulo", moduloImpl, 2, 2);
+pub const @"%quotient" = WD("quotient", quotientImpl, 2, 2);
+pub const @"%remainder" = WD("remainder", remainderImpl, 2, 2);
+pub const @"%modulo" = WD("modulo", moduloImpl, 2, 2);
 
 // --- predicates --------------------------------------------------------------
 
@@ -186,7 +186,6 @@ pub const @"%zero?" = WD("zero?", zeroP, 1, 1);
 // --- exactness ---------------------------------------------------------------
 
 fn inexactImpl(t: *Thread) Err!Word {
-    t.reserve(2);
     const w = try numArg(t, "inexact", 0);
     if (rt.isFlonum(w)) return w;
     if (tower.isComp(w)) {
@@ -208,15 +207,14 @@ fn exactImpl(t: *Thread) Err!Word {
     }
     return w;
 }
-pub const @"%inexact" = WN("inexact", inexactImpl, 1, 1);
-pub const @"%exact->inexact" = WN("exact->inexact", inexactImpl, 1, 1);
-pub const @"%exact" = WN("exact", exactImpl, 1, 1);
-pub const @"%inexact->exact" = WN("inexact->exact", exactImpl, 1, 1);
+pub const @"%inexact" = WD("inexact", inexactImpl, 1, 1);
+pub const @"%exact->inexact" = WD("exact->inexact", inexactImpl, 1, 1);
+pub const @"%exact" = WD("exact", exactImpl, 1, 1);
+pub const @"%inexact->exact" = WD("inexact->exact", exactImpl, 1, 1);
 
 // --- rounding ----------------------------------------------------------------
 
 fn roundTo(t: *Thread, comptime who: []const u8, comptime mode: @TypeOf(.floor)) Err!Word {
-    t.reserve(2);
     const w = try realArg(t, who, 0);
     if (rt.isFlonum(w)) {
         const f = rt.flo(w);
@@ -245,20 +243,18 @@ fn truncateImpl(t: *Thread) Err!Word {
 fn roundImpl(t: *Thread) Err!Word {
     return roundTo(t, "round", .round);
 }
-pub const @"%floor" = WN("floor", floorImpl, 1, 1);
-pub const @"%ceiling" = WN("ceiling", ceilingImpl, 1, 1);
-pub const @"%truncate" = WN("truncate", truncateImpl, 1, 1);
-pub const @"%round" = WN("round", roundImpl, 1, 1);
+pub const @"%floor" = WD("floor", floorImpl, 1, 1);
+pub const @"%ceiling" = WD("ceiling", ceilingImpl, 1, 1);
+pub const @"%truncate" = WD("truncate", truncateImpl, 1, 1);
+pub const @"%round" = WD("round", roundImpl, 1, 1);
 
 fn absImpl(t: *Thread) Err!Word {
-    t.reserve(2);
     const w = try realArg(t, "abs", 0);
     return if (tower.sign(w) < 0 or (rt.isFlonum(w) and std.math.signbit(rt.flo(w)))) num.sub(t, fix(0), w).? else w;
 }
-pub const @"%abs" = WN("abs", absImpl, 1, 1);
+pub const @"%abs" = WD("abs", absImpl, 1, 1);
 
 fn minMax(t: *Thread, comptime is_max: bool) Err!Word {
-    t.reserve(2);
     var acc = try realArg(t, if (is_max) "max" else "min", 0);
     var inexact = rt.isFlonum(acc);
     for (1..t.argc) |i| {
@@ -275,8 +271,8 @@ fn minImpl(t: *Thread) Err!Word {
 fn maxImpl(t: *Thread) Err!Word {
     return minMax(t, true);
 }
-pub const @"%min" = WN("min", minImpl, 1, any);
-pub const @"%max" = WN("max", maxImpl, 1, any);
+pub const @"%min" = WD("min", minImpl, 1, any);
+pub const @"%max" = WD("max", maxImpl, 1, any);
 
 fn numeratorImpl(t: *Thread) Err!Word {
     return tower.numerator(t, try realArg(t, "numerator", 0));
@@ -284,10 +280,10 @@ fn numeratorImpl(t: *Thread) Err!Word {
 fn denominatorImpl(t: *Thread) Err!Word {
     return tower.denominator(t, try realArg(t, "denominator", 0));
 }
-pub const @"%numerator" = WN("numerator", numeratorImpl, 1, 1);
-pub const @"%denominator" = WN("denominator", denominatorImpl, 1, 1);
-pub const @"%rational-numerator" = WN("rational-numerator", numeratorImpl, 1, 1);
-pub const @"%rational-denominator" = WN("rational-denominator", denominatorImpl, 1, 1);
+pub const @"%numerator" = WD("numerator", numeratorImpl, 1, 1);
+pub const @"%denominator" = WD("denominator", denominatorImpl, 1, 1);
+pub const @"%rational-numerator" = WD("rational-numerator", numeratorImpl, 1, 1);
+pub const @"%rational-denominator" = WD("rational-denominator", denominatorImpl, 1, 1);
 
 fn gcdImpl(t: *Thread) Err!Word {
     var g = fix(0);
@@ -298,12 +294,11 @@ fn gcdImpl(t: *Thread) Err!Word {
     }
     return g;
 }
-pub const @"%%gcd" = WN("%gcd", gcdImpl, 0, any);
+pub const @"%%gcd" = WD("%gcd", gcdImpl, 0, any);
 
 // --- powers and roots ----------------------------------------------------------
 
 fn sqrtImpl(t: *Thread) Err!Word {
-    t.reserve(4);
     const w = try numArg(t, "sqrt", 0);
     if (tower.isComp(w)) return raise(t, "sqrt: complex argument not supported", &.{w});
     if (tower.isExactRational(w)) {
@@ -325,7 +320,7 @@ fn exactSqrt(t: *Thread, w: Word) ?Word {
     if (sd[1] != fix(0)) return null;
     return tower.arith(t, sn[0], sd[0], .div);
 }
-pub const @"%sqrt" = WN("sqrt", sqrtImpl, 1, 1);
+pub const @"%sqrt" = WD("sqrt", sqrtImpl, 1, 1);
 
 fn exactIntegerSqrtImpl(t: *Thread) Err!Word {
     const n = arg(t, 0);
@@ -341,7 +336,6 @@ fn exactIntegerSqrtImpl(t: *Thread) Err!Word {
 pub const @"%exact-integer-sqrt" = WN("exact-integer-sqrt", exactIntegerSqrtImpl, 1, 1);
 
 fn exptImpl(t: *Thread) Err!Word {
-    t.reserve(2);
     const b = try numArg(t, "expt", 0);
     const e = try numArg(t, "expt", 1);
     if (tower.isExact(b) and tower.isExactInteger(e) and !tower.isComp(b)) {
@@ -352,7 +346,7 @@ fn exptImpl(t: *Thread) Err!Word {
     if (e == fix(0)) return if (rt.isFlonum(b)) flo(t, 1) else fix(1);
     return flo(t, std.math.pow(f64, num.toF(b).?, num.toF(e).?));
 }
-pub const @"%expt" = WN("expt", exptImpl, 2, 2);
+pub const @"%expt" = WD("expt", exptImpl, 2, 2);
 
 // --- complex numbers -------------------------------------------------------------
 
@@ -360,7 +354,6 @@ fn makeRectangular(t: *Thread) Err!Word {
     return tower.makeRect(t, try realArg(t, "make-rectangular", 0), try realArg(t, "make-rectangular", 1));
 }
 fn makePolar(t: *Thread) Err!Word {
-    t.reserve(4);
     const m = num.toF(try realArg(t, "make-polar", 0)).?;
     const a = num.toF(try realArg(t, "make-polar", 1)).?;
     if (arg(t, 1) == fix(0)) return arg(t, 0);
@@ -373,7 +366,6 @@ fn imagPart(t: *Thread) Err!Word {
     return tower.imagPart(try numArg(t, "imag-part", 0));
 }
 fn magnitude(t: *Thread) Err!Word {
-    t.reserve(4);
     const w = try numArg(t, "magnitude", 0);
     if (!tower.isComp(w)) return if (tower.sign(w) < 0) num.sub(t, fix(0), w).? else w;
     const re = num.toF(tower.realPart(w)).?;
@@ -381,23 +373,22 @@ fn magnitude(t: *Thread) Err!Word {
     return flo(t, std.math.hypot(re, im));
 }
 fn angle(t: *Thread) Err!Word {
-    t.reserve(2);
     const w = try numArg(t, "angle", 0);
     const re = num.toF(tower.realPart(w)).?;
     const im = num.toF(tower.imagPart(w)).?;
     if (!tower.isComp(w) and tower.sign(w) >= 0 and !rt.isFlonum(w)) return fix(0);
     return flo(t, std.math.atan2(im, re));
 }
-pub const @"%make-rectangular" = WN("make-rectangular", makeRectangular, 2, 2);
-pub const @"%make-polar" = WN("make-polar", makePolar, 2, 2);
-pub const @"%complex-real-part" = WN("complex-real-part", realPart, 1, 1);
-pub const @"%complex-imag-part" = WN("complex-imag-part", imagPart, 1, 1);
-pub const @"%complex-magnitude" = WN("complex-magnitude", magnitude, 1, 1);
-pub const @"%complex-angle" = WN("complex-angle", angle, 1, 1);
-pub const @"%real-part" = WN("real-part", realPart, 1, 1);
-pub const @"%imag-part" = WN("imag-part", imagPart, 1, 1);
-pub const @"%magnitude" = WN("magnitude", magnitude, 1, 1);
-pub const @"%angle" = WN("angle", angle, 1, 1);
+pub const @"%make-rectangular" = WD("make-rectangular", makeRectangular, 2, 2);
+pub const @"%make-polar" = WD("make-polar", makePolar, 2, 2);
+pub const @"%complex-real-part" = WD("complex-real-part", realPart, 1, 1);
+pub const @"%complex-imag-part" = WD("complex-imag-part", imagPart, 1, 1);
+pub const @"%complex-magnitude" = WD("complex-magnitude", magnitude, 1, 1);
+pub const @"%complex-angle" = WD("complex-angle", angle, 1, 1);
+pub const @"%real-part" = WD("real-part", realPart, 1, 1);
+pub const @"%imag-part" = WD("imag-part", imagPart, 1, 1);
+pub const @"%magnitude" = WD("magnitude", magnitude, 1, 1);
+pub const @"%angle" = WD("angle", angle, 1, 1);
 
 // --- syntax ------------------------------------------------------------------
 

@@ -252,15 +252,14 @@ pub const @"%bytevector-append" = WN("bytevector-append", bytevectorAppend, 0, a
 
 // --- transcendental functions (flonum results) -------------------------------------
 
-fn floatFn(comptime f: fn (f64) f64, comptime who: []const u8) Code {
+fn floatFnD(comptime f: fn (f64) f64, comptime who: []const u8) P.Prim {
     const S = struct {
         fn g(t: *Thread) Err!Word {
-            t.reserve(2);
             const x = num.toF(try P.numArg(t, who ++ ": not a number", 0)).?;
-            return t.makeFlo(f(x));
+            return rt.safeFlo(t, f(x));
         }
     };
-    return W(S.g, 1, 1);
+    return P.WD(who, S.g, 1, 1);
 }
 fn fsin(x: f64) f64 {
     return @sin(x);
@@ -280,33 +279,31 @@ fn facos(x: f64) f64 {
 fn flog(x: f64) f64 {
     return @log(x);
 }
-pub const @"%sin" = floatFn(fsin, "sin");
-pub const @"%cos" = floatFn(fcos, "cos");
-pub const @"%tan" = floatFn(ftan, "tan");
-pub const @"%asin" = floatFn(fasin, "asin");
-pub const @"%acos" = floatFn(facos, "acos");
+pub const @"%sin" = floatFnD(fsin, "sin");
+pub const @"%cos" = floatFnD(fcos, "cos");
+pub const @"%tan" = floatFnD(ftan, "tan");
+pub const @"%asin" = floatFnD(fasin, "asin");
+pub const @"%acos" = floatFnD(facos, "acos");
 
 fn logImpl(t: *Thread) Err!Word {
-    t.reserve(2);
     const x = num.toF(try P.numArg(t, "log: not a number", 0)).?;
     if (t.argc == 2) {
         const b = num.toF(try P.numArg(t, "log: not a number", 1)).?;
-        return t.makeFlo(@log(x) / @log(b));
+        return rt.safeFlo(t, @log(x) / @log(b));
     }
-    return t.makeFlo(@log(x));
+    return rt.safeFlo(t, @log(x));
 }
-pub const @"%log" = WN("log", logImpl, 1, 2);
+pub const @"%log" = WD("log", logImpl, 1, 2);
 
 fn atanImpl(t: *Thread) Err!Word {
-    t.reserve(2);
     const y = num.toF(try P.numArg(t, "atan: not a number", 0)).?;
     if (t.argc == 2) {
         const x = num.toF(try P.numArg(t, "atan: not a number", 1)).?;
-        return t.makeFlo(std.math.atan2(y, x));
+        return rt.safeFlo(t, std.math.atan2(y, x));
     }
-    return t.makeFlo(std.math.atan(y));
+    return rt.safeFlo(t, std.math.atan(y));
 }
-pub const @"%atan" = WN("atan", atanImpl, 1, 2);
+pub const @"%atan" = WD("atan", atanImpl, 1, 2);
 
 fn makeE() callconv(.c) Word {
     return data.constFlonum(std.math.e);

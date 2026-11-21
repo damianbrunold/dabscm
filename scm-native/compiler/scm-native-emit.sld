@@ -517,12 +517,19 @@
            (if (and (= (length bindings) 1) (not (simple? (cadr (car bindings)))))
                (cg-nontail-call (car (car bindings)) (cadr (car bindings)) body b env)
                (cg-tail body b (cg-let-bindings bindings body b env)))))
-        ((letrec) (cg-tail (caddr e) b (cg-letrec (cadr e) (caddr e) b env)))
-        ((call) (if (simple? e)
-                    (let ((a (cg-simple e b env)))
-                      (emit! b "t.val = " a ";")
-                      (emit! b tail-call-ret))
-                    (cg-call (cadr e) (cddr e) b env)))
+        ((letrec)
+         (let ((loop (loop-candidate e)))
+           (if loop
+               (cg-loop loop b env)
+               (cg-tail (caddr e) b (cg-letrec (cadr e) (caddr e) b env)))))
+        ((call)
+         (cond ((and (eq? (node-kind (cadr e)) 'lref) (assq (cadr (cadr e)) loops))
+                => (lambda (loop) (cg-loop-again loop (cddr e) b env)))
+               ((simple? e)
+                (let ((a (cg-simple e b env)))
+                  (emit! b "t.val = " a ";")
+                  (emit! b tail-call-ret)))
+               (else (cg-call (cadr e) (cddr e) b env))))
         (else
          (let ((a (cg-simple e b env)))
            (emit! b "t.val = " a ";")
@@ -598,6 +605,123 @@
                                    (bind env2 v (local-name v) #t)))))
                   (cg-tail body k env3)
                   (finish-block! k)))))))
+
+    ;; --- loops ---------------------------------------------------------------
+    ;; A named let (letrec ((v (lambda params body))) (v init ...)) whose v is
+    ;; only called, in tail position, and whose body makes no non-tail call,
+    ;; becomes a Zig loop: the parameters are vars, a call of v assigns them
+    ;; and continues. If the body allocates, each iteration checks the heap;
+    ;; to collect, the loop's values (parameters and the outer values it
+    ;; uses, copied to vars) are spilled to t.args, which are roots.
+
+    (define loops '())  ; (v label param-vars) for the loops being emitted
+
+    (define (mentions? e v) (and (memq v (refs e)) #t))
+
+    (define (loop-candidate e)
+      (and (= (length (cadr e)) 1)
+           (let* ((bd (car (cadr e)))
+                  (v (car bd))
+                  (l (cadr (cadr bd)))
+                  (call (caddr e))
+                  (n (length (lam-params l))))
+             (and (not (var-assigned? v))
+                  (not (lam-rest l))
+                  (not (any var-assigned? (lam-params l)))
+                  (eq? (node-kind call) 'call)
+                  (eq? (node-kind (cadr call)) 'lref)
+                  (eq? (cadr (cadr call)) v)
+                  (= (length (cddr call)) n)
+                  (not (any (lambda (a) (mentions? a v)) (cddr call)))
+                  ;; a body that never calls v is no loop (and Zig rejects an
+                  ;; unused label)
+                  (mentions? (lam-body l) v)
+                  (loop-body-ok? (lam-body l) v n)
+                  (list v l (cddr call))))))
+
+    (define (loop-body-ok? e v n)
+      (case (node-kind e)
+        ((if) (and (not (mentions? (cadr e) v))
+                   (loop-body-ok? (caddr e) v n)
+                   (loop-body-ok? (cadddr e) v n)))
+        ((seq) (let loop ((es (cdr e)))
+                 (if (null? (cdr es))
+                     (loop-body-ok? (car es) v n)
+                     (and (not (mentions? (car es) v)) (loop (cdr es))))))
+        ((let) (and (every (lambda (b) (simple? (cadr b))) (cadr e))
+                    (not (any (lambda (b) (mentions? (cadr b) v)) (cadr e)))
+                    (loop-body-ok? (caddr e) v n)))
+        ((letrec) (and (not (any (lambda (b) (mentions? (cadr b) v)) (cadr e)))
+                       (loop-body-ok? (caddr e) v n)))
+        ((call) (if (and (eq? (node-kind (cadr e)) 'lref) (eq? (cadr (cadr e)) v))
+                    (and (= (length (cddr e)) n)
+                         (not (any (lambda (a) (mentions? a v)) (cddr e))))
+                    (not (mentions? e v))))
+        (else (not (mentions? e v)))))
+
+    (define (cg-loop loop b env)
+      (let* ((v (car loop))
+             (l (cadr loop))
+             (inits (map (lambda (a) (cg-simple a b env)) (caddr loop)))
+             (body (lam-body l))
+             (used (refs body))
+             (label (cat "loop" (next!)))
+             (params (lam-params l))
+             ;; parameter vars (#f for unused parameters)
+             (pvars (map (lambda (p) (and (memq p used) (cat "lp" (next!)))) params))
+             ;; outer values the body uses, as vars
+             (outer (filter (lambda (entry) (and (caddr entry) (memq (car entry) used)
+                                                 (not (memq (car entry) params))))
+                            (delete-duplicates env (lambda (x y) (eq? (car x) (car y))))))
+             (ovars (map (lambda (entry) (cat "lo" (next!))) outer)))
+        (for-each (lambda (pv a)
+                    (when pv
+                      (emit! b "var " pv ": Word = " a ";")
+                      (emit! b "_ = &" pv ";")))
+                  pvars inits)
+        (for-each (lambda (entry ov)
+                    (emit! b "var " ov ": Word = " (cadr entry) ";")
+                    (emit! b "_ = &" ov ";"))
+                  outer ovars)
+        (let* ((env2 (fold (lambda (entry ov env) (bind env (car entry) ov #t)) env outer ovars))
+               (env2 (fold (lambda (p pv env) (if pv (bind env p pv #t) env)) env2 params pvars))
+               (marker (string-copy "// heap check"))
+               (saved-alloc (block-alloc b)))
+          (emit! b label ": while (true) {")
+          (set-block-lines! b (cons marker (block-lines b)))
+          (set-block-alloc! b 0)
+          (set! loops (cons (list v label pvars) loops))
+          (cg-tail body b env2)
+          (set! loops (cdr loops))
+          (emit! b "}")
+          (let* ((n (block-alloc b))
+                 (spilled (append (filter (lambda (x) x) pvars) ovars))
+                 (k (length spilled)))
+            (set-block-alloc! b saved-alloc)
+            (set-block-lines!
+             b
+             (map (lambda (line)
+                    (cond ((not (eq? line marker)) line)
+                          ;; with n = 0 the check still notices a requested
+                          ;; collection (flonums and large objects lower hlimit)
+                          (else
+                           (apply cat
+                                  "    if (@intFromPtr(t.hp) + 8 * " n " > @intFromPtr(t.hlimit)) {\n"
+                                  "        t.ensureArgs(" (max k 1) ");\n"
+                                  (append
+                                   (map (lambda (x i) (cat "        t.args[" i "] = " x ";\n")) spilled (iota k))
+                                   (list "        t.reserve(" n ");\n")
+                                   (map (lambda (x i) (cat "        " x " = t.args[" i "];\n")) spilled (iota k))
+                                   (list "    }"))))))
+                  (block-lines b)))))))
+
+    ;; a call of the loop in its body: assign the parameters, continue
+    (define (cg-loop-again loop args b env)
+      (let* ((as (map (lambda (a) (cg-simple a b env)) args))
+             ;; copy first: an argument may be another parameter's var
+             (copies (map (lambda (a pv) (and pv (temp! b a))) as (caddr loop))))
+        (for-each (lambda (pv c) (when pv (emit! b pv " = " c ";"))) (caddr loop) copies)
+        (emit! b "continue :" (cadr loop) ";")))
 
     ;; --- lambdas -----------------------------------------------------------
 

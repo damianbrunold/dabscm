@@ -123,23 +123,37 @@ The emitter adds:
   directly as Zig functions, with no frame and no block split.
 - **Flonums without reservation:** arithmetic slow paths take flonums from a separate area at
   the top of the heap, so arithmetic reserves nothing.
+- **Numeric primitives are leaf primitives.** Their flonums come from the flonum area, their
+  bignums from the large-object space; neither collects. An allocation outside the nursery
+  requests a collection by lowering `hlimit` to the heap base, and a loop's heap check notices
+  that.
+- **Heap sizing:** after a collection, two thirds of the nursery stay free (about three times
+  the live data). `SCM_NATIVE_GC_STATS=1` prints the number of collections and the heap size
+  at exit.
+- **Loops:** a named `let` whose name is only called in tail position, in a body without
+  non-tail calls, becomes a Zig `while` loop. The parameters become variables, and a self
+  call becomes assignments and `continue`. If the body allocates, every iteration checks the
+  heap; to collect, the loop's values (the parameters and the outer values it uses) are
+  spilled to `t.args`, which are roots.
 
 `bench/bench.scm`, per run, JVM implementation with the JIT after warm-up against native
 (x86-64 Linux):
 
 | benchmark | JVM | native | speedup |
 |---|---|---|---|
-| fib30 | 37.4 ms | 14.4 ms | 3× |
-| tak | 1.05 ms | 0.41 ms | 3× |
-| ctak (call/cc) | 122 ms | 11.3 ms | 11× |
-| nqueens8 | 1.92 ms | 0.35 ms | 5× |
-| loops (named let, do, vectors) | 359 ms | 11.3 ms | 32× |
-| lists (map, filter, for-each, apply) | 791 ms | 54.5 ms | 15× |
-| strings (string ports, chars) | 222 ms | 51.9 ms | 4× |
-| records (define-record-type) | 569 ms | 18.1 ms | 31× |
-| sorting (list-sort) | 487 ms | 67.8 ms | 7× |
-| assocs (assv) | 99.8 ms | 32.8 ms | 3× |
-| floats | 223 ms | 48.7 ms | 5× |
+| fib30 | 37.4 ms | 14.8 ms | 3× |
+| tak | 1.05 ms | 0.44 ms | 2× |
+| ctak (call/cc) | 122 ms | 13.8 ms | 9× |
+| nqueens8 | 1.92 ms | 0.36 ms | 5× |
+| loops (named let, do, vectors) | 359 ms | 7.1 ms | 50× |
+| lists (map, filter, for-each, apply) | 791 ms | 67 ms | 12× |
+| strings (string ports, chars) | 222 ms | 53.8 ms | 4× |
+| records (define-record-type) | 569 ms | 13.3 ms | 43× |
+| sorting (list-sort) | 487 ms | 69.9 ms | 7× |
+| assocs (assv) | 99.8 ms | 30.8 ms | 3× |
+| floats | 223 ms | 38.8 ms | 6× |
+
+Times vary between runs by 10 to 20%.
 
 Phase 1 numbers (unoptimized compiled code, per run): fib(30) 19 ms, tak 18 12 6 0.47 ms. The
 hand-written spike took 11 ms and 0.29 ms, the JVM JIT 30 ms and 0.85 ms. The difference to the

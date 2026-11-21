@@ -132,7 +132,7 @@ pub fn allocLarge(t: *Thread, n: usize) [*]Word {
     large.append(std.heap.c_allocator, mem.ptr) catch oom();
     t.large_words += n;
     // the collection happens at the next reserve
-    if (t.large_words > t.heap_len) t.hlimit = t.hp;
+    if (t.large_words > t.heap_len) t.hlimit = t.heap; // collect at the next check
     return mem.ptr;
 }
 
@@ -164,7 +164,7 @@ pub fn safeFlo(t: *Thread, f: f64) Word {
     } else {
         q = allocLarge(t, 2);
         q[0] = hdr(T_FLONUM, 1) | (@as(Word, F_LARGE) << 8);
-        t.hlimit = t.hp; // collect at the next reserve
+        t.hlimit = t.heap; // collect at the next check (even reserve(0))
     }
     q[1] = @bitCast(f);
     return tagPtr(q);
@@ -540,10 +540,11 @@ fn gc(t: *Thread, need: usize) void {
     t.hp = to.ptr + g.free;
     t.hlimit = nurseryEnd(to);
     t.flo_ptr = nurseryEnd(to);
-    // Keep at least half of the space free after a collection: if not,
-    // collect again right away into a space twice as large.
-    if ((g.free + need) * 2 > to.len - to.len / 8) {
-        t.heap_target = 2 * (g.free + need) + to.len;
+    // Keep two thirds of the nursery free after a collection (a heap of
+    // about three times the live data): if not, collect again right away
+    // into a larger space.
+    if ((g.free + need) * 3 > to.len - to.len / 8) {
+        t.heap_target = 4 * (g.free + need) + to.len;
         gc(t, need);
     }
 }
@@ -626,6 +627,8 @@ pub fn start(list: abi.ModuleList, args: []const [:0]const u8) u8 {
     }
     ports.flushAll();
     os.flush();
+    if (os.getEnv("SCM_NATIVE_GC_STATS") != null)
+        os.eprint("gc: {d} collections, heap {d} words, large objects {d} words\n", .{ t.gc_count, t.heap_len, t.large_words });
     return t.exit_code;
 }
 
