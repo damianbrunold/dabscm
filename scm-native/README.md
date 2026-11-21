@@ -6,6 +6,60 @@ here is used by the Java or C# implementations or by their builds.
 
 Toolchain: Zig 0.17.1, pinned.
 
+## Usage (Phase 1)
+
+```
+java -jar scm-java/scm.jar scm-native/scmc.scm program.scm [-o output]
+     [-O ReleaseFast|ReleaseSafe|Debug] [--target x86_64-windows] [--emit-zig]
+java -jar scm-java/scm.jar scm-native/test.scm [name ...]
+```
+
+`test.scm` compiles each program in `tests/`, runs it, and compares its output and exit code
+with the JVM implementation's.
+
+## Structure
+
+- `compiler/`: the compiler, written in Scheme. It runs on the JVM implementation for now.
+  - `(scm native frontend)`: a Phase 1 stand-in for the expander. It desugars the usual
+    derived forms of plain Scheme (no macros) into Core IR and skips `import`.
+  - `(scm native ast)`: Core IR, free-variable analysis.
+  - `(scm native anf)`: A-normal form. A complex expression (one containing a call) remains
+    only in tail position or as the right-hand side of a `let`.
+  - `(scm native emit)`: Zig code generation.
+    - Every lambda becomes an entry block, and every non-tail call ends a block and continues
+      in a return block.
+    - Live values are saved in the frame.
+    - Each block reserves its heap words at entry.
+    - Closures are flat; lambdas without free variables become static closures.
+    - Assigned variables are boxed.
+    - Hot primitives are open-coded.
+  - `(scm native driver)`: reads the program, runs the passes and calls `zig build-exe`.
+- `runtime/`: the runtime, written in Zig.
+  - `rt.zig`: values, thread, GC, control.
+  - `data.zig`: strings (Latin-1 or UTF-32 buffers), symbols, vectors, equality, static
+    constants.
+  - `num.zig`: arithmetic.
+  - `printer.zig`: `write` and `display`.
+  - `prims.zig`: primitive procedures, `@"%name"`.
+  - `os.zig`: the only user of version-sensitive `std` APIs.
+  - `main.zig`: the entry point.
+  - `zig test -fllvm runtime/check.zig` compiles every primitive (Zig compiles lazily).
+
+Phase 1 limits, lifted in later phases:
+- no bignums, rationals or complex numbers;
+- no multiple values, `dynamic-wind` or exception handlers;
+- errors are fatal, with exit code 1;
+- output goes to stdout only;
+- about 100 primitives.
+
+Known difference: the JVM implementation runs a program one top-level form at a time. A
+continuation captured in a top-level form therefore ends with that form there, but continues
+with the rest of the program in a native executable (the R7RS program semantics).
+
+Phase 1 numbers (unoptimized compiled code, per run): fib(30) 19 ms, tak 18 12 6 0.47 ms. The
+hand-written spike took 11 ms and 0.29 ms, the JVM JIT 30 ms and 0.85 ms. The difference to the
+spike is what Phase 3 (the optimizer) addresses.
+
 ## Phase 0 spike (2026-11-21)
 
 `spike/rt.zig` is a minimal runtime. `spike/bench.zig` holds hand-written code in the shape the
