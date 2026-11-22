@@ -217,35 +217,13 @@ const Png = struct {
         };
     }
 
-    // As java.util.zip.Inflater, a stream that ends early gives the data
-    // so far: here none, so that the image data is too short.
+    // As java.util.zip.Inflater: a stream that ends early (or needs a
+    // preset dictionary) gives the data so far
     fn inflate(z: []const u8) Error![]u8 {
-        // the header checks of zlib (which std.compress.flate leaves out):
-        // a bad header is an error, a preset dictionary gives no data
-        if (z.len >= 2) {
-            if ((@as(u32, z[0]) * 256 + z[1]) % 31 != 0 or z[0] & 15 != 8 or z[0] >> 4 > 7)
-                return fail("PNG: bad compressed data");
-            if (z[1] & 0x20 != 0) return pa.alloc(u8, 0);
-        }
-        const out = compress.decompress(z, .zlib) catch |e| switch (e) {
+        return compress.decompress(z, .zlib) catch |e| switch (e) {
             error.OutOfMemory => return error.OutOfMemory,
-            error.BadData => return if (std.mem.eql(u8, compress.last_error, "Unexpected end of ZLIB input stream"))
-                try pa.alloc(u8, 0)
-            else
-                fail("PNG: bad compressed data"),
+            error.BadData => fail("PNG: bad compressed data"),
         };
-        // std.compress.flate reads the Adler-32 but does not check it; it
-        // follows the deflate data, normally at the end (trailing bytes
-        // after it are ignored, as by zlib)
-        var sum: [4]u8 = undefined;
-        std.mem.writeInt(u32, &sum, std.hash.Adler32.hash(out), .big);
-        if (!(z.len >= 6 and std.mem.eql(u8, z[z.len - 4 ..], &sum)) and
-            std.mem.indexOf(u8, z[@min(z.len, 2)..], &sum) == null)
-        {
-            pa.free(out);
-            return fail("PNG: bad compressed data");
-        }
-        return out;
     }
 
     // Undoes the scanline filters in place; each row is a filter byte and stride bytes.

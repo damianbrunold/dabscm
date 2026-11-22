@@ -2303,7 +2303,8 @@ Example:
                                          (datum->string d)
                                          " is redundant: the names used from it also come from "
                                          (join-strings
-                                          (map datum->string others)
+                                          (sort-strings
+                                           (map datum->string others))
                                           ", "))))))
                           (when
                               (and (pair? d)
@@ -2698,6 +2699,16 @@ Example:
                           ((string<? (symbol->string (car l))
                                      (symbol->string (car acc)))
                            (cons (car l) acc))
+                          (else (cons (car acc) (ins (cdr acc))))))))))
+
+    (define (sort-strings strs)
+      (let loop ((l strs) (acc '()))
+        (if (null? l)
+            acc
+            (loop (cdr l)
+                  (let ins ((acc acc))
+                    (cond ((null? acc) (list (car l)))
+                          ((string<? (car l) (car acc)) (cons (car l) acc))
                           (else (cons (car acc) (ins (cdr acc))))))))))
 
     (define (join-strings strs sep)

@@ -218,6 +218,7 @@
             ((null? d) "rt.NIL")
             ((fixnum? d) (word-literal (* 2 d)))
             ((char? d) (word-literal (+ (* 8 (char->integer d)) 5)))
+            ((astral-char? d) (word-literal (+ (* 8 (astral-char-code d)) 5)))
             ;; literals are distinct objects (as in the JVM implementation),
             ;; except those that cannot be mutated
             ((and (or (symbol? d) (number? d)) (assoc d constants)) => cdr)
@@ -777,6 +778,8 @@
       (let ((name (cat "L" (local-id l))))
         (unless (member name lambdas-made)
           (set! lambdas-made (cons name lambdas-made))
+          (when (lam-doc l)
+            (add-init! (cat "    rt.setDoc(&" name ", \"" (zig-escape (lam-doc l)) "\");")))
           (let* ((b (make-block name))
                  (params (lam-params l))
                  (rest (lam-rest l))

@@ -23,9 +23,15 @@
           refs
           compute-free!
           the-unspecified
-          unspecified?)
+          unspecified?
+          lam-doc
+          lam-doc-set!
+          make-astral-char
+          astral-char?
+          astral-char-code)
   (import (scheme base)
-          (srfi 1))
+          (srfi 1)
+          (srfi 69))
   (begin
     ;; Core IR. Variables are records (unique by identity); nodes are lists:
     ;;   (const datum)            (lref var)        (lset var e)
@@ -51,6 +57,20 @@
       (make-unspecified)
       unspecified?)
     (define the-unspecified (make-unspecified))
+
+    ;; The docstrings of lambdas (for procedure-doc): the first form of the
+    ;; body, if it is a string (as the JVM implementation)
+    (define lam-docs (make-hash-table eq?))
+    (define (lam-doc l) (hash-table-ref/default lam-docs l #f))
+    (define (lam-doc-set! l doc) (hash-table-set! lam-docs l doc))
+
+    ;; A character beyond U+FFFF in the source: the JVM implementation's
+    ;; characters are UTF-16 code units, so the compiler (running there)
+    ;; reads it as this record (see read-file in (scm native expand))
+    (define-record-type astral-char
+      (make-astral-char code)
+      astral-char?
+      (code astral-char-code))
 
     (define-record-type lam
       (%make-lam params rest body free name id)

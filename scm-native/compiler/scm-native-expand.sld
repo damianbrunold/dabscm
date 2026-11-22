@@ -254,8 +254,12 @@
           (cond ((pair? f) (loop (cdr f) (cons (car f) ids)))
                 (else
                  (let* ((params (bind-locals (reverse ids) s))
-                        (rest (and (ident? f) (car (bind-locals (list f) s)))))
-                   `(lambda ,(make-lam params rest (expand-body body) name))))))))
+                        (rest (and (ident? f) (car (bind-locals (list f) s))))
+                        (lam (make-lam params rest (expand-body body) name)))
+                   ;; as the JVM implementation, also a string that is the whole body
+                   (when (and (pair? body) (string? (car body)))
+                     (lam-doc-set! lam (car body)))
+                   `(lambda ,lam)))))))
 
     (define (expand-let bindings body)
       (if (null? bindings)
@@ -484,11 +488,126 @@
              search-path)))
 
     (define (read-file file)
-      (call-with-input-file file
-        (lambda (port)
-          (let loop ((acc '()))
-            (let ((x (read port)))
-              (if (eof-object? x) (reverse acc) (loop (cons x acc))))))))
+      (let* ((text (call-with-input-file file
+                     (lambda (port)
+                       (let ((s (read-string 100000000 port)))
+                         (if (eof-object? s) "" s)))))
+             (marked (mark-astral-chars text))
+             (port (open-input-string marked)))
+        (let loop ((acc '()))
+          (let ((x (read port)))
+            (if (eof-object? x)
+                (let ((forms (reverse acc)))
+                  (if (eq? marked text) forms (map restore-astral-chars forms)))
+                (loop (cons x acc)))))))
+
+    ;; Characters beyond U+FFFF: the JVM implementation (where the compiler
+    ;; runs) has UTF-16 characters and reads such a character literal as its
+    ;; high surrogate. Before reading, each literal #\xHHHHH (and #\ with
+    ;; the character itself) beyond U+FFFF becomes a marker symbol, and
+    ;; after reading the markers become astral-char records. Strings are
+    ;; left alone (a string holds such a character as a surrogate pair,
+    ;; which the emitter writes as one character).
+    (define astral-prefix "%native-astral-char-")
+
+    (define (mark-astral-chars text)
+      (let ((n (string-length text)))
+        (define (at i) (and (< i n) (string-ref text i)))
+        (define (delimiter? i)
+          (let ((c (at i)))
+            (or (not c) (char-whitespace? c) (memv c '(#\( #\) #\" #\;)))))
+        (define (hex-end i)
+          (let loop ((j i))
+            (if (and (at j) (or (char<=? #\0 (at j) #\9) (char<=? #\a (char-downcase (at j)) #\f)))
+                (loop (+ j 1))
+                j)))
+        (define (surrogate? c lo hi) (and c (<= lo (char->integer c) hi)))
+        (if (not (has-char-literal? text))
+            text
+            (let ((out (open-output-string)) (changed #f))
+              (define (marker code)
+                (set! changed #t)
+                (write-string (string-append "|" astral-prefix (number->string code 16) "|") out))
+              (let loop ((i 0))
+                (when (< i n)
+                  (let ((c (string-ref text i)))
+                    (cond
+                     ((char=? c #\")             ; string
+                      (write-char c out)
+                      (let s ((j (+ i 1)))
+                        (cond ((>= j n) (loop j))
+                              ((char=? (string-ref text j) #\\)
+                               (write-char #\\ out)
+                               (when (at (+ j 1)) (write-char (string-ref text (+ j 1)) out))
+                               (s (+ j 2)))
+                              ((char=? (string-ref text j) #\")
+                               (write-char #\" out)
+                               (loop (+ j 1)))
+                              (else (write-char (string-ref text j) out) (s (+ j 1))))))
+                     ((char=? c #\|)             ; |symbol|
+                      (write-char c out)
+                      (let s ((j (+ i 1)))
+                        (cond ((>= j n) (loop j))
+                              ((char=? (string-ref text j) #\\)
+                               (write-char #\\ out)
+                               (when (at (+ j 1)) (write-char (string-ref text (+ j 1)) out))
+                               (s (+ j 2)))
+                              ((char=? (string-ref text j) #\|)
+                               (write-char #\| out)
+                               (loop (+ j 1)))
+                              (else (write-char (string-ref text j) out) (s (+ j 1))))))
+                     ((char=? c #\;)             ; line comment
+                      (let s ((j i))
+                        (cond ((>= j n) (loop j))
+                              ((char=? (string-ref text j) #\newline) (loop j))
+                              (else (write-char (string-ref text j) out) (s (+ j 1))))))
+                     ((and (char=? c #\#) (eqv? (at (+ i 1)) #\|)) ; block comment
+                      (write-string "#|" out)
+                      (let s ((j (+ i 2)) (depth 1))
+                        (cond ((>= j n) (loop j))
+                              ((and (char=? (string-ref text j) #\|) (eqv? (at (+ j 1)) #\#))
+                               (write-string "|#" out)
+                               (if (= depth 1) (loop (+ j 2)) (s (+ j 2) (- depth 1))))
+                              ((and (char=? (string-ref text j) #\#) (eqv? (at (+ j 1)) #\|))
+                               (write-string "#|" out)
+                               (s (+ j 2) (+ depth 1)))
+                              (else (write-char (string-ref text j) out) (s (+ j 1) depth)))))
+                     ((and (char=? c #\#) (eqv? (at (+ i 1)) #\\)) ; character
+                      (let ((d (at (+ i 2))))
+                        (cond
+                         ((and d (char-ci=? d #\x) (> (hex-end (+ i 3)) (+ i 3)) (delimiter? (hex-end (+ i 3)))
+                               (> (string->number (substring text (+ i 3) (hex-end (+ i 3))) 16) #xFFFF))
+                          (marker (string->number (substring text (+ i 3) (hex-end (+ i 3))) 16))
+                          (loop (hex-end (+ i 3))))
+                         ((and (surrogate? d #xD800 #xDBFF) (surrogate? (at (+ i 3)) #xDC00 #xDFFF)
+                               (delimiter? (+ i 4)))
+                          (marker (+ #x10000 (* (- (char->integer d) #xD800) #x400)
+                                     (- (char->integer (at (+ i 3))) #xDC00)))
+                          (loop (+ i 4)))
+                         (else
+                          (write-string "#\\" out)
+                          (when d (write-char d out))
+                          (loop (+ i 3))))))
+                     (else (write-char c out) (loop (+ i 1)))))))
+              (if changed (get-output-string out) text)))))
+
+    (define (has-char-literal? s)
+      (let ((n (- (string-length s) 1)))
+        (let loop ((i 0))
+          (cond ((>= i n) #f)
+                ((and (char=? (string-ref s i) #\#) (char=? (string-ref s (+ i 1)) #\\)) #t)
+                (else (loop (+ i 1)))))))
+
+    (define (restore-astral-chars x)
+      (cond ((pair? x) (cons (restore-astral-chars (car x)) (restore-astral-chars (cdr x))))
+            ((vector? x) (vector-map restore-astral-chars x))
+            ((and (symbol? x)
+                  (let ((s (symbol->string x)))
+                    (and (> (string-length s) (string-length astral-prefix))
+                         (string=? (substring s 0 (string-length astral-prefix)) astral-prefix)
+                         (string->number (substring s (string-length astral-prefix) (string-length s)) 16))))
+             => make-astral-char)
+            (else x)))
 
     ;; SRFI 97 names: (srfi :1 ...) and (srfi srfi-1) are (srfi 1)
     (define (canonical-library-name name)

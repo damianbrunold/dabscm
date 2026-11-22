@@ -371,6 +371,9 @@ pub const Reader = struct {
             .flo => |f| .{ .flo = f },
             .exact, .complex => .{ .exact = lit },
         };
+        // a dot outside the tail of a list (here also one that a datum
+        // comment would skip)
+        if (std.mem.eql(u8, tok, ".")) return r.fail("unexpected dot");
         if (tok.len > 1 and tok[0] == '#') return r.fail(std.fmt.allocPrint(pa, "tokenizer: Unknown # sequence: {s}", .{tok[0..@min(tok.len, 2)]}) catch rt.oom());
         if (tok.len > 0 and tok[0] == '#') return r.fail("bad # syntax");
         if (r.fold_case) for (tok) |*b| {

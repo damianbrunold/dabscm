@@ -246,13 +246,22 @@ fn writeString(buf: *std.ArrayList(u8), s: Word) void {
     put(buf, "\"");
 }
 
-fn writeSymbol(buf: *std.ArrayList(u8), name: []const u8) void {
-    var plain = name.len > 0;
+/// As the JVM implementation's Value.symbolNeedsDelimiters
+fn symbolNeedsBars(name: []const u8) bool {
+    if (name.len == 0) return true;
     for (name) |ch| switch (ch) {
-        ' ', '\t', '\n', '\r', '(', ')', '"', ';', '\'', '`', ',', '|' => plain = false,
+        '(', ')', '[', ']', '{', '}', '"', ',', '\'', '`', ';', '#', '|', ' ', '\t', '\n', '\r', '\\' => return true,
         else => {},
     };
-    if (plain) return put(buf, name);
+    const first = name[0];
+    if (first >= '0' and first <= '9') return true;
+    if (std.mem.eql(u8, name, ".")) return true;
+    // +/- followed by anything could be numeric syntax (+inf.0, +i, +3)
+    return (first == '+' or first == '-') and name.len > 1;
+}
+
+fn writeSymbol(buf: *std.ArrayList(u8), name: []const u8) void {
+    if (!symbolNeedsBars(name)) return put(buf, name);
     put(buf, "|");
     for (name) |ch| {
         if (ch == '|' or ch == '\\') put(buf, "\\");

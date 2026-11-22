@@ -295,7 +295,10 @@ fn bytevectorCopyB(t: *Thread) Err!Word {
     const from = try bvArg(t, 2);
     const r = try range(t, 3, data.bvLen(from));
     if (at + (r[1] - r[0]) > data.bvLen(to)) return raise(t, "bytevector-copy!: out of range", &.{arg(t, 1)});
-    std.mem.copyForwards(u8, data.bvBytes(to)[at .. at + r[1] - r[0]], data.bvBytes(from)[r[0]..r[1]]);
+    // the same bytevector: copy away from the overlap
+    const dst = data.bvBytes(to)[at .. at + r[1] - r[0]];
+    const src = data.bvBytes(from)[r[0]..r[1]];
+    if (@intFromPtr(dst.ptr) > @intFromPtr(src.ptr)) std.mem.copyBackwards(u8, dst, src) else std.mem.copyForwards(u8, dst, src);
     return rt.UNSPEC;
 }
 pub const @"%bytevector-copy!" = WD("bytevector-copy!", bytevectorCopyB, 3, 5);

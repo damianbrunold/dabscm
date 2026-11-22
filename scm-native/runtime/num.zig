@@ -107,6 +107,22 @@ noinline fn cmpSlow(a: Word, b: Word, comptime c: Cmp) ?bool {
             .eq => o == .eq,
         };
     }
+    // a fixnum and a flonum: exactly, unless the fixnum converts exactly
+    if (isFix(a) != isFix(b)) {
+        const n = rt.unfix(if (isFix(a)) a else b);
+        if (n > (1 << 53) or n < -(1 << 53)) {
+            const t = current_thread;
+            if (c == .eq) return tower.numEq(t, a, b);
+            const o = tower.order(t, a, b) orelse return false;
+            return switch (c) {
+                .lt => o == .lt,
+                .gt => o == .gt,
+                .le => o != .gt,
+                .ge => o != .lt,
+                .eq => o == .eq,
+            };
+        }
+    }
     const x = toF(a).?;
     const y = toF(b).?;
     return switch (c) {
@@ -225,9 +241,9 @@ pub fn parseNumber(text0: []const u8, default_radix: u8) ?Lit {
 }
 
 fn parseReal(text: []const u8, radix: u8) ?Lit {
-    if (std.mem.eql(u8, text, "+inf.0")) return .{ .flo = std.math.inf(f64) };
-    if (std.mem.eql(u8, text, "-inf.0")) return .{ .flo = -std.math.inf(f64) };
-    if (std.mem.eql(u8, text, "+nan.0") or std.mem.eql(u8, text, "-nan.0")) return .{ .flo = std.math.nan(f64) };
+    if (std.ascii.eqlIgnoreCase(text, "+inf.0")) return .{ .flo = std.math.inf(f64) };
+    if (std.ascii.eqlIgnoreCase(text, "-inf.0")) return .{ .flo = -std.math.inf(f64) };
+    if (std.ascii.eqlIgnoreCase(text, "+nan.0") or std.ascii.eqlIgnoreCase(text, "-nan.0")) return .{ .flo = std.math.nan(f64) };
     var i: usize = 0;
     if (text[0] == '+' or text[0] == '-') i = 1;
     if (i == text.len) return null;
@@ -256,7 +272,9 @@ fn parseReal(text: []const u8, radix: u8) ?Lit {
         while (k < text.len and std.ascii.isDigit(text[k])) : (k += 1) digits += 1;
     }
     if (digits == 0) return null;
-    if (k < text.len and (text[k] == 'e' or text[k] == 'E')) {
+    var marker: ?usize = null;
+    if (k < text.len and isExponentMarker(text[k])) {
+        marker = k;
         k += 1;
         if (k < text.len and (text[k] == '+' or text[k] == '-')) k += 1;
         const start = k;
@@ -264,7 +282,22 @@ fn parseReal(text: []const u8, radix: u8) ?Lit {
         if (k == start) return null;
     }
     if (k != text.len) return null;
-    return .{ .flo = std.fmt.parseFloat(f64, text) catch return null };
+    // the exponent markers s, f, d and l (R7RS) as e
+    var buf: [400]u8 = undefined;
+    const t = if (marker) |m| blk: {
+        if (text.len > buf.len) return null;
+        @memcpy(buf[0..text.len], text);
+        buf[m] = 'e';
+        break :blk buf[0..text.len];
+    } else text;
+    return .{ .flo = std.fmt.parseFloat(f64, t) catch return null };
+}
+
+fn isExponentMarker(c: u8) bool {
+    return switch (c) {
+        'e', 'E', 's', 'S', 'f', 'F', 'd', 'D', 'l', 'L' => true,
+        else => false,
+    };
 }
 
 const fix_min_num: i64 = -(1 << 62);
@@ -330,7 +363,7 @@ fn complexParts(text: []const u8, radix: u8) ?Parts {
         const c = body[i];
         if (c != '+' and c != '-') continue;
         const prev = body[i - 1];
-        if (radix == 10 and (prev == 'e' or prev == 'E')) continue;
+        if (radix == 10 and isExponentMarker(prev)) continue;
         k = i;
         break;
     }

@@ -331,6 +331,7 @@ pub const impl = if (@hasDecl(root, "scm_runtime")) root.scm_runtime else struct
     pub extern fn scm_not_procedure_code(t: *Thread) callconv(.c) void;
     pub extern fn scm_error_code(t: *Thread) callconv(.c) void;
     pub extern fn scm_remember(obj: Word) void;
+    pub extern fn scm_set_doc(code: Code, doc: [*]const u8, len: usize) void;
 };
 
 /// Prepare a call of procedure `p` and return its code.
@@ -504,6 +505,10 @@ pub fn staticProc(code: Code) Word {
 }
 pub fn primitive(code: Code, comptime name: []const u8) Word {
     return impl.scm_primitive(code, name.ptr, name.len);
+}
+/// The docstring of the lambda whose code is code (for procedure-doc)
+pub fn setDoc(code: Code, comptime doc: []const u8) void {
+    impl.scm_set_doc(code, doc.ptr, doc.len);
 }
 pub fn missingPrimitive(comptime name: []const u8) Word {
     return impl.scm_missing_primitive(name.ptr, name.len);

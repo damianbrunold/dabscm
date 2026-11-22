@@ -111,3 +111,42 @@ fn moduleRef(t: *Thread) Err!Word {
     return raise(t, std.fmt.allocPrint(pa, "{s} is not bound", .{name}) catch rt.oom(), &.{});
 }
 pub const @"%%module-ref" = WN("%module-ref", moduleRef, 2, 2);
+
+// --- procedure-doc ---------------------------------------------------------------
+
+/// docstrings of lambdas by their code (set by the modules' initialization)
+var docs: std.AutoHashMapUnmanaged(usize, []const u8) = .empty;
+
+pub fn setDoc(code: rt.Code, doc: []const u8) void {
+    docs.put(pa, @intFromPtr(code), doc) catch rt.oom();
+}
+
+/// The text of a primitive (primitive_docs.zig is sorted by name)
+fn primitiveDoc(name: []const u8) ?[]const u8 {
+    const table = @import("primitive_docs.zig").docs;
+    var lo: usize = 0;
+    var hi: usize = table.len;
+    while (lo < hi) {
+        const mid = (lo + hi) / 2;
+        switch (std.mem.order(u8, table[mid].name, name)) {
+            .eq => return table[mid].doc,
+            .lt => lo = mid + 1,
+            .gt => hi = mid,
+        }
+    }
+    return null;
+}
+
+/// The docstring of a procedure (a primitive's text as the JVM
+/// implementation's), or #f
+fn procedureDoc(t: *Thread) Err!Word {
+    const p = arg(t, 0);
+    if (!(rt.isPtr(p) and rt.objType(p) == rt.T_CLOSURE)) return rt.FALSE;
+    const doc = if (rt.isPrimitive(p))
+        primitiveDoc(data.symbolName(rt.ptr(p)[2])) orelse return rt.FALSE
+    else
+        docs.get(rt.ptr(p)[1]) orelse return rt.FALSE;
+    t.reserve(data.stringWords(doc.len, true));
+    return data.heapStringUtf8(t, doc);
+}
+pub const @"%procedure-doc" = WN("procedure-doc", procedureDoc, 1, 1);

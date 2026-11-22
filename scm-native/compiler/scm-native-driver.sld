@@ -182,11 +182,14 @@
                ;; the runtime object, then one per module, named by the hash of
                ;; everything that goes into it (the Zig CLI does not cache)
                (rt-obj (join-path objects-dir (string-append "rt-" (content-hash runtime-text flags) ".o")))
+               (c-jobs (c-object-jobs native-dir objects-dir zig common flags))
                (jobs
                 (cons (list rt-obj `(,zig "build-obj" ,@common "-lc"
                                           ,(join-path runtime-dir "rtmain.zig")
                                           ,(string-append "-femit-bin=" rt-obj)))
-                      (map (lambda (m)
+                      (append
+                       c-jobs
+                       (map (lambda (m)
                              ;; the source file is named by the hash as well: compilations
                              ;; running at the same time in one build directory must not
                              ;; overwrite each other's source
@@ -200,7 +203,7 @@
                                                 ,(string-append "-Mroot=" zig-file)
                                                 ,(string-append "-Mrt=" (join-path runtime-dir "abi.zig"))
                                                 ,(string-append "-femit-bin=" obj)))))
-                           sources))))
+                           sources)))))
           (unless (directory-exists? objects-dir) (make-directory objects-dir))
           ;; build the missing objects in parallel, then link
           (for-each (lambda (r) (check-run "zig build-obj" r))
@@ -211,6 +214,34 @@
                                                  ,@(map car jobs)
                                                  ,(string-append "-femit-bin=" output))))
           output)))
+
+    ;; The C sources linked into every program: the vendored zlib and the
+    ;; runtime's interface to it. One object per file, all named by the hash
+    ;; of every C source and header (and the flags).
+    (define zlib-dir "zlib-1.3.1")
+    (define zlib-sources '("adler32" "crc32" "deflate" "inflate" "inffast" "inftrees" "trees" "zutil"))
+
+    (define (c-object-jobs native-dir objects-dir zig common flags)
+      (let* ((zdir (join-path native-dir "vendor" zlib-dir))
+             (files (append (map (lambda (s) (join-path zdir (string-append s ".c"))) zlib-sources)
+                            (list (join-path native-dir "runtime" "zshim.c"))))
+             (headers (map (lambda (f) (join-path zdir f))
+                           (list-sort string<? (filter (lambda (f) (string-suffix? ".h" f))
+                                                       (directory-files zdir)))))
+             (hash (content-hash (apply string-append (map file->string (append files headers))) flags)))
+        (map (lambda (file)
+               (let* ((base (file-name-base file))
+                      (obj (join-path objects-dir (string-append "c-" base "-" hash ".o"))))
+                 (list obj `(,zig "build-obj" ,@common "-lc" "-I" ,zdir ,file
+                                  ,(string-append "-femit-bin=" obj)))))
+             files)))
+
+    (define (file-name-base file)
+      (let* ((name (let loop ((i (- (string-length file) 1)))
+                     (cond ((< i 0) file)
+                           ((char=? (string-ref file i) #\/) (substring file (+ i 1) (string-length file)))
+                           (else (loop (- i 1)))))))
+        (substring name 0 (- (string-length name) 2))))
 
     (define (content-hash text flags)
       (substring (bytevector->hex (sha256-hash (string-append flags "\n" text))) 0 24))

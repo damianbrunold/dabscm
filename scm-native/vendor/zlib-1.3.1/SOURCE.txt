@@ -1,0 +1,7 @@
+zlib 1.3.1 (the version the JVM implementation's java.util.zip uses on
+Debian 13), from https://zlib.net/fossils/zlib-1.3.1.tar.gz
+sha256 9a93b2b7dfdac77ceba5a558a580e74667dd6fede4585b91eefb60f03b72df23
+
+Only the files needed for deflate and inflate are kept (no gz* file API,
+no build files); they are unchanged. runtime/zshim.c is the interface the
+runtime calls (runtime/compress.zig).

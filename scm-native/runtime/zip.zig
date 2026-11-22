@@ -129,9 +129,9 @@ const Central = struct {
     csize: u64,
     usize: u64,
     offset: u64,
-    /// the modification time, for an extended timestamp field (times before
-    /// 1980, which MS-DOS dates cannot hold, as Java's ZipOutputStream)
-    unix_time: ?u32,
+    /// the modification time in an extra field, for times MS-DOS dates
+    /// cannot hold (as Java's ZipOutputStream)
+    ext: Ext,
 };
 
 pub const Writer = struct {
@@ -155,26 +155,35 @@ pub const Writer = struct {
     /// ZipEntry.setTime); method 0 stores, 8 deflates
     pub fn add(w: *Writer, name: []const u8, contents: []const u8, ms: i64, method: u16) Error!void {
         const crc = compress.crc32(contents);
-        const packed_bytes = if (method == 8) compress.compress(contents, .raw, -1) catch return error.OutOfMemory else contents;
+        const packed_bytes = if (method == 8) compress.compressEntry(contents) catch return error.OutOfMemory else contents;
         defer if (method == 8) pa.free(packed_bytes);
         const dt = dosTime(ms);
         const offset = w.out.items.len;
-        const flags: u16 = 0x0800; // UTF-8 names (as Java)
-        const unix_time: ?u32 = if (dt[1] == (1 << 5) | 1 and dt[0] == 0) @truncate(@as(u64, @bitCast(@divFloor(ms, 1000)))) else null;
+        // as Java's ZipOutputStream: UTF-8 names; a deflated entry has its
+        // CRC and sizes in a data descriptor after the data (flag 8)
+        const deflated = method == 8;
+        const flags: u16 = if (deflated) 0x0808 else 0x0800;
+        const ext = extFor(ms, dt);
         try w.put32(0x04034b50);
-        try w.put16(20);
+        try w.put16(version(method));
         try w.put16(flags);
         try w.put16(method);
         try w.put16(dt[0]);
         try w.put16(dt[1]);
-        try w.put32(crc);
-        try w.put32(@intCast(packed_bytes.len));
-        try w.put32(@intCast(contents.len));
+        try w.put32(if (deflated) 0 else crc);
+        try w.put32(if (deflated) 0 else @intCast(packed_bytes.len));
+        try w.put32(if (deflated) 0 else @intCast(contents.len));
         try w.put16(@intCast(name.len));
-        try w.put16(if (unix_time != null) 9 else 0);
+        try w.put16(ext.len());
         w.out.appendSlice(pa, name) catch return error.OutOfMemory;
-        if (unix_time) |u| try w.extendedTime(u);
+        try w.extraTime(ext);
         w.out.appendSlice(pa, packed_bytes) catch return error.OutOfMemory;
+        if (deflated) {
+            try w.put32(0x08074b50);
+            try w.put32(crc);
+            try w.put32(@intCast(packed_bytes.len));
+            try w.put32(@intCast(contents.len));
+        }
         w.central.append(pa, .{
             .name = pa.dupe(u8, name) catch return error.OutOfMemory,
             .method = method,
@@ -184,16 +193,35 @@ pub const Writer = struct {
             .csize = packed_bytes.len,
             .usize = contents.len,
             .offset = offset,
-            .unix_time = unix_time,
+            .ext = ext,
         }) catch return error.OutOfMemory;
     }
 
-    /// extended timestamp (0x5455): the modification time only
-    fn extendedTime(w: *Writer, u: u32) Error!void {
-        try w.put16(0x5455);
-        try w.put16(5);
-        w.out.append(pa, 1) catch return error.OutOfMemory;
-        try w.put32(u);
+    /// the extra field of ext: an extended timestamp (0x5455) with the
+    /// modification time only, or an NTFS times field (0x000a) without access
+    /// and creation times
+    fn extraTime(w: *Writer, ext: Ext) Error!void {
+        switch (ext) {
+            .none => {},
+            .ut => |u| {
+                try w.put16(0x5455);
+                try w.put16(5);
+                w.out.append(pa, 1) catch return error.OutOfMemory;
+                try w.put32(u);
+            },
+            .ntfs => |wt| {
+                try w.put16(0x000a);
+                try w.put16(32);
+                try w.put32(0);
+                try w.put16(1);
+                try w.put16(24);
+                for ([_]u64{ wt, 1 << 63, 1 << 63 }) |v| {
+                    var b8: [8]u8 = undefined;
+                    std.mem.writeInt(u64, &b8, v, .little);
+                    w.out.appendSlice(pa, &b8) catch return error.OutOfMemory;
+                }
+            },
+        }
     }
 
     /// The archive's bytes, with the central directory
@@ -201,9 +229,9 @@ pub const Writer = struct {
         const cd_start = w.out.items.len;
         for (w.central.items) |c| {
             try w.put32(0x02014b50);
-            try w.put16(20);
-            try w.put16(20);
-            try w.put16(0x0800);
+            try w.put16(version(c.method));
+            try w.put16(version(c.method));
+            try w.put16(if (c.method == 8) 0x0808 else 0x0800);
             try w.put16(c.method);
             try w.put16(c.time);
             try w.put16(c.date);
@@ -211,14 +239,14 @@ pub const Writer = struct {
             try w.put32(@intCast(c.csize));
             try w.put32(@intCast(c.usize));
             try w.put16(@intCast(c.name.len));
-            try w.put16(if (c.unix_time != null) 9 else 0);
+            try w.put16(c.ext.len());
             try w.put16(0);
             try w.put16(0);
             try w.put16(0);
             try w.put32(0);
             try w.put32(@intCast(c.offset));
             w.out.appendSlice(pa, c.name) catch return error.OutOfMemory;
-            if (c.unix_time) |u| try w.extendedTime(u);
+            try w.extraTime(c.ext);
         }
         const cd_len = w.out.items.len - cd_start;
         try w.put32(0x06054b50);
@@ -232,6 +260,36 @@ pub const Writer = struct {
         return w.out.items;
     }
 };
+
+const Ext = union(enum) {
+    none,
+    ut: u32,
+    ntfs: u64,
+
+    fn len(e: Ext) u16 {
+        return switch (e) {
+            .none => 0,
+            .ut => 9,
+            .ntfs => 36,
+        };
+    }
+};
+
+/// As java.util.zip.ZipEntry.setTime and ZipOutputStream: times before 1980
+/// or after 128 years from 1970 also get an extra field, an extended
+/// timestamp if the seconds fit into 32 bits, else NTFS times
+fn extFor(ms: i64, dt: [2]u16) Ext {
+    const before_1980 = dt[1] == (1 << 5) | 1 and dt[0] == 0;
+    if (!before_1980 and ms <= 128 * 365 * 24 * 60 * 60 * 1000) return .none;
+    const secs = @divTrunc(ms, 1000);
+    if (secs > 0x7fffffff) return .{ .ntfs = @bitCast((ms * 1000 - -11644473600000000) * 10) };
+    return .{ .ut = @truncate(@as(u64, @bitCast(secs))) };
+}
+
+/// the version needed to extract (and made by), as Java's ZipOutputStream
+fn version(method: u16) u16 {
+    return if (method == 8) 20 else 10;
+}
 
 /// MS-DOS time and date of ms (local time); 1980-01-01 for earlier times
 fn dosTime(ms: i64) [2]u16 {

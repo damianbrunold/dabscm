@@ -307,25 +307,25 @@ pub const @"%%gcd" = WD("%gcd", gcdImpl, 0, any);
 
 fn sqrtImpl(t: *Thread) Err!Word {
     const w = try numArg(t, "sqrt", 0);
-    if (tower.isComp(w)) return raise(t, "sqrt: complex argument not supported", &.{w});
-    if (tower.isExactRational(w)) {
-        const negative = tower.sign(w) < 0;
-        const a = if (negative) tower.negate(t, w) else w;
-        if (exactSqrt(t, a)) |r| return if (negative) tower.makeRect(t, fix(0), r) else r;
+    if (tower.isComp(w)) {
+        // the principal root, as the JVM implementation
+        const a = num.toF(tower.realPart(w)).?;
+        const b = num.toF(tower.imagPart(w)).?;
+        const mag = @sqrt(a * a + b * b);
+        const re = @sqrt((mag + a) / 2.0);
+        const im = (if (b >= 0) @as(f64, 1) else -1) * @sqrt((mag - a) / 2.0);
+        return tower.makeRect(t, flo(t, re), flo(t, im));
+    }
+    // as the JVM implementation: an exact result only for an exact integer
+    // that is a square (of at most 63 bits), else a flonum or a complex
+    // number with flonum parts
+    if (tower.isExactInteger(w) and tower.sign(w) >= 0) {
+        const r = tower.exactIntegerSqrt(t, w);
+        if (r[1] == fix(0) and num.toF(r[0]).? < 9.2e18) return r[0];
     }
     const f = num.toF(w).?;
     if (f < 0) return tower.makeRect(t, flo(t, 0), flo(t, @sqrt(-f)));
     return flo(t, @sqrt(f));
-}
-/// The exact square root of a non-negative exact rational, if it has one
-fn exactSqrt(t: *Thread, w: Word) ?Word {
-    const n = tower.numerator(t, w);
-    const d = tower.denominator(t, w);
-    const sn = tower.exactIntegerSqrt(t, n);
-    if (sn[1] != fix(0)) return null;
-    const sd = tower.exactIntegerSqrt(t, d);
-    if (sd[1] != fix(0)) return null;
-    return tower.arith(t, sn[0], sd[0], .div);
 }
 pub const @"%sqrt" = WD("sqrt", sqrtImpl, 1, 1);
 
