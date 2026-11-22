@@ -351,6 +351,56 @@ are loaded from source. `scm lint` over `scm-lib/libraries` this way (interpreti
   through libproc, user names through `getpwuid` (Linux reads `/proc` and `/etc/passwd`).
 - Not yet run on Windows or macOS: the binaries are only cross-compiled so far.
 
+### Debian packages of programs
+
+`tools/package-deb.scm` packages a compiled program (pure Scheme over `(scm deb)`, on any
+dabscm):
+
+    scm scm-native/scmc.scm app.scm -o build/app --strip
+    scm scm-native/tools/package-deb.scm --exe build/app --name app --version 1.0 \
+        --description "one line" [--long "more"] [--maintainer "Name <mail>"] \
+        [--depends "..."] [--file src /usr/share/doc/app/README [mode]] ... [--out dist]
+
+The program becomes `/usr/bin/<name>` in `<name>_<version>_<arch>.deb`; the architecture
+comes from the executable's ELF header, so `--target aarch64-linux-musl` gives an arm64
+package. The executables are static, so they need no dependencies. `scmc --strip` leaves
+out debug information (hello: 3.6 MB instead of 22 MB).
+
+### The dabscm-native package
+
+`package-deb-native.scm` (in the repository root) packages scmc, the native `scm` (as
+`scm-native`) and `scmc-deb` (`tools/package-deb.scm` compiled), the runtime, lib,
+compiler and vendor sources, scm-lib and the pinned Zig, under `/usr/lib/dabscm-native`
+(about 400 MB installed, 97 MB as a package). The commands in `/usr/bin` are wrappers that
+set `SCM_NATIVE_DIR`. Installed, scmc finds the bundled Zig (`zig/` next to `scm-native/`,
+else `SCM_NATIVE_ZIG`, else `zig` on the PATH) and keeps its build directory in
+`$XDG_CACHE_HOME/dabscm-native` (`~/.cache`), since its own directory is not writable
+(`SCM_NATIVE_BUILD` overrides both); `eval` in installed programs loads libraries that are
+not linked from the installation's scm-lib (`SCM_NATIVE_DIR`).
+
+### Testing on Windows (or macOS)
+
+1. Install Zig 0.17.1 for the machine (ziglang.org/download, the `zig-x86_64-windows-0.17.1`
+   or `zig-aarch64-macos-0.17.1` archive) and put `zig` on the PATH. `zig version` must print
+   `0.17.1`.
+2. The compiler runs on the Java or C# implementation there: `scm scm-native/scmc.scm
+   prog.scm -o prog.exe` builds for the machine itself (the default target is the host
+   outside Linux). Try small programs first: hello, then one with threads, then one with
+   sockets.
+3. Run the suites: `cd scm-native && scm lib-tests.scm` and `scm core-tests.scm` (a list
+   of test names runs only those). For comparison, on Linux the library tests are clean in
+   110 of 111 files (`tests_geiser` needs `current-module`), and the core tests fail only
+   in `tests_compiler` (bytecode introspection), `tests_tspl3ed` (1) and `tests_vm` (1). On Windows the scripts name executables `.exe` and run them without a
+   time limit (there is no `timeout` command).
+4. Code that has never run on Windows, so the first suspects when something fails:
+   `net.zig`'s `pollWindows` (the AFD poll request; used by every socket wait, the HTTP
+   server's accept loop and `%net-poll`), non-blocking `sendSome`, `os_windows.zig` (process
+   waits and trees, console raw mode and echo, Ctrl+C, time zone offsets), the young
+   space's `VirtualAlloc` reserve and commit (`os.reserveAddressSpace`, `commit`), and
+   threads under the stop-the-world collector.
+5. On macOS: `os_macos.zig` (libproc) and the TLS certificate store (std's macOS keychain
+   scan) are untested.
+
 ## Phase 0 spike (2026-11-21)
 
 `spike/rt.zig` is a minimal runtime. `spike/bench.zig` holds hand-written code in the shape the

@@ -21,6 +21,7 @@
           (scheme char)
           (scheme cxr)
           (scheme file)
+          (only (scheme process-context) get-environment-variable)
           (scheme read)
           (scheme write)
           (srfi 1)
@@ -914,7 +915,17 @@
                                    (list-ref st 5))))
         (set-scope-counter! (list-ref st 1))
         (set! features (list-ref st 2))
-        (set! search-path (list-ref st 3))
+        ;; the compiler's search path, then (for an installed program whose
+        ;; build directories are elsewhere) the libraries of the dabscm
+        ;; native installation SCM_NATIVE_DIR names
+        (set! search-path
+              (append (list-ref st 3)
+                      (let ((dir (get-environment-variable "SCM_NATIVE_DIR")))
+                        (if (and dir (not (string=? dir "")))
+                            (list (join-path (directory-name dir) "scm-lib" "libraries")
+                                  (join-path dir "compiler")
+                                  (join-path dir "lib"))
+                            '()))))
         (for-each (lambda (entry)
                     (for-each (lambda (e) (bind! (car entry) (car e) (vector-ref bindings (cadr e))))
                               (reverse (cdr entry))))

@@ -4,6 +4,7 @@
 ;;                                [--target triple] [--emit-zig]
 ;;   -O mode      ReleaseFast (default), ReleaseSafe or Debug
 ;;   --target     a Zig target such as x86_64-windows or aarch64-macos
+;;   --strip      no debug information in the executable (for packages)
 ;;   --emit-zig   print the generated Zig instead of building
 ;;   -I dir       also search dir for libraries
 ;;
@@ -33,7 +34,7 @@
 (import (scm native driver))
 
 (define (usage)
-  (display "usage: scmc program.scm [-o output] [-O mode] [--target triple] [--emit-zig] [-I dir]\n")
+  (display "usage: scmc program.scm [-o output] [-O mode] [--target triple] [--strip] [--emit-zig] [-I dir]\n")
   (exit 2))
 
 (define (search-dirs options)
@@ -70,6 +71,8 @@
                (cons (cons 'search-dirs (append (search-dirs options) (list (absolute-path (cadr args)))))
                      options)
                emit))
+        ((string=? (car args) "--strip")
+         (loop (cdr args) input output (cons (cons 'strip #t) options) emit))
         ((string=? (car args) "--emit-zig")
          (loop (cdr args) input output options #t))
         ((not input) (loop (cdr args) (car args) output options emit))

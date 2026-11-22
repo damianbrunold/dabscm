@@ -4,6 +4,7 @@
           runtime-primitives)
   (import (scheme base)
           (scheme file)
+          (only (scheme process-context) get-environment-variable)
           (scheme read)
           (scheme write)
           (scheme char)
@@ -189,9 +190,50 @@
     (define (default-target)
       (if (eq? (sys-platform) 'linux) "x86_64-linux-musl" #f))
 
+    (define (env name)
+      (let ((v (get-environment-variable name)))
+        (and v (not (string=? v "")) v)))
+
+    ;; Zig: SCM_NATIVE_ZIG, else the one an installation bundles (zig/ next
+    ;; to scm-native, as the Debian package installs it), else zig on the PATH
+    (define (default-zig native-dir)
+      (or (env "SCM_NATIVE_ZIG")
+          (let ((bundled (join-path (directory-name native-dir) "zig"
+                                    (if (eq? (sys-platform) 'windows) "zig.exe" "zig"))))
+            (and (file-exists? bundled) bundled))
+          "zig"))
+
+    ;; The build directory (objects, generated Zig, Zig's cache): SCM_NATIVE_BUILD,
+    ;; else scm-native/build when it can be written (a checkout), else the
+    ;; user's cache directory (an installation)
+    (define (default-build-dir native-dir)
+      (let ((own (join-path native-dir "build")))
+        (or (env "SCM_NATIVE_BUILD")
+            (and (guard (e (#t #f))
+                   (unless (directory-exists? own) (make-directory own))
+                   (let ((probe (join-path own ".writable")))
+                     (call-with-output-file probe (lambda (p) (write-string "" p)))
+                     (delete-file probe)
+                     #t))
+                 own)
+            (let ((cache (join-path (or (env "XDG_CACHE_HOME")
+                                        (env "LOCALAPPDATA")
+                                        (join-path (or (env "HOME") (env "USERPROFILE") ".") ".cache"))
+                                    "dabscm-native")))
+              (make-directories cache)
+              cache))))
+
+    (define (make-directories dir)
+      (unless (directory-exists? dir)
+        (let ((parent (directory-name dir)))
+          (unless (or (string=? parent "") (string=? parent dir))
+            (make-directories parent)))
+        (make-directory dir)))
+
     ;; Compile the program in file to the executable output.
     ;; options: alist with 'optimize ("ReleaseFast", "ReleaseSafe", "Debug"),
-    ;; 'target (a Zig target triple or #f), 'build-dir, 'zig, 'search-dirs
+    ;; 'target (a Zig target triple or #f), 'build-dir, 'zig, 'search-dirs,
+    ;; 'strip (#t: no debug information in the executable)
     ;; (a list of library directories).
     (define (compile-program file output native-dir options)
       (define (opt key default)
@@ -200,10 +242,10 @@
       (let* ((runtime-dir (join-path native-dir "runtime"))
              (optimize-mode (opt 'optimize "ReleaseFast"))
              (target (opt 'target (default-target)))
-             (build-dir (opt 'build-dir (join-path native-dir "build")))
+             (build-dir (opt 'build-dir (default-build-dir native-dir)))
              (cfg-dir (join-path build-dir (string-append (or target "native") "-" optimize-mode)))
              (cache (join-path build-dir "zig-cache"))
-             (zig (opt 'zig "zig"))
+             (zig (opt 'zig (default-zig native-dir)))
              (common `(,(string-append "-O" optimize-mode)
                        ,@(if (string=? optimize-mode "Debug") '("-fllvm") '())
                        ,@(if target (list "-target" target) '())
@@ -252,9 +294,12 @@
                     (run-batched (filter (lambda (job) (not (file-exists? (car job)))) jobs)))
           (check-run "zig build-exe"
                      (run-program/capture `(,zig "build-exe" ,@common "-lc"
+                                                 ,@(if (opt 'strip #f) '("-fstrip") '())
                                                  ;; Windows: the system's certificate
                                                  ;; store (std.crypto.tls)
-                                                 ,@(if (and target (string-contains target "windows"))
+                                                 ,@(if (if target
+                                                           (string-contains target "windows")
+                                                           (eq? (sys-platform) 'windows))
                                                        '("-lcrypt32" "-lws2_32")
                                                        '())
                                                  ,@(map car jobs)

@@ -29,6 +29,11 @@
         (scm system))
 
 (define native-dir (directory-name (absolute-path (car (command-line)))))
+
+;; Windows: executables end in .exe, and there is no timeout command
+(define windows? (eq? (sys-platform) 'windows))
+(define (exe-name base) (if windows? (string-append base ".exe") base))
+(define (with-timeout secs exe) (if windows? (list exe) (list "timeout" secs exe)))
 (module-search-path! (cons (join-path native-dir "compiler") (module-search-path)))
 
 (import (scm native driver))
@@ -195,9 +200,9 @@
                    (for-each (lambda (x) (display " ") (write x)) (error-object-irritants e)))
                  (newline)))
      (let* ((source (generate name))
-            (exe (join-path build-dir (string-append "core-" name))))
+            (exe (join-path build-dir (exe-name (string-append "core-" name)))))
        (compile-program source exe native-dir '())
-       (let ((r (run-program/capture (list "timeout" "120" exe))))
+       (let ((r (run-program/capture (with-timeout "120" exe))))
          (display (cadr r))
          (unless (string=? (caddr r) "") (display "stderr: ") (display (caddr r)))
          (unless (zero? (car r)) (display "exit code: ") (display (car r)) (newline))))))

@@ -19,6 +19,11 @@
         (scm system))
 
 (define native-dir (directory-name (absolute-path (car (command-line)))))
+
+;; Windows: executables end in .exe, and there is no timeout command
+(define windows? (eq? (sys-platform) 'windows))
+(define (exe-name base) (if windows? (string-append base ".exe") base))
+(define (with-timeout secs exe) (if windows? (list exe) (list "timeout" secs exe)))
 (module-search-path! (cons (join-path native-dir "compiler") (module-search-path)))
 
 (import (scm native driver))
@@ -53,7 +58,7 @@
  (lambda (name)
    (let* ((source (join-path tests-dir (string-append name ".scm")))
           (program (join-path build-dir (string-append "lib-" name ".scm")))
-          (exe (join-path build-dir (string-append "lib-" name))))
+          (exe (join-path build-dir (exe-name (string-append "lib-" name)))))
      (call-with-output-file program
        (lambda (p) (write-string (file->string source) p) (write-string epilogue p)))
      (let ((result
@@ -68,7 +73,7 @@
                                              "?"))))
               (compile-program program exe native-dir '())
               ;; run in the tests directory, as the JVM harness does from its resources
-              (let ((r (run-program/capture (list "timeout" "300" exe) (list (list 'work-dir tests-dir)))))
+              (let ((r (run-program/capture (with-timeout "300" exe) (list (list 'work-dir tests-dir)))))
                 (string-append
                  (let ((l (last-line (cadr r))))
                    (if (and (> (string-length l) 6) (string=? (substring l 0 6) "tests:"))

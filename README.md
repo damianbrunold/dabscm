@@ -21,6 +21,7 @@ set of `.sld` library files, kept in sync from a single source of truth.
 - `scm-tests/` — source of truth for tests (`core/`, `tests/`, `failures/`)
 - `scm-csharp/` — C# implementation (`scheme/`, `repl/`, `tests/`)
 - `scm-java/` — Java implementation
+- `scm-native/` — native implementation: compiles programs to Zig and static executables (see `scm-native/README.md`)
 - `documentation/` — generated API documentation
 - `examples/` — example scripts
 - `scm-bootstrap.jar` — bootstrap interpreter used by the build scripts
@@ -73,6 +74,23 @@ conflicts with Debian's unrelated `scm` package (same command name). The
 builder (the `(scm deb)` library) is pure Scheme and needs no `dpkg-deb`. A tree with
 uncommitted changes is refused unless `--allow-dirty` is given (version gets
 `+dirty`); `--out <dir>` changes the output directory.
+
+The native implementation has a package of its own, which can be installed next
+to the Java one:
+
+```bash
+./builder.sh package-deb-native.scm       # -> dist/dabscm-native_<VERSION>_amd64.deb
+sudo apt install ./dist/dabscm-native_<VERSION>_amd64.deb
+```
+
+It installs `scmc` (the compiler), `scm-native` (the native REPL and
+interpreter, with fmt and lint), `scmc-deb` (packages a compiled program as a
+`.deb`), the runtime sources and libraries under `/usr/lib/dabscm-native`, and
+the Zig 0.17.1 that `scmc` compiles with (`--zig <dir>`, default
+`~/zig-x86_64-linux-0.17.1`). It builds the three programs first (`--no-build`
+packages those in `scm-native/build/package`). `scmc` keeps its objects in
+`~/.cache/dabscm-native`; the first compilation of a program builds the
+libraries it uses (a few minutes), later ones take seconds.
 
 ## Running
 
