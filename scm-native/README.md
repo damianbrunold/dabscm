@@ -331,6 +331,26 @@ are loaded from source. `scm lint` over `scm-lib/libraries` this way (interpreti
   remembered set, each port's output, the standard output buffer, the regex and primitive
   caches and the process list; thread-local error texts, printer and reader label tables.
 
+## Phase 8: Windows, macOS, arm64
+
+- `scmc --target <triple>` cross-compiles from Linux: `x86_64-linux-musl` (the default),
+  `aarch64-linux-musl`, `x86_64-macos`, `aarch64-macos` and `x86_64-windows` all build,
+  the native `scm` tool included. Windows programs link `crypt32` and `ws2_32` (the
+  system's certificate store for TLS).
+- Windows OS layer (`runtime/os_windows.zig`, Win32 declarations of its own, since Zig's
+  std has few): processes (wait, poll, exit codes, `TerminateProcess` for kill as the
+  JVM's `destroy`, process lists and trees through Toolhelp snapshots, start times and
+  CPU times), the console (UTF-8 code pages, raw mode and echo through console modes
+  with VT input and output, size, input readiness, resizes by comparison), Ctrl+C and
+  closing as SIGINT and SIGTERM for `server-install-shutdown-hook`, the local time zone
+  with the daylight saving time of each date, the OS version. The young space is
+  reserved with `VirtualAlloc` and committed per nursery. Sockets: `std.Io` uses AFD
+  handles on Windows, so `poll` is the AFD driver's poll request (as wepoll and libuv);
+  the SQL Server Browser lookup uses `std.Io.net` UDP sockets on every system.
+- macOS (`runtime/os_macos.zig`): process lists, parents, paths, start and CPU times
+  through libproc, user names through `getpwuid` (Linux reads `/proc` and `/etc/passwd`).
+- Not yet run on Windows or macOS: the binaries are only cross-compiled so far.
+
 ## Phase 0 spike (2026-11-21)
 
 `spike/rt.zig` is a minimal runtime. `spike/bench.zig` holds hand-written code in the shape the

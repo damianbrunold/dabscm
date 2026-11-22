@@ -252,6 +252,11 @@
                     (run-batched (filter (lambda (job) (not (file-exists? (car job)))) jobs)))
           (check-run "zig build-exe"
                      (run-program/capture `(,zig "build-exe" ,@common "-lc"
+                                                 ;; Windows: the system's certificate
+                                                 ;; store (std.crypto.tls)
+                                                 ,@(if (and target (string-contains target "windows"))
+                                                       '("-lcrypt32" "-lws2_32")
+                                                       '())
                                                  ,@(map car jobs)
                                                  ,(string-append "-femit-bin=" output))))
           output)))

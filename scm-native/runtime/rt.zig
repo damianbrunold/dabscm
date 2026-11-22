@@ -133,25 +133,32 @@ var young_top: usize = 0;
 var young_free: std.ArrayList([]Word) = .empty; // nurseries of ended threads
 
 fn initYoung() void {
-    young_space = std.posix.mmap(null, young_reserve, .{ .READ = true, .WRITE = true }, .{ .TYPE = .PRIVATE, .ANONYMOUS = true, .NORESERVE = true }, -1, 0) catch oom();
+    young_space = os.reserveAddressSpace(young_reserve) orelse oom();
 }
 
 /// A nursery of at least n words (under the world lock)
 fn allocNursery(n: usize) []Word {
     for (young_free.items, 0..) |h, i| if (h.len >= n) {
         _ = young_free.swapRemove(i);
+        if (!os.commit(pageBytes(h))) oom();
         return h;
     };
     const bytes = std.mem.alignForward(usize, n * 8, std.heap.page_size_min);
     if (young_top + bytes > young_space.len) oom();
     const h: [*]Word = @ptrCast(@alignCast(young_space.ptr + young_top));
     young_top += bytes;
+    if (!os.commit(pageBytes(h[0 .. bytes / 8]))) oom();
     return h[0 .. bytes / 8];
+}
+
+fn pageBytes(h: []Word) []align(std.heap.page_size_min) u8 {
+    const p: [*]align(std.heap.page_size_min) u8 = @ptrCast(@alignCast(h.ptr));
+    return p[0 .. h.len * 8];
 }
 
 /// Give a nursery back (its memory to the system, its range for reuse)
 fn freeNursery(h: []Word) void {
-    std.posix.madvise(@ptrCast(@alignCast(h.ptr)), h.len * 8, std.posix.MADV.DONTNEED) catch {};
+    os.decommit(pageBytes(h));
     young_free.append(std.heap.c_allocator, h) catch oom();
 }
 
@@ -1109,6 +1116,7 @@ pub fn start(list: abi.ModuleList, args: []const [:0]const u8) u8 {
     command_line = args;
     modules = list.modules[0..list.count];
     initYoung();
+    os.platformInit();
     os.blocking_hooks = .{ .begin = &blockingBeginCurrent, .end = &blockingEndCurrent };
     const t = newThread();
     threads.append(std.heap.c_allocator, t) catch oom();

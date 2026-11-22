@@ -8,6 +8,10 @@ const net = std.Io.net;
 const tls = std.crypto.tls;
 
 const pa = std.heap.c_allocator;
+const is_windows = @import("builtin").os.tag == .windows;
+
+/// A socket's or listener's OS handle
+pub const Handle = net.Socket.Handle;
 
 pub const Error = error{ConnectFailed} || error{OutOfMemory};
 
@@ -64,7 +68,7 @@ pub const Conn = struct {
     }
 
     /// The socket's handle (for poll)
-    pub fn handle(c: *Conn) std.posix.fd_t {
+    pub fn handle(c: *Conn) Handle {
         return c.stream.socket.handle;
     }
 
@@ -79,6 +83,15 @@ pub const Conn = struct {
             return if (c.writeAll(copy)) bytes.len else null;
         }
         c.writer.interface.flush() catch return null;
+        if (is_windows) {
+            // no non-blocking send through std.Io: what is writable now
+            var ready = [1]bool{false};
+            if (!poll(&.{c.handle()}, &.{true}, &ready, 0)) return null;
+            if (!ready[0]) return 0;
+            const copy = pa.dupe(u8, bytes) catch @panic("out of memory");
+            defer pa.free(copy);
+            return if (c.writeAll(copy)) bytes.len else null;
+        }
         const flags: u32 = std.c.MSG.DONTWAIT | std.c.MSG.NOSIGNAL;
         const n = std.c.send(c.handle(), bytes.ptr, bytes.len, flags);
         if (n >= 0) return @intCast(n);
@@ -156,9 +169,23 @@ pub fn connect(host: []const u8, port: u16) ?*Conn {
     return newConn(stream);
 }
 
+/// The first IPv4 address of host (a name or an address)
+pub fn resolveIp4(host: []const u8, port: u16) ?net.IpAddress {
+    if (net.IpAddress.parse(host, port)) |a| return a else |_| {}
+    const name = net.HostName.init(host) catch return null;
+    var results: [16]net.HostName.LookupResult = undefined;
+    var queue: std.Io.Queue(net.HostName.LookupResult) = .init(&results);
+    name.lookup(os.io, &queue, .{ .port = port, .family = .ip4 }) catch return null;
+    while (queue.getOne(os.io)) |r| switch (r) {
+        .address => |a| return a,
+        else => {},
+    } else |_| {}
+    return null;
+}
+
 /// TCP_NODELAY, as the JVM implementation sets it on its client sockets
 fn setNoDelay(stream: net.Stream) void {
-    if (@import("builtin").os.tag == .windows) return;
+    if (is_windows) return;
     const one: c_int = 1;
     _ = std.c.setsockopt(stream.socket.handle, std.c.IPPROTO.TCP, std.c.TCP.NODELAY, std.mem.asBytes(&one), @sizeOf(c_int));
 }
@@ -184,7 +211,7 @@ pub const Listener = struct {
         l.closed = true;
     }
 
-    pub fn handle(l: *Listener) std.posix.fd_t {
+    pub fn handle(l: *Listener) Handle {
         return l.server.socket.handle;
     }
 
@@ -279,21 +306,77 @@ pub fn startTlsOver(c: *Conn, host: []const u8, verify: bool, input: *std.Io.Rea
 
 /// poll(2) over handles; events: read (or accept) / write. The ready flags
 /// are set in ready; false on error.
-pub fn poll(handles: []const std.posix.fd_t, write: []const bool, ready: []bool, timeout_ms: i32) bool {
-    const fds = pa.alloc(std.posix.pollfd, handles.len) catch @panic("out of memory");
-    defer pa.free(fds);
+pub fn poll(handles: []const ?Handle, write: []const bool, ready: []bool, timeout_ms: i32) bool {
     if (timeout_ms != 0) os.blockingBegin();
     defer if (timeout_ms != 0) os.blockingEnd();
-    for (handles, write, fds) |h, w, *f| f.* = .{ .fd = h, .events = if (w) std.posix.POLL.OUT else std.posix.POLL.IN, .revents = 0 };
+    if (is_windows) return pollWindows(handles, write, ready, timeout_ms);
+    const fds = pa.alloc(std.posix.pollfd, handles.len) catch @panic("out of memory");
+    defer pa.free(fds);
+    for (handles, write, fds) |h, w, *f| f.* = .{ .fd = h orelse -1, .events = if (w) std.posix.POLL.OUT else std.posix.POLL.IN, .revents = 0 };
     const n = std.c.poll(fds.ptr, @intCast(fds.len), timeout_ms);
     if (n < 0) return std.posix.errno(n) == .INTR;
     for (fds, ready) |f, *r| r.* = f.revents != 0;
     return true;
 }
 
+/// poll on Windows: the AFD driver's poll request (as wepoll and libuv),
+/// since std.Io's sockets are AFD handles
+fn pollWindows(handles: []const ?Handle, write: []const bool, ready: []bool, timeout_ms: i32) bool {
+    const windows = std.os.windows;
+    const HandleInfo = extern struct { handle: windows.HANDLE, events: u32, status: windows.NTSTATUS };
+    const Header = extern struct { timeout: i64, count: u32, exclusive: u32 };
+    const RECEIVE = 0x1;
+    const SEND = 0x4;
+    const DISCONNECT = 0x8;
+    const ABORT = 0x10;
+    const ACCEPT = 0x80;
+    const CONNECT_FAIL = 0x100;
+    @memset(ready, false);
+    var count: usize = 0;
+    var first: ?Handle = null;
+    for (handles) |h| if (h) |x| {
+        count += 1;
+        if (first == null) first = x;
+    };
+    if (count == 0) {
+        if (timeout_ms > 0) os.sleepMs(@intCast(timeout_ms));
+        return true;
+    }
+    const size = @sizeOf(Header) + count * @sizeOf(HandleInfo);
+    const buf = pa.alignedAlloc(u8, .@"8", size) catch @panic("out of memory");
+    defer pa.free(buf);
+    const header: *Header = @ptrCast(buf.ptr);
+    header.* = .{
+        // relative, in 100 ns units (negative); "forever" as the largest value
+        .timeout = if (timeout_ms < 0) std.math.maxInt(i64) else -@as(i64, timeout_ms) * 10_000,
+        .count = @intCast(count),
+        .exclusive = 0,
+    };
+    const infos: [*]HandleInfo = @ptrCast(@alignCast(buf.ptr + @sizeOf(Header)));
+    var k: usize = 0;
+    for (handles, write) |h, w| if (h) |x| {
+        infos[k] = .{ .handle = x, .events = if (w) SEND | ABORT | CONNECT_FAIL else RECEIVE | DISCONNECT | ABORT | ACCEPT, .status = .SUCCESS };
+        k += 1;
+    };
+    const result = os.io.operate(.{ .device_io_control = .{
+        .file = .{ .handle = first.?, .flags = .{ .nonblocking = true } },
+        .code = windows.IOCTL.AFD.POLL,
+        .in = buf,
+        .out = buf,
+    } }) catch return false;
+    if (result.device_io_control.u.Status != .SUCCESS and result.device_io_control.u.Status != .TIMEOUT) return false;
+    // the output lists the handles that are ready
+    for (infos[0..header.count]) |info| {
+        for (handles, ready) |h, *r| if (h) |x| if (x == info.handle and info.events != 0) {
+            r.* = true;
+        };
+    }
+    return true;
+}
+
 /// Writing to a peer that closed is an error, not SIGPIPE (as on the JVM)
 pub fn ignoreSigpipe() void {
-    if (@import("builtin").os.tag == .windows) return;
+    if (is_windows) return;
     const act = std.posix.Sigaction{ .handler = .{ .handler = std.posix.SIG.IGN }, .mask = std.posix.sigemptyset(), .flags = 0 };
     std.posix.sigaction(.PIPE, &act, null);
 }

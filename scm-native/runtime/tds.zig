@@ -225,30 +225,19 @@ fn browserPort() u16 {
 pub fn lookup(host: []const u8, instance: []const u8, timeout_ms: i64) !u16 {
     os.blockingBegin();
     defer os.blockingEnd();
-    const c = std.c;
+    const inet = std.Io.net;
     const udp_port = browserPort();
-    const host_z = try pa.dupeSentinel(u8, host, 0);
-    defer pa.free(host_z);
-    var hints = std.mem.zeroes(c.addrinfo);
-    hints.family = c.AF.INET;
-    hints.socktype = c.SOCK.DGRAM;
-    var res: ?*c.addrinfo = null;
-    if (@intFromEnum(c.getaddrinfo(host_z, null, &hints, &res)) != 0 or res == null) {
+    const addr = net.resolveIp4(host, udp_port) orelse {
         fail("{s}", .{host});
         return error.Lookup;
-    }
-    defer c.freeaddrinfo(res.?);
-    var addr: c.sockaddr.in = @as(*const c.sockaddr.in, @ptrCast(@alignCast(res.?.addr.?))).*;
-    addr.port = std.mem.nativeToBig(u16, udp_port);
-    const fd = c.socket(c.AF.INET, c.SOCK.DGRAM, 0);
-    if (fd < 0) {
+    };
+    const local = inet.IpAddress.parse("0.0.0.0", 0) catch unreachable;
+    const sock = local.bind(os.io, .{ .mode = .dgram, .protocol = .udp }) catch {
         fail("cannot open a UDP socket", .{});
         return error.Lookup;
-    }
-    defer _ = c.close(fd);
+    };
+    defer sock.close(os.io);
     const half: i64 = @max(1, @divTrunc(timeout_ms, 2));
-    const tv = c.timeval{ .sec = @intCast(@divTrunc(half, 1000)), .usec = @intCast(@mod(half, 1000) * 1000) };
-    _ = c.setsockopt(fd, c.SOL.SOCKET, c.SO.RCVTIMEO, @ptrCast(&tv), @sizeOf(c.timeval));
     const req = try pa.alloc(u8, instance.len + 1);
     defer pa.free(req);
     req[0] = 0x04;
@@ -258,16 +247,15 @@ pub fn lookup(host: []const u8, instance: []const u8, timeout_ms: i64) !u16 {
     var reply: ?[]const u8 = null;
     var attempt: usize = 0;
     while (attempt < 2 and reply == null) : (attempt += 1) {
-        _ = c.sendto(fd, req.ptr, req.len, 0, @ptrCast(&addr), @sizeOf(c.sockaddr.in));
-        const got = c.recvfrom(fd, buf.ptr, buf.len, 0, null, null);
-        if (got < 0) continue; // timed out, or ICMP port unreachable
-        const n: usize = @intCast(got);
-        if (n < 3 or buf[0] != 0x05) {
+        sock.send(os.io, &addr, req) catch continue;
+        const m = sock.receiveTimeout(os.io, buf, .{ .duration = .{ .raw = .fromMilliseconds(half), .clock = .awake } }) catch continue; // timed out, or ICMP port unreachable
+        const got = m.data;
+        if (got.len < 3 or got[0] != 0x05) {
             fail("unexpected SQL Browser reply from {s}", .{host});
             return error.Lookup;
         }
-        const size = @as(usize, buf[1]) | (@as(usize, buf[2]) << 8);
-        reply = buf[3..][0..@min(size, n - 3)];
+        const size = @as(usize, got[1]) | (@as(usize, got[2]) << 8);
+        reply = got[3..][0..@min(size, got.len - 3)];
     }
     const text = reply orelse {
         fail("no answer from SQL Browser at {s}:{d} for instance {s} (unknown instance, UDP blocked or SQL Server Browser service not running?)", .{ host, udp_port, instance });

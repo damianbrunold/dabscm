@@ -308,7 +308,7 @@ pub const @"%%socket-shutdown-output" = WN("%socket-shutdown-output", shutdownOu
 /// socket or listener, mode read or write; the list of the ready items.
 /// timeout-ms -1 waits without limit.
 fn netPoll(t: *Thread) Err!Word {
-    var handles: std.ArrayList(std.posix.fd_t) = .empty;
+    var handles: std.ArrayList(?net.Handle) = .empty;
     defer handles.deinit(pa);
     var writes: std.ArrayList(bool) = .empty;
     defer writes.deinit(pa);
@@ -325,14 +325,14 @@ fn netPoll(t: *Thread) Err!Word {
             const s: *Socket = @ptrCast(@alignCast(p));
             if (s.conn.closed) {
                 already = true;
-                handles.append(pa, -1) catch rt.oom();
+                handles.append(pa, null) catch rt.oom();
             } else {
                 if (!write and s.conn.buffered() > 0) already = true;
                 handles.append(pa, s.conn.handle()) catch rt.oom();
             }
         } else if (sys.nativeOf(obj, .listener)) |p| {
             const ls: *net.Listener = @ptrCast(@alignCast(p));
-            handles.append(pa, if (ls.closed) -1 else ls.handle()) catch rt.oom();
+            handles.append(pa, if (ls.closed) null else ls.handle()) catch rt.oom();
         } else return P.argTypeError(t);
         writes.append(pa, write) catch rt.oom();
         items.append(pa, item) catch rt.oom();

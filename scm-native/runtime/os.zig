@@ -48,6 +48,11 @@ pub var blocking_hooks: struct {
     end: *const fn () void = &noHook,
 } = .{};
 fn noHook() void {}
+/// Platform setup at startup
+pub fn platformInit() void {
+    if (is_windows) w32.init();
+}
+
 pub fn blockingBegin() void {
     blocking_hooks.begin();
 }
@@ -252,6 +257,9 @@ pub fn listDirectory(path: []const u8) ?[]DirEntry {
 
 const builtin = @import("builtin");
 pub const is_windows = builtin.os.tag == .windows;
+const w32 = @import("os_windows.zig");
+const is_macos = builtin.os.tag.isDarwin();
+const mac = @import("os_macos.zig");
 
 pub const ClockKind = enum { real, monotonic, process, thread };
 
@@ -281,6 +289,42 @@ pub fn sleepMs(ms: u64) void {
     io.sleep(.fromMilliseconds(@intCast(ms)), .awake) catch {};
 }
 
+// --- address space (the young space of rt.zig) ---------------------------------------
+
+const win = struct {
+    const MEM_COMMIT = 0x1000;
+    const MEM_RESERVE = 0x2000;
+    const MEM_DECOMMIT = 0x4000;
+    const PAGE_NOACCESS = 0x01;
+    const PAGE_READWRITE = 0x04;
+    extern "kernel32" fn VirtualAlloc(addr: ?*anyopaque, size: usize, kind: u32, protect: u32) callconv(.winapi) ?*anyopaque;
+    extern "kernel32" fn VirtualFree(addr: ?*anyopaque, size: usize, kind: u32) callconv(.winapi) i32;
+};
+
+/// Reserve n bytes of address space (committed by commit)
+pub fn reserveAddressSpace(n: usize) ?[]align(std.heap.page_size_min) u8 {
+    if (is_windows) {
+        const p = win.VirtualAlloc(null, n, win.MEM_RESERVE, win.PAGE_NOACCESS) orelse return null;
+        return @as([*]align(std.heap.page_size_min) u8, @ptrCast(@alignCast(p)))[0..n];
+    }
+    return std.posix.mmap(null, n, .{ .READ = true, .WRITE = true }, .{ .TYPE = .PRIVATE, .ANONYMOUS = true, .NORESERVE = true }, -1, 0) catch null;
+}
+
+/// Make reserved memory usable (pages: page-aligned)
+pub fn commit(mem: []align(std.heap.page_size_min) u8) bool {
+    if (is_windows) return win.VirtualAlloc(mem.ptr, mem.len, win.MEM_COMMIT, win.PAGE_READWRITE) != null;
+    return true; // mapped already, committed when touched
+}
+
+/// Give the memory back to the system (the range stays reserved)
+pub fn decommit(mem: []align(std.heap.page_size_min) u8) void {
+    if (is_windows) {
+        _ = win.VirtualFree(mem.ptr, mem.len, win.MEM_DECOMMIT);
+        return;
+    }
+    std.posix.madvise(mem.ptr, mem.len, std.posix.MADV.DONTNEED) catch {};
+}
+
 // --- local time zone (TZif files and POSIX TZ rules) ----------------------------------
 
 const Rule = struct {
@@ -308,6 +352,7 @@ const Zone = struct {
 };
 
 var zone: ?Zone = null;
+var zone_lock: std.Io.Mutex = .init;
 
 fn be32(b: []const u8) i64 {
     return @as(i32, @bitCast(std.mem.readInt(u32, b[0..4], .big)));
@@ -546,9 +591,13 @@ fn loadZone() Zone {
 
 /// The local time zone's offset from UTC in seconds at t (seconds since the epoch)
 pub fn localOffset(t: i64) i64 {
-    if (is_windows) return 0;
-    if (zone == null) zone = loadZone();
-    const z = zone.?;
+    if (is_windows) return w32.localOffset(t);
+    const z = blk: {
+        zone_lock.lockUncancelable(io);
+        defer zone_lock.unlock(io);
+        if (zone == null) zone = loadZone();
+        break :blk zone.?;
+    };
     if (z.times.len == 0 or t >= z.times[z.times.len - 1]) {
         if (z.rule) |r| return ruleOffset(r, t);
         if (z.times.len > 0) return z.offs[z.idx[z.times.len - 1]];
@@ -636,12 +685,12 @@ pub fn unlockFile(f: File) void {
 // --- processes ------------------------------------------------------------------------
 
 pub fn pid() i64 {
-    if (is_windows) return 0;
+    if (is_windows) return w32.pid();
     return std.c.getpid();
 }
 
 pub fn parentPid() ?i64 {
-    if (is_windows) return null;
+    if (is_windows) return w32.parentPid();
     return std.c.getppid();
 }
 
@@ -704,7 +753,12 @@ fn decodeStatus(status: c_int) i64 {
 /// The exit code if the process has ended (non-blocking)
 pub fn procPoll(p: *Proc) ?i64 {
     if (p.done) return p.code;
-    if (is_windows) return null;
+    if (is_windows) {
+        const c = w32.procPoll(p.child.id.?) orelse return null;
+        p.done = true;
+        p.code = c;
+        return c;
+    }
     var status: c_int = 0;
     const r = std.c.waitpid(p.child.id.?, &status, 1); // WNOHANG
     if (r == p.child.id.?) {
@@ -722,6 +776,14 @@ pub fn procPoll(p: *Proc) ?i64 {
 /// Wait for the process (at most timeout_ms); its exit code, or null on timeout
 pub fn procWait(p: *Proc, timeout_ms: ?u64) ?i64 {
     if (p.done) return p.code;
+    if (is_windows) {
+        blockingBegin();
+        defer blockingEnd();
+        const c = w32.procWait(p.child.id.?, timeout_ms) orelse return null;
+        p.done = true;
+        p.code = c;
+        return c;
+    }
     if (timeout_ms == null and !is_windows) {
         var status: c_int = 0;
         blockingBegin();
@@ -745,7 +807,7 @@ pub fn procWait(p: *Proc, timeout_ms: ?u64) ?i64 {
 }
 
 pub fn procId(p: *Proc) i64 {
-    if (is_windows) return 0;
+    if (is_windows) return if (p.child.id) |h| w32.procId(h) else 0;
     return p.child.id orelse 0;
 }
 
@@ -780,7 +842,7 @@ pub fn capture(s0: Spawn, stdin_text: ?[]const u8) ?Captured {
 
 /// Send SIGTERM (or SIGKILL when forced) to pid; false if it does not exist
 pub fn signalProcess(target: i64, force: bool) bool {
-    if (is_windows) return false;
+    if (is_windows) return w32.terminate(target);
     return std.c.kill(@intCast(target), if (force) .KILL else .TERM) == 0;
 }
 
@@ -812,6 +874,8 @@ fn descendants(root: i64, out: *std.ArrayList(i64)) void {
 
 /// The process ids (Linux: /proc)
 pub fn listProcesses() []i64 {
+    if (is_windows) return w32.listProcesses();
+    if (is_macos) return mac.listProcesses();
     var list: std.ArrayList(i64) = .empty;
     const entries = listDirectory("/proc") orelse return list.items;
     for (entries) |e| {
@@ -840,6 +904,8 @@ fn statField(fields: []const u8, n: usize) ?[]const u8 {
 }
 
 pub fn procParent(p: i64) ?i64 {
+    if (is_windows) return w32.procParent(p);
+    if (is_macos) return mac.procParent(p);
     const fields = procStatFields(p) orelse return null;
     return std.fmt.parseInt(i64, statField(fields, 2) orelse return null, 10) catch null;
 }
@@ -862,7 +928,14 @@ fn bootTime() ?i64 {
 }
 
 pub fn procInfo(p: i64) ?ProcInfo {
-    if (is_windows) return null;
+    if (is_windows) {
+        const i = w32.procInfo(p) orelse return null;
+        return .{ .pid = p, .ppid = i.ppid, .command = i.path orelse i.exe, .cmdline = i.exe, .user = null, .start_ms = i.start_ms, .cpu_s = i.cpu_s };
+    }
+    if (is_macos) {
+        const i = mac.procInfo(p) orelse return null;
+        return .{ .pid = p, .ppid = i.ppid, .command = i.path orelse i.name, .cmdline = i.path orelse i.name, .user = i.user, .start_ms = i.start_ms, .cpu_s = i.cpu_s };
+    }
     const fields = procStatFields(p) orelse return null;
     var info = ProcInfo{ .pid = p, .ppid = null, .command = null, .cmdline = null, .user = null, .start_ms = null, .cpu_s = null };
     info.ppid = std.fmt.parseInt(i64, statField(fields, 2) orelse "", 10) catch null;
@@ -934,7 +1007,7 @@ pub fn hostName() ?[]const u8 {
 }
 
 pub fn osRelease() []const u8 {
-    if (is_windows) return "";
+    if (is_windows) return w32.osRelease();
     var u: std.c.utsname = undefined;
     if (std.c.uname(&u) != 0) return "";
     const r: []const u8 = std.mem.sliceTo(&u.release, 0);
@@ -942,7 +1015,8 @@ pub fn osRelease() []const u8 {
 }
 
 pub fn userName() []const u8 {
-    if (!is_windows) if (userNameOf(std.c.getuid())) |n| return n;
+    if (is_macos) if (mac.userName(std.c.getuid())) |n| return n;
+    if (!is_windows and !is_macos) if (userNameOf(std.c.getuid())) |n| return n;
     return getEnv("USER") orelse getEnv("USERNAME") orelse "?";
 }
 
@@ -975,13 +1049,13 @@ pub fn atExit(h: *const fn () void) void {
 extern "c" fn ioctl(fd: c_int, request: c_ulong, ...) c_int;
 
 pub fn isTerminal(fd: c_int) bool {
-    if (is_windows) return false;
+    if (is_windows) return w32.isTerminal(fd);
     return std.c.isatty(fd) == 1;
 }
 
 /// (columns, rows) of the terminal on standard output (or /dev/tty)
 pub fn terminalSize() ?[2]u16 {
-    if (is_windows) return null;
+    if (is_windows) return w32.terminalSize();
     var ws: std.posix.winsize = undefined;
     for ([_]c_int{ 1, 0, 2 }) |fd| {
         if (ioctl(fd, std.posix.T.IOCGWINSZ, &ws) == 0 and ws.col > 0 and ws.row > 0) return .{ ws.col, ws.row };
@@ -1007,7 +1081,11 @@ fn currentTermios() ?std.posix.termios {
 
 /// Raw mode (stty raw -echo -isig) or back to the saved settings
 pub fn terminalRaw(enable: bool) bool {
-    if (is_windows or !isTerminal(0)) return false;
+    if (is_windows) {
+        atExit(&w32.restoreConsole);
+        return w32.terminalRaw(enable);
+    }
+    if (!isTerminal(0)) return false;
     var tio = currentTermios() orelse return false;
     if (!enable) {
         restoreTermios();
@@ -1036,7 +1114,11 @@ pub fn terminalRaw(enable: bool) bool {
 }
 
 pub fn terminalEcho(enable: bool) bool {
-    if (is_windows or !isTerminal(0)) return false;
+    if (is_windows) {
+        atExit(&w32.restoreConsole);
+        return w32.terminalEcho(enable);
+    }
+    if (!isTerminal(0)) return false;
     var tio = currentTermios() orelse return false;
     tio.lflag.ECHO = enable;
     return std.c.tcsetattr(0, .FLUSH, &tio) == 0;
@@ -1047,6 +1129,10 @@ pub fn readByte() ?u8 {
     var b: [1]u8 = undefined;
     blockingBegin();
     defer blockingEnd();
+    if (is_windows) {
+        const n = std.Io.File.stdin().readStreaming(io, &.{&b}) catch return null;
+        return if (n == 1) b[0] else null;
+    }
     while (true) {
         const n = std.c.read(0, &b, 1);
         if (n == 1) return b[0];
@@ -1057,7 +1143,11 @@ pub fn readByte() ?u8 {
 
 /// Whether a byte can be read from standard input within timeout_ms
 pub fn byteReady(timeout_ms: i64) bool {
-    if (is_windows) return false;
+    if (is_windows) {
+        blockingBegin();
+        defer blockingEnd();
+        return w32.byteReady(timeout_ms);
+    }
     var fds = [_]std.c.pollfd{.{ .fd = 0, .events = std.c.POLL.IN, .revents = 0 }};
     blockingBegin();
     defer blockingEnd();
@@ -1073,7 +1163,7 @@ fn onResize(_: std.posix.SIG) callconv(.c) void {
 
 /// The number of SIGWINCH signals so far (installing the handler first)
 pub fn resizeCount() ?i64 {
-    if (is_windows) return null;
+    if (is_windows) return w32.resizeCount();
     if (!resize_installed) {
         const act = std.posix.Sigaction{
             .handler = .{ .handler = &onResize },
@@ -1096,7 +1186,7 @@ fn onShutdown(sig: std.posix.SIG) callconv(.c) void {
 /// The SIGINT or SIGTERM received (0 if none so far), installing the
 /// handlers first; without SA_RESTART, so that a waiting poll returns
 pub fn shutdownSignal() i64 {
-    if (is_windows) return 0;
+    if (is_windows) return w32.shutdownSignal();
     if (!shutdown_installed) {
         const act = std.posix.Sigaction{
             .handler = .{ .handler = &onShutdown },
