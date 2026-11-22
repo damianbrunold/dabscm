@@ -12,7 +12,11 @@
           make-eval-module
           expand-eval
           take-new-modules!
-          installed-glob?)
+          installed-glob?
+          used-primitives
+          program-binding
+          macroexpand-datum
+          user-library-exports)
   (import (scheme base)
           (scheme char)
           (scheme cxr)
@@ -93,6 +97,15 @@
     (define current #f)             ; the module being expanded
 
     (define (missing-primitives) missing)
+
+    ;; the primitives the program refers to
+    (define used '())
+    (define (used-primitives) used)
+
+    ;; the program's module (its scope is in the state, for bound? and
+    ;; macroexpand at run time)
+    (define program-module #f)
+    (define program-scope #f)
 
     (define (new-module name)
       (let ((m (%make-module name (fresh-scope) '() '() '())))
@@ -247,6 +260,7 @@
              (name (if (string? a) (string->symbol a) a)))
         (unless (memq name primitives)
           (unless (memq name missing) (set! missing (cons name missing))))
+        (unless (memq name used) (set! used (cons name used)))
         `(primref ,name)))
 
     ;; Bind identifiers to new local variables in a fresh scope
@@ -675,8 +689,29 @@
         (set! current saved)
         m))
 
+    ;; library name -> its file (#f: defined in a program or library body)
+    (define library-files '())
+
+    ;; The libraries that are not files in lib-dir (defined in the program
+    ;; or found elsewhere), for %module-exports at run time: a list of
+    ;; (name (sym . kind) ...), kind syntax or unknown
+    (define (user-library-exports lib-dir)
+      (filter-map
+       (lambda (entry)
+         (let ((name (car entry)) (file (and (cdr entry) (absolute-path (cdr entry)))))
+           (and (not (and file (>= (string-length file) (string-length lib-dir))
+                          (string=? (substring file 0 (string-length lib-dir)) lib-dir)))
+                (cond ((assoc name modules)
+                       => (lambda (e)
+                            (cons name
+                                  (map (lambda (x) (cons (car x) (if (eq? (car (cdr x)) 'macro) 'syntax 'unknown)))
+                                       (module-exports (cdr e))))))
+                      (else #f)))))
+       (reverse library-files)))
+
     ;; (define-library name decl ...) as read from file
     (define (define-library-file! form file)
+      (set! library-files (cons (cons (cadr form) file) library-files))
       (let* ((name (cadr form))
              (m (new-module name)))
         (set! current m)
@@ -847,7 +882,8 @@
                                (map (lambda (e) (list (car e) (glob-id (cdr e)))) (module-globals m)))))
                      (reverse modules))))
           (list 'state (scope-counter-value) features search-path
-                (list->vector (reverse globs)) (list->vector (reverse bindings)) entries mods))))
+                (list->vector (reverse globs)) (list->vector (reverse bindings)) entries mods
+                (and program-module (module-scope program-module))))))
 
     (define (sort-by-name entries)
       (list-sort (lambda (a b) (string<? (symbol->string (car a)) (symbol->string (car b)))) entries))
@@ -893,7 +929,58 @@
                                            '())))
                       (set! modules (cons (cons (car md) m) modules))
                       (set! scope->module (cons (cons (cadr md) m) scope->module))))
-                  (list-ref st 7))))
+                  (list-ref st 7))
+        (set! program-scope (list-ref st 8))))
+
+    ;; The binding of the name sym in the program, or #f
+    (define (program-binding sym)
+      (and program-scope (resolve (make-ident sym (list program-scope)))))
+
+    ;; macroexpand: the datum x with its macros expanded, in the program's
+    ;; scope, as plain data (core forms stay; binding names are not
+    ;; expanded)
+    (define (macroexpand-datum x)
+      (define (mx stx)
+        (if (and (pair? stx) (ident? (car stx)))
+            (let ((b (resolve (car stx))))
+              (cond ((and b (eq? (car b) 'macro)) (mx (expand-macro (cdr b) stx #t)))
+                    ((and b (eq? (car b) 'core)) (mx-core (cdr b) stx))
+                    (else (map-proper mx stx))))
+            (if (pair? stx) (map-proper mx stx) stx)))
+      (define (mx-body forms) (map-proper mx forms))
+      (define (mx-bindings bs)
+        (map-proper (lambda (b) (if (and (pair? b) (pair? (cdr b))) (cons (car b) (mx-body (cdr b))) b)) bs))
+      (define (mx-core name stx)
+        (case name
+          ((quote quasiquote) stx)
+          ((lambda) (if (pair? (cdr stx)) (cons* (car stx) (cadr stx) (mx-body (cddr stx))) stx))
+          ((define)
+           (if (and (pair? (cdr stx)) (pair? (cadr stx)))
+               (cons* (car stx) (cadr stx) (mx-body (cddr stx)))
+               (cons* (car stx) (if (pair? (cdr stx)) (cadr stx) '()) (if (pair? (cdr stx)) (mx-body (cddr stx)) '()))))
+          ((set!) (if (and (pair? (cdr stx)) (pair? (cddr stx))) (list (car stx) (cadr stx) (mx (caddr stx))) stx))
+          ((let let* letrec letrec*)
+           (cond ((and (pair? (cdr stx)) (ident? (cadr stx)) (pair? (cddr stx))) ; named let
+                  (cons* (car stx) (cadr stx) (mx-bindings (caddr stx)) (mx-body (cdddr stx))))
+                 ((pair? (cdr stx)) (cons* (car stx) (mx-bindings (cadr stx)) (mx-body (cddr stx))))
+                 (else stx)))
+          ;; as the JVM implementation's expander: (if c a) gets the
+          ;; unspecified value as its else, (begin x) is x
+          ((if)
+           (let ((parts (mx-body (cdr stx))))
+             (if (and (list? parts) (= (length parts) 2))
+                 (cons (car stx) (append parts (list (if #f #f))))
+                 (cons (car stx) parts))))
+          ((begin)
+           (if (and (pair? (cdr stx)) (null? (cddr stx)))
+               (mx (cadr stx))
+               (cons (car stx) (mx-body (cdr stx)))))
+          (else (cons (car stx) (mx-body (cdr stx))))))
+      (strip (mx (wrap x (list program-scope)))))
+
+    (define (map-proper f l)
+      (cond ((pair? l) (cons (f (car l)) (map-proper f (cdr l))))
+            (else l)))
 
     ;; the globals of the compiled program (which have its cells)
     (define installed-globs (make-hash-table eq?))
@@ -901,8 +988,10 @@
 
     ;; A module for eval: the environment of the import sets specs, named
     ;; (in messages) after the first, as in the JVM implementation
-    (define (make-eval-module specs)
-      (let ((m (new-module (if (and (pair? specs) (pair? (car specs))) (car specs) '(eval)))))
+    (define (make-eval-module specs . name)
+      (let ((m (new-module (cond ((pair? name) (car name))
+                                 ((and (pair? specs) (pair? (car specs))) (car specs))
+                                 (else 'program)))))
         (set! current m)
         (for-each import-set! specs)
         m))
@@ -919,7 +1008,9 @@
         (set! completed '())
         (map (lambda (m) (cons (module-name m) `(seq ,@(reverse (module-body m)) ,unspecified))) new)))
 
-    (define (expand-program file paths feature-list prims core-file)
+    ;; extra-forms: forms the program gets before its own (the driver's
+    ;; implicit import of (scm native eval))
+    (define (expand-program file paths feature-list prims core-file . extra-forms)
       ;; a fresh library registry per program: the modules of an earlier
       ;; program (in the same process) must not end up in this one
       (set! modules '())
@@ -928,16 +1019,20 @@
       (set! all-globs '())
       (set! loading '())
       (set! missing '())
+      (set! used '())
+      (set! library-files '())
       (set! search-path paths)
       (set! features feature-list)
       (set! primitives prims)
       (set! core-library-file core-file)
       (let* ((m (new-module 'program))
              (_ (set! current m))
+             (_ (set! program-module m))
              (forms (append-map (lambda (f)
                                   (set! current m)
                                   (toplevel (wrap f (list (module-scope m)))))
-                                (with-script-globals (read-file file)))))
+                                (append (if (pair? extra-forms) (car extra-forms) '())
+                                        (with-script-globals (read-file file))))))
         ;; the modules in initialization order: (name . body), the program last
         (values (append (map (lambda (m) (cons (module-name m) `(seq ,@(reverse (module-body m)) ,unspecified)))
                              (reverse completed))

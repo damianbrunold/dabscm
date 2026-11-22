@@ -41,10 +41,14 @@
     (define environments '())
 
     (define (environment . specs)
+      (named-module-environment specs #f))
+
+    ;; name: the module's name in messages, or #f for the first spec's
+    (define (named-module-environment specs name)
       (ensure-installed!)
       (cond ((assoc specs environments) => cdr)
             (else
-             (let ((m (make-eval-module specs)))
+             (let ((m (if name (make-eval-module specs name) (make-eval-module specs))))
                (run-new-modules!)
                (let ((e (make-eval-environment m)))
                  (set! environments (cons (cons specs e) environments))
@@ -73,7 +77,7 @@
       (cond ((assoc name named-environments) => cdr)
             (else
              (let ((e (if (member name '((user main) (user program)))
-                          (apply environment repl-libraries)
+                          (named-module-environment repl-libraries name)
                           (environment name))))
                (set! named-environments (cons (cons name e) named-environments))
                e))))
@@ -94,6 +98,27 @@
     (define (run-new-modules!)
       (for-each (lambda (m) ((compile (cdr m) '()) '()))
                 (take-new-modules!)))
+
+    ;; --- primitives that need the expander ---------------------------------
+    ;; The runtime's macroexpand and bound? call this (the special
+    ;; eval_hook) with their name and arguments.
+    (define (%eval-hook op . args)
+      (ensure-installed!)
+      (case op
+        ((macroexpand) (macroexpand-datum (car args)))
+        ;; bound in the program (its definitions and imports)
+        ((bound?)
+         (let ((b (program-binding (car args))))
+           (cond ((not b) #f)
+                 ((eq? (car b) 'global) (global-bound? (cdr b)))
+                 (else #t))))
+        (else (error "primitive not implemented in dabscm native:" op))))
+
+    (define (global-bound? g)
+      (let ((c (glob-cell g)))
+        (if (car c)
+            (guard (e (#t #f)) ((%primitive "%native-global-ref") (car c)) #t)
+            (not (eq? (vector-ref (cdr c) 0) unbound)))))
 
     ;; --- globals -----------------------------------------------------------
 
@@ -162,13 +187,22 @@
            (let ((x (compile (caddr e) cenv)))
              (lambda (r) (vector-set! (frame-at r d) i (x r))))))
         ((gref) (global-getter (cadr e)))
-        ((gset gdef)
+        ((gset)
          (let ((set (global-setter (cadr e)))
                (x (compile (caddr e) cenv)))
            (lambda (r) (set (x r)))))
+        ;; a definition's value is its name (as the JVM implementation's)
+        ((gdef)
+         (let ((set (global-setter (cadr e)))
+               (x (compile (caddr e) cenv))
+               (name (glob-sym (cadr e))))
+           (lambda (r) (set (x r)) name)))
         ((primref)
-         (let ((p ((%primitive "%primitive-ref") (cadr e))))
-           (unless p (error "eval: primitive not implemented in dabscm native" (cadr e)))
+         ;; as in compiled code, a primitive the runtime does not implement is
+         ;; an error when it is called
+         (let* ((name (cadr e))
+                (p (or ((%primitive "%primitive-ref") name)
+                       (lambda args (error "primitive not implemented in dabscm native:" name)))))
            (lambda (r) p)))
         ((if)
          (let ((c (compile (cadr e) cenv))

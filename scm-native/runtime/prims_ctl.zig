@@ -438,3 +438,21 @@ fn features(t: *Thread) Err!Word {
 }
 pub const @"%%features-list" = WN("%features-list", features, 0, 0);
 pub const @"%features" = WN("features", features, 0, 0);
+
+/// (%set-command-line! list-of-strings): what command-line returns from now
+/// on (the native scm tool runs a script with the script first, as the JVM
+/// implementation)
+fn setCommandLine(t: *Thread) Err!Word {
+    var items: std.ArrayList([:0]const u8) = .empty;
+    var l = arg(t, 0);
+    while (l != rt.NIL) {
+        if (!rt.isPair(l)) return raise(t, "%set-command-line!: not a list", &.{arg(t, 0)});
+        const s = rt.car(l);
+        if (!data.isString(s)) return raise(t, "%set-command-line!: not a string", &.{s});
+        items.append(std.heap.c_allocator, std.heap.c_allocator.dupeSentinel(u8, data.toUtf8(s), 0) catch rt.oom()) catch rt.oom();
+        l = rt.cdr(l);
+    }
+    rt.command_line = items.items;
+    return rt.UNSPEC;
+}
+pub const @"%%set-command-line!" = WN("%set-command-line!", setCommandLine, 1, 1);

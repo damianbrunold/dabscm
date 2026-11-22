@@ -34,7 +34,25 @@ fn findLibrary(w: Word) ?*const lib.Library {
         b.append(pa, ')') catch rt.oom();
     } else printer.print(&b, w, true);
     for (&lib.libraries) |*l| if (std.mem.eql(u8, l.name, b.items)) return l;
+    for (user_libraries.items) |l| if (std.mem.eql(u8, l.name, b.items)) return l;
     return null;
+}
+
+/// The program's libraries that library_exports.zig does not have (defined
+/// in the program, or not in scm-lib), registered at startup
+var user_libraries: std.ArrayList(*lib.Library) = .empty;
+
+/// spec: the exports, each a kind letter (s syntax, u unknown) and the
+/// name, separated by spaces
+pub fn registerLibrary(name: []const u8, spec: []const u8) void {
+    var exports: std.ArrayList(lib.Export) = .empty;
+    var it = std.mem.tokenizeScalar(u8, spec, ' ');
+    while (it.next()) |e| {
+        exports.append(pa, .{ .name = e[1..], .kind = if (e[0] == 's') .syntax else .unknown, .id = 0 }) catch rt.oom();
+    }
+    const l = pa.create(lib.Library) catch rt.oom();
+    l.* = .{ .name = name, .exports = exports.items };
+    user_libraries.append(pa, l) catch rt.oom();
 }
 
 fn libraryArg(t: *Thread, who: []const u8) Err!*const lib.Library {
@@ -232,3 +250,25 @@ fn primitiveRef(t: *Thread) Err!Word {
     return rt.FALSE;
 }
 pub const @"%%primitive-ref" = WN("%primitive-ref", primitiveRef, 1, 1);
+
+// --- primitives over the expander at run time ------------------------------------
+
+/// A primitive that (scm native eval) implements: calls its %eval-hook with
+/// the primitive's name and the arguments. The driver links (scm native
+/// eval) into a program that uses one.
+fn evalHook(comptime op: []const u8) type {
+    return struct {
+        fn code(t: *Thread) callconv(.c) void {
+            const h = t.special(.eval_hook) orelse
+                return @call(.always_tail, rt.fail(t, "primitive not implemented in dabscm native:", &.{data.intern(op)}), .{t});
+            t.ensureArgs(t.argc + 1);
+            var i = t.argc;
+            while (i > 0) : (i -= 1) t.args[i] = t.args[i - 1];
+            t.args[0] = data.intern(op);
+            t.argc += 1;
+            return @call(.always_tail, rt.enter(t, h), .{t});
+        }
+    };
+}
+pub const @"%macroexpand": rt.Code = &evalHook("macroexpand").code;
+pub const @"%bound?": rt.Code = &evalHook("bound?").code;

@@ -150,7 +150,9 @@ pub inline fn isPrimitive(w: Word) bool {
 // Thread state
 
 /// Globals the runtime itself uses; the program tells where they are.
-pub const Special = enum(u8) { raise, input_port, output_port, error_port };
+/// eval_hook: (scm native eval)'s %eval-hook, for primitives that need the
+/// expander at run time (macroexpand, bound?)
+pub const Special = enum(u8) { raise, input_port, output_port, error_port, eval_hook };
 
 pub const Thread = extern struct {
     args: [*]Word,
@@ -171,7 +173,7 @@ pub const Thread = extern struct {
     /// dynamic-wind winders and exception handlers (lists)
     winders: Word = NIL,
     handlers: Word = NIL,
-    specials: [4]?*Word = .{ null, null, null, null },
+    specials: [5]?*Word = .{ null, null, null, null, null },
     gc_count: u64 = 0,
     heap_target: usize = 0,
     large_words: usize = 0,
@@ -334,6 +336,7 @@ pub const impl = if (@hasDecl(root, "scm_runtime")) root.scm_runtime else struct
     pub extern fn scm_set_doc(code: Code, doc: [*]const u8, len: usize) void;
     pub extern fn scm_set_eval_state(s: [*]const u8, len: usize) void;
     pub extern fn scm_register_global(name: [*]const u8, len: usize, cell: *Word) void;
+    pub extern fn scm_register_library(name: [*]const u8, len: usize, spec: [*]const u8, spec_len: usize) void;
 };
 
 /// Prepare a call of procedure `p` and return its code.
@@ -518,6 +521,10 @@ pub fn setEvalState(comptime s: []const u8) void {
 }
 pub fn registerGlobal(comptime name: []const u8, cell: *Word) void {
     impl.scm_register_global(name.ptr, name.len, cell);
+}
+/// A library of the program that runtime/library_exports.zig does not have
+pub fn registerLibrary(comptime name: []const u8, comptime spec: []const u8) void {
+    impl.scm_register_library(name.ptr, name.len, spec.ptr, spec.len);
 }
 pub fn missingPrimitive(comptime name: []const u8) Word {
     return impl.scm_missing_primitive(name.ptr, name.len);

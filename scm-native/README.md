@@ -256,6 +256,24 @@ program (compiled code calls them directly).
 - As on the JVM, `(environment spec ...)` gives one environment per list of import sets, and
   library names such as `(scheme r5rs)` and `(user main)` are environments too.
 - Programs without eval do not carry any of this.
+- `macroexpand` and `bound?` need the expander at run time: the runtime's primitives call
+  `%eval-hook` of `(scm native eval)` (the special `eval_hook`), and the driver links that
+  library into a program that uses them. `%module-exports` also knows the program's own
+  libraries (defined in it, or not in `scm-lib`), registered at startup.
+
+### scm as a native program
+
+`tools/scm.scm` is `scm` over the native eval:
+
+    scm scm-native/scmc.scm scm-native/tools/scm.scm -o scm-native/build/scm
+
+It is a REPL (line editing and history in `~/.dabscm-history` on a terminal, values written as
+by the JVM's REPL), `scm -e expr`, `scm script.scm arg ...` (the script interpreted, with
+`script-name`, `script-arguments` and `command-line` as on the JVM) and the built-in tools
+`scm fmt`, `scm lint` and `scm new-app`. The common libraries are compiled into it; others
+are loaded from source. `scm lint` over `scm-lib/libraries` this way (interpreting
+`(scm source lint)`) takes 10 s and gives the JVM's findings (JVM 16 s, the compiled
+`tools/lint.scm` 1.3 s).
 
 ## Phase 0 spike (2026-11-21)
 

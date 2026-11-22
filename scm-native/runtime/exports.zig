@@ -105,6 +105,9 @@ pub fn scm_set_eval_state(s: [*]const u8, len: usize) callconv(.c) void {
 pub fn scm_register_global(name: [*]const u8, len: usize, cell: *Word) callconv(.c) void {
     @import("prims_module.zig").registerGlobal(name[0..len], cell);
 }
+pub fn scm_register_library(name: [*]const u8, len: usize, spec: [*]const u8, spec_len: usize) callconv(.c) void {
+    @import("prims_module.zig").registerLibrary(name[0..len], spec[0..spec_len]);
+}
 pub fn scm_remember(obj: Word) callconv(.c) void {
     rt.remember(obj);
 }

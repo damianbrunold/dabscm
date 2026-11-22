@@ -2,7 +2,8 @@
   (export emit-modules
           mangle
           set-program-version!
-          set-eval-state!)
+          set-eval-state!
+          set-user-libraries!)
   (import (scheme base)
           (scheme char)
           (scheme cxr)
@@ -954,11 +955,25 @@
                              "export fn scm_program_specials(t: *Thread) callconv(.c) void {\n"
                              "    const t_ = t;\n    _ = t_;\n")
                        specials
+                       (map (lambda (l)
+                              (cat "    rt.registerLibrary(\"" (zig-escape (datum->string (car l))) "\", \""
+                                   (zig-escape (apply cat (map (lambda (e) (cat (if (eq? (cdr e) 'syntax) "s" "u")
+                                                                                (symbol->string (car e)) " "))
+                                                               (cdr l))))
+                                   "\");\n"))
+                            user-libraries)
                        eval-setup
                        (list "}\n\n")
                        (if eval-state
                            (list "const eval_state = \"" (zig-escape eval-state) "\";\n\n")
                            '())))))
+
+    ;; libraries not in runtime/library_exports.zig: (name (sym . kind) ...)
+    (define user-libraries '())
+    (define (set-user-libraries! l) (set! user-libraries l))
+
+    (define (datum->string d)
+      (let ((out (open-output-string))) (write d out) (get-output-string out)))
 
     ;; the expander state's text for a program that links eval, else #f
     (define eval-state #f)
@@ -972,7 +987,8 @@
       '((((scheme base) raise) raise)
         (((scm core) *input-port*) input_port)
         (((scm core) *output-port*) output_port)
-        (((scm core) *error-port*) error_port)))
+        (((scm core) *error-port*) error_port)
+        (((scm native eval) %eval-hook) eval_hook)))
 
 
     ;; --- strings -----------------------------------------------------------

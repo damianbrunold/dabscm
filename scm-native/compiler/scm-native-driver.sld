@@ -75,6 +75,9 @@
                   (reverse forms)
                   (loop (cons f forms))))))))
 
+    ;; primitives that (scm native eval) implements (runtime/prims_module.zig)
+    (define eval-hook-primitives '(macroexpand bound?))
+
     ;; cond-expand features for a Zig target (#f: the host)
     (define (target-features target)
       (let* ((t (or target "x86_64-linux"))
@@ -109,7 +112,10 @@
       (let ((prims (runtime-primitives runtime-dir)))
         (check-duplicates prims)
         (let-values (((modules globs)
-                      (expand-program file
+                      (let ((expand
+                             (lambda extra
+                               (apply expand-program
+                                      file
                                       (append (list (directory-name (absolute-path file)))
                                               (if (pair? extra-dirs) (car extra-dirs) '())
                                               (list (join-path lib-dir "libraries")
@@ -118,7 +124,15 @@
                                                     "."))
                                       (target-features target)
                                       (map car prims)
-                                      (join-path lib-dir "library.scm"))))
+                                      (join-path lib-dir "library.scm")
+                                      extra))))
+                        (let-values (((modules globs) (expand)))
+                          ;; primitives that need the expander at run time: again,
+                          ;; with (scm native eval) linked
+                          (if (and (any (lambda (p) (memq p (used-primitives))) eval-hook-primitives)
+                                   (not (assoc '(scm native eval) modules)))
+                              (expand '((import (only (scm native eval)))))
+                              (values modules globs))))))
           (unless (null? (missing-primitives))
             (let ((err (current-error-port)))
               (display "scmc: warning: primitives not implemented in dabscm native yet:" err)
@@ -130,6 +144,7 @@
                 (let ((out (open-output-string)))
                   (write (expander-state) out)
                   (get-output-string out))))
+          (set-user-libraries! (user-library-exports (absolute-path (join-path lib-dir "libraries"))))
           (set-leaf-primitives! (filter-map (lambda (p) (and (eq? (caddr p) 'leaf) (car p))) prims))
           (let ((modules (map (lambda (m)
                                 (let ((body (anf (cdr m))))
