@@ -388,13 +388,13 @@
             ((vector? x)
              `(call (primref list->vector) ,(expand-qq (vector->list x) depth)))
             ((not (pair? x)) `(const ,(strip x)))
-            ((core-or-name? (car x) 'unquote)
+            ((qq-form? x 'unquote)
              (if (= depth 1)
                  (expand (cadr x))
                  `(call (primref list) (const unquote) ,(expand-qq (cadr x) (- depth 1)))))
-            ((core-or-name? (car x) 'quasiquote)
+            ((qq-form? x 'quasiquote)
              `(call (primref list) (const quasiquote) ,(expand-qq (cadr x) (+ depth 1))))
-            ((and (pair? (car x)) (core-or-name? (caar x) 'unquote-splicing) (= depth 1))
+            ((and (qq-form? (car x) 'unquote-splicing) (= depth 1))
              (let ((rest (expand-qq (cdr x) depth)))
                (if (equal? rest '(const ()))
                    (expand (cadar x))
@@ -407,6 +407,10 @@
                    `(call (primref cons) ,a ,d))))))
 
     (define (core-or-name? x name) (and (ident? x) (eq? (ident-sym x) name)))
+
+    ;; (name datum): not the tail of a list such as (const unquote)
+    (define (qq-form? x name)
+      (and (pair? x) (core-or-name? (car x) name) (pair? (cdr x)) (null? (cddr x))))
 
     ;; --- cond-expand ---------------------------------------------------------
 

@@ -225,6 +225,18 @@ Differences to the JVM implementation:
 - Not yet: RSA, threads, sockets and the network libraries (Phases 6 and 7), `eval` and
   `environment` (Phase 5).
 
+## Phase 5: self-hosting
+
+`scmc` compiles itself:
+
+    scm scm-native/scmc.scm scm-native/scmc.scm -I scm-native/compiler -o scm-native/build/scmc
+
+The native `scmc` (same options; `-I dir` adds a library directory) finds `scm-native` from
+`SCM_NATIVE_DIR`, else as the parent of its executable's directory. It emits the same Zig as
+`scmc` on the JVM and compiles a program in about a second when the objects are cached
+(about a minute on the JVM). The driver builds objects with `start-program`, one process per
+core, since native programs have no threads yet.
+
 ## Phase 0 spike (2026-11-21)
 
 `spike/rt.zig` is a minimal runtime. `spike/bench.zig` holds hand-written code in the shape the

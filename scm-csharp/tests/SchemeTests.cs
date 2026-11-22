@@ -242,12 +242,46 @@ public class SchemeTests
             .TrimEnd('\n');
     }
 
+    // As the repl's Main for a script
+    static int RunScript(string[] args)
+    {
+        try
+        {
+            Scheme.CommandLineArgs = args;
+            var scheme = Scheme.ForProgram();
+            object arguments = Value.NIL;
+            for (int i = args.Length - 1; i >= 1; i--)
+                arguments = new Pair(args[i].ToCharArray(), arguments);
+            scheme.Bind("script-name", args[0].ToCharArray());
+            scheme.Bind("script-arguments", arguments);
+            var result = scheme.EvalFile(args[0]);
+            if (Scheme.PendingExitCode != 0) return Scheme.PendingExitCode;
+            if (Value.IsInteger(result)) return (int) Value.AsInteger(result);
+            return 0;
+        }
+        catch (SchemeError e)
+        {
+            e.PrintStackTrace();
+            return 1;
+        }
+        finally
+        {
+            Console.Out.Flush();
+        }
+    }
+
     // ----------------------------------------------------------------
     // Main: run categories in order, with command-line filtering
     // ----------------------------------------------------------------
 
     public static int Main(string[] args)
     {
+        // Started with a script, the test runner runs it as scm does: tests
+        // start child programs with (sys-scm-command), which in this process
+        // is the test runner (the JVM tests' class path holds scheme.Scheme)
+        if (args.Length > 0 && args[0].EndsWith(".scm") && File.Exists(args[0]))
+            return RunScript(args);
+
         var assembly = Assembly.GetExecutingAssembly();
         string[] allResources = assembly.GetManifestResourceNames();
         bool success = true;

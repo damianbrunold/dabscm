@@ -103,15 +103,16 @@
 
     ;; The Zig modules for the program in file: a list of (symbol . source),
     ;; the libraries in initialization order and the program last.
-    ;; lib-dir: the shared Scheme libraries (scm-lib).
-    (define (compile-to-zig file runtime-dir lib-dir target)
+    ;; lib-dir: the shared Scheme libraries (scm-lib); extra-dirs: more
+    ;; directories to search for libraries (scmc's -I).
+    (define (compile-to-zig file runtime-dir lib-dir target . extra-dirs)
       (let ((prims (runtime-primitives runtime-dir)))
         (check-duplicates prims)
         (let-values (((modules globs)
                       (expand-program file
-                                      (list (directory-name (absolute-path file))
-                                            (join-path lib-dir "libraries")
-                                            ".")
+                                      (append (list (directory-name (absolute-path file)))
+                                              (if (pair? extra-dirs) (car extra-dirs) '())
+                                              (list (join-path lib-dir "libraries") "."))
                                       (target-features target)
                                       (map car prims)
                                       (join-path lib-dir "library.scm"))))
@@ -132,15 +133,28 @@
                   (unless (eof-object? v) (set-program-version! v)))))
             (emit-modules modules prims)))))
 
-    ;; run-parallel over at most as many jobs at a time as there are cores
-    ;; (each Zig compilation of a large module takes a lot of memory)
-    (define (run-batched fn jobs)
+    ;; Run the commands of jobs ((output command) ...), at most as many at a
+    ;; time as there are cores (each Zig compilation of a large module takes
+    ;; a lot of memory). Processes, not threads (which native programs do
+    ;; not have yet): each writes its output to output.log. The results are
+    ;; as run-program/capture's: (exit-code output "").
+    (define (run-batched jobs)
       (let ((n (max 1 (sys-num-cpu-cores))))
         (let loop ((jobs jobs) (acc '()))
           (if (null? jobs)
               (reverse acc)
               (let* ((k (min n (length jobs)))
-                     (results (run-parallel fn (list-head jobs k))))
+                     (batch (list-head jobs k))
+                     (procs (map (lambda (job)
+                                   (let ((log (string-append (car job) ".log")))
+                                     (cons log (start-program (cadr job) (list (list 'log-file log))))))
+                                 batch))
+                     (results (map (lambda (p)
+                                     (let* ((code (process-wait (cdr p)))
+                                            (out (if (file-exists? (car p)) (file->string (car p)) "")))
+                                       (when (file-exists? (car p)) (delete-file (car p)))
+                                       (list code out "")))
+                                   procs)))
                 (loop (list-tail jobs k) (append (reverse results) acc)))))))
 
     (define (list-head l k) (if (= k 0) '() (cons (car l) (list-head (cdr l) (- k 1)))))
@@ -151,7 +165,8 @@
 
     ;; Compile the program in file to the executable output.
     ;; options: alist with 'optimize ("ReleaseFast", "ReleaseSafe", "Debug"),
-    ;; 'target (a Zig target triple or #f), 'build-dir, 'zig.
+    ;; 'target (a Zig target triple or #f), 'build-dir, 'zig, 'search-dirs
+    ;; (a list of library directories).
     (define (compile-program file output native-dir options)
       (define (opt key default)
         (cond ((assq key options) => cdr)
@@ -170,7 +185,8 @@
         (unless (directory-exists? build-dir) (make-directory build-dir))
         (unless (directory-exists? cfg-dir) (make-directory cfg-dir))
         (let* ((sources (compile-to-zig file runtime-dir
-                                         (join-path (directory-name native-dir) "scm-lib") target))
+                                         (join-path (directory-name native-dir) "scm-lib") target
+                                         (opt 'search-dirs '())))
                (objects-dir (join-path build-dir "objects"))
                (flags (apply string-append (map (lambda (f) (string-append f " ")) common)))
                (abi-text (file->string (join-path runtime-dir "abi.zig")))
@@ -207,8 +223,7 @@
           (unless (directory-exists? objects-dir) (make-directory objects-dir))
           ;; build the missing objects in parallel, then link
           (for-each (lambda (r) (check-run "zig build-obj" r))
-                    (run-batched (lambda (job) (run-program/capture (cadr job)))
-                                 (filter (lambda (job) (not (file-exists? (car job)))) jobs)))
+                    (run-batched (filter (lambda (job) (not (file-exists? (car job)))) jobs)))
           (check-run "zig build-exe"
                      (run-program/capture `(,zig "build-exe" ,@common "-lc"
                                                  ,@(map car jobs)
