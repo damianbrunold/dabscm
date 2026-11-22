@@ -423,7 +423,7 @@ fn words(n: Node) usize {
     };
 }
 
-var label_values: std.AutoHashMapUnmanaged(u64, Word) = .empty;
+threadlocal var label_values: std.AutoHashMapUnmanaged(u64, Word) = .empty;
 
 /// Replace the placeholders in w (a tree before patching) by the labels
 fn patch(w: Word) Word {

@@ -26,6 +26,7 @@ const prim_modules = .{
     @import("prims_image.zig"),
     @import("prims_module.zig"),
     @import("prims_net.zig"),
+    @import("prims_thread.zig"),
 };
 
 comptime {

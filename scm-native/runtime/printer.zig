@@ -70,7 +70,7 @@ const Labels = struct {
     }
 };
 
-var labels: ?*Labels = null;
+threadlocal var labels: ?*Labels = null;
 
 fn isLabeled(x: Word) bool {
     const l = labels orelse return false;
@@ -273,6 +273,7 @@ fn writeSymbol(buf: *std.ArrayList(u8), name: []const u8) void {
 /// A record: #<record>, or its type's print form (%set-record-printer!):
 /// strings displayed as they are, field indices as the field's display
 fn printRecord(buf: *std.ArrayList(u8), w: Word) void {
+    if (@import("prims_thread.zig").printForm(buf, w)) return;
     const slots = data.recordSlots(w);
     var l = rt.record_printers;
     while (rt.isPair(l)) : (l = rt.cdr(l)) {

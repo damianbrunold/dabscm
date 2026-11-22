@@ -92,7 +92,11 @@ pub const @"%error-object-irritants" = WD("error-object-irritants", errorObjectI
 pub const @"%read-error?" = WD("read-error?", readErrorP, 1, 1);
 pub const @"%file-error?" = WD("file-error?", fileErrorP, 1, 1);
 
-// --- parameters: a procedure over a box ----------------------------------------
+// --- parameters: a procedure over a box (the default value) -------------------
+//
+// As the JVM and C# implementations' parameter objects: each thread has its
+// own value once it set one (t.params, an alist (box . value)); until then
+// it sees the default.
 
 fn makeParameter(t: *Thread) Err!Word {
     t.reserve(2 + 3);
@@ -101,13 +105,30 @@ fn makeParameter(t: *Thread) Err!Word {
     c[2] = b;
     return rt.tagPtr(c);
 }
+
+fn paramEntry(t: *Thread, b: Word) ?Word {
+    var l = t.params;
+    while (rt.isPair(l)) : (l = rt.cdr(l)) {
+        if (rt.car(rt.car(l)) == b) return rt.car(l);
+    }
+    return null;
+}
+
 fn parameterCode(t: *Thread) callconv(.c) void {
-    const b = rt.ptr(t.free(0));
     switch (t.argc) {
-        0 => t.val = b[1],
+        0 => {
+            const b = t.free(0);
+            t.val = if (paramEntry(t, b)) |e| rt.cdr(e) else rt.ptr(b)[1];
+        },
         1 => {
-            b[1] = t.args[0];
-            rt.barrier(t, t.free(0), t.args[0]);
+            if (paramEntry(t, t.free(0))) |e| {
+                rt.ptr(e)[2] = t.args[0];
+                rt.barrier(t, e, t.args[0]);
+            } else {
+                t.reserve(6);
+                const e = t.cons(t.free(0), t.args[0]);
+                t.params = t.cons(e, t.params);
+            }
             t.val = rt.UNSPEC;
         },
         else => return @call(.always_tail, rt.arityError(t), .{t}),
@@ -226,13 +247,13 @@ pub const @"%primitive?" = WD("primitive?", primitiveP, 1, 1);
 
 var gensym_counter: u64 = 0;
 fn gensymImpl(t: *Thread) Err!Word {
-    gensym_counter += 1;
+    const n = @atomicRmw(u64, &gensym_counter, .Add, 1, .monotonic) + 1;
     var prefix: []const u8 = "g";
     if (t.argc > 0) {
         const a = arg(t, 0);
         if (data.isSymbol(a)) prefix = data.symbolName(a) else if (data.isString(a)) prefix = data.toUtf8(a);
     }
-    const name = std.fmt.allocPrint(pa, "{s}{d}", .{ prefix, gensym_counter }) catch rt.oom();
+    const name = std.fmt.allocPrint(pa, "{s}{d}", .{ prefix, n }) catch rt.oom();
     return data.intern(name);
 }
 pub const @"%gensym" = WD("gensym", gensymImpl, 0, 1);

@@ -135,7 +135,7 @@ noinline fn cmpSlow(a: Word, b: Word, comptime c: Cmp) ?bool {
 }
 
 /// The thread, for comparisons that allocate exact intermediates
-pub var current_thread: *Thread = undefined;
+pub threadlocal var current_thread: *Thread = undefined;
 
 pub fn isInteger(w: Word) bool {
     if (isFix(w) or tower.isBig(w)) return true;

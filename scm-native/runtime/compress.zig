@@ -12,7 +12,7 @@ pub const Error = error{ OutOfMemory, BadData };
 
 /// The message of the last decompression error, as the JVM implementation
 /// reports it (zlib's words, or GZIPInputStream's)
-pub var last_error: []const u8 = "invalid compressed data";
+pub threadlocal var last_error: []const u8 = "invalid compressed data";
 
 extern fn scm_zdeflate(in: [*]const u8, inlen: usize, level: c_int, raw: c_int, chunk: c_int, finish_first: c_int, out: *?[*]u8, outlen: *usize) c_int;
 extern fn scm_zinflate(in: [*]const u8, inlen: usize, raw: c_int, out: *?[*]u8, outlen: *usize, used: *usize, msg: *[*:0]const u8) c_int;

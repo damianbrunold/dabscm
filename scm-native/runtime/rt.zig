@@ -94,9 +94,23 @@ var static_arena: std.heap.ArenaAllocator = .init(std.heap.c_allocator);
 var static_scan: std.ArrayList([*]Word) = .empty;
 
 pub fn staticAlloc(n: usize, scan: bool) [*]Word {
+    lockHeap();
+    defer unlockHeap();
     const mem = static_arena.allocator().alignedAlloc(Word, .@"8", n) catch oom();
     if (scan) static_scan.append(std.heap.c_allocator, mem.ptr) catch oom();
     return mem.ptr;
+}
+
+/// Guards the shared parts of the heap that threads change outside
+/// collections: the static objects, the large-object space, the
+/// remembered set
+var heap_lock: std.Io.Mutex = .init;
+
+pub fn lockHeap() void {
+    heap_lock.lockUncancelable(os.io);
+}
+pub fn unlockHeap() void {
+    heap_lock.unlock(os.io);
 }
 
 pub fn oom() noreturn {
@@ -107,10 +121,45 @@ pub fn oom() noreturn {
 // Thread state (abi.Thread) and the large-object space
 
 var large: std.ArrayList([*]Word) = .empty;
+var large_words: usize = 0;
 
+// The young space: one reserved range of address space from which every
+// thread's nursery is taken, so that "young" is one range check for all
+// threads (abi.isYoung, the write barrier): a thread may store a pointer
+// into another thread's nursery (through a global, say).
+const young_reserve: usize = 1 << 36; // 64 GB of address space, committed when used
+var young_space: []align(std.heap.page_size_min) u8 = &.{};
+var young_top: usize = 0;
+var young_free: std.ArrayList([]Word) = .empty; // nurseries of ended threads
+
+fn initYoung() void {
+    young_space = std.posix.mmap(null, young_reserve, .{ .READ = true, .WRITE = true }, .{ .TYPE = .PRIVATE, .ANONYMOUS = true, .NORESERVE = true }, -1, 0) catch oom();
+}
+
+/// A nursery of at least n words (under the world lock)
+fn allocNursery(n: usize) []Word {
+    for (young_free.items, 0..) |h, i| if (h.len >= n) {
+        _ = young_free.swapRemove(i);
+        return h;
+    };
+    const bytes = std.mem.alignForward(usize, n * 8, std.heap.page_size_min);
+    if (young_top + bytes > young_space.len) oom();
+    const h: [*]Word = @ptrCast(@alignCast(young_space.ptr + young_top));
+    young_top += bytes;
+    return h[0 .. bytes / 8];
+}
+
+/// Give a nursery back (its memory to the system, its range for reuse)
+fn freeNursery(h: []Word) void {
+    std.posix.madvise(@ptrCast(@alignCast(h.ptr)), h.len * 8, std.posix.MADV.DONTNEED) catch {};
+    young_free.append(std.heap.c_allocator, h) catch oom();
+}
+
+/// A new thread's state (its nursery, stack and argument registers); under
+/// the world lock, or before other threads exist
 pub fn newThread() *Thread {
     const pa = std.heap.c_allocator;
-    const heap = pa.alloc(Word, nursery_words) catch oom();
+    const heap = allocNursery(nursery_words);
     const stack = pa.alloc(Word, 1 << 12) catch oom();
     const args = pa.alloc(Word, 256) catch oom();
     @memset(args, fix(0));
@@ -125,6 +174,8 @@ pub fn newThread() *Thread {
         .heap = heap.ptr,
         .heap_len = heap.len,
         .flo_ptr = nurseryEnd(heap),
+        .young_base = @intFromPtr(young_space.ptr),
+        .young_bytes = young_space.len,
     };
     return t;
 }
@@ -133,12 +184,15 @@ pub fn newThread() *Thread {
 /// allocating it never collects, so it is safe anywhere.
 pub fn allocLarge(t: *Thread, n: usize) [*]Word {
     const mem = std.heap.c_allocator.alloc(Word, n) catch oom();
+    lockHeap();
     large.append(std.heap.c_allocator, mem.ptr) catch oom();
-    t.large_words += n;
+    large_words += n;
     large_since_major += n;
+    const due = large_since_major > @max(old_space.len, nursery_words);
+    if (due) major_requested = true;
+    unlockHeap();
     // a major collection (which sweeps this space) at the next check
-    if (large_since_major > @max(old_space.len, nursery_words)) {
-        major_requested = true;
+    if (due) {
         t.hlimit = t.heap - 1;
         t.gc_requested = 1;
     }
@@ -509,7 +563,7 @@ fn contCode(t: *Thread) callconv(.c) void {
 // stamp; calling the continuation cuts the stack back to the marker and
 // returns through it: no copying.
 
-var escape_stamp: i64 = 0;
+threadlocal var escape_stamp: i64 = 0;
 
 fn escapeMarkerReturn(t: *Thread) callconv(.c) void {
     t.sp -= 2;
@@ -589,12 +643,11 @@ pub var major_count: u64 = 0;
 
 pub const F_REMEMBERED: u8 = 16;
 
-/// Is w an object the collector may move (in the nursery or the old space)?
+/// Is w an object the collector may move (in a nursery or the old space)?
 pub fn isMovable(w: Word) bool {
     if (!isPtr(w)) return false;
     const a = @intFromPtr(ptr(w));
-    const t = num.current_thread;
-    const in_young = a >= @intFromPtr(t.heap) and a < @intFromPtr(t.heap + t.heap_len);
+    const in_young = a -% @intFromPtr(young_space.ptr) < young_space.len;
     const in_old = a >= @intFromPtr(old_space.ptr) and a < @intFromPtr(old_space.ptr + old_space.len);
     return in_young or in_old;
 }
@@ -603,29 +656,218 @@ pub fn isMovable(w: Word) bool {
 pub fn remember(obj: Word) void {
     const q = ptr(obj);
     if (hdrFlags(q[0]) & F_REMEMBERED != 0) return;
+    lockHeap();
+    defer unlockHeap();
+    if (hdrFlags(q[0]) & F_REMEMBERED != 0) return;
     q[0] |= @as(Word, F_REMEMBERED) << 8;
     remembered.append(std.heap.c_allocator, q) catch oom();
 }
 
+// ---------------------------------------------------------------------------
+// Threads and collections. Every thread has its own nursery, stack and
+// registers (abi.Thread); the old space, the large objects, the static
+// objects and the globals are shared. A collection stops the world: the
+// thread that needs one asks every other thread to stop (gc_requested, and
+// a lowered allocation limit for reserve), waits until each has stopped at
+// a safepoint or is in a blocking call (t.safe: it does not touch the heap
+// meanwhile), and collects all nurseries at once.
+
+var world_lock: std.Io.Mutex = .init;
+var world_cond: std.Io.Condition = .init;
+/// every thread that has not ended, and the ended ones until the next
+/// collection (their nurseries may hold live objects)
+var threads: std.ArrayList(*Thread) = .empty;
+var stopping = false; // a collection is under way
+var stopped: usize = 0; // threads stopped at a safepoint or in a blocking call
+var heap_target: usize = 0;
+var ended_count: usize = 0; // ended threads not yet freed
+
+pub fn lockWorld() void {
+    world_lock.lockUncancelable(os.io);
+}
+pub fn unlockWorld() void {
+    world_lock.unlock(os.io);
+}
+fn waitWorld() void {
+    world_cond.waitUncancelable(os.io, &world_lock);
+}
+fn wakeWorld() void {
+    world_cond.broadcast(os.io);
+}
+
+/// The number of threads that have not ended (the program's included)
+pub fn threadCount() usize {
+    lockWorld();
+    defer unlockWorld();
+    var n: usize = 0;
+    for (threads.items) |o| if (o.ended == 0) {
+        n += 1;
+    };
+    return n;
+}
+
+/// Add a new thread (newThread), as in a blocking call: it joins the world
+/// with blockingEnd, on its own OS thread. Under the world lock.
+pub fn registerThreadLocked(t: *Thread) void {
+    // ended threads keep their nurseries until a collection: ask for one
+    // (at the creator's next safepoint) when several are waiting
+    if (ended_count >= 8) @atomicStore(u8, &num.current_thread.gc_requested, 1, .monotonic);
+    t.safe = 1;
+    stopped += 1;
+    threads.append(std.heap.c_allocator, t) catch oom();
+}
+
+/// The running thread ends: from now on it counts as stopped, and the next
+/// collection frees its state
+pub fn threadEnded(t: *Thread) void {
+    lockWorld();
+    defer unlockWorld();
+    t.sp = 0;
+    t.argc = 0;
+    t.self = FALSE;
+    t.val = FALSE;
+    t.winders = NIL;
+    t.handlers = NIL;
+    t.params = NIL;
+    t.thread_obj = FALSE;
+    t.err_n = 0;
+    t.ended = 1;
+    t.safe = 1;
+    stopped += 1;
+    ended_count += 1;
+    wakeWorld();
+}
+
+/// Enter a blocking call (a read, a sleep, a wait): until blockingEnd, the
+/// thread must not touch the heap (its Words may move), and collections
+/// need not wait for it. Calls nest.
+pub fn blockingBegin(t: *Thread) void {
+    if (t.safe > 0) {
+        t.safe += 1;
+        return;
+    }
+    lockWorld();
+    defer unlockWorld();
+    t.safe = 1;
+    stopped += 1;
+    wakeWorld();
+}
+
+pub fn blockingEnd(t: *Thread) void {
+    if (t.safe > 1) {
+        t.safe -= 1;
+        return;
+    }
+    lockWorld();
+    defer unlockWorld();
+    while (stopping) waitWorld();
+    t.safe = 0;
+    stopped -= 1;
+}
+
+/// The same for the running thread (for code that has no Thread at hand)
+pub fn blockingBeginCurrent() void {
+    blockingBegin(num.current_thread);
+}
+pub fn blockingEndCurrent() void {
+    blockingEnd(num.current_thread);
+}
+
+fn nurseryRoom(t: *Thread) usize {
+    const lim = t.limit();
+    const hp = @intFromPtr(t.hp);
+    return if (lim > hp) (lim - hp) / 8 else 0;
+}
+
+/// A safepoint at a procedure entry (abi.Thread.attention)
+pub fn attention(t: *Thread) ?Code {
+    gc(t, 0);
+    if (@atomicLoad(u8, &t.terminate_requested, .monotonic) != 0) return &terminatedCode;
+    return null;
+}
+
+/// thread-terminate!: the thread ends here (prims_thread.zig takes it from the
+/// return of its run)
+fn terminatedCode(t: *Thread) callconv(.c) void {
+    t.val = UNSPEC;
+}
+
 fn gc(t: *Thread, need: usize) void {
+    lockWorld();
+    while (stopping) {
+        // another thread collects: stop here until it is done
+        stopped += 1;
+        wakeWorld();
+        while (stopping) waitWorld();
+        stopped -= 1;
+        if (t.gc_requested == 0 and nurseryRoom(t) >= need) {
+            unlockWorld();
+            return;
+        }
+    }
+    if (@atomicLoad(u8, &t.terminate_requested, .monotonic) != 0 and need == 0) {
+        // the thread is to end: no collection needed
+        @atomicStore(u8, &t.gc_requested, 0, .monotonic);
+        unlockWorld();
+        return;
+    }
+    stopping = true;
+    for (threads.items) |o| if (o != t and o.ended == 0) {
+        @atomicStore(u8, &o.gc_requested, 1, .monotonic);
+        @atomicStore([*]Word, &o.hlimit, o.heap, .monotonic);
+    };
+    while (stopped < threads.items.len - 1) waitWorld();
+    collect(t, need);
+    stopping = false;
+    wakeWorld();
+    unlockWorld();
+}
+
+fn collect(t: *Thread, need: usize) void {
     t.gc_count += 1;
-    t.gc_requested = 0;
-    const used = (@intFromPtr(t.hp) - @intFromPtr(t.heap)) / 8 + (@intFromPtr(t.flo_ptr) - @intFromPtr(nurseryEnd(t.heap[0..t.heap_len]))) / 8;
+    var used: usize = 0;
+    for (threads.items) |o| used += nurseryUsed(o);
     if (major_requested or old_hp + used > old_space.len) {
         major(t);
     } else {
         minor(t);
     }
+    // every nursery is empty now; ended threads go
+    var kept: usize = 0;
+    for (threads.items) |o| {
+        if (o.ended != 0) {
+            stopped -= 1;
+            ended_count -= 1;
+            freeThread(o);
+            continue;
+        }
+        resetNursery(o);
+        o.gc_requested = 0;
+        threads.items[kept] = o;
+        kept += 1;
+    }
+    threads.items.len = kept;
     // a request larger than the nursery: a larger nursery (it is empty now)
     if (need > nurseryCapacity(t)) {
-        const pa = std.heap.c_allocator;
-        pa.free(t.heap[0..t.heap_len]);
-        const n = @max(nursery_words, 2 * need + need / 4);
-        const heap = pa.alloc(Word, n) catch oom();
+        freeNursery(t.heap[0..t.heap_len]);
+        const heap = allocNursery(@max(nursery_words, 2 * need + need / 4));
         t.heap = heap.ptr;
         t.heap_len = heap.len;
+        resetNursery(t);
     }
-    resetNursery(t);
+}
+
+/// The words a nursery holds (the bump area and the flonum area)
+fn nurseryUsed(o: *Thread) usize {
+    return (@intFromPtr(o.hp) - @intFromPtr(o.heap)) / 8 + (@intFromPtr(o.flo_ptr) - @intFromPtr(nurseryEnd(o.heap[0..o.heap_len]))) / 8;
+}
+
+fn freeThread(o: *Thread) void {
+    const pa = std.heap.c_allocator;
+    freeNursery(o.heap[0..o.heap_len]);
+    pa.free(o.stack[0..o.stack_len]);
+    pa.free(o.args[0..o.args_len]);
+    pa.destroy(o);
 }
 
 fn nurseryCapacity(t: *Thread) usize {
@@ -648,18 +890,24 @@ fn clearRemembered() void {
 /// alist of (type . parts), a GC root
 pub var record_printers: Word = NIL;
 
-fn scanRoots(t: *Thread, g: *Gc) void {
+fn scanThread(o: *Thread, g: *Gc) void {
+    for (o.args[0..o.args_len]) |*w| w.* = g.copy(w.*);
+    o.self = g.copy(o.self);
+    o.val = g.copy(o.val);
+    o.winders = g.copy(o.winders);
+    o.handlers = g.copy(o.handlers);
+    o.params = g.copy(o.params);
+    o.thread_obj = g.copy(o.thread_obj);
+    for (o.err_irritants[0..o.err_n]) |*w| w.* = g.copy(w.*);
+    g.scanFrames(o.stack[0..o.sp]);
+}
+
+fn scanRoots(g: *Gc) void {
     record_printers = g.copy(record_printers);
-    for (t.args[0..t.args_len]) |*w| w.* = g.copy(w.*);
-    t.self = g.copy(t.self);
-    t.val = g.copy(t.val);
-    t.winders = g.copy(t.winders);
-    t.handlers = g.copy(t.handlers);
+    for (threads.items) |o| if (o.ended == 0) scanThread(o, g);
     for (modules) |m| for (m.globals[0..m.nglobals]) |*w| {
         w.* = g.copy(w.*);
     };
-    for (t.err_irritants[0..t.err_n]) |*w| w.* = g.copy(w.*);
-    g.scanFrames(t.stack[0..t.sp]);
     for (static_scan.items) |q| g.scanObject(q);
 }
 
@@ -690,13 +938,18 @@ fn verifyBarriers(t: *Thread) void {
     }
 }
 
+fn youngWords() []Word {
+    const q: [*]Word = @ptrCast(@alignCast(young_space.ptr));
+    return q[0 .. young_space.len / 8];
+}
+
 fn minor(t: *Thread) void {
     if (verify == null) verify = os.getEnv("SCM_NATIVE_GC_VERIFY") != null;
     if (verify.?) verifyBarriers(t);
     minor_count += 1;
-    var g = Gc{ .young = t.heap[0..t.heap_len], .old = &.{}, .to = old_space, .free = old_hp, .major = false };
+    var g = Gc{ .young = youngWords(), .old = &.{}, .to = old_space, .free = old_hp, .major = false };
     const promoted = old_hp;
-    scanRoots(t, &g);
+    scanRoots(&g);
     for (remembered.items) |q| g.scanObject(q);
     var scan = promoted;
     while (scan < g.free) {
@@ -714,11 +967,13 @@ fn major(t: *Thread) void {
     large_since_major = 0;
     const pa = std.heap.c_allocator;
     // the old space for everything live: as large as both spaces (the whole
-    // nursery: its flonum area too)
-    const size = @max(old_space.len + t.heap_len, t.heap_target);
+    // nurseries: their flonum areas too)
+    var nurseries: usize = 0;
+    for (threads.items) |o| nurseries += nurseryUsed(o);
+    const size = @max(old_hp + nurseries + nursery_words, heap_target);
     const to = pa.alloc(Word, size) catch oom();
-    var g = Gc{ .young = t.heap[0..t.heap_len], .old = old_space, .to = to, .free = 0, .major = true };
-    scanRoots(t, &g);
+    var g = Gc{ .young = youngWords(), .old = old_space, .to = to, .free = 0, .major = true };
+    scanRoots(&g);
     var scan: usize = 0;
     while (true) {
         if (scan < g.free) {
@@ -746,19 +1001,24 @@ fn major(t: *Thread) void {
         }
     }
     large.items.len = kept;
-    t.large_words = words;
+    large_words = words;
 
     if (old_space.len > 0) pa.free(old_space);
     old_space = to;
     old_hp = g.free;
-    // keep the old space at about three times the live data, and room for a
-    // nursery's promotion
-    const want = 3 * g.free + 2 * nurseryCapacity(t);
-    if (want > t.heap_target) t.heap_target = want;
-    if (old_space.len - old_hp < nurseryCapacity(t)) {
-        // too small already: grow now (the nursery is empty: nothing moves into it)
+    // keep the old space at about three times the live data, and room for
+    // the nurseries' promotion
+    var capacity: usize = 0;
+    for (threads.items) |o| if (o.ended == 0) {
+        capacity += nurseryCapacity(o);
+    };
+    const want = 3 * g.free + 2 * capacity;
+    if (want > heap_target) heap_target = want;
+    if (old_space.len - old_hp < capacity) {
+        // too small already: grow now (the nurseries are empty: nothing
+        // moves into them)
         major_requested = false;
-        resetNursery(t);
+        for (threads.items) |o| resetNursery(o);
         major(t);
     }
 }
@@ -848,7 +1108,10 @@ pub fn start(list: abi.ModuleList, args: []const [:0]const u8) u8 {
     if (os.getEnv("SCM_NATIVE_SEGV") != null) std.debug.attachSegfaultHandler();
     command_line = args;
     modules = list.modules[0..list.count];
+    initYoung();
+    os.blocking_hooks = .{ .begin = &blockingBeginCurrent, .end = &blockingEndCurrent };
     const t = newThread();
+    threads.append(std.heap.c_allocator, t) catch oom();
     num.current_thread = t;
     for (modules) |m| @memset(m.globals[0..m.nglobals], UNBOUND);
     program_specials(t);
@@ -859,7 +1122,7 @@ pub fn start(list: abi.ModuleList, args: []const [:0]const u8) u8 {
     ports.flushAll();
     os.flush();
     if (os.getEnv("SCM_NATIVE_GC_STATS") != null)
-        os.eprint("gc: {d} minor, {d} major collections; old space {d} words ({d} used), large objects {d} words\n", .{ minor_count, major_count, old_space.len, old_hp, t.large_words });
+        os.eprint("gc: {d} minor, {d} major collections; old space {d} words ({d} used), large objects {d} words\n", .{ minor_count, major_count, old_space.len, old_hp, large_words });
     return t.exit_code;
 }
 
@@ -891,3 +1154,4 @@ pub const prims_xml = @import("prims_xml.zig");
 pub const prims_image = @import("prims_image.zig");
 pub const prims_module = @import("prims_module.zig");
 pub const prims_net = @import("prims_net.zig");
+pub const threads_prims = @import("prims_thread.zig");

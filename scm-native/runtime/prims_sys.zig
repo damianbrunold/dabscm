@@ -598,13 +598,18 @@ fn processKill(t: *Thread) Err!Word {
 pub const @"%process-kill" = WN("process-kill", processKill, 1, 2);
 
 var tracked: std.ArrayList(*os.Proc) = .empty;
+var tracked_lock: std.Io.Mutex = .init;
 
 fn killTracked() void {
+    tracked_lock.lockUncancelable(os.io);
+    defer tracked_lock.unlock(os.io);
     for (tracked.items) |p| if (os.procPoll(p) == null) os.killTree(os.procId(p), true);
 }
 
 fn processKillOnExit(t: *Thread) Err!Word {
     const p = try procArg(t);
+    tracked_lock.lockUncancelable(os.io);
+    defer tracked_lock.unlock(os.io);
     var i: usize = 0;
     while (i < tracked.items.len) {
         if (os.procPoll(tracked.items[i]) != null) {

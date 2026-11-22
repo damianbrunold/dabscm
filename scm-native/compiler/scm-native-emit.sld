@@ -153,15 +153,19 @@
     (define (finish-block! b)
       (let* ((n (block-alloc b))
              (dyn (block-dyn-alloc b))
-             (reserve (cond ((and dyn (> n 0)) (list (cat "    t.reserve(" dyn " + " n ");")))
-                            (dyn (list (cat "    t.reserve(" dyn ");")))
-                            ((> n 0) (list (cat "    t.reserve(" n ");")))
-                            ;; a requested collection happens at the next
-                            ;; procedure entry (or loop head): every unbounded
-                            ;; computation passes through one
-                            ((and (block-unreserved? b) (char=? (string-ref (block-name b) 0) #\L))
-                             (list "    t.poll();"))
-                            (else '()))))
+             ;; every procedure entry is a safepoint: a requested
+             ;; collection (or another thread's) happens there, and a
+             ;; terminated thread ends there; every unbounded computation
+             ;; passes through one (or a loop head)
+             (attention (if (char=? (string-ref (block-name b) 0) #\L)
+                            (list "    if (t.attention()) |c| return @call(.always_tail, c, .{t});")
+                            '()))
+             (reserve (append
+                       attention
+                       (cond ((and dyn (> n 0)) (list (cat "    t.reserve(" dyn " + " n ");")))
+                             (dyn (list (cat "    t.reserve(" dyn ");")))
+                             ((> n 0) (list (cat "    t.reserve(" n ");")))
+                             (else '())))))
         (set! blocks
               (cons (apply cat
                            (cat "fn " (block-name b) "(t: *Thread) callconv(.c) void {\n"
@@ -758,11 +762,13 @@
                           ;; collection (flonums and large objects lower hlimit)
                           (else
                            (apply cat
-                                  "    if (@intFromPtr(t.hp) + 8 * " n " > @intFromPtr(t.hlimit)) {\n"
+                                  "    if (@intFromPtr(t.hp) + 8 * " n " > t.limit()) {\n"
                                   "        t.ensureArgs(" (max k 1) ");\n"
                                   (append
                                    (map (lambda (x i) (cat "        t.args[" i "] = " x ";\n")) spilled (iota k))
-                                   (list "        t.reserve(" n ");\n")
+                                   (list "        t.reserve(" n ");\n"
+                                         ;; a terminated thread ends here too
+                                         "        if (t.ending()) |c| return @call(.always_tail, c, .{t});\n")
                                    (map (lambda (x i) (cat "        " x " = t.args[" i "];\n")) spilled (iota k))
                                    (list "    }"))))))
                   (block-lines b)))))))

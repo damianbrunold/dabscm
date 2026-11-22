@@ -235,7 +235,7 @@ The native `scmc` (same options; `-I dir` adds a library directory) finds `scm-n
 `SCM_NATIVE_DIR`, else as the parent of its executable's directory. It emits the same Zig as
 `scmc` on the JVM and compiles a program in about a second when the objects are cached
 (about a minute on the JVM). The driver builds objects with `start-program`, one process per
-core, since native programs have no threads yet.
+core.
 
 ### eval, environment, load
 
@@ -299,14 +299,37 @@ are loaded from source. `scm lint` over `scm-lib/libraries` this way (interpreti
   and WebSockets print as on the JVM (`#<http-request GET url>`; `%set-record-printer!`).
   `server-install-shutdown-hook`: SIGINT and SIGTERM stop the server, let open connections
   finish for the grace time and exit with 130 or 143, as the JVM does.
-- No threads yet: `(scm native tasks)` (`lib/scm-native-tasks.sld`) is a cooperative
-  scheduler. Every server connection is a task (a continuation); a task that would block
-  on a socket yields, and the scheduler polls the waiting sockets and the servers'
-  listeners. The program is a task too: its HTTP and WebSocket waits, `server-wait` and
-  `thread-sleep!` let servers in the same program run. Task code must not clean up with
-  `dynamic-wind` (leaving a task runs the after thunks). Raw socket ports block in the
-  runtime: a program that talks to its own server over `(scm net sockets)` cannot be
-  served meanwhile (such a read ends after 2 s with a warning); SRFI 18 threads are Phase 7.
+- The server has an accept thread and serves each connection on a thread of its own, at
+  most max-threads at once, with up to max-queued more waiting and 503 beyond, as the JVM's
+  pool (Phase 7). Socket reads wait in `poll` for their socket (`(scm native tasks)`,
+  `lib/scm-native-tasks.sld`).
+
+## Phase 7: threads
+
+- SRFI 18 (`runtime/prims_thread.zig`) with the JVM and C# implementations' semantics: every
+  thread is an OS thread with its own nursery, Scheme stack and registers (`abi.Thread`);
+  the old space, large objects, static objects and globals are shared, so a `set!` of a
+  global is seen by every thread. Threads end with the program (daemons, as on the JVM).
+  Mutexes (abandoned when their owner ends), condition variables (SRFI 18's atomic unlock
+  and wait), `thread-join!` with timeouts and the thread exceptions (join timeout,
+  abandoned mutex, terminated thread, uncaught exception with its reason);
+  `thread-terminate!` ends the thread at its next procedure entry or loop head, and its
+  join raises the uncaught "thread terminated" error, as on the JVM. Parameter objects have
+  a value per thread (falling back to the default, as C#'s `Parameter`); the current ports
+  are shared globals, as on the JVM.
+- Collections stop the world: the thread that needs one lowers every other thread's
+  allocation limit and sets its `gc_requested`; each stops at its next safepoint (every
+  procedure entry checks `t.attention()`, loop heads and `reserve` check the limit), or
+  counts as stopped while in a blocking call (reads, accepts, polls, sleeps, waits for a
+  mutex, a condition variable, a thread or a process: `rt.blockingBegin`/`blockingEnd`,
+  during which a thread must not touch the heap). The collector then collects every
+  nursery at once. All nurseries come from one reserved range of address space (64 GB,
+  committed when used), so "young" is a single range check for the write barrier of every
+  thread. An ended thread's nursery is freed by the next collection (asked for when eight
+  are waiting).
+- Thread-safe runtime state: locks for the symbol table, static and large objects, the
+  remembered set, each port's output, the standard output buffer, the regex and primitive
+  caches and the process list; thread-local error texts, printer and reader label tables.
 
 ## Phase 0 spike (2026-11-21)
 

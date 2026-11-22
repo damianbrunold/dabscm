@@ -778,9 +778,13 @@ pub fn search(re: *const Regex, s: []const u21, start: usize, caps: []?usize) bo
 // --- cache -------------------------------------------------------------------------
 
 var cache: std.StringHashMapUnmanaged(*Regex) = .empty;
+var cache_lock: std.Io.Mutex = .init;
 
 /// The compiled pattern for the UTF-8 pattern text (cached)
 pub fn get(pattern_utf8: []const u8) Error!*Regex {
+    const io = @import("os.zig").io;
+    cache_lock.lockUncancelable(io);
+    defer cache_lock.unlock(io);
     if (cache.get(pattern_utf8)) |r| return r;
     var cps: std.ArrayList(u21) = .empty;
     var it = std.unicode.Utf8View.initUnchecked(pattern_utf8).iterator();

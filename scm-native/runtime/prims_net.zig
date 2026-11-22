@@ -257,7 +257,7 @@ fn pgParseDatarow(t: *Thread) Err!Word {
 }
 pub const @"%pg-parse-datarow" = WN("pg-parse-datarow", pgParseDatarow, 1, 1);
 
-// --- non-blocking operations, for the cooperative HTTP server ----------------------
+// --- non-blocking operations, for (scm native http) ----------------------
 
 /// (%socket-recv-some socket max): a bytevector of the bytes available now
 /// (at most max, at least one), the eof object, or #f if none are there yet
@@ -385,12 +385,7 @@ fn listenHost(t: *Thread) Err!Word {
 }
 pub const @"%%tcp-listen-host" = WN("%tcp-listen-host", listenHost, 2, 2);
 
-/// (%net-servers-running! n): the number of running in-process servers
-fn serversRunning(t: *Thread) Err!Word {
-    net.servers_running = rt.unfix(arg(t, 0));
-    return rt.UNSPEC;
-}
-pub const @"%%net-servers-running!" = WN("%net-servers-running!", serversRunning, 1, 1);
+
 
 /// (%shutdown-signal): the SIGINT or SIGTERM received so far, 0 if none
 /// (the first call installs the handlers)
@@ -414,11 +409,4 @@ fn setRecordPrinter(t: *Thread) Err!Word {
 }
 pub const @"%%set-record-printer!" = WN("%set-record-printer!", setRecordPrinter, 2, 2);
 
-/// (thread-sleep! seconds): (srfi 18)'s sleep; threads are Phase 7, this
-/// blocks the whole program
-fn threadSleep(t: *Thread) Err!Word {
-    const s = @import("num.zig").toF(arg(t, 0)) orelse return P.argTypeError(t);
-    if (s > 0) @import("os.zig").sleepMs(@intFromFloat(@min(s * 1000.0, 1e12)));
-    return rt.UNSPEC;
-}
-pub const @"%thread-sleep!" = WN("thread-sleep!", threadSleep, 1, 1);
+

@@ -18,7 +18,7 @@ const pa = std.heap.c_allocator;
 pub const Error = error{ Image, Malformed, OutOfMemory };
 
 /// The message of the last Image error (ImageException's text)
-pub var last_error: []const u8 = "";
+pub threadlocal var last_error: []const u8 = "";
 
 fn fail(comptime m: []const u8) Error {
     last_error = m;

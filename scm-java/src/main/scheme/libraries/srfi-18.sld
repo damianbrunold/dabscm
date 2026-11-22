@@ -45,12 +45,6 @@
    uncaught-exception-reason
    uncaught-exception?
    with-exception-handler)
-  ;; natively (no threads yet): a sleep lets the cooperative tasks run
-  (cond-expand
-    (dabscm-native
-     (import (rename (only (scm native tasks) task-sleep!) (task-sleep! %raw-thread-sleep!))))
-    (else
-     (begin (define %raw-thread-sleep! (%primitive "thread-sleep!")))))
   (begin
     ;; Thread primitives
     (define current-thread (%primitive "current-thread"))
@@ -64,6 +58,7 @@
     (define thread-terminate! (%primitive "thread-terminate!"))
 
     ;; Raw thread primitives (accept only numbers as timeouts)
+    (define %raw-thread-sleep! (%primitive "thread-sleep!"))
     (define %raw-thread-join! (%primitive "thread-join!"))
 
     ;; Mutex primitives

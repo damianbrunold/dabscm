@@ -12,6 +12,10 @@ const Thread = rt.Thread;
 pub fn scm_gc(t: *Thread, n: usize) callconv(.c) void {
     rt.gcEntry(t, n);
 }
+
+pub fn scm_attention(t: *Thread) callconv(.c) ?Code {
+    return rt.attention(t);
+}
 pub fn scm_grow_stack(t: *Thread, need: usize) callconv(.c) void {
     rt.growStackEntry(t, need);
 }

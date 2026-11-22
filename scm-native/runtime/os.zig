@@ -41,9 +41,28 @@ pub fn initProcess(argc: usize, argv: [*][*:0]u8, envp: [*:null]?[*:0]u8) []cons
 
 // --- standard output (buffered) and error --------------------------------
 
+/// Blocking calls (reads, waits, sleeps) tell the runtime (rt.zig sets
+/// these): collections need not wait for a thread in one
+pub var blocking_hooks: struct {
+    begin: *const fn () void = &noHook,
+    end: *const fn () void = &noHook,
+} = .{};
+fn noHook() void {}
+pub fn blockingBegin() void {
+    blocking_hooks.begin();
+}
+pub fn blockingEnd() void {
+    blocking_hooks.end();
+}
+
+/// Guards the standard output buffer (threads write to it)
+var out_lock: std.Io.Mutex = .init;
+
 pub fn write(bytes: []const u8) void {
+    out_lock.lockUncancelable(io);
+    defer out_lock.unlock(io);
     if (out_len + bytes.len > out_buf.len) {
-        flush();
+        flushLocked();
         if (bytes.len > out_buf.len) {
             std.Io.File.stdout().writeStreamingAll(io, bytes) catch {};
             return;
@@ -54,6 +73,12 @@ pub fn write(bytes: []const u8) void {
 }
 
 pub fn flush() void {
+    out_lock.lockUncancelable(io);
+    defer out_lock.unlock(io);
+    flushLocked();
+}
+
+fn flushLocked() void {
     if (out_len > 0) {
         std.Io.File.stdout().writeStreamingAll(io, out_buf[0..out_len]) catch {};
         out_len = 0;
@@ -61,7 +86,9 @@ pub fn flush() void {
 }
 
 pub fn writeStderr(bytes: []const u8) void {
-    flush();
+    out_lock.lockUncancelable(io);
+    defer out_lock.unlock(io);
+    flushLocked();
     std.Io.File.stderr().writeStreamingAll(io, bytes) catch {};
 }
 
@@ -73,6 +100,8 @@ pub fn eprint(comptime fmt: []const u8, a: anytype) void {
 /// Read some bytes of standard input; 0 at end of file.
 pub fn readStdin(buf: []u8) usize {
     flush();
+    blockingBegin();
+    defer blockingEnd();
     return std.Io.File.stdin().readStreaming(io, &.{buf}) catch 0;
 }
 
@@ -247,6 +276,8 @@ pub fn randomBytes(buf: []u8) void {
 }
 
 pub fn sleepMs(ms: u64) void {
+    blockingBegin();
+    defer blockingEnd();
     io.sleep(.fromMilliseconds(@intCast(ms)), .awake) catch {};
 }
 
@@ -693,6 +724,8 @@ pub fn procWait(p: *Proc, timeout_ms: ?u64) ?i64 {
     if (p.done) return p.code;
     if (timeout_ms == null and !is_windows) {
         var status: c_int = 0;
+        blockingBegin();
+        defer blockingEnd();
         while (true) {
             const r = std.c.waitpid(p.child.id.?, &status, 0);
             if (r == p.child.id.?) break;
@@ -732,7 +765,9 @@ pub fn capture(s0: Spawn, stdin_text: ?[]const u8) ?Captured {
     var mr: std.Io.File.MultiReader = undefined;
     mr.init(pa, io, buffer.toStreams(), &.{ p.child.stdout.?, p.child.stderr.? });
     defer mr.deinit();
+    blockingBegin();
     while (mr.fill(64, .none)) |_| {} else |_| {}
+    blockingEnd();
     const out = mr.toOwnedSlice(0) catch return null;
     const err = mr.toOwnedSlice(1) catch return null;
     p.child.stdout.?.close(io);
@@ -926,7 +961,11 @@ pub fn executablePath() ?[]const u8 {
 /// called by exit (process-kill-on-exit, terminal modes)
 var exit_hooks: std.ArrayList(*const fn () void) = .empty;
 
+var exit_hooks_lock: std.Io.Mutex = .init;
+
 pub fn atExit(h: *const fn () void) void {
+    exit_hooks_lock.lockUncancelable(io);
+    defer exit_hooks_lock.unlock(io);
     for (exit_hooks.items) |x| if (x == h) return;
     exit_hooks.append(pa, h) catch {};
 }
@@ -1006,6 +1045,8 @@ pub fn terminalEcho(enable: bool) bool {
 /// A byte from standard input, or null at the end
 pub fn readByte() ?u8 {
     var b: [1]u8 = undefined;
+    blockingBegin();
+    defer blockingEnd();
     while (true) {
         const n = std.c.read(0, &b, 1);
         if (n == 1) return b[0];
@@ -1018,6 +1059,8 @@ pub fn readByte() ?u8 {
 pub fn byteReady(timeout_ms: i64) bool {
     if (is_windows) return false;
     var fds = [_]std.c.pollfd{.{ .fd = 0, .events = std.c.POLL.IN, .revents = 0 }};
+    blockingBegin();
+    defer blockingEnd();
     return std.c.poll(&fds, 1, @intCast(@max(0, timeout_ms))) > 0 and (fds[0].revents & std.c.POLL.IN) != 0;
 }
 

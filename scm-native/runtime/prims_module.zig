@@ -231,11 +231,15 @@ pub const @"%%native-global-set!" = WN("%native-global-set!", nativeGlobalSet, 2
 /// (%primitive-ref name): the procedure (or value) of the runtime's
 /// primitive named name (a symbol), or #f
 var prim_cache: std.StringHashMapUnmanaged(Word) = .empty;
+var prim_cache_lock: std.Io.Mutex = .init;
 
 fn primitiveRef(t: *Thread) Err!Word {
     const s = arg(t, 0);
     if (!rt.isPtr(s) or rt.objType(s) != rt.T_SYMBOL) return raise(t, "%primitive-ref: not a symbol", &.{s});
     const name = data.symbolName(s);
+    const io = @import("os.zig").io;
+    prim_cache_lock.lockUncancelable(io);
+    defer prim_cache_lock.unlock(io);
     if (prim_cache.get(name)) |w| return w;
     const table = @import("root").primitive_table;
     for (table) |e| {

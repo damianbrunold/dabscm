@@ -122,7 +122,11 @@ pub fn symbolName(w: Word) []const u8 {
     return b[0..n];
 }
 
+var symbol_lock: std.Io.Mutex = .init;
+
 pub fn intern(name: []const u8) Word {
+    symbol_lock.lockUncancelable(rt.os.io);
+    defer symbol_lock.unlock(rt.os.io);
     const gop = symbols.getOrPut(std.heap.c_allocator, name) catch rt.oom();
     if (gop.found_existing) return gop.value_ptr.*;
     const p = rt.staticAlloc(2 + (name.len + 7) / 8, false);

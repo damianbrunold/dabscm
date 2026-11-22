@@ -12,12 +12,7 @@ const pa = std.heap.c_allocator;
 pub const Error = error{ConnectFailed} || error{OutOfMemory};
 
 /// The message of the last failure, in the JVM's words where it has them
-pub var last_error: []const u8 = "";
-
-/// The number of running in-process HTTP servers ((scm native http)): a
-/// blocking read on a socket port would starve them (no threads yet)
-pub var servers_running: i64 = 0;
-var starvation_warned = false;
+pub threadlocal var last_error: []const u8 = "";
 
 pub const Conn = struct {
     stream: net.Stream,
@@ -26,21 +21,8 @@ pub const Conn = struct {
     tls_client: ?*tls.Client = null,
     closed: bool = false,
 
-    /// For a socket port: as read, but while in-process servers run, a read
-    /// that would block for long ends the input (with a warning), since the
-    /// servers cannot run meanwhile
+    /// For a socket port
     pub fn portRead(c: *Conn, dst: []u8) usize {
-        if (servers_running > 0 and !c.closed and c.buffered() == 0) {
-            var ready = [1]bool{false};
-            _ = poll(&.{c.handle()}, &.{false}, &ready, 2000);
-            if (!ready[0]) {
-                if (!starvation_warned) {
-                    starvation_warned = true;
-                    os.writeStderr("warning: a socket port read would block the HTTP server of this program, which cannot serve meanwhile (native programs have no threads yet); the read ends\n");
-                }
-                return 0;
-            }
-        }
         return c.read(dst);
     }
 
@@ -48,6 +30,10 @@ pub const Conn = struct {
     pub fn read(c: *Conn, dst: []u8) usize {
         if (c.closed or dst.len == 0) return 0;
         const r: *std.Io.Reader = if (c.tls_client) |t| &t.reader else &c.reader.interface;
+        // dst must not be in the heap (a collection may move it meanwhile)
+        const blocks = r.bufferedLen() == 0;
+        if (blocks) os.blockingBegin();
+        defer if (blocks) os.blockingEnd();
         const avail = r.peekGreedy(1) catch return 0;
         const n = @min(avail.len, dst.len);
         @memcpy(dst[0..n], avail[0..n]);
@@ -55,8 +41,11 @@ pub const Conn = struct {
         return n;
     }
 
+    /// bytes must not be in the heap (a collection may move them meanwhile)
     pub fn writeAll(c: *Conn, bytes: []const u8) bool {
         if (c.closed) return false;
+        os.blockingBegin();
+        defer os.blockingEnd();
         if (c.tls_client) |t| {
             t.writer.writeAll(bytes) catch return false;
             t.writer.flush() catch return false;
@@ -83,7 +72,12 @@ pub const Conn = struct {
     /// bytes written (0 if none), null on error. Over TLS, all of it.
     pub fn sendSome(c: *Conn, bytes: []const u8) ?usize {
         if (c.closed) return null;
-        if (c.tls_client != null) return if (c.writeAll(bytes)) bytes.len else null;
+        if (c.tls_client != null) {
+            // a copy: bytes may be in the heap
+            const copy = pa.dupe(u8, bytes) catch @panic("out of memory");
+            defer pa.free(copy);
+            return if (c.writeAll(copy)) bytes.len else null;
+        }
         c.writer.interface.flush() catch return null;
         const flags: u32 = std.c.MSG.DONTWAIT | std.c.MSG.NOSIGNAL;
         const n = std.c.send(c.handle(), bytes.ptr, bytes.len, flags);
@@ -134,6 +128,8 @@ fn errorText(e: anyerror) []const u8 {
 
 pub fn connect(host: []const u8, port: u16) ?*Conn {
     ignoreSigpipe();
+    os.blockingBegin();
+    defer os.blockingEnd();
     const stream = blk: {
         if (net.IpAddress.parse(host, port)) |addr| {
             break :blk addr.connect(os.io, .{ .mode = .stream, .protocol = .tcp }) catch |e| {
@@ -172,10 +168,13 @@ pub const Listener = struct {
     closed: bool = false,
 
     pub fn accept(l: *Listener) ?*Conn {
+        os.blockingBegin();
         const stream = l.server.accept(os.io) catch |e| {
+            os.blockingEnd();
             last_error = errorText(e);
             return null;
         };
+        os.blockingEnd();
         return newConn(stream);
     }
 
@@ -243,6 +242,8 @@ pub fn startTls(c: *Conn, host: []const u8, verify: bool) bool {
 /// As startTls, with the handshake read from input and written to output
 /// (TDS wraps it in its packets); the client then uses c's stream
 pub fn startTlsOver(c: *Conn, host: []const u8, verify: bool, input: *std.Io.Reader, output: *std.Io.Writer) bool {
+    os.blockingBegin();
+    defer os.blockingEnd();
     const insecure = !verify or envFlag("SCM_TLS_INSECURE");
     if (!insecure) loadCas();
     const t = pa.create(tls.Client) catch @panic("out of memory");
@@ -281,6 +282,8 @@ pub fn startTlsOver(c: *Conn, host: []const u8, verify: bool, input: *std.Io.Rea
 pub fn poll(handles: []const std.posix.fd_t, write: []const bool, ready: []bool, timeout_ms: i32) bool {
     const fds = pa.alloc(std.posix.pollfd, handles.len) catch @panic("out of memory");
     defer pa.free(fds);
+    if (timeout_ms != 0) os.blockingBegin();
+    defer if (timeout_ms != 0) os.blockingEnd();
     for (handles, write, fds) |h, w, *f| f.* = .{ .fd = h, .events = if (w) std.posix.POLL.OUT else std.posix.POLL.IN, .revents = 0 };
     const n = std.c.poll(fds.ptr, @intCast(fds.len), timeout_ms);
     if (n < 0) return std.posix.errno(n) == .INTR;

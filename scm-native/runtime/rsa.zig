@@ -11,7 +11,7 @@ const pa = std.heap.c_allocator;
 pub const Error = error{ BadKey, MessageTooLong, DecryptionError, BadSize, OutOfMemory };
 
 /// The message of the last failure, in the JVM's words
-pub var last_error: []const u8 = "";
+pub threadlocal var last_error: []const u8 = "";
 
 const max_bits = 4096;
 const U = ff.Uint(max_bits);

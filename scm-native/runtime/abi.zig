@@ -187,9 +187,25 @@ pub const Thread = extern struct {
     prim_name_ptr: [*]const u8 = "",
     prim_name_len: usize = 0,
     exit_code: u8 = 0,
-    /// set by allocations outside the nursery: a collection is due at the
-    /// next poll (or reserve)
+    /// set by allocations outside the nursery, and by another thread that
+    /// stops the world: a collection (or a stop) is due at the next poll (or
+    /// reserve)
     gc_requested: u8 = 0,
+    /// the young space: every thread's nursery lies in one reserved range
+    young_base: usize = 0,
+    young_bytes: usize = 0,
+    /// per-thread values of parameters: an alist (parameter box . value)
+    params: Word = NIL,
+    /// the thread object (SRFI 18), #f for the main thread until asked for
+    thread_obj: Word = FALSE,
+    /// in a blocking call (counts as stopped for a collection)
+    safe: u8 = 0,
+    /// thread-terminate! asked this thread to end
+    terminate_requested: u8 = 0,
+    /// the thread has ended (its nursery is freed at the next collection)
+    ended: u8 = 0,
+    /// the runtime's own thread data (rt.zig)
+    ctl: ?*anyopaque = null,
 
     /// Make sure `n` words can be pushed.
     pub inline fn ensureStack(t: *Thread, n: usize) void {
@@ -203,13 +219,33 @@ pub const Thread = extern struct {
 
     /// A safepoint: collect if a collection was requested
     pub inline fn poll(t: *Thread) void {
-        if (t.gc_requested != 0) impl.scm_gc(t, 0);
+        if (@atomicLoad(u8, &t.gc_requested, .monotonic) != 0) impl.scm_gc(t, 0);
+    }
+
+    /// A safepoint at a procedure entry: collect (or stop for another
+    /// thread's collection) if asked; the code to continue with instead
+    /// when the thread is to end (thread-terminate!)
+    pub inline fn attention(t: *Thread) ?Code {
+        if (@atomicLoad(u8, &t.gc_requested, .monotonic) != 0) return impl.scm_attention(t);
+        return null;
+    }
+
+    /// After a loop head's reserve: the code to end with when the thread
+    /// is to end (thread-terminate! lowers the limit, as a stop does)
+    pub inline fn ending(t: *Thread) ?Code {
+        if (@atomicLoad(u8, &t.terminate_requested, .monotonic) != 0) return impl.scm_attention(t);
+        return null;
+    }
+
+    /// The allocation limit (lowered by other threads to stop this one)
+    pub inline fn limit(t: *Thread) usize {
+        return @intFromPtr(@atomicLoad([*]Word, &t.hlimit, .monotonic));
     }
 
     /// Make sure `n` words can be bump-allocated without a collection.
     pub inline fn reserve(t: *Thread, n: usize) void {
         // hlimit may lie below hp: allocLarge requests a collection that way
-        if (@intFromPtr(t.hp) + 8 * n > @intFromPtr(t.hlimit)) impl.scm_gc(t, n);
+        if (@intFromPtr(t.hp) + 8 * n > t.limit()) impl.scm_gc(t, n);
     }
 
     pub inline fn allocRaw(t: *Thread, n: usize) [*]Word {
@@ -307,6 +343,7 @@ pub const ModuleList = extern struct {
 
 pub const impl = if (@hasDecl(root, "scm_runtime")) root.scm_runtime else struct {
     pub extern fn scm_gc(t: *Thread, n: usize) void;
+    pub extern fn scm_attention(t: *Thread) ?Code;
     pub extern fn scm_grow_stack(t: *Thread, need: usize) void;
     pub extern fn scm_grow_args(t: *Thread, need: usize) void;
     pub extern fn scm_not_procedure(t: *Thread, p: Word) Code;
@@ -369,7 +406,7 @@ pub inline fn barrier(t: *const Thread, obj: Word, val: Word) void {
 }
 
 pub inline fn isYoung(t: *const Thread, w: Word) bool {
-    return isPtr(w) and (w -% @intFromPtr(t.heap)) < t.heap_len * 8;
+    return isPtr(w) and (w -% t.young_base) < t.young_bytes;
 }
 
 /// Use a value whose result is not needed (compiled code).

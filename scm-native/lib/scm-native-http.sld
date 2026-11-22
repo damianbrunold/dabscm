@@ -48,12 +48,11 @@
     ;; behavior in scm-java's primitives). Written in Scheme over the
     ;; runtime's sockets.
     ;;
-    ;; Native programs have no threads yet: the server is a cooperative
-    ;; event loop. Each connection runs as a task (a continuation); a task
-    ;; that would block on a socket yields to the scheduler, which polls the
-    ;; waiting sockets and the listening servers. The program itself is a
-    ;; task too: its network waits (a client reading a response, server-wait)
-    ;; let the servers run. Handlers run one at a time.
+    ;; As on the JVM, a server has an accept thread and at most max-threads
+    ;; connections served at once, each on a thread of its own; up to
+    ;; max-queued more wait for their turn, and beyond that a connection
+    ;; gets 503 at once. Socket I/O does not block the runtime: a read waits
+    ;; in poll for the socket ((scm native tasks)).
 
     (define recv-some (%primitive "%socket-recv-some"))
     (define send-some (%primitive "%socket-send-some"))
@@ -65,12 +64,8 @@
 
     (define set-record-printer! (%primitive "%set-record-printer!"))
 
-    ;; the servers' listeners are polled by the scheduler, (scm native tasks)
-    (define servers '())
-
-    (define (update-pollers!)
-      (set-pollers! (map (lambda (s) (cons (server-listener s) (lambda () (accept-connection! s)))) servers))
-      ((%primitive "%net-servers-running!") (length servers)))
+    ;; guards the servers' counters and the shutdown state
+    (define lock (make-lock))
 
     (define (remove-eq x l)
       (cond ((null? l) '())
@@ -655,7 +650,8 @@
     ;; --- the server --------------------------------------------------------------
 
     (define-record-type server
-      (%make-server listener handler read-timeout max-body graceful spool running)
+      (%make-server listener handler read-timeout max-body graceful spool running
+                    max-threads max-queued admitted busy)
       server?
       (listener server-listener)
       (handler server-handler)
@@ -663,7 +659,12 @@
       (max-body server-max-body)
       (graceful server-graceful)
       (spool server-spool)
-      (running server-running? set-server-running!))
+      (running server-running? set-server-running!)
+      (max-threads server-max-threads)
+      (max-queued server-max-queued)
+      ;; connections admitted (served or waiting), connections being served
+      (admitted server-admitted set-server-admitted!)
+      (busy server-busy set-server-busy!))
     (set-record-printer! server '("#<server>"))
 
     (define (int-arg x)
@@ -678,31 +679,39 @@
              (read-timeout (let ((v (int-arg (opt 2 0)))) (if (<= v 0) 30000 v)))
              (max-body (let ((v (int-arg (opt 3 0)))) (if (<= v 0) 4194304 v)))
              (graceful (let ((v (int-arg (opt 4 0)))) (if (<= v 0) 10000 v)))
-             (spool (let ((v (int-arg (opt 5 0)))) (if (<= v 0) 1048576 v))))
-        (int-arg (opt 0 0))
+             (spool (let ((v (int-arg (opt 5 0)))) (if (<= v 0) 1048576 v)))
+             (max-threads (let ((v (int-arg (opt 0 0)))) (if (<= v 0) 32 v)))
+             (max-queued (let ((v (int-arg (opt 6 0))))
+                           (cond ((= v 0) (* 4 max-threads)) ((< v 0) 0) (else v)))))
         (when (or (< port 0) (> port 65535))
           (error (string-append "tcp-http-serve: port out of range:" (number->string port))))
         (let* ((listener (tcp-listen-host host port))
-               (s (%make-server listener handler read-timeout max-body graceful spool #t)))
-          (set! servers (cons s servers))
-          (update-pollers!)
+               (s (%make-server listener handler read-timeout max-body graceful spool #t
+                                max-threads max-queued 0 0)))
+          (spawn! (lambda () (accept-loop s)))
           s)))
 
     (define (server-stop s . grace)
       (when (server-running? s)
         (set-server-running! s #f)
-        (set! servers (remove-eq s servers))
-        (update-pollers!)
         (socket-close (server-listener s)))
       #t)
+
+    (define (accept-loop s)
+      (let loop ()
+        (when (server-running? s)
+          (when (guard (e (#t #f)) (wait-for! (server-listener s) 'read (+ (now-ms) 200)))
+            (when (server-running? s)
+              (accept-connection! s)))
+          (loop))))
 
     (define (server-wait s)
       (wait-until! (lambda () (and (not (server-running? s)) (not shutting-down))))
       #t)
 
     ;; SIGINT and SIGTERM stop the hooked servers, let their connections
-    ;; finish for the grace time and exit (130, 143) as the JVM does; the
-    ;; signal is seen while the program waits in the scheduler
+    ;; finish for the grace time and exit (130, 143) as the JVM does (a
+    ;; thread watches for the signal)
     (define shutdown-signal (%primitive "%shutdown-signal"))
     (define shutdown-hooks '())           ; (server . grace-ms)
     (define active-connections 0)
@@ -727,13 +736,58 @@
         (wait-until! (lambda () (or (= active-connections 0) (>= (now-ms) deadline))))
         (exit (+ 128 sig))))
 
+    (define r503 (string->utf8 "HTTP/1.1 503 Service Unavailable\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"))
+
+    ;; 503, then (as the JVM does) stop sending and read what the client
+    ;; still sends (at most 64 KB for 0.5 s) before closing, so that it gets
+    ;; to read the response instead of a reset
+    (define (reject-503 socket)
+      (spawn! (lambda ()
+                (guard (e (#t #f))
+                  (send-all socket r503)
+                  (shutdown-output socket)
+                  (let ((r (make-reader socket)) (deadline (+ (now-ms) 500)))
+                    (let loop ((total 0))
+                      (when (and (< total 65536) (eq? (reader-fill! r deadline) #t))
+                        (let ((n (reader-available r)))
+                          (set-reader-pos! r (bytevector-length (reader-buf r)))
+                          (loop (+ total n)))))))
+                (guard (e (#t #f)) (socket-close socket)))))
+
     (define (accept-connection! s)
       (let ((socket (guard (e (#t #f)) (tcp-accept (server-listener s)))))
         (when socket
-          (set! active-connections (+ active-connections 1))
-          (spawn! (lambda ()
-                    (serve-connection s socket)
-                    (set! active-connections (- active-connections 1)))))))
+          (if (with-lock lock
+                (lambda ()
+                  (and (< (server-admitted s) (+ (server-max-threads s) (server-max-queued s)))
+                       (begin (set-server-admitted! s (+ (server-admitted s) 1))
+                              (set! active-connections (+ active-connections 1))
+                              #t))))
+              (let ((accepted (now-ms)))
+                (spawn! (lambda () (run-connection s socket accepted))))
+              (reject-503 socket)))))
+
+    ;; Wait for a worker slot (a 503 after waiting longer than the read
+    ;; timeout), then serve
+    (define (run-connection s socket accepted)
+      (let wait ()
+        (cond ((with-lock lock
+                 (lambda ()
+                   (and (< (server-busy s) (server-max-threads s))
+                        (begin (set-server-busy! s (+ (server-busy s) 1)) #t))))
+               (if (> (- (now-ms) accepted) (server-read-timeout s))
+                   (reject-503 socket)
+                   (serve-connection s socket))
+               (with-lock lock
+                 (lambda ()
+                   (set-server-busy! s (- (server-busy s) 1)))))
+              ((> (- (now-ms) accepted) (server-read-timeout s))
+               (reject-503 socket))
+              (else (task-sleep! 0.005) (wait))))
+      (with-lock lock
+        (lambda ()
+          (set-server-admitted! s (- (server-admitted s) 1))
+          (set! active-connections (- active-connections 1)))))
 
     (define (log-error method url detail)
       (let ((err (current-error-port)))

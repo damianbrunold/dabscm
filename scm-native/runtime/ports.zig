@@ -37,6 +37,8 @@ pub const Port = struct {
     tag: u8 = 0,
     /// socket ports: the connection
     conn: ?*@import("net.zig").Conn = null,
+    /// guards output (threads may write to one port)
+    lock: std.Io.Mutex = .init,
 
     /// The number of bytes read from a generator port
     pub fn consumed(p: *const Port) u64 {
@@ -134,19 +136,27 @@ pub const Port = struct {
 
     pub fn write(p: *Port, bytes: []const u8) void {
         if (bytes.len == 0) return;
+        p.lock.lockUncancelable(os.io);
+        defer p.lock.unlock(os.io);
         if (std.mem.lastIndexOfScalar(u8, bytes, '\n')) |i| p.column = bytes.len - i - 1 else p.column += bytes.len;
         switch (p.kind) {
             .stdout => os.write(bytes),
             .stderr => os.writeStderr(bytes),
             else => {
                 p.out.appendSlice(pa, bytes) catch rt.oom();
-                if (p.kind == .file_out and p.out.items.len >= 65536) p.flush();
-                if (p.kind == .net_out and p.out.items.len >= 8192) p.flush();
+                if (p.kind == .file_out and p.out.items.len >= 65536) p.flushLocked();
+                if (p.kind == .net_out and p.out.items.len >= 8192) p.flushLocked();
             },
         }
     }
 
     pub fn flush(p: *Port) void {
+        p.lock.lockUncancelable(os.io);
+        defer p.lock.unlock(os.io);
+        p.flushLocked();
+    }
+
+    fn flushLocked(p: *Port) void {
         switch (p.kind) {
             .stdout => os.flush(),
             .file_out => if (p.file) |f| {
@@ -172,8 +182,11 @@ pub const Port = struct {
 
 /// File output ports, flushed at exit
 var file_ports: std.ArrayList(*Port) = .empty;
+var file_ports_lock: std.Io.Mutex = .init;
 
 pub fn flushAll() void {
+    file_ports_lock.lockUncancelable(os.io);
+    defer file_ports_lock.unlock(os.io);
     for (file_ports.items) |p| p.flush();
     stdout_port.flush();
 }
@@ -185,7 +198,11 @@ var stderr_port: Port = .{ .kind = .stderr, .binary = false };
 pub fn newPort(kind: Kind, binary: bool) *Port {
     const p = pa.create(Port) catch rt.oom();
     p.* = .{ .kind = kind, .binary = binary };
-    if (kind == .file_out) file_ports.append(pa, p) catch rt.oom();
+    if (kind == .file_out) {
+        file_ports_lock.lockUncancelable(os.io);
+        defer file_ports_lock.unlock(os.io);
+        file_ports.append(pa, p) catch rt.oom();
+    }
     return p;
 }
 

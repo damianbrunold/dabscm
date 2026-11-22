@@ -17,7 +17,7 @@ const encrypt_not_sup = 2;
 const encrypt_req = 3;
 
 /// The message of the last failure
-pub var last_error: []const u8 = "";
+pub threadlocal var last_error: []const u8 = "";
 
 fn fail(comptime fmt: []const u8, args: anytype) void {
     last_error = std.fmt.allocPrint(pa, fmt, args) catch @panic("out of memory");
@@ -155,6 +155,8 @@ fn ioText(e: anyerror) []const u8 {
 pub const PortSpec = union(enum) { port: u16, instance: []const u8 };
 
 pub fn connect(host: []const u8, port_spec: PortSpec, encrypt: bool, verify_in: bool, cert_host: []const u8) ?*net.Conn {
+    os.blockingBegin();
+    defer os.blockingEnd();
     var verify = verify_in;
     if (verify) if (os.getEnv("SCM_TLS_INSECURE")) |v| {
         const tv = std.mem.trim(u8, v, " \t");
@@ -221,6 +223,8 @@ fn browserPort() u16 {
 /// The TCP port of the named instance on host, from the SQL Server Browser
 /// (SSRP CLNT_UCAST_INST); errors leave their message in last_error
 pub fn lookup(host: []const u8, instance: []const u8, timeout_ms: i64) !u16 {
+    os.blockingBegin();
+    defer os.blockingEnd();
     const c = std.c;
     const udp_port = browserPort();
     const host_z = try pa.dupeSentinel(u8, host, 0);

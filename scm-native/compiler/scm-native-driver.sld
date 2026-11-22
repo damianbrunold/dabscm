@@ -161,9 +161,9 @@
 
     ;; Run the commands of jobs ((output command) ...), at most as many at a
     ;; time as there are cores (each Zig compilation of a large module takes
-    ;; a lot of memory). Processes, not threads (which native programs do
-    ;; not have yet): each writes its output to output.log. The results are
-    ;; as run-program/capture's: (exit-code output "").
+    ;; a lot of memory), as processes: each writes its output to
+    ;; output.log. The results are as run-program/capture's:
+    ;; (exit-code output "").
     (define (run-batched jobs)
       (let ((n (max 1 (sys-num-cpu-cores))))
         (let loop ((jobs jobs) (acc '()))
