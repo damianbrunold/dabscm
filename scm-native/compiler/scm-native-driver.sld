@@ -121,6 +121,8 @@
                                               (list (join-path lib-dir "libraries")
                                                     ;; (scm native eval) and the expander it links
                                                     (join-path (directory-name (absolute-path runtime-dir)) "compiler")
+                                                    ;; the native implementations of libraries ((scm native http))
+                                                    (join-path (directory-name (absolute-path runtime-dir)) "lib")
                                                     "."))
                                       (target-features target)
                                       (map car prims)

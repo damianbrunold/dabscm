@@ -8,7 +8,7 @@ const Thread = rt.Thread;
 
 const pa = std.heap.c_allocator;
 
-pub const Kind = enum { string_in, bytes_in, file_in, stdin, generator, string_out, bytes_out, file_out, stdout, stderr };
+pub const Kind = enum { string_in, bytes_in, file_in, stdin, generator, net_in, string_out, bytes_out, file_out, stdout, stderr, net_out };
 
 /// An endless binary input port's source: fills buf
 pub const Generator = *const fn (state: *anyopaque, buf: []u8) void;
@@ -35,6 +35,8 @@ pub const Port = struct {
     gen_base: u64 = 0,
     /// what the port is for (chacha20-port?, secure-random-port?)
     tag: u8 = 0,
+    /// socket ports: the connection
+    conn: ?*@import("net.zig").Conn = null,
 
     /// The number of bytes read from a generator port
     pub fn consumed(p: *const Port) u64 {
@@ -43,7 +45,7 @@ pub const Port = struct {
 
     pub fn isInput(p: *const Port) bool {
         return switch (p.kind) {
-            .string_in, .bytes_in, .file_in, .stdin, .generator => true,
+            .string_in, .bytes_in, .file_in, .stdin, .generator, .net_in => true,
             else => false,
         };
     }
@@ -62,6 +64,24 @@ pub const Port = struct {
                 const more = @max(64, p.pos + n - p.in.items.len);
                 const buf = p.in.addManyAsSlice(pa, more) catch rt.oom();
                 p.gen.?(p.gen_state.?, buf);
+            }
+            return true;
+        }
+        if (p.kind == .net_in) {
+            // a socket: the bytes consumed are dropped
+            if (p.pos > 0 and p.pos == p.in.items.len) {
+                p.in.clearRetainingCapacity();
+                p.pos = 0;
+            }
+            while (p.pos + n > p.in.items.len) {
+                if (p.eof) return false;
+                var buf: [8192]u8 = undefined;
+                const got = p.conn.?.portRead(&buf);
+                if (got == 0) {
+                    p.eof = true;
+                    return false;
+                }
+                p.in.appendSlice(pa, buf[0..got]) catch rt.oom();
             }
             return true;
         }
@@ -121,6 +141,7 @@ pub const Port = struct {
             else => {
                 p.out.appendSlice(pa, bytes) catch rt.oom();
                 if (p.kind == .file_out and p.out.items.len >= 65536) p.flush();
+                if (p.kind == .net_out and p.out.items.len >= 8192) p.flush();
             },
         }
     }
@@ -130,6 +151,10 @@ pub const Port = struct {
             .stdout => os.flush(),
             .file_out => if (p.file) |f| {
                 _ = os.writeFile(f, p.out.items);
+                p.out.clearRetainingCapacity();
+            },
+            .net_out => if (p.conn) |c| {
+                _ = c.writeAll(p.out.items);
                 p.out.clearRetainingCapacity();
             },
             else => {},
@@ -172,7 +197,7 @@ pub fn wrap(t: *Thread, p: *Port) Word {
     return rt.tagPtr(q);
 }
 
-fn staticWrap(p: *Port) Word {
+pub fn staticWrap(p: *Port) Word {
     const q = rt.staticAlloc(2, false);
     q[0] = rt.hdr(rt.T_PORT, 1);
     q[1] = @intFromPtr(p);

@@ -885,3 +885,4 @@ pub const prims_json = @import("prims_json.zig");
 pub const prims_xml = @import("prims_xml.zig");
 pub const prims_image = @import("prims_image.zig");
 pub const prims_module = @import("prims_module.zig");
+pub const prims_net = @import("prims_net.zig");

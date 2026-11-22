@@ -185,19 +185,24 @@ pub const @"%xor-key" = WN("xor-key", xorKey, 2, 2);
 const Aes = union(enum) {
     a128: struct { enc: crypto.core.aes.AesEncryptCtx(crypto.core.aes.Aes128), dec: crypto.core.aes.AesDecryptCtx(crypto.core.aes.Aes128) },
     a256: struct { enc: crypto.core.aes.AesEncryptCtx(crypto.core.aes.Aes256), dec: crypto.core.aes.AesDecryptCtx(crypto.core.aes.Aes256) },
+    /// std.crypto has no AES-192
+    a192: @import("aes192.zig").Ctx,
 
     fn init(key: []const u8) ?Aes {
         if (key.len == 16) return .{ .a128 = .{ .enc = crypto.core.aes.Aes128.initEnc(key[0..16].*), .dec = crypto.core.aes.Aes128.initDec(key[0..16].*) } };
         if (key.len == 32) return .{ .a256 = .{ .enc = crypto.core.aes.Aes256.initEnc(key[0..32].*), .dec = crypto.core.aes.Aes256.initDec(key[0..32].*) } };
+        if (key.len == 24) return .{ .a192 = @import("aes192.zig").Ctx.init(key[0..24].*) };
         return null;
     }
     fn encrypt(a: *const Aes, dst: *[16]u8, src: *const [16]u8) void {
         switch (a.*) {
+            .a192 => |*c| c.encrypt(dst, src),
             inline else => |*c| c.enc.encrypt(dst, src),
         }
     }
     fn decrypt(a: *const Aes, dst: *[16]u8, src: *const [16]u8) void {
         switch (a.*) {
+            .a192 => |*c| c.decrypt(dst, src),
             inline else => |*c| c.dec.decrypt(dst, src),
         }
     }
@@ -487,3 +492,37 @@ fn secureRandomPortP(t: *Thread) Err!Word {
     return rt.boolean(portTagged(arg(t, 0), TAG_SECURE) != null);
 }
 pub const @"%secure-random-port?" = WD("secure-random-port?", secureRandomPortP, 1, 1);
+
+// --- RSA (rsa.zig) ------------------------------------------------------------------
+
+const rsa = @import("rsa.zig");
+
+fn rsaGenerate(t: *Thread) Err!Word {
+    const bits = arg(t, 0);
+    if (!rt.isFix(bits)) return P.argTypeError(t);
+    const kp = rsa.generate(@intCast(@max(0, rt.unfix(bits)))) catch
+        return raise(t, msg("rsa-generate-keypair: {s}", .{rsa.last_error}), &.{});
+    t.reserve(data.bvWords(kp.public.len) + data.bvWords(kp.private.len) + 6);
+    const pub_bv = data.makeBytevector(t, kp.public.len);
+    @memcpy(data.bvBytes(pub_bv), kp.public);
+    const priv_bv = data.makeBytevector(t, kp.private.len);
+    @memcpy(data.bvBytes(priv_bv), kp.private);
+    return t.cons(pub_bv, t.cons(priv_bv, rt.NIL));
+}
+pub const @"%rsa-generate-keypair" = WN("rsa-generate-keypair", rsaGenerate, 1, 1);
+
+fn rsaEncrypt(t: *Thread) Err!Word {
+    const out = rsa.encrypt(try bvArg(t, 0), try bvArg(t, 1)) catch
+        return raise(t, msg("rsa-encrypt: {s}", .{rsa.last_error}), &.{});
+    defer pa.free(out);
+    return bytesResult(t, out);
+}
+pub const @"%rsa-encrypt" = WN("rsa-encrypt", rsaEncrypt, 2, 2);
+
+fn rsaDecrypt(t: *Thread) Err!Word {
+    const out = rsa.decrypt(try bvArg(t, 0), try bvArg(t, 1)) catch
+        return raise(t, msg("rsa-decrypt: {s}", .{rsa.last_error}), &.{});
+    defer pa.free(out);
+    return bytesResult(t, out);
+}
+pub const @"%rsa-decrypt" = WN("rsa-decrypt", rsaDecrypt, 2, 2);

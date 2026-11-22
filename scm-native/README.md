@@ -275,6 +275,30 @@ are loaded from source. `scm lint` over `scm-lib/libraries` this way (interpreti
 `(scm source lint)`) takes 10 s and gives the JVM's findings (JVM 16 s, the compiled
 `tools/lint.scm` 1.3 s).
 
+## Phase 6: network
+
+- Sockets and TLS (`net.zig`, `prims_net.zig`): `(scm net sockets)` over `std.Io.net`, TLS 1.2
+  and 1.3 clients with `std.crypto.tls.Client` (ECDHE with AES-GCM or ChaCha20-Poly1305) for
+  `tls-connect`, `socket-starttls!` and HTTPS; the trusted CAs are `SSL_CERT_FILE` or the
+  system's; `SCM_TLS_INSECURE` turns verification off. SIGPIPE is ignored.
+- RSA (`rsa.zig`, over `std.crypto.ff`): key generation (e = 65537, SubjectPublicKeyInfo and
+  PKCS#8 DER) and OAEP with SHA-256, interchangeable with the JVM's keys and ciphertexts.
+  AES with 192-bit keys (`aes192.zig`; `std.crypto` has 128 and 256 only).
+- `pg-quote-literal`, `pg-parse-datarow` for `(scm database postgres)`.
+- HTTP and WebSockets in Scheme (`lib/scm-native-http.sld`): the client (`http-get`,
+  `http-post`, `http-send`; redirects, response headers and text/binary bodies as the JDK
+  client's), request and response objects, `tcp-http-serve` (as the JVM's: one request per
+  connection, spooling of large bodies, the same status lines and log lines) and WebSockets.
+  The scm-lib libraries import it natively (`cond-expand`).
+- No threads yet: `(scm native tasks)` (`lib/scm-native-tasks.sld`) is a cooperative
+  scheduler. Every server connection is a task (a continuation); a task that would block
+  on a socket yields, and the scheduler polls the waiting sockets and the servers'
+  listeners. The program is a task too: its HTTP and WebSocket waits, `server-wait` and
+  `thread-sleep!` let servers in the same program run. Task code must not clean up with
+  `dynamic-wind` (leaving a task runs the after thunks). Raw socket ports block in the
+  runtime: a program that talks to its own server over `(scm net sockets)` cannot be
+  served meanwhile (such a read ends after 2 s with a warning); SRFI 18 threads are Phase 7.
+
 ## Phase 0 spike (2026-11-21)
 
 `spike/rt.zig` is a minimal runtime. `spike/bench.zig` holds hand-written code in the shape the

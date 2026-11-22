@@ -12,15 +12,29 @@
           http-request-url
           http-request?
           make-http-request)
+  (cond-expand
+    (dabscm-native
+     ;; natively: in Scheme over the sockets
+     (import (only (scm native http)
+                   make-http-request
+                   http-request-method
+                   http-request-url
+                   http-request-headers
+                   http-request-body
+                   http-request-body-bytes
+                   http-request-body-file
+                   http-request?)))
+    (else
+     (begin
+       (define make-http-request (%primitive "make-http-request"))
+       (define http-request-method (%primitive "http-request-method"))
+       (define http-request-url (%primitive "http-request-url"))
+       (define http-request-headers (%primitive "http-request-headers"))
+       (define http-request-body (%primitive "http-request-body"))
+       (define http-request-body-bytes (%primitive "http-request-body-bytes"))
+       (define http-request-body-file (%primitive "http-request-body-file"))
+       (define http-request? (%primitive "http-request?")))))
   (begin
-    (define make-http-request (%primitive "make-http-request"))
-    (define http-request-method (%primitive "http-request-method"))
-    (define http-request-url (%primitive "http-request-url"))
-    (define http-request-headers (%primitive "http-request-headers"))
-    (define http-request-body (%primitive "http-request-body"))
-    (define http-request-body-bytes (%primitive "http-request-body-bytes"))
-    (define http-request-body-file (%primitive "http-request-body-file"))
-    (define http-request? (%primitive "http-request?"))
 
     (define (http-request-header req name)
       "Syntax: (http-request-header req name)

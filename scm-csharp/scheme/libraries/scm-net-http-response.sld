@@ -24,18 +24,33 @@
           make-http-response
           make-http-stream-response
           text-response)
+  (cond-expand
+    (dabscm-native
+     ;; natively: in Scheme over the sockets
+     (import (only (scm native http)
+                   make-http-response
+                   make-http-file-response
+                   make-http-stream-response
+                   http-websocket-upgrade
+                   http-response-with-headers
+                   http-response-status
+                   http-response-headers
+                   http-response-body
+                   http-response?)))
+    (else
+     (begin
+       (define make-http-response (%primitive "make-http-response"))
+       (define make-http-file-response (%primitive "make-http-file-response"))
+       (define make-http-stream-response
+         (%primitive "make-http-stream-response"))
+       (define http-websocket-upgrade (%primitive "http-websocket-upgrade"))
+       (define http-response-with-headers
+         (%primitive "http-response-with-headers"))
+       (define http-response-status (%primitive "http-response-status"))
+       (define http-response-headers (%primitive "http-response-headers"))
+       (define http-response-body (%primitive "http-response-body"))
+       (define http-response? (%primitive "http-response?")))))
   (begin
-    (define make-http-response (%primitive "make-http-response"))
-    (define make-http-file-response (%primitive "make-http-file-response"))
-    (define make-http-stream-response
-      (%primitive "make-http-stream-response"))
-    (define http-websocket-upgrade (%primitive "http-websocket-upgrade"))
-    (define http-response-with-headers
-      (%primitive "http-response-with-headers"))
-    (define http-response-status (%primitive "http-response-status"))
-    (define http-response-headers (%primitive "http-response-headers"))
-    (define http-response-body (%primitive "http-response-body"))
-    (define http-response? (%primitive "http-response?"))
 
     (define (http-response-header resp name)
       "Syntax: (http-response-header resp name)

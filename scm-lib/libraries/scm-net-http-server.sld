@@ -13,12 +13,22 @@
           server-stop
           server-wait
           tcp-http-serve)
+  (cond-expand
+    (dabscm-native
+     ;; natively: in Scheme over the sockets
+     (import (only (scm native http)
+                   tcp-http-serve
+                   server-stop
+                   server-wait
+                   server-install-shutdown-hook)))
+    (else
+     (begin
+       (define tcp-http-serve (%primitive "tcp-http-serve"))
+       (define server-stop (%primitive "server-stop"))
+       (define server-wait (%primitive "server-wait"))
+       (define server-install-shutdown-hook
+         (%primitive "server-install-shutdown-hook")))))
   (begin
-    (define tcp-http-serve (%primitive "tcp-http-serve"))
-    (define server-stop (%primitive "server-stop"))
-    (define server-wait (%primitive "server-wait"))
-    (define server-install-shutdown-hook
-      (%primitive "server-install-shutdown-hook"))
 
     (define (serve-forever port handler . rest)
       "Syntax: (serve-forever port handler [max-threads [host [read-timeout-ms [max-body-bytes [graceful-stop-ms [spool-threshold-bytes [max-queued]]]]]]]])

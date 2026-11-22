@@ -11,11 +11,21 @@
           http-post-json
           http-put
           http-send)
+  (cond-expand
+    (dabscm-native
+     ;; natively: in Scheme over the sockets
+     (import (only (scm native http)
+                   http-get
+                   http-get-bytevector
+                   http-post
+                   http-send)))
+    (else
+     (begin
+       (define http-get (%primitive "http-get"))
+       (define http-get-bytevector (%primitive "http-get-bytevector"))
+       (define http-post (%primitive "http-post"))
+       (define http-send (%primitive "http-send")))))
   (begin
-    (define http-get (%primitive "http-get"))
-    (define http-get-bytevector (%primitive "http-get-bytevector"))
-    (define http-post (%primitive "http-post"))
-    (define http-send (%primitive "http-send"))
 
     (define (http-put url body)
       "Syntax: (http-put url body)

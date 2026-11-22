@@ -2,7 +2,7 @@
 //! (std.Io, std.process, ...) is kept in this file.
 const std = @import("std");
 
-var io: std.Io = undefined;
+pub var io: std.Io = undefined;
 var environ: ?*std.process.Environ.Map = null;
 var out_buf: [8192]u8 = undefined;
 var out_len: usize = 0;
