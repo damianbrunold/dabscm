@@ -16,7 +16,12 @@
           make-transformer
           transformer?
           transformer-name
-          apply-transformer)
+          apply-transformer
+          binding-table-entries
+          scope-counter-value
+          set-scope-counter!
+          transformer-parts
+          rebuild-transformer)
   (import (scheme base)
           (scheme cxr)
           (srfi 1)
@@ -39,6 +44,9 @@
     (define (fresh-scope)
       (set! scope-counter (+ scope-counter 1))
       scope-counter)
+
+    (define (scope-counter-value) scope-counter)
+    (define (set-scope-counter! n) (set! scope-counter n))
 
     (define (scopes-add s scopes)
       (cond ((null? scopes) (list s))
@@ -108,6 +116,11 @@
                           (loop (cdr es) best best-size)))
                     (loop (cdr es) best best-size)))))))
 
+    ;; The table as a list of (symbol (scopes . binding) ...), for the
+    ;; expander state that eval needs at run time
+    (define (binding-table-entries)
+      (hash-table-fold table (lambda (sym entries acc) (cons (cons sym entries) acc)) '()))
+
     (define (bound-identifier=? a b)
       (and (ident? a) (ident? b)
            (eq? (ident-sym a) (ident-sym b))
@@ -129,6 +142,11 @@
       (ellipsis transformer-ellipsis)
       (literals transformer-literals)
       (rules transformer-rules))
+
+    ;; (name ellipsis literals rules) and back, for the expander state
+    (define (transformer-parts t)
+      (list (transformer-name t) (transformer-ellipsis t) (transformer-literals t) (transformer-rules t)))
+    (define (rebuild-transformer parts) (apply %make-transformer parts))
 
     ;; spec: the cdr of (syntax-rules ...) as syntax
     (define (make-transformer name spec)

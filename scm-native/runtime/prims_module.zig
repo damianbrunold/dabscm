@@ -150,3 +150,85 @@ fn procedureDoc(t: *Thread) Err!Word {
     return data.heapStringUtf8(t, doc);
 }
 pub const @"%procedure-doc" = WN("procedure-doc", procedureDoc, 1, 1);
+
+// --- eval: the expander state, the globals, primitives by name -------------------
+
+/// The expander state of a program that links eval (a datum's text, set by
+/// the program's specials function)
+var eval_state: ?[]const u8 = null;
+
+pub fn setEvalState(s: []const u8) void {
+    eval_state = s;
+}
+
+fn evalState(t: *Thread) Err!Word {
+    const s = eval_state orelse return rt.FALSE;
+    t.reserve(data.stringWords(s.len, true));
+    return data.heapStringUtf8(t, s);
+}
+pub const @"%%eval-state" = WN("%eval-state", evalState, 0, 0);
+
+/// The compiled program's global cells by name ("<module>: <variable>")
+var global_index: std.StringHashMapUnmanaged(u32) = .empty;
+var global_cells: std.ArrayList(struct { name: []const u8, cell: *Word }) = .empty;
+
+pub fn registerGlobal(name: []const u8, cell: *Word) void {
+    const r = global_index.getOrPut(pa, name) catch rt.oom();
+    if (r.found_existing) return;
+    r.value_ptr.* = @intCast(global_cells.items.len);
+    global_cells.append(pa, .{ .name = name, .cell = cell }) catch rt.oom();
+}
+
+/// (%native-global name): the index of the program's cell of the global
+/// named name, or #f if the program has none
+fn nativeGlobal(t: *Thread) Err!Word {
+    const name = data.toUtf8(try P.stringArg(t, 0));
+    return if (global_index.get(name)) |i| rt.fix(i) else rt.FALSE;
+}
+pub const @"%%native-global" = WN("%native-global", nativeGlobal, 1, 1);
+
+fn cellArg(t: *Thread) Err!usize {
+    const i = arg(t, 0);
+    if (!rt.isFix(i) or rt.unfix(i) < 0 or rt.unfix(i) >= global_cells.items.len)
+        return raise(t, "%native-global-ref: bad global", &.{i});
+    return @intCast(rt.unfix(i));
+}
+
+fn nativeGlobalRef(t: *Thread) Err!Word {
+    const g = global_cells.items[try cellArg(t)];
+    const v = g.cell.*;
+    if (v == rt.UNBOUND) return raise(t, std.fmt.allocPrint(pa, "{s} is not bound", .{g.name}) catch rt.oom(), &.{});
+    return v;
+}
+pub const @"%%native-global-ref" = WN("%native-global-ref", nativeGlobalRef, 1, 1);
+
+fn nativeGlobalSet(t: *Thread) Err!Word {
+    const g = global_cells.items[try cellArg(t)];
+    // the program's global arrays are roots of every collection
+    g.cell.* = arg(t, 1);
+    return rt.UNSPEC;
+}
+pub const @"%%native-global-set!" = WN("%native-global-set!", nativeGlobalSet, 2, 2);
+
+/// (%primitive-ref name): the procedure (or value) of the runtime's
+/// primitive named name (a symbol), or #f
+var prim_cache: std.StringHashMapUnmanaged(Word) = .empty;
+
+fn primitiveRef(t: *Thread) Err!Word {
+    const s = arg(t, 0);
+    if (!rt.isPtr(s) or rt.objType(s) != rt.T_SYMBOL) return raise(t, "%primitive-ref: not a symbol", &.{s});
+    const name = data.symbolName(s);
+    if (prim_cache.get(name)) |w| return w;
+    const table = @import("root").primitive_table;
+    for (table) |e| {
+        if (std.mem.eql(u8, e.name, name)) {
+            // a value primitive's value may be a heap object: not cached
+            if (e.make) |make| return make();
+            const w = rt.primitive(e.code.?, e.name); // static
+            prim_cache.put(pa, e.name, w) catch rt.oom();
+            return w;
+        }
+    }
+    return rt.FALSE;
+}
+pub const @"%%primitive-ref" = WN("%primitive-ref", primitiveRef, 1, 1);

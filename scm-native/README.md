@@ -237,6 +237,26 @@ The native `scmc` (same options; `-I dir` adds a library directory) finds `scm-n
 (about a minute on the JVM). The driver builds objects with `start-program`, one process per
 core, since native programs have no threads yet.
 
+### eval, environment, load
+
+`(scheme eval)` and `(scheme load)` are, natively, `(scm native eval)`
+(`compiler/scm-native-eval.sld`): a program that imports them links the expander and a
+closure-generating interpreter over Core IR, whose procedures are ordinary procedures of the
+program (compiled code calls them directly).
+
+- The compiler embeds its expander state after compiling the program (`expander-state` in
+  `scm-native-expand.sld`: the binding table without local bindings, the libraries with their
+  exports and globals, the macros' syntax-rules), and registers the program's global cells by
+  name (`registerGlobal`, `%native-global`). `eval` installs the state on first use, so it
+  expands code against the linked libraries as the compiler did, without their sources.
+- Globals of linked libraries are the program's own cells; primitives come from the runtime's
+  table of all primitives (`%primitive-ref`).
+- A library the program does not link is loaded from its source, over the search path the
+  program was compiled with, and its body runs in the interpreter.
+- As on the JVM, `(environment spec ...)` gives one environment per list of import sets, and
+  library names such as `(scheme r5rs)` and `(user main)` are environments too.
+- Programs without eval do not carry any of this.
+
 ## Phase 0 spike (2026-11-21)
 
 `spike/rt.zig` is a minimal runtime. `spike/bench.zig` holds hand-written code in the shape the

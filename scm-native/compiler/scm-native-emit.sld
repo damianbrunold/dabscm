@@ -1,7 +1,8 @@
 (define-library (scm native emit)
   (export emit-modules
           mangle
-          set-program-version!)
+          set-program-version!
+          set-eval-state!)
   (import (scheme base)
           (scheme char)
           (scheme cxr)
@@ -9,6 +10,7 @@
           (scheme write)
           (srfi 1)
           (srfi 69)
+          (srfi 132)
           (scm native ast)
           (scm native anf)
           (scm native expand)
@@ -926,6 +928,13 @@
                               (max 1 (cdr (assoc sym module-sizes))))
                           " },\n"))
                    syms))
+             (eval-setup
+              (if eval-state
+                  (cons (cat "    rt.setEvalState(eval_state);\n")
+                        (map (lambda (g) (cat "    rt.registerGlobal(\"" (zig-escape (glob-name g)) "\", &" (global-place g) ");\n"))
+                             (list-sort (lambda (a b) (string<? (glob-name a) (glob-name b)))
+                                        (hash-table-keys global-table))))
+                  '()))
              (specials
               (filter-map
                (lambda (s)
@@ -945,7 +954,15 @@
                              "export fn scm_program_specials(t: *Thread) callconv(.c) void {\n"
                              "    const t_ = t;\n    _ = t_;\n")
                        specials
-                       (list "}\n\n")))))
+                       eval-setup
+                       (list "}\n\n")
+                       (if eval-state
+                           (list "const eval_state = \"" (zig-escape eval-state) "\";\n\n")
+                           '())))))
+
+    ;; the expander state's text for a program that links eval, else #f
+    (define eval-state #f)
+    (define (set-eval-state! s) (set! eval-state s))
 
     ;; the dabscm version, for sys-scm-version
     (define program-version "unknown")

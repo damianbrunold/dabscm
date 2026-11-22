@@ -99,6 +99,12 @@ pub fn scm_missing_primitive(name: [*]const u8, len: usize) callconv(.c) Word {
 pub fn scm_set_doc(code: Code, doc: [*]const u8, len: usize) callconv(.c) void {
     @import("prims_module.zig").setDoc(code, doc[0..len]);
 }
+pub fn scm_set_eval_state(s: [*]const u8, len: usize) callconv(.c) void {
+    @import("prims_module.zig").setEvalState(s[0..len]);
+}
+pub fn scm_register_global(name: [*]const u8, len: usize, cell: *Word) callconv(.c) void {
+    @import("prims_module.zig").registerGlobal(name[0..len], cell);
+}
 pub fn scm_remember(obj: Word) callconv(.c) void {
     rt.remember(obj);
 }

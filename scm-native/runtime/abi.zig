@@ -332,6 +332,8 @@ pub const impl = if (@hasDecl(root, "scm_runtime")) root.scm_runtime else struct
     pub extern fn scm_error_code(t: *Thread) callconv(.c) void;
     pub extern fn scm_remember(obj: Word) void;
     pub extern fn scm_set_doc(code: Code, doc: [*]const u8, len: usize) void;
+    pub extern fn scm_set_eval_state(s: [*]const u8, len: usize) void;
+    pub extern fn scm_register_global(name: [*]const u8, len: usize, cell: *Word) void;
 };
 
 /// Prepare a call of procedure `p` and return its code.
@@ -509,6 +511,13 @@ pub fn primitive(code: Code, comptime name: []const u8) Word {
 /// The docstring of the lambda whose code is code (for procedure-doc)
 pub fn setDoc(code: Code, comptime doc: []const u8) void {
     impl.scm_set_doc(code, doc.ptr, doc.len);
+}
+/// For eval: the expander state, and the program's global cells by name
+pub fn setEvalState(comptime s: []const u8) void {
+    impl.scm_set_eval_state(s.ptr, s.len);
+}
+pub fn registerGlobal(comptime name: []const u8, cell: *Word) void {
+    impl.scm_register_global(name.ptr, name.len, cell);
 }
 pub fn missingPrimitive(comptime name: []const u8) Word {
     return impl.scm_missing_primitive(name.ptr, name.len);

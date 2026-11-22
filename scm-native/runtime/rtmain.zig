@@ -48,6 +48,35 @@ comptime {
     }
 }
 
+/// Every primitive by name, for eval (%primitive-ref)
+pub const PrimEntry = struct { name: []const u8, code: ?rt.Code, make: ?*const fn () callconv(.c) rt.Word };
+pub const primitive_table = blk: {
+    @setEvalBranchQuota(1000000);
+    var n = 0;
+    for (prim_modules) |m| {
+        for (std.meta.declarations(m)) |name| {
+            if (name.len >= 2 and name[0] == '%') n += 1;
+        }
+    }
+    var table: [n]PrimEntry = undefined;
+    var i = 0;
+    for (prim_modules) |m| {
+        for (std.meta.declarations(m)) |name| {
+            if (name.len < 2 or name[0] != '%') continue;
+            const v = @field(m, name);
+            table[i] = if (@TypeOf(v) == rt.Code)
+                .{ .name = name[1..], .code = v, .make = null }
+            else if (@TypeOf(v) == @import("prims.zig").Prim)
+                .{ .name = name[1..], .code = v.code, .make = null }
+            else
+                .{ .name = name[1..], .code = null, .make = v.make };
+            i += 1;
+        }
+    }
+    const final = table;
+    break :blk &final;
+};
+
 /// The program object provides its modules, in initialization order
 extern fn scm_program_modules() callconv(.c) rt.abi.ModuleList;
 

@@ -6,7 +6,13 @@
           glob-sym
           glob-name
           glob-assigned?
-          missing-primitives)
+          missing-primitives
+          expander-state
+          install-expander-state!
+          make-eval-module
+          expand-eval
+          take-new-modules!
+          installed-glob?)
   (import (scheme base)
           (scheme char)
           (scheme cxr)
@@ -15,9 +21,14 @@
           (scheme write)
           (srfi 1)
           (srfi 69)
+          (srfi 132)
           (scm fs)
           (scm native ast)
           (scm native syntax))
+  ;; the host's characters: full Unicode natively, UTF-16 units on the JVM
+  (cond-expand
+    (dabscm-native (begin (define native-host #t)))
+    (else (begin (define native-host #f))))
   (begin
     ;; The expander: syntax (as read) -> Core IR. It follows the JVM
     ;; implementation's Expander.java (sets of scopes, two-scope flip,
@@ -496,7 +507,7 @@
                      (lambda (port)
                        (let ((s (read-string 100000000 port)))
                          (if (eof-object? s) "" s)))))
-             (marked (mark-astral-chars text))
+             (marked (if native-host text (mark-astral-chars text)))
              (port (open-input-string marked)))
         (let loop ((acc '()))
           (let ((x (read port)))
@@ -769,6 +780,144 @@
                    '()
                    '((define script-arguments ((%primitive "cdr") ((%primitive "command-line")))))))))
         (append imports globals rest)))
+
+    ;; --- the state for eval at run time -------------------------------------
+    ;; A program that links (scm native eval) carries the expander's state
+    ;; after its expansion: the binding table (without local bindings), the
+    ;; libraries with their exports and globals, and the scope counter. Run
+    ;; time eval installs it, so that it expands code against the linked
+    ;; libraries as the compiler did, without their sources.
+    ;;
+    ;; (state counter features search-path globs bindings entries modules)
+    ;;   globs: #((lib sym assigned) ...)
+    ;;   bindings: #(binding ...): (c name) (p name) (g glob-index)
+    ;;     (m name ellipsis literals rules), syntax encoded: an identifier is
+    ;;     #(%i sym scopes), a vector #(%v item ...), an astral-char #(%a code)
+    ;;   entries: (#(sym (scopes binding-index) ...) ...), sorted
+    ;;   modules: ((name scope ((sym binding-index) ...) ((sym glob-index) ...)) ...)
+    ;;   (lists and vectors rather than pairs and lists: the JVM
+    ;;   implementation's write fails on (quote . 3) and writes (quote a b)
+    ;;   as 'a)
+
+    (define (expander-state)
+      (let ((glob-ids (make-hash-table eq?)) (globs '()) (nglobs 0)
+            (binding-ids (make-hash-table eq?)) (bindings '()) (nbindings 0))
+        (define (glob-id g)
+          (or (hash-table-ref/default glob-ids g #f)
+              (let ((i nglobs))
+                (hash-table-set! glob-ids g i)
+                (set! nglobs (+ i 1))
+                (set! globs (cons (list (glob-lib g) (glob-sym g) (glob-assigned? g)) globs))
+                i)))
+        (define (enc x)
+          (cond ((ident? x) (vector '%i (ident-sym x) (ident-scopes x)))
+                ((pair? x) (cons (enc (car x)) (enc (cdr x))))
+                ((vector? x) (list->vector (cons '%v (map enc (vector->list x)))))
+                ((astral-char? x) (vector '%a (astral-char-code x)))
+                (else x)))
+        (define (binding-id b)
+          (and (not (eq? (car b) 'local))
+               (or (hash-table-ref/default binding-ids b #f)
+                   (let ((e (case (car b)
+                              ((core) (list 'c (cdr b)))
+                              ((primitive) (list 'p (cdr b)))
+                              ((global) (list 'g (glob-id (cdr b))))
+                              ((macro) (cons 'm (map enc (transformer-parts (cdr b)))))
+                              (else (error "expander-state: binding" (car b))))))
+                     (let ((i nbindings))
+                       (hash-table-set! binding-ids b i)
+                       (set! nbindings (+ i 1))
+                       (set! bindings (cons e bindings))
+                       i)))))
+        (let* ((entries
+                (filter-map
+                 (lambda (entry)
+                   (let ((es (filter-map (lambda (e)
+                                           (let ((id (binding-id (cdr e))))
+                                             (and id (list (car e) id))))
+                                         (cdr entry))))
+                     (and (pair? es) (list->vector (cons (car entry) es)))))
+                 (sort-by-name (binding-table-entries))))
+               (mods
+                (map (lambda (entry)
+                       (let ((m (cdr entry)))
+                         (list (module-name m) (module-scope m)
+                               (filter-map (lambda (e) (let ((id (binding-id (cdr e)))) (and id (list (car e) id))))
+                                           (module-exports m))
+                               (map (lambda (e) (list (car e) (glob-id (cdr e)))) (module-globals m)))))
+                     (reverse modules))))
+          (list 'state (scope-counter-value) features search-path
+                (list->vector (reverse globs)) (list->vector (reverse bindings)) entries mods))))
+
+    (define (sort-by-name entries)
+      (list-sort (lambda (a b) (string<? (symbol->string (car a)) (symbol->string (car b)))) entries))
+
+    (define (install-expander-state! st)
+      (let* ((globs (vector-map (lambda (g)
+                                  (let ((x (make-glob (car g) (cadr g))))
+                                    (when (caddr g) (set-glob-assigned! x #t))
+                                    (hash-table-set! installed-globs x #t)
+                                    x))
+                                (list-ref st 4)))
+             (dec (lambda (x)
+                    (let dec ((x x))
+                      (cond ((pair? x) (cons (dec (car x)) (dec (cdr x))))
+                            ((and (vector? x) (> (vector-length x) 0) (eq? (vector-ref x 0) '%i))
+                             (make-ident (vector-ref x 1) (vector-ref x 2)))
+                            ((and (vector? x) (> (vector-length x) 0) (eq? (vector-ref x 0) '%v))
+                             (list->vector (map dec (cdr (vector->list x)))))
+                            ((and (vector? x) (> (vector-length x) 0) (eq? (vector-ref x 0) '%a))
+                             (integer->char (vector-ref x 1)))
+                            (else x)))))
+             (bindings (vector-map (lambda (e)
+                                     (case (car e)
+                                       ((c) (cdr (assq (cadr e) core-bindings)))
+                                       ((p) (cons 'primitive (cadr e)))
+                                       ((g) (global-binding (vector-ref globs (cadr e))))
+                                       ((m) (cons 'macro (rebuild-transformer (map dec (cdr e)))))))
+                                   (list-ref st 5))))
+        (set-scope-counter! (list-ref st 1))
+        (set! features (list-ref st 2))
+        (set! search-path (list-ref st 3))
+        (for-each (lambda (entry)
+                    (for-each (lambda (e) (bind! (car entry) (car e) (vector-ref bindings (cadr e))))
+                              (reverse (cdr entry))))
+                  (map vector->list (list-ref st 6)))
+        (set! modules '())
+        (set! scope->module '())
+        (set! completed '())
+        (for-each (lambda (md)
+                    (let ((m (%make-module (car md) (cadr md)
+                                           (map (lambda (e) (cons (car e) (vector-ref globs (cadr e)))) (cadddr md))
+                                           (map (lambda (e) (cons (car e) (vector-ref bindings (cadr e)))) (caddr md))
+                                           '())))
+                      (set! modules (cons (cons (car md) m) modules))
+                      (set! scope->module (cons (cons (cadr md) m) scope->module))))
+                  (list-ref st 7))))
+
+    ;; the globals of the compiled program (which have its cells)
+    (define installed-globs (make-hash-table eq?))
+    (define (installed-glob? g) (hash-table-ref/default installed-globs g #f))
+
+    ;; A module for eval: the environment of the import sets specs, named
+    ;; (in messages) after the first, as in the JVM implementation
+    (define (make-eval-module specs)
+      (let ((m (new-module (if (and (pair? specs) (pair? (car specs))) (car specs) '(eval)))))
+        (set! current m)
+        (for-each import-set! specs)
+        m))
+
+    ;; The Core IR forms of the top-level form (a datum) in module m
+    (define (expand-eval m form)
+      (set! current m)
+      (toplevel (wrap form (list (module-scope m)))))
+
+    ;; The libraries loaded (from source) since the last call, in
+    ;; initialization order: ((name . body) ...)
+    (define (take-new-modules!)
+      (let ((new (reverse completed)))
+        (set! completed '())
+        (map (lambda (m) (cons (module-name m) `(seq ,@(reverse (module-body m)) ,unspecified))) new)))
 
     (define (expand-program file paths feature-list prims core-file)
       ;; a fresh library registry per program: the modules of an earlier

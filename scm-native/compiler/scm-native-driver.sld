@@ -112,7 +112,10 @@
                       (expand-program file
                                       (append (list (directory-name (absolute-path file)))
                                               (if (pair? extra-dirs) (car extra-dirs) '())
-                                              (list (join-path lib-dir "libraries") "."))
+                                              (list (join-path lib-dir "libraries")
+                                                    ;; (scm native eval) and the expander it links
+                                                    (join-path (directory-name (absolute-path runtime-dir)) "compiler")
+                                                    "."))
                                       (target-features target)
                                       (map car prims)
                                       (join-path lib-dir "library.scm"))))
@@ -121,6 +124,12 @@
               (display "scmc: warning: primitives not implemented in dabscm native yet:" err)
               (for-each (lambda (p) (display " " err) (display p err)) (missing-primitives))
               (newline err)))
+          ;; a program that links eval carries the expander's state
+          (set-eval-state!
+           (and (assoc '(scm native eval) modules)
+                (let ((out (open-output-string)))
+                  (write (expander-state) out)
+                  (get-output-string out))))
           (set-leaf-primitives! (filter-map (lambda (p) (and (eq? (caddr p) 'leaf) (car p))) prims))
           (let ((modules (map (lambda (m)
                                 (let ((body (anf (cdr m))))
