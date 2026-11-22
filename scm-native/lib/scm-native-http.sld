@@ -33,6 +33,7 @@
   (import (scheme base)
           (scheme char)
           (except (scheme file) file-exists? delete-file)
+          (only (scheme process-context) exit)
           (scheme write)
           (srfi 151)
           (scm bytevector)
@@ -61,6 +62,8 @@
     (define tcp-listen-host (%primitive "%tcp-listen-host"))
 
     (define (now-ms) (timestamp))
+
+    (define set-record-printer! (%primitive "%set-record-printer!"))
 
     ;; the servers' listeners are polled by the scheduler, (scm native tasks)
     (define servers '())
@@ -266,6 +269,7 @@
       (file request-file)
       (timeout request-timeout)
       (follow request-follow?))
+    (set-record-printer! http-request '("#<http-request " 0 " " 1 ">"))
 
     (define (make-http-request method url headers body . opts)
       (unless (string? method) (error "Failed in make-http-request: wrong argument type"))
@@ -313,6 +317,7 @@
       (body response-body-value)
       (offset response-offset)
       (length response-length))
+    (set-record-printer! http-response '("#<http-response " 0 ">"))
 
     (define (status-arg who s)
       (unless (exact-integer? s) (error (string-append "value out of range: " (datum->string s))))
@@ -659,6 +664,7 @@
       (graceful server-graceful)
       (spool server-spool)
       (running server-running? set-server-running!))
+    (set-record-printer! server '("#<server>"))
 
     (define (int-arg x)
       (unless (exact-integer? x) (error (string-append "value out of range: " (datum->string x))))
@@ -691,15 +697,43 @@
       #t)
 
     (define (server-wait s)
-      (wait-until! (lambda () (not (server-running? s))))
+      (wait-until! (lambda () (and (not (server-running? s)) (not shutting-down))))
       #t)
 
-    (define (server-install-shutdown-hook s . grace) #t)
+    ;; SIGINT and SIGTERM stop the hooked servers, let their connections
+    ;; finish for the grace time and exit (130, 143) as the JVM does; the
+    ;; signal is seen while the program waits in the scheduler
+    (define shutdown-signal (%primitive "%shutdown-signal"))
+    (define shutdown-hooks '())           ; (server . grace-ms)
+    (define active-connections 0)
+    (define shutting-down #f)             ; server-wait does not return meanwhile
+
+    (define (server-install-shutdown-hook s . grace)
+      (unless (server? s) (error "Failed in server-install-shutdown-hook: wrong argument type"))
+      (let ((g (if (pair? grace) (max 0 (int-arg (car grace))) (server-graceful s))))
+        (when (null? shutdown-hooks)
+          (shutdown-signal)
+          (spawn! (lambda ()
+                    (wait-until! (lambda () (> (shutdown-signal) 0)))
+                    (run-shutdown-hooks!))))
+        (set! shutdown-hooks (cons (cons s g) shutdown-hooks)))
+      #t)
+
+    (define (run-shutdown-hooks!)
+      (let ((sig (shutdown-signal))
+            (deadline (+ (now-ms) (apply max 0 (map cdr shutdown-hooks)))))
+        (set! shutting-down #t)
+        (for-each (lambda (h) (server-stop (car h))) shutdown-hooks)
+        (wait-until! (lambda () (or (= active-connections 0) (>= (now-ms) deadline))))
+        (exit (+ 128 sig))))
 
     (define (accept-connection! s)
       (let ((socket (guard (e (#t #f)) (tcp-accept (server-listener s)))))
         (when socket
-          (spawn! (lambda () (serve-connection s socket))))))
+          (set! active-connections (+ active-connections 1))
+          (spawn! (lambda ()
+                    (serve-connection s socket)
+                    (set! active-connections (- active-connections 1)))))))
 
     (define (log-error method url detail)
       (let ((err (current-error-port)))
@@ -940,6 +974,7 @@
       (server? ws-server?)
       (close-sent ws-close-sent? set-ws-close-sent!)
       (closed ws-closed? set-ws-closed!))
+    (set-record-printer! websocket '("#<websocket>"))
 
     (define ws-guid "258EAFA5-E914-47DA-95CA-C5AB0DC85B11")
     (define max-message 16777216)

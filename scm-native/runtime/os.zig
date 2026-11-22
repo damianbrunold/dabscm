@@ -1043,6 +1043,30 @@ pub fn resizeCount() ?i64 {
     return resizes.load(.monotonic);
 }
 
+var shutdown_signal: std.atomic.Value(i64) = .init(0);
+var shutdown_installed = false;
+
+fn onShutdown(sig: std.posix.SIG) callconv(.c) void {
+    shutdown_signal.store(@intFromEnum(sig), .monotonic);
+}
+
+/// The SIGINT or SIGTERM received (0 if none so far), installing the
+/// handlers first; without SA_RESTART, so that a waiting poll returns
+pub fn shutdownSignal() i64 {
+    if (is_windows) return 0;
+    if (!shutdown_installed) {
+        const act = std.posix.Sigaction{
+            .handler = .{ .handler = &onShutdown },
+            .mask = std.posix.sigemptyset(),
+            .flags = 0,
+        };
+        std.posix.sigaction(.INT, &act, null);
+        std.posix.sigaction(.TERM, &act, null);
+        shutdown_installed = true;
+    }
+    return shutdown_signal.load(.monotonic);
+}
+
 // --- random-access files ---------------------------------------------------------------
 
 pub const RafMode = enum { read, write, update };

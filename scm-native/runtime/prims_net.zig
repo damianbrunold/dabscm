@@ -5,6 +5,7 @@ const rt = @import("rt.zig");
 const data = @import("data.zig");
 const ports = @import("ports.zig");
 const net = @import("net.zig");
+const tds = @import("tds.zig");
 const sys = @import("prims_sys.zig");
 const P = @import("prims.zig");
 const Word = rt.Word;
@@ -82,6 +83,35 @@ fn startTls(t: *Thread) Err!Word {
     return arg(t, 0);
 }
 pub const @"%socket-starttls!" = WN("socket-starttls!", startTls, 2, 3);
+
+fn tdsConnect(t: *Thread) Err!Word {
+    const host = data.toUtf8(try P.stringArg(t, 0));
+    const pw = arg(t, 1);
+    const port_spec = if (rt.isFix(pw))
+        tds.PortSpec{ .port = try portArg(t, 1) }
+    else
+        tds.PortSpec{ .instance = data.toUtf8(try P.stringArg(t, 1)) };
+    const encrypt = !(t.argc > 2 and arg(t, 2) == rt.FALSE);
+    const verify = t.argc > 3 and arg(t, 3) != rt.FALSE;
+    const cert_host = if (t.argc > 4 and arg(t, 4) != rt.FALSE) data.toUtf8(try P.stringArg(t, 4)) else host;
+    const c = tds.connect(host, port_spec, encrypt, verify, cert_host) orelse return raise(t, tds.last_error, &.{});
+    return newSocket(t, c);
+}
+pub const @"%tds-connect" = WN("tds-connect", tdsConnect, 2, 5);
+
+fn sqlBrowserPort(t: *Thread) Err!Word {
+    const host = data.toUtf8(try P.stringArg(t, 0));
+    const instance = data.toUtf8(try P.stringArg(t, 1));
+    var timeout: i64 = 5000;
+    if (t.argc > 2) {
+        const w = arg(t, 2);
+        if (!rt.isFix(w)) return P.argTypeError(t);
+        timeout = rt.unfix(w);
+    }
+    const port = tds.lookup(host, instance, timeout) catch return raise(t, msg("sql-browser-port: {s}", .{tds.last_error}), &.{});
+    return rt.fix(port);
+}
+pub const @"%sql-browser-port" = WN("sql-browser-port", sqlBrowserPort, 2, 3);
 
 fn tcpListen(t: *Thread) Err!Word {
     const port = try portArg(t, 0);
@@ -361,6 +391,28 @@ fn serversRunning(t: *Thread) Err!Word {
     return rt.UNSPEC;
 }
 pub const @"%%net-servers-running!" = WN("%net-servers-running!", serversRunning, 1, 1);
+
+/// (%shutdown-signal): the SIGINT or SIGTERM received so far, 0 if none
+/// (the first call installs the handlers)
+fn shutdownSignal(t: *Thread) Err!Word {
+    _ = t;
+    return rt.fix(@import("os.zig").shutdownSignal());
+}
+pub const @"%%shutdown-signal" = WN("%shutdown-signal", shutdownSignal, 0, 0);
+
+/// (%set-record-printer! type parts): records of type print as parts
+/// (strings, and field indices for the field's display), as the JVM
+/// implementation's HTTP objects
+fn setRecordPrinter(t: *Thread) Err!Word {
+    if (!data.isRecord(arg(t, 0))) return P.argTypeError(t);
+    // (cons (cons type parts) record_printers): reserve first (a collection
+    // updates the arguments)
+    t.reserve(6);
+    const entry = t.cons(arg(t, 0), arg(t, 1));
+    rt.record_printers = t.cons(entry, rt.record_printers);
+    return rt.UNSPEC;
+}
+pub const @"%%set-record-printer!" = WN("%set-record-printer!", setRecordPrinter, 2, 2);
 
 /// (thread-sleep! seconds): (srfi 18)'s sleep; threads are Phase 7, this
 /// blocks the whole program

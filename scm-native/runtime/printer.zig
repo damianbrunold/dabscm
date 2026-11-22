@@ -159,7 +159,7 @@ pub fn print(buf: *std.ArrayList(u8), w: Word, write: bool) void {
             put(buf, ">");
         } else put(buf, "#<lambda>"),
         rt.T_BOX => put(buf, "#<box>"),
-        rt.T_RECORD => put(buf, "#<record>"),
+        rt.T_RECORD => printRecord(buf, w),
         rt.T_HASHTABLE => put(buf, if (rt.prims_hash.isDict(w)) "#<dict>" else "#<hash-table>"),
         rt.T_NATIVE => put(buf, rt.prims_sys.nativeName(w)),
         rt.T_ERROR => {
@@ -268,4 +268,25 @@ fn writeSymbol(buf: *std.ArrayList(u8), name: []const u8) void {
         buf.append(a, ch) catch rt.oom();
     }
     put(buf, "|");
+}
+
+/// A record: #<record>, or its type's print form (%set-record-printer!):
+/// strings displayed as they are, field indices as the field's display
+fn printRecord(buf: *std.ArrayList(u8), w: Word) void {
+    const slots = data.recordSlots(w);
+    var l = rt.record_printers;
+    while (rt.isPair(l)) : (l = rt.cdr(l)) {
+        const entry = rt.car(l);
+        if (rt.car(entry) != slots[0]) continue;
+        var parts = rt.cdr(entry);
+        while (rt.isPair(parts)) : (parts = rt.cdr(parts)) {
+            const part = rt.car(parts);
+            if (rt.isFix(part)) {
+                const i: usize = @intCast(rt.unfix(part));
+                if (i + 1 < slots.len) print(buf, slots[i + 1], false);
+            } else print(buf, part, false);
+        }
+        return;
+    }
+    put(buf, "#<record>");
 }

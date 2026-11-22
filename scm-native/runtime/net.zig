@@ -237,6 +237,12 @@ fn loadCas() void {
 /// Start TLS on c (the handshake), verifying the server's certificate for
 /// host unless verify is false or SCM_TLS_INSECURE is set
 pub fn startTls(c: *Conn, host: []const u8, verify: bool) bool {
+    return startTlsOver(c, host, verify, &c.reader.interface, &c.writer.interface);
+}
+
+/// As startTls, with the handshake read from input and written to output
+/// (TDS wraps it in its packets); the client then uses c's stream
+pub fn startTlsOver(c: *Conn, host: []const u8, verify: bool, input: *std.Io.Reader, output: *std.Io.Writer) bool {
     const insecure = !verify or envFlag("SCM_TLS_INSECURE");
     if (!insecure) loadCas();
     const t = pa.create(tls.Client) catch @panic("out of memory");
@@ -245,7 +251,7 @@ pub fn startTls(c: *Conn, host: []const u8, verify: bool) bool {
     var entropy: [tls.Client.Options.entropy_len]u8 = undefined;
     os.randomBytes(&entropy);
     const host_copy = pa.dupe(u8, host) catch @panic("out of memory");
-    t.* = tls.Client.init(&c.reader.interface, &c.writer.interface, .{
+    t.* = tls.Client.init(input, output, .{
         .host = if (insecure) .no_verification else .{ .explicit = host_copy },
         .ca = if (insecure) .no_verification else .{ .bundle = .{ .gpa = pa, .io = os.io, .lock = &ca_lock, .bundle = &ca_bundle } },
         .read_buffer = rbuf,
@@ -264,6 +270,8 @@ pub fn startTls(c: *Conn, host: []const u8, verify: bool) bool {
         };
         return false;
     };
+    t.input = &c.reader.interface;
+    t.output = &c.writer.interface;
     c.tls_client = t;
     return true;
 }

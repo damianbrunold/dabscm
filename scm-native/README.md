@@ -285,11 +285,20 @@ are loaded from source. `scm lint` over `scm-lib/libraries` this way (interpreti
   PKCS#8 DER) and OAEP with SHA-256, interchangeable with the JVM's keys and ciphertexts.
   AES with 192-bit keys (`aes192.zig`; `std.crypto` has 128 and 256 only).
 - `pg-quote-literal`, `pg-parse-datarow` for `(scm database postgres)`.
+- SQL Server (`tds.zig`): `tds-connect` performs the PreLogin exchange and TLS with the
+  handshake wrapped in TDS PRELOGIN packets (a framing reader and writer under
+  `std.crypto.tls.Client`, which afterwards talks to the socket directly), with or without
+  certificate verification; `sql-browser-port` asks the SQL Server Browser (UDP 1434,
+  `SCM_SQL_BROWSER_PORT`) for a named instance's port. `SCM_TDS_DEBUG` as on the JVM.
+  Tested against a fake TDS server (Python's `ssl.MemoryBIO`), not yet against SQL Server.
 - HTTP and WebSockets in Scheme (`lib/scm-native-http.sld`): the client (`http-get`,
   `http-post`, `http-send`; redirects, response headers and text/binary bodies as the JDK
   client's), request and response objects, `tcp-http-serve` (as the JVM's: one request per
   connection, spooling of large bodies, the same status lines and log lines) and WebSockets.
-  The scm-lib libraries import it natively (`cond-expand`).
+  The scm-lib libraries import it natively (`cond-expand`). Requests, responses, servers
+  and WebSockets print as on the JVM (`#<http-request GET url>`; `%set-record-printer!`).
+  `server-install-shutdown-hook`: SIGINT and SIGTERM stop the server, let open connections
+  finish for the grace time and exit with 130 or 143, as the JVM does.
 - No threads yet: `(scm native tasks)` (`lib/scm-native-tasks.sld`) is a cooperative
   scheduler. Every server connection is a task (a continuation); a task that would block
   on a socket yields, and the scheduler polls the waiting sockets and the servers'

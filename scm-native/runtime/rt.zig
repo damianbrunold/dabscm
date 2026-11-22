@@ -644,7 +644,12 @@ fn clearRemembered() void {
     remembered.clearRetainingCapacity();
 }
 
+/// Print forms of record types ((%set-record-printer! type parts)): an
+/// alist of (type . parts), a GC root
+pub var record_printers: Word = NIL;
+
 fn scanRoots(t: *Thread, g: *Gc) void {
+    record_printers = g.copy(record_printers);
     for (t.args[0..t.args_len]) |*w| w.* = g.copy(w.*);
     t.self = g.copy(t.self);
     t.val = g.copy(t.val);
