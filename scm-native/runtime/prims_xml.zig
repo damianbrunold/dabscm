@@ -330,7 +330,7 @@ fn openReader(t: *Thread, text: []const u8) Word {
 }
 
 fn openXmlString(t: *Thread) Err!Word {
-    return openReader(t, data.toUtf8(try P.stringArg(t, 0)));
+    return openReader(t, data.toUtf8Owned(try P.stringArg(t, 0)));
 }
 pub const @"%open-xml-string" = WN("open-xml-string", openXmlString, 1, 1);
 

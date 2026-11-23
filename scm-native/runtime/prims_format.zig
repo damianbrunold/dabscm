@@ -190,7 +190,6 @@ fn formatInto(t: *Thread, out: *Buf, fmt: []const u8, args: []const Word) Err!vo
                 var l = lst;
                 while (rt.isPair(l)) : (l = rt.cdr(l)) sub_args.append(pa, rt.car(l)) catch rt.oom();
                 const sub_text = data.toUtf8(sub);
-                defer pa.free(sub_text);
                 try formatInto(t, out, sub_text, sub_args.items);
             },
             'n', '%' => put(out, "\n"),
@@ -209,7 +208,6 @@ fn formatInto(t: *Thread, out: *Buf, fmt: []const u8, args: []const Word) Err!vo
 fn formatImpl(t: *Thread) Err!Word {
     const dest = arg(t, 0);
     const fmt = data.toUtf8(try P.stringArg(t, 1));
-    defer pa.free(fmt);
     var out: Buf = .empty;
     defer out.deinit(pa);
     try formatInto(t, &out, fmt, t.args[2..t.argc]);

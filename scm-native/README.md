@@ -160,7 +160,7 @@ costs recompilation.
 
 | variable | meaning |
 |---|---|
-| `SCM_NATIVE_GC_STATS=1` | print the numbers of collections at exit |
+| `SCM_NATIVE_GC_STATS=1` | at exit (also through `exit`): the numbers of collections, the old space and how much of it is used, large objects, the threads' nurseries and stacks, ended threads not yet freed, the ports and their buffers; at each major collection the old space's size |
 | `SCM_NATIVE_GC_VERIFY=1` | check for missing write barriers before each minor collection (slow) |
 | `SCM_NATIVE_SEGV=1` | a stack trace on a crash |
 | `SCM_TLS_INSECURE=1` | no TLS certificate verification |
@@ -466,6 +466,12 @@ native `scmc`.
 - **Major collections** copy everything live into a new old space, and sweep the
   large-object space (bignums, big vectors and strings).
 - **All nurseries come from one reserved address range,** so "young" is one range check.
+- **The old space** is kept at one and a half times the live data after a major collection
+  (plus room for the nurseries); it shrinks again after a peak.
+- **Native memory:** ports are freed when a collection finds their port object unreachable
+  (a major collection, and a minor one for ports made since the last collection); a closed
+  port frees its buffers at once. The reader's intermediate nodes and the temporary UTF-8
+  copies of primitives use arenas that are reset after each datum or primitive call.
 
 ### Threads
 

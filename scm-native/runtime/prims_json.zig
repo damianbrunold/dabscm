@@ -697,13 +697,13 @@ fn openJson(t: *Thread, text: []const u8) Err!Word {
     p.* = .{ .lexer = .{ .in = text } };
     if (t.argc == 2) {
         const id = arg(t, 1);
-        p.list_id = if (data.isSymbol(id)) data.symbolName(id) else data.toUtf8(try P.stringArg(t, 1));
+        p.list_id = if (data.isSymbol(id)) data.symbolName(id) else data.toUtf8Owned(try P.stringArg(t, 1));
     }
     return sys.wrapNativeOf(t, .json_reader, p);
 }
 
 fn openJsonString(t: *Thread) Err!Word {
-    return openJson(t, data.toUtf8(try P.stringArg(t, 0)));
+    return openJson(t, data.toUtf8Owned(try P.stringArg(t, 0)));
 }
 pub const @"%open-json-string" = WN("open-json-string", openJsonString, 1, 2);
 

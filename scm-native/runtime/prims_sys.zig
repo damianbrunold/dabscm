@@ -505,22 +505,22 @@ fn programArgs(t: *Thread) Err!Options {
     while (rt.isPair(l)) : (l = rt.cdr(l)) {
         const x = rt.car(l);
         if (!data.isString(x)) return P.argTypeError(t);
-        argv.append(pa, data.toUtf8(x)) catch rt.oom();
+        argv.append(pa, data.toUtf8Owned(x)) catch rt.oom();
     }
     var o = Options{ .spawn = .{ .argv = argv.items } };
     if (t.argc > 1) {
         const opts = arg(t, 1);
         if (findProperty(opts, data.intern("work-dir"), false)) |w| if (w != rt.FALSE) {
             if (!data.isString(w)) return P.argTypeError(t);
-            o.spawn.cwd = data.toUtf8(w);
+            o.spawn.cwd = data.toUtf8Owned(w);
         };
         if (findProperty(opts, data.intern("stdin"), false)) |s| if (s != rt.FALSE) {
             if (!data.isString(s)) return P.argTypeError(t);
-            o.stdin_text = data.toUtf8(s);
+            o.stdin_text = data.toUtf8Owned(s);
         };
         if (findProperty(opts, data.intern("log-file"), false)) |f| if (f != rt.FALSE) {
             if (!data.isString(f)) return P.argTypeError(t);
-            o.spawn.log_file = data.toUtf8(f);
+            o.spawn.log_file = data.toUtf8Owned(f);
         };
         if (findProperty(opts, data.intern("env"), false)) |env| {
             var pairs: std.ArrayList([2][]const u8) = .empty;
@@ -530,7 +530,7 @@ fn programArgs(t: *Thread) Err!Options {
                 if (!rt.isPair(kv) or !data.isString(rt.car(kv))) return P.argTypeError(t);
                 const v = if (rt.isPair(rt.cdr(kv))) rt.car(rt.cdr(kv)) else rt.cdr(kv);
                 if (!data.isString(v)) return P.argTypeError(t);
-                pairs.append(pa, .{ data.toUtf8(rt.car(kv)), data.toUtf8(v) }) catch rt.oom();
+                pairs.append(pa, .{ data.toUtf8Owned(rt.car(kv)), data.toUtf8Owned(v) }) catch rt.oom();
             }
             o.spawn.env = pairs.items;
         }
@@ -869,6 +869,7 @@ const ZipOut = struct {
         const p = z.port.?;
         z.writer.pending = null;
         z.port = null;
+        p.pinned = false;
         try z.writer.add(pend.name, p.out.items, pend.ms, pend.method);
         p.out.clearAndFree(pa);
         p.open = false;
@@ -974,7 +975,7 @@ fn openOutputZip(t: *Thread, path: ?[]const u8) Word {
 }
 
 fn openOutputZipFile(t: *Thread) Err!Word {
-    const path = try textArg(t, 0);
+    const path = data.toUtf8Owned(try P.stringArg(t, 0)); // kept: written at close
     // fail now, as the JVM's FileOutputStream, if the file cannot be created
     const f = os.createFile(path) orelse
         return raise(t, std.fmt.allocPrint(pa, "open-output-zip-file failed: {s} (No such file or directory)", .{path}) catch rt.oom(), &.{});
@@ -999,6 +1000,7 @@ fn addPortEntry(t: *Thread, binary: bool) Err!Word {
     z.finishPending() catch |e| return zipError(t, if (binary) "zip-add-binary-entry" else "zip-add-text-entry", e);
     const p = ports.newPort(if (binary) .bytes_out else .string_out, binary);
     z.port = p;
+    p.pinned = true; // the zip writer reads it at the next entry or close
     z.writer.pending = .{ .name = pa.dupe(u8, name) catch rt.oom(), .ms = ms, .method = 8 };
     t.reserve(2);
     return ports.wrap(t, p);

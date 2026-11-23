@@ -399,7 +399,6 @@ fn complexFromText(t: *Thread, text0: []const u8, default_radix: u8) ?Word {
     if (p.polar) {
         const m = toF(re).?;
         const a = toF(im2).?;
-        if (a == 0 and !rt.isFlonum(im2)) return re;
         return tower.makeRect(t, rt.safeFlo(t, m * @cos(a)), rt.safeFlo(t, m * @sin(a)));
     }
     return tower.makeRect(t, re, im2);

@@ -51,7 +51,6 @@ fn resultStr(t: *Thread, cs: []const u21) Word {
 fn pattern(t: *Thread, i: usize) Err!*regex.Regex {
     const p = try P.stringArg(t, i);
     const text = data.toUtf8(p);
-    defer pa.free(text);
     return regex.get(text) catch raise(t, "regular expression not supported (only the subset common to java.util.regex and .NET)", &.{arg(t, i)});
 }
 

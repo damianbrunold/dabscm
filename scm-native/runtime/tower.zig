@@ -324,8 +324,14 @@ pub fn floatToExact(t: *Thread, f: f64) ?Word {
 
 // --- complex numbers -------------------------------------------------------------------
 
-pub fn makeRect(t: *Thread, re: Word, im: Word) Word {
-    if (im == fix(0)) return re;
+pub fn makeRect(t: *Thread, re0: Word, im0: Word) Word {
+    if (im0 == fix(0)) return re0;
+    // one inexact part makes the number inexact (as the JVM implementation:
+    // (make-rectangular 1 2.5) is 1.0+2.5i)
+    var re = re0;
+    var im = im0;
+    if (rt.isFlonum(re) and !rt.isFlonum(im)) im = rt.safeFlo(t, toFloat(im));
+    if (rt.isFlonum(im) and !rt.isFlonum(re)) re = rt.safeFlo(t, toFloat(re));
     const q = rt.allocLarge(t, 3);
     q[0] = rt.hdr(rt.T_COMPNUM, 2) | (@as(Word, rt.F_LARGE) << 8);
     q[1] = re;

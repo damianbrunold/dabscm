@@ -340,11 +340,52 @@ pub fn heapStringUtf8(t: *Thread, utf8: []const u8) Word {
     return s;
 }
 
-/// The UTF-8 bytes of string s (allocated with the page allocator)
+// Scratch memory for the temporaries of a primitive (the UTF-8 copies of
+// its string arguments, ...): freed when the primitive returns (the
+// wrappers in prims.zig). A long-running program (a server) otherwise kept
+// every copy: gigabytes after a few thousand requests.
+pub threadlocal var scratch_used: bool = false;
+threadlocal var scratch_arena: std.heap.ArenaAllocator = .{ .child_allocator = std.heap.c_allocator, .state = .{} };
+
+pub fn scratch() std.mem.Allocator {
+    scratch_used = true;
+    return scratch_arena.allocator();
+}
+
+/// After a primitive returned (not on its errors: the message may point
+/// into the scratch memory until errorCode copied it)
+pub inline fn scratchReset() void {
+    if (scratch_used) {
+        scratch_used = false;
+        _ = scratch_arena.reset(.{ .retain_with_limit = 1 << 16 });
+    }
+}
+
+/// The UTF-8 bytes of string s, valid until the primitive returns (scratch
+/// memory); toUtf8Owned for bytes that are kept
 pub fn toUtf8(s: Word) []u8 {
-    var buf: std.ArrayList(u8) = .empty;
-    appendUtf8(&buf, s);
-    return buf.items;
+    return utf8Into(scratch(), s);
+}
+
+/// The UTF-8 bytes of string s, allocated with the C allocator (kept)
+pub fn toUtf8Owned(s: Word) []u8 {
+    return utf8Into(std.heap.c_allocator, s);
+}
+
+fn utf8Into(a: std.mem.Allocator, s: Word) []u8 {
+    const n = stringLen(s);
+    var len: usize = 0;
+    for (0..n) |i| len += std.unicode.utf8CodepointSequenceLength(stringRef(s, i)) catch 1;
+    const out = a.alloc(u8, len) catch rt.oom();
+    var j: usize = 0;
+    for (0..n) |i| {
+        const k = std.unicode.utf8Encode(stringRef(s, i), out[j..]) catch blk: {
+            out[j] = '?';
+            break :blk 1;
+        };
+        j += k;
+    }
+    return out;
 }
 
 // ---------------------------------------------------------------------------

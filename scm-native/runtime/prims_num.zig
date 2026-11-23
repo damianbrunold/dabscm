@@ -363,7 +363,8 @@ fn makeRectangular(t: *Thread) Err!Word {
 fn makePolar(t: *Thread) Err!Word {
     const m = num.toF(try realArg(t, "make-polar", 0)).?;
     const a = num.toF(try realArg(t, "make-polar", 1)).?;
-    if (arg(t, 1) == fix(0)) return arg(t, 0);
+    // always an inexact complex number, as the JVM implementation's
+    // ((make-polar 1 0) is 1.0+0.0i)
     return tower.makeRect(t, flo(t, m * @cos(a)), flo(t, m * @sin(a)));
 }
 fn realPart(t: *Thread) Err!Word {

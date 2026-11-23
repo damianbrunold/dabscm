@@ -291,7 +291,6 @@ pub const @"%base64-encode" = WN("base64-encode", base64Encode, 1, 1);
 
 fn base64Decode(t: *Thread) Err!Word {
     const text = data.toUtf8(try P.stringArg(t, 0));
-    defer pa.free(text);
     const dec = std.base64.standard.Decoder;
     const n = dec.calcSizeForSlice(text) catch return raise(t, "base64-decode: Illegal base64 character", &.{});
     const tmp = pa.alloc(u8, n) catch rt.oom();

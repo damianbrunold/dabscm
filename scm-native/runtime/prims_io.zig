@@ -317,7 +317,7 @@ fn fileOptions(t: *Thread) FileOptions {
 }
 
 fn openInput(t: *Thread, binary: bool) Err!Word {
-    const name = data.toUtf8(try P.stringArg(t, 0));
+    const name = data.toUtf8Owned(try P.stringArg(t, 0)); // the port's name
     var bytes = rt.os.readFile(name) orelse return fileError(t, "cannot open file", arg(t, 0));
     if (!binary) {
         const o = fileOptions(t);

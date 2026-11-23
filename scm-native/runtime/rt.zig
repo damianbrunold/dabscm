@@ -438,6 +438,27 @@ pub fn run(t: *Thread, p: Word, argc: u64) Word {
     return t.val;
 }
 
+/// SCM_NATIVE_GC_STATS=1: the collector's numbers, at exit (the end of the
+/// program, or exit)
+pub fn printGcStats() void {
+    if (os.getEnv("SCM_NATIVE_GC_STATS") == null) return;
+    var live: usize = 0;
+    var nursery: usize = 0;
+    var stacks: usize = 0;
+    var ended: usize = 0;
+    var ended_stacks: usize = 0;
+    for (threads.items) |o| if (o.ended == 0) {
+        live += 1;
+        nursery += o.heap_len;
+        stacks += o.stack_len + o.args_len;
+    } else {
+        ended += 1;
+        ended_stacks += o.stack_len + o.heap_len;
+    };
+    const ps = ports.stats();
+    os.eprint("gc: {d} minor, {d} major collections; old space {d} MB ({d} MB used), large objects {d} MB, {d} threads ({d} MB nurseries, {d} MB stacks and argument arrays), {d} ended threads not yet freed ({d} MB), {d} ports ({d} MB buffers)\n", .{ minor_count, major_count, old_space.len / 131072, old_hp / 131072, large_words / 131072, live, nursery / 131072, stacks / 131072, ended, ended_stacks / 131072, ps.count, ps.bytes / 1048576 });
+}
+
 /// The entry of module i (by its index in the initialization order), as
 /// a procedure of no arguments, with its constants set up: the program
 /// calls it at the import that brings the module in (see scm_program_eager)
@@ -976,6 +997,8 @@ fn minor(t: *Thread) void {
     }
     old_hp = g.free;
     clearRemembered();
+    // the new port objects not reached: their ports go
+    ports.sweep(false);
 }
 
 fn major(t: *Thread) void {
@@ -989,6 +1012,8 @@ fn major(t: *Thread) void {
     for (threads.items) |o| nurseries += nurseryUsed(o);
     const size = @max(old_hp + nurseries + nursery_words, heap_target);
     const to = pa.alloc(Word, size) catch oom();
+    if (os.getEnv("SCM_NATIVE_GC_STATS") != null)
+        os.eprint("gc: major {d}: old space {x} ({d} MB) -> {x} ({d} MB)\n", .{ major_count, @intFromPtr(old_space.ptr), old_space.len / 131072, @intFromPtr(to.ptr), size / 131072 });
     var g = Gc{ .young = youngWords(), .old = old_space, .to = to, .free = 0, .major = true };
     scanRoots(&g);
     var scan: usize = 0;
@@ -1023,14 +1048,20 @@ fn major(t: *Thread) void {
     if (old_space.len > 0) pa.free(old_space);
     old_space = to;
     old_hp = g.free;
-    // keep the old space at about three times the live data, and room for
-    // the nurseries' promotion
+    // the port objects not reached: their ports go
+    ports.sweep(true);
+    // keep the old space at one and a half times the live data, and room
+    // for the nurseries' promotion; recomputed at every major collection,
+    // so that it shrinks again after a peak. A major collection copies the
+    // live data into a new space while the old one still exists, so the
+    // memory peaks at about the old space plus the live data: about 2.5
+    // times the live data (it was 4 times with three times the live data,
+    // more than a JVM with large data such as loaded grouper releases)
     var capacity: usize = 0;
     for (threads.items) |o| if (o.ended == 0) {
         capacity += nurseryCapacity(o);
     };
-    const want = 3 * g.free + 2 * capacity;
-    if (want > heap_target) heap_target = want;
+    heap_target = g.free + g.free / 2 + 2 * capacity;
     if (old_space.len - old_hp < capacity) {
         // too small already: grow now (the nurseries are empty: nothing
         // moves into them)
@@ -1095,7 +1126,8 @@ const Gc = struct {
                 w.* = g.copy(w.*);
             },
             T_STACK => g.scanFrames(q[1 .. 1 + len]),
-            T_FLONUM, T_BUF8, T_BUF32, T_SYMBOL, T_PORT, T_BYTEVECTOR, T_BIGNUM, T_NATIVE => {},
+            T_PORT => ports.markSeen(@ptrFromInt(q[1])),
+            T_FLONUM, T_BUF8, T_BUF32, T_SYMBOL, T_BYTEVECTOR, T_BIGNUM, T_NATIVE => {},
             else => unreachable,
         }
     }
@@ -1147,8 +1179,7 @@ pub fn start(list: abi.ModuleList, eager: usize, args: []const [:0]const u8) u8 
         t.exit_code = @truncate(@as(u64, @bitCast(unfix(result))));
     ports.flushAll();
     os.flush();
-    if (os.getEnv("SCM_NATIVE_GC_STATS") != null)
-        os.eprint("gc: {d} minor, {d} major collections; old space {d} words ({d} used), large objects {d} words\n", .{ minor_count, major_count, old_space.len, old_hp, large_words });
+    printGcStats();
     return t.exit_code;
 }
 

@@ -12,6 +12,20 @@ const Thread = rt.Thread;
 
 const pa = std.heap.c_allocator;
 
+// The nodes of a datum being read (and their strings, lists, token
+// buffers): an arena per thread, reset when the datum is built. Allocated
+// with pa they were never freed: every read of a large file (the grouper's
+// catalogs) kept its whole intermediate tree, gigabytes in a server.
+threadlocal var node_arena: std.heap.ArenaAllocator = .{ .child_allocator = std.heap.c_allocator, .state = .{} };
+
+inline fn na() std.mem.Allocator {
+    return node_arena.allocator();
+}
+
+fn resetNodes() void {
+    _ = node_arena.reset(.{ .retain_with_limit = 1 << 20 });
+}
+
 const Node = union(enum) {
     eof,
     word: Word, // fixnums, characters, booleans, (), symbols
@@ -127,7 +141,7 @@ pub const Reader = struct {
     fn appendCp(buf: *std.ArrayList(u8), cp: u21) void {
         var tmp: [4]u8 = undefined;
         const n = std.unicode.utf8Encode(cp, &tmp) catch 0;
-        buf.appendSlice(pa, tmp[0..n]) catch rt.oom();
+        buf.appendSlice(na(), tmp[0..n]) catch rt.oom();
     }
 
     pub fn datum(r: *Reader) Error!Node {
@@ -165,7 +179,7 @@ pub const Reader = struct {
         defer r.depth -= 1;
         const d = try r.datum();
         if (d == .eof) return r.fail("end of file after quote");
-        const items = pa.alloc(Node, 2) catch rt.oom();
+        const items = na().alloc(Node, 2) catch rt.oom();
         items[0] = .{ .word = data.intern(name) };
         items[1] = d;
         return .{ .list = .{ .items = items, .tail = null } };
@@ -188,7 +202,7 @@ pub const Reader = struct {
                 _ = r.next();
                 if (r.peek() == null or isDelimiter(r.peek().?)) {
                     if (items.items.len == 0) return r.fail("dot at the start of a list");
-                    const tail = pa.create(Node) catch rt.oom();
+                    const tail = na().create(Node) catch rt.oom();
                     tail.* = try r.datum();
                     try r.skipAtmosphere();
                     if (r.next() != close) return r.fail("expected one datum after dot");
@@ -198,7 +212,7 @@ pub const Reader = struct {
             }
             const d = try r.datum();
             if (d == .eof) return r.fail("end of file in list");
-            items.append(pa, d) catch rt.oom();
+            items.append(na(), d) catch rt.oom();
         }
     }
 
@@ -243,8 +257,8 @@ pub const Reader = struct {
                     }
                     continue;
                 }
-                cps.append(pa, try r.escape()) catch rt.oom();
-            } else cps.append(pa, c) catch rt.oom();
+                cps.append(na(), try r.escape()) catch rt.oom();
+            } else cps.append(na(), c) catch rt.oom();
         }
         return .{ .string = cps.items };
     }
@@ -269,12 +283,12 @@ pub const Reader = struct {
             if (c == '\r') continue;
             if (c == '\n') {
                 if (std.mem.eql(u8, line8.items, marker.items)) return .{ .string = out.items };
-                out.appendSlice(pa, line.items) catch rt.oom();
-                out.append(pa, '\n') catch rt.oom();
+                out.appendSlice(na(), line.items) catch rt.oom();
+                out.append(na(), '\n') catch rt.oom();
                 line.clearRetainingCapacity();
                 line8.clearRetainingCapacity();
             } else {
-                line.append(pa, c) catch rt.oom();
+                line.append(na(), c) catch rt.oom();
                 appendCp(&line8, c);
             }
         }
@@ -302,7 +316,7 @@ pub const Reader = struct {
                 const d = r.next() orelse return r.fail("end of file in datum label");
                 if (d == '#') return .{ .label_ref = n };
                 if (d != '=') return r.fail("bad datum label");
-                const node = pa.create(Node) catch rt.oom();
+                const node = na().create(Node) catch rt.oom();
                 node.* = try r.datum();
                 return .{ .label_def = .{ .n = n, .node = node } };
             },
@@ -313,7 +327,7 @@ pub const Reader = struct {
                 if (rest.len == 0) return .{ .word = rt.char(first) };
                 var buf: std.ArrayList(u8) = .empty;
                 appendCp(&buf, first);
-                buf.appendSlice(pa, rest) catch rt.oom();
+                buf.appendSlice(na(), rest) catch rt.oom();
                 return .{ .word = rt.char(charName(buf.items) orelse return r.fail("unknown character name")) };
             },
             '\'' => {
@@ -352,7 +366,7 @@ pub const Reader = struct {
                 if (std.mem.eql(u8, tok, "#u8") and r.peek() == '(') {
                     _ = r.next();
                     const l = try r.list(')');
-                    const bytes = pa.alloc(u8, l.list.items.len) catch rt.oom();
+                    const bytes = na().alloc(u8, l.list.items.len) catch rt.oom();
                     for (l.list.items, 0..) |item, i| {
                         if (item != .word or !rt.isFix(item.word) or rt.unfix(item.word) < 0 or rt.unfix(item.word) > 255)
                             return r.fail("bad bytevector element");
@@ -365,7 +379,21 @@ pub const Reader = struct {
         }
     }
 
-    fn atom(r: *Reader, tok: []u8) Error!Node {
+    fn atom(r: *Reader, tok0: []u8) Error!Node {
+        // a token that starts like a number: as the JVM implementation's
+        // tokenizer (Tokenizer.readToken), which reads a number character by
+        // character: it may end before the token does (the rest is read
+        // next: "1.2.3" is 1.2 then .3), or be an error ("2026-01-01")
+        var tok = tok0;
+        switch (jvmNumberScan(tok)) {
+            .whole => {},
+            .prefix => |k| {
+                r.port.pos -= tok.len - k;
+                tok = tok[0..k];
+            },
+            .err => |m| return r.fail(m),
+            .symbol => return .{ .word = data.intern(tok) },
+        }
         if (num.parseNumber(tok, 10)) |lit| return switch (lit) {
             .fix => |n| .{ .word = rt.fix(n) },
             .flo => |f| .{ .flo = f },
@@ -382,6 +410,96 @@ pub const Reader = struct {
         return .{ .word = data.intern(tok) };
     }
 };
+
+const Scan = union(enum) { whole, prefix: usize, symbol, err: []const u8 };
+
+fn isExponentMarker(c: u8) bool {
+    return switch (c) {
+        'e', 'E', 's', 'S', 'f', 'F', 'd', 'D', 'l', 'L' => true,
+        else => false,
+    };
+}
+
+/// The JVM tokenizer's reading of a token that starts with a digit, a sign
+/// or a dot: the whole token (a number or a symbol, as the token's
+/// classification gives), a number of only its first k bytes, or an error
+const invalid_complex = "tokenizer: invalid complex number";
+
+fn jvmNumberScan(tok: []const u8) Scan {
+    if (tok.len == 0) return .whole;
+    // of the sign-letter tokens only +inf.0, -inf.0 and +nan.0 are numbers
+    if (std.ascii.eqlIgnoreCase(tok, "-nan.0")) return .symbol;
+    const c0 = tok[0];
+    const signed = c0 == '+' or c0 == '-';
+    var state: u8 = switch (c0) {
+        '0'...'9', '+', '-' => 1,
+        '.' => 12,
+        else => return .whole,
+    };
+    var i: usize = 1;
+    while (i < tok.len) : (i += 1) {
+        const c = tok[i];
+        switch (state) {
+            1 => switch (c) {
+                '0'...'9' => {},
+                '.' => state = 11,
+                '/' => state = 13,
+                '+', '-' => return if (i == 1 and signed) .whole else complexOrError(tok),
+                '@' => return if (i == 1 and signed) .whole else complexOrError(tok),
+                'i', 'I' => return .whole, // +i, -5i (or a symbol)
+                else => {
+                    if (!isExponentMarker(c)) return .whole; // a symbol
+                    state = 14;
+                },
+            },
+            13 => switch (c) {
+                '0'...'9' => {},
+                '+', '-', '@' => return complexOrError(tok),
+                'i', 'I' => return .whole,
+                else => return .{ .prefix = i },
+            },
+            11 => switch (c) {
+                '0'...'9' => {},
+                else => {
+                    if (isExponentMarker(c)) {
+                        state = 14;
+                        continue;
+                    }
+                    if (i == 2 and signed) return .whole; // +. -.
+                    return switch (c) {
+                        '+', '-', '@' => complexOrError(tok),
+                        'i', 'I' => .whole,
+                        else => .{ .prefix = i },
+                    };
+                },
+            },
+            14 => switch (c) {
+                '+', '-', '0'...'9' => state = 15,
+                else => return .{ .err = "tokenizer: malformed exponent" },
+            },
+            15 => switch (c) {
+                '0'...'9' => {},
+                '+', '-', '@' => return complexOrError(tok),
+                else => return .{ .prefix = i },
+            },
+            12 => switch (c) {
+                '0'...'9' => state = 11,
+                else => return .whole, // ".." "..." and other symbols
+            },
+            else => return .whole,
+        }
+    }
+    // an exponent without digits ("1e", "1e-")
+    if (state == 14 or (state == 15 and (tok[tok.len - 1] == '+' or tok[tok.len - 1] == '-')))
+        return .{ .err = "tokenizer: malformed exponent" };
+    return .whole;
+}
+
+/// A complex or polar number: the whole token when it is one, else the
+/// JVM's error
+fn complexOrError(tok: []const u8) Scan {
+    return if (num.parseNumber(tok, 10) != null) .whole else .{ .err = invalid_complex };
+}
 
 fn charName(name: []const u8) ?u21 {
     const names = [_]struct { []const u8, u21 }{
@@ -507,8 +625,10 @@ fn readWith(t: *Thread, r0: Reader) ?Word {
     const node = r.datum() catch {
         const m = if (r.prefix.len > 0) std.fmt.allocPrint(pa, "{s}{s}", .{ r.prefix, r.msg }) catch rt.oom() else r.msg;
         _ = rt.failKind(t, rt.ErrorKind.read, m, &.{});
+        resetNodes();
         return null;
     };
+    defer resetNodes();
     t.reserve(words(node));
     label_values.clearRetainingCapacity();
     const w = build(t, node);

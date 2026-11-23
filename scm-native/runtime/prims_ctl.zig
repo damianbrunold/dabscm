@@ -407,6 +407,7 @@ fn exitCode(w: Word) u8 {
 }
 fn exitImpl(t: *Thread) Err!Word {
     ports.flushAll();
+    rt.printGcStats();
     rt.os.exit(if (t.argc > 0) exitCode(arg(t, 0)) else t.exit_code);
 }
 pub const @"%exit" = WN("exit", exitImpl, 0, 1);

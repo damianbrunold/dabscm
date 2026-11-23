@@ -37,6 +37,7 @@ pub fn WN(comptime name: []const u8, comptime f: fn (*Thread) Err!Word, comptime
             t.prim_name_len = name.len;
             if (t.argc < min or t.argc > max) return @call(.always_tail, rt.arityErrorN(t, if (t.argc < min) min else max, min != max and t.argc < min), .{t});
             t.val = f(t) catch return @call(.always_tail, rt.errorCode, .{t});
+            data.scratchReset();
             return @call(.always_tail, rt.retCode(t), .{t});
         }
     };
@@ -59,7 +60,9 @@ pub fn WD(comptime name: []const u8, comptime f: fn (*Thread) Err!Word, comptime
                 _ = rt.arityErrorN(t, if (t.argc < min) min else max, min != max and t.argc < min);
                 return rt.UNBOUND;
             }
-            return f(t) catch rt.UNBOUND;
+            const v = f(t) catch return rt.UNBOUND;
+            data.scratchReset();
+            return v;
         }
     };
     return .{ .code = WN(name, f, min, max), .direct = &S.direct };

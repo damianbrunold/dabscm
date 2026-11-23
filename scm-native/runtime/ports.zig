@@ -47,6 +47,14 @@ pub const Port = struct {
     offset: ?u64 = null,
     /// UTF-16 output: the byte order mark is written
     started: bool = false,
+    /// the collection epoch in which a major collection last reached the
+    /// port object (see sweep); pinned: a native structure uses the port
+    /// (a zip entry being written), so it stays
+    seen: u32 = 0,
+    pinned: bool = false,
+    /// made since the last collection: its port object is in a nursery,
+    /// which every collection copies whole, so a minor one can free it too
+    young: bool = true,
 
     /// The number of bytes read from a generator port
     pub fn consumed(p: *const Port) u64 {
@@ -226,6 +234,16 @@ pub const Port = struct {
         if (p.file) |f| os.closeFile(f);
         p.file = null;
         p.open = false;
+        // the buffers: a file input port holds the whole (inflated) file;
+        // the port object itself stays (it is not collected), so without
+        // this every file read kept its contents. A string output port
+        // keeps its text (get-output-string)
+        if (p.isInput() and p.kind != .stdin) {
+            p.in.clearAndFree(pa);
+            p.pos = 0;
+            p.eof = true;
+        }
+        if (p.kind == .file_out or p.kind == .net_out) p.out.clearAndFree(pa);
     }
 };
 
@@ -363,9 +381,71 @@ var stdin_port: Port = .{ .kind = .stdin, .binary = false };
 var stdout_port: Port = .{ .kind = .stdout, .binary = false };
 var stderr_port: Port = .{ .kind = .stderr, .binary = false };
 
+/// Every port made by newPort (for the statistics and the collector)
+var all_ports: std.ArrayList(*Port) = .empty;
+var all_ports_lock: std.Io.Mutex = .init;
+
+/// The current collection epoch: a major collection marks every port
+/// object it reaches with it (rt.zig, scanObject), then sweep frees the
+/// others. Ports are native memory the copying collector does not see; a
+/// program that makes string ports in a loop (a server) otherwise kept
+/// every one with its buffer.
+pub var epoch: u32 = 1;
+
+pub fn markSeen(p: *Port) void {
+    p.seen = epoch;
+}
+
+/// After a collection (every thread stopped): the ports no object refers
+/// to any more are freed, after a minor collection only those made since
+/// the last one; a file output port is flushed and closed first, as at
+/// exit.
+pub fn sweep(major: bool) void {
+    all_ports_lock.lockUncancelable(os.io);
+    defer all_ports_lock.unlock(os.io);
+    var kept: usize = 0;
+    for (all_ports.items) |p| {
+        if (p.seen == epoch or p.pinned or !(major or p.young)) {
+            p.young = false;
+            all_ports.items[kept] = p;
+            kept += 1;
+            continue;
+        }
+        p.close();
+        if (p.kind == .file_out) {
+            file_ports_lock.lockUncancelable(os.io);
+            defer file_ports_lock.unlock(os.io);
+            for (file_ports.items, 0..) |q, i| if (q == p) {
+                _ = file_ports.swapRemove(i);
+                break;
+            };
+        }
+        p.in.deinit(pa);
+        p.out.deinit(pa);
+        pa.destroy(p);
+    }
+    all_ports.items.len = kept;
+    epoch +%= 1;
+    if (epoch == 0) epoch = 1;
+}
+
+/// The number of ports and the bytes their buffers hold (allocated)
+pub fn stats() struct { count: usize, bytes: usize } {
+    all_ports_lock.lockUncancelable(os.io);
+    defer all_ports_lock.unlock(os.io);
+    var b: usize = 0;
+    for (all_ports.items) |p| b += p.in.capacity + p.out.capacity;
+    return .{ .count = all_ports.items.len, .bytes = b };
+}
+
 pub fn newPort(kind: Kind, binary: bool) *Port {
     const p = pa.create(Port) catch rt.oom();
     p.* = .{ .kind = kind, .binary = binary };
+    {
+        all_ports_lock.lockUncancelable(os.io);
+        defer all_ports_lock.unlock(os.io);
+        all_ports.append(pa, p) catch rt.oom();
+    }
     if (kind == .file_out) {
         file_ports_lock.lockUncancelable(os.io);
         defer file_ports_lock.unlock(os.io);
@@ -382,7 +462,10 @@ pub fn wrap(t: *Thread, p: *Port) Word {
     return rt.tagPtr(q);
 }
 
+/// A static port object (never collected): its port is pinned, as the
+/// collector does not scan static objects (see sweep)
 pub fn staticWrap(p: *Port) Word {
+    p.pinned = true;
     const q = rt.staticAlloc(2, false);
     q[0] = rt.hdr(rt.T_PORT, 1);
     q[1] = @intFromPtr(p);
