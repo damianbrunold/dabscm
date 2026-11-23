@@ -17,6 +17,7 @@
           used-primitives
           program-binding
           program-eval-module
+          set-runtime-search-path!
           macroexpand-datum
           user-library-exports)
   (import (scheme base)
@@ -524,6 +525,11 @@
                  (if (string=? acc "") s (string-append acc "-" s))))
              "" name)))
 
+    ;; at run time (eval): the program's (module-search-path), searched
+    ;; before the compiler's path, as the JVM's loader searches it
+    (define runtime-search-path '())
+    (define (set-runtime-search-path! dirs) (set! runtime-search-path dirs))
+
     (define (find-library-file name)
       (let ((base (library-file-name name)))
         (any (lambda (dir)
@@ -531,7 +537,7 @@
                       (let ((f (join-path dir (string-append base ext))))
                         (and (file-exists? f) f)))
                     '(".sld" ".scm")))
-             search-path)))
+             (append runtime-search-path search-path))))
 
     (define (read-file file)
       (let* ((text (call-with-input-file file

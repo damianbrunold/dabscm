@@ -7,6 +7,7 @@
           (scheme file)
           (scheme read)
           (srfi 69)
+          (only (scm module) module-search-path)
           (scm native ast)
           (scm native expand))
   (begin
@@ -46,6 +47,7 @@
     ;; name: the module's name in messages, or #f for the first spec's
     (define (named-module-environment specs name)
       (ensure-installed!)
+      (sync-search-path!)
       (cond ((assoc specs environments) => cdr)
             (else
              (let ((m (if name (make-eval-module specs name) (make-eval-module specs))))
@@ -99,7 +101,15 @@
                (set! named-environments (cons (cons name e) named-environments))
                e))))
 
+    ;; (module-search-path!) at run time: the directories eval looks in
+    ;; first for libraries, as on the JVM (a script that sets it and then
+    ;; imports its own libraries)
+    (define (sync-search-path!)
+      (let ((dirs (module-search-path)))
+        (set-runtime-search-path! (if (list? dirs) dirs '()))))
+
     (define (eval x . env)
+      (sync-search-path!)
       (let ((e (cond ((null? env) (named-environment '(user main)))
                      ((eval-environment? (car env)) (car env))
                      ((pair? (car env)) (named-environment (car env)))
