@@ -4,7 +4,8 @@
 ;; program and reports through (scm test): the number of tests and of
 ;; failures of its last run.
 ;;
-;; Usage: scm scm-native/lib-tests.scm [name ...]   (e.g. tests_scm_string)
+;; Usage: scm scm-native/lib-tests.scm [--target triple] [--run-with cmd] [name ...]
+;;        (e.g. tests_scm_string)
 
 (import (scheme base)
         (scheme file)
@@ -23,7 +24,22 @@
 ;; Windows: executables end in .exe, and there is no timeout command
 (define windows? (eq? (sys-platform) 'windows))
 (define (exe-name base) (if windows? (string-append base ".exe") base))
-(define (with-timeout secs exe) (if windows? (list exe) (list "timeout" secs exe)))
+(define (with-timeout secs exe) (if windows? (append run-with (list exe)) (append (list "timeout" secs) run-with (list exe))))
+;; --target triple cross-compiles; --run-with cmd runs the executables under
+;; cmd (e.g. --target aarch64-linux-musl --run-with qemu-aarch64)
+(define target #f)
+(define run-with '())
+(define name-args
+  (let loop ((args (cdr (command-line))) (acc '()))
+    (cond ((null? args) (reverse acc))
+          ((and (string=? (car args) "--target") (pair? (cdr args)))
+           (set! target (cadr args)) (loop (cddr args) acc))
+          ((and (string=? (car args) "--run-with") (pair? (cdr args)))
+           (set! run-with (list (cadr args))) (loop (cddr args) acc))
+          (else (loop (cdr args) (cons (car args) acc))))))
+(define compile-options (if target (list (cons 'target target)) '()))
+(define exe-suffix (if target (string-append "-" target) ""))
+
 (module-search-path! (cons (join-path native-dir "compiler") (module-search-path)))
 
 (import (scm native driver))
@@ -40,7 +56,7 @@
        (string=? suffix (substring s (- (string-length s) (string-length suffix)) (string-length s)))))
 
 (define (names)
-  (let ((args (cdr (command-line))))
+  (let ((args name-args))
     (if (pair? args)
         args
         (map (lambda (f) (substring f 0 (- (string-length f) 4)))
@@ -58,7 +74,7 @@
  (lambda (name)
    (let* ((source (join-path tests-dir (string-append name ".scm")))
           (program (join-path build-dir (string-append "lib-" name ".scm")))
-          (exe (join-path build-dir (exe-name (string-append "lib-" name)))))
+          (exe (join-path build-dir (exe-name (string-append "lib-" name exe-suffix)))))
      (call-with-output-file program
        (lambda (p) (write-string (file->string source) p) (write-string epilogue p)))
      (let ((result
@@ -71,7 +87,7 @@
                                                     (m (get-output-string p)))
                                                (if (> (string-length m) 300) (substring m 0 300) m))
                                              "?"))))
-              (compile-program program exe native-dir '())
+              (compile-program program exe native-dir compile-options)
               ;; run in the tests directory, as the JVM harness does from its resources
               (let ((r (run-program/capture (with-timeout "300" exe) (list (list 'work-dir tests-dir)))))
                 (string-append
