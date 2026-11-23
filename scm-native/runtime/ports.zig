@@ -28,6 +28,11 @@ pub const Port = struct {
     column: usize = 0,
     /// for port-position: the file name, "{string}" for string ports
     name: []const u8 = "{string}",
+    /// the name is the port's own (freed with it). A leaked name pinned
+    /// much more than itself: musl's allocator places small allocations
+    /// inside the slots of larger ones, so every file port kept a slot of
+    /// its file buffer's size.
+    name_owned: bool = false,
     /// generator ports: the source, its state, and the bytes consumed
     /// before the buffer (in)
     gen: ?Generator = null,
@@ -411,7 +416,14 @@ pub fn sweep(major: bool) void {
             kept += 1;
             continue;
         }
-        p.close();
+        if (p.conn) |c| {
+            // a socket port: no flush (a write could block with every
+            // thread stopped; the JVM drops what an unreachable stream
+            // holds too); its connection is released
+            p.open = false;
+            c.release();
+            p.conn = null;
+        } else p.close();
         if (p.kind == .file_out) {
             file_ports_lock.lockUncancelable(os.io);
             defer file_ports_lock.unlock(os.io);
@@ -422,6 +434,7 @@ pub fn sweep(major: bool) void {
         }
         p.in.deinit(pa);
         p.out.deinit(pa);
+        if (p.name_owned) pa.free(p.name);
         pa.destroy(p);
     }
     all_ports.items.len = kept;

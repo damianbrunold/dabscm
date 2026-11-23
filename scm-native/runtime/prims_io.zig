@@ -318,13 +318,17 @@ fn fileOptions(t: *Thread) FileOptions {
 
 fn openInput(t: *Thread, binary: bool) Err!Word {
     const name = data.toUtf8Owned(try P.stringArg(t, 0)); // the port's name
-    var bytes = rt.os.readFile(name) orelse return fileError(t, "cannot open file", arg(t, 0));
+    var bytes = rt.os.readFile(name) orelse {
+        pa.free(name);
+        return fileError(t, "cannot open file", arg(t, 0));
+    };
     if (!binary) {
         const o = fileOptions(t);
         if (o.deflate) {
             const z = @import("compress.zig");
             const raw = z.decompress(bytes, .raw) catch {
                 pa.free(bytes);
+                pa.free(name);
                 return fileError(t, "open-input-file: io error", arg(t, 0));
             };
             pa.free(bytes);
@@ -335,6 +339,7 @@ fn openInput(t: *Thread, binary: bool) Err!Word {
     const p = ports.newPort(.file_in, binary);
     p.in = .fromOwnedSlice(bytes);
     p.name = name;
+    p.name_owned = true;
     t.reserve(2);
     return ports.wrap(t, p);
 }

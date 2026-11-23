@@ -29,6 +29,7 @@ const raise = P.raise;
 const Io = std.Io;
 
 const pa = std.heap.c_allocator;
+const sys = @import("prims_sys.zig");
 
 // --- the markers ------------------------------------------------------------
 
@@ -59,8 +60,29 @@ fn isKind(w: Word, m: Word) bool {
     return m != 0 and data.isRecord(w) and data.recordSize(w) >= 2 and data.recordSlots(w)[0] == m;
 }
 
+/// The control structure of a thread, mutex or condition variable: in a
+/// native object in the record's slot 1, freed by the collector with it
 fn ctlOf(comptime T: type, w: Word) *T {
-    return @ptrFromInt(@as(usize, @intCast(rt.unfix(data.recordSlots(w)[1]))));
+    return @ptrCast(@alignCast(sys.nativeRecord(data.recordSlots(w)[1]).ptr.?));
+}
+
+/// Free a control structure the collector found unreachable. A mutex a
+/// running thread still holds stays (its held list points to it).
+pub fn freeCtl(kind: sys.NativeKind, p: *anyopaque) void {
+    switch (kind) {
+        .thread_ctl => {
+            const c: *ThreadCtl = @ptrCast(@alignCast(p));
+            c.held.deinit(pa);
+            pa.destroy(c);
+        },
+        .mutex_ctl => {
+            const m: *MutexCtl = @ptrCast(@alignCast(p));
+            if (m.owner != null) return;
+            pa.destroy(m);
+        },
+        .cond_ctl => pa.destroy(@as(*CondCtl, @ptrCast(@alignCast(p)))),
+        else => unreachable,
+    }
 }
 
 fn slot(w: Word, i: usize) Word {
@@ -115,16 +137,18 @@ const ThreadCtl = struct {
     held: std.ArrayList(*MutexCtl) = .empty,
 };
 
-fn newThreadObject(t: *Thread, thunk_i: ?usize, name: Word, state: i64) Word {
-    t.reserve(1 + 9);
+/// name: the argument name_i, else name (not in the heap: a symbol)
+fn newThreadObject(t: *Thread, thunk_i: ?usize, name_i: ?usize, name: Word, state: i64) Word {
+    t.reserve(1 + 9 + 3);
     const ctl = pa.create(ThreadCtl) catch rt.oom();
     ctl.* = .{};
+    const n = sys.allocNative(t, .thread_ctl, ctl);
     const r = data.makeRecord(t, 9);
     const s = data.recordSlots(r);
     s[0] = thread_marker;
-    s[1] = rt.fix(@intCast(@intFromPtr(ctl)));
+    s[1] = n;
     s[2] = if (thunk_i) |i| arg(t, i) else rt.FALSE;
-    s[3] = name;
+    s[3] = if (name_i) |i| arg(t, i) else name;
     s[4] = rt.NIL;
     s[5] = rt.UNSPEC;
     s[6] = rt.FALSE;
@@ -138,7 +162,7 @@ fn newThreadObject(t: *Thread, thunk_i: ?usize, name: Word, state: i64) Word {
 pub fn currentThreadObject(t: *Thread) Word {
     markers();
     if (t.thread_obj == rt.FALSE) {
-        const r = newThreadObject(t, null, data.intern("primordial"), State.started);
+        const r = newThreadObject(t, null, null, data.intern("primordial"), State.started);
         ctlOf(ThreadCtl, r).t = t;
         t.thread_obj = r;
         t.ctl = ctlOf(ThreadCtl, r);
@@ -165,7 +189,7 @@ pub const @"%thread?" = WN("thread?", threadP, 1, 1);
 fn makeThread(t: *Thread) Err!Word {
     markers();
     if (!rt.isProcedure(arg(t, 0))) return P.argTypeError(t);
-    return newThreadObject(t, 0, if (t.argc > 1) arg(t, 1) else rt.FALSE, State.new);
+    return newThreadObject(t, 0, if (t.argc > 1) 1 else null, rt.FALSE, State.new);
 }
 pub const @"%make-thread" = WN("make-thread", makeThread, 1, 2);
 
@@ -392,13 +416,14 @@ fn mutexArg(t: *Thread, i: usize) Err!*MutexCtl {
 
 fn makeSync(t: *Thread, comptime T: type, m: Word) Word {
     markers();
-    t.reserve(1 + 4);
+    t.reserve(1 + 4 + 3);
     const ctl = pa.create(T) catch rt.oom();
     ctl.* = .{};
+    const n = sys.allocNative(t, if (T == MutexCtl) .mutex_ctl else .cond_ctl, ctl);
     const r = data.makeRecord(t, 4);
     const s = data.recordSlots(r);
     s[0] = if (m == 0) mutex_marker else m;
-    s[1] = rt.fix(@intCast(@intFromPtr(ctl)));
+    s[1] = n;
     s[2] = if (t.argc > 0) arg(t, 0) else rt.FALSE;
     s[3] = rt.NIL;
     return r;

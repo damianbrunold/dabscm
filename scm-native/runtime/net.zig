@@ -23,7 +23,12 @@ pub const Conn = struct {
     reader: net.Stream.Reader,
     writer: net.Stream.Writer,
     tls_client: ?*tls.Client = null,
+    /// the TLS client's buffers and host name, freed with the connection
+    tls_bufs: [3][]u8 = .{ &.{}, &.{}, &.{} },
     closed: bool = false,
+    /// the holders: the socket object and its ports; the last one's
+    /// release frees the connection
+    refs: std.atomic.Value(u32) = .init(1),
 
     /// For a socket port
     pub fn portRead(c: *Conn, dst: []u8) usize {
@@ -114,6 +119,23 @@ pub const Conn = struct {
         }
         c.stream.close(os.io);
         c.closed = true;
+    }
+
+    pub fn retain(c: *Conn) void {
+        _ = c.refs.fetchAdd(1, .monotonic);
+    }
+
+    /// A holder is gone (the collector found it unreachable, every thread
+    /// stopped): the last one closes the stream (without TLS's
+    /// close_notify, which could block) and frees the connection
+    pub fn release(c: *Conn) void {
+        if (c.refs.fetchSub(1, .acq_rel) != 1) return;
+        if (!c.closed) c.stream.close(os.io);
+        if (c.tls_client) |t| pa.destroy(t);
+        for (c.tls_bufs) |b| pa.free(b);
+        pa.free(c.reader.interface.buffer);
+        pa.free(c.writer.interface.buffer);
+        pa.destroy(c);
     }
 };
 
@@ -220,6 +242,12 @@ pub const Listener = struct {
     }
 };
 
+/// A listener the collector found unreachable: closed and freed
+pub fn freeListener(l: *Listener) void {
+    l.close();
+    pa.destroy(l);
+}
+
 /// A listener on port of host (all interfaces if null)
 pub fn listen(host: ?[]const u8, port: u16) ?*Listener {
     ignoreSigpipe();
@@ -301,6 +329,7 @@ pub fn startTlsOver(c: *Conn, host: []const u8, verify: bool, input: *std.Io.Rea
     t.input = &c.reader.interface;
     t.output = &c.writer.interface;
     c.tls_client = t;
+    c.tls_bufs = .{ rbuf, wbuf, host_copy };
     return true;
 }
 

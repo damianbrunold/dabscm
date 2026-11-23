@@ -159,6 +159,10 @@ pub fn procWait(h: HANDLE, timeout_ms: ?u64) ?i64 {
     return code;
 }
 
+pub fn closeHandle(h: HANDLE) void {
+    _ = k32.CloseHandle(h);
+}
+
 pub fn procId(h: HANDLE) i64 {
     return k32.GetProcessId(h);
 }

@@ -24,10 +24,10 @@
   (dabscm-native
    (define native-dir
      (or (get-environment-variable "SCM_NATIVE_DIR")
-         (directory-name (directory-name (absolute-path (car (command-line))))))))
+         (directory-name (directory-name (normalized-path (absolute-path (car (command-line)))))))))
   (else
    (import (scm module))
-   (define native-dir (directory-name (absolute-path (car (command-line)))))))
+   (define native-dir (directory-name (normalized-path (absolute-path (car (command-line))))))))
 ;; on the JVM, the compiler's libraries are found at run time
 (cond-expand
   (dabscm-native)

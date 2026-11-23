@@ -1,0 +1,36 @@
+;; JSON and XML readers, zips in memory and on disk, random-access files,
+;; file locks: dropped without closing
+(import (scheme base) (scheme write) (scheme file)
+        (scm json) (scm xml) (scm zip) (scm random access) (scm fs) (soak lib))
+
+(define json-text "{\"data\": [{\"a\": 1, \"b\": {\"c\": \"x\"}, \"l\": [{\"d\": 2}]}, {\"a\": 3}]}")
+(define xml-text "<root a=\"1\"><item name=\"x&amp;y\">text</item><item name=\"z\"/></root>")
+(define raf-file "soak-natives-raf.tmp")
+(define lock-file "soak-natives-lock.tmp")
+(define zip-file "soak-natives.zip")
+(call-with-output-file raf-file (lambda (p) (write-string "0123456789" p)))
+(call-with-output-zip zip-file
+  (lambda (z) (zip-add-stored-entry z "a.txt" (string->utf8 "hello"))))
+
+(soak "natives"
+      (lambda (round)
+        (do ((i 0 (+ i 1))) ((= i (scale 500)))
+          (let* ((r (open-json-string json-text))
+                 (o (json-next-object r)))
+            (json-attribute (json-attribute o "b") "c")
+            (json-attribute o "l"))
+          (let ((r (open-xml-string xml-text)))
+            (xml-read-to r "item")
+            (xml-attribute r "name")
+            (xml-value r))
+          (let ((z (open-output-zip-bytevector)))
+            (zip-add-stored-entry z "a.txt" (string->utf8 (number->string i)))
+            (close-output-zip z)
+            (get-output-zip-bytevector z))
+          (let ((z (open-output-zip-bytevector)))
+            (write-string "pending" (zip-add-text-entry z "b.txt")))
+          (let ((z (open-input-zip-file zip-file)))
+            (zip-read-entry-bytevector z "a.txt"))
+          (random-access-file-read (open-random-access-file raf-file 'read) 0 4)
+          (let ((l (file-lock lock-file)))
+            (when l (file-unlock l))))))

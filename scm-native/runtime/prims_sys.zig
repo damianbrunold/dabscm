@@ -42,7 +42,24 @@ fn pair(t: *Thread, a: i64, b: i64) Word {
 
 // --- native objects (processes, file locks) ----------------------------------------------
 
-pub const NativeKind = enum(u64) { process = 1, file_lock = 2, zip_in = 3, zip_out = 4, json_reader = 5, json_object = 6, xml_reader = 7, random_access = 8, macro_standin = 9, socket = 10, listener = 11 };
+pub const NativeKind = enum(u64) { process = 1, file_lock = 2, zip_in = 3, zip_out = 4, json_reader = 5, json_object = 6, xml_reader = 7, random_access = 8, macro_standin = 9, socket = 10, listener = 11, thread_ctl = 12, mutex_ctl = 13, cond_ctl = 14 };
+
+/// The record of a native object: its pointer (null once released) and
+/// its kind. A native heap object holds [kind, record, slots...]; the
+/// collector marks the record when it reaches the object, and the records
+/// it did not reach are finalized after the collection (sweepNatives), as
+/// ports are: their memory and handles are freed, sockets and files closed
+pub const Native = struct {
+    ptr: ?*anyopaque,
+    kind: NativeKind,
+    /// what this object keeps alive: a JSON object's parser
+    owner: ?*anyopaque = null,
+    seen: u32 = 0,
+    young: bool = true,
+};
+
+var natives: std.ArrayList(*Native) = .empty;
+var natives_lock: std.Io.Mutex = .init;
 
 fn wrapNative(t: *Thread, kind: NativeKind, p: *anyopaque) Word {
     t.reserve(3);
@@ -53,17 +70,179 @@ pub const wrapNativeOf = wrapNative;
 
 /// A native object; reserve 3 words first
 pub fn allocNative(t: *Thread, kind: NativeKind, p: *anyopaque) Word {
-    const q = t.allocRaw(3);
-    q[0] = rt.hdr(rt.T_NATIVE, 2);
+    return allocNativeSlots(t, kind, p, null, 0);
+}
+
+/// A native object with slots, words the collector scans (a socket's
+/// ports), #f at first; reserve 3 + slots words first
+pub fn allocNativeSlots(t: *Thread, kind: NativeKind, p: *anyopaque, owner: ?*anyopaque, slots: usize) Word {
+    const rec = pa.create(Native) catch rt.oom();
+    rec.* = .{ .ptr = p, .kind = kind, .owner = owner };
+    {
+        natives_lock.lockUncancelable(os.io);
+        defer natives_lock.unlock(os.io);
+        natives.append(pa, rec) catch rt.oom();
+    }
+    const q = t.allocRaw(3 + slots);
+    q[0] = rt.hdr(rt.T_NATIVE, 2 + slots);
     q[1] = @intFromEnum(kind);
-    q[2] = @intFromPtr(p);
+    q[2] = @intFromPtr(rec);
+    for (q[3 .. 3 + slots]) |*w| w.* = rt.FALSE;
     return rt.tagPtr(q);
+}
+
+/// The record of a native object w (not a macro stand-in)
+pub fn nativeRecord(w: Word) *Native {
+    return @ptrFromInt(rt.ptr(w)[2]);
 }
 
 /// The object's pointer; null if w is not of this kind or was released
 pub fn nativeOf(w: Word, kind: NativeKind) ?*anyopaque {
-    if (!rt.isObj(w, rt.T_NATIVE) or rt.ptr(w)[1] != @intFromEnum(kind) or rt.ptr(w)[2] == 0) return null;
-    return @ptrFromInt(rt.ptr(w)[2]);
+    if (!rt.isObj(w, rt.T_NATIVE) or rt.ptr(w)[1] != @intFromEnum(kind) or kind == .macro_standin) return null;
+    return nativeRecord(w).ptr;
+}
+
+/// The collector reached the native object q
+pub fn markNative(q: [*]Word) void {
+    if (q[1] == @intFromEnum(NativeKind.macro_standin)) return;
+    const rec: *Native = @ptrFromInt(q[2]);
+    rec.seen = @import("ports.zig").epoch;
+}
+
+/// The number of native objects, for the statistics
+pub fn nativeCount() usize {
+    return natives.items.len;
+}
+
+/// After a collection (every thread stopped), before the ports' sweep: the
+/// native objects not reached are finalized, after a minor collection only
+/// those made since the last one
+pub fn sweepNatives(major: bool) void {
+    natives_lock.lockUncancelable(os.io);
+    defer natives_lock.unlock(os.io);
+    const epoch = @import("ports.zig").epoch;
+    var kept: usize = 0;
+    for (natives.items) |rec| {
+        if (rec.seen == epoch or !(major or rec.young)) {
+            rec.young = false;
+            natives.items[kept] = rec;
+            kept += 1;
+            continue;
+        }
+        finalize(rec);
+        pa.destroy(rec);
+    }
+    natives.items.len = kept;
+}
+
+/// Free what a native object no longer reachable holds. Nothing here may
+/// block: a socket is closed without flushing, as the JVM's cleaner does
+fn finalize(rec: *Native) void {
+    const p = rec.ptr orelse return releaseOwner(rec);
+    rec.ptr = null;
+    switch (rec.kind) {
+        .process => {
+            const proc: *os.Proc = @ptrCast(@alignCast(p));
+            // a running process stays (it may still be waited for by
+            // process-kill-on-exit); an ended one is reaped and freed
+            if (os.procPoll(proc) == null) return;
+            tracked_lock.lockUncancelable(os.io);
+            defer tracked_lock.unlock(os.io);
+            for (tracked.items, 0..) |q, i| if (q == proc) {
+                _ = tracked.swapRemove(i);
+                break;
+            };
+            os.procFree(proc);
+        },
+        .file_lock => {
+            const f: *os.File = @ptrCast(@alignCast(p));
+            os.unlockFile(f.*);
+            pa.destroy(f);
+        },
+        .zip_in => {
+            const z: *ZipIn = @ptrCast(@alignCast(p));
+            pa.free(z.reader.bytes);
+            pa.free(z.reader.entries);
+            pa.destroy(z);
+        },
+        .zip_out => {
+            const z: *ZipOut = @ptrCast(@alignCast(p));
+            if (z.port) |port| port.pinned = false;
+            if (z.writer.pending) |pend| pa.free(pend.name);
+            for (z.writer.central.items) |c| pa.free(c.name);
+            z.writer.central.deinit(pa);
+            z.writer.out.deinit(pa);
+            if (z.path) |path| pa.free(path);
+            pa.destroy(z);
+        },
+        .json_reader => @import("prims_json.zig").releaseParser(p),
+        .json_object => releaseOwner(rec),
+        .xml_reader => @import("prims_xml.zig").freeReader(p),
+        .random_access => {
+            const r: *Raf = @ptrCast(@alignCast(p));
+            if (r.open) os.closeFile(r.file);
+            pa.destroy(r);
+        },
+        .macro_standin => {},
+        .socket => @import("prims_net.zig").freeSocket(p),
+        .listener => @import("net.zig").freeListener(@ptrCast(@alignCast(p))),
+        .thread_ctl, .mutex_ctl, .cond_ctl => @import("prims_thread.zig").freeCtl(rec.kind, p),
+    }
+}
+
+// glibc's mallinfo (Zig links against a glibc older than mallinfo2): int
+// fields, enough for tests
+const Mallinfo = extern struct { arena: c_int, ordblks: c_int, smblks: c_int, hblks: c_int, hblkhd: c_int, usmblks: c_int, fsmblks: c_int, uordblks: c_int, fordblks: c_int, keepcost: c_int };
+extern "c" fn mallinfo() Mallinfo;
+
+fn mallocInUse() usize {
+    if (builtin.os.tag != .linux or builtin.abi != .gnu) return 0;
+    const m = mallinfo();
+    return @as(usize, @intCast(@as(u32, @bitCast(m.uordblks)))) + @as(usize, @intCast(@as(u32, @bitCast(m.hblkhd))));
+}
+
+/// (%gc-collect [full]), native only (soak tests): a collection now, a
+/// major one unless full is #f
+fn gcCollect(t: *Thread) Err!Word {
+    rt.collectNow(t, !(t.argc > 0 and arg(t, 0) == rt.FALSE));
+    return rt.UNSPEC;
+}
+pub const @"%gc-collect" = WN("gc-collect", gcCollect, 0, 1);
+
+/// (%gc-statistics), native only (soak tests): an alist of the collector's
+/// numbers: minor and major collections, live-words (the old space's
+/// used words and the large objects'), ports, port-bytes (their
+/// buffers), native-objects, threads
+fn gcStatistics(t: *Thread) Err!Word {
+    const g = rt.gcNumbers();
+    const port_stats = @import("ports.zig").stats();
+    const items = [_]struct { []const u8, usize }{
+        .{ "minor", g.minor },
+        .{ "major", g.major },
+        .{ "live-words", g.old_used + g.large },
+        .{ "ports", port_stats.count },
+        .{ "port-bytes", port_stats.bytes },
+        .{ "native-objects", natives.items.len },
+        .{ "threads", g.threads },
+        // the C allocator's bytes in use (glibc only; 0 elsewhere)
+        .{ "malloc-bytes", mallocInUse() },
+    };
+    var syms: [items.len]Word = undefined;
+    for (items, 0..) |it, i| syms[i] = data.intern(it[0]);
+    t.reserve(6 * items.len);
+    var l = rt.NIL;
+    var i = items.len;
+    while (i > 0) {
+        i -= 1;
+        l = t.cons(t.cons(syms[i], fix(@intCast(items[i][1]))), l);
+    }
+    return l;
+}
+pub const @"%gc-statistics" = WN("gc-statistics", gcStatistics, 0, 0);
+
+fn releaseOwner(rec: *Native) void {
+    if (rec.kind == .json_object) if (rec.owner) |o| @import("prims_json.zig").releaseParser(o);
+    rec.owner = null;
 }
 
 pub fn nativeName(w: Word) []const u8 {
@@ -77,7 +256,8 @@ pub fn nativeName(w: Word) []const u8 {
             // as the JVM implementation: the object as JSON text
             var b: std.ArrayList(u8) = .empty;
             const json = @import("prims_json.zig");
-            json.objectText(@ptrCast(@alignCast(@as(*anyopaque, @ptrFromInt(rt.ptr(w)[2])))), &b);
+            const o = nativeRecord(w).ptr orelse break :blk "#<json-object>";
+            json.objectText(@ptrCast(@alignCast(o)), &b);
             break :blk b.items;
         },
         7 => "#<xml-reader>",
@@ -85,6 +265,7 @@ pub fn nativeName(w: Word) []const u8 {
         9 => "#<macro>",
         10 => "#<socket>",
         11 => "#<tcp-listener>",
+        12, 13, 14 => "#<synchronization>",
         else => "#<native>",
     };
 }
@@ -428,7 +609,8 @@ fn fileUnlock(t: *Thread) Err!Word {
     const p = nativeOf(w, .file_lock) orelse return rt.TRUE; // already released
     const f: *os.File = @ptrCast(@alignCast(p));
     os.unlockFile(f.*);
-    rt.ptr(w)[2] = 0;
+    pa.destroy(f);
+    nativeRecord(w).ptr = null;
     return rt.TRUE;
 }
 pub const @"%file-unlock" = WN("file-unlock", fileUnlock, 1, 1);
@@ -494,12 +676,31 @@ pub const @"%get-property-list" = WD("get-property-list", getPropertyList, 2, 3)
 const Options = struct {
     spawn: os.Spawn,
     stdin_text: ?[]const u8 = null,
+
+    /// The strings are copies, freed after the spawn (the child has its own)
+    fn deinit(o: *Options) void {
+        for (o.spawn.argv) |a| pa.free(a);
+        pa.free(o.spawn.argv);
+        if (o.spawn.cwd) |c| pa.free(c);
+        if (o.spawn.log_file) |f| pa.free(f);
+        for (o.spawn.env) |kv| {
+            pa.free(kv[0]);
+            pa.free(kv[1]);
+        }
+        pa.free(o.spawn.env);
+        if (o.stdin_text) |x| pa.free(x);
+        o.* = .{ .spawn = .{ .argv = &.{} } };
+    }
 };
 
 /// The command line and options of run-program, run-program/capture and
 /// start-program
 fn programArgs(t: *Thread) Err!Options {
     var argv: std.ArrayList([]const u8) = .empty;
+    errdefer {
+        for (argv.items) |a| pa.free(a);
+        argv.deinit(pa);
+    }
     var l = arg(t, 0);
     if (!rt.isPair(l)) return P.argTypeError(t);
     while (rt.isPair(l)) : (l = rt.cdr(l)) {
@@ -507,7 +708,8 @@ fn programArgs(t: *Thread) Err!Options {
         if (!data.isString(x)) return P.argTypeError(t);
         argv.append(pa, data.toUtf8Owned(x)) catch rt.oom();
     }
-    var o = Options{ .spawn = .{ .argv = argv.items } };
+    var o = Options{ .spawn = .{ .argv = argv.toOwnedSlice(pa) catch rt.oom() } };
+    errdefer o.deinit();
     if (t.argc > 1) {
         const opts = arg(t, 1);
         if (findProperty(opts, data.intern("work-dir"), false)) |w| if (w != rt.FALSE) {
@@ -524,6 +726,13 @@ fn programArgs(t: *Thread) Err!Options {
         };
         if (findProperty(opts, data.intern("env"), false)) |env| {
             var pairs: std.ArrayList([2][]const u8) = .empty;
+            errdefer {
+                for (pairs.items) |kv| {
+                    pa.free(kv[0]);
+                    pa.free(kv[1]);
+                }
+                pairs.deinit(pa);
+            }
             var e = env;
             while (rt.isPair(e)) : (e = rt.cdr(e)) {
                 const kv = rt.car(e);
@@ -532,24 +741,30 @@ fn programArgs(t: *Thread) Err!Options {
                 if (!data.isString(v)) return P.argTypeError(t);
                 pairs.append(pa, .{ data.toUtf8Owned(rt.car(kv)), data.toUtf8Owned(v) }) catch rt.oom();
             }
-            o.spawn.env = pairs.items;
+            o.spawn.env = pairs.toOwnedSlice(pa) catch rt.oom();
         }
     }
     return o;
 }
 
 fn runProgram(t: *Thread) Err!Word {
-    const o = try programArgs(t);
+    var o = try programArgs(t);
+    defer o.deinit();
     os.flush();
     const p = os.spawn(o.spawn) orelse return rt.FALSE;
-    return fix(os.procWait(p, null) orelse return rt.FALSE);
+    const code = os.procWait(p, null);
+    os.procFree(p);
+    return fix(code orelse return rt.FALSE);
 }
 pub const @"%run-program" = WN("run-program", runProgram, 1, 2);
 
 fn runProgramCapture(t: *Thread) Err!Word {
-    const o = try programArgs(t);
+    var o = try programArgs(t);
+    defer o.deinit();
     os.flush();
     const r = os.capture(o.spawn, o.stdin_text) orelse return rt.FALSE;
+    defer pa.free(r.out);
+    defer pa.free(r.err);
     t.reserve(9 + data.stringWords(r.out.len, true) + data.stringWords(r.err.len, true));
     const out = data.heapStringUtf8(t, r.out);
     const err = data.heapStringUtf8(t, r.err);
@@ -559,6 +774,7 @@ pub const @"%run-program/capture" = WN("run-program/capture", runProgramCapture,
 
 fn startProgram(t: *Thread) Err!Word {
     var o = try programArgs(t);
+    defer o.deinit();
     o.spawn.inherit_stdin = false;
     os.flush();
     const p = os.spawn(o.spawn) orelse return raise(t, "start-program: cannot start ~a", &.{rt.car(arg(t, 0))});
@@ -870,6 +1086,8 @@ const ZipOut = struct {
         z.writer.pending = null;
         z.port = null;
         p.pinned = false;
+        // add copies the name
+        defer pa.free(pend.name);
         try z.writer.add(pend.name, p.out.items, pend.ms, pend.method);
         p.out.clearAndFree(pa);
         p.open = false;

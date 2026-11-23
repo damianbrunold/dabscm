@@ -160,7 +160,7 @@ costs recompilation.
 
 | variable | meaning |
 |---|---|
-| `SCM_NATIVE_GC_STATS=1` | at exit (also through `exit`): the numbers of collections, the old space and how much of it is used, large objects, the threads' nurseries and stacks, ended threads not yet freed, the ports and their buffers; at each major collection the old space's size |
+| `SCM_NATIVE_GC_STATS=1` | at exit (also through `exit`): the numbers of collections, the old space and how much of it is used, large objects, the threads' nurseries and stacks, ended threads not yet freed, the ports and their buffers, the native objects; at each major collection the old space's size |
 | `SCM_NATIVE_GC_VERIFY=1` | check for missing write barriers before each minor collection (slow) |
 | `SCM_NATIVE_SEGV=1` | a stack trace on a crash |
 | `SCM_TLS_INSECURE=1` | no TLS certificate verification |
@@ -349,6 +349,28 @@ do not change it. Don't run them in `/tmp` if it is a tmpfs.
 Native-only changes to `scm-lib` or `scm-tests` go behind `cond-expand (dabscm-native ...)`;
 the Java and C# suites must still pass.
 
+### Soak tests
+
+```sh
+scm soak.scm [name ...]                          # soak/*.scm, 10 rounds each
+scm soak.scm --target x86_64-linux-gnu           # with the C allocator's bytes in use
+scm soak.scm --rounds 40 --scale 4 -O ReleaseSafe sockets
+```
+
+Each scenario in `soak/` (sockets, HTTP, threads, processes, ports, JSON/XML/zip and the
+other native objects, errors and `eval`, allocation) runs rounds of work that drops what it
+makes, often without closing it. After each round a major collection runs (the native-only
+primitive `gc-collect`), then a sample: the live heap, ports, native objects, threads (from
+`gc-statistics`), open file descriptors and resident memory (Linux `/proc`). After three
+warm-up rounds nothing may grow beyond a small limit, and the heap, the counts and the C
+allocator's bytes may not grow in nearly every round (a small leak).
+
+Built for glibc (`--target x86_64-linux-gnu`) the samples include `malloc-bytes`, the C
+allocator's bytes in use (`mallinfo`). That tells a leak from fragmentation: the resident
+memory shows both. musl's allocator (the default target) fragments more under some
+patterns: freeing a file port's buffer at a collection while small allocations land in its
+slot grew the resident memory without a leak.
+
 ### Generated files
 
 - `runtime/unicode.zig`: `tools/gen-unicode.scm`, from the Unicode Character Database.
@@ -472,6 +494,16 @@ native `scmc`.
   (a major collection, and a minor one for ports made since the last collection); a closed
   port frees its buffers at once. The reader's intermediate nodes and the temporary UTF-8
   copies of primitives use arenas that are reset after each datum or primitive call.
+- **Native objects** (sockets, listeners, processes, file locks, zips, JSON and XML
+  readers and objects, random-access files, the control structures of SRFI 18 threads,
+  mutexes and condition variables) are freed the same way: a registry of records, marked
+  when a collection reaches the object, finalized when it does not. Finalizers do not
+  block: a socket is closed without flushing (as the JVM's cleaner drops what an
+  unreachable stream holds), a running process is left running (only an ended one is
+  freed), a mutex a running thread holds stays. A socket's ports live in slots of the
+  socket object; the connection is freed when the socket and its ports are all gone, so a
+  port kept without its socket still works. A JSON reader's tokens and objects are in one
+  arena, freed when the reader and every object read from it are gone.
 
 ### Threads
 

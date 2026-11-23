@@ -115,7 +115,7 @@ pub fn open(bytes: []const u8) Error!Reader {
         entries.append(pa, e) catch return error.OutOfMemory;
         p += 46 + name_len + extra_len + comment_len;
     }
-    return .{ .bytes = bytes, .entries = entries.items };
+    return .{ .bytes = bytes, .entries = entries.toOwnedSlice(pa) catch return error.OutOfMemory };
 }
 
 // --- writing --------------------------------------------------------------------------

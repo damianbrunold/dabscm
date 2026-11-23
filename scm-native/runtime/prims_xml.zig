@@ -33,6 +33,8 @@ fn invalidChar(d: u8) bool {
 
 const Reader = struct {
     s: []const u8, // UTF-8
+    /// the allocation s is in
+    owned: []const u8,
     pos: usize = 0,
     event: Event = .doc,
     name: []const u8 = "", // qualified
@@ -112,8 +114,13 @@ const Reader = struct {
         out.appendSlice(pa, rep) catch rt.oom();
     }
 
-    fn attributes(r: *Reader) error{Xml}!void {
+    fn clearAttrs(r: *Reader) void {
+        for (r.attrs.items) |a| pa.free(a.value);
         r.attrs.clearRetainingCapacity();
+    }
+
+    fn attributes(r: *Reader) error{Xml}!void {
+        r.clearAttrs();
         while (true) {
             r.skipSpace();
             const c = r.peek() orelse return r.fail("XML document structures must start and end within the same entity.", .{});
@@ -127,6 +134,7 @@ const Reader = struct {
             if (q != '"' and q != '\'') return r.fail("Open quote is expected for attribute \"{s}\" associated with an  element type  \"{s}\".", .{ n, r.name });
             r.pos += 1;
             var v: std.ArrayList(u8) = .empty;
+            errdefer v.deinit(pa);
             while (true) {
                 const d = r.peek() orelse return r.fail("XML document structures must start and end within the same entity.", .{});
                 r.pos += 1;
@@ -140,7 +148,7 @@ const Reader = struct {
                     return r.fail("An invalid XML character (Unicode: 0x{x}) was found in the value of attribute \"{s}\" and element is \"{s}\".", .{ d, n, r.name });
                 } else v.append(pa, if (d == '\t' or d == '\n' or d == '\r') ' ' else d) catch rt.oom();
             }
-            r.attrs.append(pa, .{ .local = localOf(n), .value = v.items }) catch rt.oom();
+            r.attrs.append(pa, .{ .local = localOf(n), .value = v.toOwnedSlice(pa) catch rt.oom() }) catch rt.oom();
         }
     }
 
@@ -271,6 +279,7 @@ const Reader = struct {
     fn elementText(r: *Reader) error{Xml}![]const u8 {
         if (r.event != .element) return r.fail("parser must be on START_ELEMENT to read next text", .{});
         var out: std.ArrayList(u8) = .empty;
+        errdefer out.deinit(pa);
         while (true) {
             if (!try r.next()) return r.fail("unexpected end of document when reading element text content", .{});
             switch (r.event) {
@@ -323,21 +332,44 @@ fn decode(bytes: []const u8) []const u8 {
     return bytes;
 }
 
-fn openReader(t: *Thread, text: []const u8) Word {
+/// text: in the allocation owned, which the reader keeps
+fn openReader(t: *Thread, text: []const u8, owned: []const u8) Word {
     const r = pa.create(Reader) catch rt.oom();
-    r.* = .{ .s = text };
+    r.* = .{ .s = text, .owned = owned };
     return sys.wrapNativeOf(t, .xml_reader, r);
 }
 
+/// The bytes decoded (decode), and the allocation the text is in (bytes
+/// freed if the text is a new one)
+fn openDecoded(t: *Thread, bytes: []const u8) Word {
+    const text = decode(bytes);
+    if (text.len == 0 or (@intFromPtr(text.ptr) >= @intFromPtr(bytes.ptr) and @intFromPtr(text.ptr) <= @intFromPtr(bytes.ptr) + bytes.len))
+        return openReader(t, text, bytes);
+    pa.free(bytes);
+    return openReader(t, text, text);
+}
+
+/// A reader the collector found unreachable
+pub fn freeReader(o: *anyopaque) void {
+    const r: *Reader = @ptrCast(@alignCast(o));
+    r.clearAttrs();
+    r.attrs.deinit(pa);
+    r.text.deinit(pa);
+    r.stack.deinit(pa);
+    pa.free(r.owned);
+    pa.destroy(r);
+}
+
 fn openXmlString(t: *Thread) Err!Word {
-    return openReader(t, data.toUtf8Owned(try P.stringArg(t, 0)));
+    const text = data.toUtf8Owned(try P.stringArg(t, 0));
+    return openReader(t, text, text);
 }
 pub const @"%open-xml-string" = WN("open-xml-string", openXmlString, 1, 1);
 
 fn openXmlBytevector(t: *Thread) Err!Word {
     const bv = arg(t, 0);
     if (!data.isBytevector(bv)) return P.argTypeError(t);
-    return openReader(t, decode(pa.dupe(u8, data.bvBytes(bv)) catch rt.oom()));
+    return openDecoded(t, pa.dupe(u8, data.bvBytes(bv)) catch rt.oom());
 }
 pub const @"%open-xml-bytevector" = WN("open-xml-bytevector", openXmlBytevector, 1, 1);
 
@@ -345,7 +377,7 @@ fn openXmlFile(t: *Thread) Err!Word {
     const name = data.toUtf8(try P.stringArg(t, 0));
     if (!os.fileExists(name)) return raise(t, std.fmt.allocPrint(pa, "open-xml-file {s}: file not found", .{name}) catch rt.oom(), &.{});
     const bytes = os.readFile(name) orelse return raise(t, std.fmt.allocPrint(pa, "open-xml-file {s}: io error", .{name}) catch rt.oom(), &.{});
-    return openReader(t, decode(bytes));
+    return openDecoded(t, bytes);
 }
 pub const @"%open-xml-file" = WN("open-xml-file", openXmlFile, 1, 1);
 
@@ -406,6 +438,7 @@ pub const @"%xml-name" = WN("xml-name", xmlName, 1, 1);
 fn xmlValue(t: *Thread) Err!Word {
     const r = try readerArg(t);
     const text = r.elementText() catch return xmlError(t, "xml-value failed: ", r);
+    defer pa.free(text);
     return str(t, text);
 }
 pub const @"%xml-value" = WN("xml-value", xmlValue, 1, 1);

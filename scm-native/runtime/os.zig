@@ -737,10 +737,15 @@ fn childEnv(extra: []const [2][]const u8) ?*std.process.Environ.Map {
 pub fn spawn(s: Spawn) ?*Proc {
     var log: ?File = null;
     if (s.log_file) |lf| log = std.Io.Dir.cwd().createFile(io, lf, .{}) catch return null;
+    const env_map = childEnv(s.env);
+    defer if (env_map) |m| {
+        m.deinit();
+        pa.destroy(m);
+    };
     const child = std.process.spawn(io, .{
         .argv = s.argv,
         .cwd = if (s.cwd) |c| .{ .path = c } else .inherit,
-        .environ_map = childEnv(s.env),
+        .environ_map = env_map,
         .stdin = if (s.capture or !s.inherit_stdin) .pipe else .inherit,
         .stdout = if (s.capture) .pipe else if (log) |f| .{ .file = f } else .inherit,
         .stderr = if (s.capture) .pipe else if (log) |f| .{ .file = f } else .inherit,
@@ -821,6 +826,12 @@ pub fn procWait(p: *Proc, timeout_ms: ?u64) ?i64 {
     }
 }
 
+/// Free an ended process (its handle on Windows)
+pub fn procFree(p: *Proc) void {
+    if (is_windows) if (p.child.id) |h| w32.closeHandle(h);
+    pa.destroy(p);
+}
+
 pub fn procId(p: *Proc) i64 {
     if (is_windows) return if (p.child.id) |h| w32.procId(h) else 0;
     return p.child.id orelse 0;
@@ -852,6 +863,7 @@ pub fn capture(s0: Spawn, stdin_text: ?[]const u8) ?Captured {
     p.child.stdout = null;
     p.child.stderr = null;
     const code = procWait(p, null) orelse 0;
+    procFree(p);
     return .{ .code = code, .out = out, .err = err };
 }
 

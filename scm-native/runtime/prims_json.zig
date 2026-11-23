@@ -445,13 +445,13 @@ pub const JObject = struct {
     keys: std.ArrayList([]const u8) = .empty,
     values: std.ArrayList(JValue) = .empty,
 
-    fn put(o: *JObject, k: []const u8, v: JValue) void {
+    fn put(o: *JObject, a: std.mem.Allocator, k: []const u8, v: JValue) void {
         for (o.keys.items, 0..) |x, i| if (std.mem.eql(u8, x, k)) {
             o.values.items[i] = v;
             return;
         };
-        o.keys.append(pa, k) catch rt.oom();
-        o.values.append(pa, v) catch rt.oom();
+        o.keys.append(a, k) catch rt.oom();
+        o.values.append(a, v) catch rt.oom();
     }
 
     fn get(o: *const JObject, k: []const u8) ?JValue {
@@ -464,6 +464,9 @@ const JError = error{Json};
 
 const Lexer = struct {
     in: []const u8, // UTF-8
+    /// the parser's arena, for the tokens (object names and strings point
+    /// into them)
+    alloc: std.mem.Allocator = pa,
     pos: usize = 0,
     tokens: std.ArrayList([]const u8) = .empty,
     err: []const u8 = "",
@@ -579,7 +582,8 @@ const Lexer = struct {
             }
             if (state == -1) break;
         }
-        return if (r.items.len > 0) r.items else null;
+        defer r.deinit(pa);
+        return if (r.items.len > 0) (l.alloc.dupe(u8, r.items) catch rt.oom()) else null;
     }
 
     fn match(l: *Lexer, token: []const u8) JError!void {
@@ -591,10 +595,20 @@ const Lexer = struct {
     }
 };
 
+/// A JSON reader. Its text, tokens and objects are in its arena, freed
+/// when the reader and every object read from it are unreachable (refs:
+/// the reader's native object and each JSON object's)
 const Parser = struct {
     lexer: Lexer,
     list_id: []const u8 = "data",
     status: enum { start, reading, end } = .start,
+    arena: std.heap.ArenaAllocator,
+    text: []const u8,
+    refs: std.atomic.Value(u32) = .init(1),
+
+    fn alloc(p: *Parser) std.mem.Allocator {
+        return p.arena.allocator();
+    }
 
     fn fail(p: *Parser, m: []const u8) JError {
         p.lexer.err = m;
@@ -657,7 +671,7 @@ const Parser = struct {
     }
 
     fn object(p: *Parser) JError!*JObject {
-        const result = pa.create(JObject) catch rt.oom();
+        const result = p.alloc().create(JObject) catch rt.oom();
         result.* = .{};
         try p.lexer.match("{");
         var tok = p.lexer.next() orelse return p.fail("Unexpected end of tokens");
@@ -667,7 +681,7 @@ const Parser = struct {
             const name = tok[1 .. tok.len - 1];
             try p.lexer.match(":");
             const v = p.lexer.next() orelse return p.fail("Unexpected end of tokens");
-            result.put(name, try p.scalar(v));
+            result.put(p.alloc(), name, try p.scalar(v));
             tok = p.lexer.next() orelse return p.fail("Unexpected end of tokens");
             if (std.mem.eql(u8, tok, "}")) break;
             if (!std.mem.eql(u8, tok, ",")) return p.fail(msg("Expected comma or end of object but got {s}", .{tok}));
@@ -682,7 +696,7 @@ const Parser = struct {
         var tok = p.lexer.next() orelse return p.fail("Unexpected end of tokens");
         if (std.mem.eql(u8, tok, "]")) return items.items;
         while (true) {
-            items.append(pa, try p.scalar(tok)) catch rt.oom();
+            items.append(p.alloc(), try p.scalar(tok)) catch rt.oom();
             tok = p.lexer.next() orelse return p.fail("Unexpected end of tokens");
             if (std.mem.eql(u8, tok, "]")) break;
             if (!std.mem.eql(u8, tok, ",")) return p.fail(msg("Expected comma or end of list but got {s}", .{tok}));
@@ -692,14 +706,37 @@ const Parser = struct {
     }
 };
 
+/// text: owned by the reader
 fn openJson(t: *Thread, text: []const u8) Err!Word {
-    const p = pa.create(Parser) catch rt.oom();
-    p.* = .{ .lexer = .{ .in = text } };
+    var list_id: []const u8 = "data";
     if (t.argc == 2) {
         const id = arg(t, 1);
-        p.list_id = if (data.isSymbol(id)) data.symbolName(id) else data.toUtf8Owned(try P.stringArg(t, 1));
+        list_id = if (data.isSymbol(id)) data.symbolName(id) else data.toUtf8(P.stringArg(t, 1) catch |e| {
+            pa.free(text);
+            return e;
+        });
     }
+    const p = pa.create(Parser) catch rt.oom();
+    p.* = .{ .lexer = .{ .in = text }, .arena = .init(pa), .text = text };
+    p.lexer.alloc = p.alloc();
+    p.list_id = p.alloc().dupe(u8, list_id) catch rt.oom();
     return sys.wrapNativeOf(t, .json_reader, p);
+}
+
+/// A holder of the parser is gone (the collector, every thread stopped)
+pub fn releaseParser(o: *anyopaque) void {
+    const p: *Parser = @ptrCast(@alignCast(o));
+    if (p.refs.fetchSub(1, .acq_rel) != 1) return;
+    p.lexer.tokens.deinit(pa);
+    p.arena.deinit();
+    pa.free(p.text);
+    pa.destroy(p);
+}
+
+/// A JSON object read by parser p, keeping p alive; reserve 3 words first
+fn wrapObject(t: *Thread, p: *Parser, o: *JObject) Word {
+    _ = p.refs.fetchAdd(1, .monotonic);
+    return sys.allocNativeSlots(t, .json_object, o, p, 0);
 }
 
 fn openJsonString(t: *Thread) Err!Word {
@@ -723,7 +760,8 @@ fn parserArg(t: *Thread) Err!*Parser {
 fn jsonNextObject(t: *Thread) Err!Word {
     const p = try parserArg(t);
     const o = p.nextObject() catch return raise(t, msg("json-next-object failed: {s}", .{p.lexer.err}), &.{});
-    return sys.wrapNativeOf(t, .json_object, o orelse return rt.FALSE);
+    t.reserve(3);
+    return wrapObject(t, p, o orelse return rt.FALSE);
 }
 pub const @"%json-next-object" = WN("json-next-object", jsonNextObject, 1, 1);
 
@@ -749,7 +787,7 @@ fn jWords(v: JValue) usize {
     };
 }
 
-fn jBuild(t: *Thread, v: JValue) Word {
+fn jBuild(t: *Thread, p: *Parser, v: JValue) Word {
     return switch (v) {
         .null_ => rt.NIL,
         .true_ => rt.TRUE,
@@ -762,13 +800,13 @@ fn jBuild(t: *Thread, v: JValue) Word {
             }
             break :blk t.makeFlo(f);
         },
-        .object => |o| sys.allocNative(t, .json_object, o),
+        .object => |o| wrapObject(t, p, o),
         .list => |items| blk: {
             var l = rt.NIL;
             var i = items.len;
             while (i > 0) {
                 i -= 1;
-                l = t.cons(jBuild(t, items[i]), l);
+                l = t.cons(jBuild(t, p, items[i]), l);
             }
             break :blk l;
         },
@@ -778,11 +816,12 @@ fn jBuild(t: *Thread, v: JValue) Word {
 fn jsonAttribute(t: *Thread) Err!Word {
     const p = sys.nativeOf(arg(t, 0), .json_object) orelse return raise(t, "json-attribute failed: not a JSON object", &.{});
     const o: *JObject = @ptrCast(@alignCast(p));
+    const parser: *Parser = @ptrCast(@alignCast(sys.nativeRecord(arg(t, 0)).owner.?));
     const k = arg(t, 1);
     const name = if (data.isSymbol(k)) data.symbolName(k) else data.toUtf8(try P.stringArg(t, 1));
     const v = o.get(name) orelse return if (t.argc == 3) arg(t, 2) else rt.FALSE;
     t.reserve(jWords(v));
-    return jBuild(t, v);
+    return jBuild(t, parser, v);
 }
 pub const @"%json-attribute" = WN("json-attribute", jsonAttribute, 2, 3);
 

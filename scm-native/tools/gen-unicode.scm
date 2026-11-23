@@ -18,7 +18,7 @@
         (scm string))
 
 (define ucd-dir (if (pair? (cdr (command-line))) (cadr (command-line)) "/usr/share/unicode"))
-(define native-dir (directory-name (directory-name (absolute-path (car (command-line))))))
+(define native-dir (directory-name (directory-name (normalized-path (absolute-path (car (command-line)))))))
 (define out-file (join-path native-dir "runtime" "unicode.zig"))
 
 (define (ucd name) (join-path ucd-dir name))

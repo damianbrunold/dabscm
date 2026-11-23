@@ -438,6 +438,22 @@ pub fn run(t: *Thread, p: Word, argc: u64) Word {
     return t.val;
 }
 
+/// A collection now (a major one if full), for %gc-collect
+pub fn collectNow(t: *Thread, full: bool) void {
+    if (full) major_requested = true;
+    gc(t, 0);
+}
+
+/// The collector's numbers, for %gc-statistics: the collections, the old
+/// space's used words, the large objects' words, the live threads
+pub fn gcNumbers() struct { minor: usize, major: usize, old_used: usize, large: usize, threads: usize } {
+    var live: usize = 0;
+    for (threads.items) |o| if (o.ended == 0) {
+        live += 1;
+    };
+    return .{ .minor = minor_count, .major = major_count, .old_used = old_hp, .large = large_words, .threads = live };
+}
+
 /// SCM_NATIVE_GC_STATS=1: the collector's numbers, at exit (the end of the
 /// program, or exit)
 pub fn printGcStats() void {
@@ -456,7 +472,7 @@ pub fn printGcStats() void {
         ended_stacks += o.stack_len + o.heap_len;
     };
     const ps = ports.stats();
-    os.eprint("gc: {d} minor, {d} major collections; old space {d} MB ({d} MB used), large objects {d} MB, {d} threads ({d} MB nurseries, {d} MB stacks and argument arrays), {d} ended threads not yet freed ({d} MB), {d} ports ({d} MB buffers)\n", .{ minor_count, major_count, old_space.len / 131072, old_hp / 131072, large_words / 131072, live, nursery / 131072, stacks / 131072, ended, ended_stacks / 131072, ps.count, ps.bytes / 1048576 });
+    os.eprint("gc: {d} minor, {d} major collections; old space {d} MB ({d} MB used), large objects {d} MB, {d} threads ({d} MB nurseries, {d} MB stacks and argument arrays), {d} ended threads not yet freed ({d} MB), {d} ports ({d} MB buffers), {d} native objects\n", .{ minor_count, major_count, old_space.len / 131072, old_hp / 131072, large_words / 131072, live, nursery / 131072, stacks / 131072, ended, ended_stacks / 131072, ps.count, ps.bytes / 1048576, prims_sys.nativeCount() });
 }
 
 /// The entry of module i (by its index in the initialization order), as
@@ -963,6 +979,7 @@ fn verifyBarriers(t: *Thread) void {
         const first: usize = switch (ty) {
             T_PAIR, T_VECTOR, T_BOX, T_STRING, T_VALUES, T_RECORD, T_ERROR, T_RATNUM, T_COMPNUM, T_HASHTABLE => 1,
             T_CLOSURE => 2,
+            T_NATIVE => 3,
             else => 1 + len,
         };
         if (hdrFlags(q[0]) & F_REMEMBERED == 0) {
@@ -997,7 +1014,8 @@ fn minor(t: *Thread) void {
     }
     old_hp = g.free;
     clearRemembered();
-    // the new port objects not reached: their ports go
+    // the new native and port objects not reached: what they hold goes
+    prims_sys.sweepNatives(false);
     ports.sweep(false);
 }
 
@@ -1048,7 +1066,8 @@ fn major(t: *Thread) void {
     if (old_space.len > 0) pa.free(old_space);
     old_space = to;
     old_hp = g.free;
-    // the port objects not reached: their ports go
+    // the native and port objects not reached: what they hold goes
+    prims_sys.sweepNatives(true);
     ports.sweep(true);
     // keep the old space at one and a half times the live data, and room
     // for the nurseries' promotion; recomputed at every major collection,
@@ -1127,7 +1146,12 @@ const Gc = struct {
             },
             T_STACK => g.scanFrames(q[1 .. 1 + len]),
             T_PORT => ports.markSeen(@ptrFromInt(q[1])),
-            T_FLONUM, T_BUF8, T_BUF32, T_SYMBOL, T_BYTEVECTOR, T_BIGNUM, T_NATIVE => {},
+            // [kind, record, slots...]: the slots hold objects (a socket's ports)
+            T_NATIVE => {
+                prims_sys.markNative(q);
+                for (q[3 .. 1 + len]) |*w| w.* = g.copy(w.*);
+            },
+            T_FLONUM, T_BUF8, T_BUF32, T_SYMBOL, T_BYTEVECTOR, T_BIGNUM => {},
             else => unreachable,
         }
     }

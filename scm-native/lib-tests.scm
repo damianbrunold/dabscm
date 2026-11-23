@@ -19,7 +19,7 @@
         (scm module)
         (scm system))
 
-(define native-dir (directory-name (absolute-path (car (command-line)))))
+(define native-dir (directory-name (normalized-path (absolute-path (car (command-line))))))
 
 ;; Windows: executables end in .exe, and there is no timeout command
 (define windows? (eq? (sys-platform) 'windows))

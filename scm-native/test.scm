@@ -12,7 +12,7 @@
         (scm module)
         (scm system))
 
-(define native-dir (directory-name (absolute-path (car (command-line)))))
+(define native-dir (directory-name (normalized-path (absolute-path (car (command-line))))))
 (module-search-path! (cons (join-path native-dir "compiler") (module-search-path)))
 
 (import (scm native driver))

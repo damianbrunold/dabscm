@@ -15,7 +15,7 @@
         (scm fs)
         (scm io))
 
-(define native-dir (directory-name (directory-name (absolute-path (car (command-line))))))
+(define native-dir (directory-name (directory-name (normalized-path (absolute-path (car (command-line)))))))
 (define runtime-dir (join-path native-dir "runtime"))
 (define out-file (join-path runtime-dir "primitive_docs.zig"))
 

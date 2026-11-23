@@ -209,6 +209,7 @@ pub fn connect(host: []const u8, port_spec: PortSpec, encrypt: bool, verify_in: 
 
 fn closeFail(c: *net.Conn, step: []const u8, text: []const u8) ?*net.Conn {
     c.close();
+    c.release();
     fail("tds-connect ({s}): {s}", .{ step, text });
     return null;
 }

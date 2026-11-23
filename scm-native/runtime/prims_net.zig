@@ -19,13 +19,21 @@ const pa = std.heap.c_allocator;
 
 /// A socket: its connection and its ports (static objects, made on demand;
 /// a new set after STARTTLS, as on the JVM)
+/// A socket; its heap object has four slots for its ports (in, out,
+/// binary in, binary out), made at their first use
 pub const Socket = struct {
     conn: *net.Conn,
-    in_port: Word = 0,
-    out_port: Word = 0,
-    bin_in: Word = 0,
-    bin_out: Word = 0,
 };
+
+const port_slots = 4;
+
+/// A socket the collector found unreachable: its connection is released
+/// (closed and freed when its ports are gone too)
+pub fn freeSocket(p: *anyopaque) void {
+    const s: *Socket = @ptrCast(@alignCast(p));
+    s.conn.release();
+    pa.destroy(s);
+}
 
 fn msg(comptime fmt: []const u8, args: anytype) []const u8 {
     return std.fmt.allocPrint(pa, fmt, args) catch rt.oom();
@@ -34,7 +42,8 @@ fn msg(comptime fmt: []const u8, args: anytype) []const u8 {
 pub fn newSocket(t: *Thread, conn: *net.Conn) Word {
     const s = pa.create(Socket) catch rt.oom();
     s.* = .{ .conn = conn };
-    return sys.wrapNativeOf(t, .socket, s);
+    t.reserve(3 + port_slots);
+    return sys.allocNativeSlots(t, .socket, s, null, port_slots);
 }
 
 pub fn socketArg(t: *Thread, i: usize) Err!*Socket {
@@ -66,6 +75,7 @@ fn tlsConnect(t: *Thread) Err!Word {
     const c = net.connect(host, port) orelse return raise(t, msg("tls-connect: {s}", .{net.last_error}), &.{});
     if (!net.startTls(c, host, verifyArg(t, 2))) {
         c.close();
+        c.release();
         return raise(t, msg("tls-connect: {s}", .{net.last_error}), &.{});
     }
     return newSocket(t, c);
@@ -76,10 +86,8 @@ fn startTls(t: *Thread) Err!Word {
     const s = try socketArg(t, 0);
     const host = data.toUtf8(try P.stringArg(t, 1));
     if (!net.startTls(s.conn, host, verifyArg(t, 2))) return raise(t, msg("socket-starttls!: {s}", .{net.last_error}), &.{});
-    s.in_port = 0;
-    s.out_port = 0;
-    s.bin_in = 0;
-    s.bin_out = 0;
+    // new ports at their next use, over TLS
+    for (rt.ptr(arg(t, 0))[3 .. 3 + port_slots]) |*w| w.* = rt.FALSE;
     return arg(t, 0);
 }
 pub const @"%socket-starttls!" = WN("socket-starttls!", startTls, 2, 3);
@@ -132,19 +140,20 @@ fn socketPort(comptime which: enum { in, out, bin_in, bin_out }) fn (*Thread) Er
     return struct {
         fn f(t: *Thread) Err!Word {
             const s = try socketArg(t, 0);
-            const slot = switch (which) {
-                .in => &s.in_port,
-                .out => &s.out_port,
-                .bin_in => &s.bin_in,
-                .bin_out => &s.bin_out,
-            };
-            if (slot.* == 0) {
-                const p = ports.newPort(if (which == .in or which == .bin_in) .net_in else .net_out, which == .bin_in or which == .bin_out);
-                p.conn = s.conn;
-                p.name = "{socket}";
-                slot.* = ports.staticWrap(p);
-            }
-            return slot.*;
+            const i: usize = 3 + @as(usize, @intFromEnum(which));
+            const have = rt.ptr(arg(t, 0))[i];
+            if (have != rt.FALSE) return have;
+            t.reserve(2);
+            const p = ports.newPort(if (which == .in or which == .bin_in) .net_in else .net_out, which == .bin_in or which == .bin_out);
+            s.conn.retain();
+            p.conn = s.conn;
+            p.name = "{socket}";
+            const w = ports.wrap(t, p);
+            // the socket object again (the reservation may have moved it)
+            const obj = arg(t, 0);
+            rt.ptr(obj)[i] = w;
+            rt.barrier(t, obj, w);
+            return w;
         }
     }.f;
 }
@@ -178,8 +187,9 @@ fn socketClose(t: *Thread) Err!Word {
     if (sys.nativeOf(arg(t, 0), .socket)) |p| {
         const s: *Socket = @ptrCast(@alignCast(p));
         // what the ports hold is sent first (the JVM's close flushes too)
-        if (s.out_port != 0) if (ports.get(s.out_port)) |port| port.flush();
-        if (s.bin_out != 0) if (ports.get(s.bin_out)) |port| port.flush();
+        for (rt.ptr(arg(t, 0))[3 .. 3 + port_slots]) |w| if (ports.get(w)) |port| {
+            if (port.kind == .net_out) port.flush();
+        };
         s.conn.close();
     } else if (sys.nativeOf(arg(t, 0), .listener)) |p| {
         const l: *net.Listener = @ptrCast(@alignCast(p));
