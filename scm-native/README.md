@@ -199,6 +199,11 @@ interpreter. A program that imports `(scheme eval)` gets the expander compiled i
 it links are its own compiled ones. Libraries it does not link are loaded from source, over
 the search path it was compiled with, or from the installation's `scm-lib` (`SCM_NATIVE_DIR`).
 
+`load` without an environment evaluates in the program's own module, as on the JVM. So a
+configuration file read with `(load "config.scm")` sets the program's variables: the
+compiled program sees `(define db-host ...)` from the file as its own `db-host`. Inside code
+that `eval` runs (a script interpreted by `scm-native`), `load` uses that code's environment.
+
 ## Debian packages of programs
 
 `scmc-deb` (in the repository: `scm scm-native/tools/package-deb.scm`) packages a compiled
@@ -220,6 +225,29 @@ sudo apt install ./dist/app_1.0_amd64.deb
   aarch64-linux-musl` gives an arm64 package.
 - **Dependencies:** the executables are static, so `--depends` is needed only for other
   programs the application runs.
+
+### Web applications
+
+The web applications packaged with `(scm deb webapp)` (a `package-deb.scm` calling
+`webapp-deb-main`) get a native package with `--native`:
+
+```sh
+scm package-deb.scm --native                       # scmc.scm of ../dabscm on scm
+scm package-deb.scm --scmc /usr/bin/scmc           # the dabscm-native package's scmc
+scm package-deb.scm --target aarch64-linux-musl    # an arm64 package
+```
+
+- **Programs:** every program in `bin/` (as the JVM package ships them) is compiled with
+  `scmc --strip -I src` into `/opt/<pkg>/app/bin/<name>`, next to its source, so it finds
+  the app's files as the script does.
+- **No Java:** there is no `scm.jar` and no Java dependency. `/opt/<pkg>/bin/scm` runs the
+  native program for `bin/<name>.scm`, so the app's systemd units, `<pkg>-admin` and the
+  generated secret work unchanged.
+- **Architecture:** taken from the executables, as in `<pkg>_<version>_amd64.deb`. Both
+  packages use the same name, so one replaces the other.
+
+dabplanner, for example, is a 7.7 MB package (20 MB installed); the JVM package is 2 MB but
+needs a Java runtime.
 
 ## Differences from the JVM implementation
 

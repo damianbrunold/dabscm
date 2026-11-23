@@ -184,9 +184,10 @@ pub fn envPairs() []const [2][]const u8 {
     return list.items;
 }
 
-/// Microseconds of a monotonic clock
+/// Microseconds since the Unix epoch, as the JVM implementation's %jiffy
+/// ((scheme time)'s current-second is current-jiffy / 10^6)
 pub fn jiffy() i64 {
-    const ts = std.Io.Clock.awake.now(io);
+    const ts = std.Io.Clock.real.now(io);
     return @intCast(@divTrunc(ts.nanoseconds, 1000));
 }
 

@@ -28,6 +28,14 @@
 ;;   /var/lib/P              data, owned by the system user P
 ;; The services start once no setting in /etc/P/config.scm still holds
 ;; "change-me" or a REPLACE_WITH_... placeholder.
+;;
+;; Native packages (the native option, or --native): dabscm native's scmc
+;; compiles each bin/<name>.scm into /opt/P/app/bin/<name> (stripped, with
+;; the app's src/ as library directory); there is no scm.jar and no Java,
+;; and /opt/P/bin/scm runs the native program for bin/<name>.scm, so the
+;; app's units and P-admin work unchanged. The architecture comes from the
+;; executables: <pkg>_<version>_amd64.deb (arm64 with --target
+;; aarch64-linux-musl).
 
 (define-library (scm deb webapp)
   (export package-webapp-deb
@@ -224,10 +232,10 @@ Example:
     (define control-template
       "Package: @PKG@
 Version: @VERSION@
-Architecture: all
+Architecture: @ARCH@
 Maintainer: @MAINTAINER@
 Installed-Size: @INSTALLED_SIZE@
-Depends: default-jre-headless | java11-runtime-headless, curl, adduser@DEPENDS@
+Depends: @RUNTIME_DEPENDS@curl, adduser@DEPENDS@
 @RECOMMENDS@Suggests: nginx | apache2
 Section: web
 Priority: optional
@@ -363,6 +371,25 @@ exit 0
 exec java $JAVA_OPTS -jar /opt/@PKG@/lib/scm.jar \"$@\"
 ")
 
+    (define native-scm-template
+      "#!/bin/sh
+# Programs of @PKG@, compiled with dabscm native: scm bin/<name>.scm args...
+# runs /opt/@PKG@/app/bin/<name> args..., so that the units and tools
+# written for the JVM runtime work unchanged.
+if [ $# -eq 0 ]; then
+  echo \"usage: $0 bin/<program>.scm [args...]\" >&2
+  exit 2
+fi
+name=$(basename \"$1\" .scm)
+shift
+exe=/opt/@PKG@/app/bin/$name
+if [ ! -x \"$exe\" ]; then
+  echo \"$0: no native program $name\" >&2
+  exit 127
+fi
+exec \"$exe\" \"$@\"
+")
+
     (define admin-template
       "#!/bin/sh
 # @PKG@-admin <script> [args...]: run one of the app's bin/<script>.scm
@@ -417,7 +444,8 @@ fi
     ;; (third-party material the app ships, e.g. data and its attribution)
     ;; and the bundled dabscm runtime with its licence (from the checkout
     ;; the jar was built in, when it has one).
-    (define (copyright-text pkg license notes dabscm-dir dabscm-version)
+    (define
+        (copyright-text pkg license notes dabscm-dir dabscm-version native?)
       (let ((dabscm-license (join-path dabscm-dir "LICENSE")))
         (string-append license
                        (if (pair? notes)
@@ -426,14 +454,65 @@ fi
                             (string-join notes "\n")
                             "\n")
                            "")
-                       "\n\nScheme runtime /opt/"
-                       pkg
-                       "/lib/scm.jar: dabscm "
+                       (if native?
+                           (string-append
+                            "\n\nScheme runtime, compiled into the programs in /opt/"
+                            pkg "/app/bin: dabscm native ")
+                           (string-append "\n\nScheme runtime /opt/" pkg
+                                          "/lib/scm.jar: dabscm "))
                        dabscm-version
                        (if (file-exists? dabscm-license)
                            (string-append ", under this licence:\n\n"
                                           (read-text dabscm-license))
                            ".\n"))))
+
+    ;; --- native programs ----------------------------------------------------
+
+    ;; The Debian architecture of a Linux executable (its ELF header).
+    (define (elf-arch bytes path)
+      (unless
+          (and (> (bytevector-length bytes) 20)
+               (= (bytevector-u8-ref bytes 0) #x7f)
+               (= (bytevector-u8-ref bytes 1) 69)
+               (= (bytevector-u8-ref bytes 2) 76)
+               (= (bytevector-u8-ref bytes 3) 70))
+        (error "package-webapp-deb: not a Linux executable (ELF)" path))
+      (case
+          (+ (bytevector-u8-ref bytes 18)
+             (* 256 (bytevector-u8-ref bytes 19)))
+        ((#x3e) "amd64")
+        ((#xb7) "arm64")
+        ((#x03) "i386")
+        ((#x28) "armhf")
+        ((#xf3) "riscv64")
+        (else (error "package-webapp-deb: unknown ELF machine" path))))
+
+    ;; Compiles each program bin/<name>.scm of the app in dir with scmc (a
+    ;; command: a list of strings) into build-dir; returns ((name . path) ...).
+    (define (compile-native-programs dir names scmc target includes build-dir)
+      (unless (directory-exists? build-dir) (make-directory build-dir))
+      (map (lambda (name)
+             (let* ((exe (join-path build-dir name))
+                    (r (run-program/capture
+                        (append scmc
+                                (list (join-path dir "bin"
+                                                 (string-append name ".scm"))
+                                      "-o"
+                                      exe
+                                      "--strip")
+                                (if target (list "--target" target) '())
+                                (append-map
+                                 (lambda (i) (list "-I" (join-path dir i)))
+                                 includes))
+                        `((work-dir ,dir)))))
+               (unless (and (pair? r) (eqv? (car r) 0) (file-exists? exe))
+                 (error "package-webapp-deb: scmc failed"
+                        (string-append name ".scm: "
+                                       (if (pair? r)
+                                           (string-append (cadr r) (caddr r))
+                                           "could not run scmc"))))
+               (cons name exe)))
+           names))
 
     (define (shell-quote s)
       (string-append "'" (string-replace-all s "'" "'\\''") "'"))
@@ -461,9 +540,16 @@ Description: Builds <out>/<pkg>_<version>_all.deb for the web application
     (copyright-notes \"line\" ...) appended to the copyright file (bundled
                                  third-party material, attributions)
     (maintainer . \"Name <mail>\")
+    (native-include \"src\")      library directories for scmc (native)
   Options, each a pair: (out . dir) (default \"dist\" in app-dir),
   (jar . path) (default ../dabscm/scm-java/scm.jar next to app-dir),
-  (allow-dirty . #t) to package uncommitted changes. The version comes from
+  (allow-dirty . #t) to package uncommitted changes. (native . #t) builds
+  a native package instead: every bin/ program compiled by dabscm native's
+  scmc, no scm.jar, no Java dependency, the architecture of the
+  executables; (scmc . path) is the scmc to run (default: scm with
+  scm-native/scmc.scm of the dabscm checkout), (dabscm . dir) that
+  checkout (default ../dabscm next to app-dir), (target . triple) a
+  cross-compilation target such as aarch64-linux-musl. The version comes from
   the last commit (webapp-deb-version), so the same commit gives the same
   bytes.
 Example:
@@ -481,12 +567,16 @@ Example:
                                   "dabscm"
                                   "scm-java"
                                   "scm.jar")))
+             (dabscm-dir (opt 'dabscm
+                              (join-path (directory-name dir) "dabscm")))
+             (target (opt 'target #f))
+             (native? (or (opt 'native #f) (assq 'scmc opts) target))
              (dirty? (not (string=? (git dir "status" "--porcelain") ""))))
         (when (and dirty? (not (opt 'allow-dirty #f)))
           (error
            "package-webapp-deb: uncommitted changes; commit them or allow-dirty"
            dir))
-        (unless (file-exists? jar)
+        (unless (or native? (file-exists? jar))
           (error "package-webapp-deb: scm.jar not found (build dabscm first)"
                  jar))
         (let* ((hash (git dir "rev-parse" "--short=8" "HEAD"))
@@ -497,13 +587,45 @@ Example:
                (version (webapp-deb-version epoch hash dirty?))
                (services (spec-ref spec 'services))
                (timers (spec-ref spec 'timers))
-               (dabscm-version (let
-                                   ((f (join-path
-                                        (directory-name (directory-name jar))
-                                        "VERSION")))
+               (runtime-dir (if native?
+                                dabscm-dir
+                                (directory-name (directory-name jar))))
+               (dabscm-version (let ((f (join-path runtime-dir "VERSION")))
                                  (if (file-exists? f)
                                      (string-trim-both (read-text f))
                                      "unknown")))
+               (bin-exclude (spec-opt spec 'bin-exclude '("dev-server.scm")))
+               (bin-scripts (filter (lambda (f)
+                                      (and (string-suffix? ".scm" f)
+                                           (not (member f bin-exclude))))
+                                    (sort-strings
+                                     (directory-files
+                                      (join-path dir "bin")))))
+               (programs (if native?
+                             (compile-native-programs
+                              dir
+                              (map (lambda (f)
+                                     (substring f 0 (- (string-length f) 4)))
+                                   bin-scripts)
+                              (cond ((assq 'scmc opts)
+                                     =>
+                                     (lambda (e) (list (cdr e))))
+                                    (else
+                                     (list
+                                      "scm"
+                                      (join-path dabscm-dir "scm-native"
+                                                 "scmc.scm"))))
+                              target
+                              (spec-opt spec 'native-include '("src"))
+                              (join-path (special-folder-temp)
+                                         (string-append "dabscm-deb-" pkg)))
+                             '()))
+               (program-bytes (map (lambda (p)
+                                     (cons (car p) (read-bytes (cdr p))))
+                                   programs))
+               (arch (if (pair? program-bytes)
+                         (elf-arch (cdar program-bytes) (cdar programs))
+                         "all"))
                (subst `(("@PKG@" . ,pkg)
                         ("@VERSION@" . ,version)
                         ("@MAINTAINER@"
@@ -516,6 +638,12 @@ Example:
                          .
                          ,(string-join (reverse services) " "))
                         ("@TIMERS@" . ,(string-join timers " "))
+                        ("@ARCH@" . ,arch)
+                        ("@RUNTIME_DEPENDS@"
+                         .
+                         ,(if native?
+                              ""
+                              "default-jre-headless | java11-runtime-headless, "))
                         ("@DATA_SUBDIRS@"
                          .
                          ,(string-join (spec-opt spec 'data-subdirs '()) " "))
@@ -538,17 +666,17 @@ Example:
                (text (lambda (name mode s) (list name mode (string->utf8 s))))
                (from (lambda (name mode path)
                        (list name mode (read-bytes path))))
-               (bin-exclude (spec-opt spec 'bin-exclude '("dev-server.scm")))
-               (app-files (append (filter-map
-                                   (lambda (f)
-                                     (and
-                                      (string-suffix? ".scm" f)
-                                      (not (member f bin-exclude))
-                                      (from (string-append app "bin/" f)
-                                            #o644
-                                            (join-path dir "bin" f))))
-                                   (sort-strings
-                                    (directory-files (join-path dir "bin"))))
+               (app-files (append (map (lambda (f)
+                                         (from (string-append app "bin/" f)
+                                               #o644
+                                               (join-path dir "bin" f)))
+                                       bin-scripts)
+                                  (map (lambda (p)
+                                         (list
+                                          (string-append app "bin/" (car p))
+                                          #o755
+                                          (cdr p)))
+                                       program-bytes)
                                   (append-map
                                    (lambda (tree)
                                      (map
@@ -592,8 +720,9 @@ Example:
                                      pkg
                                      (read-text (join-path dir "LICENSE"))
                                      (spec-opt spec 'copyright-notes '())
-                                     (directory-name (directory-name jar))
-                                     dabscm-version)))
+                                     runtime-dir
+                                     dabscm-version
+                                     native?)))
                                   (filter-map
                                    (lambda (f)
                                      (let ((p (join-path dir "deploy" f)))
@@ -604,37 +733,59 @@ Example:
                                               p))))
                                    '("nginx.conf.example"
                                      "apache.conf.example"))))
-               (runtime-files (list (from
-                                     (string-append opt-dir "lib/scm.jar")
-                                     #o644
-                                     jar)
-                                    (text (string-append opt-dir "bin/scm")
-                                          #o755
-                                          (fill scm-template))
-                                    (text
-                                     (string-append opt-dir "bin/healthcheck")
-                                     #o755
-                                     (fill healthcheck-template))
-                                    (text
-                                     (string-append "usr/bin/" pkg "-admin")
-                                     #o755
-                                     (fill admin-template))
-                                    (text
-                                     (string-append opt-dir "VERSION")
-                                     #o644
-                                     (string-append pkg " " version
-                                                    "\ncommit " hash
-                                                    "\ndabscm " dabscm-version
-                                                    "\n"))
-                                    (text
-                                     (string-append "usr/share/" pkg
-                                                    "/config.default.scm")
-                                     #o644
-                                     (webapp-default-config
-                                      (read-text
-                                       (join-path dir "config.example.scm"))
-                                      pkg
-                                      (spec-opt spec 'config-settings '())))))
+               (runtime-files (append (if
+                                       native?
+                                       (list
+                                        (text
+                                         (string-append opt-dir "bin/scm")
+                                         #o755
+                                         (fill native-scm-template)))
+                                       (list
+                                        (from
+                                         (string-append opt-dir "lib/scm.jar")
+                                         #o644
+                                         jar)
+                                        (text
+                                         (string-append opt-dir "bin/scm")
+                                         #o755
+                                         (fill scm-template))))
+                                      (list
+                                       (text
+                                        (string-append opt-dir
+                                                       "bin/healthcheck")
+                                        #o755
+                                        (fill healthcheck-template))
+                                       (text
+                                        (string-append "usr/bin/" pkg
+                                                       "-admin")
+                                        #o755
+                                        (fill admin-template))
+                                       (text
+                                        (string-append opt-dir "VERSION")
+                                        #o644
+                                        (string-append
+                                         pkg
+                                         " "
+                                         version
+                                         "\ncommit "
+                                         hash
+                                         (if native?
+                                             "\ndabscm native "
+                                             "\ndabscm ")
+                                         dabscm-version
+                                         "\n"))
+                                       (text
+                                        (string-append "usr/share/" pkg
+                                                       "/config.default.scm")
+                                        #o644
+                                        (webapp-default-config
+                                         (read-text
+                                          (join-path dir
+                                                     "config.example.scm"))
+                                         pkg
+                                         (spec-opt spec
+                                                   'config-settings
+                                                   '()))))))
                (data (append app-files unit-files doc-files runtime-files))
                (installed-kib (+ (fold (lambda (e acc)
                                          (+
@@ -694,7 +845,8 @@ Example:
                                       (text "postrm" #o755
                                             (fill postrm-template))))
                (deb (join-path out-dir
-                               (string-append pkg "_" version "_all.deb"))))
+                               (string-append pkg "_" version "_" arch
+                                              ".deb"))))
           (unless (directory-exists? out-dir) (make-directory out-dir))
           (call-with-port (open-binary-output-file deb)
             (lambda (port)
@@ -708,7 +860,10 @@ Library: (scm deb webapp)
 Description: Command-line front end for package-webapp-deb, for an app's
   package-deb.scm: args (usually (cdr (command-line))) may hold
   --out <dir>, --jar <scm.jar>, --dabscm <checkout> (uses its
-  scm-java/scm.jar) and --allow-dirty. Prints the package path and returns
+  scm-java/scm.jar, or for a native package its scm-native/scmc.scm),
+  --allow-dirty, and for a native package (compiled with dabscm native)
+  --native, --scmc <scmc> (implies --native) and --target <triple>
+  (implies --native). Prints the package path and returns
   it; prints the error and exits with status 1 on failure.
 Example:
   ;; package-deb.scm
@@ -734,18 +889,29 @@ Example:
                    deb)))
               ((string=? (car as) "--allow-dirty")
                (loop (cdr as) (cons '(allow-dirty . #t) opts)))
-              ((and (member (car as) '("--out" "--jar" "--dabscm"))
+              ((string=? (car as) "--native")
+               (loop (cdr as) (cons '(native . #t) opts)))
+              ((and (member (car as)
+                            '("--out" "--jar" "--dabscm" "--scmc" "--target"))
                     (pair? (cdr as)))
                (let ((v (cadr as)))
                  (loop (cddr as)
-                       (cons (cond ((string=? (car as) "--out") (cons 'out v))
-                                   ((string=? (car as) "--jar") (cons 'jar v))
-                                   (else
-                                    (cons
-                                     'jar
-                                     (join-path v "scm-java" "scm.jar"))))
-                             opts))))
+                       (append (cond ((string=? (car as) "--out")
+                                      (list (cons 'out v)))
+                                     ((string=? (car as) "--jar")
+                                      (list (cons 'jar v)))
+                                     ((string=? (car as) "--scmc")
+                                      (list (cons 'scmc v)))
+                                     ((string=? (car as) "--target")
+                                      (list (cons 'target v)))
+                                     (else
+                                      (list
+                                       (cons
+                                        'jar
+                                        (join-path v "scm-java" "scm.jar"))
+                                       (cons 'dabscm v))))
+                               opts))))
               (else (display
-                     "usage: scm package-deb.scm [--out DIR] [--jar SCM.JAR | --dabscm DIR] [--allow-dirty]")
+                     "usage: scm package-deb.scm [--out DIR] [--jar SCM.JAR | --dabscm DIR] [--allow-dirty]\n       native: [--native] [--scmc SCMC] [--target TRIPLE]")
                     (newline)
                     (exit 2)))))))

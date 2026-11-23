@@ -54,14 +54,31 @@
                  (set! environments (cons (cons specs e) environments))
                  e)))))
 
-    ;; (load file [environment]): evaluates the forms of file in order
+    ;; (load file [environment]): evaluates the forms of file in order;
+    ;; without an environment in the running module, as the JVM's load:
+    ;; the environment of the code being evaluated (a script that scm
+    ;; interprets), else the program's own module, so that a loaded
+    ;; (define x ...) sets the program's x (a configuration file)
     (define (load file . env)
       (let ((forms (call-with-input-file file
                      (lambda (p)
                        (let loop ((acc '()))
                          (let ((x (read p)))
-                           (if (eof-object? x) (reverse acc) (loop (cons x acc)))))))))
+                           (if (eof-object? x) (reverse acc) (loop (cons x acc))))))))
+            (env (cond ((pair? env) env)
+                       ((current-eval-environment) => list)
+                       (else (list (program-environment))))))
         (for-each (lambda (f) (apply eval f env)) forms)))
+
+    (define the-program-environment #f)
+
+    (define (program-environment)
+      (ensure-installed!)
+      (or the-program-environment
+          (let ((m (program-eval-module)))
+            (set! the-program-environment
+                  (if m (make-eval-environment m) (named-environment '(user main))))
+            the-program-environment)))
 
     ;; Environment specifiers as the JVM implementation's (null-environment,
     ;; scheme-report-environment, interaction-environment): library names,
@@ -89,10 +106,14 @@
                      (else (error "eval: not an environment" (car env))))))
         (let ((forms (expand-eval (environment-module e) x)))
           (run-new-modules!)
-          (let loop ((forms forms) (result (if #f #f)))
-            (if (null? forms)
-                result
-                (loop (cdr forms) ((compile (car forms) '()) '())))))))
+          (parameterize ((current-eval-environment e))
+            (let loop ((forms forms) (result (if #f #f)))
+              (if (null? forms)
+                  result
+                  (loop (cdr forms) ((compile (car forms) '()) '()))))))))
+
+    ;; the environment of the code eval runs, for load
+    (define current-eval-environment (make-parameter #f))
 
     ;; run the bodies of the libraries loaded from source, in order
     (define (run-new-modules!)

@@ -258,7 +258,45 @@
                                        (cons 'out (join-path tmp "dist3"))
                                        (cons 'jar (join-path tmp "scm.jar"))
                                        '(allow-dirty . #t))
-                                      ".dirty_all.deb")))
+                                      ".dirty_all.deb"))
+        ;; a native package, with a stand-in for scmc that writes an
+        ;; x86-64 ELF header as the executable
+        (when
+            (and (file-exists? "/bin/sh") (not (eq? (sys-platform) 'windows)))
+          (let ((fake (join-path tmp "fake-scmc")))
+            (write-file fake
+                        "#!/bin/sh\nwhile [ $# -gt 0 ]; do\n  if [ \"$1\" = -o ]; then out=$2; fi\n  shift\ndone\nprintf '\\177ELF\\002\\001\\001\\000\\000\\000\\000\\000\\000\\000\\000\\000\\002\\000\\076\\000\\001\\000' > \"$out\"\n")
+            (run-program/capture (list "chmod" "+x" fake))
+            (let* ((deb (package-webapp-deb
+                         spec
+                         (cons 'out (join-path tmp "dist4"))
+                         (cons 'scmc fake)
+                         '(allow-dirty . #t)))
+                   (members (ar-members (read-file-bytes deb)))
+                   (data (gzip-decompress
+                          (cdr (assoc "data.tar.gz" members))))
+                   (control (gzip-decompress
+                             (cdr (assoc "control.tar.gz" members)))))
+              (test-assert "native: architecture in the file name"
+                           (string-suffix? "_amd64.deb" deb))
+              (test-assert "native: the compiled program"
+                           (bytes-contain? data
+                                           "./opt/myapp/app/bin/server\x0;"))
+              (test-assert "native: the source is kept"
+                           (bytes-contain? data
+                                           "./opt/myapp/app/bin/server.scm"))
+              (test-assert "native: scm runs the native programs"
+                           (bytes-contain? data
+                                           "exe=/opt/myapp/app/bin/$name"))
+              (test-assert "native: no jar, no Java"
+                           (and (not (bytes-contain? data "scm.jar"))
+                                (not (bytes-contain? control "default-jre"))))
+              (test-assert "native: control fields"
+                           (and (bytes-contain? control "Architecture: amd64")
+                                (bytes-contain? control
+                                                "Depends: curl, adduser")))
+              (test-assert "native: copyright"
+                           (bytes-contain? data "dabscm native "))))))
       (delete-directory tmp))))
 
 (test-end "scm-deb")

@@ -15,6 +15,7 @@
           installed-glob?
           used-primitives
           program-binding
+          program-eval-module
           macroexpand-datum
           user-library-exports)
   (import (scheme base)
@@ -469,12 +470,21 @@
                  ((define)
                   (let* ((d (normalize-define form))
                          (name (ident-name (car d)))
-                         (e (expand-named (cadr d) name))
                          ;; a top-level definition is visible by its name in
                          ;; the module, whatever scopes a macro gave it
-                         (g (module-glob current name)))
-                    (bind! name (list (module-scope current)) (global-binding g))
-                    (list `(gdef ,g ,e))))
+                         (g (module-glob current name))
+                         (bind (lambda () (bind! name (list (module-scope current)) (global-binding g))))
+                         (hb (head-binding (cadr d)))
+                         (proc? (and hb (eq? (car hb) 'core) (eq? (cdr hb) 'lambda))))
+                    ;; A procedure's body sees its own definition, also where the
+                    ;; name was imported (the JVM looks globals up when the body
+                    ;; runs): (define (f x) ... (f ...)) in a program that
+                    ;; imports another f. Any other expression runs at once, as
+                    ;; on the JVM before the definition exists: (define x (wrap x)).
+                    (when proc? (bind))
+                    (let ((e (expand-named (cadr d) name)))
+                      (unless proc? (bind))
+                      (list `(gdef ,g ,e)))))
                  ((define-syntax)
                   (let-values (((name t) (syntax-definition form)))
                     (bind! (ident-name name) (list (module-scope current)) (cons 'macro t))
@@ -881,10 +891,17 @@
                                (filter-map (lambda (e) (let ((id (binding-id (cdr e)))) (and id (list (car e) id))))
                                            (module-exports m))
                                (map (lambda (e) (list (car e) (glob-id (cdr e)))) (module-globals m)))))
-                     (reverse modules))))
+                     (reverse modules)))
+               ;; the program's globals, for load without an environment
+               ;; (numbered before globs is turned into the vector below)
+               (program-globals
+                (if program-module
+                    (map (lambda (e) (list (car e) (glob-id (cdr e)))) (module-globals program-module))
+                    '())))
           (list 'state (scope-counter-value) features search-path
                 (list->vector (reverse globs)) (list->vector (reverse bindings)) entries mods
-                (and program-module (module-scope program-module))))))
+                (and program-module (module-scope program-module))
+                program-globals))))
 
     (define (sort-by-name entries)
       (list-sort (lambda (a b) (string<? (symbol->string (car a)) (symbol->string (car b)))) entries))
@@ -941,7 +958,20 @@
                       (set! modules (cons (cons (car md) m) modules))
                       (set! scope->module (cons (cons (cadr md) m) scope->module))))
                   (list-ref st 7))
-        (set! program-scope (list-ref st 8))))
+        (set! program-scope (list-ref st 8))
+        (set! program-module
+              (and program-scope
+                   (let ((m (%make-module 'program program-scope
+                                          (map (lambda (e) (cons (car e) (vector-ref globs (cadr e))))
+                                               (if (> (length st) 9) (list-ref st 9) '()))
+                                          '() '())))
+                     (set! scope->module (cons (cons program-scope m) scope->module))
+                     m)))))
+
+    ;; The compiled program's module (after install-expander-state!), or #f:
+    ;; load without an environment evaluates in it, as the JVM's load in the
+    ;; running module, so its definitions set the program's globals
+    (define (program-eval-module) program-module)
 
     ;; The binding of the name sym in the program, or #f
     (define (program-binding sym)
