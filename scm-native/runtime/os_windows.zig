@@ -35,6 +35,20 @@ const k32 = struct {
     extern "ntdll" fn RtlGetVersion(info: *OsVersionInfo) callconv(.winapi) i32;
     extern "kernel32" fn SetConsoleOutputCP(cp: u32) callconv(.winapi) BOOL;
     extern "kernel32" fn SetConsoleCP(cp: u32) callconv(.winapi) BOOL;
+    extern "kernel32" fn PeekConsoleInputW(h: HANDLE, buf: [*]InputRecord, len: DWORD, read: *DWORD) callconv(.winapi) BOOL;
+    extern "kernel32" fn ReadConsoleInputW(h: HANDLE, buf: [*]InputRecord, len: DWORD, read: *DWORD) callconv(.winapi) BOOL;
+    extern "kernel32" fn ReadConsoleW(h: HANDLE, buf: [*]u16, n: DWORD, read: *DWORD, control: ?*anyopaque) callconv(.winapi) BOOL;
+    extern "kernel32" fn CreateFileW(name: [*:0]const u16, access: DWORD, share: DWORD, sa: ?*anyopaque, disposition: DWORD, flags: DWORD, template: ?HANDLE) callconv(.winapi) HANDLE;
+    extern "kernel32" fn SetFileTime(h: HANDLE, creation: ?*const FileTime, access: ?*const FileTime, write: ?*const FileTime) callconv(.winapi) BOOL;
+    extern "kernel32" fn GetTickCount64() callconv(.winapi) u64;
+    extern "kernel32" fn Sleep(ms: DWORD) callconv(.winapi) void;
+    extern "kernel32" fn GetComputerNameExW(kind: u32, buf: ?[*]u16, size: *DWORD) callconv(.winapi) BOOL;
+};
+
+const adv = struct {
+    extern "advapi32" fn OpenProcessToken(h: HANDLE, access: DWORD, token: *HANDLE) callconv(.winapi) BOOL;
+    extern "advapi32" fn GetTokenInformation(token: HANDLE, class: u32, info: ?*anyopaque, len: DWORD, ret: *DWORD) callconv(.winapi) BOOL;
+    extern "advapi32" fn LookupAccountSidW(system: ?[*:0]const u16, sid: *anyopaque, name: [*]u16, name_len: *DWORD, domain: [*]u16, domain_len: *DWORD, use: *u32) callconv(.winapi) BOOL;
 };
 
 const STILL_ACTIVE = 259;
@@ -75,6 +89,20 @@ const ScreenBufferInfo = extern struct {
     attributes: WORD,
     window: SmallRect,
     max_size: Coord,
+};
+
+const KEY_EVENT = 0x0001;
+const KeyEvent = extern struct {
+    down: BOOL,
+    repeat: WORD,
+    key_code: WORD,
+    scan_code: WORD,
+    char: u16,
+    state: DWORD,
+};
+const InputRecord = extern struct {
+    kind: WORD,
+    event: extern union { key: KeyEvent, other: [16]u8 },
 };
 
 const FileTime = extern struct { low: DWORD, high: DWORD };
@@ -161,9 +189,15 @@ fn snapshot() []Entry {
     return list.toOwnedSlice(pa) catch &.{};
 }
 
+/// Free a snapshot, all its names but keep
+fn freeSnapshot(all: []Entry, keep: ?[]const u8) void {
+    for (all) |e| if (e.exe.len > 0 and (keep == null or e.exe.ptr != keep.?.ptr)) pa.free(e.exe);
+    pa.free(all);
+}
+
 pub fn listProcesses() []i64 {
     const all = snapshot();
-    defer pa.free(all);
+    defer freeSnapshot(all, null);
     const ids = pa.alloc(i64, all.len) catch return &.{};
     for (all, ids) |e, *i| i.* = e.pid;
     return ids;
@@ -171,12 +205,46 @@ pub fn listProcesses() []i64 {
 
 pub fn procParent(p: i64) ?i64 {
     const all = snapshot();
-    defer pa.free(all);
+    defer freeSnapshot(all, null);
     for (all) |e| if (e.pid == p) return if (e.parent == 0) null else e.parent;
     return null;
 }
 
-pub const Info = struct { ppid: ?i64, exe: ?[]const u8, path: ?[]const u8, start_ms: ?i64, cpu_s: ?f64 };
+pub const Info = struct { ppid: ?i64, exe: ?[]const u8, path: ?[]const u8, user: ?[]const u8, start_ms: ?i64, cpu_s: ?f64 };
+
+const TOKEN_QUERY = 0x0008;
+const TokenUser = 1;
+
+/// The owner of the process (its token's user) as DOMAIN\user, as the JVM's
+/// ProcessHandle.Info.user
+fn procUser(h: HANDLE) ?[]const u8 {
+    var token: HANDLE = undefined;
+    if (adv.OpenProcessToken(h, TOKEN_QUERY, &token) == 0) return null;
+    defer _ = k32.CloseHandle(token);
+    var buf: [256]u8 align(8) = undefined;
+    var len: DWORD = 0;
+    if (adv.GetTokenInformation(token, TokenUser, &buf, buf.len, &len) == 0) return null;
+    // TOKEN_USER: a SID_AND_ATTRIBUTES whose first field is the SID pointer
+    const sid: *anyopaque = @as(*const *anyopaque, @ptrCast(&buf)).*;
+    var name: [256]u16 = undefined;
+    var domain: [256]u16 = undefined;
+    var nl: DWORD = name.len;
+    var dl: DWORD = domain.len;
+    var use: u32 = 0;
+    if (adv.LookupAccountSidW(null, sid, &name, &nl, &domain, &dl, &use) == 0) return null;
+    const n = std.unicode.utf16LeToUtf8Alloc(pa, name[0..nl]) catch return null;
+    if (dl == 0) return n;
+    const d = std.unicode.utf16LeToUtf8Alloc(pa, domain[0..dl]) catch return n;
+    return std.fmt.allocPrint(pa, "{s}\\{s}", .{ d, n }) catch n;
+}
+
+/// The DNS host name (as the JVM's InetAddress.getLocalHost().getHostName())
+pub fn hostName() ?[]const u8 {
+    var buf: [256]u16 = undefined;
+    var n: DWORD = buf.len;
+    if (k32.GetComputerNameExW(1, &buf, &n) == 0 or n == 0) return null; // ComputerNameDnsHostname
+    return std.unicode.utf16LeToUtf8Alloc(pa, buf[0..n]) catch null;
+}
 
 fn fileTimeTicks(ft: FileTime) i64 {
     return @intCast((@as(u64, ft.high) << 32) | ft.low);
@@ -189,10 +257,12 @@ fn ticksToUnixMs(ticks: i64) i64 {
 
 pub fn procInfo(p: i64) ?Info {
     const all = snapshot();
-    defer pa.free(all);
     var info: ?Info = null;
+    var keep: ?[]const u8 = null;
+    defer freeSnapshot(all, keep);
     for (all) |e| if (e.pid == p) {
-        info = .{ .ppid = if (e.parent == 0) null else e.parent, .exe = e.exe, .path = null, .start_ms = null, .cpu_s = null };
+        keep = e.exe;
+        info = .{ .ppid = if (e.parent == 0) null else e.parent, .exe = e.exe, .path = null, .user = null, .start_ms = null, .cpu_s = null };
     };
     var i = info orelse return null;
     if (k32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, @intCast(p))) |h| {
@@ -205,6 +275,7 @@ pub fn procInfo(p: i64) ?Info {
             i.start_ms = ticksToUnixMs(fileTimeTicks(c));
             i.cpu_s = @as(f64, @floatFromInt(fileTimeTicks(kt) + fileTimeTicks(ut))) / 1e7;
         }
+        i.user = procUser(h);
         var buf: [1024]u16 = undefined;
         var n: DWORD = buf.len;
         if (k32.QueryFullProcessImageNameW(h, 0, &buf, &n) != 0)
@@ -293,11 +364,64 @@ pub fn terminalEcho(enable: bool) bool {
     return k32.SetConsoleMode(in.h, mode) != 0;
 }
 
-/// Whether input can be read within timeout_ms (the console handle is
-/// signaled while it has input events)
+// One key can give several bytes (a UTF-8 character, a VT sequence), and the
+// console keeps what a byte-wise ReadFile leaves in a buffer of its own, where
+// waiting on the handle does not see it. So the console is read as UTF-16
+// with ReadConsoleW and the UTF-8 bytes not yet taken are kept here.
+var pending: [8]u8 = undefined;
+var pending_pos: usize = 0;
+var pending_len: usize = 0;
+
+/// A byte from the console (null at the end); error.NotConsole when standard
+/// input is not a console
+pub fn consoleReadByte() error{NotConsole}!?u8 {
+    if (pending_pos < pending_len) {
+        pending_pos += 1;
+        return pending[pending_pos - 1];
+    }
+    const h = stdHandle(STD_INPUT_HANDLE) orelse return error.NotConsole;
+    var mode: DWORD = 0;
+    if (k32.GetConsoleMode(h, &mode) == 0) return error.NotConsole;
+    var units: [2]u16 = undefined;
+    var n: DWORD = 0;
+    if (k32.ReadConsoleW(h, &units, 1, &n, null) == 0 or n == 0) return null;
+    var len: usize = 1;
+    // a high surrogate: its partner follows
+    if (units[0] >= 0xD800 and units[0] < 0xDC00) {
+        if (k32.ReadConsoleW(h, units[1..].ptr, 1, &n, null) != 0 and n == 1) len = 2;
+    }
+    // Ctrl+Z at the start of a line ends cooked input, as ReadFile does
+    if (len == 1 and units[0] == 0x1A and (mode & ENABLE_LINE_INPUT) != 0) return null;
+    var cps = std.unicode.Utf16LeIterator.init(units[0..len]);
+    const cp = (cps.nextCodepoint() catch null orelse 0xFFFD);
+    const k = std.unicode.utf8Encode(cp, &pending) catch std.unicode.utf8Encode(0xFFFD, &pending) catch unreachable;
+    pending_len = k;
+    pending_pos = 1;
+    return pending[0];
+}
+
+/// Whether input can be read within timeout_ms. The console handle is
+/// signaled while it has input events of any kind (key releases, focus,
+/// mouse, resizes), but only key presses with a character give bytes: the
+/// others are taken out of the queue, so that a read does not block.
+/// A pipe or file is always ready.
 pub fn byteReady(timeout_ms: i64) bool {
     const h = stdHandle(STD_INPUT_HANDLE) orelse return false;
-    return k32.WaitForSingleObject(h, @intCast(@max(0, @min(timeout_ms, INFINITE - 1)))) == WAIT_OBJECT_0;
+    var mode: DWORD = 0;
+    if (k32.GetConsoleMode(h, &mode) == 0) return true;
+    if (pending_pos < pending_len) return true;
+    const deadline = k32.GetTickCount64() + @as(u64, @intCast(@max(0, timeout_ms)));
+    while (true) {
+        const now = k32.GetTickCount64();
+        const left: DWORD = if (now >= deadline) 0 else @intCast(@min(deadline - now, INFINITE - 1));
+        if (k32.WaitForSingleObject(h, left) != WAIT_OBJECT_0) return false;
+        var rec: [1]InputRecord = undefined;
+        var n: DWORD = 0;
+        if (k32.PeekConsoleInputW(h, &rec, 1, &n) == 0) return false;
+        if (n == 0) continue;
+        if (rec[0].kind == KEY_EVENT and rec[0].event.key.down != 0 and rec[0].event.key.char != 0) return true;
+        _ = k32.ReadConsoleInputW(h, &rec, 1, &n);
+    }
 }
 
 var last_size: ?[2]u16 = null;
@@ -322,6 +446,9 @@ var shutdown_installed = false;
 fn onCtrl(kind: DWORD) callconv(.winapi) BOOL {
     // Ctrl+C and Ctrl+Break as SIGINT, closing and shutdown as SIGTERM
     shutdown_signal.store(if (kind <= 1) 2 else 15, .monotonic);
+    // closing, logoff, shutdown: the process ends when the handler returns,
+    // so wait here for the program to finish (Windows ends it after 5 s)
+    if (kind > 1) k32.Sleep(INFINITE);
     return 1;
 }
 
@@ -331,6 +458,24 @@ pub fn shutdownSignal() i64 {
         shutdown_installed = true;
     }
     return shutdown_signal.load(.monotonic);
+}
+
+// --- files ---------------------------------------------------------------------------
+
+/// Set the modification time (ns since the epoch) of a file or directory
+/// (Zig 0.17's std has no setTimestamps on Windows)
+pub fn setModificationTime(path: []const u8, ns: i128) bool {
+    const wpath = std.unicode.wtf8ToWtf16LeAllocZ(pa, path) catch return false;
+    defer pa.free(wpath);
+    const FILE_WRITE_ATTRIBUTES = 0x0100;
+    const OPEN_EXISTING = 3;
+    const FILE_FLAG_BACKUP_SEMANTICS = 0x02000000; // directories too
+    const h = k32.CreateFileW(wpath, FILE_WRITE_ATTRIBUTES, 7, null, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, null);
+    if (h == windows.INVALID_HANDLE_VALUE) return false;
+    defer _ = k32.CloseHandle(h);
+    const ticks: u64 = @intCast(@max(0, @divFloor(ns, 100) + 116444736000000000));
+    const ft = FileTime{ .low = @truncate(ticks), .high = @intCast(ticks >> 32) };
+    return k32.SetFileTime(h, null, null, &ft) != 0;
 }
 
 // --- time and version ------------------------------------------------------------------

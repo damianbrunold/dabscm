@@ -627,6 +627,7 @@ pub fn modificationTime(path: []const u8) ?i128 {
 }
 
 pub fn setModificationTime(path: []const u8, ns: i128) bool {
+    if (is_windows) return w32.setModificationTime(path, ns);
     std.Io.Dir.cwd().setTimestamps(io, path, .{ .modify_timestamp = .{ .new = .{ .nanoseconds = @intCast(ns) } } }) catch return false;
     return true;
 }
@@ -930,7 +931,7 @@ fn bootTime() ?i64 {
 pub fn procInfo(p: i64) ?ProcInfo {
     if (is_windows) {
         const i = w32.procInfo(p) orelse return null;
-        return .{ .pid = p, .ppid = i.ppid, .command = i.path orelse i.exe, .cmdline = i.exe, .user = null, .start_ms = i.start_ms, .cpu_s = i.cpu_s };
+        return .{ .pid = p, .ppid = i.ppid, .command = i.path orelse i.exe, .cmdline = null, .user = i.user, .start_ms = i.start_ms, .cpu_s = i.cpu_s };
     }
     if (is_macos) {
         const i = mac.procInfo(p) orelse return null;
@@ -999,7 +1000,7 @@ fn userNameOf(uid: u32) ?[]const u8 {
 // --- system information ------------------------------------------------------------------
 
 pub fn hostName() ?[]const u8 {
-    if (is_windows) return getEnv("COMPUTERNAME");
+    if (is_windows) return w32.hostName() orelse getEnv("COMPUTERNAME");
     var buf: [256]u8 = undefined;
     if (std.c.gethostname(&buf, buf.len) != 0) return null;
     const n = std.mem.indexOfScalar(u8, &buf, 0) orelse buf.len;
@@ -1130,6 +1131,7 @@ pub fn readByte() ?u8 {
     blockingBegin();
     defer blockingEnd();
     if (is_windows) {
+        if (w32.consoleReadByte()) |r| return r else |_| {}
         const n = std.Io.File.stdin().readStreaming(io, &.{&b}) catch return null;
         return if (n == 1) b[0] else null;
     }

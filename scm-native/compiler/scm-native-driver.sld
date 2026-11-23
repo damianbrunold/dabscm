@@ -81,7 +81,7 @@
 
     ;; cond-expand features for a Zig target (#f: the host)
     (define (target-features target)
-      (let* ((t (or target "x86_64-linux"))
+      (let* ((t (or target (host-target)))
              (has? (lambda (part) (string-contains t part))))
         (append '(r7rs scm dabscm-native exact-closed ieee-float)
                 (cond ((has? "windows") '(windows))
@@ -91,6 +91,15 @@
                       (else '(x86-64)))
                 '(little-endian)
                 srfi-features)))
+
+    ;; the machine the compiler runs on, as a target triple (no --target:
+    ;; scmc builds for it), from the running implementation's features
+    (define (host-target)
+      (let ((fs (features)))
+        (string-append (if (memq 'arm64 fs) "aarch64" "x86_64")
+                       (cond ((memq 'windows fs) "-windows")
+                             ((memq 'darwin fs) "-macos")
+                             (else "-linux")))))
 
     ;; as the JVM implementation's %features-list
     (define srfi-features
@@ -179,7 +188,10 @@
                      (results (map (lambda (p)
                                      (let* ((code (process-wait (cdr p)))
                                             (out (if (file-exists? (car p)) (file->string (car p)) "")))
-                                       (when (file-exists? (car p)) (delete-file (car p)))
+                                       ;; (Windows: another build in the same directory
+                                       ;; may hold the same log open)
+                                       (guard (e (#t #f))
+                                         (when (file-exists? (car p)) (delete-file (car p))))
                                        (list code out "")))
                                    procs)))
                 (loop (list-tail jobs k) (append (reverse results) acc)))))))
@@ -300,7 +312,7 @@
                                                  ,@(if (if target
                                                            (string-contains target "windows")
                                                            (eq? (sys-platform) 'windows))
-                                                       '("-lcrypt32" "-lws2_32")
+                                                       '("-lcrypt32" "-lws2_32" "-ladvapi32")
                                                        '())
                                                  ,@(map car jobs)
                                                  ,(string-append "-femit-bin=" output))))
@@ -330,7 +342,7 @@
     (define (file-name-base file)
       (let* ((name (let loop ((i (- (string-length file) 1)))
                      (cond ((< i 0) file)
-                           ((char=? (string-ref file i) #\/) (substring file (+ i 1) (string-length file)))
+                           ((memv (string-ref file i) '(#\/ #\\)) (substring file (+ i 1) (string-length file)))
                            (else (loop (- i 1)))))))
         (substring name 0 (- (string-length name) 2))))
 

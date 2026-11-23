@@ -336,7 +336,7 @@ are loaded from source. `scm lint` over `scm-lib/libraries` this way (interpreti
 - `scmc --target <triple>` cross-compiles from Linux: `x86_64-linux-musl` (the default),
   `aarch64-linux-musl`, `x86_64-macos`, `aarch64-macos` and `x86_64-windows` all build,
   the native `scm` tool included. Windows programs link `crypt32` and `ws2_32` (the
-  system's certificate store for TLS).
+  system's certificate store for TLS) and `advapi32` (process owners).
 - Windows OS layer (`runtime/os_windows.zig`, Win32 declarations of its own, since Zig's
   std has few): processes (wait, poll, exit codes, `TerminateProcess` for kill as the
   JVM's `destroy`, process lists and trees through Toolhelp snapshots, start times and
@@ -349,7 +349,8 @@ are loaded from source. `scm lint` over `scm-lib/libraries` this way (interpreti
   the SQL Server Browser lookup uses `std.Io.net` UDP sockets on every system.
 - macOS (`runtime/os_macos.zig`): process lists, parents, paths, start and CPU times
   through libproc, user names through `getpwuid` (Linux reads `/proc` and `/etc/passwd`).
-- Not yet run on Windows or macOS: the binaries are only cross-compiled so far.
+- Run on Windows 11 (x86_64, 2026-11-23); see "Testing on Windows" below. macOS is only
+  cross-compiled so far.
 
 ### Debian packages of programs
 
@@ -392,14 +393,48 @@ not linked from the installation's scm-lib (`SCM_NATIVE_DIR`).
    110 of 111 files (`tests_geiser` needs `current-module`), and the core tests fail only
    in `tests_compiler` (bytecode introspection), `tests_tspl3ed` (1) and `tests_vm` (1). On Windows the scripts name executables `.exe` and run them without a
    time limit (there is no `timeout` command).
-4. Code that has never run on Windows, so the first suspects when something fails:
-   `net.zig`'s `pollWindows` (the AFD poll request; used by every socket wait, the HTTP
-   server's accept loop and `%net-poll`), non-blocking `sendSome`, `os_windows.zig` (process
-   waits and trees, console raw mode and echo, Ctrl+C, time zone offsets), the young
-   space's `VirtualAlloc` reserve and commit (`os.reserveAddressSpace`, `commit`), and
-   threads under the stop-the-world collector.
-5. On macOS: `os_macos.zig` (libproc) and the TLS certificate store (std's macOS keychain
+4. On macOS: `os_macos.zig` (libproc) and the TLS certificate store (std's macOS keychain
    scan) are untested.
+
+Results on Windows 11 x86_64 (2026-11-23), scmc on the JVM:
+
+- The library tests are clean in 110 of 111 files (`tests_geiser` needs `current-module`,
+  as on Linux). The core tests fail as on
+  Linux: `tests_compiler`, `tests_tspl3ed` (1), `tests_vm` (1). Sockets (AFD poll), TLS,
+  threads, the HTTP server and WebSockets pass (`tests_net`, `tests_srfi_18`,
+  `tests_scm_http_large`, `tests_scm_websocket_upgrade`, `tests_smtp`).
+- The native `scmc` and `scm` build and run (scmc: about 1 s per program with cached
+  objects). The REPL's line editing, history, UTF-8 input (also outside the BMP) and
+  Ctrl+C at the prompt work in a console. A server with `server-install-shutdown-hook`
+  finishes open requests on Ctrl+C and exits with 130. Closing the console window
+  (SIGTERM) is untested.
+- Fixed on the way:
+  - `cond-expand` on a Windows (or macOS) host: without `--target` the driver gave the
+    features of `x86_64-linux` (`gnu-linux`, `unix`); now those of the host (from the
+    compiling implementation's `features`).
+  - `directory-name` on Windows makes paths absolute as the JVM does: a path without a
+    drive (`/a/b`) is on the current directory's drive, `C:foo` is relative to C:'s
+    directory, and the separators become `\`.
+  - `tests_scm_fs_paths` expected `/` as the separator: its expected paths now use
+    `path-sep` and the root of the current drive, with Windows-only cases (drives,
+    backslashes) under `cond-expand`. The JVM, .NET and native pass it on Windows.
+  - Object names of the C sources: `file-name-base` split only at `/`.
+  - Setting modification times (`copy-file` and others): Zig 0.17's
+    `Dir.setTimestamps` panics on Windows ("TODO"), so `SetFileTime` is called directly.
+  - The console is read with `ReadConsoleW`, and the UTF-8 bytes of a key that are not
+    taken yet are kept in the runtime. One key can give several bytes, and after a
+    byte-wise `ReadFile` the console keeps the rest where waiting on the handle does
+    not see it. Before, `terminal-byte-ready?` missed them and multibyte characters
+    reached the line editor broken. `terminal-byte-ready?` skips console events that
+    give no bytes (key releases, focus, mouse).
+  - `(scm terminal)` gives a character above #xFFFF as one char natively (a surrogate
+    pair string on the JVM and .NET).
+  - `ps-info`: `command` is the executable's full path and `user` is `DOMAIN\user`, as
+    on the JVM. `sys-machine-name` is the DNS host name, as on the JVM.
+  - Closing the console: the handler waits, so that the shutdown hooks run before
+    Windows ends the process.
+  - A build's log file that another build in the same directory holds open is left
+    in place.
 
 ## Phase 0 spike (2026-11-21)
 

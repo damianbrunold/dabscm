@@ -640,14 +640,18 @@ Example:
                    (b3 (read-continuation))
                    (b4 (read-continuation)))
                ;; Above #xFFFF: a char holds one UTF-16 code unit, so
-               ;; return the surrogate pair as a two-character string.
+               ;; return the surrogate pair as a two-character string
+               ;; (natively a char is a code point).
                (let ((cp (- (+ (* b1 262144) (* b2 4096) (* b3 64) b4)
                             #x10000)))
                  (if (or (< cp 0) (> cp #xFFFFF))
                      (integer->char #xFFFD)
-                     (string (integer->char (+ #xD800 (quotient cp 1024)))
-                             (integer->char
-                              (+ #xDC00 (remainder cp 1024))))))))))
+                     (cond-expand
+                      (dabscm-native (integer->char (+ cp #x10000)))
+                      (else
+                       (string (integer->char (+ #xD800 (quotient cp 1024)))
+                               (integer->char
+                                (+ #xDC00 (remainder cp 1024))))))))))))
 
     (define (terminal-read-key)
       "Syntax: (terminal-read-key)

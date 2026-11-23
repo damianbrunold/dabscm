@@ -45,9 +45,33 @@ fn baseName(t: *Thread) Err!Word {
 }
 pub const @"%base-name" = WN("base-name", baseName, 1, 1);
 
+/// Windows: p made absolute as the JVM's toAbsolutePath (a path without a
+/// drive, such as \a or /a, is on the current directory's drive) with
+/// backslashes as separators
+fn windowsAbsolute(p: []const u8) []const u8 {
+    const cwd = os.currentDirectory();
+    const kind = std.fs.path.getWin32PathType(u8, p);
+    const abs = switch (kind) {
+        .drive_absolute, .unc_absolute, .local_device, .root_local_device => pa.dupe(u8, p) catch rt.oom(),
+        .rooted => std.mem.concat(pa, u8, &.{ cwd[0..@min(2, cwd.len)], p }) catch rt.oom(),
+        // C:foo: relative to the current directory if that is on C:, else to C:\
+        .drive_relative => if (cwd.len >= 2 and std.ascii.toLower(cwd[0]) == std.ascii.toLower(p[0]) and cwd[1] == ':')
+            std.fs.path.join(pa, &.{ cwd, p[2..] }) catch rt.oom()
+        else
+            std.mem.concat(pa, u8, &.{ p[0..2], "\\", p[2..] }) catch rt.oom(),
+        else => std.fs.path.join(pa, &.{ cwd, p }) catch rt.oom(),
+    };
+    for (abs) |*c| if (c.* == '/') {
+        c.* = '\\';
+    };
+    return abs;
+}
+
 fn directoryName(t: *Thread) Err!Word {
     const p = try pathArg(t, 0);
-    const abs = if (std.fs.path.isAbsolute(p)) p else std.fs.path.join(pa, &.{ os.currentDirectory(), p }) catch rt.oom();
+    const abs = if (builtin.os.tag == .windows)
+        windowsAbsolute(p)
+    else if (std.fs.path.isAbsolute(p)) p else std.fs.path.join(pa, &.{ os.currentDirectory(), p }) catch rt.oom();
     const d = std.fs.path.dirname(abs) orelse return rt.FALSE;
     return str(t, d);
 }
