@@ -209,6 +209,9 @@ fn threadStart(t: *Thread) Err!Word {
     const ctl = ctlOf(ThreadCtl, r);
     rt.lockWorld();
     const nt = rt.newThread();
+    // the program's special cells (raise, the current ports): errors of
+    // primitives in the thread go to its handlers, as Scheme raises do
+    nt.specials = t.specials;
     nt.thread_obj = r;
     nt.ctl = ctl;
     ctl.t = nt;
