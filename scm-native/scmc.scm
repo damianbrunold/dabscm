@@ -4,6 +4,8 @@
 ;;                                [--target triple] [--emit-zig]
 ;;   -O mode      ReleaseFast (default), ReleaseSafe or Debug
 ;;   --target     a Zig target such as x86_64-windows or aarch64-macos
+;;   --cpu        a Zig CPU name: native (this machine's), x86_64_v3, ...;
+;;                the default is the target's baseline (runs everywhere)
 ;;   --strip      no debug information in the executable (for packages)
 ;;   --emit-zig   print the generated Zig instead of building
 ;;   -I dir       also search dir for libraries
@@ -71,6 +73,8 @@
                (cons (cons 'search-dirs (append (search-dirs options) (list (absolute-path (cadr args)))))
                      options)
                emit))
+        ((and (string=? (car args) "--cpu") (pair? (cdr args)))
+         (loop (cddr args) input output (cons (cons 'cpu (cadr args)) options) emit))
         ((string=? (car args) "--strip")
          (loop (cdr args) input output (cons (cons 'strip #t) options) emit))
         ((string=? (car args) "--emit-zig")

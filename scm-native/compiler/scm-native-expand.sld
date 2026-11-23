@@ -7,6 +7,7 @@
           glob-name
           glob-assigned?
           missing-primitives
+          program-eager-modules
           expander-state
           install-expander-state!
           make-eval-module
@@ -99,6 +100,11 @@
     (define current #f)             ; the module being expanded
 
     (define (missing-primitives) missing)
+
+    ;; the number of libraries initialized before the program starts (the
+    ;; others at their import, see expand-program)
+    (define eager-modules 0)
+    (define (program-eager-modules) eager-modules)
 
     ;; the primitives the program refers to
     (define used '())
@@ -732,6 +738,7 @@
               ((export) (set! exports (append exports (cdr d))))
               ((import) (for-each import-set! (cdr d)))
               ((begin)
+               (predeclare-procedures! m (cdr d))
                (let ((forms (append-map (lambda (f) (toplevel (wrap f (list (module-scope m)))))
                                         (cdr d))))
                  (add-body! m forms)))
@@ -760,6 +767,30 @@
                 exports))
           (set! modules (cons (cons name m) modules))
           (set! completed (cons m completed)))))
+
+    ;; A library's procedure definitions are visible in its whole body,
+    ;; also where the name is imported: the JVM looks globals up by name
+    ;; when the code runs, so a procedure defined earlier in the body that
+    ;; calls the library's own list->string (shadowing (scheme base)'s) gets
+    ;; that one. Only procedures ((define (f ...) ...), (define f (lambda
+    ;; ...))): a value definition's expression runs at once, where the JVM
+    ;; still sees the import ((define x (wrap x))). forms as read.
+    (define (predeclare-procedures! m forms)
+      (for-each
+       (lambda (f)
+         (when (and (pair? f) (eq? (car f) 'define) (pair? (cdr f)))
+           (let ((target (cadr f)))
+             (cond ((and (pair? target) (symbol? (car target)))
+                    (predeclare! m (car target)))
+                   ((and (symbol? target) (pair? (cddr f)) (pair? (caddr f))
+                         (eq? (car (caddr f)) 'lambda))
+                    (predeclare! m target)))))
+         (when (and (pair? f) (eq? (car f) 'begin))
+           (predeclare-procedures! m (cdr f))))
+       forms))
+
+    (define (predeclare! m sym)
+      (bind! sym (list (module-scope m)) (global-binding (module-glob m sym))))
 
     (define (define-library! form)
       (define-library-file! (strip form) #f))
@@ -1069,13 +1100,42 @@
       (let* ((m (new-module 'program))
              (_ (set! current m))
              (_ (set! program-module m))
-             (forms (append-map (lambda (f)
-                                  (set! current m)
-                                  (toplevel (wrap f (list (module-scope m)))))
-                                (append (if (pair? extra-forms) (car extra-forms) '())
-                                        (with-script-globals (read-file file))))))
+             (seen-code? #f)
+             ;; Libraries are initialized when the program reaches the import
+             ;; that brings them in, as on the JVM, where code before a later
+             ;; import (a configuration loaded, a parameter set) is seen by
+             ;; the libraries it imports. Those of the imports before the
+             ;; program's first definition or expression start with the
+             ;; program (eager); a later import's are initialized by calls
+             ;; of their entries (%module-entry, by their index in the
+             ;; initialization order) at its place.
+             (forms (append-map
+                     (lambda (f)
+                       (set! current m)
+                       (let* ((before (length completed))
+                              (fs (toplevel (wrap f (list (module-scope m)))))
+                              (after (length completed)))
+                         (cond (seen-code?
+                                (append (map (lambda (i)
+                                               `(call (call (primref %module-entry) (const ,i))))
+                                             (iota (- after before) before))
+                                        fs))
+                               (else
+                                (when (pair? fs)
+                                  (set! seen-code? #t)
+                                  (set! eager-modules after))
+                                fs))))
+                     (append (if (pair? extra-forms) (car extra-forms) '())
+                             (with-script-globals (read-file file))))))
+        (unless seen-code? (set! eager-modules (length completed)))
         ;; the modules in initialization order: (name . body), the program last
         (values (append (map (lambda (m) (cons (module-name m) `(seq ,@(reverse (module-body m)) ,unspecified)))
                              (reverse completed))
-                        (list (cons 'program `(seq ,@forms ,unspecified))))
+                        ;; the program's value is its last form's (an integer
+                        ;; is the exit code, as for a script on the JVM)
+                        (list (cons 'program
+                                    (if (and (pair? forms)
+                                             (not (eq? (car (last forms)) 'gdef)))
+                                        `(seq ,@forms)
+                                        `(seq ,@forms ,unspecified)))))
                 (reverse all-globs))))))

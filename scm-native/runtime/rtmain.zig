@@ -81,10 +81,13 @@ pub const primitive_table = blk: {
 
 /// The program object provides its modules, in initialization order
 extern fn scm_program_modules() callconv(.c) rt.abi.ModuleList;
+/// ... of which the first this many start before the program; the others
+/// start at the program's import that brings them in (%module-entry)
+extern fn scm_program_eager() callconv(.c) usize;
 
 fn cMain(c_argc: c_int, c_argv: [*][*:0]u8, c_envp: [*:null]?[*:0]u8) callconv(.c) c_int {
     const args = rt.os.initProcess(@intCast(c_argc), c_argv, c_envp);
-    return rt.start(scm_program_modules(), args);
+    return rt.start(scm_program_modules(), scm_program_eager(), args);
 }
 
 comptime {

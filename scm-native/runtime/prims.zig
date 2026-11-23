@@ -545,11 +545,17 @@ fn vectorIndex(t: *Thread, who: []const u8, v: Word) Err!usize {
     return @intCast(unfix(i));
 }
 
+// (vector-ref v k [default]): as the JVM implementation, default for k out
+// of range (the open-coded two-argument calls do not get here)
 fn vectorRef(t: *Thread) Err!Word {
     const v = try vectorArg(t, 0);
+    if (t.argc == 3) {
+        const i = arg(t, 1);
+        if (rt.isFix(i) and (unfix(i) < 0 or unfix(i) >= data.vectorLen(v))) return arg(t, 2);
+    }
     return data.vectorItems(v)[try vectorIndex(t, "vector-ref", v)];
 }
-pub const @"%vector-ref" = WD("vector-ref", vectorRef, 2, 2);
+pub const @"%vector-ref" = WD("vector-ref", vectorRef, 2, 3);
 
 fn vectorSet(t: *Thread) Err!Word {
     const v = try vectorArg(t, 0);

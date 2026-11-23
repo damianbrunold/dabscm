@@ -104,6 +104,48 @@
     (test-equal '("caf\xe9;") (file->lines path 'latin-1)))
   (teardown))
 
+;; --- the bytes the encoding options write and read ---
+(define (file-bytes path)
+  (let* ((p (open-binary-input-file path))
+         (bv (read-bytevector 1000 p)))
+    (close-port p)
+    (if (eof-object? bv)
+        '()
+        (let loop ((i (- (bytevector-length bv) 1)) (acc '()))
+          (if (< i 0) acc (loop (- i 1) (cons (bytevector-u8-ref bv i) acc)))))))
+
+(define (write-bytes path bytes)
+  (let ((p (open-binary-output-file path)))
+    (write-bytevector (apply bytevector bytes) p)
+    (close-port p)))
+
+(test-group "encoding bytes"
+  (setup)
+  (let ((path (join-path test-base "bytes.txt")))
+    ;; Latin-1: one byte per character, ? for characters it lacks
+    (write-text path "caf\xe9; \x20ac;" 'latin-1)
+    (test-equal '(99 97 102 233 32 63) (file-bytes path))
+    ;; UTF-8 with a byte order mark, which reading skips
+    (write-text path "\xe9;" 'utf-8-bom)
+    (test-equal '(#xef #xbb #xbf #xc3 #xa9) (file-bytes path))
+    (test-equal "\xe9;" (file->string path))
+    ;; appending: after the content, without a second byte order mark
+    (write-text path "!" 'append 'utf-8-bom)
+    (test-equal '(#xef #xbb #xbf #xc3 #xa9 33) (file-bytes path))
+    (write-text path "ab")
+    (write-text path "c" 'append)
+    (test-equal "abc" (file->string path))
+    ;; Latin-1 bytes read as characters
+    (write-bytes path '(97 233 98))
+    (test-equal "a\xe9;b" (file->string path 'latin-1))
+    ;; UTF-16 round trip
+    (write-text path "a\xe9;\x20ac;" 'utf-16)
+    (test-equal "a\xe9;\x20ac;" (file->string path 'utf-16))
+    ;; deflate and an encoding together
+    (write-text path "caf\xe9;" 'deflate 'latin-1)
+    (test-equal "caf\xe9;" (file->string path 'deflate 'latin-1)))
+  (teardown))
+
 (test-group "port-position"
   (let ((p (open-input-string "(a)\n\n  (b)")))
     (test-equal '("{string}" 1 0) (port-position p))

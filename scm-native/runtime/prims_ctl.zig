@@ -416,6 +416,16 @@ fn setExitCode(t: *Thread) Err!Word {
 }
 pub const @"%set-exit-code!" = WD("set-exit-code!", setExitCode, 1, 1);
 
+// (%module-entry i): the entry of the program's module i, to call at the
+// import that brings it in (libraries imported after program code start
+// there, as on the JVM; see scm_program_eager)
+fn moduleEntry(t: *Thread) Err!Word {
+    const i = arg(t, 0);
+    if (!rt.isFix(i) or unfix(i) < 0) return raise(t, "%module-entry: wrong argument type", &.{});
+    return rt.moduleEntry(t, @intCast(unfix(i))) orelse raise(t, "%module-entry: no such module", &.{});
+}
+pub const @"%%module-entry" = WN("%module-entry", moduleEntry, 1, 1);
+
 fn jiffy(_: *Thread) Err!Word {
     return fix(rt.os.jiffy());
 }

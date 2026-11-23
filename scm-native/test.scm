@@ -49,7 +49,10 @@
 (define (run-test name)
   (let* ((source (join-path tests-dir (string-append name ".scm")))
          (exe (join-path build-dir name))
-         (expected (run-program/capture (list "java" "-jar" jar source))))
+         ;; both in the tests directory: the JVM finds the libraries of a
+         ;; test there (lazy-*.sld), natively the program's directory
+         (expected (run-program/capture (list "java" "-jar" jar source)
+                                        (list (list 'work-dir tests-dir)))))
     (display name)
     (display " ... ")
     (guard (e (#t (set! failures (+ failures 1))
@@ -59,7 +62,7 @@
                     (for-each (lambda (x) (display " ") (display x)) (error-object-irritants e)))
                   (newline)))
       (compile-program source exe native-dir '())
-      (let ((actual (run-program/capture (list exe))))
+      (let ((actual (run-program/capture (list exe) (list (list 'work-dir tests-dir)))))
         (cond ((and (= (car actual) (car expected))
                     (or (string=? (cadr actual) (cadr expected))
                         ;; a failing program: the JVM prints its error message

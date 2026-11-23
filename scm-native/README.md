@@ -111,6 +111,7 @@ scmc program.scm [-o output] [-O mode] [--target triple] [--strip] [-I dir]... [
 | `-O mode` | `ReleaseFast` (default), `ReleaseSafe` (Zig's safety checks in the runtime) or `Debug` |
 | `--target triple` | cross-compile, see [Cross-compiling](#cross-compiling) |
 | `--strip` | no debug information (for example hello: 3.6 MB instead of 22 MB) |
+| `--cpu cpu` | a Zig CPU name: `native` (this machine) or `x86_64_v3`, ... The default is the target's baseline, which runs on every CPU of the architecture. `--cpu native` can be much faster for crypto: PBKDF2 with SHA-256 takes 117 ms instead of 716 ms with the SHA instructions (the JVM: about 200 ms) |
 | `-I dir` | also search `dir` for libraries (repeatable) |
 | `--emit-zig` | print the generated Zig instead of building |
 
@@ -130,6 +131,15 @@ So a project with its libraries next to the program, or in a `src` directory, co
 **Programs behave as on the JVM:**
 - `command-line` and `exit` work as there, as do standard input and output, the
   environment, and the exit code of an uncaught error (with the JVM's message).
+- **Exit code:** if the program's last form gives an integer, that is its exit code, as for
+  `scm script.scm`; `set-exit-code!` takes precedence.
+- **`script-name` and `script-arguments`** are bound: the executable and its arguments.
+- **When libraries start:**
+  - the libraries of the imports before the program's first definition or expression start
+    before the program;
+  - a library first imported later starts at that import, as on the JVM. So code before an
+    import, such as loading a configuration or setting a value, is seen by the libraries
+    that import brings in.
 - Native `cond-expand` has the feature `dabscm-native`, along with the target's features:
   `gnu-linux`, `windows` or `darwin`, `unix` (Linux and macOS), `x86-64` or `arm64`, and the
   JVM's SRFI features.

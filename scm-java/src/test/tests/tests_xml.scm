@@ -75,4 +75,21 @@
     (test-equal "a & b <c>" (xml-value r))
     (close-xml r)))
 
+(test-group "characters XML does not allow"
+  ;; a NUL or another control character in text or an attribute value is
+  ;; an error, as XML 1.0 does not allow it (tab, newline and CR are fine)
+  (let ((r (open-xml-string
+            (string-append "<r><a>X" (string (integer->char 0)) "</a></r>"))))
+    (test-equal #t (xml-read-to r "a"))
+    (test-equal 'error (guard (e (#t 'error)) (xml-value r)))
+    (close-xml r))
+  (let ((r (open-xml-string
+            (string-append "<r a=\"x" (string (integer->char 1)) "\"/>"))))
+    (test-equal 'error (guard (e (#t 'error)) (xml-read-to r "r") 'read))
+    (close-xml r))
+  (let ((r (open-xml-string "<r><a>x\ty\nz\r</a></r>")))
+    (test-equal #t (xml-read-to r "a"))
+    (test-equal #t (string? (xml-value r)))
+    (close-xml r)))
+
 (test-end "xml")

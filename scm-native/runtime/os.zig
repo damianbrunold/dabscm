@@ -149,6 +149,19 @@ pub fn createFile(path: []const u8) ?File {
     return std.Io.Dir.cwd().createFile(io, path, .{}) catch null;
 }
 
+/// A file opened for appending (created if missing) and its length: the
+/// writes go after it (std.Io has no append mode or seek)
+pub fn openAppend(path: []const u8) ?struct { file: File, len: u64 } {
+    const f = std.Io.Dir.cwd().createFile(io, path, .{ .truncate = false }) catch return null;
+    const n = f.length(io) catch 0;
+    return .{ .file = f, .len = n };
+}
+
+pub fn writeFileAt(f: File, bytes: []const u8, offset: u64) bool {
+    f.writePositionalAll(io, bytes, offset) catch return false;
+    return true;
+}
+
 pub fn writeFile(f: File, bytes: []const u8) bool {
     f.writeStreamingAll(io, bytes) catch return false;
     return true;

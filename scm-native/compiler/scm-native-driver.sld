@@ -156,6 +156,7 @@
                 (let ((out (open-output-string)))
                   (write (expander-state) out)
                   (get-output-string out))))
+          (set-eager-modules! (program-eager-modules))
           (set-user-libraries! (user-library-exports (absolute-path (join-path lib-dir "libraries"))))
           (set-leaf-primitives! (filter-map (lambda (p) (and (eq? (caddr p) 'leaf) (car p))) prims))
           (let ((modules (map (lambda (m)
@@ -245,7 +246,8 @@
     ;; Compile the program in file to the executable output.
     ;; options: alist with 'optimize ("ReleaseFast", "ReleaseSafe", "Debug"),
     ;; 'target (a Zig target triple or #f), 'build-dir, 'zig, 'search-dirs,
-    ;; 'strip (#t: no debug information in the executable)
+    ;; 'strip (#t: no debug information in the executable), 'cpu (a Zig CPU
+    ;; name such as native or x86_64_v3; the default is the target's baseline)
     ;; (a list of library directories).
     (define (compile-program file output native-dir options)
       (define (opt key default)
@@ -261,6 +263,7 @@
              (common `(,(string-append "-O" optimize-mode)
                        ,@(if (string=? optimize-mode "Debug") '("-fllvm") '())
                        ,@(if target (list "-target" target) '())
+                       ,@(let ((cpu (opt 'cpu #f))) (if cpu (list (string-append "-mcpu=" cpu)) '()))
                        "--cache-dir" ,cache)))
         (unless (directory-exists? build-dir) (make-directory build-dir))
         (unless (directory-exists? cfg-dir) (make-directory cfg-dir))

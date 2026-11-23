@@ -39,6 +39,14 @@ pub const Port = struct {
     conn: ?*@import("net.zig").Conn = null,
     /// guards output (threads may write to one port)
     lock: std.Io.Mutex = .init,
+    /// text file output: the encoding the buffered UTF-8 is written in, a
+    /// DEFLATE stream (written when the port is closed, or at exit), and
+    /// for appending the offset of the next write
+    enc: Encoding = .utf8,
+    deflate: bool = false,
+    offset: ?u64 = null,
+    /// UTF-16 output: the byte order mark is written
+    started: bool = false,
 
     /// The number of bytes read from a generator port
     pub fn consumed(p: *const Port) u64 {
@@ -159,8 +167,8 @@ pub const Port = struct {
     fn flushLocked(p: *Port) void {
         switch (p.kind) {
             .stdout => os.flush(),
-            .file_out => if (p.file) |f| {
-                _ = os.writeFile(f, p.out.items);
+            .file_out => if (p.file != null and !p.deflate) {
+                p.writeEncoded(p.out.items);
                 p.out.clearRetainingCapacity();
             },
             .net_out => if (p.conn) |c| {
@@ -171,14 +179,166 @@ pub const Port = struct {
         }
     }
 
+    /// The buffered UTF-8 text in the port's encoding, to its file
+    fn writeEncoded(p: *Port, utf8: []const u8) void {
+        if (p.enc == .utf8) return p.writeRaw(utf8);
+        var buf: std.ArrayList(u8) = .empty;
+        defer buf.deinit(pa);
+        if (p.enc == .utf16 and !p.started) buf.appendSlice(pa, &.{ 0xfe, 0xff }) catch rt.oom();
+        p.started = true;
+        encode(&buf, utf8, p.enc);
+        p.writeRaw(buf.items);
+    }
+
+    fn writeRaw(p: *Port, bytes: []const u8) void {
+        const f = p.file orelse return;
+        if (p.offset) |o| {
+            _ = os.writeFileAt(f, bytes, o);
+            p.offset = o + bytes.len;
+        } else _ = os.writeFile(f, bytes);
+    }
+
+    /// A DEFLATE port: its text, encoded and compressed (as Java's
+    /// DeflaterOutputStream with a raw Deflater), once
+    fn finishDeflate(p: *Port) void {
+        if (!p.deflate or p.file == null) return;
+        p.deflate = false;
+        var buf: std.ArrayList(u8) = .empty;
+        defer buf.deinit(pa);
+        if (p.enc == .utf8) buf.appendSlice(pa, p.out.items) catch rt.oom() else {
+            if (p.enc == .utf16) buf.appendSlice(pa, &.{ 0xfe, 0xff }) catch rt.oom();
+            encode(&buf, p.out.items, p.enc);
+        }
+        p.out.clearRetainingCapacity();
+        const z = @import("compress.zig").compress(buf.items, .raw, -1) catch rt.oom();
+        defer if (z.len > 0) pa.free(z);
+        p.writeRaw(z);
+    }
+
     pub fn close(p: *Port) void {
         if (!p.open) return;
+        if (p.deflate) {
+            p.lock.lockUncancelable(os.io);
+            p.finishDeflate();
+            p.lock.unlock(os.io);
+        }
         p.flush();
         if (p.file) |f| os.closeFile(f);
         p.file = null;
         p.open = false;
     }
 };
+
+// --- encodings of text files ---------------------------------------------
+
+pub const Encoding = enum { utf8, latin1, utf16, utf16be, utf16le };
+
+/// An encoding name as the JVM implementation's (Encoding.java), with
+/// whether it asks for a UTF-8 byte order mark
+pub fn parseEncoding(name: []const u8) ?struct { enc: Encoding, bom: bool } {
+    var low: [16]u8 = undefined;
+    if (name.len > low.len) return null;
+    const n = std.ascii.lowerString(&low, name);
+    const eq = struct {
+        fn f(a: []const u8, names: []const []const u8) bool {
+            for (names) |x| if (std.mem.eql(u8, a, x)) return true;
+            return false;
+        }
+    }.f;
+    if (eq(n, &.{ "utf8", "utf-8" })) return .{ .enc = .utf8, .bom = false };
+    if (eq(n, &.{ "utf8bom", "utf-8-bom" })) return .{ .enc = .utf8, .bom = true };
+    if (eq(n, &.{ "latin-1", "iso-8859-1", "iso88591" })) return .{ .enc = .latin1, .bom = false };
+    if (eq(n, &.{ "utf-16", "utf16" })) return .{ .enc = .utf16, .bom = false };
+    if (eq(n, &.{ "utf-16-be", "utf-16be", "utf16-be", "utf16be" })) return .{ .enc = .utf16be, .bom = false };
+    if (eq(n, &.{ "utf-16-le", "utf-16le", "utf16-le", "utf16le" })) return .{ .enc = .utf16le, .bom = false };
+    return null;
+}
+
+/// UTF-8 text in enc (not utf8): Latin-1 writes ? for a character above
+/// U+00FF, as Java's encoder; UTF-16 big endian unless utf16le
+fn encode(out: *std.ArrayList(u8), utf8: []const u8, enc: Encoding) void {
+    const data = @import("data.zig");
+    var i: usize = 0;
+    while (i < utf8.len) {
+        const d = data.utf8Next(utf8, i);
+        i += d.len;
+        const cp: u32 = d.cp;
+        switch (enc) {
+            .latin1 => out.append(pa, if (cp <= 0xff) @intCast(cp) else '?') catch rt.oom(),
+            else => {
+                const le = enc == .utf16le;
+                if (cp >= 0x10000) {
+                    const v = cp - 0x10000;
+                    unit(out, @intCast(0xd800 + (v >> 10)), le);
+                    unit(out, @intCast(0xdc00 + (v & 0x3ff)), le);
+                } else unit(out, @intCast(cp), le);
+            },
+        }
+    }
+}
+
+fn unit(out: *std.ArrayList(u8), u: u16, le: bool) void {
+    const b = if (le) [2]u8{ @truncate(u), @truncate(u >> 8) } else [2]u8{ @truncate(u >> 8), @truncate(u) };
+    out.appendSlice(pa, &b) catch rt.oom();
+}
+
+/// The bytes of a text file in enc as UTF-8 (owned by pa): Latin-1 bytes
+/// as characters, UTF-16 with its byte order mark (else big endian) for
+/// utf16, unpaired surrogates as U+FFFD; utf8 without a byte order mark
+/// when strip_bom (as Java's reader of a file that is not deflated)
+pub fn decodeText(bytes: []u8, enc: Encoding, strip_bom: bool) []u8 {
+    switch (enc) {
+        .utf8 => {
+            if (strip_bom and bytes.len >= 3 and bytes[0] == 0xef and bytes[1] == 0xbb and bytes[2] == 0xbf) {
+                const rest = pa.dupe(u8, bytes[3..]) catch rt.oom();
+                pa.free(bytes);
+                return rest;
+            }
+            return bytes;
+        },
+        .latin1 => {
+            var out: std.ArrayList(u8) = .empty;
+            out.ensureTotalCapacity(pa, bytes.len) catch rt.oom();
+            for (bytes) |b| appendCp(&out, b);
+            pa.free(bytes);
+            return out.toOwnedSlice(pa) catch rt.oom();
+        },
+        else => {
+            var le = enc == .utf16le;
+            var i: usize = 0;
+            if (enc == .utf16 and bytes.len >= 2) {
+                if (bytes[0] == 0xfe and bytes[1] == 0xff) {
+                    i = 2;
+                } else if (bytes[0] == 0xff and bytes[1] == 0xfe) {
+                    i = 2;
+                    le = true;
+                }
+            }
+            var out: std.ArrayList(u8) = .empty;
+            while (i + 1 < bytes.len) : (i += 2) {
+                const u: u32 = if (le) @as(u32, bytes[i]) | (@as(u32, bytes[i + 1]) << 8) else (@as(u32, bytes[i]) << 8) | bytes[i + 1];
+                if (u >= 0xd800 and u < 0xdc00 and i + 3 < bytes.len) {
+                    const v: u32 = if (le) @as(u32, bytes[i + 2]) | (@as(u32, bytes[i + 3]) << 8) else (@as(u32, bytes[i + 2]) << 8) | bytes[i + 3];
+                    if (v >= 0xdc00 and v < 0xe000) {
+                        appendCp(&out, 0x10000 + ((u - 0xd800) << 10) + (v - 0xdc00));
+                        i += 2;
+                        continue;
+                    }
+                }
+                appendCp(&out, if (u >= 0xd800 and u < 0xe000) 0xfffd else u);
+            }
+            if (i < bytes.len) appendCp(&out, 0xfffd); // an odd last byte
+            pa.free(bytes);
+            return out.toOwnedSlice(pa) catch rt.oom();
+        },
+    }
+}
+
+fn appendCp(out: *std.ArrayList(u8), cp: u32) void {
+    var b: [4]u8 = undefined;
+    const n = std.unicode.utf8Encode(@intCast(cp), &b) catch 0;
+    out.appendSlice(pa, b[0..n]) catch rt.oom();
+}
 
 /// File output ports, flushed at exit
 var file_ports: std.ArrayList(*Port) = .empty;
@@ -187,7 +347,15 @@ var file_ports_lock: std.Io.Mutex = .init;
 pub fn flushAll() void {
     file_ports_lock.lockUncancelable(os.io);
     defer file_ports_lock.unlock(os.io);
-    for (file_ports.items) |p| p.flush();
+    // only at exit: DEFLATE ports are finished
+    for (file_ports.items) |p| {
+        if (p.deflate) {
+            p.lock.lockUncancelable(os.io);
+            p.finishDeflate();
+            p.lock.unlock(os.io);
+        }
+        p.flush();
+    }
     stdout_port.flush();
 }
 

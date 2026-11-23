@@ -438,6 +438,16 @@ pub fn run(t: *Thread, p: Word, argc: u64) Word {
     return t.val;
 }
 
+/// The entry of module i (by its index in the initialization order), as
+/// a procedure of no arguments, with its constants set up: the program
+/// calls it at the import that brings the module in (see scm_program_eager)
+pub fn moduleEntry(t: *Thread, i: usize) ?Word {
+    if (i >= modules.len) return null;
+    const m = modules[i];
+    m.init(t);
+    return staticProc(m.entry);
+}
+
 /// A static procedure object for code that needs no free variables.
 pub fn staticProc(code: Code) Word {
     const q = staticAlloc(2, false);
@@ -1110,7 +1120,7 @@ const Gc = struct {
 var modules: []const abi.Module = &.{};
 pub var command_line: []const [:0]const u8 = &.{};
 
-pub fn start(list: abi.ModuleList, args: []const [:0]const u8) u8 {
+pub fn start(list: abi.ModuleList, eager: usize, args: []const [:0]const u8) u8 {
     // SCM_NATIVE_SEGV=1: a stack trace on a crash (for debugging the runtime)
     if (os.getEnv("SCM_NATIVE_SEGV") != null) std.debug.attachSegfaultHandler();
     command_line = args;
@@ -1123,10 +1133,18 @@ pub fn start(list: abi.ModuleList, args: []const [:0]const u8) u8 {
     num.current_thread = t;
     for (modules) |m| @memset(m.globals[0..m.nglobals], UNBOUND);
     program_specials(t);
-    for (modules) |m| {
+    // the program (the last module) returns its last form's value: an
+    // integer is the exit code unless set-exit-code! set one, as for a
+    // script on the JVM implementation
+    for (modules[0..@min(eager, modules.len - 1)]) |m| {
         m.init(t);
         _ = run(t, staticProc(m.entry), 0);
     }
+    const program = modules[modules.len - 1];
+    program.init(t);
+    const result = run(t, staticProc(program.entry), 0);
+    if (t.exit_code == 0 and isFix(result))
+        t.exit_code = @truncate(@as(u64, @bitCast(unfix(result))));
     ports.flushAll();
     os.flush();
     if (os.getEnv("SCM_NATIVE_GC_STATS") != null)

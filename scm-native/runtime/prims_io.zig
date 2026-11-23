@@ -293,9 +293,45 @@ fn fileError(t: *Thread, msg: []const u8, name: Word) Err {
     return error.Scheme;
 }
 
+/// The options of open-input-file and open-output-file after the file name,
+/// as the JVM implementation's: an encoding name, 'deflate, 'append
+/// (symbols or strings; others are ignored)
+const FileOptions = struct { enc: ports.Encoding = .utf8, bom: bool = false, deflate: bool = false, append: bool = false };
+
+fn fileOptions(t: *Thread) FileOptions {
+    var o: FileOptions = .{};
+    var i: usize = 1;
+    while (i < t.argc) : (i += 1) {
+        const a = arg(t, i);
+        const name: []const u8 = if (data.isSymbol(a)) data.symbolName(a) else if (data.isString(a)) data.toUtf8(a) else continue;
+        if (ports.parseEncoding(name)) |e| {
+            o.enc = e.enc;
+            o.bom = e.bom;
+        } else if (std.mem.eql(u8, name, "deflate")) {
+            o.deflate = true;
+        } else if (std.mem.eql(u8, name, "append")) {
+            o.append = true;
+        }
+    }
+    return o;
+}
+
 fn openInput(t: *Thread, binary: bool) Err!Word {
     const name = data.toUtf8(try P.stringArg(t, 0));
-    const bytes = rt.os.readFile(name) orelse return fileError(t, "cannot open file", arg(t, 0));
+    var bytes = rt.os.readFile(name) orelse return fileError(t, "cannot open file", arg(t, 0));
+    if (!binary) {
+        const o = fileOptions(t);
+        if (o.deflate) {
+            const z = @import("compress.zig");
+            const raw = z.decompress(bytes, .raw) catch {
+                pa.free(bytes);
+                return fileError(t, "open-input-file: io error", arg(t, 0));
+            };
+            pa.free(bytes);
+            bytes = raw;
+        }
+        bytes = ports.decodeText(bytes, o.enc, !o.deflate);
+    }
     const p = ports.newPort(.file_in, binary);
     p.in = .fromOwnedSlice(bytes);
     p.name = name;
@@ -308,14 +344,27 @@ fn openInputFile(t: *Thread) Err!Word {
 fn openBinaryInputFile(t: *Thread) Err!Word {
     return openInput(t, true);
 }
-pub const @"%open-input-file" = WN("open-input-file", openInputFile, 1, 2);
+pub const @"%open-input-file" = WN("open-input-file", openInputFile, 1, 3);
 pub const @"%open-binary-input-file" = WN("open-binary-input-file", openBinaryInputFile, 1, 2);
 
 fn openOutput(t: *Thread, binary: bool) Err!Word {
     const name = data.toUtf8(try P.stringArg(t, 0));
-    const f = rt.os.createFile(name) orelse return fileError(t, "cannot open file for writing", arg(t, 0));
+    const o: FileOptions = if (binary) .{} else fileOptions(t);
+    var offset: ?u64 = null;
+    const f = if (o.append) blk: {
+        const a = rt.os.openAppend(name) orelse return fileError(t, "cannot open file for writing", arg(t, 0));
+        offset = a.len;
+        break :blk a.file;
+    } else rt.os.createFile(name) orelse return fileError(t, "cannot open file for writing", arg(t, 0));
     const p = ports.newPort(.file_out, binary);
     p.file = f;
+    p.enc = o.enc;
+    p.deflate = o.deflate;
+    p.offset = offset;
+    // a UTF-8 byte order mark only at the start of the file (C#'s
+    // StreamWriter, the JVM implementation): not when appending to a
+    // file that has content
+    if (o.bom and (offset orelse 0) == 0) p.out.appendSlice(pa, "\xef\xbb\xbf") catch rt.oom();
     t.reserve(2);
     return ports.wrap(t, p);
 }
@@ -325,7 +374,7 @@ fn openOutputFile(t: *Thread) Err!Word {
 fn openBinaryOutputFile(t: *Thread) Err!Word {
     return openOutput(t, true);
 }
-pub const @"%open-output-file" = WN("open-output-file", openOutputFile, 1, 2);
+pub const @"%open-output-file" = WN("open-output-file", openOutputFile, 1, 4);
 pub const @"%open-binary-output-file" = WN("open-binary-output-file", openBinaryOutputFile, 1, 2);
 
 fn closePort(t: *Thread) Err!Word {

@@ -3,6 +3,7 @@
           mangle
           set-program-version!
           set-eval-state!
+          set-eager-modules!
           set-user-libraries!)
   (import (scheme base)
           (scheme char)
@@ -956,6 +957,9 @@
                        (list "};\n\n"
                              "export fn scm_program_modules() callconv(.c) rt.ModuleList {\n"
                              "    return .{ .modules = &modules, .count = modules.len };\n}\n\n"
+                             "export fn scm_program_eager() callconv(.c) usize {\n"
+                             "    return " (if eager-modules (number->string eager-modules) "modules.len - 1")
+                             ";\n}\n\n"
                              "export fn scm_program_version() callconv(.c) [*:0]const u8 {\n"
                              "    return \"" program-version "\";\n}\n\n"
                              "export fn scm_program_specials(t: *Thread) callconv(.c) void {\n"
@@ -984,6 +988,10 @@
     ;; the expander state's text for a program that links eval, else #f
     (define eval-state #f)
     (define (set-eval-state! s) (set! eval-state s))
+
+    ;; libraries initialized before the program (the others at their import)
+    (define eager-modules #f)
+    (define (set-eager-modules! n) (set! eager-modules n))
 
     ;; the dabscm version, for sys-scm-version
     (define program-version "unknown")

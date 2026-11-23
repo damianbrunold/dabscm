@@ -24,6 +24,13 @@ const Event = enum { doc, element, end_element, text, comment, pi, doctype, end_
 
 const Attr = struct { local: []const u8, value: []const u8 };
 
+/// A byte that is a character XML 1.0 does not allow (the control
+/// characters other than tab, newline and carriage return), as the JVM's
+/// and .NET's parsers reject it
+fn invalidChar(d: u8) bool {
+    return d < 0x20 and d != '\t' and d != '\n' and d != '\r';
+}
+
 const Reader = struct {
     s: []const u8, // UTF-8
     pos: usize = 0,
@@ -128,6 +135,9 @@ const Reader = struct {
                     try r.reference(&v);
                 } else if (d == '<') {
                     return r.fail("The value of attribute \"{s}\" associated with an element type \"{s}\" must not contain the '<' character.", .{ n, r.name });
+                } else if (invalidChar(d)) {
+                    r.pos -= 1;
+                    return r.fail("An invalid XML character (Unicode: 0x{x}) was found in the value of attribute \"{s}\" and element is \"{s}\".", .{ d, n, r.name });
                 } else v.append(pa, if (d == '\t' or d == '\n' or d == '\r') ' ' else d) catch rt.oom();
             }
             r.attrs.append(pa, .{ .local = localOf(n), .value = v.items }) catch rt.oom();
@@ -245,6 +255,7 @@ const Reader = struct {
             } else {
                 while (r.peek()) |d| {
                     if (d == '<' or d == '&') break;
+                    if (invalidChar(d)) return r.fail("An invalid XML character (Unicode: 0x{x}) was found in the element content of the document.", .{d});
                     r.text.append(pa, d) catch rt.oom();
                     r.pos += 1;
                 }
