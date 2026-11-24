@@ -151,10 +151,16 @@ So a project with its libraries next to the program, or in a `src` directory, co
 | `SCM_NATIVE_ZIG` | the `zig` to use. Default: the Zig an installation bundles, else `zig` on the PATH |
 | `SCM_NATIVE_BUILD` | the build directory (objects, generated Zig, Zig's cache). Default: `scm-native/build` if writable, else `$XDG_CACHE_HOME/dabscm-native` (`~/.cache/dabscm-native`; `%LOCALAPPDATA%` on Windows) |
 | `SCM_NATIVE_DIR` | the `scm-native` directory, for the native `scmc` and `scm` (the package's commands set it) |
+| `SCM_NATIVE_CACHE_MB` | the size the objects of the build directory are kept to (default 4096; see below) |
 
-The objects of a build directory take a few GB after many changes and targets (each
-version of a library and each target has its own). Deleting the directory is safe; it only
-costs recompilation.
+Each version of a library and each target has its own objects, so every change of the
+compiler or the runtime leaves the earlier ones behind. After a link, the objects it used are
+marked as used, and at most once an hour the build directory is cleaned up: objects unused for
+14 days are deleted, then the least recently used ones while the objects take more than
+`SCM_NATIVE_CACHE_MB` MB (never one used within the last hour, which another compilation may be
+about to link), the generated Zig sources whose object is gone, and Zig's cache of parsed
+files (`zig-cache/z`) in the same way, kept to a quarter of that size. Deleting the directory
+is safe; it only costs recompilation.
 
 **Environment variables of compiled programs**, for debugging the runtime:
 
@@ -479,6 +485,12 @@ native `scmc`.
 - **The Zig command line does not cache,** so `build/objects/` holds the objects under the
   hash of everything that goes into them. The driver builds them in parallel, one process
   per core.
+- **A module of more than 4 MB of Zig is split** (`compiler/scm-native-split.sld`) into parts of
+  about 2 MB, compiled in parallel: LLVM's time grows faster than the size of a module (8.7 s
+  per MB at 3 MB, 24 s per MB at 15 MB). The functions go into the parts in their order; a
+  name another part uses is exported under `scmx_<module>_<name>` and declared `extern` there.
+  Only test programs are this large (chibi's R7RS tests: 15.6 MB, 8 parts, about 90 s
+  instead of 300).
 - **`zig build-exe` only links** the objects with libc (statically, for musl).
 
 ### The runtime (`runtime/`)

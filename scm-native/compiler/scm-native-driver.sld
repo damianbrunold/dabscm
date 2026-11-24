@@ -8,6 +8,7 @@
           (scheme read)
           (scheme write)
           (scheme char)
+          (only (scheme time) current-second)
           (srfi 1)
           (srfi 132)
           (scm fs)
@@ -18,7 +19,8 @@
           (scm native expand)
           (scm native optimize)
           (scm native anf)
-          (scm native emit))
+          (scm native emit)
+          (scm native split))
   (begin
 ;; Primitives the runtime provides: the `pub const @"%name"` declarations
     ;; of runtime/prims*.zig, as a list of (name module kind), kind code or
@@ -282,28 +284,17 @@
                ;; everything that goes into it (the Zig CLI does not cache)
                (rt-obj (join-path objects-dir (string-append "rt-" (content-hash runtime-text flags) ".o")))
                (c-jobs (c-object-jobs native-dir objects-dir zig common flags))
+               (_ (unless (directory-exists? objects-dir) (make-directory objects-dir)))
                (jobs
                 (cons (list rt-obj `(,zig "build-obj" ,@common "-lc"
                                           ,(join-path runtime-dir "rtmain.zig")
                                           ,(string-append "-femit-bin=" rt-obj)))
                       (append
                        c-jobs
-                       (map (lambda (m)
-                             ;; the source file is named by the hash as well: compilations
-                             ;; running at the same time in one build directory must not
-                             ;; overwrite each other's source
-                             (let* ((sym (car m))
-                                    (hash (content-hash (string-append (cdr m) abi-text) flags))
-                                    (zig-file (join-path cfg-dir (string-append sym "-" hash ".zig")))
-                                    (obj (join-path objects-dir (string-append sym "-" hash ".o"))))
-                               (write-if-changed zig-file (cdr m))
-                               (list obj `(,zig "build-obj" ,@common
-                                                "--dep" "rt"
-                                                ,(string-append "-Mroot=" zig-file)
-                                                ,(string-append "-Mrt=" (join-path runtime-dir "abi.zig"))
-                                                ,(string-append "-femit-bin=" obj)))))
-                           sources)))))
-          (unless (directory-exists? objects-dir) (make-directory objects-dir))
+                       (append-map (lambda (m)
+                                     (module-jobs m zig common flags abi-text cfg-dir objects-dir
+                                                  (join-path runtime-dir "abi.zig")))
+                                   sources)))))
           ;; build the missing objects in parallel, then link
           (for-each (lambda (r) (check-run "zig build-obj" r))
                     (run-batched (filter (lambda (job) (not (file-exists? (car job)))) jobs)))
@@ -319,7 +310,163 @@
                                                        '())
                                                  ,@(map car jobs)
                                                  ,(string-append "-femit-bin=" output))))
+          (prune-cache! build-dir objects-dir (map car jobs))
           output)))
+
+    ;; The jobs ((object command) ...) of a module (sym . zig-text): one, or
+    ;; one per part of a large module (scm native split), compiled in
+    ;; parallel. Its source files are named by the hash as well:
+    ;; compilations running at the same time in one build directory must
+    ;; not overwrite each other's source. <base>.parts holds the number of
+    ;; parts, so that a module whose parts are built is not split again.
+    (define split-threshold 4000000) ; characters of Zig
+    (define split-target 2000000)
+    (define split-version "split 1") ; in a split module's hash
+
+    (define (module-jobs m zig common flags abi-text cfg-dir objects-dir abi-file)
+      (let* ((sym (car m))
+             (text (cdr m))
+             (big? (> (string-length text) split-threshold))
+             (hash (content-hash (string-append text abi-text (if big? split-version "")) flags))
+             (base (string-append sym "-" hash))
+             (job (lambda (zig-file obj)
+                    (list obj `(,zig "build-obj" ,@common
+                                     "--dep" "rt"
+                                     ,(string-append "-Mroot=" zig-file)
+                                     ,(string-append "-Mrt=" abi-file)
+                                     ,(string-append "-femit-bin=" obj))))))
+        (if (not big?)
+            (let ((zig-file (join-path cfg-dir (string-append base ".zig"))))
+              (write-if-changed zig-file text)
+              (list (job zig-file (join-path objects-dir (string-append base ".o")))))
+            (let* ((manifest (join-path objects-dir (string-append base ".parts")))
+                   (part (lambda (dir i ext)
+                           (join-path dir (string-append base "-p" (number->string i) ext))))
+                   (built (and (file-exists? manifest)
+                               (let ((n (guard (e (#t #f)) (call-with-input-file manifest read))))
+                                 (and (exact-integer? n)
+                                      (every (lambda (i) (file-exists? (part objects-dir i ".o"))) (iota n))
+                                      n))))
+                   (n (or built
+                          (let ((parts (split-module sym text split-target)))
+                            (let loop ((ps parts) (i 0))
+                              (when (pair? ps)
+                                (write-if-changed (part cfg-dir i ".zig") (car ps))
+                                (loop (cdr ps) (+ i 1))))
+                            (call-with-output-file manifest
+                              (lambda (p) (write (length parts) p) (newline p)))
+                            (length parts)))))
+              (map (lambda (i) (job (part cfg-dir i ".zig") (part objects-dir i ".o"))) (iota n))))))
+
+    ;; --- the object cache --------------------------------------------------
+    ;; Objects are named by the hash of their input, so every change of the
+    ;; compiler or the runtime leaves the earlier ones behind. After a link,
+    ;; the objects it used are marked (their .log rewritten: its time is the
+    ;; last use), and at most once an hour the cache is cleaned up: objects
+    ;; unused for 14 days go, and then the least recently used ones while
+    ;; the objects take more than SCM_NATIVE_CACHE_MB (default 4096) MB;
+    ;; never one used within the last hour (another compilation may be about
+    ;; to link it). Then the generated sources whose object is gone, and
+    ;; Zig's cache of parsed files (zig-cache/z) in the same way, with a
+    ;; quarter of the limit.
+    (define hour-ms (* 3600 1000))
+    (define max-unused-ms (* 14 24 hour-ms))
+
+    (define (now-ms) (exact (round (* 1000 (current-second)))))
+
+    (define (cache-limit-bytes)
+      (* 1024 1024 (let ((v (env "SCM_NATIVE_CACHE_MB")))
+                     (or (and v (let ((n (string->number v))) (and n (> n 0) n))) 4096))))
+
+    (define (mark-used! obj)
+      (let ((log (string-append obj ".log")))
+        (guard (e (#t #f))
+          (let ((text (if (file-exists? log) (file->string log) "")))
+            (call-with-output-file log (lambda (p) (write-string text p)))))))
+
+    (define (prune-cache! build-dir objects-dir used)
+      (for-each mark-used! used)
+      (let ((marker (join-path objects-dir "last-cleanup"))
+            (now (now-ms)))
+        (when (or (not (file-exists? marker))
+                  (> (- now (file-modification-timestamp marker)) hour-ms))
+          (guard (e (#t #f))
+            (call-with-output-file marker (lambda (p) (write-string "" p)))
+            (prune-files! objects-dir ".o" (lambda (f) (list (string-append f ".log")))
+                          (cache-limit-bytes) now)
+            (prune-orphans! objects-dir now)
+            (prune-sources! build-dir objects-dir now)
+            (let ((z (join-path build-dir "zig-cache" "z")))
+              (when (directory-exists? z)
+                (prune-files! z "" (lambda (f) '()) (quotient (cache-limit-bytes) 4) now)))))))
+
+    (define (try-delete! f) (guard (e (#t #f)) (when (file-exists? f) (delete-file f))))
+
+    ;; the files of dir ending in suffix, with their companions: the unused
+    ;; for 14 days, then the oldest while they take more than limit bytes
+    (define (prune-files! dir suffix companions limit now)
+      (let* ((entries
+              (filter-map
+               (lambda (name)
+                 (and (string-suffix? suffix name)
+                      (let* ((f (join-path dir name))
+                             (others (filter file-exists? (companions f))))
+                        (guard (e (#t #f))
+                          (list f
+                                (apply max (map file-modification-timestamp (cons f others)))
+                                (apply + (map file-size (cons f others)))
+                                others)))))
+               (directory-files dir)))
+             (sorted (list-sort (lambda (a b) (< (cadr a) (cadr b))) entries))
+             (delete! (lambda (e) (for-each try-delete! (cons (car e) (list-ref e 3))))))
+        (let loop ((es sorted) (total (apply + 0 (map caddr entries))))
+          (when (pair? es)
+            (let* ((e (car es))
+                   (age (- now (cadr e))))
+              (cond ((> age max-unused-ms)
+                     (delete! e)
+                     (loop (cdr es) (- total (caddr e))))
+                    ((and (> total limit) (> age hour-ms))
+                     (delete! e)
+                     (loop (cdr es) (- total (caddr e))))))))))
+
+    ;; logs of failed builds and the part counts of modules whose parts are gone
+    (define (prune-orphans! objects-dir now)
+      (for-each
+       (lambda (name)
+         (let ((f (join-path objects-dir name)))
+           (guard (e (#t #f))
+             (when (> (- now (file-modification-timestamp f)) hour-ms)
+               (cond ((string-suffix? ".o.log" name)
+                      (unless (file-exists? (substring f 0 (- (string-length f) 4)))
+                        (try-delete! f)))
+                     ((string-suffix? ".parts" name)
+                      (unless (file-exists? (string-append (substring f 0 (- (string-length f) 6))
+                                                           "-p0.o"))
+                        (try-delete! f))))))))
+       (directory-files objects-dir)))
+
+    ;; the generated Zig sources (<target>-<mode>/<module>-<hash>[-p<i>].zig)
+    ;; whose object is gone
+    (define (prune-sources! build-dir objects-dir now)
+      (for-each
+       (lambda (d)
+         (when (any (lambda (mode) (string-suffix? mode d))
+                    '("-ReleaseFast" "-ReleaseSafe" "-ReleaseSmall" "-Debug"))
+           (let ((dir (join-path build-dir d)))
+             (for-each
+              (lambda (name)
+                (when (string-suffix? ".zig" name)
+                  (let ((f (join-path dir name)))
+                    (guard (e (#t #f))
+                      (when (and (> (- now (file-modification-timestamp f)) hour-ms)
+                                 (not (file-exists?
+                                       (join-path objects-dir
+                                                  (string-append (substring name 0 (- (string-length name) 4))
+                                                                 ".o")))))
+                        (try-delete! f))))))
+              (directory-files dir)))))
+       (directory-directories build-dir)))
 
     ;; The C sources linked into every program: the vendored zlib and the
     ;; runtime's interface to it. One object per file, all named by the hash

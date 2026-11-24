@@ -59,7 +59,8 @@
     (define module-sizes '())    ; module-sym -> number of globals (finished)
     (define externs '())         ; extern declarations of the module
     (define local-ids (make-hash-table eq?))    ; var or lam -> number in the module
-    (define constants '())     ; (datum . zig-name)
+    (define constant-symbols (make-hash-table eq?)) ; symbol -> zig-name
+    (define constant-numbers '())                   ; (number . zig-name)
     (define counter 0)
 
     (define (next!)
@@ -229,11 +230,13 @@
             ((astral-char? d) (word-literal (+ (* 8 (astral-char-code d)) 5)))
             ;; literals are distinct objects (as in the JVM implementation),
             ;; except those that cannot be mutated
-            ((and (or (symbol? d) (number? d)) (assoc d constants)) => cdr)
+            ((and (symbol? d) (hash-table-ref/default constant-symbols d #f)) => (lambda (n) n))
+            ((and (number? d) (assoc d constant-numbers)) => cdr)
             (else
              (let ((name (cat "c" (next!)))
                    (init (constant-init d)))
-               (set! constants (cons (cons d name) constants))
+               (cond ((symbol? d) (hash-table-set! constant-symbols d name))
+                     ((number? d) (set! constant-numbers (cons (cons d name) constant-numbers))))
                (add-static! (cat "var " name ": Word = undefined;"))
                (add-init! (cat "    " name " = " init ";"))
                name))))
@@ -396,8 +399,8 @@
 
     (define (static-closure l)
       (let ((name (cat "s" (local-id l))))
-        (unless (member name statics-made)
-          (set! statics-made (cons name statics-made))
+        (unless (hash-table-ref/default statics-made name #f)
+          (hash-table-set! statics-made name #t)
           (add-static! (cat "var " name ": Word = undefined;"))
           (add-init! (cat "    " name " = rt.staticProc(&" (gen-lambda l) ");"))
           (when (escape-only? l) (add-init! (cat "    rt.markEscapeOnly(" name ");"))))
@@ -426,7 +429,7 @@
         ((let letrec) (and (every (lambda (b) (only-called? (cadr b) k)) (cadr e))
                            (only-called? (caddr e) k)))
         (else #f)))
-    (define statics-made '())
+    (define statics-made (make-hash-table string=?))
 
     (define (cg-closure l b env)
       (if (null? (lam-free l))
@@ -633,8 +636,15 @@
     ;; frame, evaluate rhs in tail position, continue in a return block.
     (define (cg-nontail-call v rhs body b env)
       (let* ((used (refs body))
-             (live (filter (lambda (entry) (and (memq (car entry) used) (caddr entry)))
-                           (delete-duplicates env (lambda (x y) (eq? (car x) (car y))))))
+             ;; the first entry of each variable (delete-duplicates is
+             ;; quadratic, and env holds a long body's literals and statics)
+             (live (let ((seen (make-hash-table eq?)))
+                     (filter (lambda (entry)
+                               (and (not (hash-table-ref/default seen (car entry) #f))
+                                    (begin (hash-table-set! seen (car entry) #t) #t)
+                                    (memq (car entry) used)
+                                    (caddr entry)))
+                             env)))
              (n (length live))
              (k (make-block (cat "K" (next!))))
              (info (cat "k" (substring (block-name k) 1 (string-length (block-name k))))))
@@ -786,8 +796,8 @@
 
     (define (gen-lambda l)
       (let ((name (cat "L" (local-id l))))
-        (unless (member name lambdas-made)
-          (set! lambdas-made (cons name lambdas-made))
+        (unless (hash-table-ref/default lambdas-made name #f)
+          (hash-table-set! lambdas-made name #t)
           (when (lam-doc l)
             (add-init! (cat "    rt.setDoc(&" name ", \"" (zig-escape (lam-doc l)) "\");")))
           (let* ((b (make-block name))
@@ -820,7 +830,7 @@
               (cg-tail (lam-body l) b env)
               (finish-block! b))))
         name))
-    (define lambdas-made '())
+    (define lambdas-made (make-hash-table string=?))
 
     (define (bind-param v expr b env)
       (if (var-assigned? v)
@@ -875,9 +885,12 @@
       (set! blocks '())
       (set! statics '())
       (set! init-lines '())
-      (set! constants '())
-      (set! statics-made '())
-      (set! lambdas-made '())
+      ;; hash tables: a large module (a test program) has tens of thousands
+      ;; of lambdas, and lists made the emitter quadratic
+      (set! constant-symbols (make-hash-table eq?))
+      (set! constant-numbers '())
+      (set! statics-made (make-hash-table string=?))
+      (set! lambdas-made (make-hash-table string=?))
       (set! primitive-procs '())
       (set! externs '())
       (set! own-globals 0)
@@ -894,9 +907,11 @@
       (map (lambda (m)
              (let ((sym (module-symbol (car m))))
                (reset-module! sym)
+               (start-refs-memo!)
                (let* ((entry (gen-lambda (make-lam '() #f (cdr m) 'toplevel)))
                       (extra (if (eq? (car m) 'program) (program-tables modules entry) "")))
                  (set! module-sizes (cons (cons sym own-globals) module-sizes))
+                 (stop-refs-memo!)
                  (cons sym (module-source sym entry extra)))))
            modules))
 
@@ -1008,9 +1023,14 @@
     ;; --- strings -----------------------------------------------------------
 
     (define (join strs sep)
+      ;; a port: appending to the result is quadratic (a large bytevector
+      ;; constant has a million elements)
       (if (null? strs)
           ""
-          (fold (lambda (s acc) (string-append acc sep s)) (car strs) (cdr strs))))
+          (let ((out (open-output-string)))
+            (write-string (car strs) out)
+            (for-each (lambda (s) (write-string sep out) (write-string s out)) (cdr strs))
+            (get-output-string out))))
 
     (define (bytevector->list bv)
       (let loop ((i (- (bytevector-length bv) 1)) (acc '()))

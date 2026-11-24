@@ -1,5 +1,7 @@
 (define-library (scm native ast)
   (export make-var
+          start-refs-memo!
+          stop-refs-memo!
           var?
           var-name
           var-id
@@ -103,7 +105,23 @@
 
     ;; Local variables referenced by e (free in e). Needs compute-free! first
     ;; for nested lambdas.
+    ;; While a module is emitted, the refs of the compound nodes are kept:
+    ;; the emitter asks for the refs of the rest of a body at every
+    ;; non-tail call, which made a long body (a test program's top level:
+    ;; 24000 calls) quadratic. Only while the tree does not change.
+    (define refs-memo #f)
+    (define (start-refs-memo!) (set! refs-memo (make-hash-table eq?)))
+    (define (stop-refs-memo!) (set! refs-memo #f))
+
     (define (refs e)
+      (if (and refs-memo (memq (node-kind e) '(if seq call prim let letrec lset)))
+          (or (hash-table-ref/default refs-memo e #f)
+              (let ((r (compute-refs e)))
+                (hash-table-set! refs-memo e r)
+                r))
+          (compute-refs e)))
+
+    (define (compute-refs e)
       (case (node-kind e)
         ((const gref primref) '())
         ((lref) (list (cadr e)))
