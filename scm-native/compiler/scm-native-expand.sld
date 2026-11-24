@@ -1142,6 +1142,7 @@
     (define (expand-program file paths feature-list prims core-file . extra-forms)
       ;; a fresh library registry per program: the modules of an earlier
       ;; program (in the same process) must not end up in this one
+      (reset-syntax-state!)
       (set! modules '())
       (set! scope->module '())
       (set! completed '())

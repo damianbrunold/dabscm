@@ -11,6 +11,7 @@
         (scheme file)
         (scheme process-context)
         (scheme read)
+        (scheme time)
         (scheme write)
         (srfi 1)
         (srfi 132)
@@ -89,9 +90,17 @@
 
 (unless (directory-exists? build-dir) (make-directory build-dir))
 (define summary '())
+;; compile and run times, per test and in total
+(define compile-secs 0)
+(define run-secs 0)
+(define (seconds jiffies) (/ jiffies (jiffies-per-second)))
+(define (seconds-text jiffies)
+  (number->string (/ (round (* 10 (seconds jiffies))) 10.)))
 (for-each
  (lambda (name)
-   (let* ((source (join-path tests-dir (string-append name ".scm")))
+   (let* ((started (current-jiffy))
+          (compiled #f)
+          (source (join-path tests-dir (string-append name ".scm")))
           (program (join-path build-dir (string-append "lib-" name ".scm")))
           (exe (join-path build-dir (exe-name (string-append "lib-" name exe-suffix)))))
      (call-with-output-file program
@@ -107,6 +116,7 @@
                                                (if (> (string-length m) 300) (substring m 0 300) m))
                                              "?"))))
               (compile-program program exe native-dir compile-options)
+              (set! compiled (current-jiffy))
               ;; run in the tests directory, as the JVM harness does from its resources
               (let ((r (run-program/capture (with-timeout "300" exe) (run-options (list 'work-dir tests-dir)))))
                 (string-append
@@ -120,6 +130,14 @@
        ;; keep the executables of failing tests only (each is several MB)
        (when (and (string-suffix? " failures: 0" result) (file-exists? exe))
          (delete-file exe))
-       (display name) (display ": ") (display result) (newline)
+       (let ((end (current-jiffy)))
+         (set! compile-secs (+ compile-secs (seconds (- (or compiled end) started))))
+         (set! run-secs (+ run-secs (if compiled (seconds (- end compiled)) 0)))
+         (display name) (display ": ") (display result)
+         (display "  [compile ") (display (seconds-text (- (or compiled end) started)))
+         (when compiled (display ", run ") (display (seconds-text (- end compiled))))
+         (display "]") (newline))
        (set! summary (cons (cons name result) summary)))))
  (names))
+(display "compile ") (display (round (inexact compile-secs)))
+(display " s, run ") (display (round (inexact run-secs))) (display " s") (newline)

@@ -5,6 +5,7 @@
 
 (import (scheme base)
         (scheme file)
+        (scheme process-context)
         (scheme write)
         (srfi 18)
         (scm fs)
@@ -18,6 +19,23 @@
         (scm test))
 
 (test-runner-factory scm-test-runner)
+
+;; dabscm native under a heavy GC stress mode (SCM_NATIVE_GC_STRESS below
+;; 10000 words): the 10 MB upload is then slower than the 2 s the server
+;; reads and drops an oversize body after its 413, so the client's send
+;; fails with a broken pipe before it reads the 413
+(define heavy-gc-stress?
+  (cond-expand
+    (dabscm-native
+     (let ((spec (get-environment-variable "SCM_NATIVE_GC_STRESS")))
+       (and spec
+            (let* ((comma (let loop ((i 0))
+                            (cond ((= i (string-length spec)) i)
+                                  ((char=? (string-ref spec i) #\,) i)
+                                  (else (loop (+ i 1))))))
+                   (words (string->number (substring spec 0 comma))))
+              (and words (< words 10000))))))
+    (else #f)))
 
 (test-begin "scm-http-large")
 
@@ -102,11 +120,12 @@
         (thread-sleep! 0.2)
         (test-assert "spool file deleted"
                      (and seen-file (not (file-exists? seen-file))))
-        (test-equal 413
-                    (http-response-status
-                     (send "POST" "http://127.0.0.1:18121/"
-                           '()
-                           (pattern 10000001))))))))
+        (unless heavy-gc-stress?
+          (test-equal 413
+                      (http-response-status
+                       (send "POST" "http://127.0.0.1:18121/"
+                             '()
+                             (pattern 10000001)))))))))
 
 (test-group "chunked request bodies"
   (with-server 18122

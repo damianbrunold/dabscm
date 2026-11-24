@@ -20,6 +20,7 @@
           binding-table-entries
           scope-counter-value
           set-scope-counter!
+          reset-syntax-state!
           transformer-parts
           rebuild-transformer)
   (import (scheme base)
@@ -118,6 +119,15 @@
 
     ;; The table as a list of (symbol (scopes . binding) ...), for the
     ;; expander state that eval needs at run time
+    ;; A new program (scmc compiles several in one process, e.g. the native
+    ;; test runners and (scm deb webapp)): no bindings and scopes of an
+    ;; earlier one. Else they end up in the expander state of a program that
+    ;; links eval (all earlier programs' libraries in its executable) and
+    ;; its output depends on what was compiled before it.
+    (define (reset-syntax-state!)
+      (set! table (make-hash-table eq?))
+      (set! scope-counter 0))
+
     (define (binding-table-entries)
       (hash-table-fold table (lambda (sym entries acc) (cons (cons sym entries) acc)) '()))
 
