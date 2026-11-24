@@ -381,6 +381,23 @@ memory shows both. musl's allocator (the default target) fragments more under so
 patterns: freeing a file port's buffer at a collection while small allocations land in its
 slot grew the resident memory without a leak.
 
+### Differential tests
+
+`difftest.scm` runs random cases on the JVM, C# and natively and compares the results:
+
+```sh
+scm difftest.scm [--seed n] [--time secs] [--rounds n] [--cases n] [numbers|reader|strings ...]
+```
+
+- **Cases** come from generators (numbers: arithmetic, conversion and printing on every kind
+  of number; reader: random texts read to the end; strings: case mappings, comparisons,
+  UTF-8, characters) and a seed; round k uses seed + k.
+- **A value against an error, or different values,** is a divergence; errors with different
+  messages are minor. An implementation that dies is reported for its case, and the rest run
+  again.
+- **The report,** `build/difftest/report-<seed>.txt`, groups the divergences by operation
+  and pattern with a few examples each. On a disagreement R7RS decides first, then the JVM.
+
 ### GC stress tests
 
 ```sh

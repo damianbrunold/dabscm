@@ -32,6 +32,13 @@ public class Expander {
     /**
      * Expand a top-level form. Returns fully-expanded S-expression.
      */
+    // Whether the form expandForm is about to expand may be a definition: at
+    // the top level (also inside a top-level begin, cond-expand or macro
+    // use), not in an expression (R7RS: cond clauses, if branches, when
+    // bodies hold expressions). Bodies collect their definitions themselves
+    // (expandBody).
+    private boolean definitionContext = false;
+
     public Object expand(SourcePos pos, Object form) {
         // Get the module scope and ensure bindings are registered
         int moduleScope = modules.getCurrentModuleScope();
@@ -41,6 +48,7 @@ public class Expander {
         Object wrapped = SyntaxObject.wrapDatum(form, ScopeSet.of(moduleScope), pos);
 
         // Expand recursively
+        definitionContext = true;
         Object expanded = expandForm(pos, wrapped);
 
         // Return expanded form — the compiler resolves identifiers
@@ -64,6 +72,8 @@ public class Expander {
      * Recursively expand a form (syntax object or plain datum).
      */
     private Object expandForm(SourcePos pos, Object stx) {
+        boolean defOk = definitionContext;
+        definitionContext = false;
         // Self-quoting constants: numbers, booleans, chars, strings, NIL
         if (stx == null || stx == Value.NIL) return stx;
         if (stx.equals(Value.T) || stx.equals(Value.F)) return stx;
@@ -96,9 +106,9 @@ public class Expander {
             if (firstBinding != null) {
                 // Dispatch based on binding kind
                 if (firstBinding.bindingKind == ResolvedBinding.Kind.CORE_FORM)
-                    return expandCoreForm(pos, stx, firstBinding.symbolName);
+                    return expandCoreForm(pos, stx, firstBinding.symbolName, defOk);
                 if (firstBinding.bindingKind == ResolvedBinding.Kind.MACRO)
-                    return expandMacroCall(pos, stx, firstBinding.symbolName, firstBinding.value);
+                    return expandMacroCall(pos, stx, firstBinding.symbolName, firstBinding.value, defOk);
             }
             resolvedName = firstBinding != null ? firstBinding.symbolName : firstId.symbolName();
         } else if (Value.isSymbol(first)) {
@@ -126,7 +136,7 @@ public class Expander {
     /**
      * Dispatch to the appropriate core form expander.
      */
-    private Object expandCoreForm(SourcePos pos, Object stx, String formName) {
+    private Object expandCoreForm(SourcePos pos, Object stx, String formName, boolean defOk) {
         switch (formName) {
             case "quote":
                 return ((Pair)Pair.list(coreFormId("quote"), SyntaxObject.strip(formNth(stx, 1)))).withPos(pos);
@@ -141,15 +151,17 @@ public class Expander {
                 return expandSet(pos, stx);
 
             case "begin":
-                return expandBegin(pos, formNthCdr(stx, 1));
+                return expandBegin(pos, formNthCdr(stx, 1), defOk);
 
             case "lambda":
                 return expandLambda(pos, stx);
 
             case "define":
+                if (!defOk) throw expressionContextError(pos, stx);
                 return expandDefine(pos, stx);
 
             case "define-syntax":
+                if (!defOk) throw expressionContextError(pos, stx);
                 return expandDefineSyntax(pos, stx, false);
 
             case "let":
@@ -163,13 +175,13 @@ public class Expander {
                 return expandLetrec(pos, stx, formName);
 
             case "let-syntax":
-                return expandLetSyntax(pos, stx);
+                return expandLetSyntax(pos, stx, defOk);
 
             case "letrec-syntax":
-                return expandLetrecSyntax(pos, stx);
+                return expandLetrecSyntax(pos, stx, defOk);
 
             case "cond-expand":
-                return expandCondExpand(pos, stx);
+                return expandCondExpand(pos, stx, defOk);
 
             case "%primitive":
                 // Resolve primitive at expansion time
@@ -203,8 +215,12 @@ public class Expander {
 
     // ---- Macro Expansion (Two-scope Flip Protocol) ----
 
+    private SchemeError expressionContextError(SourcePos pos, Object stx) {
+        return new SchemeError(pos, "definition or declaration in expression context ~s", SyntaxObject.strip(stx));
+    }
+
     private Object expandMacroCall(SourcePos pos, Object form, String macroName,
-                                   Object transformer) {
+                                   Object transformer, boolean defOk) {
         if (!(transformer instanceof SyntaxRulesTransformer))
             throw new SchemeError(pos, "macro ~a: expected syntax-rules transformer", macroName);
         SyntaxRulesTransformer srt = (SyntaxRulesTransformer) transformer;
@@ -237,7 +253,9 @@ public class Expander {
         // Template identifiers don't have introScope, flip adds it.
         result = SyntaxObject.flipScope(result, introScope);
 
-        // Step 3: Recurse
+        // Step 3: Recurse (in the same context: a macro use at the top level
+        // may expand to definitions)
+        definitionContext = defOk;
         return expandForm(pos, result);
     }
 
@@ -263,7 +281,7 @@ public class Expander {
      * Handles define-syntax visibility: each define-syntax is processed before
      * expanding subsequent forms, making the macro available to later forms.
      */
-    private Object expandBegin(SourcePos pos, Object forms) {
+    private Object expandBegin(SourcePos pos, Object forms, boolean defOk) {
         if (forms == Value.NIL) return Value.NIL;
 
         ArrayList<Object> expandedForms = new ArrayList<>();
@@ -273,6 +291,7 @@ public class Expander {
             if (!Value.isPair(current)) break;
 
             Object form = Value.asPair(current).car;
+            definitionContext = defOk;
             Object expanded = expandForm(pos, form);
 
             // After expanding, check if result is a begin — splice it
@@ -533,8 +552,8 @@ public class Expander {
                             case "let-syntax":
                             case "letrec-syntax": {
                                 Object expanded = "let-syntax".equals(headBinding.symbolName)
-                                    ? expandLetSyntax(pos, form)
-                                    : expandLetrecSyntax(pos, form);
+                                    ? expandLetSyntax(pos, form, true)
+                                    : expandLetrecSyntax(pos, form, true);
                                 if (isBeginForm(expanded)) {
                                     Object beginBody = getCdr(expanded);
                                     while (beginBody != Value.NIL && Value.isPair(beginBody)) {
@@ -1052,7 +1071,7 @@ public class Expander {
         throw new SchemeError(pos, "define-syntax: expected (syntax-rules ...) transformer");
     }
 
-    private Object expandLetSyntax(SourcePos pos, Object form) {
+    private Object expandLetSyntax(SourcePos pos, Object form, boolean defOk) {
         Object bindings = formNth(form, 1);  // the bindings list
         Object body = formNthCdr(form, 2);   // the body forms
 
@@ -1094,10 +1113,10 @@ public class Expander {
         Object scopedBody = SyntaxObject.addScope(body, scope);
 
         // Expand the body as a begin
-        return expandBegin(pos, scopedBody);
+        return expandBegin(pos, scopedBody, defOk);
     }
 
-    private Object expandLetrecSyntax(SourcePos pos, Object form) {
+    private Object expandLetrecSyntax(SourcePos pos, Object form, boolean defOk) {
         Object bindings = formNth(form, 1);
         Object body = formNthCdr(form, 2);
 
@@ -1150,7 +1169,7 @@ public class Expander {
 
         // Add scope to body and expand
         Object scopedBody = SyntaxObject.addScope(body, scope);
-        return expandBegin(pos, scopedBody);
+        return expandBegin(pos, scopedBody, defOk);
     }
 
     /**
@@ -1382,7 +1401,7 @@ public class Expander {
      * Each clause is (feature-requirement expr ...). Evaluates feature requirements
      * and expands the first matching clause as (begin expr ...).
      */
-    private Object expandCondExpand(SourcePos pos, Object form) {
+    private Object expandCondExpand(SourcePos pos, Object form, boolean defOk) {
         // Get the feature list from the primitive
         Primitive featuresPrim = (Primitive) modules.primitives.getPrimitive("%features-list");
         Object featureList = featuresPrim.apply(pos, new Object[0]);
@@ -1399,7 +1418,7 @@ public class Expander {
             Object body = Value.asPair(clause).cdr;
 
             if (featureSatisfied(req, featureList))
-                return expandBegin(pos, body);
+                return expandBegin(pos, body, defOk);
 
             clauses = Value.asPair(clauses).cdr;
         }

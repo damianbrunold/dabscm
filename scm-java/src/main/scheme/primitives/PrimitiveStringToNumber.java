@@ -1,7 +1,6 @@
 package scheme.primitives;
 
 import scheme.*;
-import java.math.BigInteger;
 
 public class PrimitiveStringToNumber extends Primitive {
     @Override
@@ -24,56 +23,41 @@ public class PrimitiveStringToNumber extends Primitive {
     public Object apply(SourcePos pos, Object[] arguments) {
         checkArgs(pos, arguments, 1, 2);
         String s = new String(Value.asString(arguments[0]));
-        boolean exact = s.indexOf('.') == -1;
-        int base = 10;
-        if (arguments.length == 2) base = IntegerMath.toInt(arguments[1]);
-        while (s.startsWith("#")) {
-            if (s.startsWith("#e")) {
-                exact = true;
-                s = s.substring(2);
-            } else if (s.startsWith("#i")) {
-                exact = false;
-                s = s.substring(2);
-            } else if (s.startsWith("#x")) {
-                base = 16;
-                s = s.substring(2);
-            } else if (s.startsWith("#b")) {
-                base = 2;
-                s = s.substring(2);
-            } else if (s.startsWith("#o")) {
-                base = 8;
-                s = s.substring(2);
-            } else {
-                break;
-            }
+        int radix = 10;
+        if (arguments.length == 2) {
+            radix = IntegerMath.toInt(arguments[1]);
+            if (radix != 2 && radix != 8 && radix != 10 && radix != 16)
+                throw new SchemeError(pos, "string->number: bad radix", arguments[1]);
         }
-        if (exact && base == 10 && s.matches(".*[eEsSfFdDlL].*"))
-            exact = false;
-        // TODO: add complex number parsing (e.g. "1+2i", "3-4i")
-        try {
-            if (exact) {
-                int slash = s.indexOf('/');
-                if (slash >= 0) {
-                    String ns = s.substring(0, slash), ds = s.substring(slash + 1);
-                    Object n = parseIntegerInRadix(ns, base);
-                    Object d = parseIntegerInRadix(ds, base);
-                    return Rational.create(n, d);
-                }
-                return parseIntegerInRadix(s, base);
-            } else {
-                // Normalize R7RS exponent markers (s, f, d, l) to 'e'
-                return Double.parseDouble(s.replaceAll("[sfdlSFDL]", "e"));
-            }
-        } catch (NumberFormatException e) {
-            return Value.F;
-        }
+        return parse(s, radix);
     }
 
-    private static Object parseIntegerInRadix(String s, int base) {
+    /**
+     * The number s denotes as the reader reads it (prefixes, rationals,
+     * decimals, complex numbers), else #f: the whole string, without
+     * surrounding whitespace. radix applies unless s has a radix prefix.
+     */
+    public static Object parse(String s, int radix) {
+        if (s.isEmpty() || Character.isWhitespace(s.charAt(0))) return Value.F;
+        boolean radixPrefix = false;
+        int i = 0;
+        while (i + 1 < s.length() && s.charAt(i) == '#') {
+            char p = Character.toLowerCase(s.charAt(i + 1));
+            if (p == 'x' || p == 'b' || p == 'o' || p == 'd') radixPrefix = true;
+            else if (p != 'e' && p != 'i') return Value.F;
+            i += 2;
+        }
+        String text = s;
+        if (!radixPrefix && radix != 10)
+            text = (radix == 16 ? "#x" : radix == 8 ? "#o" : "#b") + s;
         try {
-            return Long.parseLong(s, base);
-        } catch (NumberFormatException e) {
-            return IntegerMath.normalize(new BigInteger(s, base));
+            TextStream in = new TextStream(new java.io.PushbackReader(new java.io.StringReader(text), 16), "string->number");
+            Token token = Tokenizer.readToken(in);
+            if (token == null || in.peek() != -1) return Value.F;
+            Object n = PrimitiveRead.numberFromToken(token);
+            return n != null ? n : Value.F;
+        } catch (java.io.IOException | RuntimeException e) {
+            return Value.F;
         }
     }
 }

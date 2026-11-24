@@ -125,33 +125,10 @@ public class PrimitiveRead : Primitive
         {
             throw new SchemeError(token.pos, new ReadErrorObject("read: unexpected )", Array.Empty<object>()));
         }
-        if (token.type == TokenType.INTEGER)
+        object? number = NumberFromToken(token);
+        if (number != null)
         {
-            if (long.TryParse(token.value, CultureInfo.InvariantCulture, out long lv)) return lv;
-            return System.Numerics.BigInteger.Parse(token.value, CultureInfo.InvariantCulture);
-        }
-        else if (token.type == TokenType.RATIONAL)
-        {
-            int slash = token.value.IndexOf('/');
-            string ns = token.value.Substring(0, slash), ds = token.value.Substring(slash + 1);
-            object n = long.TryParse(ns, CultureInfo.InvariantCulture, out long nl) ? nl : (object)System.Numerics.BigInteger.Parse(ns, CultureInfo.InvariantCulture);
-            object d = long.TryParse(ds, CultureInfo.InvariantCulture, out long dl) ? dl : (object)System.Numerics.BigInteger.Parse(ds, CultureInfo.InvariantCulture);
-            return Rational.Create(n, d);
-        }
-        else if (token.type == TokenType.REAL)
-        {
-            if (token.value == "+inf.0") return double.PositiveInfinity;
-            if (token.value == "-inf.0") return double.NegativeInfinity;
-            if (token.value == "+nan.0") return double.NaN;
-            // Normalize R7RS exponent markers (s, f, d, l) to 'e' for double.Parse
-            var realStr = token.value;
-            foreach (char em in "sfdlSFDL")
-                realStr = realStr.Replace(em, 'e');
-            return double.Parse(realStr, CultureInfo.InvariantCulture);
-        }
-        else if (token.type == TokenType.COMPLEX)
-        {
-            return ParseComplexToken(token.value, token.pos);
+            return number;
         }
         else if (token.type == TokenType.STRING)
         {
@@ -351,16 +328,69 @@ public class PrimitiveRead : Primitive
 	return Tokenizer.ReadToken(reader);
     }
 
+    /// <summary>The number of a number token (INTEGER, RATIONAL, REAL, COMPLEX), else null.</summary>
+    public static object? NumberFromToken(Token token)
+    {
+        if (token.type == TokenType.INTEGER)
+        {
+            if (long.TryParse(token.value, CultureInfo.InvariantCulture, out long lv)) return lv;
+            return IntegerMath.Normalize(System.Numerics.BigInteger.Parse(token.value, CultureInfo.InvariantCulture));
+        }
+        else if (token.type == TokenType.RATIONAL)
+        {
+            int slash = token.value.IndexOf('/');
+            string ns = token.value.Substring(0, slash), ds = token.value.Substring(slash + 1);
+            object n = long.TryParse(ns, CultureInfo.InvariantCulture, out long nl) ? nl : (object)System.Numerics.BigInteger.Parse(ns, CultureInfo.InvariantCulture);
+            object d = long.TryParse(ds, CultureInfo.InvariantCulture, out long dl) ? dl : (object)System.Numerics.BigInteger.Parse(ds, CultureInfo.InvariantCulture);
+            return Rational.Create(n, d);
+        }
+        else if (token.type == TokenType.REAL)
+        {
+            if (token.value == "+inf.0") return double.PositiveInfinity;
+            if (token.value == "-inf.0") return double.NegativeInfinity;
+            if (token.value == "+nan.0" || token.value == "-nan.0") return double.NaN;
+            // Normalize R7RS exponent markers (s, f, d, l) to 'e' for double.Parse
+            var realStr = token.value;
+            foreach (char em in "sfdlSFDL")
+                realStr = realStr.Replace(em, 'e');
+            return double.Parse(realStr, CultureInfo.InvariantCulture);
+        }
+        else if (token.type == TokenType.COMPLEX)
+        {
+            return ParseComplexToken(token.value, token.pos);
+        }
+        return null;
+    }
+
     private static object ParseComplexToken(string value, SourcePos pos)
     {
+        // #e or #i before the parts: the number's exactness prefix, for both parts
+        if (value.StartsWith("#e") || value.StartsWith("#i"))
+        {
+            bool exact = value[1] == 'e';
+            string rest = value.Substring(2);
+            int at = rest.IndexOf('@');
+            int bar = rest.IndexOf('|');
+            if (at < 0 && bar >= 0)
+            {
+                string re = rest.Substring(0, bar), im = rest.Substring(bar + 1);
+                if (exact) return Complex.Create(ExactPart(re, pos), ExactPart(im, pos));
+                return Complex.Create(Complex.ToInexact(ParseNumberStr(re)), Complex.ToInexact(ParseNumberStr(im)));
+            }
+            object z = ParseComplexToken(rest, pos);
+            if (z is not Complex c) return exact ? Complex.ToExact(z) : Complex.ToInexact(z);
+            return exact ? Complex.Create(Complex.ToExact(c.Real), Complex.ToExact(c.Imag))
+                         : Complex.Create(Complex.ToInexact(c.Real), Complex.ToInexact(c.Imag));
+        }
         // Polar form: "magnitude@angle"
         int atIdx = value.IndexOf('@');
         if (atIdx >= 0)
         {
             string magStr = value.Substring(0, atIdx);
             string angStr = value.Substring(atIdx + 1);
-            double mag = ParseRealStr(magStr);
-            double ang = ParseRealStr(angStr);
+            // the parts may be exact (#e1.5@0 has 3/2@0)
+            double mag = (double)Complex.ToInexact(ParseNumberStr(magStr));
+            double ang = (double)Complex.ToInexact(ParseNumberStr(angStr));
             return Complex.Create(mag * Math.Cos(ang), mag * Math.Sin(ang));
         }
 
@@ -373,6 +403,16 @@ public class PrimitiveRead : Primitive
         object realPart = ParseNumberStr(realStr);
         object imagPart = ParseNumberStr(imagStr);
         return Complex.Create(realPart, imagPart);
+    }
+
+    // a part of an exact (#e) complex number: a decimal exactly
+    private static object ExactPart(string s, SourcePos pos)
+    {
+        if (s.Contains("inf.0") || s.Contains("nan.0"))
+            throw new SchemeError(pos, new ReadErrorObject("tokenizer: #e applied to non-finite number", Array.Empty<object>()));
+        if (s.Contains('/')) return ParseNumberStr(s);
+        if (s.Contains('.') || s.IndexOfAny("eEsSfFdDlL".ToCharArray()) >= 0) return Tokenizer.ExactDecimal(s);
+        return ParseNumberStr(s);
     }
 
     private static object ParseNumberStr(string s)
@@ -399,16 +439,5 @@ public class PrimitiveRead : Primitive
         }
         if (long.TryParse(s, CultureInfo.InvariantCulture, out long lv)) return lv;
         return System.Numerics.BigInteger.Parse(s, CultureInfo.InvariantCulture);
-    }
-
-    private static double ParseRealStr(string s)
-    {
-        if (s == "+inf.0") return double.PositiveInfinity;
-        if (s == "-inf.0") return double.NegativeInfinity;
-        if (s == "+nan.0" || s == "-nan.0") return double.NaN;
-        var rs = s;
-        foreach (char em in "sfdlSFDL")
-            rs = rs.Replace(em, 'e');
-        return double.Parse(rs, CultureInfo.InvariantCulture);
     }
 }

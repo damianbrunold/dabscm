@@ -54,7 +54,8 @@ public final class Complex {
 
     private static boolean isPartNegative(Object v) {
         if (v instanceof Long) return (long)(Long) v < 0;
-        if (v instanceof Double) return (double)(Double) v < 0.0;
+        // -0.0 too (its sign is printed: -1.0-0.0i); NaN prints as +nan.0
+        if (v instanceof Double) { double d = (Double) v; return !Double.isNaN(d) && (d < 0.0 || 1.0 / d < 0); }
         if (v instanceof BigInteger) return ((BigInteger) v).signum() < 0;
         if (v instanceof Rational) return isPartNegative(((Rational) v).numerator);
         return false;

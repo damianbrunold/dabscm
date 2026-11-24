@@ -430,15 +430,24 @@ public class Value {
         sb.append(')');
     }
 
+    // 'x `x ,x ,@x for (quote x) and the others: a list of exactly two
+    // elements; (quote a b) and (quote . 3) print as lists
+    private static String abbreviation(Pair pair) {
+        if (!Value.isSymbol(pair.car) || !(pair.cdr instanceof Pair) || ((Pair) pair.cdr).cdr != Value.NIL)
+            return null;
+        switch (Value.asSymbol(pair.car)) {
+            case "quote": return "'";
+            case "quasiquote": return "`";
+            case "unquote": return ",";
+            case "unquote-splicing": return ",@";
+            default: return null;
+        }
+    }
+
     private static void printRepPairTo(Pair pair, StringBuilder sb) {
-        if (Value.isSymbol(pair.car) && Value.asSymbol(pair.car).equals("quote")) {
-            sb.append('\''); printRepTo(Value.asPair(pair.cdr).car, sb); return;
-        } else if (Value.isSymbol(pair.car) && Value.asSymbol(pair.car).equals("quasiquote")) {
-            sb.append('`'); printRepTo(Value.asPair(pair.cdr).car, sb); return;
-        } else if (Value.isSymbol(pair.car) && Value.asSymbol(pair.car).equals("unquote")) {
-            sb.append(','); printRepTo(Value.asPair(pair.cdr).car, sb); return;
-        } else if (Value.isSymbol(pair.car) && Value.asSymbol(pair.car).equals("unquote-splicing")) {
-            sb.append(",@"); printRepTo(Value.asPair(pair.cdr).car, sb); return;
+        String abbr = abbreviation(pair);
+        if (abbr != null) {
+            sb.append(abbr); printRepTo(Value.asPair(pair.cdr).car, sb); return;
         }
         sb.append('(');
         Pair current = pair;
@@ -582,15 +591,8 @@ public class Value {
     }
 
     private static String printRepPair(Pair pair) {
-        if (Value.isSymbol(pair.car) && Value.asSymbol(pair.car).equals("quote")) {
-            return "'" + printRep(Value.asPair(pair.cdr).car);
-        } else if (Value.isSymbol(pair.car) && Value.asSymbol(pair.car).equals("quasiquote")) {
-            return "`" + printRep(Value.asPair(pair.cdr).car);
-        } else if (Value.isSymbol(pair.car) && Value.asSymbol(pair.car).equals("unquote")) {
-            return "," + printRep(Value.asPair(pair.cdr).car);
-        } else if (Value.isSymbol(pair.car) && Value.asSymbol(pair.car).equals("unquote-splicing")) {
-            return ",@" + printRep(Value.asPair(pair.cdr).car);
-        }
+        String abbr = abbreviation(pair);
+        if (abbr != null) return abbr + printRep(Value.asPair(pair.cdr).car);
         StringBuilder result = new StringBuilder("(");
         Pair current = pair;
         while (true) {
@@ -718,14 +720,9 @@ public class Value {
     }
 
     private static void displayRepPairTo(Pair pair, StringBuilder sb) {
-        if (Value.isSymbol(pair.car) && Value.asSymbol(pair.car).equals("quote")) {
-            sb.append('\''); displayRepTo(Value.asPair(pair.cdr).car, sb); return;
-        } else if (Value.isSymbol(pair.car) && Value.asSymbol(pair.car).equals("quasiquote")) {
-            sb.append('`'); displayRepTo(Value.asPair(pair.cdr).car, sb); return;
-        } else if (Value.isSymbol(pair.car) && Value.asSymbol(pair.car).equals("unquote")) {
-            sb.append(','); displayRepTo(Value.asPair(pair.cdr).car, sb); return;
-        } else if (Value.isSymbol(pair.car) && Value.asSymbol(pair.car).equals("unquote-splicing")) {
-            sb.append(",@"); displayRepTo(Value.asPair(pair.cdr).car, sb); return;
+        String abbr = abbreviation(pair);
+        if (abbr != null) {
+            sb.append(abbr); displayRepTo(Value.asPair(pair.cdr).car, sb); return;
         }
         sb.append('(');
         Pair current = pair;
@@ -762,15 +759,8 @@ public class Value {
     }
 
     private static String displayRepPair(Pair pair) {
-        if (Value.isSymbol(pair.car) && Value.asSymbol(pair.car).equals("quote")) {
-            return "'" + displayRep(Value.asPair(pair.cdr).car);
-        } else if (Value.isSymbol(pair.car) && Value.asSymbol(pair.car).equals("quasiquote")) {
-            return "`" + displayRep(Value.asPair(pair.cdr).car);
-        } else if (Value.isSymbol(pair.car) && Value.asSymbol(pair.car).equals("unquote")) {
-            return "," + displayRep(Value.asPair(pair.cdr).car);
-        } else if (Value.isSymbol(pair.car) && Value.asSymbol(pair.car).equals("unquote-splicing")) {
-            return ",@" + displayRep(Value.asPair(pair.cdr).car);
-        }
+        String abbr = abbreviation(pair);
+        if (abbr != null) return abbr + displayRep(Value.asPair(pair.cdr).car);
         StringBuilder result = new StringBuilder("(");
         Pair current = pair;
         while (true) {

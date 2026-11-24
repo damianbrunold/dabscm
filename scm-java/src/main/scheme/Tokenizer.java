@@ -146,7 +146,7 @@ public class Tokenizer {
                         return readPolarForm(in, token.toString(), pos);
                     } else {
                         putback = true;
-                        return new Token(token.toString(), TokenType.RATIONAL, pos);
+                        return rationalToken(token.toString(), pos);
                     }
                     break;
 
@@ -323,14 +323,11 @@ public class Tokenizer {
                 case 3: // symbol
                     if (isDelim(ch)) {
                         putback = true;
-                        String sym = maybeFold(in, token.toString());
-                        String symLower = sym.toLowerCase();
-                        if (symLower.equals("+inf.0") || symLower.equals("-inf.0") || symLower.equals("+nan.0"))
-                            return new Token(symLower, TokenType.REAL, pos);
-                        return new Token(sym, TokenType.SYMBOL, pos);
+                        return symbolOrInfNan(maybeFold(in, token.toString()), pos);
                     } else if ((ch == '+' || ch == '-') && token.length() >= 5) {
                         String symLower = token.toString().toLowerCase();
-                        if (symLower.equals("+inf.0") || symLower.equals("-inf.0") || symLower.equals("+nan.0"))
+                        if (symLower.equals("+inf.0") || symLower.equals("-inf.0") || symLower.equals("+nan.0")
+                            || symLower.equals("-nan.0"))
                             return readComplexImaginary(in, symLower, pos);
                         token.append(ch);
                     } else {
@@ -677,15 +674,11 @@ public class Tokenizer {
         } else if (state == 14) {
             throw new SchemeError(in.pos(), new ReadErrorObject("tokenizer: malformed exponent", new Object[0]));
         } else if (state == 13) {
-            return new Token(token.toString(), TokenType.RATIONAL, pos);
+            return rationalToken(token.toString(), pos);
         } else if (state == 2) {
             throw new SchemeError(in.pos(), new ReadErrorObject("tokenizer: String not closed", new Object[0]));
         } else if (state == 3) {
-            String sym = maybeFold(in, token.toString());
-            String symLower = sym.toLowerCase();
-            if (symLower.equals("+inf.0") || symLower.equals("-inf.0") || symLower.equals("+nan.0"))
-                return new Token(symLower, TokenType.REAL, pos);
-            return new Token(sym, TokenType.SYMBOL, pos);
+            return symbolOrInfNan(maybeFold(in, token.toString()), pos);
         } else if (state == 6 || state == 61) {
             return asCharacterToken(token.toString(), pos);
         } else if (state == 52) {
@@ -742,50 +735,20 @@ public class Tokenizer {
         }
     }
 
-    private static long gcd(long a, long b) {
-        while (b != 0) { long t = b; b = a % b; a = t; }
-        return a;
+    /** The exact value of a decimal (with an optional exponent): #e1.2 is 6/5. */
+    public static Object exactDecimal(String numStr) {
+        java.math.BigDecimal bd = new java.math.BigDecimal(numStr.replaceAll("[sfdlSFDL]", "e"));
+        java.math.BigInteger unscaled = bd.unscaledValue();
+        int scale = bd.scale();
+        if (scale <= 0)
+            return IntegerMath.normalize(unscaled.multiply(java.math.BigInteger.TEN.pow(-scale)));
+        return Rational.create(IntegerMath.normalize(unscaled),
+                               IntegerMath.normalize(java.math.BigInteger.TEN.pow(scale)));
     }
 
-    private static int trailingZeros64(long n) {
-        if (n == 0) return 64;
-        int count = 0;
-        while ((n & 1L) == 0) { n >>= 1; count++; }
-        return count;
-    }
-
-    private static Token doubleToExactToken(double d, SourcePos pos) {
-        if (Double.isInfinite(d) || Double.isNaN(d))
-            throw new SchemeError(pos, new ReadErrorObject("tokenizer: #e applied to non-finite number", new Object[0]));
-        double absD = Math.abs(d);
-        long bits = Double.doubleToLongBits(absD);
-        long mant = bits & 0x000FFFFFFFFFFFFFL;
-        int biasedExp = (int)((bits >> 52) & 0x7FFL);
-        long n;
-        int shift;
-        if (biasedExp == 0) {
-            n = mant;
-            shift = 1074;
-        } else {
-            n = mant | (1L << 52);
-            shift = 1023 + 52 - biasedExp;
-        }
-        if (shift <= 0) {
-            long intN = n << (-shift);
-            if (d < 0) intN = -intN;
-            return new Token(Long.toString(intN), TokenType.INTEGER, pos);
-        }
-        int tz = trailingZeros64(n);
-        int reduce = Math.min(tz, shift);
-        n >>= reduce;
-        shift -= reduce;
-        if (shift > 62) {
-            return new Token("0", TokenType.INTEGER, pos);
-        }
-        long den = 1L << shift;
-        if (d < 0) n = -n;
-        if (den == 1) return new Token(Long.toString(n), TokenType.INTEGER, pos);
-        return new Token(n + "/" + den, TokenType.RATIONAL, pos);
+    private static Token exactDecimalToken(String numStr, SourcePos pos) {
+        Object v = exactDecimal(numStr);
+        return new Token(v.toString(), Value.isInteger(v) ? TokenType.INTEGER : TokenType.RATIONAL, pos);
     }
 
     private static Token readPrefixedNumber(TextStream in, int radix, boolean forceExact, boolean forceInexact, SourcePos pos) throws IOException {
@@ -806,7 +769,11 @@ public class Tokenizer {
             String s = special.toString().toLowerCase();
             if (s.equals("+inf.0")) return new Token("+inf.0", TokenType.REAL, pos);
             if (s.equals("-inf.0")) return new Token("-inf.0", TokenType.REAL, pos);
-            if (s.equals("+nan.0")) return new Token("+nan.0", TokenType.REAL, pos);
+            if (s.equals("+nan.0") || s.equals("-nan.0")) {
+                if (forceExact)
+                    throw new SchemeError(pos, new ReadErrorObject("tokenizer: #e applied to non-finite number", new Object[0]));
+                return new Token("+nan.0", TokenType.REAL, pos);
+            }
             throw new SchemeError(pos, new ReadErrorObject("tokenizer: invalid number: " + special, new Object[0]));
         }
 
@@ -846,7 +813,7 @@ public class Tokenizer {
             return new Token(r.toString(), TokenType.RATIONAL, pos);
         }
 
-        if (c == '.' && (radix == 10 || radix == 16)) {
+        if (c == '.' && radix == 10) {
             in.read();
             c = in.peek();
             StringBuilder fracDigits = new StringBuilder();
@@ -864,8 +831,8 @@ public class Tokenizer {
                 while (c != -1 && c >= '0' && c <= '9') { expDigits.append((char) c); in.read(); c = in.peek(); }
                 numStr += expDigits;
             }
+            if (forceExact) return exactDecimalToken(numStr, pos);
             double dval = Double.parseDouble(numStr);
-            if (forceExact) return doubleToExactToken(dval, pos);
             return new Token(Double.toString(dval), TokenType.REAL, pos);
         }
 
@@ -876,8 +843,8 @@ public class Tokenizer {
             StringBuilder expDigits = new StringBuilder();
             while (c != -1 && c >= '0' && c <= '9') { expDigits.append((char) c); in.read(); c = in.peek(); }
             numStr += expDigits;
+            if (forceExact) return exactDecimalToken(numStr, pos);
             double dval = Double.parseDouble(numStr);
-            if (forceExact) return doubleToExactToken(dval, pos);
             return new Token(Double.toString(dval), TokenType.REAL, pos);
         }
 
@@ -894,13 +861,22 @@ public class Tokenizer {
     private static Token readPrefixedNumberOrComplex(TextStream in, int radix, boolean forceExact, boolean forceInexact, SourcePos pos) throws IOException {
         Token token = readPrefixedNumber(in, radix, forceExact, forceInexact, pos);
         int c = in.peek();
+        Token complex = null;
         if (c == '+' || c == '-') {
             // Complex continuation: read imaginary part
-            return readComplexImaginary(in, token.value, pos);
+            complex = readComplexImaginary(in, token.value, pos);
+        } else if (c == '@') {
+            complex = readPolarForm(in, token.value, pos);
         }
-        if (c == '@') {
-            return readPolarForm(in, token.value, pos);
+        if (complex != null) {
+            // the exactness prefix applies to both parts
+            if (forceExact || forceInexact)
+                return new Token((forceExact ? "#e" : "#i") + complex.value, TokenType.COMPLEX, pos);
+            return complex;
         }
+        // a number ends at a delimiter (#b1.1, #x1.8 are not numbers)
+        if (!isDelimiterOrEnd(c))
+            throw new SchemeError(pos, new ReadErrorObject("tokenizer: invalid number", new Object[0]));
         return token;
     }
 
@@ -1032,6 +1008,30 @@ public class Tokenizer {
         Token angleToken = readPrefixedNumber(in, 10, false, false, pos);
         // Return as COMPLEX with polar conversion marker
         return new Token(magnitude + "@" + angleToken.value, TokenType.COMPLEX, pos);
+    }
+
+    // n/d: an error without d or with d zero
+    private static Token rationalToken(String text, SourcePos pos) {
+        int slash = text.indexOf('/');
+        String d = text.substring(slash + 1);
+        if (d.isEmpty())
+            throw new SchemeError(pos, new ReadErrorObject("tokenizer: expected denominator after /", new Object[0]));
+        if (d.chars().allMatch(ch -> ch == '0'))
+            throw new SchemeError(pos, new ReadErrorObject("tokenizer: division by zero in rational literal", new Object[0]));
+        return new Token(text, TokenType.RATIONAL, pos);
+    }
+
+    // a symbol token, or one of the numbers that read like symbols: +inf.0,
+    // -inf.0, +nan.0, -nan.0 and the pure imaginary +inf.0i ... -nan.0i
+    private static Token symbolOrInfNan(String sym, SourcePos pos) {
+        String l = sym.toLowerCase();
+        if (l.equals("+inf.0") || l.equals("-inf.0") || l.equals("+nan.0"))
+            return new Token(l, TokenType.REAL, pos);
+        if (l.equals("-nan.0"))
+            return new Token("+nan.0", TokenType.REAL, pos);
+        if (l.equals("+inf.0i") || l.equals("-inf.0i") || l.equals("+nan.0i") || l.equals("-nan.0i"))
+            return new Token("0|" + l.substring(0, 6), TokenType.COMPLEX, pos);
+        return new Token(sym, TokenType.SYMBOL, pos);
     }
 
     private static Token asCharacterToken(String result, SourcePos pos) {

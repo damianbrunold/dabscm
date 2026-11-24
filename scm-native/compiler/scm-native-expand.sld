@@ -250,7 +250,7 @@
              (expand-let (cadr form) (cddr form))
              (expand-let (list (caadr form))
                          (list (cons (car form) (cons (cdadr form) (cddr form)))))))
-        ((letrec letrec*) (expand-letrec (cadr form) (cddr form)))
+        ((letrec letrec*) (expand-letrec (cadr form) (cddr form) (core? (car form) 'letrec)))
         ((let-syntax letrec-syntax)
          (expand-seq (let-syntax-body form)))
         ((cond-expand) (expand-seq (cond-expand-body form)))
@@ -327,8 +327,9 @@
              (expand-lambda (cadr init) (cddr init) name))
             (else (expand init))))
 
-    ;; letrec* over variables already bound
-    (define (make-letrec vars inits body)
+    ;; letrec* over variables already bound (parallel: letrec, whose inits
+    ;; are all evaluated before the variables are assigned, as on the JVM)
+    (define (make-letrec vars inits body . parallel)
       (if (and (pair? vars)
                (every (lambda (i) (eq? (node-kind i) 'lambda)) inits)
                (not (any var-assigned? vars)))
@@ -336,15 +337,42 @@
           (begin
             (for-each var-assigned! vars)
             `(let ,(map (lambda (v) (list v unspecified)) vars)
-               (seq ,@(map (lambda (v i) `(lset ,v ,i)) vars inits) ,body)))))
+               (seq ,@(let loop ((vs vars) (is inits) (acc '()))
+                        (if (null? vs)
+                            (reverse acc)
+                            (loop (cdr vs) (cdr is)
+                                  (cons `(lset ,(car vs)
+                                               ,(uninitialized-refs
+                                                 (car is)
+                                                 (if (and (pair? parallel) (car parallel)) vars vs)))
+                                        acc))))
+                    ,body)))))
 
-    (define (expand-letrec bindings body)
+    ;; init with its references to the variables uninit (not initialized
+    ;; yet when init is evaluated) outside lambdas raising an error instead
+    ;; of reading the placeholder (R7RS: it is an error)
+    (define (uninitialized-refs init uninit)
+      (let walk ((e init))
+        (case (node-kind e)
+          ((lref) (if (memq (cadr e) uninit)
+                      `(call (primref error) (const "variable used before its initialization")
+                             (const ,(var-name (cadr e))))
+                      e))
+          ((lset) `(lset ,(cadr e) ,(walk (caddr e))))
+          ((gset gdef) `(,(car e) ,(cadr e) ,(walk (caddr e))))
+          ((if seq call) `(,(car e) ,@(map walk (cdr e))))
+          ((prim) `(prim ,(cadr e) ,@(map walk (cddr e))))
+          ((let letrec) `(,(car e) ,(map (lambda (b) (list (car b) (walk (cadr b)))) (cadr e))
+                          ,(walk (caddr e))))
+          (else e))))
+
+    (define (expand-letrec bindings body parallel?)
       (let* ((s (fresh-scope))
              (bindings (add-scope bindings s))
              (vars (bind-locals (map car bindings) s))
              (inits (map (lambda (b) (expand-named (if (pair? (cdr b)) (cadr b) no-init) (ident-name (car b))))
                          bindings)))
-        (make-letrec vars inits (expand-body (add-scope body s)))))
+        (make-letrec vars inits (expand-body (add-scope body s)) parallel?)))
 
     ;; let-syntax / letrec-syntax: bind the macros, return the body forms
     (define (let-syntax-body form)

@@ -207,7 +207,7 @@ public class Tokenizer
                     else
                     {
                         putback = true;
-                        return new Token(token.ToString(), TokenType.RATIONAL, pos);
+                        return RationalToken(token.ToString(), pos);
                     }
                     break;
 
@@ -466,16 +466,13 @@ public class Tokenizer
                     if (IsDelim(ch))
                     {
                         putback = true;
-                        string sym = Maybefold(reader, token.ToString());
-                        var symLower = sym.ToLowerInvariant();
-                        if (symLower == "+inf.0" || symLower == "-inf.0" || symLower == "+nan.0")
-                            return new Token(symLower, TokenType.REAL, pos);
-                        return new Token(sym, TokenType.SYMBOL, pos);
+                        return SymbolOrInfNan(Maybefold(reader, token.ToString()), pos);
                     }
                     else if ((ch == '+' || ch == '-') && token.Length >= 5)
                     {
                         var symLower = token.ToString().ToLowerInvariant();
-                        if (symLower == "+inf.0" || symLower == "-inf.0" || symLower == "+nan.0")
+                        if (symLower == "+inf.0" || symLower == "-inf.0" || symLower == "+nan.0"
+                            || symLower == "-nan.0")
                             return ReadComplexImaginary(reader, symLower, pos);
                         token.Append(ch);
                     }
@@ -949,7 +946,7 @@ public class Tokenizer
         }
         else if (state == 13)
         {
-            return new Token(token.ToString(), TokenType.RATIONAL, pos);
+            return RationalToken(token.ToString(), pos);
         }
         else if (state == 2)
         {
@@ -957,11 +954,7 @@ public class Tokenizer
         }
         else if (state == 3)
         {
-            string sym = Maybefold(reader, token.ToString());
-            var symLower = sym.ToLowerInvariant();
-            if (symLower == "+inf.0" || symLower == "-inf.0" || symLower == "+nan.0")
-                return new Token(symLower, TokenType.REAL, pos);
-            return new Token(sym, TokenType.SYMBOL, pos);
+            return SymbolOrInfNan(Maybefold(reader, token.ToString()), pos);
         }
         else if (state == 6 || state == 61)
         {
@@ -1045,78 +1038,71 @@ public class Tokenizer
         }
     }
 
-    private static long Gcd(long a, long b)
+    /// <summary>The exact value of a decimal (with an optional exponent): #e1.2 is 6/5.</summary>
+    public static object ExactDecimal(string numStr)
     {
-        while (b != 0) { long t = b; b = a % b; a = t; }
-        return a;
+        // digits and scale, as Java's BigDecimal unscaledValue/scale
+        int i = 0;
+        bool neg = false;
+        if (i < numStr.Length && (numStr[i] == '+' || numStr[i] == '-')) { neg = numStr[i] == '-'; i++; }
+        var digits = new StringBuilder();
+        int scale = 0;
+        while (i < numStr.Length && char.IsAsciiDigit(numStr[i])) digits.Append(numStr[i++]);
+        if (i < numStr.Length && numStr[i] == '.')
+        {
+            i++;
+            while (i < numStr.Length && char.IsAsciiDigit(numStr[i])) { digits.Append(numStr[i++]); scale++; }
+        }
+        if (i < numStr.Length && IsExponentMarker(numStr[i]))
+        {
+            i++;
+            bool expNeg = false;
+            if (i < numStr.Length && (numStr[i] == '+' || numStr[i] == '-')) { expNeg = numStr[i] == '-'; i++; }
+            int expStart = i;
+            while (i < numStr.Length && char.IsAsciiDigit(numStr[i])) i++;
+            if (i == expStart) throw new FormatException("malformed exponent: " + numStr);
+            int exp = int.Parse(numStr.AsSpan(expStart, i - expStart), System.Globalization.CultureInfo.InvariantCulture);
+            scale += expNeg ? exp : -exp;
+        }
+        if (i != numStr.Length || digits.Length == 0) throw new FormatException("malformed decimal: " + numStr);
+        var unscaled = System.Numerics.BigInteger.Parse(digits.ToString(), System.Globalization.CultureInfo.InvariantCulture);
+        if (neg) unscaled = -unscaled;
+        if (scale <= 0)
+            return IntegerMath.Normalize(unscaled * System.Numerics.BigInteger.Pow(10, -scale));
+        return Rational.Create(IntegerMath.Normalize(unscaled),
+                               IntegerMath.Normalize(System.Numerics.BigInteger.Pow(10, scale)));
     }
 
-    private static int TrailingZeros64(long n)
+    private static Token ExactDecimalToken(string numStr, SourcePos pos)
     {
-        if (n == 0) return 64;
-        int count = 0;
-        while ((n & 1L) == 0) { n >>= 1; count++; }
-        return count;
-    }
-
-    private static Token DoubleToExactToken(double d, SourcePos pos)
-    {
-        if (double.IsInfinity(d) || double.IsNaN(d))
-            throw new SchemeError(pos, new ReadErrorObject("tokenizer: #e applied to non-finite number", Array.Empty<object>()));
-        double absD = Math.Abs(d);
-        long bits = BitConverter.DoubleToInt64Bits(absD);
-        long mant = bits & 0x000FFFFFFFFFFFFFL;
-        int biasedExp = (int)((bits >> 52) & 0x7FF);
-        long n;
-        int shift;
-        if (biasedExp == 0)
-        {
-            // subnormal: value = mant * 2^(-1074)
-            n = mant;
-            shift = 1074;
-        }
-        else
-        {
-            // normal: value = (mant | 2^52) * 2^(biasedExp - 1023 - 52)
-            n = mant | (1L << 52);
-            shift = 1023 + 52 - biasedExp; // denominator = 2^shift
-        }
-        if (shift <= 0)
-        {
-            // integer
-            long intN = n << (-shift);
-            if (d < 0) intN = -intN;
-            return new Token(intN.ToString(), TokenType.INTEGER, pos);
-        }
-        // Reduce by trailing zeros
-        int tz = TrailingZeros64(n);
-        int reduce = Math.Min(tz, shift);
-        n >>= reduce;
-        shift -= reduce;
-        if (shift > 62)
-        {
-            // Very large denominator (subnormals) — treat as 0
-            return new Token("0", TokenType.INTEGER, pos);
-        }
-        long den = 1L << shift;
-        if (d < 0) n = -n;
-        if (den == 1) return new Token(n.ToString(), TokenType.INTEGER, pos);
-        return new Token(n + "/" + den, TokenType.RATIONAL, pos);
+        object v = ExactDecimal(numStr);
+        return new Token(v.ToString()!, Value.IsInteger(v) ? TokenType.INTEGER : TokenType.RATIONAL, pos);
     }
 
     private static Token ReadPrefixedNumberOrComplex(TextStream reader, int radix, bool forceExact, bool forceInexact, SourcePos pos)
     {
         Token token = ReadPrefixedNumber(reader, radix, forceExact, forceInexact, pos);
         int c = reader.Peek();
+        Token? complex = null;
         if (c == '+' || c == '-')
         {
             // Complex continuation: read imaginary part
-            return ReadComplexImaginary(reader, token.value, pos);
+            complex = ReadComplexImaginary(reader, token.value, pos);
         }
-        if (c == '@')
+        else if (c == '@')
         {
-            return ReadPolarForm(reader, token.value, pos);
+            complex = ReadPolarForm(reader, token.value, pos);
         }
+        if (complex != null)
+        {
+            // the exactness prefix applies to both parts
+            if (forceExact || forceInexact)
+                return new Token((forceExact ? "#e" : "#i") + complex.value, TokenType.COMPLEX, pos);
+            return complex;
+        }
+        // a number ends at a delimiter (#b1.1, #x1.8 are not numbers)
+        if (!IsDelimiterOrEnd(c))
+            throw new SchemeError(pos, new ReadErrorObject("tokenizer: invalid number", Array.Empty<object>()));
         return token;
     }
 
@@ -1142,7 +1128,12 @@ public class Tokenizer
             string s = special.ToString().ToLowerInvariant();
             if (s == "+inf.0") return new Token("+inf.0", TokenType.REAL, pos);
             if (s == "-inf.0") return new Token("-inf.0", TokenType.REAL, pos);
-            if (s == "+nan.0") return new Token("+nan.0", TokenType.REAL, pos);
+            if (s == "+nan.0" || s == "-nan.0")
+            {
+                if (forceExact)
+                    throw new SchemeError(pos, new ReadErrorObject("tokenizer: #e applied to non-finite number", Array.Empty<object>()));
+                return new Token("+nan.0", TokenType.REAL, pos);
+            }
             throw new SchemeError(pos, new ReadErrorObject("tokenizer: invalid number: " + special, Array.Empty<object>()));
         }
 
@@ -1190,7 +1181,7 @@ public class Tokenizer
         }
 
         // Real: check for '.' (decimal/hex only)
-        if (c == '.' && (radix == 10 || radix == 16))
+        if (c == '.' && radix == 10)
         {
             reader.Read();
             c = reader.Peek();
@@ -1212,8 +1203,8 @@ public class Tokenizer
                 while (c != -1 && c >= '0' && c <= '9') { expDigits.Append((char)c); reader.Read(); c = reader.Peek(); }
                 numStr += expDigits;
             }
+            if (forceExact) return ExactDecimalToken(numStr, pos);
             double dval = double.Parse(numStr, System.Globalization.CultureInfo.InvariantCulture);
-            if (forceExact) return DoubleToExactToken(dval, pos);
             return new Token(dval.ToString("G17", System.Globalization.CultureInfo.InvariantCulture), TokenType.REAL, pos);
         }
 
@@ -1226,8 +1217,8 @@ public class Tokenizer
             StringBuilder expDigits = new StringBuilder();
             while (c != -1 && c >= '0' && c <= '9') { expDigits.Append((char)c); reader.Read(); c = reader.Peek(); }
             numStr += expDigits;
+            if (forceExact) return ExactDecimalToken(numStr, pos);
             double dval = double.Parse(numStr, System.Globalization.CultureInfo.InvariantCulture);
-            if (forceExact) return DoubleToExactToken(dval, pos);
             return new Token(dval.ToString("G17", System.Globalization.CultureInfo.InvariantCulture), TokenType.REAL, pos);
         }
 
@@ -1415,6 +1406,32 @@ public class Tokenizer
     /// <summary>
     /// Reads polar form: magnitude already parsed, reader.Peek() is '@'.
     /// </summary>
+    // n/d: an error without d or with d zero
+    private static Token RationalToken(string text, SourcePos pos)
+    {
+        int slash = text.IndexOf('/');
+        string d = text.Substring(slash + 1);
+        if (d.Length == 0)
+            throw new SchemeError(pos, new ReadErrorObject("tokenizer: expected denominator after /", Array.Empty<object>()));
+        if (d.All(ch => ch == '0'))
+            throw new SchemeError(pos, new ReadErrorObject("tokenizer: division by zero in rational literal", Array.Empty<object>()));
+        return new Token(text, TokenType.RATIONAL, pos);
+    }
+
+    // a symbol token, or one of the numbers that read like symbols: +inf.0,
+    // -inf.0, +nan.0, -nan.0 and the pure imaginary +inf.0i ... -nan.0i
+    private static Token SymbolOrInfNan(string sym, SourcePos pos)
+    {
+        string l = sym.ToLowerInvariant();
+        if (l == "+inf.0" || l == "-inf.0" || l == "+nan.0")
+            return new Token(l, TokenType.REAL, pos);
+        if (l == "-nan.0")
+            return new Token("+nan.0", TokenType.REAL, pos);
+        if (l == "+inf.0i" || l == "-inf.0i" || l == "+nan.0i" || l == "-nan.0i")
+            return new Token("0|" + l.Substring(0, 6), TokenType.COMPLEX, pos);
+        return new Token(sym, TokenType.SYMBOL, pos);
+    }
+
     private static Token ReadPolarForm(TextStream reader, string magnitude, SourcePos pos)
     {
         reader.Read(); // consume '@'

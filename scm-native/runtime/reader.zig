@@ -444,8 +444,6 @@ const invalid_complex = "tokenizer: invalid complex number";
 
 fn jvmNumberScan(tok: []const u8) Scan {
     if (tok.len == 0) return .whole;
-    // of the sign-letter tokens only +inf.0, -inf.0 and +nan.0 are numbers
-    if (std.ascii.eqlIgnoreCase(tok, "-nan.0")) return .symbol;
     const c0 = tok[0];
     const signed = c0 == '+' or c0 == '-';
     var state: u8 = switch (c0) {
@@ -509,6 +507,12 @@ fn jvmNumberScan(tok: []const u8) Scan {
     // an exponent without digits ("1e", "1e-")
     if (state == 14 or (state == 15 and (tok[tok.len - 1] == '+' or tok[tok.len - 1] == '-')))
         return .{ .err = "tokenizer: malformed exponent" };
+    // n/ and n/0
+    if (state == 13) {
+        const d = tok[std.mem.indexOfScalar(u8, tok, '/').? + 1 ..];
+        if (d.len == 0) return .{ .err = "tokenizer: expected denominator after /" };
+        if (std.mem.allEqual(u8, d, '0')) return .{ .err = "tokenizer: division by zero in rational literal" };
+    }
     return .whole;
 }
 

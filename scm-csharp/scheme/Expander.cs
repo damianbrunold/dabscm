@@ -34,6 +34,13 @@ public class Expander
     /// <summary>
     /// Expand a top-level form. Returns fully-expanded S-expression.
     /// </summary>
+    // Whether the form ExpandForm is about to expand may be a definition: at
+    // the top level (also inside a top-level begin, cond-expand or macro
+    // use), not in an expression (R7RS: cond clauses, if branches, when
+    // bodies hold expressions). Bodies collect their definitions themselves
+    // (ExpandBody).
+    private bool definitionContext = false;
+
     public object Expand(SourcePos? pos, object form)
     {
         // Get or create the module scope for the current module
@@ -46,6 +53,7 @@ public class Expander
         object wrapped = SyntaxObject.WrapDatum(form, ScopeSet.Of(moduleScope), pos);
 
         // Expand recursively
+        definitionContext = true;
         object expanded = ExpandForm(pos, wrapped);
 
         return expanded;
@@ -68,6 +76,8 @@ public class Expander
     /// </summary>
     private object ExpandForm(SourcePos? pos, object stx)
     {
+        bool defOk = definitionContext;
+        definitionContext = false;
         // Self-quoting constants: numbers, booleans, chars, strings, NIL
         if (stx == null || stx == Value.NIL) return stx!;
         if (stx.Equals(Value.T) || stx.Equals(Value.F)) return stx;
@@ -104,9 +114,9 @@ public class Expander
             {
                 // Dispatch based on binding kind
                 if (firstBinding.BindingKind == ResolvedBinding.Kind.CoreForm)
-                    return ExpandCoreForm(pos, stx, firstBinding.SymbolName);
+                    return ExpandCoreForm(pos, stx, firstBinding.SymbolName, defOk);
                 if (firstBinding.BindingKind == ResolvedBinding.Kind.Macro)
-                    return ExpandMacroCall(pos, stx, firstBinding.SymbolName, firstBinding.Value!);
+                    return ExpandMacroCall(pos, stx, firstBinding.SymbolName, firstBinding.Value!, defOk);
             }
             resolvedName = firstBinding?.SymbolName ?? firstId.SymbolName;
         }
@@ -122,7 +132,7 @@ public class Expander
     /// <summary>
     /// Dispatch to the appropriate core form expander.
     /// </summary>
-    private object ExpandCoreForm(SourcePos? pos, object stx, string formName)
+    private object ExpandCoreForm(SourcePos? pos, object stx, string formName, bool defOk)
     {
         switch (formName)
         {
@@ -139,15 +149,17 @@ public class Expander
                 return ExpandSet(pos, stx);
 
             case "begin":
-                return ExpandBegin(pos, FormNthCdr(stx, 1));
+                return ExpandBegin(pos, FormNthCdr(stx, 1), defOk);
 
             case "lambda":
                 return ExpandLambda(pos, stx);
 
             case "define":
+                if (!defOk) throw ExpressionContextError(pos, stx);
                 return ExpandDefine(pos, stx);
 
             case "define-syntax":
+                if (!defOk) throw ExpressionContextError(pos, stx);
                 return ExpandDefineSyntax(pos, stx, inBodyContext: false);
 
             case "let":
@@ -161,13 +173,13 @@ public class Expander
                 return ExpandLetrec(pos, stx, formName);
 
             case "let-syntax":
-                return ExpandLetSyntax(pos, stx);
+                return ExpandLetSyntax(pos, stx, defOk);
 
             case "letrec-syntax":
-                return ExpandLetrecSyntax(pos, stx);
+                return ExpandLetrecSyntax(pos, stx, defOk);
 
             case "cond-expand":
-                return ExpandCondExpand(pos, stx);
+                return ExpandCondExpand(pos, stx, defOk);
 
             case "%primitive":
                 // Resolve primitive at expansion time
@@ -216,8 +228,13 @@ public class Expander
 
     // ---- Macro Expansion (Sets-of-Scopes Protocol) ----
 
+    private SchemeError ExpressionContextError(SourcePos? pos, object stx)
+    {
+        return new SchemeError(pos, "definition or declaration in expression context ~s", SyntaxObject.Strip(stx));
+    }
+
     private object ExpandMacroCall(SourcePos? pos, object form, string macroName,
-                                   object transformer)
+                                   object transformer, bool defOk)
     {
         if (!(transformer is SyntaxRulesTransformer srt))
             throw new SchemeError(pos, "macro ~a: expected syntax-rules transformer", macroName);
@@ -250,7 +267,9 @@ public class Expander
         // Template identifiers don't have introScope, flip adds it.
         result = SyntaxObject.FlipScope(result, introScope);
 
-        // Step 4: Recurse
+        // Step 4: Recurse (in the same context: a macro use at the top level
+        // may expand to definitions)
+        definitionContext = defOk;
         return ExpandForm(pos, result);
     }
 
@@ -278,7 +297,7 @@ public class Expander
     /// Handles define-syntax visibility: each define-syntax is processed before
     /// expanding subsequent forms, making the macro available to later forms.
     /// </summary>
-    private object ExpandBegin(SourcePos? pos, object forms)
+    private object ExpandBegin(SourcePos? pos, object forms, bool defOk)
     {
         if (forms == Value.NIL) return Value.NIL;
 
@@ -289,6 +308,7 @@ public class Expander
             if (!Value.IsPair(current)) break;
 
             object form = Value.AsPair(current).car;
+            definitionContext = defOk;
             object expanded = ExpandForm(pos, form);
 
             // After expanding, check if result is a begin — splice it
@@ -602,8 +622,8 @@ public class Expander
                                 // syntax bindings, then splice the body forms.
                                 {
                                     object expanded = headBinding.SymbolName == "let-syntax"
-                                        ? ExpandLetSyntax(pos, form)
-                                        : ExpandLetrecSyntax(pos, form);
+                                        ? ExpandLetSyntax(pos, form, true)
+                                        : ExpandLetrecSyntax(pos, form, true);
                                     // ExpandLetSyntax/ExpandLetrecSyntax returns
                                     // ExpandBegin result — may be a begin or single form
                                     if (IsBeginForm(expanded))
@@ -1186,7 +1206,7 @@ public class Expander
         throw new SchemeError(pos, "define-syntax: expected (syntax-rules ...) transformer");
     }
 
-    private object ExpandLetSyntax(SourcePos? pos, object form)
+    private object ExpandLetSyntax(SourcePos? pos, object form, bool defOk)
     {
         object bindings = FormNth(form, 1);  // the bindings list
         object body = FormNthCdr(form, 2);   // the body forms
@@ -1232,10 +1252,10 @@ public class Expander
 
         // Add scope to body and expand
         object scopedBody = SyntaxObject.AddScope(body, scope);
-        return ExpandBegin(pos, scopedBody);
+        return ExpandBegin(pos, scopedBody, defOk);
     }
 
-    private object ExpandLetrecSyntax(SourcePos? pos, object form)
+    private object ExpandLetrecSyntax(SourcePos? pos, object form, bool defOk)
     {
         object bindings = FormNth(form, 1);
         object body = FormNthCdr(form, 2);
@@ -1288,7 +1308,7 @@ public class Expander
 
         // Add scope to body and expand
         object scopedBody = SyntaxObject.AddScope(body, scope);
-        return ExpandBegin(pos, scopedBody);
+        return ExpandBegin(pos, scopedBody, defOk);
     }
 
     /// <summary>
@@ -1547,7 +1567,7 @@ public class Expander
     /// Each clause is (feature-requirement expr ...). Evaluates feature requirements
     /// and expands the first matching clause as (begin expr ...).
     /// </summary>
-    private object ExpandCondExpand(SourcePos? pos, object form)
+    private object ExpandCondExpand(SourcePos? pos, object form, bool defOk)
     {
         // Get the feature list from the primitive
         var featuresPrim = (Primitive)modules.primitives.GetPrimitive("%features-list");
@@ -1566,7 +1586,7 @@ public class Expander
             object body = Value.AsPair(clause).cdr;
 
             if (FeatureSatisfied(req, featureList))
-                return ExpandBegin(pos, body);
+                return ExpandBegin(pos, body, defOk);
 
             clauses = Value.AsPair(clauses).cdr;
         }

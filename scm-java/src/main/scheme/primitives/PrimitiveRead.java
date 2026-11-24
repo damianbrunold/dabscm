@@ -108,24 +108,9 @@ public class PrimitiveRead extends Primitive {
         if (token.type == TokenType.CLOSEPAR) {
             throw new SchemeError(token.pos, new ReadErrorObject("read: unexpected )", new Object[0]));
         }
-        if (token.type == TokenType.INTEGER) {
-            try { return Long.parseLong(token.value); }
-            catch (NumberFormatException e) { return new java.math.BigInteger(token.value); }
-        } else if (token.type == TokenType.RATIONAL) {
-            int slash = token.value.indexOf('/');
-            String ns = token.value.substring(0, slash), ds = token.value.substring(slash + 1);
-            Object n, d;
-            try { n = Long.parseLong(ns); } catch (NumberFormatException e) { n = new java.math.BigInteger(ns); }
-            try { d = Long.parseLong(ds); } catch (NumberFormatException e) { d = new java.math.BigInteger(ds); }
-            return Rational.create(n, d);
-        } else if (token.type == TokenType.REAL) {
-            if (token.value.equals("+inf.0")) return Double.POSITIVE_INFINITY;
-            if (token.value.equals("-inf.0")) return Double.NEGATIVE_INFINITY;
-            if (token.value.equals("+nan.0")) return Double.NaN;
-            // Normalize R7RS exponent markers (s, f, d, l) to 'e'
-            return Double.parseDouble(token.value.replaceAll("[sfdlSFDL]", "e"));
-        } else if (token.type == TokenType.COMPLEX) {
-            return parseComplexToken(token.value, token.pos);
+        Object number = numberFromToken(token);
+        if (number != null) {
+            return number;
         } else if (token.type == TokenType.STRING) {
             return token.value.toCharArray();
         } else if (token.type == TokenType.CHARACTER) {
@@ -262,14 +247,56 @@ public class PrimitiveRead extends Primitive {
         return Tokenizer.readToken(reader);
     }
 
+    /** The number of a number token (INTEGER, RATIONAL, REAL, COMPLEX), else null. */
+    public static Object numberFromToken(Token token) {
+        if (token.type == TokenType.INTEGER) {
+            try { return Long.parseLong(token.value); }
+            catch (NumberFormatException e) { return IntegerMath.normalize(new java.math.BigInteger(token.value)); }
+        } else if (token.type == TokenType.RATIONAL) {
+            int slash = token.value.indexOf('/');
+            String ns = token.value.substring(0, slash), ds = token.value.substring(slash + 1);
+            Object n, d;
+            try { n = Long.parseLong(ns); } catch (NumberFormatException e) { n = new java.math.BigInteger(ns); }
+            try { d = Long.parseLong(ds); } catch (NumberFormatException e) { d = new java.math.BigInteger(ds); }
+            return Rational.create(n, d);
+        } else if (token.type == TokenType.REAL) {
+            if (token.value.equals("+inf.0")) return Double.POSITIVE_INFINITY;
+            if (token.value.equals("-inf.0")) return Double.NEGATIVE_INFINITY;
+            if (token.value.equals("+nan.0") || token.value.equals("-nan.0")) return Double.NaN;
+            // Normalize R7RS exponent markers (s, f, d, l) to 'e'
+            return Double.parseDouble(token.value.replaceAll("[sfdlSFDL]", "e"));
+        } else if (token.type == TokenType.COMPLEX) {
+            return parseComplexToken(token.value, token.pos);
+        }
+        return null;
+    }
+
     private static Object parseComplexToken(String value, SourcePos pos) {
+        // #e or #i before the parts: the number's exactness prefix, for both parts
+        if (value.startsWith("#e") || value.startsWith("#i")) {
+            boolean exact = value.charAt(1) == 'e';
+            String rest = value.substring(2);
+            int at = rest.indexOf('@');
+            int pipe = rest.indexOf('|');
+            if (at < 0 && pipe >= 0) {
+                String re = rest.substring(0, pipe), im = rest.substring(pipe + 1);
+                if (exact) return Complex.create(exactPart(re, pos), exactPart(im, pos));
+                return Complex.create(Complex.toInexact(parseNumberStr(re)), Complex.toInexact(parseNumberStr(im)));
+            }
+            Object z = parseComplexToken(rest, pos);
+            if (!(z instanceof Complex)) return exact ? Complex.toExact(z) : Complex.toInexact(z);
+            Complex c = (Complex) z;
+            return exact ? Complex.create(Complex.toExact(c.real), Complex.toExact(c.imag))
+                         : Complex.create(Complex.toInexact(c.real), Complex.toInexact(c.imag));
+        }
         // Polar form: "magnitude@angle"
         int atIdx = value.indexOf('@');
         if (atIdx >= 0) {
             String magStr = value.substring(0, atIdx);
             String angStr = value.substring(atIdx + 1);
-            double mag = parseRealStr(magStr);
-            double ang = parseRealStr(angStr);
+            // the parts may be exact (#e1.5@0 has 3/2@0)
+            double mag = (Double) Complex.toInexact(parseNumberStr(magStr));
+            double ang = (Double) Complex.toInexact(parseNumberStr(angStr));
             return Complex.create(mag * Math.cos(ang), mag * Math.sin(ang));
         }
 
@@ -282,6 +309,15 @@ public class PrimitiveRead extends Primitive {
         Object realPart = parseNumberStr(realStr);
         Object imagPart = parseNumberStr(imagStr);
         return Complex.create(realPart, imagPart);
+    }
+
+    // a part of an exact (#e) complex number: a decimal exactly
+    private static Object exactPart(String s, SourcePos pos) {
+        if (s.contains("inf.0") || s.contains("nan.0"))
+            throw new SchemeError(pos, new ReadErrorObject("tokenizer: #e applied to non-finite number", new Object[0]));
+        if (s.contains("/")) return parseNumberStr(s);
+        if (s.contains(".") || s.matches(".*[eEsSfFdDlL].*")) return Tokenizer.exactDecimal(s);
+        return parseNumberStr(s);
     }
 
     private static Object parseNumberStr(String s) {
@@ -303,10 +339,4 @@ public class PrimitiveRead extends Primitive {
         catch (NumberFormatException e) { return new java.math.BigInteger(s); }
     }
 
-    private static double parseRealStr(String s) {
-        if (s.equals("+inf.0")) return Double.POSITIVE_INFINITY;
-        if (s.equals("-inf.0")) return Double.NEGATIVE_INFINITY;
-        if (s.equals("+nan.0") || s.equals("-nan.0")) return Double.NaN;
-        return Double.parseDouble(s.replaceAll("[sfdlSFDL]", "e"));
-    }
 }

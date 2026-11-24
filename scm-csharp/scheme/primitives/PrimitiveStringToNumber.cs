@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Numerics;
 
 namespace scheme;
 
@@ -25,102 +24,48 @@ public class PrimitiveStringToNumber : Primitive
     public override object Apply(SourcePos? pos, object[] arguments)
     {
         CheckArgs(pos, arguments, 1, 2);
-        // TODO: Complex number parsing will be handled by the tokenizer
         string s = new String(Value.AsString(arguments[0]));
-        bool exact = s.IndexOf('.') == -1;
-        int numbase = 10;
-        if (arguments.Length == 2) numbase = IntegerMath.ToInt(arguments[1]);
-        while (s.StartsWith("#"))
+        int radix = 10;
+        if (arguments.Length == 2)
         {
-            if (s.StartsWith("#e"))
-            {
-                exact = true;
-                s = s.Substring(2);
-            }
-            else if (s.StartsWith("#i"))
-            {
-                exact = false;
-                s = s.Substring(2);
-            }
-            else if (s.StartsWith("#x"))
-            {
-                numbase = 16;
-                s = s.Substring(2);
-            }
-            else if (s.StartsWith("#b"))
-            {
-                numbase = 2;
-                s = s.Substring(2);
-            }
-            else if (s.StartsWith("#o"))
-            {
-                numbase = 8;
-                s = s.Substring(2);
-            }
-            else
-            {
-                break;
-            }
+            radix = IntegerMath.ToInt(arguments[1]);
+            if (radix != 2 && radix != 8 && radix != 10 && radix != 16)
+                throw new SchemeError(pos, "string->number: bad radix", arguments[1]);
         }
-        if (exact && numbase == 10 && s.IndexOfAny("eEsSfFdDlL".ToCharArray()) >= 0)
-            exact = false;
+        return Parse(s, radix);
+    }
+
+    /// <summary>
+    /// The number s denotes as the reader reads it (prefixes, rationals,
+    /// decimals, complex numbers), else #f: the whole string, without
+    /// surrounding whitespace. radix applies unless s has a radix prefix.
+    /// </summary>
+    public static object Parse(string s, int radix)
+    {
+        if (s.Length == 0 || char.IsWhiteSpace(s[0])) return Value.F;
+        bool radixPrefix = false;
+        int i = 0;
+        while (i + 1 < s.Length && s[i] == '#')
+        {
+            char p = char.ToLowerInvariant(s[i + 1]);
+            if (p == 'x' || p == 'b' || p == 'o' || p == 'd') radixPrefix = true;
+            else if (p != 'e' && p != 'i') return Value.F;
+            i += 2;
+        }
+        string text = s;
+        if (!radixPrefix && radix != 10)
+            text = (radix == 16 ? "#x" : radix == 8 ? "#o" : "#b") + s;
         try
         {
-            if (exact)
-            {
-                int slash = s.IndexOf('/');
-                if (slash >= 0)
-                {
-                    string ns = s.Substring(0, slash), ds = s.Substring(slash + 1);
-                    object n = ParseIntegerInRadix(ns, numbase);
-                    object d = ParseIntegerInRadix(ds, numbase);
-                    return Rational.Create(n, d);
-                }
-                return ParseIntegerInRadix(s, numbase);
-            }
-            else
-            {
-                // Normalize R7RS exponent markers (s, f, d, l) to 'e'
-                foreach (char em in "sfdlSFDL")
-                    s = s.Replace(em, 'e');
-                return double.Parse(s, CultureInfo.InvariantCulture);
-            }
+            var reader = new TextStream(new StringReader(text), "string->number");
+            Token? token = Tokenizer.ReadToken(reader);
+            if (token == null || reader.Peek() != -1) return Value.F;
+            object? n = PrimitiveRead.NumberFromToken(token);
+            return n ?? Value.F;
         }
         catch (Exception)
         {
             return Value.F;
-        }
-    }
-
-    private static object ParseIntegerInRadix(string s, int numbase)
-    {
-        if (numbase == 10)
-        {
-            if (long.TryParse(s, CultureInfo.InvariantCulture, out long lv)) return lv;
-            return BigInteger.Parse(s, CultureInfo.InvariantCulture);
-        }
-        // For non-decimal bases, try long first via Convert
-        bool negative = s.StartsWith("-");
-        string digits = negative ? s.Substring(1) : s;
-        try
-        {
-            long val = Convert.ToInt64(digits, numbase);
-            return negative ? IntegerMath.Negate(val) : (object)val;
-        }
-        catch (OverflowException)
-        {
-            // Parse as BigInteger for non-decimal
-            BigInteger val = BigInteger.Zero;
-            foreach (char c in digits)
-            {
-                int d = c >= '0' && c <= '9' ? c - '0' :
-                        c >= 'a' && c <= 'f' ? c - 'a' + 10 :
-                        c >= 'A' && c <= 'F' ? c - 'A' + 10 : -1;
-                if (d < 0) throw new FormatException();
-                val = val * numbase + d;
-            }
-            if (negative) val = -val;
-            return IntegerMath.Normalize(val);
         }
     }
 }

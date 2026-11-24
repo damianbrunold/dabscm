@@ -91,6 +91,13 @@ public class Compiler
     }
     private readonly Dictionary<object, LoopInfo> loops = new(ReferenceEqualityComparer.Instance);
 
+    // The frames of letrec and letrec* whose variables from an index on are
+    // not initialized yet while an init is compiled (letrec: all of them,
+    // letrec*: the init's own and the later ones). A reference to one outside
+    // a lambda is evaluated before the variable has its value: it raises an
+    // error instead of reading the placeholder (R7RS: it is an error).
+    private readonly Dictionary<object, int> uninitFrom = new(ReferenceEqualityComparer.Instance);
+
     // A loop's name is used other than the prescan allowed: compile the
     // named let the ordinary way instead.
     private sealed class LoopBailout : Exception
@@ -342,6 +349,10 @@ public class Compiler
         if (!p.Equals(Value.F))
         {
             CheckNotLoop(p, env);
+            if (uninitFrom.Count > 0
+                && uninitFrom.TryGetValue(FrameAt(env, Convert.ToInt32(Value.AsPair(p).First())), out int from)
+                && Convert.ToInt32(Value.AsPair(p).Second()) >= from)
+                return GenUninitialized(pos, name, env);
             return Gen(pos, Opcode.LVAR, Value.AsPair(p).First(), Value.AsPair(p).Second(), ";", name);
         }
         // Not local → resolve through binding table or fall back to current module
@@ -352,6 +363,17 @@ public class Compiler
                 return Gen(pos, Opcode.GVAR, binding.SymbolName, binding.ModuleName);
         }
         return Gen(pos, Opcode.GVAR, name ?? "?", modules.GetCurrentModule().Name);
+    }
+
+    // (error "variable used before its initialization" 'name), with the error
+    // primitive itself (a module need not import error)
+    private object GenUninitialized(SourcePos? pos, string? name, object env)
+    {
+        object call = Pair.List(
+            Pair.List(CoreFormId("quote"), modules.primitives.GetPrimitive(pos, "error")),
+            "variable used before its initialization".ToCharArray(),
+            Pair.List(CoreFormId("quote"), Value.Intern(name ?? "?")));
+        return Comp(pos, call, env, true, true);
     }
 
     /// <summary>Generate variable set for any identifier.</summary>
@@ -784,6 +806,23 @@ public class Compiler
 
     private Pair CompLambda(SourcePos? pos, object args, object body, object env)
     {
+        // a lambda's body runs later (usually after the inits): no checks
+        if (uninitFrom.Count == 0) return CompLambda0(pos, args, body, env);
+        var saved = new Dictionary<object, int>(uninitFrom, ReferenceEqualityComparer.Instance);
+        uninitFrom.Clear();
+        try
+        {
+            return CompLambda0(pos, args, body, env);
+        }
+        finally
+        {
+            uninitFrom.Clear();
+            foreach (var kv in saved) uninitFrom[kv.Key] = kv.Value;
+        }
+    }
+
+    private Pair CompLambda0(SourcePos? pos, object args, object body, object env)
+    {
         // Detect and strip docstring: first form is a string literal and body has more forms
         string? docstring = null;
         if (body != Value.NIL
@@ -1055,18 +1094,26 @@ public class Compiler
         // Evaluate ALL init expressions onto the stack
         object evalCode = Value.NIL;
         object frame = Value.AsPair(newEnv).car;
-        for (int i = 0; i < n; i++)
+        uninitFrom[frame] = 0;
+        try
         {
-            pendingSelf = SelfCallFor(x, frame, i, vars[i], valExprs[i]);
-            try
+            for (int i = 0; i < n; i++)
             {
-                evalCode = Seq(pos, evalCode,
-                    Comp(pos, valExprs[i], newEnv, true, true));
+                pendingSelf = SelfCallFor(x, frame, i, vars[i], valExprs[i]);
+                try
+                {
+                    evalCode = Seq(pos, evalCode,
+                        Comp(pos, valExprs[i], newEnv, true, true));
+                }
+                finally
+                {
+                    pendingSelf = null;
+                }
             }
-            finally
-            {
-                pendingSelf = null;
-            }
+        }
+        finally
+        {
+            uninitFrom.Remove(frame);
         }
 
         // Assign all at once in reverse order (last value is on top of stack)
@@ -1122,6 +1169,7 @@ public class Compiler
         {
             pendingSelf = SelfCallFor(x, frame, i, vars[i], valExprs[i]);
             object valCode;
+            uninitFrom[frame] = i;
             try
             {
                 valCode = Comp(pos, valExprs[i], newEnv, true, true);
@@ -1129,6 +1177,7 @@ public class Compiler
             finally
             {
                 pendingSelf = null;
+                uninitFrom.Remove(frame);
             }
             setCode = Seq(pos, setCode,
                 valCode,

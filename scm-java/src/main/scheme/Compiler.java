@@ -90,6 +90,13 @@ public class Compiler {
     }
     private final Map<Object, LoopInfo> loops = new IdentityHashMap<>();
 
+    // The frames of letrec and letrec* whose variables from an index on are
+    // not initialized yet while an init is compiled (letrec: all of them,
+    // letrec*: the init's own and the later ones). A reference to one outside
+    // a lambda is evaluated before the variable has its value: it raises an
+    // error instead of reading the placeholder (R7RS: it is an error).
+    private final Map<Object, Integer> uninitFrom = new IdentityHashMap<>();
+
     // A loop's name is used other than the prescan allowed: compile the
     // named let the ordinary way instead.
     private static final class LoopBailout extends RuntimeException {
@@ -313,6 +320,10 @@ public class Compiler {
         Object p = resolveLocal(identifier, env);
         if (!p.equals(Value.F)) {
             checkNotLoop(p, env);
+            Integer from = uninitFrom.isEmpty() ? null
+                : uninitFrom.get(frameAt(env, (int) Value.asPair(p).first()));
+            if (from != null && ((Number) Value.asPair(p).second()).intValue() >= from)
+                return genUninitialized(pos, name, env);
             return gen(pos, Opcode.LVAR, Value.asPair(p).first(), Value.asPair(p).second(), ";", name);
         }
         // Not local → resolve through binding table or fall back to current module
@@ -324,6 +335,16 @@ public class Compiler {
                 return gen(pos, Opcode.GVAR, binding.symbolName, binding.moduleName);
         }
         return gen(pos, Opcode.GVAR, name != null ? name : "?", modules.getCurrentModule().getName());
+    }
+
+    // (error "variable used before its initialization" 'name), with the error
+    // primitive itself (a module need not import error)
+    private Object genUninitialized(SourcePos pos, String name, Object env) {
+        Object call = Pair.list(
+            Pair.list(coreFormId("quote"), modules.primitives.getPrimitive(pos, "error")),
+            "variable used before its initialization".toCharArray(),
+            Pair.list(coreFormId("quote"), Value.intern(name != null ? name : "?")));
+        return comp(pos, call, env, true, true);
     }
 
     /** Generate variable set for any identifier. */
@@ -688,6 +709,19 @@ public class Compiler {
     }
 
     private Pair compLambda(SourcePos pos, Object args, Object body, Object env) {
+        // a lambda's body runs later (usually after the inits): no checks
+        if (uninitFrom.isEmpty()) return compLambda0(pos, args, body, env);
+        Map<Object, Integer> saved = new IdentityHashMap<>(uninitFrom);
+        uninitFrom.clear();
+        try {
+            return compLambda0(pos, args, body, env);
+        } finally {
+            uninitFrom.clear();
+            uninitFrom.putAll(saved);
+        }
+    }
+
+    private Pair compLambda0(SourcePos pos, Object args, Object body, Object env) {
         // Detect and strip docstring: first form is a string literal and body has more forms
         String docstring = null;
         if (body != Value.NIL
@@ -945,14 +979,19 @@ public class Compiler {
         // Evaluate ALL init expressions onto the stack
         Object evalCode = Value.NIL;
         Object frame = Value.asPair(newEnv).car;
-        for (int i = 0; i < n; i++) {
-            pendingSelf = selfCallFor(x, frame, i, vars.get(i), valExprs.get(i));
-            try {
-                evalCode = seq(pos, evalCode,
-                    comp(pos, valExprs.get(i), newEnv, true, true));
-            } finally {
-                pendingSelf = null;
+        uninitFrom.put(frame, 0);
+        try {
+            for (int i = 0; i < n; i++) {
+                pendingSelf = selfCallFor(x, frame, i, vars.get(i), valExprs.get(i));
+                try {
+                    evalCode = seq(pos, evalCode,
+                        comp(pos, valExprs.get(i), newEnv, true, true));
+                } finally {
+                    pendingSelf = null;
+                }
             }
+        } finally {
+            uninitFrom.remove(frame);
         }
 
         // Assign all at once in reverse order (last value is on top of stack)
@@ -1006,10 +1045,12 @@ public class Compiler {
             String varName = getIdName(vars.get(i));
             pendingSelf = selfCallFor(x, frame, i, vars.get(i), valExprs.get(i));
             Object valCode;
+            uninitFrom.put(frame, i);
             try {
                 valCode = comp(pos, valExprs.get(i), newEnv, true, true);
             } finally {
                 pendingSelf = null;
+                uninitFrom.remove(frame);
             }
             setCode = seq(pos, setCode,
                 valCode,

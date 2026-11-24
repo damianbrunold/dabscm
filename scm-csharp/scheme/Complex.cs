@@ -62,7 +62,8 @@ public class Complex : IEquatable<Complex>
     private static bool IsPartNegative(object v)
     {
         if (v is long l) return l < 0;
-        if (v is double d) return d < 0.0;
+        // -0.0 too (its sign is printed: -1.0-0.0i); NaN prints as +nan.0
+        if (v is double d) return !double.IsNaN(d) && (d < 0.0 || double.IsNegative(d));
         if (v is BigInteger bi) return bi.Sign < 0;
         if (v is Rational r) return IsPartNegative(r.Numerator);
         return false;

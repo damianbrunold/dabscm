@@ -473,23 +473,28 @@ public class Value
         sb.Append(')');
     }
 
+    // 'x `x ,x ,@x for (quote x) and the others: a list of exactly two
+    // elements; (quote a b) and (quote . 3) print as lists
+    private static string? Abbreviation(Pair pair)
+    {
+        if (!Value.IsSymbol(pair.car!) || pair.cdr is not Pair rest || rest.cdr != Value.NIL)
+            return null;
+        switch (Value.AsSymbol(pair.car!))
+        {
+            case "quote": return "'";
+            case "quasiquote": return "`";
+            case "unquote": return ",";
+            case "unquote-splicing": return ",@";
+            default: return null;
+        }
+    }
+
     private static void PrintRepPairTo(Pair pair, StringBuilder sb)
     {
-        if (Value.IsSymbol(pair.car!) && Value.AsSymbol(pair.car!).Equals("quote"))
+        string? abbr = Abbreviation(pair);
+        if (abbr != null)
         {
-            sb.Append('\''); PrintRepTo(Value.AsPair(pair.cdr).car, sb); return;
-        }
-        else if (Value.IsSymbol(pair.car!) && Value.AsSymbol(pair.car!).Equals("quasiquote"))
-        {
-            sb.Append('`'); PrintRepTo(Value.AsPair(pair.cdr).car, sb); return;
-        }
-        else if (Value.IsSymbol(pair.car!) && Value.AsSymbol(pair.car!).Equals("unquote"))
-        {
-            sb.Append(','); PrintRepTo(Value.AsPair(pair.cdr).car, sb); return;
-        }
-        else if (Value.IsSymbol(pair.car!) && Value.AsSymbol(pair.car!).Equals("unquote-splicing"))
-        {
-            sb.Append(",@"); PrintRepTo(Value.AsPair(pair.cdr).car!, sb); return;
+            sb.Append(abbr); PrintRepTo(Value.AsPair(pair.cdr).car, sb); return;
         }
         sb.Append('(');
         Pair current = pair;
@@ -638,22 +643,8 @@ public class Value
 
     private static string PrintRepPair(Pair pair)
     {
-        if (Value.IsSymbol(pair.car!) && Value.AsSymbol(pair.car!).Equals("quote"))
-        {
-            return "'" + PrintRep(Value.AsPair(pair.cdr).car);
-        }
-        else if (Value.IsSymbol(pair.car!) && Value.AsSymbol(pair.car!).Equals("quasiquote"))
-        {
-            return "`" + PrintRep(Value.AsPair(pair.cdr).car);
-        }
-        else if (Value.IsSymbol(pair.car!) && Value.AsSymbol(pair.car!).Equals("unquote"))
-        {
-            return "," + PrintRep(Value.AsPair(pair.cdr).car);
-        }
-        else if (Value.IsSymbol(pair.car!) && Value.AsSymbol(pair.car!).Equals("unquote-splicing"))
-        {
-            return ",@" + PrintRep(Value.AsPair(pair.cdr).car!);
-        }
+        string? abbr = Abbreviation(pair);
+        if (abbr != null) return abbr + PrintRep(Value.AsPair(pair.cdr).car);
         StringBuilder result = new StringBuilder("(");
         Pair current = pair;
         while (true)
@@ -773,21 +764,10 @@ public class Value
 
     private static void DisplayRepPairTo(Pair pair, StringBuilder sb)
     {
-        if (Value.IsSymbol(pair.car!) && Value.AsSymbol(pair.car!).Equals("quote"))
+        string? abbr = Abbreviation(pair);
+        if (abbr != null)
         {
-            sb.Append('\''); DisplayRepTo(Value.AsPair(pair.cdr).car, sb); return;
-        }
-        else if (Value.IsSymbol(pair.car!) && Value.AsSymbol(pair.car!).Equals("quasiquote"))
-        {
-            sb.Append('`'); DisplayRepTo(Value.AsPair(pair.cdr).car, sb); return;
-        }
-        else if (Value.IsSymbol(pair.car!) && Value.AsSymbol(pair.car!).Equals("unquote"))
-        {
-            sb.Append(','); DisplayRepTo(Value.AsPair(pair.cdr).car, sb); return;
-        }
-        else if (Value.IsSymbol(pair.car!) && Value.AsSymbol(pair.car!).Equals("unquote-splicing"))
-        {
-            sb.Append(",@"); DisplayRepTo(Value.AsPair(pair.cdr).car, sb); return;
+            sb.Append(abbr); DisplayRepTo(Value.AsPair(pair.cdr).car, sb); return;
         }
         sb.Append('(');
         Pair current = pair;
@@ -834,22 +814,8 @@ public class Value
 
     private static string DisplayRepPair(Pair pair)
     {
-        if (Value.IsSymbol(pair.car!) && Value.AsSymbol(pair.car!).Equals("quote"))
-        {
-            return "'" + DisplayRep(Value.AsPair(pair.cdr).car);
-        }
-        else if (Value.IsSymbol(pair.car!) && Value.AsSymbol(pair.car!).Equals("quasiquote"))
-        {
-            return "`" + DisplayRep(Value.AsPair(pair.cdr).car);
-        }
-        else if (Value.IsSymbol(pair.car!) && Value.AsSymbol(pair.car!).Equals("unquote"))
-        {
-            return "," + DisplayRep(Value.AsPair(pair.cdr).car);
-        }
-        else if (Value.IsSymbol(pair.car!) && Value.AsSymbol(pair.car!).Equals("unquote-splicing"))
-        {
-            return ",@" + DisplayRep(Value.AsPair(pair.cdr).car);
-        }
+        string? abbr = Abbreviation(pair);
+        if (abbr != null) return abbr + DisplayRep(Value.AsPair(pair.cdr).car);
         StringBuilder result = new StringBuilder("(");
         Pair current = pair;
         while (true)

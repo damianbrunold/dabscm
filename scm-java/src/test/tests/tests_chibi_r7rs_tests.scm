@@ -1645,9 +1645,7 @@
                               '(a b)))))
               (or (equal? res '(1 2)) (equal? res '(2 1)))))
 
-;; Disabled: map with circular list — requires detecting shortest list termination.
-;; To be re-enabled after implementing circular list support in map.
-#;(test-equal '(10 200 3000 40 500 6000)
+(test-equal '(10 200 3000 40 500 6000)
               (let ((ls1 (list 10 100 1000))
                     (ls2 (list 1 2 3 4 5 6)))
                 (set-cdr! (cddr ls1) ls1)
@@ -1685,9 +1683,7 @@
               (for-each (lambda (i) (vector-set! v i (* i i))) '(0 1 2 3 4))
               v))
 
-;; Disabled: for-each with circular list — requires detecting shortest list termination.
-;; To be re-enabled after implementing circular list support in for-each.
-#;(test-equal 9750
+(test-equal 9750
               (let ((ls1 (list 10 100 1000))
                     (ls2 (list 1 2 3 4 5 6))
                     (count 0))
