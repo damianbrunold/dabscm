@@ -26,8 +26,7 @@ public class PrimitiveZipAddTextEntry : Primitive
         {
             ZipOutput output = (ZipOutput) Value.AsNativeValue(arguments[0]).value;
             string entryname = new(Value.AsString(arguments[1]));
-            output.bin_strm?.Dispose();
-            output.text_strm?.Dispose();
+            output.FinishEntry();
             var entry = output.zip!.CreateEntry(entryname);
             if (arguments.Length > 2)
             {

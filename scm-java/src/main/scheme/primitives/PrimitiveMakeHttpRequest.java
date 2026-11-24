@@ -46,7 +46,7 @@ public class PrimitiveMakeHttpRequest extends Primitive {
         }
         SchemeHttpRequest req = new SchemeHttpRequest(method, url, headers, body, bodyBytes);
         if (arguments.length >= 5) {
-            req.timeoutSeconds = Value.asInteger(arguments[4]).intValue();
+            req.timeoutSeconds = SchemeHttpRequest.timeoutSeconds(arguments[4]);
         }
         if (arguments.length == 6) {
             req.followRedirects = arguments[5] != Value.F;

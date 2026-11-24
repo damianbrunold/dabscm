@@ -466,36 +466,63 @@ public class Value {
         sb.append('>');
     }
 
+    // The shortest digits that read back as d, laid out as Java's %.15g
+    // (scientific below 1e-4 and from 1e15, or beyond the digits): the same
+    // text as the native implementation (num.zig formatFlonum)
     public static String formatDouble(double d) {
         if (Double.isInfinite(d)) return d > 0 ? "+inf.0" : "-inf.0";
         if (Double.isNaN(d)) return "+nan.0";
-        for (int p = 15; p <= 17; p++) {
-            String s = String.format(java.util.Locale.ROOT, "%." + p + "g", d);
-            if (Double.parseDouble(s) == d)
-                return normalizeDouble(s);
+        StringBuilder sb = new StringBuilder();
+        if (d < 0 || (d == 0 && 1 / d < 0)) sb.append('-');
+        double x = Math.abs(d);
+        if (x == 0) return sb.append("0.0").toString();
+        // Double.toString is the shortest round trip (JDK 19+), but keeps
+        // two digits where one would do (4.9E-324 for 5e-324)
+        String t = Double.toString(x);
+        int ePos = t.indexOf('E');
+        String mant = ePos >= 0 ? t.substring(0, ePos) : t;
+        int exp10 = ePos >= 0 ? Integer.parseInt(t.substring(ePos + 1)) : 0;
+        int dot = mant.indexOf('.');
+        String all = mant.substring(0, dot) + mant.substring(dot + 1);
+        int lead = 0;
+        while (lead < all.length() - 1 && all.charAt(lead) == '0') lead++;
+        int exp = exp10 + dot - 1 - lead;
+        String digits = stripZeros(all.substring(lead));
+        if (digits.length() == 2) {
+            java.math.BigDecimal one = new java.math.BigDecimal(x).round(new java.math.MathContext(1, java.math.RoundingMode.HALF_EVEN));
+            if (one.doubleValue() == x) {
+                digits = stripZeros(one.unscaledValue().toString());
+                exp = one.precision() - one.scale() - 1;
+            }
         }
-        return normalizeDouble(String.format(java.util.Locale.ROOT, "%.17g", d));
+        return layoutDouble(sb, digits, exp);
     }
 
-    private static String normalizeDouble(String s) {
-        int eIdx = s.indexOf('e');
-        if (eIdx >= 0) {
-            String mantissa = stripTrailingZeros(s.substring(0, eIdx));
-            int exp = Integer.parseInt(s.substring(eIdx + 1)); // handles e+020, e-005
-            return mantissa + "e" + (exp >= 0 ? "+" : "") + exp;
+    private static String stripZeros(String digits) {
+        int n = digits.length();
+        while (n > 1 && digits.charAt(n - 1) == '0') n--;
+        return digits.substring(0, n);
+    }
+
+    // digits d1 d2 ... dn with d1 at the decimal exponent exp
+    static String layoutDouble(StringBuilder sb, String digits, int exp) {
+        int nd = digits.length();
+        int p = Math.max(15, nd);
+        if (exp < -4 || exp >= p) {
+            sb.append(digits.charAt(0)).append('.');
+            sb.append(nd > 1 ? digits.substring(1) : "0");
+            sb.append('e').append(exp >= 0 ? "+" : "-").append(Math.abs(exp));
+        } else if (exp < 0) {
+            sb.append("0.");
+            for (int i = 0; i < -exp - 1; i++) sb.append('0');
+            sb.append(digits);
+        } else {
+            int ip = exp + 1;
+            for (int i = 0; i < ip; i++) sb.append(i < nd ? digits.charAt(i) : '0');
+            sb.append('.');
+            sb.append(nd > ip ? digits.substring(ip) : "0");
         }
-        return stripTrailingZerosFixed(s);
-    }
-
-    private static String stripTrailingZeros(String s) {
-        s = s.replaceAll("0+$", "");
-        return s.endsWith(".") ? s + "0" : s;
-    }
-
-    private static String stripTrailingZerosFixed(String s) {
-        if (!s.contains(".")) return s + ".0";
-        s = s.replaceAll("0+$", "");
-        return s.endsWith(".") ? s + "0" : s;
+        return sb.toString();
     }
 
     private static String printRepValues(Values values) {

@@ -514,16 +514,16 @@ Example:
           (define (hex->string h)
             (let loop ((start 0) (i 0) (acc '()))
               (cond ((= i (string-length h))
-                     (list->string (reverse
-                                    (cons
-                                     (integer->char
-                                      (string->number (substring h start i)
-                                                      16))
-                                     acc))))
+                     (apply string-append
+                            (reverse
+                             (cons
+                              (code-point->string
+                               (string->number (substring h start i) 16))
+                              acc))))
                     ((char=? (string-ref h i) #\+)
                      (loop (+ i 1)
                            (+ i 1)
-                           (cons (integer->char
+                           (cons (code-point->string
                                   (string->number (substring h start i) 16))
                                  acc)))
                     (else (loop start (+ i 1) acc)))))
@@ -557,12 +557,25 @@ Example:
          #x201D #x2022 #x2013 #x2014 #x02DC #x2122 #x0161 #x203A #x0153 #x9D
          #x017E #x0178))
 
-    (define (reference-char n)
+    ;; the character of code point n as a string: natively one character,
+    ;; on the JVM and C# (UTF-16 characters) a surrogate pair above #xFFFF
+    (define (code-point->string n)
+      (cond-expand
+        (dabscm-native (string (integer->char n)))
+        (else
+         (if (> n #xFFFF)
+             (let ((v (- n #x10000)))
+               (string (integer->char (+ #xD800 (quotient v 1024)))
+                       (integer->char (+ #xDC00 (remainder v 1024)))))
+             (string (integer->char n))))))
+
+    ;; the text of a numeric character reference to n
+    (define (reference-string n)
       (cond ((and (>= n #x80) (< n #xA0))
-             (integer->char (vector-ref c1-replacements (- n #x80))))
+             (code-point->string (vector-ref c1-replacements (- n #x80))))
             ((or (= n 0) (> n #x10FFFF) (and (>= n #xD800) (< n #xE000)))
-             (integer->char #xFFFD))
-            (else (integer->char n))))
+             (code-point->string #xFFFD))
+            (else (code-point->string n))))
 
     (define (ascii-digit? c) (and (char>=? c #\0) (char<=? c #\9)))
     (define (ascii-hex? c)
@@ -632,7 +645,7 @@ Example:
                    (let
                        ((v (string->number (substring s d0 d1)
                                            (if hex? 16 10))))
-                     (write-char (reference-char v) out)
+                     (write-string (reference-string v) out)
                      (semicolon-after d1)))))
             (else (let* ((e (let scan ((j i))
                               (if (and (< j n)

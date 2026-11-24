@@ -49,7 +49,7 @@ fn fold(t: *Thread, comptime op: tower.Op, comptime who: []const u8) Err!Word {
     if (t.argc == 0) return if (op == .mul) fix(1) else fix(0);
     var acc = try numArg(t, who, 0);
     if (t.argc == 1) switch (op) {
-        .sub => return num.sub(t, fix(0), acc).?,
+        .sub => return tower.negate(t, acc),
         .div => return divide(t, fix(1), acc),
         else => return acc,
     };
@@ -204,12 +204,12 @@ fn inexactImpl(t: *Thread) Err!Word {
 }
 fn exactImpl(t: *Thread) Err!Word {
     const w = try numArg(t, "exact", 0);
-    if (rt.isFlonum(w)) return tower.floatToSimplest(t, rt.flo(w)) orelse raise(t, "exact: no exact representation for ~a", &.{w});
+    if (rt.isFlonum(w)) return tower.floatToExact(t, rt.flo(w)) orelse raise(t, "exact: no exact representation for ~a", &.{w});
     if (tower.isComp(w)) {
         const re = tower.realPart(w);
         const im = tower.imagPart(w);
-        const ere = if (rt.isFlonum(re)) tower.floatToSimplest(t, rt.flo(re)) orelse return raise(t, "exact: no exact representation for ~a", &.{w}) else re;
-        const eim = if (rt.isFlonum(im)) tower.floatToSimplest(t, rt.flo(im)) orelse return raise(t, "exact: no exact representation for ~a", &.{w}) else im;
+        const ere = if (rt.isFlonum(re)) tower.floatToExact(t, rt.flo(re)) orelse return raise(t, "exact: no exact representation for ~a", &.{w}) else re;
+        const eim = if (rt.isFlonum(im)) tower.floatToExact(t, rt.flo(im)) orelse return raise(t, "exact: no exact representation for ~a", &.{w}) else im;
         return tower.makeRect(t, ere, eim);
     }
     return w;

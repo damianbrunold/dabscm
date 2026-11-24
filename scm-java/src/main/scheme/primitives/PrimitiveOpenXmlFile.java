@@ -27,13 +27,13 @@ public class PrimitiveOpenXmlFile extends Primitive {
     public Object apply(SourcePos pos, Object[] arguments) {
         checkArgs(pos, arguments, 1, 1);
         String filename = new String(Value.asString(arguments[0]));
-        if (!new File(filename).exists()) {
+        if (!SchemePaths.file(filename).exists()) {
             throw new SchemeError(pos, name() + " ~a: file not found", filename);
         }
         try {
             XMLInputFactory xmlif = XmlInput.factory();
             XMLStreamReader xmlr = xmlif.createXMLStreamReader(filename,
-                                   new FileInputStream(filename));
+                                   new FileInputStream(SchemePaths.file(filename)));
             return new NativeValue(xmlr);
         } catch (Exception e) {
             throw new SchemeError(pos, name() + " ~a: io error", filename);

@@ -341,7 +341,9 @@
               ((= n arity) `(prim ,op ,@args))
               ((and (memq op '(+ * -)) (> n 2))
                (fold (lambda (a acc) `(prim ,op ,acc ,a)) `(prim ,op ,(car args) ,(cadr args)) (cddr args)))
-              ((and (eq? op '-) (= n 1)) `(prim - (const 0) ,(car args)))
+              ;; (- x) is not (- 0 x): (- 0.0) is -0.0, (- 0 0.0) is 0.0; the
+              ;; primitive negates
+              ((and (eq? op '-) (= n 1)) #f)
               ((and (eq? op '+) (= n 0)) '(const 0))
               ((and (eq? op '*) (= n 0)) '(const 1))
               ((and (memq op '(+ *)) (= n 1) ) #f)

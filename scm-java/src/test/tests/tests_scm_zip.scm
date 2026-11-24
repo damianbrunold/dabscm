@@ -67,6 +67,28 @@
       (test-error (zip-entry-size z "missing"))
       (test-error (zip-extract-entry z "missing" (path "x"))))))
 
+(test-group "entry ports"
+  ;; what an entry port holds goes into its entry without a flush; closing an
+  ;; entry port leaves the zip open for the next entries
+  (let ((z (open-output-zip-bytevector)))
+    (write-bytevector (bytevector 1 2 3) (zip-add-binary-entry z "a.bin"))
+    (let ((p (zip-add-binary-entry z "b.bin")))
+      (write-bytevector (bytevector 4 5) p)
+      (close-port p))
+    (write-string "text" (zip-add-text-entry z "c.txt"))
+    (zip-add-stored-entry z "d.txt" (string->utf8 "d"))
+    (close-output-zip z)
+    (let ((file (path "ports.zip")))
+      (write-bytes! file (get-output-zip-bytevector z))
+      (call-with-input-zip file
+        (lambda (zin)
+          (test-equal '("a.bin" "b.bin" "c.txt" "d.txt") (zip-entry-names zin))
+          (test-equal (bytevector 1 2 3) (zip-read-entry-bytevector zin "a.bin"))
+          (test-equal (bytevector 4 5) (zip-read-entry-bytevector zin "b.bin"))
+          (test-equal "text" (utf8->string (zip-read-entry-bytevector zin "c.txt")))
+          (test-equal "d" (utf8->string (zip-read-entry-bytevector zin "d.txt")))))
+      (delete-file file))))
+
 (for-each (lambda (f) (when (file-exists? (path f)) (delete-file (path f))))
           '("big.bin" "small.bin" "a.zip" "out.bin" "out2.bin"))
 (delete-directory dir)

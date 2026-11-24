@@ -902,12 +902,12 @@ Example:
 Syntax: (exact z)
 Library: (scheme base)
 Description: Returns the exact number that is numerically equal to z.
-  For inexact integers, returns the integer. For non-integral inexact
-  numbers, returns the simplest exact rational whose inexact value
-  equals z (using continued fraction approximation).
+  For an inexact z that is the exact value of the binary floating-point
+  number (R7RS), so (exact 0.1) is 3602879701896397/36028797018963968;
+  rationalize finds the simplest rational near it.
 Example:
   (exact 1.5) => 3/2
-  (exact 0.3) => 3/10
+  (exact 0.1) => 3602879701896397/36028797018963968
   (exact 3.0) => 3
   (exact 3) => 3
 ```

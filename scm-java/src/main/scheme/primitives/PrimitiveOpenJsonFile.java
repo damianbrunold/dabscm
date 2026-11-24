@@ -9,6 +9,7 @@ import scheme.NativeValue;
 import scheme.Primitive;
 import scheme.SchemeError;
 import scheme.SourcePos;
+import scheme.SchemePaths;
 import scheme.Value;
 import scheme.json.JsonParser;
 
@@ -32,13 +33,13 @@ public class PrimitiveOpenJsonFile extends Primitive {
     public Object apply(SourcePos pos, Object[] arguments) {
         checkArgs(pos, arguments, 1, 2);
         String filename = new String(Value.asString(arguments[0]));
-        if (!new File(filename).exists()) {
+        if (!SchemePaths.file(filename).exists()) {
             throw new SchemeError(pos, name() + " ~a: file not found", filename);
         }
         try {
             Charset encoding = Encoding.getEncoding("utf8");
             var reader = new BufferedReader(new InputStreamReader(
-                    new FileInputStream(filename),
+                    new FileInputStream(SchemePaths.file(filename)),
                     encoding), 8192);
             var parser = new JsonParser(reader);
             if (arguments.length == 2) {

@@ -41,13 +41,15 @@ public class PrimitiveIncludeCi extends Primitive {
         checkArgs(pos, arguments, 1, -1);
         try {
             Scheme scheme = new Scheme(modules);
+            Object value = new Values();
             for (var i = 0; i < arguments.length; i++) {
                 String filename = new String(Value.asString(arguments[i]));
-                var stream = new TextStream(new PushbackReader(new InputStreamReader(new FileInputStream(new File(filename)), StandardCharsets.UTF_8)), filename);
+                File file = PrimitiveInclude.resolve(pos, filename);
+                var stream = new TextStream(new PushbackReader(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8)), file.getPath());
                 stream.foldCase = true;
-                scheme.evalFile(stream, filename);
+                value = scheme.evalFile(stream, file.getPath());
             }
-            return new Values();
+            return value;
         } catch (SchemeError e) {
             throw e;
         } catch (Exception e) {

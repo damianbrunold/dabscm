@@ -1,4 +1,5 @@
 (import (scheme base)
+        (scheme complex)
         (scheme inexact)
         (scheme write)
         (scm test))
@@ -17,15 +18,19 @@
   (test-equal #f (integer? +inf.0))
   (test-equal #f (integer? +nan.0)))
 
-;; exact returns the simplest rational that reads back as the double.
+;; exact returns the exact value of the binary double (R7RS); rationalize
+;; finds the simplest rational near it.
 (test-group "exact"
-  (test-equal 1/10 (exact 0.1))
-  (test-equal -3/10 (exact -0.3))
-  (test-equal 1/3 (exact (/ 1. 3)))
-  (test-equal 15432/125 (exact 123.456))
+  (test-equal 3602879701896397/36028797018963968 (exact 0.1))
+  (test-equal -5404319552844595/18014398509481984 (exact -0.3))
+  (test-equal 6004799503160661/18014398509481984 (exact (/ 1. 3)))
+  (test-equal 8687443681197687/70368744177664 (exact 123.456))
+  (test-equal #t (= 0.1 (exact 0.1)))
+  (test-equal 1/10 (rationalize (exact 0.1) 1/100))
+  (test-equal 3602879701896397/36028797018963968 (real-part (exact (make-rectangular 0.1 2.0))))
   (test-equal 100000000000000000000 (exact 1e20))
   ;; tiny and subnormal doubles used to raise or return 1/9223372036854775807
-  (test-equal 1/99999999999999997962 (exact 1e-20))
+  (test-equal 6646139978924579/664613997892457936451903530140172288 (exact 1e-20))
   (test-equal #t
               (< (/ 999 (expt 10 303)) (exact 1e-300) (/ 1001 (expt 10 303))))
   (test-equal #t
@@ -100,5 +105,30 @@
   (test-equal "Failed in quotient: wrong argument type"
               (guard (e ((error-object? e) (error-object-message e)))
                 (quotient 7.5 2))))
+
+(test-group "negation"
+  ;; (- x) flips the sign, also of 0.0; (- 0 x) does not
+  (test-equal "-0.0" (number->string (- 0.0)))
+  (test-equal "0.0" (number->string (- 0 0.0)))
+  (test-equal "0.0" (number->string (- -0.0)))
+  (test-equal -5 (- 5))
+  (test-equal -1/2 (- 1/2)))
+
+(test-group "printing flonums"
+  ;; the shortest digits that read back, in the layout of %.15g: the same
+  ;; text in all three implementations
+  (test-equal "5.0e-324" (number->string 5e-324))
+  (test-equal "0.1" (number->string 0.1))
+  (test-equal "0.3333333333333333" (number->string (/ 1. 3)))
+  (test-equal "123.456" (number->string 123.456))
+  (test-equal "100.0" (number->string 100.0))
+  (test-equal "1.0e+21" (number->string 1e21))
+  (test-equal "1.0e+15" (number->string 1e15))
+  (test-equal "123456789012345.0" (number->string 123456789012345.0))
+  (test-equal "1234567890123456.0" (number->string 1234567890123456.0))
+  (test-equal "1.0e-7" (number->string 1e-7))
+  (test-equal "2.5e-5" (number->string 2.5e-5))
+  (test-equal "1.7976931348623157e+308" (number->string 1.7976931348623157e308))
+  (test-equal "-0.0" (number->string -0.0)))
 
 (test-end "numeric-exact")

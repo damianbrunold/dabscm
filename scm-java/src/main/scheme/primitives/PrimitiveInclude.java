@@ -7,6 +7,7 @@ import scheme.Primitive;
 import scheme.Scheme;
 import scheme.SchemeError;
 import scheme.SourcePos;
+import scheme.SchemePaths;
 import scheme.Value;
 import scheme.Values;
 
@@ -36,13 +37,33 @@ public class PrimitiveInclude extends Primitive {
         checkArgs(pos, arguments, 1, -1);
         try {
             Scheme scheme = new Scheme(modules);
+            Object value = new Values();
             for (var i = 0; i < arguments.length; i++) {
                 String filename = new String(Value.asString(arguments[i]));
-                scheme.evalFile(new File(filename));
+                value = scheme.evalFile(resolve(pos, filename));
             }
-            return new Values();
+            // the value of the last form, as where the forms stood
+            return value;
+        } catch (SchemeError e) {
+            throw e;
         } catch (Exception e) {
             throw new SchemeError(pos, name() + ": io failure");
         }
+    }
+
+    // A relative name resolves against the directory of the file with the
+    // include (as the native implementation and library declarations do),
+    // else the current directory
+    static File resolve(SourcePos pos, String filename) {
+        File f = new File(filename);
+        if (f.isAbsolute()) return f;
+        if (pos != null && pos.filename != null && !pos.filename.isEmpty()) {
+            File parent = new File(pos.filename).getAbsoluteFile().getParentFile();
+            if (parent != null) {
+                File candidate = new File(parent, filename);
+                if (candidate.exists()) return candidate;
+            }
+        }
+        return SchemePaths.file(filename);
     }
 }

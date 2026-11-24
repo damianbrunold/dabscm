@@ -18,15 +18,16 @@ public class ModulePath {
         while (lst != Value.NIL) {
             String path = new String(Value.asString(Value.asPair(lst).car));
             if (path.endsWith(".slz")) {
-                var source = findModuleInZip(path, moduleFile);
+                var source = findModuleInZip(SchemePaths.resolve(path), moduleFile);
                 if (source != null) return source;
             } else {
                 var modulePath = path + "/" + moduleFile + ".scm";
-                if (new File(modulePath).exists())
-                    return ModuleSource.fromFile(modulePath);
+                // a relative search path entry is relative to the current directory
+                if (SchemePaths.file(modulePath).exists())
+                    return ModuleSource.fromFile(SchemePaths.resolve(modulePath));
                 modulePath = path + "/" + moduleFile + ".sld";
-                if (new File(modulePath).exists())
-                    return ModuleSource.fromFile(modulePath);
+                if (SchemePaths.file(modulePath).exists())
+                    return ModuleSource.fromFile(SchemePaths.resolve(modulePath));
             }
             lst = Value.asPair(lst).cdr;
         }

@@ -199,4 +199,18 @@
     (delete-file path)
     (test-error (sha256-file path))))
 
+(test-group "sha-2 family"
+  ;; FIPS 180-4 test vectors for "abc"
+  (test-equal "23097d223405d8228642a477bda255b32aadbce4bda0b3f7e36c9da7"
+              (bytevector->hex (sha224-hash "abc")))
+  (test-equal "cb00753f45a35e8bb5a03d699ac65007272c32ab0eded1631a8b605a43ff5bed8086072ba1e7cc2358baeca134c825a7"
+              (bytevector->hex (sha384-hash "abc")))
+  (test-equal "ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f"
+              (bytevector->hex (sha512-hash (string->utf8 "abc"))))
+  ;; two blocks for SHA-224 (56 bytes of padding boundary)
+  (test-equal "75388b16512776cc5dba5da1fd890150b0c6455cb4f58b1952522525"
+              (bytevector->hex (sha224-hash "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq")))
+  (test-equal 28 (bytevector-length (sha224-hash "")))
+  (test-error (sha512-hash 42)))
+
 (test-end "crypto")

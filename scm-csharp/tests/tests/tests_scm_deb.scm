@@ -294,7 +294,7 @@
               (test-assert "native: control fields"
                            (and (bytes-contain? control "Architecture: amd64")
                                 (bytes-contain? control
-                                                "Depends: curl, adduser")))
+                                                "Depends: libc6 (>= 2.31), curl, adduser")))
               (test-assert "native: copyright"
                            (bytes-contain? data "dabscm native "))))))
       (delete-directory tmp))))

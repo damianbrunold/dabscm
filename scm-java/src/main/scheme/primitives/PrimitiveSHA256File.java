@@ -3,7 +3,6 @@ package scheme.primitives;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import scheme.*;
@@ -26,7 +25,7 @@ public class PrimitiveSHA256File extends Primitive {
     public Object apply(SourcePos pos, Object[] arguments) {
         checkArgs(pos, arguments, 1, 1);
         String path = new String(Value.asString(arguments[0]));
-        try (InputStream in = Files.newInputStream(Paths.get(path))) {
+        try (InputStream in = Files.newInputStream(SchemePaths.path(path))) {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] buf = new byte[65536];
             int r;

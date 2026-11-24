@@ -30,6 +30,15 @@ const pa = std.heap.c_allocator;
 
 pub const Error = error{ BadPattern, OutOfMemory };
 
+/// The last compile's syntax error, in java.util.regex's words (a pattern
+/// neither host takes); null when the pattern is valid in one host only
+pub threadlocal var syntax_error: ?[]const u8 = null;
+
+fn bad(desc: []const u8) Error {
+    syntax_error = desc;
+    return error.BadPattern;
+}
+
 // --- syntax tree ------------------------------------------------------------------
 
 const ClassItem = union(enum) {
@@ -152,8 +161,8 @@ const Parser = struct {
                     p.pos += 1;
                     max = p.number();
                 }
-                if (p.next() != '}') return error.BadPattern;
-                if (max) |m| if (m < min) return error.BadPattern;
+                if (p.next() != '}') return bad("Unclosed counted closure");
+                if (max) |m| if (m < min) return bad("Illegal repetition range");
             },
             else => return a,
         }
@@ -178,7 +187,7 @@ const Parser = struct {
     }
 
     fn atom(p: *Parser, f: *Flags) Error!?*Node {
-        const ch = p.next() orelse return error.BadPattern;
+        const ch = p.next() orelse return bad("Unexpected internal error");
         return switch (ch) {
             '.' => try p.node(.{ .any = f.dotall }),
             '^' => try p.node(.{ .assertion = if (f.multi) .bol_multi else .bol }),
@@ -186,7 +195,10 @@ const Parser = struct {
             '[' => try p.node(.{ .class = try p.class(f) }),
             '(' => try p.group(f),
             '\\' => try p.escape(f),
-            '*', '+', '?', '{' => error.BadPattern, // nothing to repeat
+            '*' => bad("Dangling meta character '*'"),
+            '+' => bad("Dangling meta character '+'"),
+            '?' => bad("Dangling meta character '?'"),
+            '{' => bad("Illegal repetition"),
             else => try p.node(.{ .char = .{ .ch = ch, .icase = f.icase } }),
         };
     }
@@ -197,17 +209,17 @@ const Parser = struct {
             const n = p.ngroups;
             var inner = f.*;
             const body = try p.alternation(&inner);
-            if (p.next() != ')') return error.BadPattern;
+            if (p.next() != ')') return bad("Unclosed group");
             return try p.node(.{ .group = .{ .n = n, .node = body } });
         }
         p.pos += 1;
-        const kind = p.next() orelse return error.BadPattern;
+        const kind = p.next() orelse return bad("Unknown inline modifier");
         switch (kind) {
             ':' => return try p.groupBody(f, 0),
             '>' => {
                 var inner = f.*;
                 const body = try p.alternation(&inner);
-                if (p.next() != ')') return error.BadPattern;
+                if (p.next() != ')') return bad("Unclosed group");
                 return try p.node(.{ .atomic = body });
             },
             '=', '!' => return try p.lookBody(f, true, kind == '!'),
@@ -243,7 +255,7 @@ const Parser = struct {
                     },
                     ':' => {
                         const body = try p.alternation(&g);
-                        if (p.next() != ')') return error.BadPattern;
+                        if (p.next() != ')') return bad("Unclosed group");
                         return try p.node(.{ .group = .{ .n = 0, .node = body } });
                     },
                     else => return error.BadPattern, // u d U n ...: one host only
@@ -256,19 +268,19 @@ const Parser = struct {
     fn groupBody(p: *Parser, f: *Flags, n: usize) Error!*Node {
         var inner = f.*;
         const body = try p.alternation(&inner);
-        if (p.next() != ')') return error.BadPattern;
+        if (p.next() != ')') return bad("Unclosed group");
         return p.node(.{ .group = .{ .n = n, .node = body } });
     }
 
     fn lookBody(p: *Parser, f: *Flags, ahead: bool, negated: bool) Error!*Node {
         var inner = f.*;
         const body = try p.alternation(&inner);
-        if (p.next() != ')') return error.BadPattern;
+        if (p.next() != ')') return bad("Unclosed group");
         return p.node(.{ .look = .{ .node = body, .ahead = ahead, .negated = negated } });
     }
 
     fn escape(p: *Parser, f: *Flags) Error!*Node {
-        const ch = p.next() orelse return error.BadPattern;
+        const ch = p.next() orelse return bad("Unexpected internal error");
         switch (ch) {
             'd', 'D', 'w', 'W', 's', 'S' => {
                 const items = try pa.alloc(ClassItem, 1);
@@ -334,7 +346,11 @@ const Parser = struct {
             },
             // escaped metacharacters and other punctuation
             '\\', '.', '*', '+', '?', '(', ')', '[', ']', '{', '}', '|', '^', '$', '-', '/', '#', ' ', '&', '~', '!', '"', '\'', ',', ':', ';', '<', '=', '>', '@', '%', '`', '_' => ch,
-            else => error.BadPattern, // \Q \0 \h \v \R \G ...: one host only or unknown
+            // \Q \0 \h \v \R \G ...: Java only; other letters: neither host
+            else => if (((ch >= 'a' and ch <= 'z') or (ch >= 'A' and ch <= 'Z')) and std.mem.indexOfScalar(u8, "QEhHvVRGXNg", @intCast(ch)) == null)
+                bad("Illegal/unsupported escape sequence")
+            else
+                error.BadPattern,
         };
     }
 
@@ -356,14 +372,14 @@ const Parser = struct {
         }
         var first = true;
         while (true) {
-            const ch = p.next() orelse return error.BadPattern;
+            const ch = p.next() orelse return bad("Unclosed character class");
             if (ch == ']' and !first) break;
             first = false;
             if (ch == '[') return error.BadPattern; // nested classes: one host each
             if (ch == '&' and p.peek() == '&') return error.BadPattern; // Java intersection
             var lo: u21 = ch;
             if (ch == '\\') {
-                const e = p.next() orelse return error.BadPattern;
+                const e = p.next() orelse return bad("Unclosed character class");
                 switch (e) {
                     'd', 'D', 'w', 'W', 's', 'S' => {
                         try items.append(pa, predefined(e));
@@ -383,7 +399,7 @@ const Parser = struct {
                 if (p.peek() == '[') return error.BadPattern; // .NET subtraction
                 hi = p.next() orelse return error.BadPattern;
                 if (hi == '\\') hi = try p.escapeChar(p.next() orelse return error.BadPattern);
-                if (hi < lo) return error.BadPattern;
+                if (hi < lo) return bad("Illegal character range");
             }
             try items.append(pa, .{ .range = .{ .lo = lo, .hi = hi } });
         }
@@ -533,10 +549,11 @@ const Gen = struct {
 };
 
 pub fn compile(pattern: []const u21) Error!Regex {
+    syntax_error = null;
     var p = Parser{ .pat = pattern };
     var flags = Flags{};
     const tree = try p.alternation(&flags);
-    if (p.pos != pattern.len) return error.BadPattern; // an unmatched )
+    if (p.pos != pattern.len) return bad("Unmatched closing ')'");
     // backreferences to groups that do not exist
     if (maxBackref(tree) > p.ngroups) return error.BadPattern;
     var g = Gen{};

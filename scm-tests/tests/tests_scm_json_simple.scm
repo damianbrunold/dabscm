@@ -86,4 +86,24 @@
   (test-error (json-parse "tru"))
   (test-error (json-parse "")))
 
+;; strict as RFC 8259 (and Python's json): the same messages in all three
+;; implementations
+(define (json-error-text s)
+  (guard (e ((error-object? e) (error-object-message e))) (json-parse s) #f))
+
+(test-group "json-parse: strict"
+  (test-equal "json: unexpected trailing characters" (json-error-text "{\"a\": 1} x"))
+  (test-equal '(("a" . 1)) (json-parse "{\"a\": 1}  \n"))
+  (test-equal "json: leading zero in number" (json-error-text "[01]"))
+  (test-equal "json: leading zero in number" (json-error-text "[-01]"))
+  (test-equal #(0 0 0.5 -500.0) (json-parse "[0, -0, 0.5, -0.5e3]"))
+  (test-equal "json: bad number" (json-error-text "[-]"))
+  (test-equal "json: bad number" (json-error-text "[1.]"))
+  (test-equal "json: bad number" (json-error-text "[1e]"))
+  (test-equal "json: unexpected char ." (json-error-text "[.5]"))
+  (test-equal "json: control character in string" (json-error-text (string #\" #\a (integer->char 1) #\")))
+  (test-equal (string #\a (integer->char 1)) (json-parse "\"a\\u0001\""))
+  (test-equal "json: expected low surrogate" (json-error-text "\"\\ud83d\\u0041\""))
+  (test-equal "json: unexpected char N" (json-error-text "[NaN]")))
+
 (test-end "scm-json-simple")

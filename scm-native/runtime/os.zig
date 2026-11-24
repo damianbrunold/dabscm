@@ -237,6 +237,21 @@ pub fn realPath(path: []const u8) ?[]const u8 {
     return std.Io.Dir.cwd().realPathFileAlloc(io, path, pa) catch null;
 }
 
+/// The permission bits of path (as chmod takes them), null on Windows or
+/// if it does not exist
+pub fn fileMode(path: []const u8) ?u32 {
+    if (is_windows) return null;
+    const st = std.Io.Dir.cwd().statFile(io, path, .{}) catch return null;
+    return @intCast(st.permissions.toMode() & 0o7777);
+}
+
+/// chmod in the process; false on Windows or failure
+pub fn setFileMode(path: []const u8, mode: u32) bool {
+    if (is_windows) return false;
+    std.Io.Dir.cwd().setFilePermissions(io, path, .fromMode(@intCast(mode)), .{}) catch return false;
+    return true;
+}
+
 pub fn makeDirectory(path: []const u8) bool {
     std.Io.Dir.cwd().createDirPath(io, path) catch return false;
     return true;

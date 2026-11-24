@@ -19,6 +19,18 @@
           scm-pretty)
   (begin
 
+    ;; the character of code point n as a string: natively one character,
+    ;; on the JVM and C# (UTF-16 characters) a surrogate pair above #xFFFF
+    (define (code-point->string n)
+      (cond-expand
+        (dabscm-native (string (integer->char n)))
+        (else
+         (if (> n #xFFFF)
+             (let ((v (- n #x10000)))
+               (string (integer->char (+ #xD800 (quotient v 1024)))
+                       (integer->char (+ #xDC00 (remainder v 1024)))))
+             (string (integer->char n))))))
+
     ;; ================================================================
     ;; (scm data r) — translates analysis code between R (tidyverse:
     ;; dplyr, tidyr, readr, readxl, ggplot2, sf, stringr, lubridate,
@@ -99,7 +111,11 @@
                                (code (string->number (substring text s e2)
                                                      16)))
                           (loop (if brace? (+ e2 1) e2)
-                                (if code (cons (integer->char code) acc) acc)
+                                (if code
+                                    ;; beyond U+FFFF a surrogate pair on the
+                                    ;; JVM and C# (UTF-16 characters)
+                                    (append (reverse (string->list (code-point->string code))) acc)
+                                    acc)
                                 line)))
                        (else (loop (+ j 2) (cons e acc) line)))))
                   ((char=? (at j) #\newline)

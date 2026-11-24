@@ -9,7 +9,7 @@ public class PrimitiveRegexSearch : Primitive
     private static Regex Get(string pattern)
     {
         if (cache.TryGetValue(pattern, out var r)) return r;
-        var fresh = new Regex(pattern);
+        var fresh = RegexPatterns.Compile("regex-search", pattern);
         if (cache.Count > 256) cache.Clear();
         cache.TryAdd(pattern, fresh);
         return fresh;
@@ -51,7 +51,7 @@ public class PrimitiveRegexSearch : Primitive
         {
             regex = Get(new String(Value.AsString(arguments[1])));
         }
-        catch (ArgumentException e)
+        catch (ArgumentException e) when (e is not RegexParseException)
         {
             throw new SchemeError(pos, "regex-search: invalid pattern: ~a", e.Message);
         }

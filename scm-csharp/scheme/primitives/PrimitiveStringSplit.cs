@@ -9,7 +9,8 @@ public class PrimitiveStringSplit : Primitive
     internal static Regex GetSplitRegex(string pattern)
     {
         if (SplitCache.TryGetValue(pattern, out var r)) return r;
-        var fresh = new Regex(pattern, RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(2000));
+        // case-sensitive, as on the JVM and natively
+        var fresh = RegexPatterns.Compile("string-split", pattern);
         if (SplitCache.Count > 256) SplitCache.Clear();
         SplitCache.TryAdd(pattern, fresh);
         return fresh;

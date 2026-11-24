@@ -43,13 +43,14 @@ public class PrimitiveRunProgram extends Primitive {
             }
 
             var pb = new ProcessBuilder(ProcessUtil.resolveBatchLauncher(cmd_args));
+            pb.directory(ProcessUtil.workDir(null));
 
             if (options != Value.NIL) {
                 // no 'work-dir -> inherit the current directory (a host "."
                 // default isn't a Scheme string and made asString throw)
                 Object val = PrimitiveGetProperty.getProperty(options, "work-dir", Value.F);
                 if (val != Value.F) {
-                    pb.directory(new File(new String(Value.asString(val))).getAbsoluteFile());
+                    pb.directory(ProcessUtil.workDir(new String(Value.asString(val))));
                 }
                 ProcessUtil.applyEnv(pb, options);
             }

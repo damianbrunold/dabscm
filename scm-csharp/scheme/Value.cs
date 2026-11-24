@@ -524,32 +524,55 @@ public class Value
         sb.Append('>');
     }
 
+    // The shortest digits that read back as d, laid out as Java's %.15g
+    // (scientific below 1e-4 and from 1e15, or beyond the digits): the same
+    // text as the JVM and native implementations
     public static string FormatDouble(double d)
     {
         if (double.IsPositiveInfinity(d)) return "+inf.0";
         if (double.IsNegativeInfinity(d)) return "-inf.0";
         if (double.IsNaN(d)) return "+nan.0";
-        for (int p = 15; p <= 17; p++)
+        var sb = new StringBuilder();
+        if (d < 0 || (d == 0 && double.IsNegative(d))) sb.Append('-');
+        double x = Math.Abs(d);
+        if (x == 0) return sb.Append("0.0").ToString();
+        // "R": the shortest round trip (.NET Core 3.0+)
+        string t = x.ToString("R", CultureInfo.InvariantCulture);
+        int ePos = t.IndexOf('E');
+        string mant = ePos >= 0 ? t.Substring(0, ePos) : t;
+        int exp10 = ePos >= 0 ? int.Parse(t.Substring(ePos + 1), CultureInfo.InvariantCulture) : 0;
+        int dot = mant.IndexOf('.');
+        if (dot < 0) dot = mant.Length;
+        string all = mant.Substring(0, dot) + (dot < mant.Length ? mant.Substring(dot + 1) : "");
+        int lead = 0;
+        while (lead < all.Length - 1 && all[lead] == '0') lead++;
+        int exp = exp10 + dot - 1 - lead;
+        string digits = all.Substring(lead);
+        int n = digits.Length;
+        while (n > 1 && digits[n - 1] == '0') n--;
+        digits = digits.Substring(0, n);
+        int nd = digits.Length;
+        int p = Math.Max(15, nd);
+        if (exp < -4 || exp >= p)
         {
-            string s = d.ToString("G" + p, CultureInfo.InvariantCulture);
-            if (double.Parse(s, CultureInfo.InvariantCulture) == d)
-                return NormalizeDouble(s);
+            sb.Append(digits[0]).Append('.');
+            sb.Append(nd > 1 ? digits.Substring(1) : "0");
+            sb.Append('e').Append(exp >= 0 ? "+" : "-").Append(Math.Abs(exp));
         }
-        return NormalizeDouble(d.ToString("G17", CultureInfo.InvariantCulture));
-    }
-
-    private static string NormalizeDouble(string s)
-    {
-        int eIdx = s.IndexOf('E');
-        if (eIdx >= 0)
+        else if (exp < 0)
         {
-            string mantissa = s.Substring(0, eIdx);
-            if (!mantissa.Contains('.')) mantissa += ".0";
-            int exp = int.Parse(s.Substring(eIdx + 1)); // handles E+020, E-005
-            return mantissa + "e" + (exp >= 0 ? "+" : "") + exp;
+            sb.Append("0.");
+            for (int i = 0; i < -exp - 1; i++) sb.Append('0');
+            sb.Append(digits);
         }
-        if (!s.Contains('.')) s += ".0";
-        return s;
+        else
+        {
+            int ip = exp + 1;
+            for (int i = 0; i < ip; i++) sb.Append(i < nd ? digits[i] : '0');
+            sb.Append('.');
+            sb.Append(nd > ip ? digits.Substring(ip) : "0");
+        }
+        return sb.ToString();
     }
 
     private static string PrintRepValues(Values values)

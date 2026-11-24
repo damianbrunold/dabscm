@@ -15,6 +15,18 @@
           toml-write)
   (begin
 
+    ;; the character of code point n as a string: natively one character,
+    ;; on the JVM and C# (UTF-16 characters) a surrogate pair above #xFFFF
+    (define (code-point->string n)
+      (cond-expand
+        (dabscm-native (string (integer->char n)))
+        (else
+         (if (> n #xFFFF)
+             (let ((v (- n #x10000)))
+               (string (integer->char (+ #xD800 (quotient v 1024)))
+                       (integer->char (+ #xDC00 (remainder v 1024)))))
+             (string (integer->char n))))))
+
     ;; ================================================================
     ;; (scm toml) — a TOML 1.0 codec mapping TOML to and from ordinary
     ;; Scheme data (sexps). toml-parse / toml-read turn a whole document
@@ -189,7 +201,7 @@ Example:
                   ((char=? e #\u)
                    (write-char (integer->char (read-hex 4)) out))
                   ((char=? e #\U)
-                   (write-char (integer->char (read-hex 8)) out))
+                   (write-string (code-point->string (read-hex 8)) out))
                   ((and ml?
                         (or (char=? e #\space)
                             (char=? e #\tab)

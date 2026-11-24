@@ -10,7 +10,7 @@ public class PrimitiveStringReplaceRegex : Primitive
     private static Regex Get(string pattern)
     {
         if (cache.TryGetValue(pattern, out var r)) return r;
-        var fresh = new Regex(pattern);
+        var fresh = RegexPatterns.Compile("string-replace-all-regex", pattern);
         if (cache.Count > 256) cache.Clear();
         cache.TryAdd(pattern, fresh);
         return fresh;

@@ -46,6 +46,7 @@ public class PrimitiveZipAddStoredEntry extends Primitive {
             ze.setCrc(crc.getValue());
             if (arguments.length > 3)
                 ze.setTime(IntegerMath.toLong(arguments[3]) * 1000L);
+            holder.finishEntry();
             holder.zip.putNextEntry(ze);
             holder.zip.write(data);
             holder.zip.closeEntry();

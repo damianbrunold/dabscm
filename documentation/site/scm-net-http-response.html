@@ -112,11 +112,13 @@ Example:
 </div>
 <div class="entry" id="e4" data-name="http-not-found">
   <div class="entry-name">http-not-found</div>
-  <pre class="entry-doc">Syntax: (http-not-found)
+  <pre class="entry-doc">Syntax: (http-not-found [body])
 Library: (scm net http response)
-Description: Creates a 404 Not Found HTTP response.
+Description: Creates a 404 Not Found HTTP response with body (a string,
+  default "Not Found").
 Example:
-  (http-not-found)</pre>
+  (http-not-found)
+  (http-not-found "no such page")</pre>
 </div>
 <div class="entry" id="e5" data-name="http-ok">
   <div class="entry-name">http-ok</div>

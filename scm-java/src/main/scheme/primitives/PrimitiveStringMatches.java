@@ -8,10 +8,10 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class PrimitiveStringMatches extends Primitive {
     private static final ConcurrentHashMap<String, Pattern> cache = new ConcurrentHashMap<>();
-    private static Pattern get(String pattern) {
+    private static Pattern get(String who, String pattern) {
         Pattern p = cache.get(pattern);
         if (p != null) return p;
-        p = Pattern.compile(pattern);
+        p = RegexPatterns.compile(who, pattern);
         if (cache.size() > 256) cache.clear();
         cache.putIfAbsent(pattern, p);
         return p;
@@ -37,7 +37,7 @@ public class PrimitiveStringMatches extends Primitive {
     public Object apply(SourcePos pos, Object[] arguments) {
         checkArgs(pos, arguments, 2, 2);
         var s = new String(Value.asString(arguments[0]));
-        var pattern = get(new String(Value.asString(arguments[1])));
+        var pattern = get(name(), new String(Value.asString(arguments[1])));
         var matcher = pattern.matcher(s);
         if (matcher.find()) {
             var groups = new Object[matcher.groupCount() + 1];

@@ -35,7 +35,10 @@
 ;; and /opt/P/bin/scm runs the native program for bin/<name>.scm, so the
 ;; app's units and P-admin work unchanged. The architecture comes from the
 ;; executables: <pkg>_<version>_amd64.deb (arm64 with --target
-;; aarch64-linux-musl).
+;; aarch64-linux-musl). By default they are built for glibc 2.31
+;; (x86_64-linux-gnu.2.31: Debian 11, Ubuntu 20.04 and later) and the
+;; package depends on libc6 (>= 2.31): a long-running server fragments
+;; memory less with glibc's allocator than with musl's (static).
 
 (define-library (scm deb webapp)
   (export package-webapp-deb
@@ -514,6 +517,20 @@ fi
                (cons name exe)))
            names))
 
+    (define default-native-target "x86_64-linux-gnu.2.31")
+
+    ;; The Depends entry for the C library of target: libc6 (>= version)
+    ;; for a glibc target (x86_64-linux-gnu.2.31), nothing for musl (static)
+    (define (libc-depends target)
+      (let ((gnu (let loop ((i 0))
+                   (cond ((> (+ i 4) (string-length target)) #f)
+                         ((string=? (substring target i (+ i 4)) "-gnu") (+ i 4))
+                         (else (loop (+ i 1)))))))
+        (cond ((not gnu) "")
+              ((and (< gnu (string-length target)) (char=? (string-ref target gnu) #\.))
+               (string-append "libc6 (>= " (substring target (+ gnu 1) (string-length target)) "), "))
+              (else "libc6, "))))
+
     (define (shell-quote s)
       (string-append "'" (string-replace-all s "'" "'\\''") "'"))
 
@@ -548,8 +565,9 @@ Description: Builds <out>/<pkg>_<version>_all.deb for the web application
   scmc, no scm.jar, no Java dependency, the architecture of the
   executables; (scmc . path) is the scmc to run (default: scm with
   scm-native/scmc.scm of the dabscm checkout), (dabscm . dir) that
-  checkout (default ../dabscm next to app-dir), (target . triple) a
-  cross-compilation target such as aarch64-linux-musl. The version comes from
+  checkout (default ../dabscm next to app-dir), (target . triple) the
+  target (default x86_64-linux-gnu.2.31, glibc: the package depends on
+  libc6 (>= 2.31); aarch64-linux-musl and other musl targets are static). The version comes from
   the last commit (webapp-deb-version), so the same commit gives the same
   bytes.
 Example:
@@ -571,6 +589,8 @@ Example:
                               (join-path (directory-name dir) "dabscm")))
              (target (opt 'target #f))
              (native? (or (opt 'native #f) (assq 'scmc opts) target))
+             ;; native: glibc unless a target is given (see above)
+             (build-target (and native? (or target default-native-target)))
              (dirty? (not (string=? (git dir "status" "--porcelain") ""))))
         (when (and dirty? (not (opt 'allow-dirty #f)))
           (error
@@ -615,7 +635,7 @@ Example:
                                       "scm"
                                       (join-path dabscm-dir "scm-native"
                                                  "scmc.scm"))))
-                              target
+                              build-target
                               (spec-opt spec 'native-include '("src"))
                               (join-path (special-folder-temp)
                                          (string-append "dabscm-deb-" pkg)))
@@ -642,7 +662,7 @@ Example:
                         ("@RUNTIME_DEPENDS@"
                          .
                          ,(if native?
-                              ""
+                              (libc-depends build-target)
                               "default-jre-headless | java11-runtime-headless, "))
                         ("@DATA_SUBDIRS@"
                          .

@@ -1374,7 +1374,7 @@ public class Expander {
                 if (candidate.exists()) return candidate;
             }
         }
-        return f;
+        return SchemePaths.file(filename);
     }
 
     /**

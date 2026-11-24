@@ -21,6 +21,16 @@ import scheme.Value;
  * same in ProcUtil.CreateStartInfo.
  */
 final class ProcessUtil {
+    // The current directory as set-current-directory! sets it (the JVM
+    // cannot change its process's directory: user.dir), for a child's
+    // working directory; a relative 'work-dir is taken from there too
+    static java.io.File workDir(String dir) {
+        java.io.File cwd = new java.io.File(System.getProperty("user.dir"));
+        if (dir == null) return cwd;
+        java.io.File f = new java.io.File(dir);
+        return f.isAbsolute() ? f : new java.io.File(cwd, dir);
+    }
+
     private ProcessUtil() {}
 
     /**

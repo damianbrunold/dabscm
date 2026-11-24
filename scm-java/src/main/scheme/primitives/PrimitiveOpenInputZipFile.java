@@ -6,6 +6,7 @@ import scheme.NativeValue;
 import scheme.Primitive;
 import scheme.SchemeError;
 import scheme.SourcePos;
+import scheme.SchemePaths;
 import scheme.Value;
 import scheme.ZipInputHolder;
 
@@ -31,7 +32,7 @@ public class PrimitiveOpenInputZipFile extends Primitive {
         checkArgs(pos, arguments, 1, 1);
         try {
             String filename = new String(Value.asString(arguments[0]));
-            return new NativeValue(new ZipInputHolder(new ZipFile(filename)));
+            return new NativeValue(new ZipInputHolder(new ZipFile(SchemePaths.file(filename))));
         } catch (Exception e) {
             throw new SchemeError(pos, name() + " failed: ~s", e.getMessage());
         }

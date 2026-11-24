@@ -177,13 +177,18 @@ Example:
              (let
                  ((v (string->number (substring name 2 (string-length name))
                                      16)))
-               (and v (integer->char v))))
+               (and v (code-point-char v))))
             ((string-prefix? "#" name)
              (let
                  ((v (string->number (substring name 1
                                                 (string-length name)))))
-               (and v (integer->char v))))
+               (and v (code-point-char v))))
             (else #f)))
+
+    ;; a character reference's character; U+FFFD for a code point the
+    ;; implementation has no character for (beyond U+FFFF on the JVM and C#)
+    (define (code-point-char v)
+      (guard (e (#t #\xFFFD)) (integer->char v)))
 
     ;; --- the tree -------------------------------------------------------
 

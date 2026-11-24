@@ -82,6 +82,19 @@ fn sha256Hash(t: *Thread) Err!Word {
 }
 pub const @"%sha256-hash" = WN("sha256-hash", sha256Hash, 1, 1);
 
+fn sha2Hash(comptime H: type, comptime who: []const u8) fn (*Thread) Err!Word {
+    return struct {
+        fn f(t: *Thread) Err!Word {
+            var out: [H.digest_length]u8 = undefined;
+            H.hash(try hashInput(t, who, false), &out, .{});
+            return bytesResult(t, &out);
+        }
+    }.f;
+}
+pub const @"%sha224-hash" = WN("sha224-hash", sha2Hash(crypto.hash.sha2.Sha224, "sha224-hash"), 1, 1);
+pub const @"%sha384-hash" = WN("sha384-hash", sha2Hash(crypto.hash.sha2.Sha384, "sha384-hash"), 1, 1);
+pub const @"%sha512-hash" = WN("sha512-hash", sha2Hash(crypto.hash.sha2.Sha512, "sha512-hash"), 1, 1);
+
 fn sha1Hash(t: *Thread) Err!Word {
     var out: [20]u8 = undefined;
     crypto.hash.Sha1.hash(try hashInput(t, "sha1-hash", true), &out, .{});

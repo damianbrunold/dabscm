@@ -4,12 +4,12 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 import scheme.IntegerMath;
 import scheme.Primitive;
 import scheme.SchemeError;
 import scheme.SourcePos;
+import scheme.SchemePaths;
 import scheme.Value;
 import scheme.ZipInputHolder;
 
@@ -34,7 +34,7 @@ public class PrimitiveZipExtractEntry extends Primitive {
         checkArgs(pos, arguments, 3, 4);
         ZipInputHolder holder = (ZipInputHolder) Value.asNativeValue(arguments[0]).value;
         String entryName = new String(Value.asString(arguments[1]));
-        Path path = Paths.get(new String(Value.asString(arguments[2])));
+        Path path = SchemePaths.path(new String(Value.asString(arguments[2])));
         long max = arguments.length > 3 ? IntegerMath.toLong(arguments[3]) : Long.MAX_VALUE;
         var entry = holder.zip.getEntry(entryName);
         if (entry == null)

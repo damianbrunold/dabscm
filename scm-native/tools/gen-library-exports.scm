@@ -19,7 +19,7 @@
         (scm fs)
         (scm module))
 
-(define native-dir (directory-name (directory-name (absolute-path (car (command-line))))))
+(define native-dir (directory-name (directory-name (normalized-path (absolute-path (car (command-line)))))))
 (define libs-dir (join-path (directory-name native-dir) "scm-lib" "libraries"))
 (define out-file (join-path native-dir "runtime" "library_exports.zig"))
 
@@ -63,7 +63,9 @@
     (map (lambda (s)
            (guard (e (#t (list s 'unknown 0)))
              (let ((v (%module-ref name s)))
-               (list s (value-kind v) (value-id v)))))
+               ;; natively include and include-ci are syntax (the
+               ;; expander's core forms), procedures on the JVM
+               (list s (if (memq s '(include include-ci)) 'syntax (value-kind v)) (value-id v)))))
          (%module-exports name))))
 
 (define (name->string name)

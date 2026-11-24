@@ -26,15 +26,16 @@ public class PrimitiveIncludeCi : Primitive
         try
         {
             Scheme scheme = new Scheme(modules);
+            object value = new Values();
             for (int i = 0; i < arguments.Length; i++)
             {
-                string filename = new string(Value.AsString(arguments[i]));
+                string filename = PrimitiveInclude.Resolve(pos, new string(Value.AsString(arguments[i])));
                 using var reader = new StreamReader(new FileStream(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite), Encoding.UTF8);
                 using var stream = new TextStream(reader, filename);
                 stream.FoldCase = true;
-                scheme.EvalFile(stream, filename);
+                value = scheme.EvalFile(stream, filename);
             }
-            return new Values();
+            return value;
         }
         catch (SchemeError)
         {

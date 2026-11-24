@@ -451,7 +451,11 @@ Example:
     (define read-error? (%primitive "read-error?"))
     (define file-error? (%primitive "file-error?"))
 
-    (define include (%primitive "include"))
+    ;; natively include and include-ci are syntax (the expander's core
+    ;; forms): the files' forms are compiled where the include stands
+    (cond-expand
+      (dabscm-native)
+      (else (define include (%primitive "include"))))
 
     (define number->string (%primitive "number->string"))
     (define string->number (%primitive "string->number"))
@@ -1456,7 +1460,9 @@ Example:
               (apply for-each f (map string->list (cons s more))))))
 
     ;; include-ci — case-insensitive file loading
-    (define include-ci (%primitive "include-ci"))
+    (cond-expand
+      (dabscm-native)
+      (else (define include-ci (%primitive "include-ci"))))
 
     ;; ---- R7RS/SRFI-9 define-record-type ----
     (define record? (%primitive "record?"))

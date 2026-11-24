@@ -24,7 +24,7 @@ public class PrimitiveMakeHttpFileResponse extends Primitive {
         checkArgs(pos, arguments, 3, 5);
         int status = IntegerMath.toInt(arguments[0]);
         String path = new String(Value.asString(arguments[2]));
-        File f = new File(path);
+        File f = SchemePaths.file(path);
         if (!f.isFile()) throw new SchemeError(pos, "make-http-file-response: not a file: ~a", path);
         long size = f.length();
         long offset = arguments.length > 3 ? IntegerMath.toLong(arguments[3]) : 0;
@@ -32,6 +32,6 @@ public class PrimitiveMakeHttpFileResponse extends Primitive {
         if (offset < 0 || length < 0 || offset + length > size)
             throw new SchemeError(pos, "make-http-file-response: part outside the file: ~a+~a of ~a", offset, length, size);
         return new NativeValue(SchemeHttpResponse.ofFile(
-            status, PrimitiveMakeHttpResponse.parseHeaders(arguments[1]), path, offset, length));
+            status, PrimitiveMakeHttpResponse.parseHeaders(arguments[1]), f.getPath(), offset, length));
     }
 }

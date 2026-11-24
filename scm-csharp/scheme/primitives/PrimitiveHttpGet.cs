@@ -29,7 +29,7 @@ public class PrimitiveHttpGet : Primitive
         CheckArgs(pos, arguments, 1, 3);
         string url = new String(Value.AsString(arguments[0]));
         int timeoutSeconds = arguments.Length == 3
-            ? (int)Value.AsInteger(arguments[2])
+            ? SchemeHttpRequest.TimeoutArg(arguments[2])
             : SchemeHttpRequest.DefaultTimeoutSeconds;
         using var client = TlsTrust.CreateHttpClient();
         client.Timeout = timeoutSeconds > 0

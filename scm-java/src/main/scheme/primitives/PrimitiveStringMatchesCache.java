@@ -12,7 +12,7 @@ final class PrimitiveStringMatchesCache {
     static Pattern get(String pattern) {
         Pattern p = cache.get(pattern);
         if (p != null) return p;
-        p = Pattern.compile(pattern);
+        p = RegexPatterns.compile("regex-search", pattern);
         if (cache.size() > 256) cache.clear();
         cache.putIfAbsent(pattern, p);
         return p;

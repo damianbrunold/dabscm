@@ -30,6 +30,7 @@ public class PrimitiveCloseOutputZip extends Primitive {
         checkArgs(pos, arguments, 1, 1);
         try {
             ZipOutputHolder holder = (ZipOutputHolder) Value.asNativeValue(arguments[0]).value;
+            holder.finishEntry();
             holder.zip.close();
             return new Values();
         } catch (Exception e) {

@@ -739,9 +739,10 @@ Example:
                               ;; (one without code points beyond U+FFFF truncates
                               ;; them)
                               ((and (> (gid-of (car cps)) 0)
-                                    (= (char->integer
-                                        (integer->char (car cps)))
-                                       (car cps)))
+                                    (guard (e (#t #f))
+                                      (= (char->integer
+                                          (integer->char (car cps)))
+                                         (car cps))))
                                (loop (cdr cps)
                                      (cons (integer->char (car cps)) acc)))
                               (else (loop (cdr cps) acc))))))))

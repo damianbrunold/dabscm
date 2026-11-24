@@ -67,9 +67,16 @@ Description: Builds &lt;out&gt;/&lt;pkg&gt;_&lt;version&gt;_all.deb for the web 
     (copyright-notes "line" ...) appended to the copyright file (bundled
                                  third-party material, attributions)
     (maintainer . "Name &lt;mail&gt;")
+    (native-include "src")      library directories for scmc (native)
   Options, each a pair: (out . dir) (default "dist" in app-dir),
   (jar . path) (default ../dabscm/scm-java/scm.jar next to app-dir),
-  (allow-dirty . #t) to package uncommitted changes. The version comes from
+  (allow-dirty . #t) to package uncommitted changes. (native . #t) builds
+  a native package instead: every bin/ program compiled by dabscm native's
+  scmc, no scm.jar, no Java dependency, the architecture of the
+  executables; (scmc . path) is the scmc to run (default: scm with
+  scm-native/scmc.scm of the dabscm checkout), (dabscm . dir) that
+  checkout (default ../dabscm next to app-dir), (target . triple) a
+  cross-compilation target such as aarch64-linux-musl. The version comes from
   the last commit (webapp-deb-version), so the same commit gives the same
   bytes.
 Example:
@@ -85,7 +92,10 @@ Library: (scm deb webapp)
 Description: Command-line front end for package-webapp-deb, for an app's
   package-deb.scm: args (usually (cdr (command-line))) may hold
   --out &lt;dir&gt;, --jar &lt;scm.jar&gt;, --dabscm &lt;checkout&gt; (uses its
-  scm-java/scm.jar) and --allow-dirty. Prints the package path and returns
+  scm-java/scm.jar, or for a native package its scm-native/scmc.scm),
+  --allow-dirty, and for a native package (compiled with dabscm native)
+  --native, --scmc &lt;scmc&gt; (implies --native) and --target &lt;triple&gt;
+  (implies --native). Prints the package path and returns
   it; prints the error and exits with status 1 on failure.
 Example:
   ;; package-deb.scm

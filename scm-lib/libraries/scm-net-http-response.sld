@@ -74,13 +74,15 @@ Example:
   (http-ok \"Hello, world!\")"
       (make-http-response 200 '() body))
 
-    (define (http-not-found)
-      "Syntax: (http-not-found)
+    (define (http-not-found . body)
+      "Syntax: (http-not-found [body])
 Library: (scm net http response)
-Description: Creates a 404 Not Found HTTP response.
+Description: Creates a 404 Not Found HTTP response with body (a string,
+  default \"Not Found\").
 Example:
-  (http-not-found)"
-      (make-http-response 404 '() "Not Found"))
+  (http-not-found)
+  (http-not-found \"no such page\")"
+      (make-http-response 404 '() (if (pair? body) (car body) "Not Found")))
 
     (define (http-bad-request msg)
       "Syntax: (http-bad-request msg)

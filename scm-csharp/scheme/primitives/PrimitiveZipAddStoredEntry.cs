@@ -31,10 +31,7 @@ public class PrimitiveZipAddStoredEntry: Primitive
             ZipOutput output = (ZipOutput) Value.AsNativeValue(arguments[0]).value;
             string entryname = new(Value.AsString(arguments[1]));
             byte[] data = Value.AsBytevector(arguments[2]);
-            output.text_strm?.Dispose();
-            output.bin_strm?.Dispose();
-            output.text_strm = null;
-            output.bin_strm = null;
+            output.FinishEntry();
             var entry = output.zip!.CreateEntry(entryname, CompressionLevel.NoCompression);
             if (arguments.Length > 3)
             {

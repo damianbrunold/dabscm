@@ -28,7 +28,7 @@ public class PrimitiveHttpPost extends Primitive {
         String body = new String(Value.asString(arguments[1]));
         int timeoutSeconds = SchemeHttpRequest.DEFAULT_TIMEOUT_SECONDS;
         if (arguments.length == 4) {
-            timeoutSeconds = Value.asInteger(arguments[3]).intValue();
+            timeoutSeconds = SchemeHttpRequest.timeoutSeconds(arguments[3]);
         }
         try {
             var builder = HttpRequest.newBuilder()

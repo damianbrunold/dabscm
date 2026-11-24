@@ -6,6 +6,19 @@ namespace scheme;
 
 public class SchemeHttpRequest
 {
+    // A timeout argument: seconds as any non-negative real (1.5, 30),
+    // rounded up to whole seconds
+    public static int TimeoutArg(object v)
+    {
+        if (Value.IsInteger(v)) return (int)Value.AsInteger(v);
+        if (Value.IsReal(v))
+        {
+            double d = Value.AsReal(v);
+            if (d >= 0 && !double.IsNaN(d)) return (int)Math.Min(int.MaxValue, Math.Ceiling(d));
+        }
+        throw new SchemeError("http: timeout must be a non-negative number of seconds: ~s", v);
+    }
+
     // Default request timeout in seconds. A value <= 0 means "no timeout".
     public const int DefaultTimeoutSeconds = 600;
 

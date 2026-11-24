@@ -3,13 +3,13 @@ package scheme.primitives;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
 
 import scheme.Primitive;
 import scheme.SchemeError;
 import scheme.SourcePos;
+import scheme.SchemePaths;
 import scheme.Value;
 import scheme.Values;
 import scheme.ZipOutputHolder;
@@ -34,7 +34,7 @@ public class PrimitiveZipAddFileEntry extends Primitive {
         checkArgs(pos, arguments, 3, 4);
         ZipOutputHolder holder = (ZipOutputHolder) Value.asNativeValue(arguments[0]).value;
         String entryName = new String(Value.asString(arguments[1]));
-        Path path = Paths.get(new String(Value.asString(arguments[2])));
+        Path path = SchemePaths.path(new String(Value.asString(arguments[2])));
         boolean compress = arguments.length > 3 && arguments[3] != Value.F;
         try {
             ZipEntry ze = new ZipEntry(entryName);
@@ -55,6 +55,7 @@ public class PrimitiveZipAddFileEntry extends Primitive {
                 ze.setCrc(crc.getValue());
             }
             ze.setTime(Files.getLastModifiedTime(path).toMillis());
+            holder.finishEntry();
             holder.zip.putNextEntry(ze);
             try (InputStream in = Files.newInputStream(path)) {
                 while ((n = in.read(buf)) != -1) holder.zip.write(buf, 0, n);

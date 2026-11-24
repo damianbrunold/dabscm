@@ -20,7 +20,9 @@ public class PrimitiveJsonSimpleParse extends Primitive {
                "  representation: objects as alists with string keys (order preserved),\n" +
                "  arrays as vectors, strings as strings, integral numbers as exact\n" +
                "  integers and fractional ones as inexact reals, true/false as #t/#f,\n" +
-               "  and null as the symbol 'null. Raises an error on malformed input.\n" +
+               "  and null as the symbol 'null. Raises an error on malformed input, as\n" +
+               "  RFC 8259 defines it: also on text after the value, numbers with\n" +
+               "  leading zeros and control characters in strings.\n" +
                "Example:\n" +
                "  (json-parse \"{\\\"a\\\": [1, 2.5, true, null]}\")\n" +
                "    => ((\"a\" . #(1 2.5 #t null)))";
@@ -32,6 +34,7 @@ public class PrimitiveJsonSimpleParse extends Primitive {
         Parser parser = new Parser(Value.asString(arguments[0]), pos);
         Object result = parser.parseValue();
         parser.skipWs();
+        parser.end();
         return result;
     }
 
@@ -57,6 +60,11 @@ public class PrimitiveJsonSimpleParse extends Primitive {
         private char next() {
             if (pos >= s.length) err("unexpected end of input");
             return s[pos++];
+        }
+
+        // nothing but whitespace after the value (RFC 8259)
+        void end() {
+            if (pos < s.length) err("unexpected trailing characters");
         }
 
         void skipWs() {
@@ -158,10 +166,10 @@ public class PrimitiveJsonSimpleParse extends Primitive {
                                 if (next() != '\\') err("expected low surrogate");
                                 if (next() != 'u') err("expected \\u low surrogate");
                                 int lo = parseHex4();
-                                int combined = 0x10000 + (cp - 0xD800) * 0x400 + (lo - 0xDC00);
-                                // Scheme chars are 16-bit; match the original
-                                // integer->char behaviour (truncates to 16 bits).
-                                sb.append((char) combined);
+                                if (lo < 0xDC00 || lo > 0xDFFF) err("expected low surrogate");
+                                // strings are UTF-16 here: the pair, as the
+                                // reader makes for such a character
+                                sb.append((char) cp).append((char) lo);
                             } else {
                                 sb.append((char) cp);
                             }
@@ -169,6 +177,8 @@ public class PrimitiveJsonSimpleParse extends Primitive {
                         }
                         default: err("bad escape"); break;
                     }
+                } else if (c < 0x20) {
+                    err("control character in string");
                 } else {
                     sb.append(c);
                 }
@@ -190,16 +200,25 @@ public class PrimitiveJsonSimpleParse extends Primitive {
         }
 
         private Object parseNumber() {
+            // RFC 8259: -?(0|[1-9][0-9]*)(.[0-9]+)?([eE][+-]?[0-9]+)?
             int start = pos;
             if (peek() == '-') pos++;
-            while (peek() >= '0' && peek() <= '9') pos++;
+            if (peek() == '0') {
+                pos++;
+                if (peek() >= '0' && peek() <= '9') err("leading zero in number");
+            } else {
+                if (!(peek() >= '0' && peek() <= '9')) err("bad number");
+                while (peek() >= '0' && peek() <= '9') pos++;
+            }
             if (peek() == '.') {
                 pos++;
+                if (!(peek() >= '0' && peek() <= '9')) err("bad number");
                 while (peek() >= '0' && peek() <= '9') pos++;
             }
             if (peek() == 'e' || peek() == 'E') {
                 pos++;
                 if (peek() == '+' || peek() == '-') pos++;
+                if (!(peek() >= '0' && peek() <= '9')) err("bad number");
                 while (peek() >= '0' && peek() <= '9') pos++;
             }
             String num = new String(s, start, pos - start);

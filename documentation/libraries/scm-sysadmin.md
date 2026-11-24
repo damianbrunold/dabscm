@@ -157,10 +157,11 @@ Example:
 ```
 Syntax: (chmod path mode [option ...])
 Library: (scm fs)
-Description: Changes file mode bits via the native chmod command. mode is
-  either an octal string (e.g. "755") or a symbolic spec ("u+x").
-  Options: 'recursive (-R). On Windows this is a best-effort no-op when
-  no native chmod is available.
+Description: Changes file mode bits. mode is an integer (#o755), an octal
+  string (e.g. "755") or a symbolic spec ("u+x"). A numeric mode on
+  one path is set in the process (set-file-mode!); a symbolic one or the
+  option 'recursive (-R) runs the chmod command. On Windows this is a
+  best-effort no-op when no native chmod is available.
 Example:
   (chmod "script.sh" "755")
   (chmod "dir" "700" 'recursive)
@@ -419,7 +420,9 @@ Example:
 ```
 Syntax: (directory-files dirname)
 Library: (scm fs)
-Description: Returns a list of file names (not full paths) in the directory dirname.
+Description: Returns a list of the names (not full paths) of the files in the
+  directory dirname, without its subdirectories (directory-entries lists
+  both).
 Example:
   (directory-files "/tmp") => ("file1.txt" "file2.txt" ...)
 ```
@@ -603,7 +606,8 @@ Description: Returns a sorted list of file and directory paths matching
   globstar matching zero or more directory levels). Dotfiles are not
   matched by *, ?, or ** unless the pattern segment explicitly starts
   with a dot. Returns an empty list if no matches are found or the
-  base directory does not exist. On Windows, both / and \ separate path
+  base directory does not exist. On Windows matching ignores case (as
+  file names there do), and both / and \ separate path
   segments in the pattern; returned paths use \.
 Example:
   (glob "src/*.scm") => ("src/bar.scm" "src/foo.scm")
@@ -736,7 +740,9 @@ Description: Joins one or more path component strings into a single path
   added where a part already ends (or the next one starts) with one, so
   joining a directory name with a trailing separator gives no doubled
   separator. Parts that are not strings (symbols, numbers, ...) are
-  converted as display would show them.
+  converted as display would show them. A later absolute part is joined
+  too, not taken as a new start (unlike Python's os.path.join):
+  (join-path "/a" "/x") is "/a/x".
 Example:
   (join-path "/usr" "local" "bin") => "/usr/local/bin"  ; on Unix
   (join-path "/usr/" "local") => "/usr/local"

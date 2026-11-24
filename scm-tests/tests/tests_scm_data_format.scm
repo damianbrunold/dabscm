@@ -25,7 +25,9 @@
     (test-equal "1.234,5" (fmt-num 1234.5 1))))
 
 (test-group "percent and other formats"
-  (test-equal "23.5 %" (fmt-pct 0.2345))
+  ;; 0.2345 is 0.23449999999999998... in binary: 23.4 (as in R and Python)
+  (test-equal "23.4 %" (fmt-pct 0.2345))
+  (test-equal "23.5 %" (fmt-pct 0.235))
   (test-equal "23 %" (fmt-pct 0.2345 0))
   (test-equal "+23 %" (fmt-pct-change 20316 24973))
   (test-equal "-4 %" (fmt-pct-change 100 96))

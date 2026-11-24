@@ -70,7 +70,9 @@
             (env (cond ((pair? env) env)
                        ((current-eval-environment) => list)
                        (else (list (program-environment))))))
-        (for-each (lambda (f) (apply eval f env)) forms)))
+        ;; an include in the file resolves against its directory
+        (with-expanding-file file
+          (lambda () (for-each (lambda (f) (apply eval f env)) forms)))))
 
     (define the-program-environment #f)
 

@@ -42,16 +42,17 @@ public class PrimitiveStartProgram extends Primitive {
 
         try {
             ProcessBuilder pb = new ProcessBuilder(ProcessUtil.resolveBatchLauncher(argv));
+            pb.directory(ProcessUtil.workDir(null));
 
             boolean logfileSet = false;
             if (options != Value.NIL) {
                 Object workdirVal = PrimitiveGetProperty.getProperty(options, "work-dir", Value.F);
                 if (workdirVal != Value.F) {
-                    pb.directory(new File(new String(Value.asString(workdirVal))));
+                    pb.directory(ProcessUtil.workDir(new String(Value.asString(workdirVal))));
                 }
                 Object logfileVal = PrimitiveGetProperty.getProperty(options, "log-file", Value.F);
                 if (logfileVal != Value.F) {
-                    File lf = new File(new String(Value.asString(logfileVal)));
+                    File lf = SchemePaths.file(new String(Value.asString(logfileVal)));
                     pb.redirectOutput(ProcessBuilder.Redirect.to(lf));
                     pb.redirectErrorStream(true);
                     logfileSet = true;

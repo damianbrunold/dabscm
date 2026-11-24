@@ -612,9 +612,10 @@
 
     (define (timeout-arg who opts i)
       (if (> (length opts) i)
+          ;; seconds as any non-negative real, rounded up
           (let ((t (list-ref opts i)))
-            (unless (exact-integer? t) (error (string-append "Failed in " who ": wrong argument type")))
-            t)
+            (unless (and (real? t) (>= t 0)) (error "http: timeout must be a non-negative number of seconds:" t))
+            (exact (ceiling t)))
           600))
 
     (define (url-arg who url)

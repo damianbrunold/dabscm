@@ -78,11 +78,13 @@ Example:
 ### `http-not-found`
 
 ```
-Syntax: (http-not-found)
+Syntax: (http-not-found [body])
 Library: (scm net http response)
-Description: Creates a 404 Not Found HTTP response.
+Description: Creates a 404 Not Found HTTP response with body (a string,
+  default "Not Found").
 Example:
   (http-not-found)
+  (http-not-found "no such page")
 ```
 
 ### `http-ok`

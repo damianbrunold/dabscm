@@ -4,6 +4,7 @@ import java.io.File;
 
 import scheme.Primitive;
 import scheme.SourcePos;
+import scheme.SchemePaths;
 import scheme.Value;
 
 public class PrimitiveNormalizedPath extends Primitive {
@@ -35,16 +36,20 @@ public class PrimitiveNormalizedPath extends Primitive {
     public Object apply(SourcePos pos, Object[] arguments) {
         checkArgs(pos, arguments, 1, 1);
         var workdir = new File(System.getProperty("user.dir"));
-        var path = new File(new String(Value.asString(arguments[0])));
+        String raw = new String(Value.asString(arguments[0]));
+        var path = SchemePaths.file(raw);
+        // on Windows \a and /a are rooted (on the current drive), not relative
+        boolean rooted = new File(raw).isAbsolute()
+            || (File.separatorChar == '\\' && (raw.startsWith("\\") || raw.startsWith("/")));
         try {
-            if (path.isAbsolute()) {
+            if (rooted) {
                 return path.getCanonicalPath().toCharArray();
             } else {
                 return relativeTo(workdir.getCanonicalFile(),
                                   path.getCanonicalFile()).toCharArray();
             }
         } catch (Exception e) {
-            if (path.isAbsolute()) {
+            if (rooted) {
                 return path.getAbsolutePath().toCharArray();
             } else {
                 return relativeTo(workdir.getAbsoluteFile(),

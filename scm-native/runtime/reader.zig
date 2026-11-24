@@ -226,14 +226,18 @@ pub const Reader = struct {
             'b' => 8,
             '0' => 0,
             'x', 'X' => blk: {
-                var v: u21 = 0;
+                var v: u32 = 0;
+                var digits: usize = 0;
                 while (true) {
                     const d = r.next() orelse return r.fail("end of file in \\x escape");
                     if (d == ';') break;
                     const dv = if (d < 128) num.digitOf(@intCast(d), 16) else null;
-                    v = v * 16 + (dv orelse return r.fail("bad \\x escape"));
+                    v = v *| 16 +| (dv orelse return r.fail("tokenizer: malformed hex escape"));
+                    digits += 1;
                 }
-                break :blk v;
+                if (digits == 0) return r.fail("tokenizer: empty hex escape \\x;");
+                if (v > 0x10FFFF) return r.fail("tokenizer: malformed hex escape");
+                break :blk @intCast(v);
             },
             else => c,
         };
@@ -246,16 +250,29 @@ pub const Reader = struct {
             if (c == '"') break;
             if (c == '\\') {
                 const d = r.peek() orelse return r.fail("end of file in string");
-                if (d == '\n' or d == ' ' or d == '\t') {
+                if (d == '\n' or d == '\r' or d == ' ' or d == '\t') {
                     // line continuation: \ <spaces> newline <spaces>
                     while (r.peek()) |e| {
                         if (e == ' ' or e == '\t') _ = r.next() else break;
                     }
-                    if (r.peek() == '\n') _ = r.next();
+                    if (r.peek() == '\r') _ = r.next();
+                    if (r.peek() == '\n') _ = r.next() else if (d == ' ' or d == '\t') {
+                        return r.fail("tokenizer: invalid string escape: expected newline in line continuation");
+                    }
                     while (r.peek()) |e| {
                         if (e == ' ' or e == '\t') _ = r.next() else break;
                     }
                     continue;
+                }
+                // the escapes the JVM tokenizer takes in strings
+                switch (d) {
+                    'n', 't', 'r', 'a', 'b', '0', 'x', '"', '\\', '|' => {},
+                    else => {
+                        var m: std.ArrayList(u8) = .empty;
+                        m.appendSlice(na(), "tokenizer: invalid string escape: \\") catch rt.oom();
+                        appendCp(&m, d);
+                        return r.fail(m.items);
+                    },
                 }
                 cps.append(na(), try r.escape()) catch rt.oom();
             } else cps.append(na(), c) catch rt.oom();

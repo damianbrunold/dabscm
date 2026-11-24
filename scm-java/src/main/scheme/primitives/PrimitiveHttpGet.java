@@ -35,7 +35,7 @@ public class PrimitiveHttpGet extends Primitive {
         String url = new String(Value.asString(arguments[0]));
         int timeoutSeconds = SchemeHttpRequest.DEFAULT_TIMEOUT_SECONDS;
         if (arguments.length == 3) {
-            timeoutSeconds = Value.asInteger(arguments[2]).intValue();
+            timeoutSeconds = SchemeHttpRequest.timeoutSeconds(arguments[2]);
         }
         try {
             var builder = HttpRequest.newBuilder().uri(URI.create(url)).GET();

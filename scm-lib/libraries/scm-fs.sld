@@ -20,6 +20,7 @@
           directory-name
           file-exists?
           file-lock
+          file-mode
           file-modification-date
           file-modification-timestamp
           file-size
@@ -39,7 +40,9 @@
           path-sep
           read-symlink
           readlink
+          real-path
           rm
+          set-file-mode!
           set-file-modification-time!
           special-folder-application-data
           special-folder-documents
@@ -62,6 +65,9 @@
     (define directory-entries (%primitive "directory-entries"))
     (define directory-exists? (%primitive "directory-exists?"))
     (define directory-files (%primitive "directory-files"))
+    (define file-mode (%primitive "file-mode"))
+    (define set-file-mode! (%primitive "set-file-mode!"))
+    (define real-path (%primitive "real-path"))
     (define directory-name (%primitive "directory-name"))
     (define file-exists? (%primitive "file-exists?"))
     (define file-lock (%primitive "file-lock"))
@@ -140,7 +146,9 @@ Description: Joins one or more path component strings into a single path
   added where a part already ends (or the next one starts) with one, so
   joining a directory name with a trailing separator gives no doubled
   separator. Parts that are not strings (symbols, numbers, ...) are
-  converted as display would show them.
+  converted as display would show them. A later absolute part is joined
+  too, not taken as a new start (unlike Python's os.path.join):
+  (join-path \"/a\" \"/x\") is \"/a/x\".
 Example:
   (join-path \"/usr\" \"local\" \"bin\") => \"/usr/local/bin\"  ; on Unix
   (join-path \"/usr/\" \"local\") => \"/usr/local\""
@@ -196,23 +204,40 @@ Example:
     (define (chmod path mode . opts)
       "Syntax: (chmod path mode [option ...])
 Library: (scm fs)
-Description: Changes file mode bits via the native chmod command. mode is
-  either an octal string (e.g. \"755\") or a symbolic spec (\"u+x\").
-  Options: 'recursive (-R). On Windows this is a best-effort no-op when
-  no native chmod is available.
+Description: Changes file mode bits. mode is an integer (#o755), an octal
+  string (e.g. \"755\") or a symbolic spec (\"u+x\"). A numeric mode on
+  one path is set in the process (set-file-mode!); a symbolic one or the
+  option 'recursive (-R) runs the chmod command. On Windows this is a
+  best-effort no-op when no native chmod is available.
 Example:
   (chmod \"script.sh\" \"755\")
   (chmod \"dir\" \"700\" 'recursive)"
-      (let ((native (which "chmod")))
-        (if native
+      (let ((native (and (not (and (not (%has-flag? opts 'recursive))
+                                   (%numeric-mode mode)
+                                   (not (%windows?))))
+                         (which "chmod"))))
+        (cond
+         ((and (not (%has-flag? opts 'recursive)) (%numeric-mode mode) (not (%windows?)))
+          (set-file-mode! path (%numeric-mode mode)))
+         (native
             (let* ((mode-str (if (string? mode)
                                  mode
                                  (%number->string mode 8)))
                    (args (if (%has-flag? opts 'recursive)
                              (list native "-R" mode-str path)
                              (list native mode-str path))))
-              (zero? (%run-program args)))
-            (if (%windows?) #f (error "chmod: native chmod not found")))))
+              (zero? (%run-program args))))
+         (else (if (%windows?) #f (error "chmod: native chmod not found"))))))
+
+    ;; mode as an integer if it is one or an octal string, else #f
+    (define (%numeric-mode mode)
+      (cond ((exact-integer? mode) mode)
+            ((and (string? mode) (> (string-length mode) 0)
+                  (let loop ((i 0))
+                    (or (= i (string-length mode))
+                        (and (char<=? #\0 (string-ref mode i) #\7) (loop (+ i 1))))))
+             (string->number mode 8))
+            (else #f)))
 
     (define (chown path owner . opts)
       "Syntax: (chown path owner [option ...])

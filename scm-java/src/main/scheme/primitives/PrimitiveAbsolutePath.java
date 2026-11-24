@@ -2,7 +2,6 @@ package scheme.primitives;
 
 import scheme.*;
 
-import java.io.File;
 
 public class PrimitiveAbsolutePath extends Primitive {
     @Override
@@ -23,6 +22,6 @@ public class PrimitiveAbsolutePath extends Primitive {
     public Object apply(SourcePos pos, Object[] arguments) {
         checkArgs(pos, arguments, 1, 1);
         var path = new String(Value.asString(arguments[0]));
-        return new File(path).getAbsolutePath().toCharArray();
+        return SchemePaths.file(path).getAbsolutePath().toCharArray();
     }
 }

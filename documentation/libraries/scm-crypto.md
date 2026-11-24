@@ -281,6 +281,17 @@ Example:
   (sha1-hash "hello") => "aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d"
 ```
 
+### `sha224-hash`
+
+```
+Syntax: (sha224-hash obj)
+Library: (scm crypto)
+Description: Returns the SHA-224 hash of obj as a bytevector. Accepts strings
+  (hashed as UTF-8), symbols, or bytevectors.
+Example:
+  (bytevector->hex (sha224-hash "abc")) => "..."
+```
+
 ### `sha256-file`
 
 ```
@@ -300,6 +311,28 @@ Library: (scm crypto)
 Description: Returns the SHA-256 hash of obj as a bytevector. Accepts strings, symbols, or bytevectors.
 Example:
   (sha256-hash "hello") => #u8(...)
+```
+
+### `sha384-hash`
+
+```
+Syntax: (sha384-hash obj)
+Library: (scm crypto)
+Description: Returns the SHA-384 hash of obj as a bytevector. Accepts strings
+  (hashed as UTF-8), symbols, or bytevectors.
+Example:
+  (bytevector->hex (sha384-hash "abc")) => "..."
+```
+
+### `sha512-hash`
+
+```
+Syntax: (sha512-hash obj)
+Library: (scm crypto)
+Description: Returns the SHA-512 hash of obj as a bytevector. Accepts strings
+  (hashed as UTF-8), symbols, or bytevectors.
+Example:
+  (bytevector->hex (sha512-hash "abc")) => "..."
 ```
 
 ### `xor-key`

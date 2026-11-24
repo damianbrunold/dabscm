@@ -25,13 +25,19 @@
           rsa-generate-keypair
           scrypt
           sha1-hash
+          sha224-hash
           sha256-file
           sha256-hash
+          sha384-hash
+          sha512-hash
           xor-key)
   (begin
     (define sha1-hash (%primitive "sha1-hash"))
     (define md5-hash (%primitive "md5-hash"))
     (define sha256-hash (%primitive "sha256-hash"))
+    (define sha224-hash (%primitive "sha224-hash"))
+    (define sha384-hash (%primitive "sha384-hash"))
+    (define sha512-hash (%primitive "sha512-hash"))
     (define sha256-file (%primitive "sha256-file"))
     (define hmac-sha256 (%primitive "hmac-sha256"))
     (define pbkdf2-sha256 (%primitive "pbkdf2-sha256"))

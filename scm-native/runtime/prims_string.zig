@@ -51,7 +51,13 @@ fn resultStr(t: *Thread, cs: []const u21) Word {
 fn pattern(t: *Thread, i: usize) Err!*regex.Regex {
     const p = try P.stringArg(t, i);
     const text = data.toUtf8(p);
-    return regex.get(text) catch raise(t, "regular expression not supported (only the subset common to java.util.regex and .NET)", &.{arg(t, i)});
+    return regex.get(text) catch {
+        // a syntax error as the JVM reports it (its PatternSyntaxException's
+        // description); else a construct only one host has
+        if (regex.syntax_error) |desc|
+            return raise(t, std.fmt.allocPrint(data.scratch(), "{s}: invalid pattern: {s}", .{ t.primName(), desc }) catch rt.oom(), &.{});
+        return raise(t, "regular expression not supported (only the subset common to java.util.regex and .NET)", &.{arg(t, i)});
+    };
 }
 
 // --- regular expressions ---------------------------------------------------------

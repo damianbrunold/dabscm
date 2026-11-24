@@ -575,7 +575,10 @@ fn relativeTo(dir: []const u8, path: []const u8) []const u8 {
 fn normalizedPath(t: *Thread) Err!Word {
     const p = try textArg(t, 0);
     const cwd = os.currentDirectory();
-    const abs = if (std.fs.path.isAbsolute(p)) normalize(p) else normalize(std.fs.path.join(pa, &.{ cwd, p }) catch rt.oom());
+    // on Windows a rooted path without a drive is on the current drive
+    const abs = if (builtin.os.tag == .windows)
+        normalize(@import("prims_fs.zig").windowsAbsolute(p))
+    else if (std.fs.path.isAbsolute(p)) normalize(p) else normalize(std.fs.path.join(pa, &.{ cwd, p }) catch rt.oom());
     const canonical = os.realPath(abs) orelse canonicalPrefix(abs);
     if (std.fs.path.isAbsolute(p)) return str(t, canonical);
     const wd = os.realPath(cwd) orelse cwd;
@@ -587,8 +590,9 @@ pub const @"%normalized-path" = WN("normalized-path", normalizedPath, 1, 1);
 /// the rest appended (as File.getCanonicalPath)
 fn canonicalPrefix(abs: []const u8) []const u8 {
     var cut = abs.len;
-    while (std.mem.lastIndexOfScalar(u8, abs[0..cut], '/')) |i| {
-        if (i == 0) break;
+    while (std.mem.lastIndexOfAny(u8, abs[0..cut], if (builtin.os.tag == .windows) "/\\" else "/")) |i| {
+        // the root (/, C:\) stays
+        if (i == 0 or (builtin.os.tag == .windows and i <= 2)) break;
         if (os.realPath(abs[0..i])) |r| return std.fs.path.join(pa, &.{ r, abs[i + 1 ..] }) catch abs;
         cut = i;
     }
@@ -632,11 +636,30 @@ pub const @"%special-folder-application-data" = WN("special-folder-application-d
 fn which(t: *Thread) Err!Word {
     const name = try textArg(t, 0);
     const path = os.getEnv("PATH") orelse return rt.FALSE;
+    // On Windows a name without an extension is resolved as cmd.exe does
+    // (and the JVM implementation): each PATHEXT extension in order, so
+    // "git" finds git.exe (and not an extension-less file before it)
+    var candidates: std.ArrayList([]const u8) = .empty;
+    defer candidates.deinit(pa);
+    const slash = if (std.mem.lastIndexOfAny(u8, name, "/\\")) |i| i + 1 else 0;
+    const has_ext = std.mem.indexOfScalar(u8, name[slash..], '.') != null;
+    if (!os.is_windows or has_ext) {
+        candidates.append(pa, name) catch rt.oom();
+    } else {
+        const pathext = if (os.getEnv("PATHEXT")) |v| (if (v.len > 0) v else ".COM;.EXE;.BAT;.CMD") else ".COM;.EXE;.BAT;.CMD";
+        var exts = std.mem.splitScalar(u8, pathext, ';');
+        while (exts.next()) |e0| {
+            const e = std.mem.trim(u8, e0, " \t");
+            if (e.len > 0) candidates.append(pa, std.mem.concat(data.scratch(), u8, &.{ name, e }) catch rt.oom()) catch rt.oom();
+        }
+    }
     var it = std.mem.splitScalar(u8, path, if (os.is_windows) ';' else ':');
     while (it.next()) |dir| {
         if (dir.len == 0) continue;
-        const full = std.fs.path.join(pa, &.{ dir, name }) catch rt.oom();
-        if (os.kindOf(full, true) == .file) return str(t, full);
+        for (candidates.items) |c| {
+            const full = std.fs.path.join(data.scratch(), &.{ dir, c }) catch rt.oom();
+            if (os.kindOf(full, true) == .file) return str(t, full);
+        }
     }
     return rt.FALSE;
 }

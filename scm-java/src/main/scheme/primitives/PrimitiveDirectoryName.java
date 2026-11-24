@@ -23,7 +23,7 @@ public class PrimitiveDirectoryName extends Primitive {
     public Object apply(SourcePos pos, Object[] arguments) {
         checkArgs(pos, arguments, 1, 1);
         var path = new File(new String(Value.asString(arguments[0])));
-        path = new File(path.getAbsolutePath());
+        path = new File(SchemePaths.file(path.getPath()).getAbsolutePath());
         String parent = path.getParent();
         // the root has no parent
         return parent == null ? Value.F : parent.toCharArray();

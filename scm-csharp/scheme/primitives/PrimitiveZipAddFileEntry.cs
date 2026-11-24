@@ -26,10 +26,7 @@ public class PrimitiveZipAddFileEntry : Primitive
             string name = new(Value.AsString(arguments[1]));
             string path = new(Value.AsString(arguments[2]));
             bool compress = arguments.Length > 3 && arguments[3] != Value.F;
-            output.text_strm?.Dispose();
-            output.bin_strm?.Dispose();
-            output.text_strm = null;
-            output.bin_strm = null;
+            output.FinishEntry();
             var entry = output.zip!.CreateEntry(name,
                 compress ? CompressionLevel.Optimal : CompressionLevel.NoCompression);
             var modified = new DateTimeOffset(File.GetLastWriteTimeUtc(path));

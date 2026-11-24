@@ -89,7 +89,7 @@ public class Complex : IEquatable<Complex>
                 try { return checked((long)d); }
                 catch { return new BigInteger(d); }
             }
-            // Use continued fractions for non-integral doubles
+            // the exact value of the binary number (R7RS)
             return DoubleToExact(d);
         }
         return v;
@@ -97,7 +97,7 @@ public class Complex : IEquatable<Complex>
 
     private static object DoubleToExact(double d)
     {
-        // Convert double to exact rational via continued fraction
+        // the double's exact value: mantissa / 2^-exp, reduced
         if (d == 0.0) return 0L;
         bool neg = d < 0;
         if (neg) d = -d;

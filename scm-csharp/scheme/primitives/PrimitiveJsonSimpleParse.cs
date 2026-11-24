@@ -20,7 +20,9 @@ public class PrimitiveJsonSimpleParse : Primitive
             "  representation: objects as alists with string keys (order preserved),\n" +
             "  arrays as vectors, strings as strings, integral numbers as exact\n" +
             "  integers and fractional ones as inexact reals, true/false as #t/#f,\n" +
-            "  and null as the symbol 'null. Raises an error on malformed input.\n" +
+            "  and null as the symbol 'null. Raises an error on malformed input, as\n" +
+               "  RFC 8259 defines it: also on text after the value, numbers with\n" +
+               "  leading zeros and control characters in strings.\n" +
             "Example:\n" +
             "  (json-parse \"{\\\"a\\\": [1, 2.5, true, null]}\")\n" +
             "    => ((\"a\" . #(1 2.5 #t null)))";
@@ -32,6 +34,7 @@ public class PrimitiveJsonSimpleParse : Primitive
         var parser = new Parser(Value.AsString(arguments[0]), pos);
         object result = parser.ParseValue();
         parser.SkipWs();
+        parser.End();
         return result;
     }
 
@@ -62,6 +65,12 @@ public class PrimitiveJsonSimpleParse : Primitive
         {
             if (pos >= s.Length) Err("unexpected end of input");
             return s[pos++];
+        }
+
+        // nothing but whitespace after the value (RFC 8259)
+        public void End()
+        {
+            if (pos < s.Length) Err("unexpected trailing characters");
         }
 
         public void SkipWs()
@@ -179,10 +188,10 @@ public class PrimitiveJsonSimpleParse : Primitive
                                 if (Next() != '\\') Err("expected low surrogate");
                                 if (Next() != 'u') Err("expected \\u low surrogate");
                                 int lo = ParseHex4();
-                                int combined = 0x10000 + (cp - 0xD800) * 0x400 + (lo - 0xDC00);
-                                // Scheme chars are 16-bit; match the original
-                                // integer->char behaviour (truncates to 16 bits).
-                                sb.Append((char)combined);
+                                if (lo < 0xDC00 || lo > 0xDFFF) Err("expected low surrogate");
+                                // strings are UTF-16 here: the pair, as the
+                                // reader makes for such a character
+                                sb.Append((char)cp).Append((char)lo);
                             }
                             else
                             {
@@ -191,6 +200,10 @@ public class PrimitiveJsonSimpleParse : Primitive
                             break;
                         default: Err("bad escape"); break;
                     }
+                }
+                else if (c < 0x20)
+                {
+                    Err("control character in string");
                 }
                 else
                 {
@@ -217,18 +230,30 @@ public class PrimitiveJsonSimpleParse : Primitive
 
         private object ParseNumber()
         {
+            // RFC 8259: -?(0|[1-9][0-9]*)(.[0-9]+)?([eE][+-]?[0-9]+)?
             int start = pos;
             if (Peek() == '-') pos++;
-            while (Peek() >= '0' && Peek() <= '9') pos++;
+            if (Peek() == '0')
+            {
+                pos++;
+                if (Peek() >= '0' && Peek() <= '9') Err("leading zero in number");
+            }
+            else
+            {
+                if (!(Peek() >= '0' && Peek() <= '9')) Err("bad number");
+                while (Peek() >= '0' && Peek() <= '9') pos++;
+            }
             if (Peek() == '.')
             {
                 pos++;
+                if (!(Peek() >= '0' && Peek() <= '9')) Err("bad number");
                 while (Peek() >= '0' && Peek() <= '9') pos++;
             }
             if (Peek() == 'e' || Peek() == 'E')
             {
                 pos++;
                 if (Peek() == '+' || Peek() == '-') pos++;
+                if (!(Peek() >= '0' && Peek() <= '9')) Err("bad number");
                 while (Peek() >= '0' && Peek() <= '9') pos++;
             }
             string num = new string(s, start, pos - start);

@@ -41,8 +41,11 @@ const Val = union(enum) {
     obj: []const [2]Val, // (key . value); key is a .str
 };
 
+/// Everything a parse allocates is in its arena (a: freed after the
+/// result is built)
 const SimpleParser = struct {
     s: []const u21,
+    a: std.mem.Allocator,
     pos: usize = 0,
     err: []const u8 = "",
 
@@ -65,7 +68,7 @@ const SimpleParser = struct {
         p.skipWs();
         if (p.peek() == c) {
             p.pos += 1;
-        } else return p.fail(msg("expected {u}", .{c}));
+        } else return p.fail(p.fmt("expected {u}", .{c}));
     }
 
     fn value(p: *SimpleParser) error{Json}!Val {
@@ -78,13 +81,13 @@ const SimpleParser = struct {
             't' => p.literal("true", rt.TRUE),
             'f' => p.literal("false", rt.FALSE),
             'n' => p.literal("null", data.intern("null")),
-            else => if (c == '-' or (c >= '0' and c <= '9')) p.number() else p.fail(msg("unexpected char {u}", .{c})),
+            else => if (c == '-' or (c >= '0' and c <= '9')) p.number() else p.fail(p.fmt("unexpected char {u}", .{c})),
         };
     }
 
     fn literal(p: *SimpleParser, word: []const u8, v: Word) error{Json}!Val {
         for (word) |ch| {
-            if (p.peek() != ch) return p.fail(msg("expected {s}", .{word}));
+            if (p.peek() != ch) return p.fail(p.fmt("expected {s}", .{word}));
             p.pos += 1;
         }
         return .{ .word = v };
@@ -103,7 +106,7 @@ const SimpleParser = struct {
             const key = try p.string();
             try p.expect(':');
             const v = try p.value();
-            entries.append(pa, .{ .{ .str = key }, v }) catch rt.oom();
+            entries.append(p.a, .{ .{ .str = key }, v }) catch rt.oom();
             p.skipWs();
             const c = p.peek();
             if (c == ',') {
@@ -128,7 +131,7 @@ const SimpleParser = struct {
         }
         var items: std.ArrayList(Val) = .empty;
         while (true) {
-            items.append(pa, try p.value()) catch rt.oom();
+            items.append(p.a, try p.value()) catch rt.oom();
             p.skipWs();
             const c = p.peek();
             if (c == ',') {
@@ -153,7 +156,9 @@ const SimpleParser = struct {
             const c = try p.next();
             if (c == '"') return out.items;
             if (c != '\\') {
-                out.append(pa, c) catch rt.oom();
+                // RFC 8259: control characters only escaped
+                if (c < 0x20) return p.fail("control character in string");
+                out.append(p.a, c) catch rt.oom();
                 continue;
             }
             const e = try p.next();
@@ -172,6 +177,7 @@ const SimpleParser = struct {
                         if (try p.next() != '\\') return p.fail("expected low surrogate");
                         if (try p.next() != 'u') return p.fail("expected \\u low surrogate");
                         const lo = try p.hex4();
+                        if (lo < 0xDC00 or lo > 0xDFFF) return p.fail("expected low surrogate");
                         // a full code point (the JVM truncates to 16 bits)
                         break :blk @intCast(0x10000 + (@as(u32, cp) - 0xD800) * 0x400 + (@as(u32, lo) -% 0xDC00));
                     }
@@ -179,8 +185,21 @@ const SimpleParser = struct {
                 },
                 else => return p.fail("bad escape"),
             };
-            out.append(pa, v) catch rt.oom();
+            out.append(p.a, v) catch rt.oom();
         }
+    }
+
+    fn fmt(p: *SimpleParser, comptime f: []const u8, args: anytype) []const u8 {
+        return std.fmt.allocPrint(p.a, f, args) catch rt.oom();
+    }
+
+    fn digit(p: *SimpleParser) bool {
+        const c = p.peek() orelse return false;
+        return c >= '0' and c <= '9';
+    }
+
+    fn digits(p: *SimpleParser) void {
+        while (p.digit()) p.pos += 1;
     }
 
     fn hex4(p: *SimpleParser) error{Json}!u21 {
@@ -199,40 +218,39 @@ const SimpleParser = struct {
     }
 
     fn number(p: *SimpleParser) error{Json}!Val {
+        // RFC 8259: -?(0|[1-9][0-9]*)(.[0-9]+)?([eE][+-]?[0-9]+)?
         const start = p.pos;
         if (p.peek() == '-') p.pos += 1;
-        while (p.peek()) |c| {
-            if (c < '0' or c > '9') break;
+        if (p.peek() == '0') {
             p.pos += 1;
+            if (p.digit()) return p.fail("leading zero in number");
+        } else {
+            if (!p.digit()) return p.fail("bad number");
+            p.digits();
         }
         var exact = true;
         if (p.peek() == '.') {
             exact = false;
             p.pos += 1;
-            while (p.peek()) |c| {
-                if (c < '0' or c > '9') break;
-                p.pos += 1;
-            }
+            if (!p.digit()) return p.fail("bad number");
+            p.digits();
         }
         if (p.peek() == 'e' or p.peek() == 'E') {
             exact = false;
             p.pos += 1;
             if (p.peek() == '+' or p.peek() == '-') p.pos += 1;
-            while (p.peek()) |c| {
-                if (c < '0' or c > '9') break;
-                p.pos += 1;
-            }
+            if (!p.digit()) return p.fail("bad number");
+            p.digits();
         }
         var text: std.ArrayList(u8) = .empty;
-        for (p.s[start..p.pos]) |c| text.append(pa, @intCast(c)) catch rt.oom();
+        for (p.s[start..p.pos]) |c| text.append(p.a, @intCast(c)) catch rt.oom();
         if (exact) {
             if (std.fmt.parseInt(i64, text.items, 10)) |n| {
                 if (rt.fixFits(n)) return .{ .word = fix(n) };
             } else |_| {}
-            if (text.items.len == 0 or std.mem.eql(u8, text.items, "-")) return p.fail(msg("For input string: \"{s}\"", .{text.items}));
             return .{ .big = text.items };
         }
-        const f = std.fmt.parseFloat(f64, text.items) catch return p.fail(msg("For input string: \"{s}\"", .{text.items}));
+        const f = std.fmt.parseFloat(f64, text.items) catch return p.fail("bad number");
         return .{ .flo = f };
     }
 };
@@ -296,10 +314,18 @@ fn build(t: *Thread, v: Val) Word {
 
 fn jsonSimpleParse(t: *Thread) Err!Word {
     const s0 = try P.stringArg(t, 0);
-    const cps = pa.alloc(u21, data.stringLen(s0)) catch rt.oom();
+    var arena = std.heap.ArenaAllocator.init(pa);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const cps = a.alloc(u21, data.stringLen(s0)) catch rt.oom();
     for (cps, 0..) |*c, i| c.* = data.stringRef(s0, i);
-    var p = SimpleParser{ .s = cps };
-    const v = p.value() catch return raise(t, msg("json: {s}", .{p.err}), &.{});
+    var p = SimpleParser{ .s = cps, .a = a };
+    // the message in the scratch memory: the arena is gone when the error
+    // object is made
+    const v = p.value() catch return raise(t, std.fmt.allocPrint(data.scratch(), "json: {s}", .{p.err}) catch rt.oom(), &.{});
+    // nothing but whitespace after the value (RFC 8259)
+    p.skipWs();
+    if (p.pos < cps.len) return raise(t, "json: unexpected trailing characters", &.{});
     t.reserve(valWords(v));
     return build(t, v);
 }

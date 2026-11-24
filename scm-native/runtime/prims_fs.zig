@@ -32,13 +32,58 @@ fn makePathSep() callconv(.c) Word {
 }
 pub const @"%path-sep" = rt.ValuePrim{ .make = &makePathSep };
 
+/// As the JVM's File.getAbsolutePath: on the current directory unless
+/// absolute, separators made single and no trailing one; neither .. nor
+/// symbolic links are resolved (normalized-path, real-path do that); on
+/// Windows backslashes, and a path without a drive on the current drive
 fn absolutePath(t: *Thread) Err!Word {
     const p = try pathArg(t, 0);
-    if (os.realPath(p)) |r| return str(t, r);
-    if (std.fs.path.isAbsolute(p)) return arg(t, 0);
-    return str(t, std.fs.path.join(pa, &.{ os.currentDirectory(), p }) catch rt.oom());
+    if (builtin.os.tag == .windows) return str(t, javaFileNormalize(windowsAbsolute(p), '\\'));
+    const abs = if (std.fs.path.isAbsolute(p)) p else if (p.len == 0) os.currentDirectory() else std.fs.path.join(data.scratch(), &.{ os.currentDirectory(), p }) catch rt.oom();
+    return str(t, javaFileNormalize(abs, '/'));
+}
+
+/// Single separators and none at the end (but a leading \\ of a UNC path and
+/// a root stay), as java.io.File normalizes a path
+fn javaFileNormalize(p: []const u8, s: u8) []const u8 {
+    var out: std.ArrayList(u8) = .empty;
+    for (p, 0..) |c, i| {
+        if (c == s and out.items.len > 0 and out.items[out.items.len - 1] == s and !(s == '\\' and i == 1)) continue;
+        out.append(data.scratch(), c) catch rt.oom();
+    }
+    // a trailing separator goes, unless it is the root (/, C:\, \\)
+    while (out.items.len > 1 and out.items[out.items.len - 1] == s and
+        !(s == '\\' and out.items.len == 3 and out.items[1] == ':') and
+        !(s == '\\' and out.items.len == 2 and out.items[0] == s))
+        out.items.len -= 1;
+    return out.items;
 }
 pub const @"%absolute-path" = WN("absolute-path", absolutePath, 1, 1);
+
+/// (file-mode path): the permission bits, #f on Windows or if path does not exist
+fn fileMode(t: *Thread) Err!Word {
+    const m = os.fileMode(try pathArg(t, 0)) orelse return rt.FALSE;
+    return rt.fix(@intCast(m));
+}
+pub const @"%file-mode" = WN("file-mode", fileMode, 1, 1);
+
+/// (set-file-mode! path mode): chmod in the process; #f on Windows or failure
+fn setFileMode(t: *Thread) Err!Word {
+    const p = try pathArg(t, 0);
+    const m = arg(t, 1);
+    if (!rt.isFix(m) or rt.unfix(m) < 0 or rt.unfix(m) > 0o7777) return P.argTypeError(t);
+    return rt.boolean(os.setFileMode(p, @intCast(rt.unfix(m))));
+}
+pub const @"%set-file-mode!" = WN("set-file-mode!", setFileMode, 2, 2);
+
+/// (real-path path): absolute, with . .. and symbolic links resolved; #f if
+/// path does not exist
+fn realPath(t: *Thread) Err!Word {
+    const r = os.realPath(try pathArg(t, 0)) orelse return rt.FALSE;
+    defer pa.free(r);
+    return str(t, r);
+}
+pub const @"%real-path" = WN("real-path", realPath, 1, 1);
 
 fn baseName(t: *Thread) Err!Word {
     return str(t, std.fs.path.basename(try pathArg(t, 0)));
@@ -48,18 +93,18 @@ pub const @"%base-name" = WN("base-name", baseName, 1, 1);
 /// Windows: p made absolute as the JVM's toAbsolutePath (a path without a
 /// drive, such as \a or /a, is on the current directory's drive) with
 /// backslashes as separators
-fn windowsAbsolute(p: []const u8) []const u8 {
+pub fn windowsAbsolute(p: []const u8) []const u8 {
     const cwd = os.currentDirectory();
     const kind = std.fs.path.getWin32PathType(u8, p);
     const abs = switch (kind) {
-        .drive_absolute, .unc_absolute, .local_device, .root_local_device => pa.dupe(u8, p) catch rt.oom(),
-        .rooted => std.mem.concat(pa, u8, &.{ cwd[0..@min(2, cwd.len)], p }) catch rt.oom(),
+        .drive_absolute, .unc_absolute, .local_device, .root_local_device => data.scratch().dupe(u8, p) catch rt.oom(),
+        .rooted => std.mem.concat(data.scratch(), u8, &.{ cwd[0..@min(2, cwd.len)], p }) catch rt.oom(),
         // C:foo: relative to the current directory if that is on C:, else to C:\
         .drive_relative => if (cwd.len >= 2 and std.ascii.toLower(cwd[0]) == std.ascii.toLower(p[0]) and cwd[1] == ':')
-            std.fs.path.join(pa, &.{ cwd, p[2..] }) catch rt.oom()
+            std.fs.path.join(data.scratch(), &.{ cwd, p[2..] }) catch rt.oom()
         else
-            std.mem.concat(pa, u8, &.{ p[0..2], "\\", p[2..] }) catch rt.oom(),
-        else => std.fs.path.join(pa, &.{ cwd, p }) catch rt.oom(),
+            std.mem.concat(data.scratch(), u8, &.{ p[0..2], "\\", p[2..] }) catch rt.oom(),
+        else => std.fs.path.join(data.scratch(), &.{ cwd, p }) catch rt.oom(),
     };
     for (abs) |*c| if (c.* == '/') {
         c.* = '\\';
@@ -71,7 +116,7 @@ fn directoryName(t: *Thread) Err!Word {
     const p = try pathArg(t, 0);
     const abs = if (builtin.os.tag == .windows)
         windowsAbsolute(p)
-    else if (std.fs.path.isAbsolute(p)) p else std.fs.path.join(pa, &.{ os.currentDirectory(), p }) catch rt.oom();
+    else if (std.fs.path.isAbsolute(p)) p else std.fs.path.join(data.scratch(), &.{ os.currentDirectory(), p }) catch rt.oom();
     const d = std.fs.path.dirname(abs) orelse return rt.FALSE;
     return str(t, d);
 }

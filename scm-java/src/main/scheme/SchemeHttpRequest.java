@@ -7,6 +7,17 @@ import java.nio.file.Path;
 import java.util.List;
 
 public class SchemeHttpRequest {
+    // A timeout argument: seconds as any non-negative real (1.5, 30),
+    // rounded up to whole seconds
+    public static int timeoutSeconds(Object v) {
+        if (Value.isInteger(v)) return Value.asInteger(v).intValue();
+        if (Value.isReal(v)) {
+            double d = Value.asReal(v);
+            if (d >= 0 && !Double.isNaN(d)) return (int) Math.min(Integer.MAX_VALUE, Math.ceil(d));
+        }
+        throw new SchemeError("http: timeout must be a non-negative number of seconds: ~s", v);
+    }
+
     // Default request timeout in seconds. A value <= 0 means "no timeout".
     public static final int DEFAULT_TIMEOUT_SECONDS = 600;
 

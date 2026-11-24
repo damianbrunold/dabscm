@@ -26,8 +26,7 @@ public class PrimitiveZipAddBinaryEntry: Primitive
         {
             ZipOutput output = (ZipOutput) Value.AsNativeValue(arguments[0]).value;
             string entryname = new(Value.AsString(arguments[1]));
-            output.text_strm?.Dispose();
-            output.bin_strm?.Dispose();
+            output.FinishEntry();
             var entry = output.zip!.CreateEntry(entryname);
             if (arguments.Length > 2)
             {
@@ -36,7 +35,8 @@ public class PrimitiveZipAddBinaryEntry: Primitive
                 entry.LastWriteTime = dt < zipEpoch ? zipEpoch : dt;
             }
             output.bin_strm = entry.Open();
-            return new BinaryOutputStream(output.bin_strm);
+            output.bin_port = new BinaryOutputStream(output.bin_strm);
+            return output.bin_port;
         }
         catch (Exception e)
         {

@@ -522,7 +522,23 @@
     (define-syntax %test-evaluate-with-catch
       (syntax-rules ()
         ((%test-evaluate-with-catch test-expression)
-         (guard (err (else #f)) test-expression))))
+         (guard (err (else
+                      ;; the error, for the runner to report (else a failing
+                      ;; test showed only expected #f, actual #f)
+                      (test-result-set! (test-runner-get) 'actual-error (%test-error-text err))
+                      #f))
+           test-expression))))
+
+    (define (%test-error-text err)
+      (if (error-object? err)
+          (let ((out (open-output-string)))
+            (display (error-object-message err) out)
+            (for-each (lambda (x) (display " " out) (write x out))
+                      (error-object-irritants err))
+            (get-output-string out))
+          (let ((out (open-output-string)))
+            (write err out)
+            (get-output-string out))))
 
     (define (%test-source-line2 src)
       (if src

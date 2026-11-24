@@ -46,7 +46,7 @@ public class PrimitiveMakeHttpRequest : Primitive
         }
         var req = new SchemeHttpRequest(method, url, headers, body, bodyBytes);
         if (arguments.Length >= 5)
-            req.TimeoutSeconds = (int)Value.AsInteger(arguments[4]);
+            req.TimeoutSeconds = SchemeHttpRequest.TimeoutArg(arguments[4]);
         if (arguments.Length == 6)
             req.FollowRedirects = !arguments[5].Equals(Value.F);
         return new NativeValue(req);

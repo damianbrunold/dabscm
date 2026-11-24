@@ -21,6 +21,10 @@ public class PrimitiveIntegerToChar : Primitive
     public override object Apply(SourcePos? pos, object[] arguments)
     {
         CheckArgs(pos, arguments, 1, 1);
-        return (char) IntegerMath.ToLong(arguments[0]);
+        long n = arguments[0] is long l ? l : -1;
+        if (n < 0 || n > 0x10FFFF) throw new SchemeError(pos, "integer->char: not a code point", arguments[0]);
+        // characters are UTF-16 code units here: no silent truncation
+        if (n > 0xFFFF) throw new SchemeError(pos, "integer->char: characters beyond U+FFFF are not supported", arguments[0]);
+        return (char) n;
     }
 }

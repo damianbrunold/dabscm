@@ -9,10 +9,10 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class PrimitiveStringSplit extends Primitive {
     static final ConcurrentHashMap<String, Pattern> splitCache = new ConcurrentHashMap<>();
-    static Pattern getSplitPattern(String pattern) {
+    static Pattern getSplitPattern(String who, String pattern) {
         Pattern p = splitCache.get(pattern);
         if (p != null) return p;
-        p = Pattern.compile(pattern);
+        p = RegexPatterns.compile(who, pattern);
         if (splitCache.size() > 256) splitCache.clear();
         splitCache.putIfAbsent(pattern, p);
         return p;
@@ -39,7 +39,7 @@ public class PrimitiveStringSplit extends Primitive {
         String s = new String(Value.asString(arguments[0]));
         String regexp = "[ \\t\\r\\n]+";
         if (arguments.length > 1) regexp = new String(Value.asString(arguments[1]));
-        String[] parts = getSplitPattern(regexp).split(s, -1);
+        String[] parts = getSplitPattern(name(), regexp).split(s, -1);
         List<char[]> result = new ArrayList<>();
         for (String part : parts) result.add(part.toCharArray());
         return Pair.list(result.toArray());

@@ -26,7 +26,7 @@ public final class LongPath {
     public static String wlp(String path) {
         if (!WINDOWS || path == null || path.isEmpty()) return path;
         if (path.startsWith("\\\\?\\")) return path;
-        String abs = new File(path).getAbsolutePath();
+        String abs = SchemePaths.file(path).getAbsolutePath();
         if (abs.startsWith("\\\\")) return "\\\\?\\UNC\\" + abs.substring(2);
         return "\\\\?\\" + abs;
     }
@@ -46,8 +46,9 @@ public final class LongPath {
     /**
      * Build a nio Path from a Scheme path string, applying the long-path
      * prefix on Windows. Use this everywhere instead of new File(s).toPath().
+     * A relative path is resolved against the current directory (user.dir).
      */
     public static Path of(String path) {
-        return Paths.get(wlp(path));
+        return Paths.get(wlp(SchemePaths.resolve(path)));
     }
 }

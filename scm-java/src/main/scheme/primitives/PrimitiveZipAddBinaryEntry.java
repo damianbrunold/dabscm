@@ -38,8 +38,11 @@ public class PrimitiveZipAddBinaryEntry extends Primitive {
             ZipEntry ze = new ZipEntry(entryname);
             if (arguments.length > 2)
                 ze.setTime(IntegerMath.toLong(arguments[2]) * 1000L);
+            holder.finishEntry();
             holder.zip.putNextEntry(ze);
-            return new BinaryOutputStream(holder.zip, false);
+            BinaryOutputStream port = new BinaryOutputStream(holder.entryStream(), false);
+            holder.setCurrent(port::flush);
+            return port;
         } catch (Exception e) {
             throw new SchemeError(pos, name() + ": io failure: ~s", e.getMessage());
         }

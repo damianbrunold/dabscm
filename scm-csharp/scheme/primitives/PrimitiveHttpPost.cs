@@ -23,7 +23,7 @@ public class PrimitiveHttpPost : Primitive
         string url = new String(Value.AsString(arguments[0]));
         string body = new String(Value.AsString(arguments[1]));
         int timeoutSeconds = arguments.Length == 4
-            ? (int)Value.AsInteger(arguments[3])
+            ? SchemeHttpRequest.TimeoutArg(arguments[3])
             : SchemeHttpRequest.DefaultTimeoutSeconds;
         using var client = TlsTrust.CreateHttpClient();
         client.Timeout = timeoutSeconds > 0

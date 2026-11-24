@@ -24,8 +24,7 @@ public class PrimitiveCloseOutputZip : Primitive
         try
         {
             ZipOutput output = (ZipOutput) Value.AsNativeValue(arguments[0]).value;
-            output.text_strm?.Close();
-            output.bin_strm?.Close();
+            output.FinishEntry();
             output.Dispose();
             return new Values();
         }

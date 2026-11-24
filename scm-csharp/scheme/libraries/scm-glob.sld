@@ -17,6 +17,20 @@
     (define %path-sep (%primitive "path-sep"))
     (define %path-sep-char (string-ref %path-sep 0))
 
+    ;; Windows file names are case-insensitive: there a pattern matches
+    ;; regardless of case (a.TXT for *.txt), elsewhere exactly
+    (define %fold-case? (char=? %path-sep-char #\\))
+
+    (define (%char-match? pc ch)
+      (if %fold-case? (char-ci=? pc ch) (char=? pc ch)))
+
+    (define (%char-in-range? lo ch hi)
+      (or (and (char<=? lo ch) (char<=? ch hi))
+          (and %fold-case?
+               (let ((d (char-downcase ch)) (u (char-upcase ch)))
+                 (or (and (char<=? lo d) (char<=? d hi))
+                     (and (char<=? lo u) (char<=? u hi)))))))
+
     (define (%split-path str)
       "Split a path string into segments by the path separator character.
 Skips empty segments caused by consecutive separators (e.g. //)"
@@ -81,11 +95,10 @@ Returns a pair (matched? . index-past-closing-bracket) or (#f . pi) on malformed
                             (let ((lo pc)
                                   (hi (string-ref pat (+ i 2))))
                               (loop (+ i 3)
-                                    (or matched?
-                                        (and (char<=? lo ch) (char<=? ch hi)))
+                                    (or matched? (%char-in-range? lo ch hi))
                                     #f))
                             (loop (+ i 1)
-                                  (or matched? (char=? pc ch))
+                                  (or matched? (%char-match? pc ch))
                                   #f))))))))
 
     (define (%glob-match-impl pat pi plen str si slen)
@@ -144,7 +157,7 @@ Returns a pair (matched? . index-past-closing-bracket) or (#f . pi) on malformed
 
        ;; Literal character
        (else (and (< si slen)
-                  (char=? (string-ref pat pi) (string-ref str si))
+                  (%char-match? (string-ref pat pi) (string-ref str si))
                   (%glob-match-impl pat (+ pi 1) plen str (+ si 1) slen)))))
 
     ;; --- Public API ---
@@ -277,7 +290,8 @@ Description: Returns a sorted list of file and directory paths matching
   globstar matching zero or more directory levels). Dotfiles are not
   matched by *, ?, or ** unless the pattern segment explicitly starts
   with a dot. Returns an empty list if no matches are found or the
-  base directory does not exist. On Windows, both / and \\ separate path
+  base directory does not exist. On Windows matching ignores case (as
+  file names there do), and both / and \\ separate path
   segments in the pattern; returned paths use \\.
 Example:
   (glob \"src/*.scm\") => (\"src/bar.scm\" \"src/foo.scm\")

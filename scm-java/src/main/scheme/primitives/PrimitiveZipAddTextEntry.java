@@ -38,8 +38,11 @@ public class PrimitiveZipAddTextEntry extends Primitive {
             ZipEntry ze = new ZipEntry(entryname);
             if (arguments.length > 2)
                 ze.setTime(IntegerMath.toLong(arguments[2]) * 1000L);
+            holder.finishEntry();
             holder.zip.putNextEntry(ze);
-            return new OutputStreamWriter(holder.zip, Encoding.getEncoding("utf8"));
+            OutputStreamWriter port = new OutputStreamWriter(holder.entryStream(), Encoding.getEncoding("utf8"));
+            holder.setCurrent(port);
+            return port;
         } catch (Exception e) {
             throw new SchemeError(pos, name() + ": io failure: ~s", e.getMessage());
         }

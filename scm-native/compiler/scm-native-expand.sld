@@ -18,6 +18,7 @@
           program-binding
           program-eval-module
           set-runtime-search-path!
+          with-expanding-file
           macroexpand-datum
           user-library-exports)
   (import (scheme base)
@@ -137,7 +138,7 @@
     (define core-names
       '(quote quasiquote if set! begin lambda define define-syntax let let*
         letrec letrec* let-syntax letrec-syntax cond-expand import %primitive
-        define-library))
+        define-library include include-ci))
 
     (define core-bindings (map (lambda (n) (cons n (cons 'core n))) core-names))
 
@@ -253,6 +254,7 @@
         ((let-syntax letrec-syntax)
          (expand-seq (let-syntax-body form)))
         ((cond-expand) (expand-seq (cond-expand-body form)))
+        ((include include-ci) (expand-seq (map-included form (lambda (f) (list f)))))
         ((%primitive) (primitive-ref (cadr form)))
         ;; as the JVM implementation: an import anywhere imports into the
         ;; module being expanded
@@ -401,8 +403,47 @@
                     (bind! (ident-sym name) (ident-scopes name) (cons 'macro t))
                     '()))
                  ((let-syntax letrec-syntax) (append-map partial-expand (let-syntax-body form)))
+                 ((include include-ci) (map-included form partial-expand))
                  (else (list form))))
               (else (list form)))))
+
+    ;; --- include -------------------------------------------------------------
+
+    ;; the file whose forms are being expanded: include resolves against its
+    ;; directory (#f at run time in eval: the current directory)
+    (define expanding-file #f)
+
+    (define (with-expanding-file file thunk)
+      (let ((saved expanding-file))
+        (set! expanding-file file)
+        (let ((r (thunk)))
+          (set! expanding-file saved)
+          r)))
+
+    ;; (include "file" ...) and (include-ci ...): the files' forms, read when
+    ;; the form is expanded and expanded where it stands (R7RS), with the
+    ;; scopes of the include keyword; (f form) of each is a list of forms,
+    ;; made while expanding-file is the included file (for nested includes)
+    (define (map-included form f)
+      (let ((scopes (ident-scopes (car form)))
+            (ci? (core? (car form) 'include-ci)))
+        (append-map
+         (lambda (name)
+           (let ((name (strip name)))
+             (unless (string? name) (error "include: expected a file name" name))
+             (let ((path (include-path name expanding-file)))
+               (unless (file-exists? path) (error "include: file not found" path))
+               (with-expanding-file path
+                 (lambda ()
+                   (append-map (lambda (d) (f (wrap (if ci? (fold-symbols d) d) scopes)))
+                               (read-file path)))))))
+         (proper (cdr form) form))))
+
+    (define (fold-symbols d)
+      (cond ((symbol? d) (string->symbol (string-foldcase (symbol->string d))))
+            ((pair? d) (cons (fold-symbols (car d)) (fold-symbols (cdr d))))
+            ((vector? d) (vector-map fold-symbols d))
+            (else d)))
 
     ;; (define (f . args) body ...) => (f (lambda args body ...)); (define x) => (x no-init)
     (define (normalize-define form)
@@ -498,6 +539,7 @@
                     '()))
                  ((let-syntax letrec-syntax) (append-map toplevel (let-syntax-body form)))
                  ((cond-expand) (append-map toplevel (cond-expand-body form)))
+                 ((include include-ci) (map-included form toplevel))
                  ((import)
                   (for-each import-set! (strip (cdr form)))
                   '())
@@ -545,11 +587,14 @@
                        (let ((s (read-string 100000000 port)))
                          (if (eof-object? s) "" s)))))
              (marked (if native-host text (mark-astral-chars text)))
-             (port (open-input-string marked)))
+             ;; the file itself when nothing was marked: a read error then
+             ;; names the file with its line and column
+             (port (if (eq? marked text) (open-input-file file) (open-input-string marked))))
         (let loop ((acc '()))
           (let ((x (read port)))
             (if (eof-object? x)
                 (let ((forms (reverse acc)))
+                  (close-port port)
                   (if (eq? marked text) forms (map restore-astral-chars forms)))
                 (loop (cons x acc)))))))
 
@@ -745,8 +790,10 @@
               ((import) (for-each import-set! (cdr d)))
               ((begin)
                (predeclare-procedures! m (cdr d))
-               (let ((forms (append-map (lambda (f) (toplevel (wrap f (list (module-scope m)))))
-                                        (cdr d))))
+               (let ((forms (with-expanding-file file
+                              (lambda ()
+                                (append-map (lambda (f) (toplevel (wrap f (list (module-scope m)))))
+                                            (cdr d))))))
                  (add-body! m forms)))
               ((include include-ci)
                (for-each (lambda (f)
@@ -806,7 +853,11 @@
           (join-path (directory-name file) f)
           f))
 
-    (define (absolute-path? f) (and (> (string-length f) 0) (char=? (string-ref f 0) #\/)))
+    ;; / or \ at the start, or a drive (C:)
+    (define (absolute-path? f)
+      (let ((n (string-length f)))
+        (or (and (> n 0) (memv (string-ref f 0) '(#\/ #\\)))
+            (and (> n 1) (char=? (string-ref f 1) #\:)))))
 
     ;; The bindings an import set provides: alist sym -> binding
     (define (import-bindings spec)
@@ -1103,6 +1154,7 @@
       (set! features feature-list)
       (set! primitives prims)
       (set! core-library-file core-file)
+      (set! expanding-file file)
       (let* ((m (new-module 'program))
              (_ (set! current m))
              (_ (set! program-module m))

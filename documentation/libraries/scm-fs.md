@@ -72,10 +72,11 @@ Example:
 ```
 Syntax: (chmod path mode [option ...])
 Library: (scm fs)
-Description: Changes file mode bits via the native chmod command. mode is
-  either an octal string (e.g. "755") or a symbolic spec ("u+x").
-  Options: 'recursive (-R). On Windows this is a best-effort no-op when
-  no native chmod is available.
+Description: Changes file mode bits. mode is an integer (#o755), an octal
+  string (e.g. "755") or a symbolic spec ("u+x"). A numeric mode on
+  one path is set in the process (set-file-mode!); a symbolic one or the
+  option 'recursive (-R) runs the chmod command. On Windows this is a
+  best-effort no-op when no native chmod is available.
 Example:
   (chmod "script.sh" "755")
   (chmod "dir" "700" 'recursive)
@@ -191,7 +192,9 @@ Example:
 ```
 Syntax: (directory-files dirname)
 Library: (scm fs)
-Description: Returns a list of file names (not full paths) in the directory dirname.
+Description: Returns a list of the names (not full paths) of the files in the
+  directory dirname, without its subdirectories (directory-entries lists
+  both).
 Example:
   (directory-files "/tmp") => ("file1.txt" "file2.txt" ...)
 ```
@@ -230,6 +233,17 @@ Description: Acquires an exclusive, OS-managed advisory lock on the file at
 Example:
   (define h (file-lock "/tmp/app.lock"))
   (when h (file-unlock h))
+```
+
+### `file-mode`
+
+```
+Syntax: (file-mode path)
+Library: (scm fs)
+Description: Returns the permission bits of path as an integer (as chmod
+  takes them), or #f on Windows or if path does not exist.
+Example:
+  (number->string (file-mode "script.sh") 8) => "755"
 ```
 
 ### `file-modification-date`
@@ -293,7 +307,9 @@ Description: Joins one or more path component strings into a single path
   added where a part already ends (or the next one starts) with one, so
   joining a directory name with a trailing separator gives no doubled
   separator. Parts that are not strings (symbols, numbers, ...) are
-  converted as display would show them.
+  converted as display would show them. A later absolute part is joined
+  too, not taken as a new start (unlike Python's os.path.join):
+  (join-path "/a" "/x") is "/a/x".
 Example:
   (join-path "/usr" "local" "bin") => "/usr/local/bin"  ; on Unix
   (join-path "/usr/" "local") => "/usr/local"
@@ -429,6 +445,17 @@ Example:
   (readlink "/usr/local/bin/python") => "/usr/bin/python3"
 ```
 
+### `real-path`
+
+```
+Syntax: (real-path path)
+Library: (scm fs)
+Description: Returns path made absolute with . and .. and symbolic links
+  resolved, or #f if path does not exist.
+Example:
+  (real-path "link/../file.txt") => "/home/me/file.txt"
+```
+
 ### `rm`
 
 ```
@@ -439,6 +466,17 @@ Description: Removes path. Options: 'recursive (-r) to remove a directory
 Example:
   (rm "foo.txt")
   (rm "build" 'recursive 'force)
+```
+
+### `set-file-mode!`
+
+```
+Syntax: (set-file-mode! path mode)
+Library: (scm fs)
+Description: Sets the permission bits of path to the integer mode, in the
+  process (no chmod program). Returns #t, or #f on Windows or failure.
+Example:
+  (set-file-mode! "script.sh" #o755) => #t
 ```
 
 ### `set-file-modification-time!`

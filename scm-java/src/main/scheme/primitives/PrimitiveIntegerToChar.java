@@ -21,6 +21,10 @@ public class PrimitiveIntegerToChar extends Primitive {
     @Override
     public Object apply(SourcePos pos, Object[] arguments) {
         checkArgs(pos, arguments, 1, 1);
-        return (char) IntegerMath.toInt(arguments[0]);
+        long n = arguments[0] instanceof Long ? (Long) arguments[0] : -1;
+        if (n < 0 || n > 0x10FFFF) throw new SchemeError(pos, "integer->char: not a code point", arguments[0]);
+        // characters are UTF-16 code units here: no silent truncation
+        if (n > 0xFFFF) throw new SchemeError(pos, "integer->char: characters beyond U+FFFF are not supported", arguments[0]);
+        return (char) n;
     }
 }

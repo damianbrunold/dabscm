@@ -24,7 +24,7 @@ public class PrimitiveSetCurrentDirectory extends Primitive {
         checkArgs(pos, arguments, 1, 1);
         try {
             String path = new String(Value.asString(arguments[0]));
-            java.io.File f = new java.io.File(path);
+            java.io.File f = SchemePaths.file(path);
             if (!f.isDirectory()) return Value.F;
             System.setProperty("user.dir", f.getAbsolutePath());
             return f.getAbsolutePath().toCharArray();

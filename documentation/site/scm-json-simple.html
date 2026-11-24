@@ -111,7 +111,9 @@ Description: Parses the JSON text in string str and returns its Scheme
   representation: objects as alists with string keys (order preserved),
   arrays as vectors, strings as strings, integral numbers as exact
   integers and fractional ones as inexact reals, true/false as #t/#f,
-  and null as the symbol 'null. Raises an error on malformed input.
+  and null as the symbol 'null. Raises an error on malformed input, as
+  RFC 8259 defines it: also on text after the value, numbers with
+  leading zeros and control characters in strings.
 Example:
   (json-parse "{\"a\": [1, 2.5, true, null]}")
     =&gt; (("a" . #(1 2.5 #t null)))</pre>

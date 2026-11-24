@@ -1,6 +1,5 @@
 package scheme.primitives;
 
-import java.io.File;
 
 import scheme.Module;
 import scheme.Modules;
@@ -8,6 +7,7 @@ import scheme.Primitive;
 import scheme.Scheme;
 import scheme.SchemeError;
 import scheme.SourcePos;
+import scheme.SchemePaths;
 import scheme.Value;
 
 public class PrimitiveLoad extends Primitive {
@@ -49,7 +49,7 @@ public class PrimitiveLoad extends Primitive {
                     throw new SchemeError(pos, "load: environment not found: ~a", moduleName);
                 evalModules = new Modules(modules, module);
             }
-            new Scheme(evalModules).evalFile(new File(filename));
+            new Scheme(evalModules).evalFile(SchemePaths.file(filename));
             return Value.T;
         } catch (SchemeError e) {
             throw e;

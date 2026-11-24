@@ -413,6 +413,12 @@ public class Primitives {
         bind(new PrimitiveRunProgramCapture());
         bind(new PrimitiveSHA1Hash());
         bind(new PrimitiveSHA256Hash());
+        bind(new PrimitiveFileMode("file-mode"));
+        bind(new PrimitiveFileMode("set-file-mode!"));
+        bind(new PrimitiveFileMode("real-path"));
+        bind(new PrimitiveSHA2Hash("sha224-hash", "SHA-224"));
+        bind(new PrimitiveSHA2Hash("sha384-hash", "SHA-384"));
+        bind(new PrimitiveSHA2Hash("sha512-hash", "SHA-512"));
         bind(new PrimitiveSHA256File());
         bind(new PrimitiveSecond());
         bind(new PrimitiveSecureRandomPortP());
