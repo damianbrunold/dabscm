@@ -491,10 +491,52 @@ pub fn ignoreCtrlCInChildren(on: bool) void {
     _ = k32.SetConsoleCtrlHandler(null, if (on) 1 else 0);
 }
 
-/// Move the file pointer to the end (a child's appended output)
-pub fn seekEnd(h: HANDLE) void {
-    _ = k32.SetFilePointerEx(h, 0, null, 2);
+/// An inheritable handle on a file for a child's output: truncated, or
+/// opened with FILE_APPEND_DATA only, so that every write goes to the end
+/// whatever the file pointer (a handle of the parent that is moved to the
+/// end does not do: std.process.spawn reopens a .file handle, which gives
+/// a file object with a pointer of its own at 0). null on failure.
+pub fn openChildOutput(path: []const u8, append: bool) ?HANDLE {
+    const wpath = std.unicode.wtf8ToWtf16LeAllocZ(pa, path) catch return null;
+    defer pa.free(wpath);
+    const GENERIC_WRITE = 0x40000000;
+    const FILE_APPEND_DATA = 0x0004;
+    const FILE_READ_ATTRIBUTES = 0x0080;
+    const CREATE_ALWAYS = 2;
+    const OPEN_ALWAYS = 4;
+    const FILE_ATTRIBUTE_NORMAL = 0x80;
+    var sa = SecurityAttributes{ .length = @sizeOf(SecurityAttributes), .descriptor = null, .inherit = 1 };
+    const h = k32.CreateFileW(
+        wpath,
+        if (append) FILE_APPEND_DATA | FILE_READ_ATTRIBUTES | SYNCHRONIZE else GENERIC_WRITE,
+        7, // share read, write and delete, as std's files
+        &sa,
+        if (append) OPEN_ALWAYS else CREATE_ALWAYS,
+        FILE_ATTRIBUTE_NORMAL,
+        null,
+    );
+    if (h == windows.INVALID_HANDLE_VALUE) return null;
+    return h;
 }
+
+/// The standard output and error handles of this process (the PEB's, which
+/// std.process.spawn gives a child for .inherit); setStdOutErr replaces them
+pub fn stdOutErr() [2]HANDLE {
+    const pp = windows.peb().ProcessParameters;
+    return .{ pp.hStdOutput, pp.hStdError };
+}
+
+pub fn setStdOutErr(h: [2]HANDLE) void {
+    const pp = windows.peb().ProcessParameters;
+    pp.hStdOutput = h[0];
+    pp.hStdError = h[1];
+}
+
+const SecurityAttributes = extern struct {
+    length: DWORD,
+    descriptor: ?*anyopaque,
+    inherit: BOOL,
+};
 
 // --- files ---------------------------------------------------------------------------
 
