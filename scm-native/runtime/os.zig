@@ -829,7 +829,7 @@ pub fn spawn(s: Spawn) ?*Proc {
         out = .pipe;
         err = .pipe;
     }
-    return startChild(s, in, out, err, null);
+    return startChild(s, in, out, err, false);
 }
 
 /// Windows without capture: the output files are inheritable handles of our
@@ -839,33 +839,25 @@ pub fn spawn(s: Spawn) ?*Proc {
 /// stdout and one for stderr: appended output would overwrite the file,
 /// and stdout and stderr in one file each other.
 fn spawnWindows(s: Spawn, in: std.process.SpawnOptions.StdIo) ?*Proc {
-    const HANDLE = std.os.windows.HANDLE;
-    // log, stdout, stderr
-    var hs: [3]?HANDLE = .{ null, null, null };
-    defer for (hs) |o| if (o) |h| w32.closeHandle(h);
-    if (s.log_file) |p| hs[0] = w32.openChildOutput(p, s.append) orelse return null;
-    if (s.stdout_file) |p| hs[1] = w32.openChildOutput(p, s.append) orelse return null;
-    if (s.stderr_file) |p| hs[2] = w32.openChildOutput(p, s.append) orelse return null;
-    const out_h = hs[1] orelse hs[0];
-    const err_h: ?HANDLE = hs[2] orelse if (s.stderr_to_stdout) out_h else hs[0];
-    const swap = StdSwap{ .out = out_h, .err = err_h, .err_to_out = s.stderr_to_stdout and hs[2] == null };
-    return startChild(s, in, .inherit, .inherit, swap);
+    return startChild(s, in, .inherit, .inherit, true);
 }
 
-/// The standard handles a Windows child gets in place of ours (null: ours;
-/// err_to_out: stderr where its stdout goes)
-const StdSwap = struct {
-    out: ?std.os.windows.HANDLE,
-    err: ?std.os.windows.HANDLE,
-    err_to_out: bool,
-};
+/// The output files of a Windows child as inheritable handles, opened under
+/// win_spawn_lock (another spawn meanwhile would inherit them too and keep
+/// the files open): log, stdout, stderr; false if one cannot be opened
+fn openChildOutputs(s: Spawn, hs: *[3]?std.os.windows.HANDLE) bool {
+    if (s.log_file) |p| hs[0] = w32.openChildOutput(p, s.append) orelse return false;
+    if (s.stdout_file) |p| hs[1] = w32.openChildOutput(p, s.append) orelse return false;
+    if (s.stderr_file) |p| hs[2] = w32.openChildOutput(p, s.append) orelse return false;
+    return true;
+}
 
 fn startChild(
     s: Spawn,
     in: std.process.SpawnOptions.StdIo,
     out: std.process.SpawnOptions.StdIo,
     err: std.process.SpawnOptions.StdIo,
-    swap: ?StdSwap,
+    swap: bool,
 ) ?*Proc {
     const env_map = childEnv(s.env);
     defer if (env_map) |m| {
@@ -886,13 +878,19 @@ fn startChild(
         defer win_spawn_lock.unlock(io);
         if (s.new_group) w32.ignoreCtrlCInChildren(true);
         defer if (s.new_group) w32.ignoreCtrlCInChildren(false);
-        if (swap) |sw| {
+        if (swap) {
+            var hs: [3]?std.os.windows.HANDLE = .{ null, null, null };
+            defer for (hs) |o| if (o) |h| w32.closeHandle(h);
+            if (!openChildOutputs(s, &hs)) return null;
             // no output of ours goes to the child's files meanwhile
             out_lock.lockUncancelable(io);
             defer out_lock.unlock(io);
             const saved = w32.stdOutErr();
-            const new_out = sw.out orelse saved[0];
-            w32.setStdOutErr(.{ new_out, if (sw.err_to_out) new_out else sw.err orelse saved[1] });
+            // stdout: the file, else the log, else ours; stderr: its file,
+            // else where stdout goes ('stderr 'stdout), else the log, else ours
+            const new_out = hs[1] orelse hs[0] orelse saved[0];
+            const new_err = hs[2] orelse if (s.stderr_to_stdout) new_out else hs[0] orelse saved[1];
+            w32.setStdOutErr(.{ new_out, new_err });
             defer w32.setStdOutErr(saved);
             break :blk std.process.spawn(io, options) catch return null;
         }
