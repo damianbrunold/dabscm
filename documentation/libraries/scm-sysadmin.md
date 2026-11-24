@@ -1275,7 +1275,7 @@ Example:
 ```
 Syntax: (run-program cmd [options])
 Library: (scm system)
-Description: Executes the external program specified as a list (program arg1 arg2 ...), waits for it to complete, and returns its exit code as an exact integer. The program inherits the caller's standard input, output and error (so it can use the terminal; start-program gives it a private stdin instead). options is an alist with optional keys: 'work-dir <path>, 'env <alist of (name value) string pairs added to the child environment>. Returns #f on failure.
+Description: Executes the external program specified as a list (program arg1 arg2 ...), waits for it to complete, and returns its exit code as an exact integer. The program inherits the caller's standard input, output and error (so it can use the terminal; start-program gives it a private stdin instead). options is an alist with optional keys: 'work-dir <path>, 'env <alist of (name value) string pairs added to the child environment>, 'stdin <string> (the text the program reads), 'stdin-file <path>, 'stdout <path>, 'stderr <path> (the program writes to these files; output not redirected goes to the terminal as it is written), 'stderr 'stdout (stderr goes where stdout goes), 'append #t (the files are appended to). Returns #f on failure.
 Example:
   (run-program '("echo" "hello")) => 0
 ```
@@ -1471,7 +1471,7 @@ Example:
 ```
 Syntax: (start-program cmd-and-args [options])
 Library: (scm system)
-Description: Starts an external program without waiting for it to finish and returns a process handle (a native value). cmd-and-args is a list (program arg1 arg2 ...). options is an alist with optional keys: 'work-dir <path>, 'log-file <path> (redirects stdout+stderr to this file), 'env <alist of (name value) string pairs added to the child environment>. Use process-pid, process-kill, process-wait, process-alive? on the handle.
+Description: Starts an external program without waiting for it to finish and returns a process handle (a native value). cmd-and-args is a list (program arg1 arg2 ...). options is an alist with optional keys: 'work-dir <path>, 'log-file <path> (redirects stdout+stderr to this file), 'env <alist of (name value) string pairs added to the child environment>, 'stdin <string> (the text the program reads; else a private stdin with nothing to read), 'stdin-file <path>, 'stdout <path>, 'stderr <path>, 'stderr 'stdout (stderr goes where stdout goes), 'append #t (the files are appended to), 'new-group #t (the program runs in a process group of its own, so that Ctrl+C at the terminal does not reach it; on Windows the program ignores Ctrl+C; the JVM cannot do this on Windows). Use process-pid, process-kill, process-wait, process-alive? on the handle.
 Example:
   (define p (start-program '("sleep" "30")))
   (process-kill p)

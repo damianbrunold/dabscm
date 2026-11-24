@@ -51,13 +51,15 @@ public class PrimitiveTerminalRawB : Primitive
     public override string Info()
     {
         return
-            "Syntax: (terminal-raw! enable)\n" +
+            "Syntax: (terminal-raw! enable [keep-output])\n" +
             "Library: (scm terminal)\n" +
             "Description: Enables or disables raw terminal mode.\n" +
             "When enable is #t, disables line buffering, echo, signal processing,\n" +
             "flow control (Ctrl-S/Ctrl-Q), CR/NL translation of input and output\n" +
             "post-processing, so that individual keypresses can be read; write\n" +
             "\"\\r\\n\" to start a new line at column 1.\n" +
+            "With 'keep-output as second argument, output post-processing stays on, so\n" +
+            "that \"\\n\" also returns the carriage (Windows has no such processing).\n" +
             "When enable is #f, restores the original terminal settings.\n" +
             "Returns #t on success, #f if raw mode is not supported.\n" +
             "Example:\n" +
@@ -67,8 +69,15 @@ public class PrimitiveTerminalRawB : Primitive
 
     public override object Apply(SourcePos? pos, object[] arguments)
     {
-        CheckArgs(pos, arguments, 1, 1);
+        CheckArgs(pos, arguments, 1, 2);
         bool enable = !arguments[0].Equals(Value.F);
+        bool keepOutput = false;
+        if (arguments.Length > 1)
+        {
+            if (!Value.IsSymbol(arguments[1]) || Value.AsSymbol(arguments[1]) != "keep-output")
+                throw new SchemeError(pos, "terminal-raw!: expected 'keep-output");
+            keepOutput = true;
+        }
 
         if (Console.IsInputRedirected)
             return (object)false;
@@ -85,7 +94,7 @@ public class PrimitiveTerminalRawB : Primitive
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 return (object)SetRawModeWindows(enable);
             else
-                return (object)SetRawModeUnix(enable);
+                return (object)SetRawModeUnix(enable, keepOutput);
         }
         catch
         {
@@ -93,23 +102,32 @@ public class PrimitiveTerminalRawB : Primitive
         }
     }
 
-    private static bool SetRawModeUnix(bool enable)
+    private static bool SetRawModeUnix(bool enable, bool keepOutput = false)
     {
         if (enable)
         {
-            if (isRaw) return true;
+            if (!isRaw)
+            {
+                savedTermios = new byte[TERMIOS_SIZE];
+                if (tcgetattr(STDIN_FILENO, savedTermios) != 0)
+                    return false;
+            }
 
-            savedTermios = new byte[TERMIOS_SIZE];
-            if (tcgetattr(STDIN_FILENO, savedTermios) != 0)
-                return false;
-
-            byte[] raw = (byte[])savedTermios.Clone();
+            byte[] raw = (byte[])savedTermios!.Clone();
 
             // Same mode as `stty raw -echo -isig` on Java: no echo, no line
             // editing, no signals, no flow control (IXON), no CR/NL input
             // translation, no output post-processing (write "\r\n"),
             // VMIN=1/VTIME=0.
             cfmakeraw(raw);
+            if (keepOutput)
+            {
+                // c_oflag as it was: after c_iflag, a 32-bit field on Linux,
+                // an unsigned long on macOS
+                int at = OperatingSystem.IsMacOS() ? 8 : 4;
+                int size = OperatingSystem.IsMacOS() ? 8 : 4;
+                Array.Copy(savedTermios, at, raw, at, size);
+            }
 
             if (tcsetattr(STDIN_FILENO, TCSANOW, raw) != 0)
                 return false;

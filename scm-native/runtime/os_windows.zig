@@ -42,6 +42,7 @@ const k32 = struct {
     extern "kernel32" fn SetFileTime(h: HANDLE, creation: ?*const FileTime, access: ?*const FileTime, write: ?*const FileTime) callconv(.winapi) BOOL;
     extern "kernel32" fn GetTickCount64() callconv(.winapi) u64;
     extern "kernel32" fn Sleep(ms: DWORD) callconv(.winapi) void;
+    extern "kernel32" fn SetFilePointerEx(h: HANDLE, distance: i64, new_pos: ?*i64, method: DWORD) callconv(.winapi) BOOL;
     extern "kernel32" fn GetComputerNameExW(kind: u32, buf: ?[*]u16, size: *DWORD) callconv(.winapi) BOOL;
 };
 
@@ -462,6 +463,37 @@ pub fn shutdownSignal() i64 {
         shutdown_installed = true;
     }
     return shutdown_signal.load(.monotonic);
+}
+
+// set-interrupt-handler!: 0 default, 1 ignore, 2 record (Ctrl+C and Ctrl+Break)
+pub var interrupt_mode: std.atomic.Value(u8) = .init(0);
+pub var interrupted: std.atomic.Value(bool) = .init(false);
+var interrupt_installed = false;
+
+fn onInterrupt(kind: DWORD) callconv(.winapi) BOOL {
+    if (kind > 1) return 0;
+    const m = interrupt_mode.load(.monotonic);
+    if (m == 0) return 0; // the next handler: the shutdown handler or the default (exit)
+    if (m == 2) interrupted.store(true, .monotonic);
+    return 1;
+}
+
+pub fn installInterruptHandler() void {
+    if (interrupt_installed) return;
+    _ = k32.SetConsoleCtrlHandler(&onInterrupt, 1);
+    interrupt_installed = true;
+}
+
+/// Children started between these two calls ignore Ctrl+C (the flag is
+/// inherited, as CREATE_NEW_PROCESS_GROUP sets it); this process ignores
+/// a Ctrl+C in between too
+pub fn ignoreCtrlCInChildren(on: bool) void {
+    _ = k32.SetConsoleCtrlHandler(null, if (on) 1 else 0);
+}
+
+/// Move the file pointer to the end (a child's appended output)
+pub fn seekEnd(h: HANDLE) void {
+    _ = k32.SetFilePointerEx(h, 0, null, 2);
 }
 
 // --- files ---------------------------------------------------------------------------

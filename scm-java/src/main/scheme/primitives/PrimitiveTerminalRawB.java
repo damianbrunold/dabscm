@@ -16,13 +16,15 @@ public class PrimitiveTerminalRawB extends Primitive {
 
     @Override
     public String info() {
-        return "Syntax: (terminal-raw! enable)\n" +
+        return "Syntax: (terminal-raw! enable [keep-output])\n" +
                "Library: (scm terminal)\n" +
                "Description: Enables or disables raw terminal mode.\n" +
                "When enable is #t, disables line buffering, echo, signal processing,\n" +
                "flow control (Ctrl-S/Ctrl-Q), CR/NL translation of input and output\n" +
                "post-processing, so that individual keypresses can be read; write\n" +
                "\"\\r\\n\" to start a new line at column 1.\n" +
+               "With 'keep-output as second argument, output post-processing stays on, so\n" +
+               "that \"\\n\" also returns the carriage (Windows has no such processing).\n" +
                "When enable is #f, restores the original terminal settings.\n" +
                "Returns #t on success, #f if raw mode is not supported.\n" +
                "On Windows with Java, raw mode is not supported and returns #f.\n" +
@@ -33,8 +35,14 @@ public class PrimitiveTerminalRawB extends Primitive {
 
     @Override
     public Object apply(SourcePos pos, Object[] arguments) {
-        checkArgs(pos, arguments, 1, 1);
+        checkArgs(pos, arguments, 1, 2);
         boolean enable = arguments[0] != Value.F;
+        boolean keepOutput = false;
+        if (arguments.length > 1) {
+            if (!Value.isSymbol(arguments[1]) || !Value.asSymbol(arguments[1]).equals("keep-output"))
+                throw new SchemeError(pos, "terminal-raw!: expected 'keep-output");
+            keepOutput = true;
+        }
 
         if (System.console() == null)
             return false;
@@ -50,7 +58,7 @@ public class PrimitiveTerminalRawB extends Primitive {
 
         try {
             if (enable) {
-                if (isRaw) return true;
+                if (isRaw) return stty(keepOutput ? "opost" : "-opost");
 
                 // Save current settings
                 ProcessBuilder pbSave = new ProcessBuilder("stty", "-g");
@@ -64,11 +72,7 @@ public class PrimitiveTerminalRawB extends Primitive {
                     return false;
 
                 // Enable raw mode
-                ProcessBuilder pbRaw = new ProcessBuilder("stty", "raw", "-echo", "-isig");
-                pbRaw.redirectInput(new java.io.File("/dev/tty"));
-                pbRaw.redirectErrorStream(true);
-                int exitCode = pbRaw.start().waitFor();
-                if (exitCode != 0)
+                if (!stty("raw", "-echo", "-isig", keepOutput ? "opost" : "-opost"))
                     return false;
 
                 isRaw = true;
@@ -88,6 +92,16 @@ public class PrimitiveTerminalRawB extends Primitive {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    private static boolean stty(String... settings) throws Exception {
+        String[] cmd = new String[settings.length + 1];
+        cmd[0] = "stty";
+        System.arraycopy(settings, 0, cmd, 1, settings.length);
+        ProcessBuilder pb = new ProcessBuilder(cmd);
+        pb.redirectInput(new java.io.File("/dev/tty"));
+        pb.redirectErrorStream(true);
+        return pb.start().waitFor() == 0;
     }
 
     private static void restoreTerminal() {

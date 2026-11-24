@@ -1254,7 +1254,7 @@ Example:
   <div class="entry-name">run-program</div>
   <pre class="entry-doc">Syntax: (run-program cmd [options])
 Library: (scm system)
-Description: Executes the external program specified as a list (program arg1 arg2 ...), waits for it to complete, and returns its exit code as an exact integer. The program inherits the caller's standard input, output and error (so it can use the terminal; start-program gives it a private stdin instead). options is an alist with optional keys: 'work-dir &lt;path&gt;, 'env &lt;alist of (name value) string pairs added to the child environment&gt;. Returns #f on failure.
+Description: Executes the external program specified as a list (program arg1 arg2 ...), waits for it to complete, and returns its exit code as an exact integer. The program inherits the caller's standard input, output and error (so it can use the terminal; start-program gives it a private stdin instead). options is an alist with optional keys: 'work-dir &lt;path&gt;, 'env &lt;alist of (name value) string pairs added to the child environment&gt;, 'stdin &lt;string&gt; (the text the program reads), 'stdin-file &lt;path&gt;, 'stdout &lt;path&gt;, 'stderr &lt;path&gt; (the program writes to these files; output not redirected goes to the terminal as it is written), 'stderr 'stdout (stderr goes where stdout goes), 'append #t (the files are appended to). Returns #f on failure.
 Example:
   (run-program '("echo" "hello")) =&gt; 0</pre>
 </div>
@@ -1416,7 +1416,7 @@ Example:
   <div class="entry-name">start-program</div>
   <pre class="entry-doc">Syntax: (start-program cmd-and-args [options])
 Library: (scm system)
-Description: Starts an external program without waiting for it to finish and returns a process handle (a native value). cmd-and-args is a list (program arg1 arg2 ...). options is an alist with optional keys: 'work-dir &lt;path&gt;, 'log-file &lt;path&gt; (redirects stdout+stderr to this file), 'env &lt;alist of (name value) string pairs added to the child environment&gt;. Use process-pid, process-kill, process-wait, process-alive? on the handle.
+Description: Starts an external program without waiting for it to finish and returns a process handle (a native value). cmd-and-args is a list (program arg1 arg2 ...). options is an alist with optional keys: 'work-dir &lt;path&gt;, 'log-file &lt;path&gt; (redirects stdout+stderr to this file), 'env &lt;alist of (name value) string pairs added to the child environment&gt;, 'stdin &lt;string&gt; (the text the program reads; else a private stdin with nothing to read), 'stdin-file &lt;path&gt;, 'stdout &lt;path&gt;, 'stderr &lt;path&gt;, 'stderr 'stdout (stderr goes where stdout goes), 'append #t (the files are appended to), 'new-group #t (the program runs in a process group of its own, so that Ctrl+C at the terminal does not reach it; on Windows the program ignores Ctrl+C; the JVM cannot do this on Windows). Use process-pid, process-kill, process-wait, process-alive? on the handle.
 Example:
   (define p (start-program '("sleep" "30")))
   (process-kill p)

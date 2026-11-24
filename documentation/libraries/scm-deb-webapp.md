@@ -37,8 +37,9 @@ Description: Builds <out>/<pkg>_<version>_all.deb for the web application
   scmc, no scm.jar, no Java dependency, the architecture of the
   executables; (scmc . path) is the scmc to run (default: scm with
   scm-native/scmc.scm of the dabscm checkout), (dabscm . dir) that
-  checkout (default ../dabscm next to app-dir), (target . triple) a
-  cross-compilation target such as aarch64-linux-musl. The version comes from
+  checkout (default ../dabscm next to app-dir), (target . triple) the
+  target (default x86_64-linux-gnu.2.31, glibc: the package depends on
+  libc6 (>= 2.31); aarch64-linux-musl and other musl targets are static). The version comes from
   the last commit (webapp-deb-version), so the same commit gives the same
   bytes.
 Example:

@@ -60,6 +60,96 @@ final class ProcessUtil {
     }
 
     /**
+     * The redirection options of run-program and start-program: 'stdin
+     * <string> (returned, for feedStdin), 'stdin-file <path>, 'stdout
+     * <path>, 'stderr <path> or 'stdout, 'append #t. Streams no option
+     * names are left as the caller set them.
+     */
+    static String applyRedirects(ProcessBuilder pb, Object options) {
+        if (options == Value.NIL) return null;
+        boolean append = PrimitiveGetProperty.getProperty(options, "append", Value.F) != Value.F;
+        String text = null;
+        Object v = PrimitiveGetProperty.getProperty(options, "stdin", Value.F);
+        if (v != Value.F) {
+            text = new String(Value.asString(v));
+            pb.redirectInput(ProcessBuilder.Redirect.PIPE);
+        }
+        v = PrimitiveGetProperty.getProperty(options, "stdin-file", Value.F);
+        if (v != Value.F) {
+            pb.redirectInput(scheme.SchemePaths.file(new String(Value.asString(v))));
+        }
+        v = PrimitiveGetProperty.getProperty(options, "stdout", Value.F);
+        if (v != Value.F) {
+            pb.redirectOutput(output(new String(Value.asString(v)), append));
+        }
+        v = PrimitiveGetProperty.getProperty(options, "stderr", Value.F);
+        if (Value.isSymbol(v) && Value.asSymbol(v).equals("stdout")) {
+            pb.redirectErrorStream(true);
+        } else if (v != Value.F) {
+            pb.redirectError(output(new String(Value.asString(v)), append));
+        }
+        return text;
+    }
+
+    static ProcessBuilder.Redirect output(String path, boolean append) {
+        File f = scheme.SchemePaths.file(path);
+        return append ? ProcessBuilder.Redirect.appendTo(f) : ProcessBuilder.Redirect.to(f);
+    }
+
+    /** Writes text (UTF-8) into the child's stdin and closes it, on a thread of its own */
+    static void feedStdin(Process process, String text) {
+        if (text == null) return;
+        Thread t = new Thread(() -> {
+            try (var out = process.getOutputStream()) {
+                out.write(text.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            } catch (java.io.IOException ignored) {
+                // the child did not read all of it
+            }
+        }, "scm-stdin-feeder");
+        t.setDaemon(true);
+        t.start();
+    }
+
+    /**
+     * The command line for start-program's 'new-group #t: on POSIX the
+     * program runs in a process group of its own, so that Ctrl+C at the
+     * terminal does not reach it (perl's setpgrp, else setsid, before the
+     * exec: the pid stays the program's). The JVM cannot do this on
+     * Windows: there the command line is returned unchanged.
+     */
+    static List<String> newGroupCommand(List<String> argv) {
+        if (isWindows()) return argv;
+        String prog = argv.get(0);
+        if (!hasPathSeparator(prog) && findExecutable(prog) == null
+            || hasPathSeparator(prog) && !new File(prog).canExecute())
+            throw new IllegalArgumentException("Cannot run program \"" + prog + "\": not found");
+        List<String> out = new ArrayList<>();
+        if (findExecutable("perl") != null) {
+            out.add("perl");
+            out.add("-e");
+            out.add("setpgrp(0, 0); exec { $ARGV[0] } @ARGV; print STDERR \"$ARGV[0]: $!\\n\"; exit 127");
+            out.add("--");
+        } else if (findExecutable("setsid") != null) {
+            out.add("setsid");
+        } else {
+            throw new IllegalArgumentException("'new-group needs perl or setsid");
+        }
+        out.addAll(argv);
+        return out;
+    }
+
+    private static File findExecutable(String prog) {
+        String path = System.getenv("PATH");
+        if (path == null) return null;
+        for (String dir : path.split(File.pathSeparator)) {
+            if (dir.isEmpty()) continue;
+            File f = new File(dir, prog);
+            if (f.isFile() && f.canExecute()) return f;
+        }
+        return null;
+    }
+
+    /**
      * Destroys a process and all of its descendants. Process.destroy() /
      * destroyForcibly() terminate only the direct child; on Windows that child
      * is often a wrapper (e.g. cmd.exe running scm.bat, which in turn spawns the

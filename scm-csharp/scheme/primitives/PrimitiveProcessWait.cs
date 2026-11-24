@@ -29,12 +29,15 @@ public class PrimitiveProcessWait : Primitive
             while (!sp.process.WaitForExit(1000)) { }
             var drain = Task.Run(() => sp.process.WaitForExit());
             drain.Wait(2000);
+            sp.redirects?.Wait(2000);
             sp.CloseLog();
             return (long) sp.process.ExitCode;
         }
         int timeoutMs = IntegerMath.ToInt(arguments[1]);
         if (sp.process.WaitForExit(timeoutMs))
         {
+            Task.Run(() => sp.process.WaitForExit()).Wait(2000);
+            sp.redirects?.Wait(2000);
             sp.CloseLog();
             return (long) sp.process.ExitCode;
         }

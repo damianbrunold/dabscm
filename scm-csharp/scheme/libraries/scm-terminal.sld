@@ -85,10 +85,11 @@
 
     ;; === Raw mode convenience ===
 
-    (define (with-terminal-raw thunk)
-      "Syntax: (with-terminal-raw thunk)
+    (define (with-terminal-raw thunk . keep-output)
+      "Syntax: (with-terminal-raw thunk [keep-output])
 Library: (scm terminal)
-Description: Calls thunk with raw terminal mode enabled. The original
+Description: Calls thunk with raw terminal mode enabled (with 'keep-output,
+output post-processing stays on, see terminal-raw!). The original
 terminal settings are restored when thunk returns or when an exception
 is raised. Returns the value returned by thunk.
 Example:
@@ -97,7 +98,7 @@ Example:
       (let ((key (terminal-read-key)))
         (display key))))"
       (dynamic-wind
-        (lambda () (terminal-raw! #t))
+        (lambda () (apply terminal-raw! #t keep-output))
         thunk
         (lambda () (terminal-raw! #f))))
 

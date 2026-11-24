@@ -405,6 +405,8 @@ public class Primitives
         Bind(new PrimitiveRunProgramCapture());
         Bind(new PrimitiveSHA1Hash());
         Bind(new PrimitiveSHA256Hash());
+        Bind(new PrimitiveInterrupt("set-interrupt-handler!"));
+        Bind(new PrimitiveInterrupt("take-interrupt!"));
         Bind(new PrimitiveFileMode("file-mode"));
         Bind(new PrimitiveFileMode("set-file-mode!"));
         Bind(new PrimitiveFileMode("real-path"));

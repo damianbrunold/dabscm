@@ -728,6 +728,8 @@ pub const Proc = struct {
     child: std.process.Child,
     done: bool = false,
     code: i64 = 0,
+    /// the thread writing 'stdin's text into the child's stdin
+    feeder: ?std.Thread = null,
 };
 
 pub const Spawn = struct {
@@ -739,6 +741,18 @@ pub const Spawn = struct {
     /// stdout and stderr to this file (start-program's 'log-file)
     log_file: ?[]const u8 = null,
     capture: bool = false,
+    /// the child's stdin: this text ('stdin) or this file ('stdin-file)
+    stdin_text: ?[]const u8 = null,
+    stdin_file: ?[]const u8 = null,
+    /// stdout and stderr to files ('stdout, 'stderr), stderr to where stdout
+    /// goes ('stderr 'stdout), the files appended to ('append #t)
+    stdout_file: ?[]const u8 = null,
+    stderr_file: ?[]const u8 = null,
+    stderr_to_stdout: bool = false,
+    append: bool = false,
+    /// a new process group ('new-group #t): Ctrl+C at the terminal does
+    /// not reach the child
+    new_group: bool = false,
 };
 
 fn childEnv(extra: []const [2][]const u8) ?*std.process.Environ.Map {
@@ -749,34 +763,126 @@ fn childEnv(extra: []const [2][]const u8) ?*std.process.Environ.Map {
     return m;
 }
 
+/// A file for a child's output: truncated, or appended to (O_APPEND on
+/// POSIX, the file pointer at the end on Windows)
+fn childOutput(path: []const u8, append: bool) ?File {
+    const f = std.Io.Dir.cwd().createFile(io, path, .{ .truncate = !append }) catch return null;
+    if (append) {
+        if (is_windows) {
+            w32.seekEnd(f.handle);
+        } else {
+            const fl = std.c.fcntl(f.handle, std.c.F.GETFL);
+            const app: c_int = @bitCast(@as(u32, @bitCast(std.c.O{ .APPEND = true })));
+            if (fl >= 0) _ = std.c.fcntl(f.handle, std.c.F.SETFL, fl | app);
+        }
+    }
+    return f;
+}
+
+/// Write text into the child's stdin and close it, on a thread of its own:
+/// the child may read slowly, or write output it waits on us to take
+fn feed(f: File, text: []u8) void {
+    if (!is_windows) {
+        // a child that does not read its input: EPIPE for this thread
+        // instead of SIGPIPE for the process (which children would inherit
+        // if it were ignored)
+        var set = std.posix.sigemptyset();
+        std.posix.sigaddset(&set, .PIPE);
+        std.posix.sigprocmask(std.posix.SIG.BLOCK, &set, null);
+    }
+    f.writeStreamingAll(io, text) catch {};
+    f.close(io);
+    pa.free(text);
+}
+
+var group_spawn_lock: std.Io.Mutex = .init;
+
 pub fn spawn(s: Spawn) ?*Proc {
-    var log: ?File = null;
-    if (s.log_file) |lf| log = std.Io.Dir.cwd().createFile(io, lf, .{}) catch return null;
+    var opened: [4]?File = .{ null, null, null, null };
+    defer for (opened) |o| if (o) |f| f.close(io);
+    var in: std.process.SpawnOptions.StdIo = if (s.capture or s.stdin_text != null or !s.inherit_stdin) .pipe else .inherit;
+    if (s.stdin_file) |p| {
+        opened[0] = std.Io.Dir.cwd().openFile(io, p, .{}) catch return null;
+        in = .{ .file = opened[0].? };
+    }
+    var out: std.process.SpawnOptions.StdIo = .inherit;
+    var err: std.process.SpawnOptions.StdIo = .inherit;
+    if (s.log_file) |lf| {
+        opened[1] = childOutput(lf, s.append) orelse return null;
+        out = .{ .file = opened[1].? };
+        err = out;
+    }
+    if (s.stdout_file) |p| {
+        opened[2] = childOutput(p, s.append) orelse return null;
+        out = .{ .file = opened[2].? };
+    }
+    if (s.stderr_file) |p| {
+        opened[3] = childOutput(p, s.append) orelse return null;
+        err = .{ .file = opened[3].? };
+    } else if (s.stderr_to_stdout) {
+        err = switch (out) {
+            .file => out,
+            else => .{ .file = std.Io.File.stdout() },
+        };
+    }
+    if (s.capture) {
+        out = .pipe;
+        err = .pipe;
+    }
     const env_map = childEnv(s.env);
     defer if (env_map) |m| {
         m.deinit();
         pa.destroy(m);
     };
-    const child = std.process.spawn(io, .{
+    const options: std.process.SpawnOptions = .{
         .argv = s.argv,
         .cwd = if (s.cwd) |c| .{ .path = c } else .inherit,
         .environ_map = env_map,
-        .stdin = if (s.capture or !s.inherit_stdin) .pipe else .inherit,
-        .stdout = if (s.capture) .pipe else if (log) |f| .{ .file = f } else .inherit,
-        .stderr = if (s.capture) .pipe else if (log) |f| .{ .file = f } else .inherit,
-    }) catch {
-        if (log) |f| f.close(io);
-        return null;
+        .stdin = in,
+        .stdout = out,
+        .stderr = err,
+        .pgid = if (s.new_group and !is_windows) 0 else null,
     };
-    if (log) |f| f.close(io);
+    const child = if (s.new_group and is_windows) blk: {
+        group_spawn_lock.lockUncancelable(io);
+        defer group_spawn_lock.unlock(io);
+        w32.ignoreCtrlCInChildren(true);
+        defer w32.ignoreCtrlCInChildren(false);
+        break :blk std.process.spawn(io, options) catch return null;
+    } else std.process.spawn(io, options) catch return null;
     const p = pa.create(Proc) catch return null;
     p.* = .{ .child = child };
-    if (!s.capture and !s.inherit_stdin) {
+    if (s.stdin_text) |text| {
+        if (p.child.stdin) |f| {
+            p.child.stdin = null;
+            if (text.len == 0) {
+                f.close(io);
+                return p;
+            }
+            const copy = pa.dupe(u8, text) catch {
+                f.close(io);
+                return p;
+            };
+            p.feeder = std.Thread.spawn(.{ .stack_size = 64 << 10 }, feed, .{ f, copy }) catch blk: {
+                feed(f, copy);
+                break :blk null;
+            };
+        }
+    } else if (!s.capture and !s.inherit_stdin) {
         // start-program: a private stdin with nothing to read
         if (p.child.stdin) |f| f.close(io);
         p.child.stdin = null;
     }
     return p;
+}
+
+/// Wait for the thread feeding the child's stdin (after the child ended),
+/// or leave it to finish on its own
+pub fn procJoinFeeder(p: *Proc, wait: bool) void {
+    if (p.feeder) |th| {
+        if (wait) th.join() else th.detach();
+        p.feeder = null;
+    }
 }
 
 fn decodeStatus(status: c_int) i64 {
@@ -843,6 +949,7 @@ pub fn procWait(p: *Proc, timeout_ms: ?u64) ?i64 {
 
 /// Free an ended process (its handle on Windows)
 pub fn procFree(p: *Proc) void {
+    procJoinFeeder(p, false);
     if (is_windows) if (p.child.id) |h| w32.closeHandle(h);
     pa.destroy(p);
 }
@@ -858,12 +965,8 @@ pub const Captured = struct { code: i64, out: []u8, err: []u8 };
 pub fn capture(s0: Spawn, stdin_text: ?[]const u8) ?Captured {
     var s = s0;
     s.capture = true;
+    s.stdin_text = stdin_text orelse "";
     const p = spawn(s) orelse return null;
-    if (p.child.stdin) |f| {
-        if (stdin_text) |text| f.writeStreamingAll(io, text) catch {};
-        f.close(io);
-        p.child.stdin = null;
-    }
     var buffer: std.Io.File.MultiReader.Buffer(2) = undefined;
     var mr: std.Io.File.MultiReader = undefined;
     mr.init(pa, io, buffer.toStreams(), &.{ p.child.stdout.?, p.child.stderr.? });
@@ -878,6 +981,7 @@ pub fn capture(s0: Spawn, stdin_text: ?[]const u8) ?Captured {
     p.child.stdout = null;
     p.child.stderr = null;
     const code = procWait(p, null) orelse 0;
+    procJoinFeeder(p, true);
     procFree(p);
     return .{ .code = code, .out = out, .err = err };
 }
@@ -1121,18 +1225,21 @@ fn currentTermios() ?std.posix.termios {
     return tio;
 }
 
-/// Raw mode (stty raw -echo -isig) or back to the saved settings
-pub fn terminalRaw(enable: bool) bool {
+/// Raw mode (stty raw -echo -isig) or back to the saved settings;
+/// keep_output: output post-processing stays as it was (OPOST: "\n" also
+/// returns the carriage)
+pub fn terminalRaw(enable: bool, keep_output: bool) bool {
     if (is_windows) {
         atExit(&w32.restoreConsole);
         return w32.terminalRaw(enable);
     }
     if (!isTerminal(0)) return false;
-    var tio = currentTermios() orelse return false;
+    _ = currentTermios() orelse return false;
     if (!enable) {
         restoreTermios();
         return true;
     }
+    var tio = saved_termios.?;
     tio.iflag.IGNBRK = false;
     tio.iflag.BRKINT = false;
     tio.iflag.IGNPAR = false;
@@ -1144,7 +1251,7 @@ pub fn terminalRaw(enable: bool) bool {
     tio.iflag.ICRNL = false;
     tio.iflag.IXON = false;
     tio.iflag.IXOFF = false;
-    tio.oflag.OPOST = false;
+    if (!keep_output) tio.oflag.OPOST = false;
     tio.lflag.ICANON = false;
     tio.lflag.ISIG = false;
     tio.lflag.IEXTEN = false;
@@ -1241,6 +1348,52 @@ pub fn shutdownSignal() i64 {
         shutdown_installed = true;
     }
     return shutdown_signal.load(.monotonic);
+}
+
+// --- set-interrupt-handler! ----------------------------------------------------------
+
+/// 0 default, 1 ignore, 2 record
+var interrupt_mode: std.atomic.Value(u8) = .init(0);
+var interrupted: std.atomic.Value(bool) = .init(false);
+var interrupt_saved: ?std.posix.Sigaction = null;
+
+fn onInterrupt(_: std.posix.SIG) callconv(.c) void {
+    // a handler, not SIG_IGN: children get the default action back at exec
+    if (interrupt_mode.load(.monotonic) == 2) interrupted.store(true, .monotonic);
+}
+
+/// What SIGINT (Ctrl+C, Ctrl+Break on Windows) does: 0 the default (the
+/// program ends, or the handler installed before, such as the shutdown
+/// signal's), 1 nothing, 2 it is recorded for takeInterrupt; the mode before
+pub fn setInterruptMode(mode: u8) u8 {
+    const before = interrupt_mode.swap(mode, .monotonic);
+    if (is_windows) {
+        w32.interrupt_mode.store(mode, .monotonic);
+        if (mode != 0) w32.installInterruptHandler();
+        return before;
+    }
+    if (mode == 0) {
+        if (interrupt_saved) |old| {
+            std.posix.sigaction(.INT, &old, null);
+            interrupt_saved = null;
+        }
+    } else if (interrupt_saved == null) {
+        const act = std.posix.Sigaction{
+            .handler = .{ .handler = &onInterrupt },
+            .mask = std.posix.sigemptyset(),
+            .flags = std.posix.SA.RESTART,
+        };
+        var old: std.posix.Sigaction = undefined;
+        std.posix.sigaction(.INT, &act, &old);
+        interrupt_saved = old;
+    }
+    return before;
+}
+
+/// Whether an interrupt was recorded since the last call
+pub fn takeInterrupt() bool {
+    if (is_windows) return w32.interrupted.swap(false, .monotonic);
+    return interrupted.swap(false, .monotonic);
 }
 
 // --- random-access files ---------------------------------------------------------------

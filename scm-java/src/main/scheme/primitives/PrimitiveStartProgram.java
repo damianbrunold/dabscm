@@ -16,7 +16,12 @@ public class PrimitiveStartProgram extends Primitive {
                "and returns a process handle (a native value). cmd-and-args is a list " +
                "(program arg1 arg2 ...). options is an alist with optional keys: " +
                "'work-dir <path>, 'log-file <path> (redirects stdout+stderr to this file), " +
-               "'env <alist of (name value) string pairs added to the child environment>. " +
+               "'env <alist of (name value) string pairs added to the child environment>, " +
+               "'stdin <string> (the text the program reads; else a private stdin with nothing to read), " +
+               "'stdin-file <path>, 'stdout <path>, 'stderr <path>, 'stderr 'stdout (stderr goes where stdout goes), " +
+               "'append #t (the files are appended to), 'new-group #t (the program runs in a process group of its own, " +
+               "so that Ctrl+C at the terminal does not reach it; on Windows the program ignores Ctrl+C; " +
+               "the JVM cannot do this on Windows). " +
                "Use process-pid, process-kill, process-wait, process-alive? on the handle.\n" +
                "Example:\n" +
                "  (define p (start-program '(\"sleep\" \"30\")))\n" +
@@ -41,10 +46,16 @@ public class PrimitiveStartProgram extends Primitive {
         }
 
         try {
-            ProcessBuilder pb = new ProcessBuilder(ProcessUtil.resolveBatchLauncher(argv));
+            List<String> command = ProcessUtil.resolveBatchLauncher(argv);
+            if (options != Value.NIL
+                && PrimitiveGetProperty.getProperty(options, "new-group", Value.F) != Value.F)
+                command = ProcessUtil.newGroupCommand(command);
+            ProcessBuilder pb = new ProcessBuilder(command);
             pb.directory(ProcessUtil.workDir(null));
 
-            boolean logfileSet = false;
+            String stdinText = null;
+            pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+            pb.redirectError(ProcessBuilder.Redirect.INHERIT);
             if (options != Value.NIL) {
                 Object workdirVal = PrimitiveGetProperty.getProperty(options, "work-dir", Value.F);
                 if (workdirVal != Value.F) {
@@ -53,18 +64,16 @@ public class PrimitiveStartProgram extends Primitive {
                 Object logfileVal = PrimitiveGetProperty.getProperty(options, "log-file", Value.F);
                 if (logfileVal != Value.F) {
                     File lf = SchemePaths.file(new String(Value.asString(logfileVal)));
-                    pb.redirectOutput(ProcessBuilder.Redirect.to(lf));
+                    boolean append = PrimitiveGetProperty.getProperty(options, "append", Value.F) != Value.F;
+                    pb.redirectOutput(append ? ProcessBuilder.Redirect.appendTo(lf) : ProcessBuilder.Redirect.to(lf));
                     pb.redirectErrorStream(true);
-                    logfileSet = true;
                 }
                 ProcessUtil.applyEnv(pb, options);
-            }
-            if (!logfileSet) {
-                pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
-                pb.redirectError(ProcessBuilder.Redirect.INHERIT);
+                stdinText = ProcessUtil.applyRedirects(pb, options);
             }
 
             Process proc = pb.start();
+            ProcessUtil.feedStdin(proc, stdinText);
             return new NativeValue(new SchemeProcess(proc));
         } catch (Exception e) {
             throw new SchemeError(pos, "start-program: " + e.getMessage());

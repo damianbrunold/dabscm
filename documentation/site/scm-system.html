@@ -45,21 +45,23 @@
   <a href="#e20" data-name="run-program">run-program</a>
   <a href="#e21" data-name="run-program/capture">run-program/capture</a>
   <a href="#e22" data-name="run?">run?</a>
-  <a href="#e23" data-name="sh">sh</a>
-  <a href="#e24" data-name="sh-lines">sh-lines</a>
-  <a href="#e25" data-name="shell-quote">shell-quote</a>
-  <a href="#e26" data-name="sleep">sleep</a>
-  <a href="#e27" data-name="start-program">start-program</a>
-  <a href="#e28" data-name="sys-machine-name">sys-machine-name</a>
-  <a href="#e29" data-name="sys-num-cpu-cores">sys-num-cpu-cores</a>
-  <a href="#e30" data-name="sys-os-version">sys-os-version</a>
-  <a href="#e31" data-name="sys-platform">sys-platform</a>
-  <a href="#e32" data-name="sys-scm-command">sys-scm-command</a>
-  <a href="#e33" data-name="sys-scm-technology">sys-scm-technology</a>
-  <a href="#e34" data-name="sys-scm-version">sys-scm-version</a>
-  <a href="#e35" data-name="sys-user-name">sys-user-name</a>
-  <a href="#e36" data-name="uuidgen">uuidgen</a>
-  <a href="#e37" data-name="watch">watch</a>
+  <a href="#e23" data-name="set-interrupt-handler!">set-interrupt-handler!</a>
+  <a href="#e24" data-name="sh">sh</a>
+  <a href="#e25" data-name="sh-lines">sh-lines</a>
+  <a href="#e26" data-name="shell-quote">shell-quote</a>
+  <a href="#e27" data-name="sleep">sleep</a>
+  <a href="#e28" data-name="start-program">start-program</a>
+  <a href="#e29" data-name="sys-machine-name">sys-machine-name</a>
+  <a href="#e30" data-name="sys-num-cpu-cores">sys-num-cpu-cores</a>
+  <a href="#e31" data-name="sys-os-version">sys-os-version</a>
+  <a href="#e32" data-name="sys-platform">sys-platform</a>
+  <a href="#e33" data-name="sys-scm-command">sys-scm-command</a>
+  <a href="#e34" data-name="sys-scm-technology">sys-scm-technology</a>
+  <a href="#e35" data-name="sys-scm-version">sys-scm-version</a>
+  <a href="#e36" data-name="sys-user-name">sys-user-name</a>
+  <a href="#e37" data-name="take-interrupt!">take-interrupt!</a>
+  <a href="#e38" data-name="uuidgen">uuidgen</a>
+  <a href="#e39" data-name="watch">watch</a>
 </nav>
 
 <main>
@@ -93,7 +95,7 @@
 <p><a class="xref" href="#e4"><code>getopt</code></a> parses command-line option lists; see also the higher-level <a class="xref" href="scm-args.html"><code>(scm args)</code></a>.</p>
 </div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
-<p class="export-count">38 bindings</p>
+<p class="export-count">40 bindings</p>
 
 <div class="entry" id="e0" data-name="current-pid">
   <div class="entry-name">current-pid</div>
@@ -303,7 +305,7 @@ Example:
   <div class="entry-name">run-program</div>
   <pre class="entry-doc">Syntax: (run-program cmd [options])
 Library: (scm system)
-Description: Executes the external program specified as a list (program arg1 arg2 ...), waits for it to complete, and returns its exit code as an exact integer. The program inherits the caller's standard input, output and error (so it can use the terminal; start-program gives it a private stdin instead). options is an alist with optional keys: 'work-dir &lt;path&gt;, 'env &lt;alist of (name value) string pairs added to the child environment&gt;. Returns #f on failure.
+Description: Executes the external program specified as a list (program arg1 arg2 ...), waits for it to complete, and returns its exit code as an exact integer. The program inherits the caller's standard input, output and error (so it can use the terminal; start-program gives it a private stdin instead). options is an alist with optional keys: 'work-dir &lt;path&gt;, 'env &lt;alist of (name value) string pairs added to the child environment&gt;, 'stdin &lt;string&gt; (the text the program reads), 'stdin-file &lt;path&gt;, 'stdout &lt;path&gt;, 'stderr &lt;path&gt; (the program writes to these files; output not redirected goes to the terminal as it is written), 'stderr 'stdout (stderr goes where stdout goes), 'append #t (the files are appended to). Returns #f on failure.
 Example:
   (run-program '("echo" "hello")) =&gt; 0</pre>
 </div>
@@ -324,7 +326,20 @@ Description: Returns #t when the program exits with status 0, #f otherwise.
 Example:
   (run? "test" "-f" "/etc/hosts") =&gt; #t</pre>
 </div>
-<div class="entry" id="e23" data-name="sh">
+<div class="entry" id="e23" data-name="set-interrupt-handler!">
+  <div class="entry-name">set-interrupt-handler!</div>
+  <pre class="entry-doc">Syntax: (set-interrupt-handler! mode)
+Library: (scm system)
+Description: Sets what an interrupt (Ctrl+C, SIGINT; Ctrl+Break on Windows) does:
+  'default ends the program (as at the start), 'ignore does nothing, 'record
+  records it for take-interrupt!. Child processes are not affected: a program
+  run in the foreground still gets Ctrl+C. Returns the mode before.
+Example:
+  (set-interrupt-handler! 'ignore) =&gt; default
+  (run-program '("sleep" "10"))     ; Ctrl+C ends sleep, not the caller
+  (set-interrupt-handler! 'default) =&gt; ignore</pre>
+</div>
+<div class="entry" id="e24" data-name="sh">
   <div class="entry-name">sh</div>
   <pre class="entry-doc">Syntax: (sh prog arg ...)
 Library: (scm system)
@@ -333,7 +348,7 @@ Description: Runs the program and returns its captured stdout as a string.
 Example:
   (sh "date" "+%Y") =&gt; "2026\n"</pre>
 </div>
-<div class="entry" id="e24" data-name="sh-lines">
+<div class="entry" id="e25" data-name="sh-lines">
   <div class="entry-name">sh-lines</div>
   <pre class="entry-doc">Syntax: (sh-lines prog arg ...)
 Library: (scm system)
@@ -342,7 +357,7 @@ Description: Like sh but returns stdout split into a list of lines
 Example:
   (sh-lines "ls" "/tmp") =&gt; ("file1" "file2")</pre>
 </div>
-<div class="entry" id="e25" data-name="shell-quote">
+<div class="entry" id="e26" data-name="shell-quote">
   <div class="entry-name">shell-quote</div>
   <pre class="entry-doc">Syntax: (shell-quote s)
 Library: (scm system)
@@ -352,7 +367,7 @@ Description: Returns s quoted such that it can be safely passed as a single
 Example:
   (shell-quote "it's fine") =&gt; "'it'\\''s fine'"</pre>
 </div>
-<div class="entry" id="e26" data-name="sleep">
+<div class="entry" id="e27" data-name="sleep">
   <div class="entry-name">sleep</div>
   <pre class="entry-doc">Syntax: (sleep seconds)
 Library: (scm system)
@@ -362,17 +377,17 @@ Description: Pauses the current thread for the given number of seconds
 Example:
   (sleep 1.5)</pre>
 </div>
-<div class="entry" id="e27" data-name="start-program">
+<div class="entry" id="e28" data-name="start-program">
   <div class="entry-name">start-program</div>
   <pre class="entry-doc">Syntax: (start-program cmd-and-args [options])
 Library: (scm system)
-Description: Starts an external program without waiting for it to finish and returns a process handle (a native value). cmd-and-args is a list (program arg1 arg2 ...). options is an alist with optional keys: 'work-dir &lt;path&gt;, 'log-file &lt;path&gt; (redirects stdout+stderr to this file), 'env &lt;alist of (name value) string pairs added to the child environment&gt;. Use process-pid, process-kill, process-wait, process-alive? on the handle.
+Description: Starts an external program without waiting for it to finish and returns a process handle (a native value). cmd-and-args is a list (program arg1 arg2 ...). options is an alist with optional keys: 'work-dir &lt;path&gt;, 'log-file &lt;path&gt; (redirects stdout+stderr to this file), 'env &lt;alist of (name value) string pairs added to the child environment&gt;, 'stdin &lt;string&gt; (the text the program reads; else a private stdin with nothing to read), 'stdin-file &lt;path&gt;, 'stdout &lt;path&gt;, 'stderr &lt;path&gt;, 'stderr 'stdout (stderr goes where stdout goes), 'append #t (the files are appended to), 'new-group #t (the program runs in a process group of its own, so that Ctrl+C at the terminal does not reach it; on Windows the program ignores Ctrl+C; the JVM cannot do this on Windows). Use process-pid, process-kill, process-wait, process-alive? on the handle.
 Example:
   (define p (start-program '("sleep" "30")))
   (process-kill p)
   (process-wait p)</pre>
 </div>
-<div class="entry" id="e28" data-name="sys-machine-name">
+<div class="entry" id="e29" data-name="sys-machine-name">
   <div class="entry-name">sys-machine-name</div>
   <pre class="entry-doc">Syntax: (sys-machine-name)
 Library: (scm system)
@@ -380,7 +395,7 @@ Description: Returns the hostname of the current machine as a string.
 Example:
   (sys-machine-name) =&gt; "myhost"</pre>
 </div>
-<div class="entry" id="e29" data-name="sys-num-cpu-cores">
+<div class="entry" id="e30" data-name="sys-num-cpu-cores">
   <div class="entry-name">sys-num-cpu-cores</div>
   <pre class="entry-doc">Syntax: (sys-num-cpu-cores)
 Library: (scm system)
@@ -388,7 +403,7 @@ Description: Returns the number of logical CPU cores available to the current pr
 Example:
   (sys-num-cpu-cores) =&gt; 8</pre>
 </div>
-<div class="entry" id="e30" data-name="sys-os-version">
+<div class="entry" id="e31" data-name="sys-os-version">
   <div class="entry-name">sys-os-version</div>
   <pre class="entry-doc">Syntax: (sys-os-version)
 Library: (scm system)
@@ -396,7 +411,7 @@ Description: Returns a list describing the operating system: (platform version-s
 Example:
   (sys-os-version) =&gt; (linux "Unix 5.15.0.0" 5 15 "")</pre>
 </div>
-<div class="entry" id="e31" data-name="sys-platform">
+<div class="entry" id="e32" data-name="sys-platform">
   <div class="entry-name">sys-platform</div>
   <pre class="entry-doc">Syntax: (sys-platform)
 Library: (scm system)
@@ -404,7 +419,7 @@ Description: Returns a symbol identifying the current operating system platform:
 Example:
   (sys-platform) =&gt; linux</pre>
 </div>
-<div class="entry" id="e32" data-name="sys-scm-command">
+<div class="entry" id="e33" data-name="sys-scm-command">
   <div class="entry-name">sys-scm-command</div>
   <pre class="entry-doc">Syntax: (sys-scm-command)
 Library: (scm system)
@@ -413,7 +428,7 @@ Example:
   (sys-scm-command) =&gt; ("/usr/lib/jvm/java-21/bin/java" "-jar" "/opt/dabscm/scm.jar")
   (run-program (append (sys-scm-command) (list "build.scm")))</pre>
 </div>
-<div class="entry" id="e33" data-name="sys-scm-technology">
+<div class="entry" id="e34" data-name="sys-scm-technology">
   <div class="entry-name">sys-scm-technology</div>
   <pre class="entry-doc">Syntax: (sys-scm-technology)
 Library: (scm system)
@@ -421,7 +436,7 @@ Description: Returns a symbol identifying the SCM implementation technology: csh
 Example:
   (sys-scm-technology) =&gt; java</pre>
 </div>
-<div class="entry" id="e34" data-name="sys-scm-version">
+<div class="entry" id="e35" data-name="sys-scm-version">
   <div class="entry-name">sys-scm-version</div>
   <pre class="entry-doc">Syntax: (sys-scm-version)
 Library: (scm system)
@@ -429,7 +444,7 @@ Description: Returns the SCM interpreter version as a string.
 Example:
   (sys-scm-version) =&gt; "0.0.1"</pre>
 </div>
-<div class="entry" id="e35" data-name="sys-user-name">
+<div class="entry" id="e36" data-name="sys-user-name">
   <div class="entry-name">sys-user-name</div>
   <pre class="entry-doc">Syntax: (sys-user-name)
 Library: (scm system)
@@ -437,7 +452,16 @@ Description: Returns the name of the currently logged-in user as a string.
 Example:
   (sys-user-name) =&gt; "alice"</pre>
 </div>
-<div class="entry" id="e36" data-name="uuidgen">
+<div class="entry" id="e37" data-name="take-interrupt!">
+  <div class="entry-name">take-interrupt!</div>
+  <pre class="entry-doc">Syntax: (take-interrupt!)
+Library: (scm system)
+Description: Returns #t if an interrupt (Ctrl+C) was recorded since the last call
+  (set-interrupt-handler! 'record), else #f.
+Example:
+  (when (take-interrupt!) (display "^C"))</pre>
+</div>
+<div class="entry" id="e38" data-name="uuidgen">
   <div class="entry-name">uuidgen</div>
   <pre class="entry-doc">Syntax: (uuidgen)
 Library: (scm system)
@@ -447,7 +471,7 @@ Description: Returns a random RFC 4122 version 4 UUID as a string in
 Example:
   (uuidgen) =&gt; "e3b0c442-98fc-4c14-9afb-f4ca495991b9"</pre>
 </div>
-<div class="entry" id="e37" data-name="watch">
+<div class="entry" id="e39" data-name="watch">
   <div class="entry-name">watch</div>
   <pre class="entry-doc">Syntax: (watch thunk [option ...])
 Library: (scm system)

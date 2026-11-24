@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Threading.Tasks;
 using System.Runtime.InteropServices;
 
 namespace scheme;
@@ -16,7 +17,12 @@ public class PrimitiveStartProgram : Primitive
         "and returns a process handle (a native value). cmd-and-args is a list " +
         "(program arg1 arg2 ...). options is an alist with optional keys: " +
         "'work-dir <path>, 'log-file <path> (redirects stdout+stderr to this file), " +
-        "'env <alist of (name value) string pairs added to the child environment>. " +
+        "'env <alist of (name value) string pairs added to the child environment>, " +
+        "'stdin <string> (the text the program reads; else a private stdin with nothing to read), " +
+        "'stdin-file <path>, 'stdout <path>, 'stderr <path>, 'stderr 'stdout (stderr goes where stdout goes), " +
+        "'append #t (the files are appended to), 'new-group #t (the program runs in a process group of its own, " +
+        "so that Ctrl+C at the terminal does not reach it; on Windows the program ignores Ctrl+C; " +
+        "the JVM cannot do this on Windows). " +
         "Use process-pid, process-kill, process-wait, process-alive? on the handle.\n" +
         "Example:\n" +
         "  (define p (start-program '(\"sleep\" \"30\")))\n" +
@@ -44,8 +50,15 @@ public class PrimitiveStartProgram : Primitive
 
         try
         {
+            bool newGroup = options != Value.NIL
+                && !PrimitiveGetProperty.GetProperty(options, "new-group", Value.F).Equals(Value.F);
+            if (newGroup && !OperatingSystem.IsWindows())
+                (cmd, args) = ProcessRedirects.NewGroupCommand(cmd, args);
             var psi = ProcUtil.CreateStartInfo(cmd, args);
             psi.UseShellExecute = false;
+            if (newGroup && OperatingSystem.IsWindows())
+                psi.CreateNewProcessGroup = true;
+            var redirects = ProcessRedirects.Parse(options);
             // Mirror the JDK: suppress a console window only when we have no
             // console ourselves. With one, the child shares it and so receives
             // Ctrl+C / Ctrl+Break like the rest of the console group — as child
@@ -79,6 +92,10 @@ public class PrimitiveStartProgram : Primitive
 
                 ProcessEnvUtil.Apply(psi, options);
             }
+            bool append = options != Value.NIL
+                && !PrimitiveGetProperty.GetProperty(options, "append", Value.F).Equals(Value.F);
+            if (logfile != null) redirects.DropOutput();
+            redirects.Apply(psi);
 
             var proc = new Process();
             proc.StartInfo = psi;
@@ -88,7 +105,7 @@ public class PrimitiveStartProgram : Primitive
             if (logfile != null)
             {
                 var writer = new StreamWriter(
-                    new FileStream(logfile, FileMode.Create, FileAccess.Write, FileShare.Read))
+                    new FileStream(logfile, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.Read))
                     { AutoFlush = true };
                 sp.AttachLog(writer);
                 proc.OutputDataReceived += (s, e) => { if (e.Data != null) sp.WriteLogLine(e.Data); };
@@ -98,7 +115,13 @@ public class PrimitiveStartProgram : Primitive
                 // an instance it no longer tracks. process-kill / process-wait
                 // close it on the explicit-stop path; this covers the rest.
                 proc.EnableRaisingEvents = true;
-                proc.Exited += (s, e) => sp.CloseLog();
+                // After the output still in the pipes (the async handlers
+                // see it after the exit; closing at once lost the last lines).
+                proc.Exited += (s, e) => Task.Run(() =>
+                {
+                    Task.Run(() => proc.WaitForExit()).Wait(2000);
+                    sp.CloseLog();
+                });
             }
 
             proc.Start();
@@ -108,6 +131,8 @@ public class PrimitiveStartProgram : Primitive
                 proc.BeginOutputReadLine();
                 proc.BeginErrorReadLine();
             }
+            redirects.Start(proc);
+            sp.redirects = redirects;
 
             // On Windows, contain the whole descendant tree in a kill-on-close
             // Job Object so process-kill can take it down atomically (the

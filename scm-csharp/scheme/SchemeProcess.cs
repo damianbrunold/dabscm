@@ -23,6 +23,8 @@ public class SchemeProcess
     // this mirrors that. Guarded so a late async callback after close is a no-op
     // rather than a write to a disposed stream.
     private StreamWriter? logWriter;
+    // the tasks copying 'stdin, 'stdout and 'stderr (start-program)
+    internal ProcessRedirects? redirects;
     private readonly object logLock = new object();
     private bool logClosed;
 

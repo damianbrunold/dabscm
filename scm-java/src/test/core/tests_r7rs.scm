@@ -797,7 +797,8 @@
   (=> (cond-expand (srfi-1 'yes) (else 'no)) 'yes)
   (=> (cond-expand ((library (srfi 1)) 'yes) (else 'no)) 'yes)
   (=> (cond-expand ((library (no such lib)) 'yes) (else 'no)) 'no)
-  (=> (procedure? include-ci) #t))
+  ;; include-ci is syntax natively, a procedure on the JVM and C#
+  (=> (cond-expand (dabscm-native #t) (else (procedure? include-ci))) #t))
 
 (test-group (import (scheme base))
   (=> (read-char (open-input-string "abc")) #\a)

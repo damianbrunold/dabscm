@@ -706,6 +706,9 @@ const Options = struct {
         pa.free(o.spawn.argv);
         if (o.spawn.cwd) |c| pa.free(c);
         if (o.spawn.log_file) |f| pa.free(f);
+        if (o.spawn.stdin_file) |f| pa.free(f);
+        if (o.spawn.stdout_file) |f| pa.free(f);
+        if (o.spawn.stderr_file) |f| pa.free(f);
         for (o.spawn.env) |kv| {
             pa.free(kv[0]);
             pa.free(kv[1]);
@@ -747,6 +750,24 @@ fn programArgs(t: *Thread) Err!Options {
             if (!data.isString(f)) return P.argTypeError(t);
             o.spawn.log_file = data.toUtf8Owned(f);
         };
+        if (findProperty(opts, data.intern("stdin-file"), false)) |f| if (f != rt.FALSE) {
+            if (!data.isString(f)) return P.argTypeError(t);
+            o.spawn.stdin_file = data.toUtf8Owned(f);
+        };
+        if (findProperty(opts, data.intern("stdout"), false)) |f| if (f != rt.FALSE) {
+            if (!data.isString(f)) return P.argTypeError(t);
+            o.spawn.stdout_file = data.toUtf8Owned(f);
+        };
+        if (findProperty(opts, data.intern("stderr"), false)) |f| if (f != rt.FALSE) {
+            if (f == data.intern("stdout")) {
+                o.spawn.stderr_to_stdout = true;
+            } else {
+                if (!data.isString(f)) return P.argTypeError(t);
+                o.spawn.stderr_file = data.toUtf8Owned(f);
+            }
+        };
+        if (findProperty(opts, data.intern("append"), false)) |f| o.spawn.append = f != rt.FALSE;
+        if (findProperty(opts, data.intern("new-group"), false)) |f| o.spawn.new_group = f != rt.FALSE;
         if (findProperty(opts, data.intern("env"), false)) |env| {
             var pairs: std.ArrayList([2][]const u8) = .empty;
             errdefer {
@@ -773,9 +794,12 @@ fn programArgs(t: *Thread) Err!Options {
 fn runProgram(t: *Thread) Err!Word {
     var o = try programArgs(t);
     defer o.deinit();
+    o.spawn.stdin_text = o.stdin_text;
+    o.spawn.new_group = false;
     os.flush();
     const p = os.spawn(o.spawn) orelse return rt.FALSE;
     const code = os.procWait(p, null);
+    os.procJoinFeeder(p, true);
     os.procFree(p);
     return fix(code orelse return rt.FALSE);
 }
@@ -784,6 +808,7 @@ pub const @"%run-program" = WN("run-program", runProgram, 1, 2);
 fn runProgramCapture(t: *Thread) Err!Word {
     var o = try programArgs(t);
     defer o.deinit();
+    o.spawn.new_group = false;
     os.flush();
     const r = os.capture(o.spawn, o.stdin_text) orelse return rt.FALSE;
     defer pa.free(r.out);
@@ -799,8 +824,10 @@ fn startProgram(t: *Thread) Err!Word {
     var o = try programArgs(t);
     defer o.deinit();
     o.spawn.inherit_stdin = false;
+    o.spawn.stdin_text = o.stdin_text;
     os.flush();
     const p = os.spawn(o.spawn) orelse return raise(t, "start-program: cannot start ~a", &.{rt.car(arg(t, 0))});
+    os.procJoinFeeder(p, false);
     return wrapNative(t, .process, p);
 }
 pub const @"%start-program" = WN("start-program", startProgram, 1, 2);
@@ -1028,10 +1055,35 @@ fn terminalSize(t: *Thread) Err!Word {
 pub const @"%terminal-size" = WN("terminal-size", terminalSize, 0, 0);
 
 fn terminalRaw(t: *Thread) Err!Word {
+    var keep_output = false;
+    if (t.argc > 1) {
+        if (arg(t, 1) != data.intern("keep-output")) return P.argTypeError(t);
+        keep_output = true;
+    }
     os.flush();
-    return rt.boolean(os.terminalRaw(arg(t, 0) != rt.FALSE));
+    return rt.boolean(os.terminalRaw(arg(t, 0) != rt.FALSE, keep_output));
 }
-pub const @"%terminal-raw!" = WN("terminal-raw!", terminalRaw, 1, 1);
+pub const @"%terminal-raw!" = WN("terminal-raw!", terminalRaw, 1, 2);
+
+const interrupt_modes = [_][]const u8{ "default", "ignore", "record" };
+
+/// (set-interrupt-handler! mode): what Ctrl+C does: 'default, 'ignore,
+/// 'record (take-interrupt! tells); the mode before
+fn setInterruptHandler(t: *Thread) Err!Word {
+    const m = arg(t, 0);
+    for (interrupt_modes, 0..) |name, i| if (m == data.intern(name)) {
+        const before = os.setInterruptMode(@intCast(i));
+        return data.intern(interrupt_modes[before]);
+    };
+    return P.argTypeError(t);
+}
+pub const @"%set-interrupt-handler!" = WN("set-interrupt-handler!", setInterruptHandler, 1, 1);
+
+fn takeInterrupt(t: *Thread) Err!Word {
+    _ = t;
+    return rt.boolean(os.takeInterrupt());
+}
+pub const @"%take-interrupt!" = WN("take-interrupt!", takeInterrupt, 0, 0);
 
 fn consoleEcho(t: *Thread) Err!Word {
     return rt.boolean(os.terminalEcho(arg(t, 0) != rt.FALSE));

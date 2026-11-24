@@ -447,13 +447,15 @@ Example:
 ### `terminal-raw!`
 
 ```
-Syntax: (terminal-raw! enable)
+Syntax: (terminal-raw! enable [keep-output])
 Library: (scm terminal)
 Description: Enables or disables raw terminal mode.
 When enable is #t, disables line buffering, echo, signal processing,
 flow control (Ctrl-S/Ctrl-Q), CR/NL translation of input and output
 post-processing, so that individual keypresses can be read; write
 "\r\n" to start a new line at column 1.
+With 'keep-output as second argument, output post-processing stays on, so
+that "\n" also returns the carriage (Windows has no such processing).
 When enable is #f, restores the original terminal settings.
 Returns #t on success, #f if raw mode is not supported.
 On Windows with Java, raw mode is not supported and returns #f.
@@ -584,9 +586,10 @@ Example:
 ### `with-terminal-raw`
 
 ```
-Syntax: (with-terminal-raw thunk)
+Syntax: (with-terminal-raw thunk [keep-output])
 Library: (scm terminal)
-Description: Calls thunk with raw terminal mode enabled. The original
+Description: Calls thunk with raw terminal mode enabled (with 'keep-output,
+output post-processing stays on, see terminal-raw!). The original
 terminal settings are restored when thunk returns or when an exception
 is raised. Returns the value returned by thunk.
 Example:

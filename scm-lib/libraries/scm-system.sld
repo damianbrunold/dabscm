@@ -25,6 +25,7 @@
           run-program
           run-program/capture
           run?
+          set-interrupt-handler!
           sh
           sh-lines
           shell-quote
@@ -38,6 +39,7 @@
           sys-scm-technology
           sys-scm-version
           sys-user-name
+          take-interrupt!
           uuidgen
           watch)
   (begin
@@ -64,6 +66,8 @@
     (define run-program (%primitive "run-program"))
     (define run-program/capture (%primitive "run-program/capture"))
     (define start-program (%primitive "start-program"))
+    (define set-interrupt-handler! (%primitive "set-interrupt-handler!"))
+    (define take-interrupt! (%primitive "take-interrupt!"))
     (define (run-parallel fn values)
       "Syntax: (run-parallel fn values)
 Library: (scm system)
