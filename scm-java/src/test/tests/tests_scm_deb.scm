@@ -172,6 +172,9 @@
       (write-file (join-path app "deploy" "systemd" "myapp-health.timer")
                   "[Timer]\n")
       (write-file (join-path app "deploy" "debian" "README.Debian") "notes\n")
+      (write-file (join-path app "deploy" "nginx.conf.example") "server {}\n")
+      (write-file (join-path app "deploy" "apache2-subpath.conf.example")
+                  "Alias /myapp\n")
       (write-file (join-path app "LICENSE") "MIT\n")
       (write-file (join-path tmp "scm.jar") "not really a jar")
       (git "init" "-q")
@@ -222,6 +225,11 @@
                                      "(define data-dir \"/var/lib/myapp/data\")"))
         (test-assert "copyright"
                      (bytes-contain? data "./usr/share/doc/myapp/copyright"))
+        (test-assert "every deploy/*.example in the docs"
+                     (and (bytes-contain? data
+                                          "./usr/share/doc/myapp/nginx.conf.example")
+                          (bytes-contain? data
+                                          "./usr/share/doc/myapp/apache2-subpath.conf.example")))
         (test-assert "copyright: notes and runtime"
                      (and (bytes-contain? data
                                           "Bundled third-party material:\n\nMap data: (c) swisstopo.\n")

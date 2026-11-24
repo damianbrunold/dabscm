@@ -9,7 +9,8 @@
 ;;   config.example.scm          (define name value) settings
 ;;   deploy/systemd/*.service|*.timer   units for the installed layout
 ;;   deploy/debian/README.Debian        admin notes
-;;   deploy/{nginx,apache}.conf.example optional proxy examples
+;;   deploy/*.example                   optional proxy examples (e.g.
+;;                                      nginx.conf.example), to the docs
 ;;   LICENSE                            becomes the copyright file
 ;;
 ;; Installed layout for package P:
@@ -743,16 +744,18 @@ Example:
                                      runtime-dir
                                      dabscm-version
                                      native?)))
-                                  (filter-map
+                                  ;; every deploy/*.example (proxy examples:
+                                  ;; nginx.conf.example, apache.conf.example, ...)
+                                  (map
                                    (lambda (f)
-                                     (let ((p (join-path dir "deploy" f)))
-                                       (and
-                                        (file-exists? p)
-                                        (from (string-append doc f)
-                                              #o644
-                                              p))))
-                                   '("nginx.conf.example"
-                                     "apache.conf.example"))))
+                                     (from (string-append doc f)
+                                           #o644
+                                           (join-path dir "deploy" f)))
+                                   (sort-strings
+                                    (filter
+                                     (lambda (f) (string-suffix? ".example" f))
+                                     (directory-files
+                                      (join-path dir "deploy")))))))
                (runtime-files (append (if
                                        native?
                                        (list
