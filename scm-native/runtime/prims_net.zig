@@ -187,7 +187,9 @@ fn socketClose(t: *Thread) Err!Word {
     if (sys.nativeOf(arg(t, 0), .socket)) |p| {
         const s: *Socket = @ptrCast(@alignCast(p));
         // what the ports hold is sent first (the JVM's close flushes too)
-        for (rt.ptr(arg(t, 0))[3 .. 3 + port_slots]) |w| if (ports.get(w)) |port| {
+        // (the socket object from the argument each time: a flush can
+        // block, and another thread's collection then moves the object)
+        for (0..port_slots) |k| if (ports.get(rt.ptr(arg(t, 0))[3 + k])) |port| {
             if (port.kind == .net_out) port.flush();
         };
         s.conn.close();

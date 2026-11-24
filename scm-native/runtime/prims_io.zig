@@ -105,13 +105,17 @@ fn writeString(t: *Thread) Err!Word {
     p.write(buf.items);
     return rt.UNSPEC;
 }
-pub const @"%write" = WD("write", writeImpl, 1, 2);
-pub const @"%write-shared" = WD("write-shared", writeSharedImpl, 1, 2);
-pub const @"%write-simple" = WD("write-simple", writeImpl, 1, 2);
-pub const @"%display" = WD("display", displayImpl, 1, 2);
-pub const @"%newline" = WD("newline", newlineImpl, 0, 1);
-pub const @"%write-char" = WD("write-char", writeChar, 1, 2);
-pub const @"%write-string" = WD("write-string", writeString, 1, 4);
+// The port operations are not leaf primitives (WD): on a socket port (or
+// standard input) they can block, and while one blocks another thread's
+// collection moves objects, which compiled code holds in locals across a
+// leaf call (found with SCM_NATIVE_GC_STRESS)
+pub const @"%write" = WN("write", writeImpl, 1, 2);
+pub const @"%write-shared" = WN("write-shared", writeSharedImpl, 1, 2);
+pub const @"%write-simple" = WN("write-simple", writeImpl, 1, 2);
+pub const @"%display" = WN("display", displayImpl, 1, 2);
+pub const @"%newline" = WN("newline", newlineImpl, 0, 1);
+pub const @"%write-char" = WN("write-char", writeChar, 1, 2);
+pub const @"%write-string" = WN("write-string", writeString, 1, 4);
 
 fn writeU8(t: *Thread) Err!Word {
     const b = arg(t, 0);
@@ -120,7 +124,7 @@ fn writeU8(t: *Thread) Err!Word {
     (try outPort(t, 1)).write(&byte);
     return rt.UNSPEC;
 }
-pub const @"%write-u8" = WD("write-u8", writeU8, 1, 2);
+pub const @"%write-u8" = WN("write-u8", writeU8, 1, 2);
 
 fn writeBytevector(t: *Thread) Err!Word {
     const bv = arg(t, 0);
@@ -132,13 +136,13 @@ fn writeBytevector(t: *Thread) Err!Word {
     (try outPort(t, 1)).write(data.bvBytes(bv)[start..end]);
     return rt.UNSPEC;
 }
-pub const @"%write-bytevector" = WD("write-bytevector", writeBytevector, 1, 4);
+pub const @"%write-bytevector" = WN("write-bytevector", writeBytevector, 1, 4);
 
 fn flushOutputPort(t: *Thread) Err!Word {
     (try outPort(t, 0)).flush();
     return rt.UNSPEC;
 }
-pub const @"%flush-output-port" = WD("flush-output-port", flushOutputPort, 0, 1);
+pub const @"%flush-output-port" = WN("flush-output-port", flushOutputPort, 0, 1);
 
 // --- reading ---------------------------------------------------------------------
 
@@ -158,10 +162,10 @@ fn peekU8(t: *Thread) Err!Word {
     const b = (try inPort(t, 0)).peekByte() orelse return rt.EOF;
     return fix(b);
 }
-pub const @"%read-char" = WD("read-char", readCharImpl, 0, 1);
-pub const @"%peek-char" = WD("peek-char", peekCharImpl, 0, 1);
-pub const @"%read-u8" = WD("read-u8", readU8, 0, 1);
-pub const @"%peek-u8" = WD("peek-u8", peekU8, 0, 1);
+pub const @"%read-char" = WN("read-char", readCharImpl, 0, 1);
+pub const @"%peek-char" = WN("peek-char", peekCharImpl, 0, 1);
+pub const @"%read-u8" = WN("read-u8", readU8, 0, 1);
+pub const @"%peek-u8" = WN("peek-u8", peekU8, 0, 1);
 
 fn readLine(t: *Thread) Err!Word {
     const p = try inPort(t, 0);
@@ -206,7 +210,12 @@ fn readBytevectorB(t: *Thread) Err!Word {
     const end: usize = if (t.argc > 3) try P.count(t, arg(t, 3)) else len;
     if (start > end or end > len) return raise(t, "read-bytevector!: index out of range", &.{});
     var i = start;
-    while (i < end) : (i += 1) data.bvBytes(bv)[i] = p.readByte() orelse break;
+    while (i < end) : (i += 1) {
+        const b = p.readByte() orelse break;
+        // the bytevector again: a socket read can block, and another
+        // thread's collection then moves it
+        data.bvBytes(arg(t, 0))[i] = b;
+    }
     if (i == start and end > start) return rt.EOF;
     return fix(@intCast(i - start));
 }
@@ -386,9 +395,9 @@ fn closePort(t: *Thread) Err!Word {
     (try portArg(t, 0)).close();
     return rt.UNSPEC;
 }
-pub const @"%close-input-port" = WD("close-input-port", closePort, 1, 1);
-pub const @"%close-output-port" = WD("close-output-port", closePort, 1, 1);
-pub const @"%close-port" = WD("close-port", closePort, 1, 1);
+pub const @"%close-input-port" = WN("close-input-port", closePort, 1, 1);
+pub const @"%close-output-port" = WN("close-output-port", closePort, 1, 1);
+pub const @"%close-port" = WN("close-port", closePort, 1, 1);
 
 fn portPredD(comptime f: fn (*Port) bool) P.Prim {
     const S = struct {

@@ -162,6 +162,7 @@ costs recompilation.
 |---|---|
 | `SCM_NATIVE_GC_STATS=1` | at exit (also through `exit`): the numbers of collections, the old space and how much of it is used, large objects, the threads' nurseries and stacks, ended threads not yet freed, the ports and their buffers, the native objects; at each major collection the old space's size |
 | `SCM_NATIVE_GC_VERIFY=1` | check for missing write barriers before each minor collection (slow) |
+| `SCM_NATIVE_GC_STRESS=words[,major]` | GC stress mode (see [GC stress tests](#gc-stress-tests)): a collection after every `words` words allocated, every `major`th one major (default 100), dead memory poisoned |
 | `SCM_NATIVE_SEGV=1` | a stack trace on a crash |
 | `SCM_TLS_INSECURE=1` | no TLS certificate verification |
 | `SSL_CERT_FILE` | the trusted CA certificates (default: the system's) |
@@ -340,6 +341,9 @@ scm lib-tests.scm --target aarch64-linux-musl --run-with qemu-aarch64   # arm64 
   file and keeps the executables of failing files only.
 - **`--target` and `--run-with`** (both scripts) cross-compile and run the executables
   under a command such as qemu.
+- **`--gc-stress spec`** (all three scripts) runs the executables in the GC stress mode,
+  and **`-O mode`** (`core-tests.scm`, `lib-tests.scm`) builds them in another mode, for
+  example `ReleaseSafe` (see [GC stress tests](#gc-stress-tests)).
 
 The library tests compile about 125 programs, each about 95 MB with debug information. Run
 them from a copy of the tree (for example `rsync` `scm-lib`, `scm-tests`, `VERSION` and
@@ -370,6 +374,46 @@ allocator's bytes in use (`mallinfo`). That tells a leak from fragmentation: the
 memory shows both. musl's allocator (the default target) fragments more under some
 patterns: freeing a file port's buffer at a collection while small allocations land in its
 slot grew the resident memory without a leak.
+
+### GC stress tests
+
+```sh
+scm test.scm --gc-stress 100
+scm core-tests.scm --gc-stress 100
+scm lib-tests.scm --gc-stress 0,1000 tests_scm_json   # at every allocation
+```
+
+The collector is precise and moves objects, so a heap pointer the runtime holds in a Zig
+local across an allocation, or an object it registers before allocating its heap object,
+works until the allocation happens to collect. `SCM_NATIVE_GC_STRESS=words[,major]` makes
+that happen everywhere: a collection after every `words` words allocated (0: at every
+allocation check that allocates), every `major`th collection a major one (default 100;
+1: all, which also moves every old object every time). After each collection the memory of
+the dead nursery objects and flonums is poisoned (`0xdeaddeaddeaddeee`, a header of no
+type), and allocation goes on above it instead of at the start of the nursery, so that a
+stale pointer finds poison rather than a new object. The collector stops the program with
+"gc stress: a pointer to a dead object" when it reaches one; a primitive that reads one sees
+a value of no type. The old space a major collection leaves is poisoned before it is freed.
+
+Minor collections are cheap; major ones copy the live data, so `major` sets most of the
+cost: with `100`, `tests/gc.scm` takes 0.9 s instead of 0.02 s, and the library suite
+runs about an hour; `0,1000` is thorough and slower. The scripts give the stress mode 20
+times the normal timeout.
+
+When the collector reaches a stale pointer it also says what it pointed to: the dead
+object's type, and whether that collection copied it (a stale pointer to a live object) or
+found it garbage (an object only the runtime held), and the object that held the pointer.
+
+The stress mode found:
+
+- opening a port registered the port with the collector before its port object was
+  allocated, so a collection at that allocation freed the port (`tests/portgc.scm`);
+- the port operations were leaf primitives, which compiled code calls directly while it
+  keeps objects in locals, as for a call that never collects; on a socket port they can
+  block, and another thread's collection then moved those objects (`tests/blockleaf.scm`).
+  They are ordinary primitives now (about 10% slower in a loop of string port operations);
+- `read-bytevector!` and `socket-close` used a heap object they had read before a socket
+  operation that can block.
 
 ### Generated files
 

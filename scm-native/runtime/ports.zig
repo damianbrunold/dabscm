@@ -386,7 +386,7 @@ var stdin_port: Port = .{ .kind = .stdin, .binary = false };
 var stdout_port: Port = .{ .kind = .stdout, .binary = false };
 var stderr_port: Port = .{ .kind = .stderr, .binary = false };
 
-/// Every port made by newPort (for the statistics and the collector)
+/// Every port wrapped (ports.wrap) (for the statistics and the collector)
 var all_ports: std.ArrayList(*Port) = .empty;
 var all_ports_lock: std.Io.Mutex = .init;
 
@@ -454,21 +454,24 @@ pub fn stats() struct { count: usize, bytes: usize } {
 pub fn newPort(kind: Kind, binary: bool) *Port {
     const p = pa.create(Port) catch rt.oom();
     p.* = .{ .kind = kind, .binary = binary };
+    return p;
+}
+
+/// The port object for p (made by newPort); reserve 2 words first. The
+/// port joins the ports the collector sweeps only here, with its object: a
+/// port registered before the reservation was freed when the reservation
+/// collected (found with SCM_NATIVE_GC_STRESS)
+pub fn wrap(t: *Thread, p: *Port) Word {
     {
         all_ports_lock.lockUncancelable(os.io);
         defer all_ports_lock.unlock(os.io);
         all_ports.append(pa, p) catch rt.oom();
     }
-    if (kind == .file_out) {
+    if (p.kind == .file_out) {
         file_ports_lock.lockUncancelable(os.io);
         defer file_ports_lock.unlock(os.io);
         file_ports.append(pa, p) catch rt.oom();
     }
-    return p;
-}
-
-/// The port object for p; reserve 2 words first.
-pub fn wrap(t: *Thread, p: *Port) Word {
     const q = t.allocRaw(2);
     q[0] = rt.hdr(rt.T_PORT, 1);
     q[1] = @intFromPtr(p);

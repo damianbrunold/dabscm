@@ -184,6 +184,7 @@ pub fn newThread() *Thread {
         .young_base = @intFromPtr(young_space.ptr),
         .young_bytes = young_space.len,
     };
+    if (stress) |st| stressNursery(t, st);
     return t;
 }
 
@@ -881,7 +882,8 @@ fn collect(t: *Thread, need: usize) void {
     t.gc_count += 1;
     var used: usize = 0;
     for (threads.items) |o| used += nurseryUsed(o);
-    if (major_requested or old_hp + used > old_space.len) {
+    const stress_major = if (stress) |st| (minor_count + major_count + 1) % st.major == 0 else false;
+    if (major_requested or stress_major or old_hp + used > old_space.len) {
         major(t);
     } else {
         minor(t);
@@ -909,6 +911,13 @@ fn collect(t: *Thread, need: usize) void {
         t.heap_len = heap.len;
         resetNursery(t);
     }
+    // stress mode: allocation goes on above the poisoned part, unless the
+    // request does not fit there
+    if (stress) |st| if (@intFromPtr(t.hp) + 8 * need > @intFromPtr(nurseryEnd(t.heap[0..t.heap_len]))) {
+        t.hp = t.heap;
+        t.stress_young = @intFromPtr(t.hp);
+        t.hlimit = @ptrFromInt(@min(@intFromPtr(nurseryEnd(t.heap[0..t.heap_len])), @intFromPtr(t.hp) + 8 * st.words));
+    };
 }
 
 /// The words a nursery holds (the bump area and the flonum area)
@@ -930,9 +939,112 @@ fn nurseryCapacity(t: *Thread) usize {
 
 fn resetNursery(t: *Thread) void {
     const heap = t.heap[0..t.heap_len];
+    if (stress) |st| return stressNursery(t, st);
     t.hp = heap.ptr;
     t.hlimit = nurseryEnd(heap);
     t.flo_ptr = nurseryEnd(heap);
+}
+
+// ---------------------------------------------------------------------------
+// GC stress mode, for finding objects the collector does not know about (a
+// heap pointer in a runtime local across an allocation, a missing root):
+//
+//   SCM_NATIVE_GC_STRESS=words[,major]
+//
+// A collection after every `words` words allocated (0: at every allocation
+// check that allocates), and every `major`th collection a major one (default
+// 100; 1: all). After a collection the memory of the dead nursery objects and
+// flonums is poisoned, and allocation goes on above it rather than at the
+// nursery's start, so that a stale pointer finds poison instead of a new
+// object: the collector stops the program with a message when it reaches
+// one, and a primitive reading one sees no valid type. The old space a major
+// collection leaves is poisoned before it is freed.
+
+const Stress = struct { words: usize, major: usize };
+var stress: ?Stress = null;
+
+/// Poison, as a header: type 0xee (no type), length 0xdeaddeaddead
+pub const poison_word: Word = 0xdead_dead_dead_deee;
+const poison_type: u8 = 0xee;
+
+fn initStress() void {
+    const v = os.getEnv("SCM_NATIVE_GC_STRESS") orelse return;
+    var it = std.mem.splitScalar(u8, v, ',');
+    const words = std.fmt.parseInt(usize, std.mem.trim(u8, it.first(), " "), 10) catch 0;
+    var every: usize = 100;
+    if (it.next()) |m| every = @max(1, std.fmt.parseInt(usize, std.mem.trim(u8, m, " "), 10) catch 100);
+    stress = .{ .words = words, .major = every };
+}
+
+fn poison(from: usize, to: usize) void {
+    if (to <= from) return;
+    const q: [*]Word = @ptrFromInt(from);
+    @memset(q[0 .. (to - from) / 8], poison_word);
+}
+
+/// Poison the objects from..to of a nursery, each with a header that keeps
+/// its type and whether it was copied (forwarded) or garbage, for the
+/// message when a stale pointer reaches it; the rest plain poison when the
+/// objects cannot be walked
+fn poisonObjects(from: usize, to: usize) void {
+    var a = from;
+    while (a < to) {
+        const q: [*]Word = @ptrFromInt(a);
+        const h = q[0];
+        var ty = hdrType(h);
+        var len = hdrLen(h);
+        var moved: Word = 0;
+        if (ty == T_FWD) {
+            const nq = ptr(forwardee(h));
+            ty = hdrType(nq[0]);
+            len = hdrLen(nq[0]);
+            moved = 1;
+        }
+        if (ty == 0 or ty > T_NATIVE or a + 8 * (1 + len) > to) return poison(a, to);
+        q[0] = (poison_word & ~@as(Word, 0xffffff)) | (moved << 16) | (@as(Word, ty) << 8) | poison_type;
+        @memset(q[1 .. 1 + len], poison_word);
+        a += 8 * (1 + len);
+    }
+}
+
+fn stressNursery(t: *Thread, st: Stress) void {
+    const heap = t.heap[0..t.heap_len];
+    const lo = @intFromPtr(heap.ptr);
+    const mid = @intFromPtr(nurseryEnd(heap));
+    const top = @intFromPtr(heap.ptr + heap.len);
+    // marks outside this nursery: a new or replaced nursery
+    if (t.stress_young < lo or t.stress_young > mid) t.stress_young = lo;
+    if (t.stress_flo < mid or t.stress_flo > top) t.stress_flo = mid;
+    const hp = @intFromPtr(t.hp);
+    const fp = @intFromPtr(t.flo_ptr);
+    if (hp >= lo and hp <= mid) poisonObjects(t.stress_young, hp) else poison(lo, mid);
+    if (fp >= mid and fp <= top) poison(t.stress_flo, fp) else poison(mid, top);
+    // go on above the poisoned part while a quarter of the nursery is left
+    // (a collection with a larger request finds room: it made the nursery
+    // large enough for it, and an empty one has it)
+    if (hp < lo or hp + (mid - lo) / 4 > mid) t.hp = heap.ptr;
+    if (fp < mid or fp + (top - mid) / 2 > top) t.flo_ptr = nurseryEnd(heap);
+    t.stress_young = @intFromPtr(t.hp);
+    t.stress_flo = @intFromPtr(t.flo_ptr);
+    t.hlimit = @ptrFromInt(@min(mid, @intFromPtr(t.hp) + 8 * st.words));
+}
+
+fn deadObject(g: *const Gc, q: [*]Word) noreturn {
+    os.eprint("gc stress: a pointer to a dead object ({x}): an object the collector did not know about was used after a collection\n", .{@intFromPtr(q)});
+    if (q[0] != poison_word)
+        os.eprint("  the dead object: type {d}, {s}\n", .{ (q[0] >> 8) & 0xff, if ((q[0] >> 16) & 0xff != 0) "copied by that collection (a stale pointer to a live object)" else "garbage at that collection (an object only the runtime held)" });
+    if (g.cur) |c| {
+        const len = hdrLen(c[0]);
+        os.eprint("  found in an object of type {d}, length {d}:", .{ hdrType(c[0]), len });
+        for (c[1 .. 1 + @min(len, 8)]) |w| os.eprint(" {x}", .{w});
+        os.eprint("\n", .{});
+    } else os.eprint("  found in a root\n", .{});
+    @panic("gc stress: a pointer to a dead object");
+}
+
+fn badHeader(q: [*]Word) noreturn {
+    os.eprint("gc: object {x} has a header of no type ({x})\n", .{ @intFromPtr(q), q[0] });
+    @panic("gc: object without a valid header");
 }
 
 fn clearRemembered() void {
@@ -1063,7 +1175,10 @@ fn major(t: *Thread) void {
     large.items.len = kept;
     large_words = words;
 
-    if (old_space.len > 0) pa.free(old_space);
+    if (old_space.len > 0) {
+        if (stress != null) @memset(old_space[0..old_hp], poison_word);
+        pa.free(old_space);
+    }
     old_space = to;
     old_hp = g.free;
     // the native and port objects not reached: what they hold goes
@@ -1102,6 +1217,8 @@ const Gc = struct {
     free: usize,
     major: bool,
     large_todo: std.ArrayList([*]Word) = .empty,
+    /// the object being scanned (null: a root), for the stress mode's message
+    cur: ?[*]Word = null,
 
     inline fn in(region: []Word, a: usize) bool {
         return a >= @intFromPtr(region.ptr) and a < @intFromPtr(region.ptr + region.len);
@@ -1123,6 +1240,7 @@ const Gc = struct {
             return w;
         }
         if (hdrType(q[0]) == T_FWD) return forwardee(q[0]);
+        if (hdrType(q[0]) == poison_type) deadObject(g, q);
         const n = 1 + hdrLen(q[0]);
         const dst = g.to.ptr + g.free;
         @memcpy(dst[0..n], q[0..n]);
@@ -1136,6 +1254,8 @@ const Gc = struct {
     }
 
     fn scanObject(g: *Gc, q: [*]Word) void {
+        g.cur = q;
+        defer g.cur = null;
         const len = hdrLen(q[0]);
         switch (hdrType(q[0])) {
             T_PAIR, T_VECTOR, T_BOX, T_STRING, T_VALUES, T_RECORD, T_ERROR, T_RATNUM, T_COMPNUM, T_HASHTABLE => for (q[1 .. 1 + len]) |*w| {
@@ -1152,7 +1272,7 @@ const Gc = struct {
                 for (q[3 .. 1 + len]) |*w| w.* = g.copy(w.*);
             },
             T_FLONUM, T_BUF8, T_BUF32, T_SYMBOL, T_BYTEVECTOR, T_BIGNUM => {},
-            else => unreachable,
+            else => badHeader(q),
         }
     }
 
@@ -1182,6 +1302,7 @@ pub fn start(list: abi.ModuleList, eager: usize, args: []const [:0]const u8) u8 
     command_line = args;
     modules = list.modules[0..list.count];
     initYoung();
+    initStress();
     os.platformInit();
     os.blocking_hooks = .{ .begin = &blockingBeginCurrent, .end = &blockingEndCurrent };
     const t = newThread();

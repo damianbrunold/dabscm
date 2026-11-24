@@ -4,7 +4,7 @@
 ;; program and reports through (scm test): the number of tests and of
 ;; failures of its last run.
 ;;
-;; Usage: scm scm-native/lib-tests.scm [--target triple] [--run-with cmd] [name ...]
+;; Usage: scm scm-native/lib-tests.scm [--target triple] [--run-with cmd] [--gc-stress spec] [-O mode] [name ...]
 ;;        (e.g. tests_scm_string)
 
 (import (scheme base)
@@ -24,11 +24,20 @@
 ;; Windows: executables end in .exe, and there is no timeout command
 (define windows? (eq? (sys-platform) 'windows))
 (define (exe-name base) (if windows? (string-append base ".exe") base))
-(define (with-timeout secs exe) (if windows? (append run-with (list exe)) (append (list "timeout" secs) run-with (list exe))))
+(define (with-timeout secs exe)
+  (if windows?
+      (append run-with (list exe))
+      ;; the stress mode is slower: 20 times the time
+      (append (list "timeout" (if gc-stress (number->string (* 20 (string->number secs))) secs)) run-with (list exe))))
 ;; --target triple cross-compiles; --run-with cmd runs the executables under
 ;; cmd (e.g. --target aarch64-linux-musl --run-with qemu-aarch64)
+;; --gc-stress spec runs the executables with SCM_NATIVE_GC_STRESS=spec (see
+;; runtime/rt.zig: "words[,major]", e.g. 100), -O mode builds them in that
+;; mode (e.g. ReleaseSafe, with Zig's checks)
 (define target #f)
 (define run-with '())
+(define gc-stress #f)
+(define optimize #f)
 (define name-args
   (let loop ((args (cdr (command-line))) (acc '()))
     (cond ((null? args) (reverse acc))
@@ -36,8 +45,18 @@
            (set! target (cadr args)) (loop (cddr args) acc))
           ((and (string=? (car args) "--run-with") (pair? (cdr args)))
            (set! run-with (list (cadr args))) (loop (cddr args) acc))
+          ((and (string=? (car args) "--gc-stress") (pair? (cdr args)))
+           (set! gc-stress (cadr args)) (loop (cddr args) acc))
+          ((and (string=? (car args) "-O") (pair? (cdr args)))
+           (set! optimize (cadr args)) (loop (cddr args) acc))
           (else (loop (cdr args) (cons (car args) acc))))))
-(define compile-options (if target (list (cons 'target target)) '()))
+(define compile-options
+  (append (if target (list (cons 'target target)) '())
+          (if optimize (list (cons 'optimize optimize)) '())))
+;; the options of a test executable's run
+(define (run-options . more)
+  (append more
+          (if gc-stress (list (list 'env (list (cons "SCM_NATIVE_GC_STRESS" gc-stress)))) '())))
 (define exe-suffix (if target (string-append "-" target) ""))
 
 (module-search-path! (cons (join-path native-dir "compiler") (module-search-path)))
@@ -89,7 +108,7 @@
                                              "?"))))
               (compile-program program exe native-dir compile-options)
               ;; run in the tests directory, as the JVM harness does from its resources
-              (let ((r (run-program/capture (with-timeout "300" exe) (list (list 'work-dir tests-dir)))))
+              (let ((r (run-program/capture (with-timeout "300" exe) (run-options (list 'work-dir tests-dir)))))
                 (string-append
                  (let ((l (last-line (cadr r))))
                    (if (and (> (string-length l) 6) (string=? (substring l 0 6) "tests:"))

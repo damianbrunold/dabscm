@@ -206,6 +206,10 @@ pub const Thread = extern struct {
     ended: u8 = 0,
     /// the runtime's own thread data (rt.zig)
     ctl: ?*anyopaque = null,
+    /// GC stress mode (rt.zig): where the nursery's and the flonum area's
+    /// allocations since the last collection began (poisoned at the next)
+    stress_young: usize = 0,
+    stress_flo: usize = 0,
 
     /// Make sure `n` words can be pushed.
     pub inline fn ensureStack(t: *Thread, n: usize) void {

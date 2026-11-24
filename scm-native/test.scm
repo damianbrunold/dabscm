@@ -1,7 +1,9 @@
 ;; Phase 1 tests: compile every program in scm-native/tests natively, run
 ;; it, and compare its output with the output of the JVM implementation.
 ;;
-;; Usage: scm scm-native/test.scm [name ...]   (names without .scm)
+;; Usage: scm scm-native/test.scm [--gc-stress spec] [name ...]   (names without .scm)
+;;   --gc-stress: the native programs run with SCM_NATIVE_GC_STRESS=spec
+;;     (runtime/rt.zig: "words[,major]", e.g. 100)
 
 (import (scheme base)
         (scheme process-context)
@@ -22,8 +24,16 @@
 (define build-dir (join-path native-dir "build"))
 (define jar (join-path base-dir "scm-java" "scm.jar"))
 
+(define gc-stress #f)
+(define name-args
+  (let loop ((args (cdr (command-line))) (acc '()))
+    (cond ((null? args) (reverse acc))
+          ((and (string=? (car args) "--gc-stress") (pair? (cdr args)))
+           (set! gc-stress (cadr args)) (loop (cddr args) acc))
+          (else (loop (cdr args) (cons (car args) acc))))))
+
 (define (test-names)
-  (let ((args (cdr (command-line))))
+  (let ((args name-args))
     (if (pair? args)
         args
         (map (lambda (f) (substring f 0 (- (string-length f) 4)))
@@ -62,7 +72,11 @@
                     (for-each (lambda (x) (display " ") (display x)) (error-object-irritants e)))
                   (newline)))
       (compile-program source exe native-dir '())
-      (let ((actual (run-program/capture (list exe) (list (list 'work-dir tests-dir)))))
+      (let ((actual (run-program/capture (list exe)
+                                         (cons (list 'work-dir tests-dir)
+                                               (if gc-stress
+                                                   (list (list 'env (list (cons "SCM_NATIVE_GC_STRESS" gc-stress))))
+                                                   '())))))
         (cond ((and (= (car actual) (car expected))
                     (or (string=? (cadr actual) (cadr expected))
                         ;; a failing program: the JVM prints its error message

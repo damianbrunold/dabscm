@@ -358,7 +358,11 @@
 
     (define (check-run what r)
       (unless (and r (zero? (car r)))
-        (error (string-append what " failed")
+        ;; the exit code too: a Zig killed by a signal (out of memory, say)
+        ;; prints nothing
+        (error (if (and r (car r))
+                   (string-append what " failed (exit code " (number->string (car r)) ")")
+                   (string-append what " failed"))
                (if r (string-append (cadr r) (caddr r)) "could not run zig"))))
 
     (define (write-if-changed file text)
