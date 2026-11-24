@@ -22,7 +22,7 @@ public class PrimitiveLog : Primitive
     {
         CheckArgs(pos, arguments, 1, 2);
         if (arguments.Length == 2)
-            return Math.Log(ToReal(arguments[0]), ToReal(arguments[1]));
-        return Math.Log(ToReal(arguments[0]));
+            return ComplexMath.Log(arguments[0], arguments[1]);
+        return ComplexMath.Log(arguments[0]);
     }
 }

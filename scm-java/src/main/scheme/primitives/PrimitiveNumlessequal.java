@@ -22,7 +22,7 @@ public class PrimitiveNumlessequal extends Primitive {
     public Object apply(SourcePos pos, Object[] arguments) {
         checkArgs(pos, arguments, 2, -1);
         if (hasComplex(arguments))
-            throw new SchemeError(pos, "<=: not applicable to complex numbers");
+            throw new SchemeError(pos, "<=: complex numbers are not ordered");
         Object current = arguments[0];
         for (int i = 1; i < arguments.length; i++) {
             Object next = arguments[i];

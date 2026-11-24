@@ -21,6 +21,6 @@ public class PrimitiveSin : Primitive
     public override object Apply(SourcePos? pos, object[] arguments)
     {
         CheckArgs(pos, arguments, 1, 1);
-        return Math.Sin(ToReal(arguments[0]));
+        return ComplexMath.Sin(arguments[0]);
     }
 }

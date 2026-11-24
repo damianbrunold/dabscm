@@ -23,6 +23,6 @@ public class PrimitiveCharFoldcase extends Primitive {
     @Override
     public Object apply(SourcePos pos, Object[] arguments) {
         checkArgs(pos, arguments, 1, 1);
-        return Character.toLowerCase(Value.asChar(arguments[0]));
+        return scheme.UnicodeCaseMap.foldChar(Value.asChar(arguments[0]));
     }
 }

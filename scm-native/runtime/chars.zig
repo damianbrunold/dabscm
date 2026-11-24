@@ -3,7 +3,8 @@
 //!
 //! The predicates follow the JVM implementation (java.lang.Character):
 //! alphabetic, upper and lower case are the derived Unicode properties,
-//! numeric is category Nd, whitespace is Character.isWhitespace (the space
+//! numeric is category Nd, char-whitespace? is the White_Space property (the
+//! reader's whitespace, isWhitespace, is Character.isWhitespace: the space
 //! separators other than the no-break spaces, the line and paragraph
 //! separators, \t \n \v \f \r and U+001C..U+001F). Case mappings are the
 //! simple mappings; foldcase is the Unicode simple case folding.
@@ -57,6 +58,12 @@ pub fn isWhitespace(cp: u21) bool {
             else => false,
         },
     };
+}
+
+/// The Unicode White_Space property (char-whitespace?; the reader keeps
+/// isWhitespace, the JVM tokenizer's)
+pub fn isWhiteSpaceProperty(cp: u21) bool {
+    return inRanges(&u.white_space_lo, &u.white_space_hi, cp);
 }
 
 pub fn isUpper(cp: u21) bool {

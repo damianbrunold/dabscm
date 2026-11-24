@@ -21,6 +21,6 @@ public class PrimitiveCharAlphabeticP : Primitive
     public override object Apply(SourcePos? pos, object[] arguments)
     {
         CheckArgs(pos, arguments, 1, 1);
-        return Char.IsLetter(Value.AsChar(arguments[0]));
+        return UnicodeCaseMap.IsAlphabetic(Value.AsChar(arguments[0]));
     }
 }

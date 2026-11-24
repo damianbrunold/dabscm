@@ -15,6 +15,9 @@ public final class Rational implements Comparable<Rational> {
     public static Object create(long n, long d) {
         if (d == 0) throw new SchemeError("rational: division by zero");
         if (n == 0) return 0L;
+        // Long.MIN_VALUE has no long negation (nor absolute value)
+        if (n == Long.MIN_VALUE || d == Long.MIN_VALUE)
+            return create((Object) BigInteger.valueOf(n), (Object) BigInteger.valueOf(d));
         long sign = d < 0 ? -1 : 1;
         long absN = Math.abs(n), absD = Math.abs(d);
         long g = longGcd(absN, absD);
@@ -25,7 +28,9 @@ public final class Rational implements Comparable<Rational> {
 
     // Generic path: handles BigInteger numerator/denominator
     public static Object create(Object n, Object d) {
-        if (n instanceof Long && d instanceof Long) return create((long)(Long) n, (long)(Long) d);
+        if (n instanceof Long && d instanceof Long && (long)(Long) n != Long.MIN_VALUE
+            && (long)(Long) d != Long.MIN_VALUE)
+            return create((long)(Long) n, (long)(Long) d);
         if (IntegerMath.isZero(d)) throw new SchemeError("rational: division by zero");
         if (IntegerMath.isZero(n)) return 0L;
         // Normalize sign: denominator always positive

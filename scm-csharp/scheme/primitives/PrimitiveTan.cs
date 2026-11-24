@@ -21,6 +21,6 @@ public class PrimitiveTan : Primitive
     public override object Apply(SourcePos? pos, object[] arguments)
     {
         CheckArgs(pos, arguments, 1, 1);
-        return Math.Tan(ToReal(arguments[0]));
+        return ComplexMath.Tan(arguments[0]);
     }
 }

@@ -31,6 +31,13 @@ fn realArg(t: *Thread, comptime who: []const u8, i: usize) Err!Word {
     if (!tower.isReal(w)) return raise(t, "Failed in " ++ who ++ ": wrong argument type", &.{w});
     return w;
 }
+/// A real argument of an ordering (<, max, abs): a non-real complex number
+/// is "not ordered"
+fn orderedArg(t: *Thread, comptime who: []const u8, i: usize) Err!Word {
+    const w = arg(t, i);
+    if (tower.isComp(w)) return raise(t, who ++ ": complex numbers are not ordered", &.{});
+    return realArg(t, who, i);
+}
 fn integerArg(t: *Thread, comptime who: []const u8, i: usize) Err!Word {
     const w = arg(t, i);
     if (!num.isInteger(w)) return raise(t, "Failed in " ++ who ++ ": wrong argument type", &.{w});
@@ -66,8 +73,8 @@ fn fold(t: *Thread, comptime op: tower.Op, comptime who: []const u8) Err!Word {
 }
 
 fn divide(t: *Thread, a: Word, b: Word) Err!Word {
-    if (b == fix(0)) return raise(t, if (rt.isFlonum(a)) "/: Division by 0.0" else "/: division by zero", &.{});
-    return num.div(t, a, b) orelse raise(t, "/: division by zero", &.{});
+    if (b == fix(0)) return raise(t, "/: Division by zero", &.{});
+    return num.div(t, a, b) orelse raise(t, "/: Division by zero", &.{});
 }
 
 fn addImpl(t: *Thread) Err!Word {
@@ -88,7 +95,7 @@ pub const @"%*" = WD("*", mulImpl, 0, any);
 pub const @"%/" = WD("/", divImpl, 1, any);
 
 fn compareChain(t: *Thread, comptime c: num.Cmp, comptime who: []const u8) Err!Word {
-    for (0..t.argc) |i| _ = if (c == .eq) try numArg(t, who, i) else try realArg(t, who, i);
+    for (0..t.argc) |i| _ = if (c == .eq) try numArg(t, who, i) else try orderedArg(t, who, i);
     var result = true;
     for (1..t.argc) |i| {
         if (!(num.cmp(arg(t, i - 1), arg(t, i), c) orelse false)) result = false;
@@ -123,16 +130,22 @@ fn intDivision(t: *Thread, comptime who: []const u8, comptime kind: tower.DivKin
     const b = try integerArg(t, who, 1);
     if (num.toF(b).? == 0) return raise(t, who ++ ": division by zero", &.{});
     if (rt.isFlonum(a) or rt.isFlonum(b)) {
+        // on the exact values, the result made inexact (as the JVM
+        // implementation): a zero result is 0.0, never -0.0
         const x = num.toF(a).?;
         const y = num.toF(b).?;
-        if (which == 0) return flo(t, switch (kind) {
-            .trunc => @trunc(x / y),
-            .floor => @floor(x / y),
-        });
-        // the remainder exactly (fmod), not x - q * y
-        var r = @rem(x, y);
-        if (kind == .floor and r != 0 and (r < 0) != (y < 0)) r += y;
-        return flo(t, r);
+        if (@abs(x) < 4.0e18 and @abs(y) < 4.0e18) {
+            const p: i64 = @intFromFloat(x);
+            const q: i64 = @intFromFloat(y);
+            const r: i64 = switch (kind) {
+                .trunc => if (which == 0) @divTrunc(p, q) else @rem(p, q),
+                .floor => if (which == 0) @divFloor(p, q) else @mod(p, q),
+            };
+            return flo(t, @floatFromInt(r));
+        }
+        const ea = if (rt.isFlonum(a)) tower.floatToExact(t, x).? else a;
+        const eb = if (rt.isFlonum(b)) tower.floatToExact(t, y).? else b;
+        return flo(t, num.toF(tower.intDiv(t, ea, eb, kind)[which]).? + 0.0);
     }
     return tower.intDiv(t, a, b, kind)[which];
 }
@@ -198,7 +211,8 @@ fn inexactImpl(t: *Thread) Err!Word {
     if (tower.isComp(w)) {
         const re = tower.realPart(w);
         const im = tower.imagPart(w);
-        return tower.makeRect(t, tower.arith(t, re, flo(t, 0), .add).?, tower.arith(t, im, flo(t, 0), .add).?);
+        // each part's value (keeping the sign of a zero part)
+        return tower.makeRect(t, flo(t, num.toF(re).?), flo(t, num.toF(im).?));
     }
     return flo(t, num.toF(w).?);
 }
@@ -256,16 +270,16 @@ pub const @"%truncate" = WD("truncate", truncateImpl, 1, 1);
 pub const @"%round" = WD("round", roundImpl, 1, 1);
 
 fn absImpl(t: *Thread) Err!Word {
-    const w = try realArg(t, "abs", 0);
+    const w = try orderedArg(t, "<", 0);
     return if (tower.sign(w) < 0 or (rt.isFlonum(w) and std.math.signbit(rt.flo(w)))) num.sub(t, fix(0), w).? else w;
 }
 pub const @"%abs" = WD("abs", absImpl, 1, 1);
 
 fn minMax(t: *Thread, comptime is_max: bool) Err!Word {
-    var acc = try realArg(t, if (is_max) "max" else "min", 0);
+    var acc = try orderedArg(t, if (is_max) ">" else "<", 0);
     var inexact = rt.isFlonum(acc);
     for (1..t.argc) |i| {
-        const b = try realArg(t, if (is_max) "max" else "min", i);
+        const b = try orderedArg(t, if (is_max) ">" else "<", i);
         if (rt.isFlonum(b)) inexact = true;
         if (num.cmp(b, acc, if (is_max) .gt else .lt) orelse false) acc = b;
     }
@@ -281,11 +295,20 @@ fn maxImpl(t: *Thread) Err!Word {
 pub const @"%min" = WD("min", minImpl, 1, any);
 pub const @"%max" = WD("max", maxImpl, 1, any);
 
+/// "numerator: not a rational number: +inf.0" (as the JVM implementation)
+fn notRational(t: *Thread, comptime who: []const u8, w: Word) Err {
+    var buf: std.ArrayList(u8) = .empty;
+    defer buf.deinit(pa);
+    tower.format(&buf, w, 10);
+    return raise(t, std.fmt.allocPrint(pa, who ++ ": not a rational number: {s}", .{buf.items}) catch rt.oom(), &.{});
+}
 fn numeratorImpl(t: *Thread) Err!Word {
-    return tower.numerator(t, try realArg(t, "numerator", 0));
+    const w = try realArg(t, "numerator", 0);
+    return tower.numerator(t, w) orelse notRational(t, "numerator", w);
 }
 fn denominatorImpl(t: *Thread) Err!Word {
-    return tower.denominator(t, try realArg(t, "denominator", 0));
+    const w = try realArg(t, "denominator", 0);
+    return tower.denominator(t, w) orelse notRational(t, "denominator", w);
 }
 pub const @"%numerator" = WD("numerator", numeratorImpl, 1, 1);
 pub const @"%denominator" = WD("denominator", denominatorImpl, 1, 1);
@@ -307,21 +330,15 @@ pub const @"%%gcd" = WD("%gcd", gcdImpl, 0, any);
 
 fn sqrtImpl(t: *Thread) Err!Word {
     const w = try numArg(t, "sqrt", 0);
-    if (tower.isComp(w)) {
-        // the principal root, as the JVM implementation
-        const a = num.toF(tower.realPart(w)).?;
-        const b = num.toF(tower.imagPart(w)).?;
-        const mag = @sqrt(a * a + b * b);
-        const re = @sqrt((mag + a) / 2.0);
-        const im = (if (b >= 0) @as(f64, 1) else -1) * @sqrt((mag - a) / 2.0);
-        return tower.makeRect(t, flo(t, re), flo(t, im));
-    }
-    // as the JVM implementation: an exact result only for an exact integer
-    // that is a square (of at most 63 bits), else a flonum or a complex
-    // number with flonum parts
-    if (tower.isExactInteger(w) and tower.sign(w) >= 0) {
-        const r = tower.exactIntegerSqrt(t, w);
-        if (r[1] == fix(0) and num.toF(r[0]).? < 9.2e18) return r[0];
+    // the principal root: r = |z|, sqrt((r + x)/2) +- i sqrt((r - x)/2)
+    if (tower.isComp(w)) return tower.C.sqrt(tower.C.of(w)).word(t);
+    // an exact result for an exact non-negative integer or rational whose
+    // numerator and denominator are squares, else a flonum (or a complex
+    // number with flonum parts)
+    if (tower.isExactRational(w) and tower.sign(w) >= 0) {
+        const n = tower.exactIntegerSqrt(t, tower.numerator(t, w).?);
+        const d = tower.exactIntegerSqrt(t, tower.denominator(t, w).?);
+        if (n[1] == fix(0) and d[1] == fix(0)) return tower.makeRational(t, n[0], d[0]);
     }
     const f = num.toF(w).?;
     if (f < 0) return tower.makeRect(t, flo(t, 0), flo(t, @sqrt(-f)));
@@ -342,16 +359,67 @@ fn exactIntegerSqrtImpl(t: *Thread) Err!Word {
 }
 pub const @"%exact-integer-sqrt" = WN("exact-integer-sqrt", exactIntegerSqrtImpl, 1, 1);
 
+/// b^e by repeated squaring with the generic multiplication (e >= 0)
+fn exptBySquaring(t: *Thread, b: Word, e: Word) Word {
+    var result: Word = fix(1);
+    var base = b;
+    var k = e;
+    while (k != fix(0)) {
+        const qr = tower.intDiv(t, k, fix(2), .floor);
+        if (qr[1] != fix(0)) result = num.mul(t, result, base).?;
+        k = qr[0];
+        if (k != fix(0)) base = num.mul(t, base, base).?;
+    }
+    return result;
+}
+
+/// zero, also a complex number with zero parts (0+0.0i)
+fn isZeroNum(w: Word) bool {
+    if (tower.isComp(w)) return num.toF(tower.realPart(w)).? == 0 and num.toF(tower.imagPart(w)).? == 0;
+    return num.toF(w).? == 0;
+}
+
+/// as the JVM implementation's expt (PrimitiveExpt.java)
 fn exptImpl(t: *Thread) Err!Word {
     const b = try numArg(t, "expt", 0);
     const e = try numArg(t, "expt", 1);
-    if (tower.isExact(b) and tower.isExactInteger(e) and !tower.isComp(b)) {
-        if (b == fix(0) and tower.sign(e) < 0) return raise(t, "expt: division by zero", &.{});
-        if (tower.exactExpt(t, b, e)) |r| return r;
+    const C = tower.C;
+    if (tower.isExactInteger(e)) {
+        if (rt.isFlonum(b)) {
+            if (e == fix(0)) return flo(t, 1);
+            return flo(t, tower.fpow(rt.flo(b), num.toF(e).?));
+        }
+        if (e == fix(0)) return if (tower.isExact(b)) fix(1) else flo(t, 1);
+        if (b == fix(0) and tower.sign(e) < 0) return raise(t, "/: Division by zero", &.{});
+        if (tower.isExactRational(b)) {
+            if (tower.exactExpt(t, b, e)) |r| return r;
+            // a bignum exponent
+            if (b == fix(0) or b == fix(1)) return b;
+            if (b == fix(-1)) return if (tower.intDiv(t, e, fix(2), .floor)[1] == fix(0)) fix(1) else fix(-1);
+        } else if (isFix(e)) {
+            // a complex number: repeated squaring
+            if (tower.sign(e) > 0) return exptBySquaring(t, b, e);
+            return divide(t, fix(1), exptBySquaring(t, b, tower.negate(t, e)));
+        }
     }
-    if (tower.isComp(b) or tower.isComp(e)) return raise(t, "expt: complex arguments not supported", &.{ b, e });
-    if (e == fix(0)) return if (rt.isFlonum(b)) flo(t, 1) else fix(1);
-    return flo(t, std.math.pow(f64, num.toF(b).?, num.toF(e).?));
+    const inexact = !tower.isExact(b) or !tower.isExact(e);
+    if (isZeroNum(b)) {
+        // 0^z: 1.0 for z = 0, 0 when z's real part is positive, else an error
+        if (isZeroNum(e)) return flo(t, 1);
+        if (num.toF(tower.realPart(e)).? > 0) return if (inexact) flo(t, 0) else fix(0);
+        return raise(t, "/: Division by zero", &.{});
+    }
+    if (!tower.isComp(b) and !tower.isComp(e)) {
+        const x = num.toF(b).?;
+        const y = num.toF(e).?;
+        if (y == 0.0) return flo(t, 1);
+        // a negative base to a non-integer power: the principal complex value
+        if (x < 0 and y != @round(y) and !std.math.isInf(y)) return C.pow(C.of(b), C.of(e)).word(t);
+        return flo(t, tower.fpow(x, y));
+    }
+    // (exp z) is (expt E z)
+    if (rt.isFlonum(b) and rt.flo(b) == std.math.e) return C.exp(C.of(e)).word(t);
+    return C.pow(C.of(b), C.of(e)).word(t);
 }
 pub const @"%expt" = WD("expt", exptImpl, 2, 2);
 

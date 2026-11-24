@@ -345,6 +345,9 @@ pub fn typeError(t: *Thread, who: []const u8, irritants: []const Word) Code {
 pub fn arithError(t: *Thread, who: []const u8, a: Word, b: Word) Code {
     if (!num.isNumber(a)) return typeError(t, who, &.{a});
     if (!num.isNumber(b)) return typeError(t, who, &.{b});
+    // an ordering of a non-real complex number
+    if (who.len > 0 and (who[0] == '<' or who[0] == '>') and (num.tower.isComp(a) or num.tower.isComp(b)))
+        return fail(t, std.fmt.allocPrint(std.heap.c_allocator, "{s}: complex numbers are not ordered", .{who}) catch oom(), &.{});
     return fail(t, std.fmt.allocPrint(std.heap.c_allocator, "{s}: Division by zero", .{who}) catch oom(), &.{});
 }
 

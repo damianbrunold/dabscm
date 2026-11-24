@@ -18,6 +18,8 @@ public class Rational : IEquatable<Rational>, IComparable<Rational>
     {
         if (d == 0) throw new SchemeError("rational: division by zero");
         if (n == 0) return 0L;
+        // long.MinValue has no long negation (Math.Abs would throw)
+        if (n == long.MinValue || d == long.MinValue) return CreateBig(n, d);
         long sign = d < 0 ? -1 : 1;
         long absN = Math.Abs(n), absD = Math.Abs(d);
         long g = LongGcd(absN, absD);
@@ -30,6 +32,11 @@ public class Rational : IEquatable<Rational>, IComparable<Rational>
     public static object Create(object n, object d)
     {
         if (n is long nl && d is long dl) return Create(nl, dl);
+        return CreateBig(n, d);
+    }
+
+    private static object CreateBig(object n, object d)
+    {
         if (IntegerMath.IsZero(d)) throw new SchemeError("rational: division by zero");
         if (IntegerMath.IsZero(n)) return 0L;
         // Normalize sign: denominator always positive

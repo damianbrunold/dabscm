@@ -21,6 +21,6 @@ public class PrimitiveCharUpperCaseP : Primitive
     public override object Apply(SourcePos? pos, object[] arguments)
     {
         CheckArgs(pos, arguments, 1, 1);
-        return Char.IsUpper(Value.AsChar(arguments[0]));
+        return UnicodeCaseMap.IsUppercase(Value.AsChar(arguments[0]));
     }
 }

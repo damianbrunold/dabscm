@@ -4,8 +4,10 @@
 ;; their initialization.
 
 (import (scheme base)
+        (scheme char)
         (scheme complex)
         (scheme eval)
+        (scheme inexact)
         (scheme read)
         (scheme write)
         (scm test))
@@ -19,6 +21,13 @@
   (let ((p (open-output-string)))
     (write x p)
     (get-output-string p)))
+
+(define (read-string-datum* s)
+  (guard (e (#t 'error))
+    (let ((p (open-input-string s)))
+      (let loop ((acc '()))
+        (let ((d (read p)))
+          (if (eof-object? d) (reverse acc) (loop (cons d acc))))))))
 
 (define (read-string-datum s)
   (guard (e (#t 'error))
@@ -107,5 +116,123 @@
   (test-equal #t (letrec ((even? (lambda (n) (if (= n 0) #t (odd? (- n 1)))))
                           (odd? (lambda (n) (if (= n 0) #f (even? (- n 1))))))
                    (even? 10))))
+
+
+;; --- found by the differential tests (scm-native/difftest.scm) ---
+
+;; z close to w (each part within a relative 1e-12, or both equal)
+(define (close? z w)
+  (define (near a b)
+    (or (= a b)
+        (and (nan? a) (nan? b))
+        (<= (abs (- a b)) (* 1e-12 (max 1 (abs a) (abs b))))))
+  (and (near (real-part z) (real-part w)) (near (imag-part z) (imag-part w))))
+
+(test-group "complex functions"
+  (test-assert (close? (exp +i) (make-rectangular 0.5403023058681398 0.8414709848078965)))
+  (test-assert (close? (log -1) (make-rectangular 0.0 3.141592653589793)))
+  (test-assert (close? (log 1+i) (make-rectangular 0.34657359027997264 0.7853981633974483)))
+  (test-assert (close? (sin 1+i) (make-rectangular 1.2984575814159773 0.6349639147847361)))
+  (test-assert (close? (cos 1+i) (make-rectangular 0.8337300251311491 -0.9888977057628651)))
+  (test-assert (close? (tan 1+i) (make-rectangular 0.2717525853195117 1.0839233273386946)))
+  (test-assert (close? (asin 2) (make-rectangular 1.5707963267948966 -1.3169578969248166)))
+  (test-assert (close? (acos 2) (make-rectangular 0.0 1.3169578969248166)))
+  (test-assert (close? (atan +2i) (make-rectangular 1.5707963267948966 0.5493061443340549)))
+  (test-assert (close? (sqrt 1+2i) (make-rectangular 1.272019649514069 0.7861513777574233)))
+  (test-assert (close? (expt -1 0.5) (make-rectangular 6.123233995736766e-17 1.0)))
+  (test-assert (close? (expt -8 1/3) (make-rectangular 1.0000000000000002 1.7320508075688772)))
+  (test-equal -3+4i (expt 1+2i 2))
+  (test-equal "real arguments in the real domain stay real" #t
+              (and (real? (asin 0.5)) (real? (log 2)) (real? (sqrt 2)) (real? (atan 2))))
+  (test-error (atan +i 1))
+  (test-error (atan 1 +i)))
+
+(test-group "exact results"
+  (test-equal 1/27 (expt 1/3 3))
+  (test-equal 9 (expt 1/3 -2))
+  (test-equal -929/446 (expt -446/929 -1))
+  (test-equal #f (exact? (sqrt 4611686018427387903)))
+  (test-equal #f (exact? (sqrt 95855530006365444879066410924116)))
+  (test-equal 2147483647 (sqrt 4611686014132420609))
+  (test-equal 3/5 (sqrt 9/25))
+  (test-equal #f (exact? (sqrt 2/3))))
+
+(test-group "numerator and denominator of flonums"
+  (test-equal "1.0" (w (denominator 0.0)))
+  (test-equal "9.44473296573929e+21" (w (denominator 1e-7)))
+  (test-equal "1.0" (w (numerator 0.5)))
+  (test-equal "2.0" (w (denominator 0.5)))
+  (test-error (numerator +inf.0))
+  (test-error (denominator +nan.0)))
+
+(test-group "number->string with a radix"
+  (test-equal "1/6b14e9f812f366c35" (number->string 1/123456789012345678901 16))
+  (test-equal "-1010001001" (number->string -649 2))
+  (test-equal "-22145712670460675630521137" (number->string -85942423363967562981983 8))
+  (test-equal "-123456789abcdef0123456789" (number->string #x-123456789abcdef0123456789 16)))
+
+(test-group "make-rectangular and make-polar take reals"
+  (test-error (make-rectangular 1 +i))
+  (test-error (make-rectangular +i 1))
+  (test-error (make-polar 1 +i)))
+
+(test-group "gcd and lcm of inexact integers"
+  (test-equal "1.0" (w (gcd 1e21 70119057158701821438962364699007639909)))
+  (test-equal "0.0" (w (lcm 0.0 0.0)))
+  (test-equal 0 (lcm 0 5))
+  (test-equal "12.0" (w (lcm 4.0 6))))
+
+(test-group "integer division with inexact operands"
+  (test-equal "3.456629481269237e+16" (w (modulo 1e21 902495878795295404)))
+  (test-equal "0.0" (w (quotient 0.0 -98765432109876543210)))
+  (test-equal "0.0" (w (modulo -0.0 9060312629235379793577532464746830704343)))
+  (test-equal '("0.0" "0.0") (call-with-values (lambda () (truncate/ -0.0 521)) (lambda (q r) (list (w q) (w r))))))
+
+(test-group "signed zeros and IEEE division"
+  (test-equal #t (= (make-rectangular 0 -0.0) 0.0))
+  (test-equal #f (eqv? -0.0 0.0))
+  (test-equal #f (equal? (make-rectangular 0.0 -0.0) (make-rectangular -0.0 0.0)))
+  (test-equal "-0.5-0.0i" (w (- (make-rectangular 1/2 0.0))))
+  (test-equal "-0.0+3.25i" (w (- (make-rectangular 0.0 -3.25))))
+  (test-equal "0.5-0.0i" (w (inexact (make-rectangular 1/2 -0.0))))
+  (test-equal "0.0+0.0i" (w (* -0.0 1/2-3/4i)))
+  (test-equal "+inf.0" (w (/ 1 0.0)))
+  (test-equal "-inf.0" (w (/ 1 -0.0)))
+  (test-equal "+nan.0" (w (/ 0 0.0)))
+  (test-error (/ 1.0 0))
+  (test-equal "-inf.0" (w (log 0.1 1)))
+  (test-equal "0.0" (w (log 1272.6026e-214 0.0))))
+
+(test-group "complex numbers are not ordered"
+  (test-equal "<: complex numbers are not ordered"
+              (guard (e (#t (error-object-message e))) (< 1 +i))))
+
+(test-group "read: delimiters and peculiar identifiers"
+  (test-equal "(x41)" (w (read-string-datum* "x41;comment")))
+  (test-equal "(912)" (w (read-string-datum* "912;")))
+  (test-equal "(|e3#xsλ|)" (w (read-string-datum* "e3#xs\x3bb;;")))
+  (test-equal "(|ln'|)" (w (read-string-datum* "ln'")))
+  (test-equal "(`|+'a|)" (w (read-string-datum* "`+'a")))
+  (test-equal "(|a,b|)" (w (read-string-datum* "a,b")))
+  (test-equal "(|.lf#tl|)" (w (read-string-datum* ".lf#tl")))
+  (test-equal "(#\\#)" (w (read-string-datum* "#\\#;")))
+  (test-equal "(x |y z|)" (w (read-string-datum* "x|y z|")))
+  (for-each (lambda (s) (test-equal s 'error (read-string-datum* s)))
+            '("'" "`" "," ",@" "#;" "#!fold-case#e")))
+
+(test-group "characters and strings"
+  (test-equal #\x3c3 (char-foldcase #\x3c2))
+  (test-equal "σ" (string-foldcase "\x3c2;"))
+  (test-equal #\x130 (char-foldcase #\x130))
+  (test-equal #\I (char-upcase #\x131))
+  (test-equal #\i (char-downcase #\x130))
+  (test-equal "I" (string-upcase "\x131;"))
+  (test-equal #t (char-alphabetic? #\x2163))
+  (test-equal #t (char-upper-case? #\x2163))
+  (test-equal #t (char-whitespace? #\xa0))
+  (test-equal #t (char-whitespace? #\x3000))
+  (test-error (substring "" 1 1))
+  (test-error (substring "abc" 2 1))
+  (test-equal "" (substring "abc" 3 3)))
 
 (test-end "r7rs-conformance")

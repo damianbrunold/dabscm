@@ -60,7 +60,7 @@ public class PrimitiveEqvP : Primitive
 
         if (Value.IsReal(a) && Value.IsReal(b))
         {
-            return Value.AsReal(a).Equals(Value.AsReal(b));
+            return EqvDouble(Value.AsReal(a), Value.AsReal(b));
         }
 
         if (Value.IsChar(a) && Value.IsChar(b))
@@ -70,4 +70,8 @@ public class PrimitiveEqvP : Primitive
 
         return false;
     }
+
+    // eqv? on flonums: -0.0 and 0.0 differ, every NaN is the same
+    public static bool EqvDouble(double x, double y)
+        => x == y ? double.IsNegative(x) == double.IsNegative(y) : double.IsNaN(x) && double.IsNaN(y);
 }

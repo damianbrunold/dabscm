@@ -51,14 +51,6 @@ public class Complex : IEquatable<Complex>
     internal static bool IsExact(object v)
         => v is long || v is BigInteger || v is Rational;
 
-    private static bool IsZero(object v)
-    {
-        if (v is long l) return l == 0;
-        if (v is double d) return d == 0.0;
-        if (v is BigInteger bi) return bi.IsZero;
-        return false;
-    }
-
     private static bool IsPartNegative(object v)
     {
         if (v is long l) return l < 0;
@@ -228,7 +220,8 @@ public class Complex : IEquatable<Complex>
         // (ar + ai*i) / (br + bi*i)
         // = ((ar*br + ai*bi) + (ai*br - ar*bi)*i) / (br^2 + bi^2)
         object denom = PartAdd(PartMul(br, br), PartMul(bi, bi));
-        if (IsZero(denom)) throw new SchemeError("/: Division by zero");
+        // an inexact zero divisor follows IEEE (+nan.0+nan.0i)
+        if (IsExactZero(denom)) throw new SchemeError("/: Division by zero");
         object realPart = PartDiv(PartAdd(PartMul(ar, br), PartMul(ai, bi)), denom);
         object imagPart = PartDiv(PartSub(PartMul(ai, br), PartMul(ar, bi)), denom);
         return Create(realPart, imagPart);
@@ -269,7 +262,7 @@ public class Complex : IEquatable<Complex>
     {
         if (a is long la && b is long lb) return la == lb;
         if (Value.IsInteger(a) && Value.IsInteger(b)) return IntegerMath.GenericEquals(a, b);
-        if (a is double da && b is double db) return da == db;
+        if (a is double da && b is double db) return PrimitiveEqvP.EqvDouble(da, db);
         if (a is Rational ra && b is Rational rb) return ra.Equals(rb);
         return false;
     }

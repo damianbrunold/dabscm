@@ -19,8 +19,11 @@ public class Tokenizer {
         return ch == ' ' || ch == '\r' || ch == '\n' || ch == '\t';
     }
 
+    // R7RS delimiters: whitespace, ( ) " ; and | (and [ ]); ' ` , are not
+    // delimiters, they stay part of a symbol
     private static boolean isDelim(char ch) {
-        return ch == '(' || ch == ')' || ch == '[' || ch == ']' || ch == '"' || isWhitespace(ch);
+        return ch == '(' || ch == ')' || ch == '[' || ch == ']' || ch == '"' || ch == ';' || ch == '|'
+            || isWhitespace(ch);
     }
 
     public static Token readToken(TextStream in) throws IOException {
@@ -80,6 +83,10 @@ public class Tokenizer {
                     } else if (ch == '.') {
                         token.append(ch);
                         state = 11; // real
+                    } else if ((ch == '/' || isExponentMarker(ch)) && !hasDigit(token)) {
+                        // +/1, -d00, +e1: symbols
+                        token.append(ch);
+                        state = 3;
                     } else if (ch == '/') {
                         token.append(ch);
                         state = 13; // rational denominator
@@ -144,9 +151,13 @@ public class Tokenizer {
                         break;
                     } else if (ch == '@') {
                         return readPolarForm(in, token.toString(), pos);
-                    } else {
+                    } else if (isDelim(ch)) {
                         putback = true;
                         return rationalToken(token.toString(), pos);
+                    } else {
+                        // not a number: a symbol (as 1x)
+                        token.append(ch);
+                        state = 3;
                     }
                     break;
 
@@ -158,12 +169,14 @@ public class Tokenizer {
                         state = 14; // exponent
                     } else {
                         String rtok = token.toString();
-                        if (rtok.equals("+.")) {
-                            putback = true;
-                            return new Token(maybeFold(in, "+"), TokenType.SYMBOL, pos);
-                        } else if (rtok.equals("-.")) {
-                            putback = true;
-                            return new Token(maybeFold(in, "-"), TokenType.SYMBOL, pos);
+                        if (rtok.equals("+.") || rtok.equals("-.")) {
+                            // +.a, -.@ (R7RS peculiar identifiers), +. : symbols
+                            if (isDelim(ch)) {
+                                putback = true;
+                                return new Token(maybeFold(in, rtok), TokenType.SYMBOL, pos);
+                            }
+                            token.append(ch);
+                            state = 3;
                         } else if (ch == '+' || ch == '-') {
                             return readComplexImaginary(in, rtok, pos);
                         } else if ((ch == 'i' || ch == 'I') && (rtok.charAt(0) == '+' || rtok.charAt(0) == '-')) {
@@ -178,9 +191,13 @@ public class Tokenizer {
                             break;
                         } else if (ch == '@') {
                             return readPolarForm(in, rtok, pos);
-                        } else {
+                        } else if (isDelim(ch)) {
                             putback = true;
                             return new Token(rtok, TokenType.REAL, pos);
+                        } else {
+                            // not a number: a symbol (as 1x)
+                            token.append(ch);
+                            state = 3;
                         }
                     }
                     break;
@@ -197,13 +214,20 @@ public class Tokenizer {
                 case 15: // accumulating exponent digits
                     if ('0' <= ch && ch <= '9') {
                         token.append(ch);
+                    } else if (!Character.isDigit(token.charAt(token.length() - 1))) {
+                        // 1e+ without exponent digits
+                        throw new SchemeError(pos, new ReadErrorObject("tokenizer: malformed exponent", new Object[0]));
                     } else if (ch == '+' || ch == '-') {
                         return readComplexImaginary(in, token.toString(), pos);
                     } else if (ch == '@') {
                         return readPolarForm(in, token.toString(), pos);
-                    } else {
+                    } else if (isDelim(ch)) {
                         putback = true;
                         return new Token(token.toString(), TokenType.REAL, pos);
+                    } else {
+                        // not a number: a symbol (as 1x)
+                        token.append(ch);
+                        state = 3;
                     }
                     break;
 
@@ -211,13 +235,14 @@ public class Tokenizer {
                     if ('0' <= ch && ch <= '9') {
                         token.append(ch);
                         state = 11;
-                    } else if (ch == '.') {
-                        // ".." or "..." — treat as symbol (R7RS identifiers)
-                        token.append(ch);
-                        state = 3;
-                    } else {
+                    } else if (isDelim(ch)) {
                         putback = true;
                         return new Token(".", TokenType.DOT, pos);
+                    } else {
+                        // "..", "...", ".a", ".+": identifiers (R7RS
+                        // peculiar identifiers; others as the JVM reads 1x)
+                        token.append(ch);
+                        state = 3;
                     }
                     break;
 
@@ -664,13 +689,20 @@ public class Tokenizer {
             }
         }
         if ((state == 0 || state == 7) && (token == null || token.length() == 0)) return null;
+        if (state == 4) return new Token(",", TokenType.COMMA, pos);
+        if (state == 12) return new Token(".", TokenType.DOT, pos);
         if (state == 1) {
             if (token.toString().equals("+") || token.toString().equals("-")) {
                 return new Token(maybeFold(in, token.toString()), TokenType.SYMBOL, pos);
             }
             return new Token(token.toString(), TokenType.INTEGER, pos);
+        } else if (state == 15 && !Character.isDigit(token.charAt(token.length() - 1))) {
+            throw new SchemeError(in.pos(), new ReadErrorObject("tokenizer: malformed exponent", new Object[0]));
         } else if (state == 11 || state == 15) {
-            return new Token(token.toString(), TokenType.REAL, pos);
+            String rtok = token.toString();
+            if (rtok.equals("+.") || rtok.equals("-."))
+                return new Token(maybeFold(in, rtok), TokenType.SYMBOL, pos);
+            return new Token(rtok, TokenType.REAL, pos);
         } else if (state == 14) {
             throw new SchemeError(in.pos(), new ReadErrorObject("tokenizer: malformed exponent", new Object[0]));
         } else if (state == 13) {
@@ -753,12 +785,14 @@ public class Tokenizer {
 
     private static Token readPrefixedNumber(TextStream in, int radix, boolean forceExact, boolean forceInexact, SourcePos pos) throws IOException {
         int sign = 1;
+        boolean signed = false;
         int c = in.peek();
-        if (c == '+') { in.read(); sign = 1; c = in.peek(); }
-        else if (c == '-') { in.read(); sign = -1; c = in.peek(); }
+        if (c == '+') { in.read(); sign = 1; signed = true; c = in.peek(); }
+        else if (c == '-') { in.read(); sign = -1; signed = true; c = in.peek(); }
 
-        // Check for +inf.0, -inf.0, +nan.0 (after sign)
-        if (radix == 10 && (c == 'i' || c == 'I' || c == 'n' || c == 'N')) {
+        // Check for +inf.0, -inf.0, +nan.0 (they need their sign: #inan.0
+        // is no number)
+        if (signed && radix == 10 && (c == 'i' || c == 'I' || c == 'n' || c == 'N')) {
             StringBuilder special = new StringBuilder();
             special.append(sign < 0 ? '-' : '+');
             while (c != -1 && "infINFnanNAN.0".indexOf((char) c) >= 0) {
@@ -767,6 +801,8 @@ public class Tokenizer {
                 c = in.peek();
             }
             String s = special.toString().toLowerCase();
+            if ((s.equals("+inf.0") || s.equals("-inf.0")) && forceExact)
+                throw new SchemeError(pos, new ReadErrorObject("tokenizer: #e applied to non-finite number", new Object[0]));
             if (s.equals("+inf.0")) return new Token("+inf.0", TokenType.REAL, pos);
             if (s.equals("-inf.0")) return new Token("-inf.0", TokenType.REAL, pos);
             if (s.equals("+nan.0") || s.equals("-nan.0")) {
@@ -822,6 +858,9 @@ public class Tokenizer {
                 in.read();
                 c = in.peek();
             }
+            // "." alone is no number
+            if (digits.length() == 0 && fracDigits.length() == 0)
+                throw new SchemeError(pos, new ReadErrorObject("tokenizer: invalid number", new Object[0]));
             String numStr = (sign < 0 ? "-" : "") + digits + "." + (fracDigits.length() > 0 ? fracDigits.toString() : "0");
             if ((c == 'e' || c == 'E') && radix == 10) {
                 numStr += 'e';
@@ -829,6 +868,8 @@ public class Tokenizer {
                 if (c == '+' || c == '-') { numStr += (char) c; in.read(); c = in.peek(); }
                 StringBuilder expDigits = new StringBuilder();
                 while (c != -1 && c >= '0' && c <= '9') { expDigits.append((char) c); in.read(); c = in.peek(); }
+                if (expDigits.length() == 0)
+                    throw new SchemeError(pos, new ReadErrorObject("tokenizer: malformed exponent", new Object[0]));
                 numStr += expDigits;
             }
             if (forceExact) return exactDecimalToken(numStr, pos);
@@ -842,6 +883,8 @@ public class Tokenizer {
             if (c == '+' || c == '-') { numStr += (char) c; in.read(); c = in.peek(); }
             StringBuilder expDigits = new StringBuilder();
             while (c != -1 && c >= '0' && c <= '9') { expDigits.append((char) c); in.read(); c = in.peek(); }
+            if (expDigits.length() == 0)
+                throw new SchemeError(pos, new ReadErrorObject("tokenizer: malformed exponent", new Object[0]));
             numStr += expDigits;
             if (forceExact) return exactDecimalToken(numStr, pos);
             double dval = Double.parseDouble(numStr);
@@ -852,6 +895,12 @@ public class Tokenizer {
             return new Token(Double.toString(IntegerMath.toDouble(intVal)), TokenType.REAL, pos);
         }
         return new Token(intVal.toString(), TokenType.INTEGER, pos);
+    }
+
+    private static boolean hasDigit(CharSequence s) {
+        for (int i = 0; i < s.length(); i++)
+            if (s.charAt(i) >= '0' && s.charAt(i) <= '9') return true;
+        return false;
     }
 
     private static boolean isDelimiterOrEnd(int c) {
@@ -1006,6 +1055,8 @@ public class Tokenizer {
         in.read(); // consume '@'
         // Read the angle as a full number
         Token angleToken = readPrefixedNumber(in, 10, false, false, pos);
+        if (!isDelimiterOrEnd(in.peek()))
+            throw new SchemeError(pos, new ReadErrorObject("tokenizer: invalid complex number", new Object[0]));
         // Return as COMPLEX with polar conversion marker
         return new Token(magnitude + "@" + angleToken.value, TokenType.COMPLEX, pos);
     }

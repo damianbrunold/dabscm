@@ -17,8 +17,25 @@ public class Tokenizer
     private static bool IsWhitespace(char ch) =>
         ch == ' ' || ch == '\r' || ch == '\n' || ch == '\t';
 
+    // R7RS delimiters (whitespace, ( ) " ; |) and [ ]
     private static bool IsDelim(char ch) =>
-        ch == '(' || ch == ')' || ch == '[' || ch == ']' || ch == '"' || IsWhitespace(ch);
+        ch == '(' || ch == ')' || ch == '[' || ch == ']' || ch == '"' || ch == ';' || ch == '|' || IsWhitespace(ch);
+
+    // a real with an exponent; "1e+" (a sign without digits) is malformed
+    private static Token ExponentToken(string text, SourcePos pos)
+    {
+        char last = text[text.Length - 1];
+        if (last == '+' || last == '-')
+            throw new SchemeError(pos, new ReadErrorObject("tokenizer: malformed exponent", Array.Empty<object>()));
+        return new Token(text, TokenType.REAL, pos);
+    }
+
+    private static bool HasDigit(StringBuilder token)
+    {
+        for (int i = 0; i < token.Length; i++)
+            if (token[i] >= '0' && token[i] <= '9') return true;
+        return false;
+    }
 
     public static Token? ReadToken(TextStream reader)
     {
@@ -110,6 +127,12 @@ public class Tokenizer
                         token.Append(ch);
                         state = 11; // real
                     }
+                    else if ((ch == '/' || IsExponentMarker(ch)) && !HasDigit(token))
+                    {
+                        // "-/1", "-d00": a sign alone is no numerator or mantissa
+                        token.Append(ch);
+                        state = 3; // symbol
+                    }
                     else if (ch == '/')
                     {
                         token.Append(ch);
@@ -154,7 +177,7 @@ public class Tokenizer
                             string imagStr = token.ToString();
                             if (imagStr == "+" || imagStr == "-")
                                 imagStr += "1";
-                            return new Token("0|" + imagStr, TokenType.COMPLEX, pos);
+                            return ComplexToken("0", imagStr, pos);
                         }
                         // Not pure imaginary — continue as symbol
                         // 'i' was already consumed, update c and use putback
@@ -192,7 +215,7 @@ public class Tokenizer
                         int next = reader.Peek();
                         if (IsDelimiterOrEnd(next))
                         {
-                            return new Token("0|" + token.ToString(), TokenType.COMPLEX, pos);
+                            return ComplexToken("0", token.ToString(), pos);
                         }
                         token.Append('i');
                         state = 3;
@@ -204,10 +227,16 @@ public class Tokenizer
                     {
                         return ReadPolarForm(reader, token.ToString(), pos);
                     }
-                    else
+                    else if (IsDelim(ch))
                     {
                         putback = true;
                         return RationalToken(token.ToString(), pos);
+                    }
+                    else
+                    {
+                        // not a number: a symbol (as 1x)
+                        token.Append(ch);
+                        state = 3;
                     }
                     break;
 
@@ -216,7 +245,7 @@ public class Tokenizer
                     {
                         token.Append(ch);
                     }
-                    else if (IsExponentMarker(ch))
+                    else if (IsExponentMarker(ch) && HasDigit(token))
                     {
                         token.Append(ch);
                         state = 14; // exponent
@@ -224,15 +253,16 @@ public class Tokenizer
                     else
                     {
                         string rtok = token.ToString();
-                        if (rtok.Equals("+."))
+                        if (rtok.Equals("+.") || rtok.Equals("-."))
                         {
-                            putback = true;
-                            return new Token(Maybefold(reader, "+"), TokenType.SYMBOL, pos);
-                        }
-                        else if (rtok.Equals("-."))
-                        {
-                            putback = true;
-                            return new Token(Maybefold(reader, "-"), TokenType.SYMBOL, pos);
+                            // +.a, -.@ (R7RS peculiar identifiers), +. : symbols
+                            if (IsDelim(ch))
+                            {
+                                putback = true;
+                                return new Token(Maybefold(reader, rtok), TokenType.SYMBOL, pos);
+                            }
+                            token.Append(ch);
+                            state = 3;
                         }
                         else if (ch == '+' || ch == '-')
                         {
@@ -243,7 +273,7 @@ public class Tokenizer
                             reader.Read();
                             int next = reader.Peek();
                             if (IsDelimiterOrEnd(next))
-                                return new Token("0|" + rtok, TokenType.COMPLEX, pos);
+                                return ComplexToken("0", rtok, pos);
                             token.Append('i');
                             state = 3;
                             c = reader.Peek();
@@ -254,10 +284,16 @@ public class Tokenizer
                         {
                             return ReadPolarForm(reader, rtok, pos);
                         }
-                        else
+                        else if (IsDelim(ch))
                         {
                             putback = true;
                             return new Token(rtok, TokenType.REAL, pos);
+                        }
+                        else
+                        {
+                            // not a number: a symbol (as 1x)
+                            token.Append(ch);
+                            state = 3;
                         }
                     }
                     break;
@@ -287,10 +323,16 @@ public class Tokenizer
                     {
                         return ReadPolarForm(reader, token.ToString(), pos);
                     }
-                    else
+                    else if (IsDelim(ch))
                     {
                         putback = true;
-                        return new Token(token.ToString(), TokenType.REAL, pos);
+                        return ExponentToken(token.ToString(), pos);
+                    }
+                    else
+                    {
+                        // not a number: a symbol (as 1x)
+                        token.Append(ch);
+                        state = 3;
                     }
                     break;
 
@@ -300,16 +342,17 @@ public class Tokenizer
                         token.Append(ch);
                         state = 11;
                     }
-                    else if (ch == '.')
-                    {
-                        // ".." or "..." — treat as symbol (R7RS identifiers)
-                        token.Append(ch);
-                        state = 3;
-                    }
-                    else
+                    else if (IsDelim(ch))
                     {
                         putback = true;
                         return new Token(".", TokenType.DOT, pos);
+                    }
+                    else
+                    {
+                        // "..", "...", ".a", ".+": identifiers (R7RS peculiar
+                        // identifiers; others as 1x is read)
+                        token.Append(ch);
+                        state = 3;
                     }
                     break;
 
@@ -936,9 +979,20 @@ public class Tokenizer
             }
             return new Token(token.ToString(), TokenType.INTEGER, pos);
         }
+        else if (state == 4)
+        {
+            return new Token(",", TokenType.COMMA, pos);
+        }
+        else if (state == 12)
+        {
+            return new Token(".", TokenType.DOT, pos);
+        }
         else if (state == 11 || state == 15)
         {
-            return new Token(token.ToString(), TokenType.REAL, pos);
+            string rtok = token.ToString();
+            if (rtok.Equals("+.") || rtok.Equals("-."))
+                return new Token(Maybefold(reader, rtok), TokenType.SYMBOL, pos);
+            return state == 15 ? ExponentToken(rtok, pos) : new Token(rtok, TokenType.REAL, pos);
         }
         else if (state == 14)
         {
@@ -1079,12 +1133,43 @@ public class Tokenizer
         return new Token(v.ToString()!, Value.IsInteger(v) ? TokenType.INTEGER : TokenType.RATIONAL, pos);
     }
 
+    // The imaginary part "+<digits>i", "-<digits>/<digits>i", "+i" or "-i"
+    // in radix 2, 8 or 16; the sign is next.
+    private static Token ReadRadixImaginary(TextStream reader, int radix, string realPart, SourcePos pos)
+    {
+        string imag;
+        int sign = reader.Peek();
+        reader.Read();
+        int c = reader.Peek();
+        if (c == 'i' || c == 'I')
+            imag = (char)sign + "1";
+        else if (IsDigitInRadix((char)c, radix))
+        {
+            Token t = ReadPrefixedNumber(reader, radix, false, false, pos);
+            imag = (sign == '-' ? "-" : "+") + t.value;
+            c = reader.Peek();
+        }
+        else
+            throw new SchemeError(pos, new ReadErrorObject("tokenizer: invalid complex number", Array.Empty<object>()));
+        if (c != 'i' && c != 'I')
+            throw new SchemeError(pos, new ReadErrorObject("tokenizer: invalid complex number", Array.Empty<object>()));
+        reader.Read();
+        if (!IsDelimiterOrEnd(reader.Peek()))
+            throw new SchemeError(pos, new ReadErrorObject("tokenizer: invalid complex number", Array.Empty<object>()));
+        return ComplexToken(realPart, imag, pos);
+    }
+
     private static Token ReadPrefixedNumberOrComplex(TextStream reader, int radix, bool forceExact, bool forceInexact, SourcePos pos)
     {
         Token token = ReadPrefixedNumber(reader, radix, forceExact, forceInexact, pos);
         int c = reader.Peek();
         Token? complex = null;
-        if (c == '+' || c == '-')
+        if ((c == '+' || c == '-') && radix != 10)
+        {
+            // the imaginary part in the radix too (#b101-11i is 5-3i)
+            complex = ReadRadixImaginary(reader, radix, token.value, pos);
+        }
+        else if (c == '+' || c == '-')
         {
             // Complex continuation: read imaginary part
             complex = ReadComplexImaginary(reader, token.value, pos);
@@ -1111,12 +1196,14 @@ public class Tokenizer
         // Read optional sign
         int sign = 1;
         int c = reader.Peek();
+        bool signed = c == '+' || c == '-';
         if (c == '+') { reader.Read(); sign = 1; c = reader.Peek(); }
         else if (c == '-') { reader.Read(); sign = -1; c = reader.Peek(); }
 
-        // Check for +inf.0, -inf.0, +nan.0 (after sign)
+        // Check for +inf.0, -inf.0, +nan.0 (after sign; "#inan.0" is no number)
         if (radix == 10 && (c == 'i' || c == 'I' || c == 'n' || c == 'N'))
         {
+            if (!signed) throw InvalidNumber(pos);
             StringBuilder special = new StringBuilder();
             special.Append(sign < 0 ? '-' : '+');
             while (c != -1 && "infINFnanNAN.0".IndexOf((char)c) >= 0)
@@ -1126,6 +1213,8 @@ public class Tokenizer
                 c = reader.Peek();
             }
             string s = special.ToString().ToLowerInvariant();
+            if ((s == "+inf.0" || s == "-inf.0") && forceExact)
+                throw new SchemeError(pos, new ReadErrorObject("tokenizer: #e applied to non-finite number", Array.Empty<object>()));
             if (s == "+inf.0") return new Token("+inf.0", TokenType.REAL, pos);
             if (s == "-inf.0") return new Token("-inf.0", TokenType.REAL, pos);
             if (s == "+nan.0" || s == "-nan.0")
@@ -1171,8 +1260,9 @@ public class Tokenizer
                 throw new SchemeError(pos, new ReadErrorObject("tokenizer: division by zero in rational literal", Array.Empty<object>()));
             if (forceInexact)
             {
-                double dv = IntegerMath.ToDouble(intVal) / IntegerMath.ToDouble(denomVal);
-                return new Token(dv.ToString("G17", System.Globalization.CultureInfo.InvariantCulture), TokenType.REAL, pos);
+                object q = Rational.Create(intVal, denomVal);
+                double dv = q is Rational qr ? qr.ToDouble() : IntegerMath.ToDouble(q);
+                return DoubleToken(dv, pos);
             }
             object result = Rational.Create(intVal, denomVal);
             if (Value.IsInteger(result)) return new Token(result.ToString()!, TokenType.INTEGER, pos);
@@ -1192,6 +1282,8 @@ public class Tokenizer
                 reader.Read();
                 c = reader.Peek();
             }
+            // "#i." and "#e-." are no numbers
+            if (digits.Length == 0 && fracDigits.Length == 0) throw InvalidNumber(pos);
             string numStr = (sign < 0 ? "-" : "") + digits + "." + (fracDigits.Length > 0 ? fracDigits.ToString() : "0");
             // Check for exponent
             if ((c == 'e' || c == 'E') && radix == 10)
@@ -1201,11 +1293,12 @@ public class Tokenizer
                 if (c == '+' || c == '-') { numStr += (char)c; reader.Read(); c = reader.Peek(); }
                 StringBuilder expDigits = new StringBuilder();
                 while (c != -1 && c >= '0' && c <= '9') { expDigits.Append((char)c); reader.Read(); c = reader.Peek(); }
+                if (expDigits.Length == 0) throw InvalidNumber(pos);
                 numStr += expDigits;
             }
             if (forceExact) return ExactDecimalToken(numStr, pos);
             double dval = double.Parse(numStr, System.Globalization.CultureInfo.InvariantCulture);
-            return new Token(dval.ToString("G17", System.Globalization.CultureInfo.InvariantCulture), TokenType.REAL, pos);
+            return DoubleToken(dval, pos);
         }
 
         // Exponent on integer (decimal only)
@@ -1216,20 +1309,34 @@ public class Tokenizer
             if (c == '+' || c == '-') { numStr += (char)c; reader.Read(); c = reader.Peek(); }
             StringBuilder expDigits = new StringBuilder();
             while (c != -1 && c >= '0' && c <= '9') { expDigits.Append((char)c); reader.Read(); c = reader.Peek(); }
+            if (expDigits.Length == 0) throw InvalidNumber(pos);
             numStr += expDigits;
             if (forceExact) return ExactDecimalToken(numStr, pos);
             double dval = double.Parse(numStr, System.Globalization.CultureInfo.InvariantCulture);
-            return new Token(dval.ToString("G17", System.Globalization.CultureInfo.InvariantCulture), TokenType.REAL, pos);
+            return DoubleToken(dval, pos);
         }
 
         // Plain integer
         if (forceInexact)
         {
             double dv = IntegerMath.ToDouble(intVal);
-            return new Token(dv.ToString("G17", System.Globalization.CultureInfo.InvariantCulture), TokenType.REAL, pos);
+            return DoubleToken(dv, pos);
         }
         return new Token(intVal.ToString()!, TokenType.INTEGER, pos);
     }
+
+    // a REAL token of a double; the infinities and NaN as Scheme writes
+    // them (G17 would give "Infinity")
+    private static Token DoubleToken(double d, SourcePos pos)
+    {
+        string text = double.IsNaN(d) ? "+nan.0" : double.IsPositiveInfinity(d) ? "+inf.0"
+            : double.IsNegativeInfinity(d) ? "-inf.0"
+            : d.ToString("G17", System.Globalization.CultureInfo.InvariantCulture);
+        return new Token(text, TokenType.REAL, pos);
+    }
+
+    private static SchemeError InvalidNumber(SourcePos pos)
+        => new SchemeError(pos, new ReadErrorObject("tokenizer: invalid number", Array.Empty<object>()));
 
     private static Token AsCharacterToken(string result, SourcePos pos)
     {
@@ -1273,6 +1380,22 @@ public class Tokenizer
     /// reader.Peek() should be '+' or '-' (the sign of the imaginary part).
     /// realPart is the string of the already-parsed real part.
     /// </summary>
+    // A decimal real as the parts of a complex number are written: an
+    // integer, a rational, a decimal with an optional exponent, or a signed
+    // inf.0 or nan.0. The tokenizer, not a .NET parse, rejects anything else.
+    private static readonly Regex RealText = new Regex(
+        @"^([+-]?([0-9]+(/[0-9]+)?|([0-9]+\.?[0-9]*|\.[0-9]+)([esfdlESFDL][+-]?[0-9]+)?)|[+-](inf|nan)\.0)$",
+        RegexOptions.CultureInvariant);
+
+    private static bool IsRealText(string s) => RealText.IsMatch(s);
+
+    private static Token ComplexToken(string realPart, string imag, SourcePos pos)
+    {
+        if (!IsRealText(realPart) || !IsRealText(imag))
+            throw new SchemeError(pos, new ReadErrorObject("tokenizer: invalid complex number", Array.Empty<object>()));
+        return new Token(realPart + "|" + imag, TokenType.COMPLEX, pos);
+    }
+
     private static Token ReadComplexImaginary(TextStream reader, string realPart, SourcePos pos)
     {
         int c = reader.Peek();
@@ -1301,7 +1424,7 @@ public class Tokenizer
             if (s == "+i" || s == "-i")
             {
                 if (IsDelimiterOrEnd(c))
-                    return new Token(realPart + "|" + sign + "1", TokenType.COMPLEX, pos);
+                    return ComplexToken(realPart, sign + "1", pos);
                 throw new SchemeError(pos, new ReadErrorObject("tokenizer: invalid complex number", Array.Empty<object>()));
             }
 
@@ -1312,7 +1435,7 @@ public class Tokenizer
                 reader.Read(); // consume 'i'
                 int next = reader.Peek();
                 if (IsDelimiterOrEnd(next))
-                    return new Token(realPart + "|" + s, TokenType.COMPLEX, pos);
+                    return ComplexToken(realPart, s, pos);
             }
             throw new SchemeError(pos, new ReadErrorObject("tokenizer: invalid complex number", Array.Empty<object>()));
         }
@@ -1332,7 +1455,7 @@ public class Tokenizer
             reader.Read();
             int next = reader.Peek();
             if (IsDelimiterOrEnd(next))
-                return new Token(realPart + "|" + imagDigits, TokenType.COMPLEX, pos);
+                return ComplexToken(realPart, imagDigits.ToString(), pos);
             throw new SchemeError(pos, new ReadErrorObject("tokenizer: invalid complex number", Array.Empty<object>()));
         }
 
@@ -1353,7 +1476,7 @@ public class Tokenizer
                 reader.Read();
                 int next = reader.Peek();
                 if (IsDelimiterOrEnd(next))
-                    return new Token(realPart + "|" + imagDigits, TokenType.COMPLEX, pos);
+                    return ComplexToken(realPart, imagDigits.ToString(), pos);
             }
             throw new SchemeError(pos, new ReadErrorObject("tokenizer: invalid complex number", Array.Empty<object>()));
         }
@@ -1397,7 +1520,7 @@ public class Tokenizer
             reader.Read();
             int next = reader.Peek();
             if (IsDelimiterOrEnd(next))
-                return new Token(realPart + "|" + imagDigits, TokenType.COMPLEX, pos);
+                return ComplexToken(realPart, imagDigits.ToString(), pos);
         }
 
         throw new SchemeError(pos, new ReadErrorObject("tokenizer: invalid complex number", Array.Empty<object>()));
@@ -1437,7 +1560,12 @@ public class Tokenizer
         reader.Read(); // consume '@'
         // Read the angle as a full number
         Token angleToken = ReadPrefixedNumber(reader, 10, false, false, pos);
+        // "9@1.50a" is no number (not 9@1.50 then a)
+        if (!IsDelimiterOrEnd(reader.Peek()))
+            throw new SchemeError(pos, new ReadErrorObject("tokenizer: invalid complex number", Array.Empty<object>()));
         // Return as COMPLEX with polar conversion marker
+        if (!IsRealText(magnitude))
+            throw new SchemeError(pos, new ReadErrorObject("tokenizer: invalid complex number", Array.Empty<object>()));
         return new Token(magnitude + "@" + angleToken.value, TokenType.COMPLEX, pos);
     }
 }

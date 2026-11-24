@@ -60,18 +60,17 @@ public class PrimitiveDiv : Primitive
         }
         else
         {
+            // an exact zero divisor is an error, an inexact one follows IEEE
             if (arguments.Length == 1)
             {
-                double value = ToReal(arguments[0]);
-                if (value == 0.0) throw new SchemeError(pos, "/: Division by ~s", value);
-                return 1.0 / value;
+                if (arguments[0] is long l0 && l0 == 0) throw new SchemeError(pos, "/: Division by zero");
+                return 1.0 / ToReal(arguments[0]);
             }
             double dresult = ToReal(arguments[0]);
             for (int i = 1; i < arguments.Length; i++)
             {
-                double value = ToReal(arguments[i]);
-                if (value == 0.0) throw new SchemeError(pos, "/: Division by ~s", value);
-                dresult /= value;
+                if (arguments[i] is long li && li == 0) throw new SchemeError(pos, "/: Division by zero");
+                dresult /= ToReal(arguments[i]);
             }
             return dresult;
         }

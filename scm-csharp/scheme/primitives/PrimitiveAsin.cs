@@ -21,6 +21,6 @@ public class PrimitiveAsin : Primitive
     public override object Apply(SourcePos? pos, object[] arguments)
     {
         CheckArgs(pos, arguments, 1, 1);
-        return Math.Asin(ToReal(arguments[0]));
+        return ComplexMath.Asin(arguments[0]);
     }
 }

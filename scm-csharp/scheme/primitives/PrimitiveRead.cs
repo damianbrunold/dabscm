@@ -113,12 +113,34 @@ public class PrimitiveRead : Primitive
         || t == TokenType.SYNTAX || t == TokenType.QUASISYNTAX || t == TokenType.UNSYNTAX
         || t == TokenType.UNSYNTAXSPLICING || t == TokenType.DATUMCOMMENT;
 
+    // The next token in a list, vector or bytevector, after any datum
+    // comments (so that "(a #;b)" is (a)).
+    private Token? ElementToken(TextStream reader, Dictionary<int, object> labels)
+    {
+        Token? t = ReadToken(reader);
+        while (t != null && t.type == TokenType.DATUMCOMMENT)
+        {
+            ReadRequiredDatum(reader, labels);
+            t = ReadToken(reader);
+        }
+        return t;
+    }
+
+    // The datum after ' ` , ,@ or #;: the end of input is an error.
+    private object ReadRequiredDatum(TextStream reader, Dictionary<int, object> labels)
+    {
+        object datum = ReadDatum(ReadToken(reader), reader, labels);
+        if (Value.IsEOFObject(datum))
+            throw new SchemeError(reader.Pos(), new ReadErrorObject("read: unexpected end of file", Array.Empty<object>()));
+        return datum;
+    }
+
     private object ReadDatum0(Token? token, TextStream reader, Dictionary<int, object> labels)
     {
         if (token == null) return Value.EOF;
         if (token.type == TokenType.DATUMCOMMENT)
         {
-            ReadDatum(ReadToken(reader), reader, labels); // discard next datum
+            ReadRequiredDatum(reader, labels); // discard next datum
             return ReadDatum(ReadToken(reader), reader, labels);
         }
         if (token.type == TokenType.CLOSEPAR)
@@ -152,39 +174,39 @@ public class PrimitiveRead : Primitive
         }
         else if (token.type == TokenType.QUOTE)
         {
-            return Pair.List(Value.Intern("quote"), ReadDatum(ReadToken(reader), reader, labels));
+            return Pair.List(Value.Intern("quote"), ReadRequiredDatum(reader, labels));
         }
         else if (token.type == TokenType.BACKQUOTE)
         {
-            return Pair.List(Value.Intern("quasiquote"), ReadDatum(ReadToken(reader), reader, labels));
+            return Pair.List(Value.Intern("quasiquote"), ReadRequiredDatum(reader, labels));
         }
         else if (token.type == TokenType.COMMA)
         {
-            return Pair.List(Value.Intern("unquote"), ReadDatum(ReadToken(reader), reader, labels));
+            return Pair.List(Value.Intern("unquote"), ReadRequiredDatum(reader, labels));
         }
         else if (token.type == TokenType.COMMAAT)
         {
-            return Pair.List(Value.Intern("unquote-splicing"), ReadDatum(ReadToken(reader), reader, labels));
+            return Pair.List(Value.Intern("unquote-splicing"), ReadRequiredDatum(reader, labels));
         }
         else if (token.type == TokenType.SYNTAX)
         {
-            return Pair.List(Value.Intern("syntax"), ReadDatum(ReadToken(reader), reader, labels));
+            return Pair.List(Value.Intern("syntax"), ReadRequiredDatum(reader, labels));
         }
         else if (token.type == TokenType.QUASISYNTAX)
         {
-            return Pair.List(Value.Intern("quasisyntax"), ReadDatum(ReadToken(reader), reader, labels));
+            return Pair.List(Value.Intern("quasisyntax"), ReadRequiredDatum(reader, labels));
         }
         else if (token.type == TokenType.UNSYNTAX)
         {
-            return Pair.List(Value.Intern("unsyntax"), ReadDatum(ReadToken(reader), reader, labels));
+            return Pair.List(Value.Intern("unsyntax"), ReadRequiredDatum(reader, labels));
         }
         else if (token.type == TokenType.UNSYNTAXSPLICING)
         {
-            return Pair.List(Value.Intern("unsyntax-splicing"), ReadDatum(ReadToken(reader), reader, labels));
+            return Pair.List(Value.Intern("unsyntax-splicing"), ReadRequiredDatum(reader, labels));
         }
         else if (token.type == TokenType.OPENPAR)
         {
-            token = ReadToken(reader);
+            token = ElementToken(reader, labels);
             if (token == null)
             {
                 throw new SchemeError(reader.Pos(), new ReadErrorObject("read: unexpected end of file", Array.Empty<object>()));
@@ -197,24 +219,19 @@ public class PrimitiveRead : Primitive
             {
                 Pair result = new Pair(ReadDatum(token, reader, labels), Value.NIL, token.pos);
                 Pair current = result;
-                token = ReadToken(reader);
+                token = ElementToken(reader, labels);
                 while (token != null && token.type != TokenType.CLOSEPAR && token.type != TokenType.DOT)
                 {
                     object value = ReadDatum(token, reader, labels);
                     Pair next = new Pair(value, Value.NIL);
                     current.cdr = next;
                     current = next;
-                    token = ReadToken(reader);
+                    token = ElementToken(reader, labels);
                 }
                 if (token != null && token.type == TokenType.DOT)
                 {
                     current.cdr = ReadDatum(ReadToken(reader), reader, labels);
-                    token = ReadToken(reader);
-                    while (token != null && token.type == TokenType.DATUMCOMMENT)
-                    {
-                        ReadDatum(ReadToken(reader), reader, labels); // discard commented datum
-                        token = ReadToken(reader);
-                    }
+                    token = ElementToken(reader, labels);
                 }
                 if (token == null)
                     throw new SchemeError(reader.Pos(), new ReadErrorObject("read: unexpected end of file", Array.Empty<object>()));
@@ -228,11 +245,11 @@ public class PrimitiveRead : Primitive
         else if (token.type == TokenType.SHARPOPENPAR)
         {
             var elements = new List<object>();
-            token = ReadToken(reader);
+            token = ElementToken(reader, labels);
             while (token != null && token.type != TokenType.CLOSEPAR)
             {
                 elements.Add(ReadDatum(token, reader, labels));
-                token = ReadToken(reader);
+                token = ElementToken(reader, labels);
             }
             if (token == null) throw new SchemeError(reader.Pos(), new ReadErrorObject("read: unexpected end of file", Array.Empty<object>()));
             return elements.ToArray();
@@ -240,7 +257,7 @@ public class PrimitiveRead : Primitive
         else if (token.type == TokenType.BYTEVECTOROPENPAR)
         {
             List<byte> bv = new();
-            token = ReadToken(reader);
+            token = ElementToken(reader, labels);
             while (token != null && token.type != TokenType.CLOSEPAR)
             {
                 object elem = ReadDatum(token, reader, labels);
@@ -250,7 +267,7 @@ public class PrimitiveRead : Primitive
                 if (val < 0 || val > 255)
                     throw new SchemeError(token.pos, new ReadErrorObject("read: bytevector element out of range", new object[] { val }));
                 bv.Add((byte)val);
-                token = ReadToken(reader);
+                token = ElementToken(reader, labels);
             }
             if (token == null) throw new SchemeError(reader.Pos(), new ReadErrorObject("read: unexpected end of file", Array.Empty<object>()));
             return bv.ToArray();
@@ -258,11 +275,11 @@ public class PrimitiveRead : Primitive
         else if (token.type == TokenType.LABELDEFINITION)
         {
             int labelN = int.Parse(token.value, CultureInfo.InvariantCulture);
-            Token? next = ReadToken(reader);
+            Token? next = ElementToken(reader, labels);
             if (next == null) throw new SchemeError(reader.Pos(), new ReadErrorObject("read: unexpected end of file", Array.Empty<object>()));
             if (next.type == TokenType.OPENPAR)
             {
-                Token? firstTok = ReadToken(reader);
+                Token? firstTok = ElementToken(reader, labels);
                 if (firstTok == null) throw new SchemeError(reader.Pos(), new ReadErrorObject("read: unexpected end of file", Array.Empty<object>()));
                 if (firstTok.type == TokenType.CLOSEPAR)
                 {
@@ -273,13 +290,13 @@ public class PrimitiveRead : Primitive
                 labels[labelN] = result;
                 result.car = ReadDatum(firstTok, reader, labels);
                 Pair current = result;
-                Token? t = ReadToken(reader);
+                Token? t = ElementToken(reader, labels);
                 while (t != null && t.type != TokenType.CLOSEPAR && t.type != TokenType.DOT)
                 {
                     Pair nxt = new Pair(ReadDatum(t, reader, labels), Value.NIL);
                     current.cdr = nxt;
                     current = nxt;
-                    t = ReadToken(reader);
+                    t = ElementToken(reader, labels);
                 }
                 if (t == null) throw new SchemeError(reader.Pos(), new ReadErrorObject("read: unexpected end of file", Array.Empty<object>()));
                 if (t.type == TokenType.DOT)
@@ -292,11 +309,11 @@ public class PrimitiveRead : Primitive
             else if (next.type == TokenType.SHARPOPENPAR)
             {
                 var elements = new List<object>();
-                Token? t = ReadToken(reader);
+                Token? t = ElementToken(reader, labels);
                 while (t != null && t.type != TokenType.CLOSEPAR)
                 {
                     elements.Add(ReadDatum(t, reader, labels));
-                    t = ReadToken(reader);
+                    t = ElementToken(reader, labels);
                 }
                 if (t == null) throw new SchemeError(reader.Pos(), new ReadErrorObject("read: unexpected end of file", Array.Empty<object>()));
                 object[] vec = elements.ToArray();

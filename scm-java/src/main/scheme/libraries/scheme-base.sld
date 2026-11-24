@@ -615,15 +615,19 @@ Example:
   (gcd 32 -36) => 4
   (gcd)        => 0
   (gcd 32 -36 12) => 4"
+      ;; inexact integers: computed on their exact values, the result inexact
       (let ((gcd2 (lambda (a b)
                     (let loop ((a (abs a))
                                (b (abs b)))
                       (cond ((= b 0) a)
                             (else (loop b (modulo a b))))))))
-        (if (= (length ls) 2)
-            (apply gcd2 ls)
-            (let loop ((ls ls) (g 0))
-              (if (null? ls) g (loop (cdr ls) (gcd2 (car ls) g)))))))
+        (let loop ((l ls) (g 0) (inex #f))
+          (if (null? l)
+              (if inex (inexact g) g)
+              (let ((n (car l)))
+                (if (exact? n)
+                    (loop (cdr l) (gcd2 n g) inex)
+                    (loop (cdr l) (gcd2 (exact n) g) #t)))))))
 
     (define (lcm . ls)
       "Syntax: (lcm n1 ...)
@@ -634,11 +638,18 @@ Example:
   (lcm 32 -36) => 288
   (lcm)        => 1
   (lcm 32 -36 12) => 288"
-      (let ((lcm2 (lambda (a b) (abs (/ (* a b) (gcd a b))))))
-        (if (= (length ls) 2)
-            (apply lcm2 ls)
-            (let loop ((ls ls) (r 1))
-              (if (null? ls) r (loop (cdr ls) (lcm2 (car ls) r)))))))
+      ;; inexact integers: computed on their exact values, the result inexact
+      (let ((lcm2 (lambda (a b)
+                    (if (or (= a 0) (= b 0))
+                        0
+                        (abs (quotient (* a b) (gcd a b)))))))
+        (let loop ((l ls) (r 1) (inex #f))
+          (if (null? l)
+              (if inex (inexact r) r)
+              (let ((n (car l)))
+                (if (exact? n)
+                    (loop (cdr l) (lcm2 n r) inex)
+                    (loop (cdr l) (lcm2 (exact n) r) #t)))))))
 
     ;; multi-list map (R7RS)
     ;; map is defined in library.scm (scm core) and re-exported here.

@@ -15,6 +15,8 @@ public class PrimitiveMakePolar extends Primitive {
 
     @Override public Object apply(SourcePos pos, Object[] arguments) {
         checkArgs(pos, arguments, 2, 2);
+        for (Object a : arguments)
+            if (!PrimitiveMakeRectangular.isRealNumber(a)) throw new WrongTypeException(a, "real number");
         double r = toReal(arguments[0]);
         double theta = toReal(arguments[1]);
         return Complex.create(r * Math.cos(theta), r * Math.sin(theta));

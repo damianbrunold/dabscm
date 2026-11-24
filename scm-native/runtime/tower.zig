@@ -387,10 +387,12 @@ pub fn arith(t: *Thread, a: Word, b: Word, op: Op) ?Word {
 }
 
 fn compArith(t: *Thread, a: Word, b: Word, op: Op) ?Word {
+    // a real's imaginary part: exact 0, or 0.0 for a flonum (as the JVM
+    // implementation: (* -0.0 1/2-3/4i) is 0.0+0.0i)
     const ar = realPart(a);
-    const ai = imagPart(a);
+    const ai = if (rt.isFlonum(a)) floWord(t, 0.0) else imagPart(a);
     const br = realPart(b);
-    const bi = imagPart(b);
+    const bi = if (rt.isFlonum(b)) floWord(t, 0.0) else imagPart(b);
     switch (op) {
         .add => return makeRect(t, arith(t, ar, br, .add).?, arith(t, ai, bi, .add).?),
         .sub => return makeRect(t, arith(t, ar, br, .sub).?, arith(t, ai, bi, .sub).?),
@@ -453,15 +455,18 @@ pub fn sign(w: Word) i2 {
 /// -w; a flonum's sign flips (0 - 0.0 is 0.0, (- 0.0) is -0.0)
 pub fn negate(t: *Thread, w: Word) Word {
     if (rt.isFlonum(w)) return floWord(t, -rt.flo(w));
+    // each part, keeping the sign of a zero part
+    if (isComp(w)) return makeRect(t, negate(t, realPart(w)), negate(t, imagPart(w)));
     return arith(t, fix(0), w, .sub).?;
 }
 
-pub fn numerator(t: *Thread, w: Word) Word {
-    if (rt.isFlonum(w)) return floWord(t, toFloat(numerator(t, floatToExact(t, rt.flo(w)) orelse return w)));
+/// numerator and denominator; null for an infinity or NaN
+pub fn numerator(t: *Thread, w: Word) ?Word {
+    if (rt.isFlonum(w)) return floWord(t, toFloat(numerator(t, floatToExact(t, rt.flo(w)) orelse return null).?));
     return ratNum(w);
 }
-pub fn denominator(t: *Thread, w: Word) Word {
-    if (rt.isFlonum(w)) return floWord(t, toFloat(denominator(t, floatToExact(t, rt.flo(w)) orelse return w)));
+pub fn denominator(t: *Thread, w: Word) ?Word {
+    if (rt.isFlonum(w)) return floWord(t, toFloat(denominator(t, floatToExact(t, rt.flo(w)) orelse return null).?));
     return ratDen(w);
 }
 
@@ -520,7 +525,30 @@ pub fn exactIntegerSqrt(t: *Thread, n: Word) [2]Word {
 
 pub fn format(buf: *std.ArrayList(u8), w: Word, radix: u8) void {
     const fmtFlo = @import("num.zig").formatFlonum;
-    if (isFix(w) or isBig(w)) {
+    if (isBig(w) and radix != 10) {
+        // the digits of a power-of-two radix from the bits (Managed.toString
+        // gets radix 8 wrong: its digit groups straddle the limbs)
+        const c = bigConst(w);
+        const bits: usize = switch (radix) {
+            2 => 1,
+            8 => 3,
+            16 => 4,
+            else => unreachable,
+        };
+        if (!c.positive) buf.append(pa, '-') catch oom();
+        const n = c.bitCountAbs();
+        var k = (n + bits - 1) / bits;
+        while (k > 0) {
+            k -= 1;
+            var d: usize = 0;
+            for (0..bits) |j| {
+                const pos = k * bits + (bits - 1 - j);
+                const bit = if (pos / @bitSizeOf(Limb) < c.limbs.len) (c.limbs[pos / @bitSizeOf(Limb)] >> @intCast(pos % @bitSizeOf(Limb))) & 1 else 0;
+                d = d * 2 + @as(usize, @intCast(bit));
+            }
+            buf.append(pa, "0123456789abcdef"[d]) catch oom();
+        }
+    } else if (isFix(w) or isBig(w)) {
         var m = toManaged(w);
         defer m.deinit();
         const str = m.toString(pa, radix, .lower) catch oom();
@@ -704,3 +732,90 @@ pub fn integerLength(a: Word) i64 {
     return @intCast(x.bitCountAbs());
 }
 
+
+// --- complex functions (flonum parts) -----------------------------------------------
+
+/// pow from the C library: correctly rounded or nearly (glibc, musl);
+/// std.math.pow is off by several units in the last place ((expt E -97))
+extern "c" fn pow(x: f64, y: f64) f64;
+pub fn fpow(x: f64, y: f64) f64 {
+    return pow(x, y);
+}
+
+/// A complex number with flonum parts, for exp, log, sin, ... of complex
+/// arguments: the JVM implementation's formulas (Complex.java), operation
+/// by operation, so that intermediate infinities and NaNs come out the same
+pub const C = struct {
+    re: f64,
+    im: f64,
+
+    pub fn of(w: Word) C {
+        return .{ .re = toFloat(realPart(w)), .im = toFloat(imagPart(w)) };
+    }
+    pub fn word(z: C, t: *Thread) Word {
+        return makeRect(t, floWord(t, z.re), floWord(t, z.im));
+    }
+    pub fn mul(a: C, b: C) C {
+        return .{ .re = a.re * b.re - a.im * b.im, .im = a.re * b.im + a.im * b.re };
+    }
+    pub fn div(a: C, b: C) C {
+        const d = b.re * b.re + b.im * b.im;
+        return .{ .re = (a.re * b.re + a.im * b.im) / d, .im = (a.im * b.re - a.re * b.im) / d };
+    }
+    pub fn exp(z: C) C {
+        const e = @exp(z.re);
+        if (z.im == 0.0) return .{ .re = e, .im = z.im };
+        return .{ .re = e * @cos(z.im), .im = e * @sin(z.im) };
+    }
+    pub fn log(z: C) C {
+        return .{ .re = @log(std.math.hypot(z.re, z.im)), .im = std.math.atan2(z.im, z.re) };
+    }
+    /// the imaginary part negative only for y < 0 ((sqrt -1.0-0.0i) is +i)
+    pub fn sqrt(z: C) C {
+        const r = std.math.hypot(z.re, z.im);
+        const im = @sqrt((r - z.re) / 2.0);
+        return .{ .re = @sqrt((r + z.re) / 2.0), .im = if (z.im < 0) -im else im };
+    }
+    pub fn sin(z: C) C {
+        return .{ .re = @sin(z.re) * std.math.cosh(z.im), .im = @cos(z.re) * std.math.sinh(z.im) };
+    }
+    pub fn cos(z: C) C {
+        return .{ .re = @cos(z.re) * std.math.cosh(z.im), .im = -@sin(z.re) * std.math.sinh(z.im) };
+    }
+    pub fn tan(z: C) C {
+        return div(sin(z), cos(z));
+    }
+    /// -i log(iz + sqrt(1 - z^2))
+    pub fn asin(z: C) C {
+        const z2 = mul(z, z);
+        const s = sqrt(.{ .re = 1.0 - z2.re, .im = 0.0 - z2.im });
+        const l = log(.{ .re = s.re - z.im, .im = s.im + z.re });
+        return .{ .re = l.im, .im = -l.re };
+    }
+    /// pi/2 - asin z
+    pub fn acos(z: C) C {
+        const a = asin(z);
+        return .{ .re = std.math.pi / 2.0 - a.re, .im = -a.im };
+    }
+    /// (log(1 + iz) - log(1 - iz)) / 2i
+    pub fn atan(z: C) C {
+        const a = log(.{ .re = 1.0 - z.im, .im = 0.0 + z.re });
+        const b = log(.{ .re = 1.0 + z.im, .im = 0.0 - z.re });
+        const dr = a.re - b.re;
+        const di = a.im - b.im;
+        return .{ .re = di / 2.0, .im = -dr / 2.0 };
+    }
+    /// z1^z2 = exp(z2 log z1) in polar form: |z1|^x2 e^(-y2 angle z1) at
+    /// the angle x2 angle z1 + y2 ln|z1|
+    pub fn pow(a: C, b: C) C {
+        const r = std.math.hypot(a.re, a.im);
+        const at = std.math.atan2(a.im, a.re);
+        var len = fpow(r, b.re);
+        var phase = at * b.re;
+        if (b.im != 0.0) {
+            len /= @exp(at * b.im);
+            phase += b.im * @log(r);
+        }
+        return .{ .re = len * @cos(phase), .im = len * @sin(phase) };
+    }
+};

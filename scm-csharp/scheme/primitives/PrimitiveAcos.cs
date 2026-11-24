@@ -21,6 +21,6 @@ public class PrimitiveAcos : Primitive
     public override object Apply(SourcePos? pos, object[] arguments)
     {
         CheckArgs(pos, arguments, 1, 1);
-        return Math.Acos(ToReal(arguments[0]));
+        return ComplexMath.Acos(arguments[0]);
     }
 }

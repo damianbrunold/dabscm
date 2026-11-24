@@ -1,6 +1,6 @@
 ;; Tokens that start like a number read as the JVM implementation's tokenizer
-;; reads them: a number may end before the token ("1.2.3" is 1.2, then .3),
-;; some are errors ("2026-01-01": an invalid complex number), others symbols
+;; reads them: a number, an error ("2026-01-01": an invalid complex number) or
+;; a symbol (the whole token: "1.2.3", "1.5x")
 (import (scheme base) (scheme read) (scheme write))
 (define (show s)
   (write (list s (guard (e (#t (list 'error (error-object-message e))))

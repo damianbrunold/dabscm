@@ -32,6 +32,9 @@ public class PrimitiveSubstring extends Primitive {
             end = IntegerMath.toInt(arguments[2]);
             if (end < 0) end = s.length + end;
         }
+        if (start < 0 || start > end || end > s.length)
+            throw new SchemeError(pos, new ErrorObject("substring: index out of range",
+                arguments.length > 2 ? new Object[] { arguments[1], arguments[2] } : new Object[] { arguments[1] }));
         char[] result = new char[end - start];
         for (var i = 0; i < result.length; i++) {
             result[i] = s[start + i];

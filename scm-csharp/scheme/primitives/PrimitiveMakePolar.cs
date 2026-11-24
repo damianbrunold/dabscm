@@ -21,8 +21,8 @@ public class PrimitiveMakePolar : Primitive
     public override object Apply(SourcePos? pos, object[] arguments)
     {
         CheckArgs(pos, arguments, 2, 2);
-        double r = ToReal(arguments[0]);
-        double theta = ToReal(arguments[1]);
+        double r = ComplexMath.Real(arguments[0]);
+        double theta = ComplexMath.Real(arguments[1]);
         return Complex.Create(r * Math.Cos(theta), r * Math.Sin(theta));
     }
 }

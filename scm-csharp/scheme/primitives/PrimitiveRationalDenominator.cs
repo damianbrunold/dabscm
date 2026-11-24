@@ -22,7 +22,7 @@ public class PrimitiveRationalDenominator : Primitive
         {
             double d = (double)arguments[0];
             if (!double.IsFinite(d))
-                throw new SchemeError(pos, "denominator: not a rational number: " + d);
+                throw new SchemeError(pos, "denominator: not a rational number: ~s", d);
             var (_, den) = PrimitiveRationalNumerator.DoubleToReducedParts(d);
             return den;
         }

@@ -23,7 +23,7 @@ public class PrimitiveRationalDenominator extends Primitive {
         if (Value.isReal(arguments[0])) {
             double d = (double) arguments[0];
             if (!Double.isFinite(d))
-                throw new SchemeError(pos, "denominator: not a rational number: " + d);
+                throw new SchemeError(pos, "denominator: not a rational number: ~s", d);
             return PrimitiveRationalNumerator.doubleToReducedParts(d)[1];
         }
         throw new SchemeError(pos, "denominator: not a rational number: ~s", arguments[0]);

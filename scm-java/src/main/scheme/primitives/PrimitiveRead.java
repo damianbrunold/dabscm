@@ -102,7 +102,7 @@ public class PrimitiveRead extends Primitive {
             return Value.EOF;
         }
         if (token.type == TokenType.DATUMCOMMENT) {
-            readDatum(readToken(in), in, labels); // discard next datum
+            readRequired(in, labels); // discard next datum
             return readDatum(readToken(in), in, labels);
         }
         if (token.type == TokenType.CLOSEPAR) {
@@ -122,44 +122,44 @@ public class PrimitiveRead extends Primitive {
         } else if (token.type == TokenType.SYMBOL) {
             return Value.intern(token.value);
         } else if (token.type == TokenType.QUOTE) {
-            return Pair.list(Value.intern("quote"), readDatum(readToken(in), in, labels));
+            return Pair.list(Value.intern("quote"), readRequired(in, labels));
         } else if (token.type == TokenType.BACKQUOTE) {
-            return Pair.list(Value.intern("quasiquote"), readDatum(readToken(in), in, labels));
+            return Pair.list(Value.intern("quasiquote"), readRequired(in, labels));
         } else if (token.type == TokenType.COMMA) {
-            return Pair.list(Value.intern("unquote"), readDatum(readToken(in), in, labels));
+            return Pair.list(Value.intern("unquote"), readRequired(in, labels));
         } else if (token.type == TokenType.COMMAAT) {
-            return Pair.list(Value.intern("unquote-splicing"), readDatum(readToken(in), in, labels));
+            return Pair.list(Value.intern("unquote-splicing"), readRequired(in, labels));
         } else if (token.type == TokenType.SYNTAX) {
-            return Pair.list(Value.intern("syntax"), readDatum(readToken(in), in, labels));
+            return Pair.list(Value.intern("syntax"), readRequired(in, labels));
         } else if (token.type == TokenType.QUASISYNTAX) {
-            return Pair.list(Value.intern("quasisyntax"), readDatum(readToken(in), in, labels));
+            return Pair.list(Value.intern("quasisyntax"), readRequired(in, labels));
         } else if (token.type == TokenType.UNSYNTAX) {
-            return Pair.list(Value.intern("unsyntax"), readDatum(readToken(in), in, labels));
+            return Pair.list(Value.intern("unsyntax"), readRequired(in, labels));
         } else if (token.type == TokenType.UNSYNTAXSPLICING) {
-            return Pair.list(Value.intern("unsyntax-splicing"), readDatum(readToken(in), in, labels));
+            return Pair.list(Value.intern("unsyntax-splicing"), readRequired(in, labels));
         } else if (token.type == TokenType.OPENPAR) {
-            token = readToken(in);
+            token = elementToken(in, labels);
             if (token == null) throw new SchemeError(in.pos(), new ReadErrorObject("read: unexpected end of file", new Object[0]));
             if (token.type == TokenType.CLOSEPAR) {
                 return Value.NIL;
             } else {
                 Pair result = new Pair(readDatum(token, in, labels), Value.NIL, token.pos);
                 Pair current = result;
-                token = readToken(in);
+                token = elementToken(in, labels);
                 while (token != null && token.type != TokenType.CLOSEPAR && token.type != TokenType.DOT) {
                     Object value = readDatum(token, in, labels);
                     Pair next = new Pair(value, Value.NIL);
                     current.cdr = next;
                     current = next;
-                    token = readToken(in);
+                    token = elementToken(in, labels);
                 }
                 if (token == null) throw new SchemeError(in.pos(), new ReadErrorObject("read: unexpected end of file", new Object[0]));
                 if (token.type == TokenType.DOT) {
                     current.cdr = readDatum(readToken(in), in, labels);
-                    token = readToken(in);
+                    token = elementToken(in, labels);
                     while (token != null && token.type == TokenType.DATUMCOMMENT) {
-                        readDatum(readToken(in), in, labels); // discard commented datum
-                        token = readToken(in);
+                        readRequired(in, labels); // discard commented datum
+                        token = elementToken(in, labels);
                     }
                 }
                 if (token == null || token.type != TokenType.CLOSEPAR) {
@@ -169,16 +169,16 @@ public class PrimitiveRead extends Primitive {
             }
         } else if (token.type == TokenType.SHARPOPENPAR) {
             List<Object> elements = new ArrayList<>();
-            token = readToken(in);
+            token = elementToken(in, labels);
             while (token != null && token.type != TokenType.CLOSEPAR) {
                 elements.add(readDatum(token, in, labels));
-                token = readToken(in);
+                token = elementToken(in, labels);
             }
             if (token == null) throw new SchemeError(in.pos(), new ReadErrorObject("read: unexpected end of file", new Object[0]));
             return elements.toArray();
         } else if (token.type == TokenType.BYTEVECTOROPENPAR) {
             java.io.ByteArrayOutputStream bv = new java.io.ByteArrayOutputStream();
-            token = readToken(in);
+            token = elementToken(in, labels);
             while (token != null && token.type != TokenType.CLOSEPAR) {
                 Object elem = readDatum(token, in, labels);
                 if (!Value.isInteger(elem))
@@ -187,15 +187,15 @@ public class PrimitiveRead extends Primitive {
                 if (val < 0 || val > 255)
                     throw new SchemeError(token.pos, new ReadErrorObject("read: bytevector element out of range", new Object[] { val }));
                 bv.write((int) val);
-                token = readToken(in);
+                token = elementToken(in, labels);
             }
             if (token == null) throw new SchemeError(in.pos(), new ReadErrorObject("read: unexpected end of file", new Object[0]));
             return bv.toByteArray();
         } else if (token.type == TokenType.LABELDEFINITION) {
             int labelN = Integer.parseInt(token.value);
-            Token next = readToken(in);
+            Token next = elementToken(in, labels);
             if (next.type == TokenType.OPENPAR) {
-                Token firstTok = readToken(in);
+                Token firstTok = elementToken(in, labels);
                 if (firstTok.type == TokenType.CLOSEPAR) {
                     labels.put(labelN, Value.NIL);
                     return Value.NIL;
@@ -204,12 +204,12 @@ public class PrimitiveRead extends Primitive {
                 labels.put(labelN, result);
                 result.car = readDatum(firstTok, in, labels);
                 Pair current = result;
-                Token t = readToken(in);
+                Token t = elementToken(in, labels);
                 while (t != null && t.type != TokenType.CLOSEPAR && t.type != TokenType.DOT) {
                     Pair nxt = new Pair(readDatum(t, in, labels), Value.NIL);
                     current.cdr = nxt;
                     current = nxt;
-                    t = readToken(in);
+                    t = elementToken(in, labels);
                 }
                 if (t == null) throw new SchemeError(in.pos(), new ReadErrorObject("read: unexpected end of file", new Object[0]));
                 if (t.type == TokenType.DOT) {
@@ -219,10 +219,10 @@ public class PrimitiveRead extends Primitive {
                 return result;
             } else if (next.type == TokenType.SHARPOPENPAR) {
                 List<Object> elements = new ArrayList<>();
-                Token t = readToken(in);
+                Token t = elementToken(in, labels);
                 while (t != null && t.type != TokenType.CLOSEPAR) {
                     elements.add(readDatum(t, in, labels));
-                    t = readToken(in);
+                    t = elementToken(in, labels);
                 }
                 if (t == null) throw new SchemeError(in.pos(), new ReadErrorObject("read: unexpected end of file", new Object[0]));
                 Object[] vec = elements.toArray();
@@ -243,12 +243,42 @@ public class PrimitiveRead extends Primitive {
         }
     }
 
+    // The next token in a list or vector, after any datum comments
+    // (so that "(a #;b)" is (a)).
+    private Token elementToken(TextStream in, Map<Integer, Object> labels) throws IOException {
+        Token t = readToken(in);
+        while (t != null && t.type == TokenType.DATUMCOMMENT) {
+            readRequired(in, labels);
+            t = readToken(in);
+        }
+        return t;
+    }
+
+    // The datum after a quote abbreviation or #;: the end of input there is an error.
+    private Object readRequired(TextStream in, Map<Integer, Object> labels) throws IOException {
+        Token t = readToken(in);
+        if (t == null) throw new SchemeError(in.pos(), new ReadErrorObject("read: unexpected end of file", new Object[0]));
+        Object d = readDatum(t, in, labels);
+        // the end of input after a datum comment ('#;a)
+        if (d == Value.EOF) throw new SchemeError(in.pos(), new ReadErrorObject("read: unexpected end of file", new Object[0]));
+        return d;
+    }
+
     public static Token readToken(TextStream reader) throws IOException {
         return Tokenizer.readToken(reader);
     }
 
     /** The number of a number token (INTEGER, RATIONAL, REAL, COMPLEX), else null. */
     public static Object numberFromToken(Token token) {
+        try {
+            return numberFromToken0(token);
+        } catch (NumberFormatException | ArithmeticException e) {
+            // the tokenizer let through a text that is no number
+            throw new SchemeError(token.pos, new ReadErrorObject("tokenizer: invalid number", new Object[] { token.value.toCharArray() }));
+        }
+    }
+
+    private static Object numberFromToken0(Token token) {
         if (token.type == TokenType.INTEGER) {
             try { return Long.parseLong(token.value); }
             catch (NumberFormatException e) { return IntegerMath.normalize(new java.math.BigInteger(token.value)); }

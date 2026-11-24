@@ -15,6 +15,6 @@ public class PrimitiveCharFoldcase : Primitive
     public override object Apply(SourcePos? pos, object[] arguments)
     {
         CheckArgs(pos, arguments, 1, 1);
-        return char.ToLowerInvariant(Value.AsChar(arguments[0]));
+        return UnicodeCaseMap.Foldcase(Value.AsChar(arguments[0]));
     }
 }

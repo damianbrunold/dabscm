@@ -21,6 +21,7 @@ public class PrimitiveCos extends Primitive {
     @Override
     public Object apply(SourcePos pos, Object[] arguments) {
         checkArgs(pos, arguments, 1, 1);
+        if (arguments[0] instanceof Complex) return Complex.cos(arguments[0]);
         return Math.cos(toReal(arguments[0]));
     }
 }

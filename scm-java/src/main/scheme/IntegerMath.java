@@ -241,7 +241,9 @@ public final class IntegerMath {
     // --- GCD (used by Rational) ---
 
     public static Object gcd(Object a, Object b) {
-        if (a instanceof Long && b instanceof Long) {
+        // Long.MIN_VALUE has no long absolute value
+        if (a instanceof Long && b instanceof Long
+            && (long)(Long) a != Long.MIN_VALUE && (long)(Long) b != Long.MIN_VALUE) {
             long la = Math.abs((long)(Long) a);
             long lb = Math.abs((long)(Long) b);
             while (lb != 0) { long t = lb; lb = la % lb; la = t; }

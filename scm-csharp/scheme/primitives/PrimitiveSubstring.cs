@@ -28,11 +28,19 @@ public class PrimitiveSubstring : Primitive
         {
             start = IntegerMath.ToInt(arguments[1]);
             if (start < 0) start = s.Length + start;
+            if (start < 0) throw OutOfRange(pos, arguments[1]);
         }
         if (arguments.Length > 2)
         {
             end = IntegerMath.ToInt(arguments[2]);
             if (end < 0) end = s.Length + end;
+            if (end < 0) throw OutOfRange(pos, arguments[2]);
+        }
+        if (start > end || end > s.Length)
+        {
+            object[] irritants = new object[arguments.Length - 1];
+            Array.Copy(arguments, 1, irritants, 0, irritants.Length);
+            throw OutOfRange(pos, irritants);
         }
         char[] result = new char[end - start];
         for (var i = 0; i < result.Length; i++) {
@@ -40,4 +48,7 @@ public class PrimitiveSubstring : Primitive
         }
         return result;
     }
+
+    private static SchemeError OutOfRange(SourcePos? pos, params object[] irritants)
+        => new SchemeError(pos, new ErrorObject("substring: index out of range", irritants));
 }

@@ -154,7 +154,7 @@ public final class Complex {
         return Rational.div(a, b);
     }
 
-    static Object partNegate(Object a) {
+    public static Object partNegate(Object a) {
         if (a instanceof Long) return IntegerMath.negate((long)(Long) a);
         if (a instanceof BigInteger) return IntegerMath.genericNegate(a);
         if (a instanceof Double) return -(double)(Double) a;
@@ -211,7 +211,8 @@ public final class Complex {
         Object ar = ap[0], ai = ap[1], br = bp[0], bi = bp[1];
         // (ar + ai*i) / (br + bi*i)
         Object denom = partAdd(partMul(br, br), partMul(bi, bi));
-        if (isZero(denom)) throw new SchemeError("/: Division by zero");
+        // an exact zero divisor is an error, an inexact one follows IEEE
+        if (isExactZero(denom)) throw new SchemeError("/: Division by zero");
         Object realPart = partDiv(partAdd(partMul(ar, br), partMul(ai, bi)), denom);
         Object imagPart = partDiv(partSub(partMul(ai, br), partMul(ar, bi)), denom);
         return create(realPart, imagPart);
@@ -267,7 +268,8 @@ public final class Complex {
     private static boolean numericPartEquals(Object a, Object b) {
         if (a instanceof Long && b instanceof Long) return a.equals(b);
         if (Value.isInteger(a) && Value.isInteger(b)) return IntegerMath.genericEquals(a, b);
-        if (a instanceof Double && b instanceof Double) return a.equals(b);
+        // == ignores the sign of zero (and NaN is unequal to itself)
+        if (a instanceof Double && b instanceof Double) return (double)(Double) a == (double)(Double) b;
         if (a instanceof Rational && b instanceof Rational) return a.equals(b);
         return Primitive.mixedNumericEquals(a, b);
     }
@@ -276,33 +278,45 @@ public final class Complex {
 
     @Override
     public String toString() {
+        return toString(10);
+    }
+
+    // The written form with exact parts in radix (inexact parts in decimal)
+    public String toString(int radix) {
         StringBuilder sb = new StringBuilder();
-        appendPart(sb, real);
+        appendPart(sb, real, radix);
 
         boolean negImag = isPartNegative(imag);
         sb.append(negImag ? '-' : '+');
-        appendAbsImag(sb, imag);
+        appendAbsImag(sb, imag, radix);
         sb.append('i');
 
         return sb.toString();
     }
 
-    private static void appendPart(StringBuilder sb, Object v) {
-        if (v instanceof Double) sb.append(Value.formatDouble((double)(Double) v));
-        else if (v instanceof Rational) sb.append(v.toString());
-        else sb.append(v);
+    private static String exactString(Object v, int radix) {
+        if (radix == 10) return v.toString();
+        if (v instanceof Rational) {
+            Rational q = (Rational) v;
+            return IntegerMath.toBigInteger(q.numerator).toString(radix) + "/"
+                + IntegerMath.toBigInteger(q.denominator).toString(radix);
+        }
+        return IntegerMath.toBigInteger(v).toString(radix);
     }
 
-    private static void appendAbsImag(StringBuilder sb, Object v) {
+    private static void appendPart(StringBuilder sb, Object v, int radix) {
+        if (v instanceof Double) sb.append(Value.formatDouble((double)(Double) v));
+        else sb.append(exactString(v, radix));
+    }
+
+    private static void appendAbsImag(StringBuilder sb, Object v, int radix) {
         if (v instanceof Double) {
             double d = (double)(Double) v;
             if (Double.isNaN(d)) sb.append("nan.0");
             else if (Double.isInfinite(d)) sb.append("inf.0");
             else sb.append(Value.formatDouble(Math.abs(d)));
         } else {
-            Object abs = partAbs(v);
-            if (abs instanceof Rational) sb.append(abs.toString());
-            else sb.append(abs);
+            sb.append(exactString(partAbs(v), radix));
         }
     }
 
@@ -319,5 +333,103 @@ public final class Complex {
             return r;
         }
         return v;
+    }
+
+    // --- Transcendental functions (inexact, on doubles) ---
+
+    // The real and imaginary part of a number as doubles.
+    public static double re(Object z) {
+        return z instanceof Complex ? partToDouble(((Complex) z).real) : partToDouble(z);
+    }
+
+    public static double im(Object z) {
+        return z instanceof Complex ? partToDouble(((Complex) z).imag) : 0.0;
+    }
+
+    private static Object make(double[] z) { return new Complex(z[0], z[1]); }
+
+    private static double[] cmul(double[] a, double[] b) {
+        return new double[] { a[0] * b[0] - a[1] * b[1], a[0] * b[1] + a[1] * b[0] };
+    }
+
+    private static double[] cdiv(double[] a, double[] b) {
+        double d = b[0] * b[0] + b[1] * b[1];
+        return new double[] { (a[0] * b[0] + a[1] * b[1]) / d, (a[1] * b[0] - a[0] * b[1]) / d };
+    }
+
+    private static double[] cexp(double[] z) {
+        double e = Math.exp(z[0]);
+        if (z[1] == 0.0) return new double[] { e, z[1] };
+        return new double[] { e * Math.cos(z[1]), e * Math.sin(z[1]) };
+    }
+
+    private static double[] clog(double[] z) {
+        return new double[] { Math.log(Math.hypot(z[0], z[1])), Math.atan2(z[1], z[0]) };
+    }
+
+    private static double[] csqrt(double[] z) {
+        double r = Math.hypot(z[0], z[1]);
+        // the sign of the imaginary part, -0.0 positive: the branch cut is
+        // continuous with quadrant II (R7RS; chibi's (sqrt -1.0-0.0i) => +i)
+        double im = Math.sqrt((r - z[0]) / 2);
+        return new double[] { Math.sqrt((r + z[0]) / 2), z[1] < 0 ? -im : im };
+    }
+
+    private static double[] csin(double[] z) {
+        return new double[] { Math.sin(z[0]) * Math.cosh(z[1]), Math.cos(z[0]) * Math.sinh(z[1]) };
+    }
+
+    private static double[] ccos(double[] z) {
+        return new double[] { Math.cos(z[0]) * Math.cosh(z[1]), -Math.sin(z[0]) * Math.sinh(z[1]) };
+    }
+
+    // asin z = -i log(iz + sqrt(1 - z^2)); the zero imaginary parts as
+    // the exact 1 gives them (0 - 0.0 = 0.0), so that (asin 2) is
+    // 1.57...-1.31...i
+    private static double[] casin(double[] z) {
+        double[] z2 = cmul(z, z);
+        double[] s = csqrt(new double[] { 1.0 - z2[0], 0.0 - z2[1] });
+        double[] l = clog(new double[] { s[0] - z[1], s[1] + z[0] });
+        return new double[] { l[1], -l[0] };
+    }
+
+    private static double[] toPair(Object z) { return new double[] { re(z), im(z) }; }
+
+    public static Object exp(Object z) { return make(cexp(toPair(z))); }
+    public static Object log(Object z) { return make(clog(toPair(z))); }
+    public static Object sqrt(Object z) { return make(csqrt(toPair(z))); }
+    public static Object sin(Object z) { return make(csin(toPair(z))); }
+    public static Object cos(Object z) { return make(ccos(toPair(z))); }
+    public static Object tan(Object z) { double[] p = toPair(z); return make(cdiv(csin(p), ccos(p))); }
+    public static Object asin(Object z) { return make(casin(toPair(z))); }
+
+    // acos z = pi/2 - asin z
+    public static Object acos(Object z) {
+        double[] a = casin(toPair(z));
+        return make(new double[] { Math.PI / 2 - a[0], -a[1] });
+    }
+
+    // atan z = (log(1 + iz) - log(1 - iz)) / 2i
+    public static Object atan(Object z) {
+        double[] p = toPair(z);
+        double[] a = clog(new double[] { 1.0 - p[1], 0.0 + p[0] });
+        double[] b = clog(new double[] { 1.0 + p[1], 0.0 - p[0] });
+        double dr = a[0] - b[0], di = a[1] - b[1];
+        // (dr + di i) / 2i = di/2 - (dr/2) i
+        return make(new double[] { di / 2, -dr / 2 });
+    }
+
+    // z1^z2 = exp(z2 log z1), in polar form: |z1|^x2 e^(-y2 angle z1) at
+    // the angle x2 angle z1 + y2 ln|z1| (so (expt -1 0.5) is
+    // 6.123233995736766e-17+1.0i, the magnitude Math.pow(1.0, 0.5) = 1.0)
+    public static Object pow(Object z1, Object z2) {
+        double[] a = toPair(z1), b = toPair(z2);
+        double r = Math.hypot(a[0], a[1]), at = Math.atan2(a[1], a[0]);
+        double len = Math.pow(r, b[0]), phase = at * b[0];
+        if (b[1] != 0.0) {
+            len /= Math.exp(at * b[1]);
+            phase += b[1] * Math.log(r);
+        }
+        return make(new double[] { len * Math.cos(phase), len * Math.sin(phase) });
     }
 }

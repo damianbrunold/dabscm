@@ -50,15 +50,14 @@ public class PrimitiveDiv extends Primitive {
             return result;
         } else {
             if (arguments.length == 1) {
-                double value = toReal(arguments[0]);
-                if (value == 0.0) throw new SchemeError(pos, "/: Division by ~s", value);
-                return 1.0 / value;
+                return 1.0 / toReal(arguments[0]);
             }
+            // an exact zero divisor is an error, an inexact one follows IEEE
             double dresult = toReal(arguments[0]);
             for (int i = 1; i < arguments.length; i++) {
-                double value = toReal(arguments[i]);
-                if (value == 0.0) throw new SchemeError(pos, "/: Division by ~s", value);
-                dresult /= value;
+                if (Value.isInteger(arguments[i]) && IntegerMath.isZero(arguments[i]))
+                    throw new SchemeError(pos, "/: Division by zero");
+                dresult /= toReal(arguments[i]);
             }
             return dresult;
         }

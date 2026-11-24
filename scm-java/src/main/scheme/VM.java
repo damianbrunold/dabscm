@@ -340,9 +340,9 @@ public class VM {
         }
         if (ia instanceof Double || ib instanceof Double) {
             if (ia instanceof Complex || ib instanceof Complex) return Complex.div(ia, ib);
-            double dib = vmToReal(ib);
-            if (dib == 0.0) throw new SchemeError(pos, "/: Division by ~s", dib);
-            return vmToReal(ia) / dib;
+            // an exact zero divisor is an error, an inexact one follows IEEE
+            if (ib instanceof Long && (long)(Long)ib == 0) throw new SchemeError(pos, "/: Division by zero");
+            return vmToReal(ia) / vmToReal(ib);
         }
         if (ia instanceof Complex || ib instanceof Complex) return Complex.div(ia, ib);
         return Rational.div(ia, ib);

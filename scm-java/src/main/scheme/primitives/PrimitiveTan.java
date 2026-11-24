@@ -21,6 +21,7 @@ public class PrimitiveTan extends Primitive {
     @Override
     public Object apply(SourcePos pos, Object[] arguments) {
         checkArgs(pos, arguments, 1, 1);
+        if (arguments[0] instanceof Complex) return Complex.tan(arguments[0]);
         return Math.tan(toReal(arguments[0]));
     }
 }

@@ -22,22 +22,6 @@ public class PrimitiveExpt : Primitive
     public override object Apply(SourcePos? pos, object[] arguments)
     {
         CheckArgs(pos, arguments, 2, 2);
-        if (AllIntegers(arguments))
-        {
-            long b = IntegerMath.ToLong(arguments[1]);
-            if (b == 0) return 1L;
-            if (b > 0) {
-                return IntegerMath.Expt(arguments[0], b);
-            } else {
-                return Rational.Div(1L, IntegerMath.Expt(arguments[0], -b));
-            }
-        }
-        else
-        {
-            double a = ToReal(arguments[0]);
-            double b = ToReal(arguments[1]);
-            if (b == 0.0) return 1.0;
-            return Math.Pow(a, b);
-        }
+        return ComplexMath.Expt(arguments[0], arguments[1]);
     }
 }

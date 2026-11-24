@@ -23,6 +23,6 @@ public class PrimitiveCharUpcase : Primitive
     public override object Apply(SourcePos? pos, object[] arguments)
     {
         CheckArgs(pos, arguments, 1, 1);
-        return Char.ToUpper(Value.AsChar(arguments[0]), CultureInfo.InvariantCulture);
+        return UnicodeCaseMap.Upcase(Value.AsChar(arguments[0]));
     }
 }

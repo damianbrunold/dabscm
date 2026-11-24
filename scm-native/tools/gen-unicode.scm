@@ -4,7 +4,7 @@
 ;;
 ;; Reads UnicodeData.txt (general categories, simple case mappings, decimal
 ;; digit values), DerivedCoreProperties.txt (Alphabetic, Uppercase,
-;; Lowercase) and CaseFolding.txt (simple case folding: statuses C and S),
+;; Lowercase), PropList.txt (White_Space) and CaseFolding.txt (simple case folding: statuses C and S),
 ;; and writes sorted tables that runtime/chars.zig searches.
 
 (import (scheme base)
@@ -118,7 +118,8 @@
 
 ;; --- derived properties ------------------------------------------------------------
 
-(define derived (filter-map fields (read-lines (ucd "DerivedCoreProperties.txt"))))
+(define derived (append (filter-map fields (read-lines (ucd "DerivedCoreProperties.txt")))
+                        (filter-map fields (read-lines (ucd "PropList.txt")))))
 
 (define (property-ranges name)
   (let loop ((rs (list-sort (lambda (a b) (< (car a) (car b)))
@@ -177,7 +178,8 @@
                 (let ((rs (property-ranges (car prop))))
                   (write-array p (string-append (cdr prop) "_lo") "u21" rs (lambda (r) (hex-string (car r))))
                   (write-array p (string-append (cdr prop) "_hi") "u21" rs (lambda (r) (hex-string (cdr r))))))
-              '(("Alphabetic" . "alphabetic") ("Uppercase" . "uppercase") ("Lowercase" . "lowercase")))))
+              '(("Alphabetic" . "alphabetic") ("Uppercase" . "uppercase") ("Lowercase" . "lowercase")
+                ("White_Space" . "white_space")))))
 
 (display "wrote ") (display out-file) (newline)
 (display (length category-ranges)) (display " category ranges, ")

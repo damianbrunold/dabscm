@@ -97,7 +97,7 @@ pub const Reader = struct {
                     try r.skipBlockComment();
                 } else if (d == ';') {
                     _ = r.next();
-                    _ = try r.datum();
+                    if (try r.datum() == .eof) return r.fail("end of file after #;");
                 } else {
                     r.port.pos = save;
                     return;
@@ -120,9 +120,11 @@ pub const Reader = struct {
         }
     }
 
+    /// The R7RS delimiters (and [ ]): ' ` and , are not, they stay part of
+    /// a symbol (as the JVM implementation: ln' is |ln'|)
     fn isDelimiter(c: u21) bool {
         return chars.isWhitespace(c) or switch (c) {
-            '(', ')', '[', ']', '"', ';', '\'', '`', ',' => true,
+            '(', ')', '[', ']', '"', ';', '|' => true,
             else => false,
         };
     }
@@ -165,7 +167,20 @@ pub const Reader = struct {
                 while (true) {
                     const d = r.next() orelse return r.fail("unterminated |symbol|");
                     if (d == '|') break;
-                    appendCp(&buf, if (d == '\\') try r.escape() else d);
+                    if (d == '\\') {
+                        // the escapes R7RS allows in |...| (and \", as the JVM)
+                        const e = r.peek() orelse return r.fail("unterminated |symbol|");
+                        switch (e) {
+                            'a', 'b', 't', 'n', 'r', 'x', '|', '\\', '"' => {},
+                            else => {
+                                var m: std.ArrayList(u8) = .empty;
+                                m.appendSlice(na(), "tokenizer: invalid escape in delimited identifier: \\") catch rt.oom();
+                                appendCp(&m, e);
+                                return r.fail(m.items);
+                            },
+                        }
+                        appendCp(&buf, try r.escape());
+                    } else appendCp(&buf, d);
                 }
                 return .{ .word = data.intern(buf.items) };
             },
@@ -373,7 +388,13 @@ pub const Reader = struct {
                 r.port.pos -= 1;
                 const tok = r.token(null);
                 if (tok.len == 1) return r.fail("bad #! syntax");
-                if (std.mem.eql(u8, tok, "!fold-case")) r.fold_case = true else if (std.mem.eql(u8, tok, "!no-fold-case")) r.fold_case = false else if (std.mem.eql(u8, tok, "!eof")) return .{ .word = rt.EOF } else if (std.mem.eql(u8, tok, "!default")) return .{ .word = rt.DEFAULT } else if (std.mem.eql(u8, tok, "!unspecific")) return .{ .word = rt.UNSPEC };
+                // a fold-case directive followed by a non-delimiter (as the
+                // JVM implementation)
+                // (and in any case: #!FOLD-CASE)
+                if ((std.ascii.startsWithIgnoreCase(tok, "!fold-case") and tok.len > "!fold-case".len) or
+                    (std.ascii.startsWithIgnoreCase(tok, "!no-fold-case") and tok.len > "!no-fold-case".len))
+                    return r.fail(std.fmt.allocPrint(pa, "tokenizer: unknown directive: #{s}", .{tok}) catch rt.oom());
+                if (std.ascii.eqlIgnoreCase(tok, "!fold-case")) r.fold_case = true else if (std.ascii.eqlIgnoreCase(tok, "!no-fold-case")) r.fold_case = false else if (std.mem.eql(u8, tok, "!eof")) return .{ .word = rt.EOF } else if (std.mem.eql(u8, tok, "!default")) return .{ .word = rt.DEFAULT } else if (std.mem.eql(u8, tok, "!unspecific")) return .{ .word = rt.UNSPEC };
                 return r.datum();
             },
             else => {
@@ -396,20 +417,26 @@ pub const Reader = struct {
         }
     }
 
-    fn atom(r: *Reader, tok0: []u8) Error!Node {
+    fn symbol(r: *Reader, tok: []u8) Node {
+        if (r.fold_case) for (tok) |*b| {
+            b.* = std.ascii.toLower(b.*);
+        };
+        return .{ .word = data.intern(tok) };
+    }
+
+    fn atom(r: *Reader, tok: []u8) Error!Node {
+        if (tok.len > 1 and tok[0] == '#') if (prefixedError(tok)) |m| return r.fail(m);
         // a token that starts like a number: as the JVM implementation's
-        // tokenizer (Tokenizer.readToken), which reads a number character by
-        // character: it may end before the token does (the rest is read
-        // next: "1.2.3" is 1.2 then .3), or be an error ("2026-01-01")
-        var tok = tok0;
+        // tokenizer (Tokenizer.readToken): a number, one symbol when a
+        // number ends before the token does ("1.2.3" is |1.2.3|), or an
+        // error ("2026-01-01", "1e", "1/0")
         switch (jvmNumberScan(tok)) {
             .whole => {},
-            .prefix => |k| {
-                r.port.pos -= tok.len - k;
-                tok = tok[0..k];
-            },
+            // a token that starts like a number and is not one: one symbol
+            // (as the JVM implementation: 1.5x is |1.5x|)
+            .prefix => return r.symbol(tok),
             .err => |m| return r.fail(m),
-            .symbol => return .{ .word = data.intern(tok) },
+            .symbol => return r.symbol(tok),
         }
         if (num.parseNumber(tok, 10)) |lit| return switch (lit) {
             .fix => |n| .{ .word = rt.fix(n) },
@@ -457,13 +484,18 @@ fn jvmNumberScan(tok: []const u8) Scan {
         switch (state) {
             1 => switch (c) {
                 '0'...'9' => {},
+                // a sign followed by / or an exponent marker: a symbol
+                // (+/ -d00 +e1)
+                '/' => if (i == 1 and signed) return .whole else {
+                    state = 13;
+                },
                 '.' => state = 11,
-                '/' => state = 13,
                 '+', '-' => return if (i == 1 and signed) .whole else complexOrError(tok),
                 '@' => return if (i == 1 and signed) .whole else complexOrError(tok),
                 'i', 'I' => return .whole, // +i, -5i (or a symbol)
                 else => {
                     if (!isExponentMarker(c)) return .whole; // a symbol
+                    if (i == 1 and signed) return .whole; // +e1
                     state = 14;
                 },
             },
@@ -507,6 +539,8 @@ fn jvmNumberScan(tok: []const u8) Scan {
     // an exponent without digits ("1e", "1e-")
     if (state == 14 or (state == 15 and (tok[tok.len - 1] == '+' or tok[tok.len - 1] == '-')))
         return .{ .err = "tokenizer: malformed exponent" };
+    // an exponent after a dot without digits ("+.e1")
+    if (state == 15 and !mantissaHasDigit(tok)) return .{ .err = "tokenizer: invalid number" };
     // n/ and n/0
     if (state == 13) {
         const d = tok[std.mem.indexOfScalar(u8, tok, '/').? + 1 ..];
@@ -514,6 +548,64 @@ fn jvmNumberScan(tok: []const u8) Scan {
         if (std.mem.allEqual(u8, d, '0')) return .{ .err = "tokenizer: division by zero in rational literal" };
     }
     return .whole;
+}
+
+fn mantissaHasDigit(tok: []const u8) bool {
+    for (tok) |c| switch (c) {
+        '0'...'9' => return true,
+        '+', '-', '.' => {},
+        else => return false,
+    };
+    return false;
+}
+
+/// The JVM tokenizer's errors for a token with a # prefix that is not a
+/// number: no digits ("#e", "#inan.0"), a division by zero ("#e1/0"),
+/// a malformed exponent ("#e1e+"), else an invalid number ("#i.");
+/// null for a number, or a token that is not a number prefix
+fn prefixedError(tok: []const u8) ?[]const u8 {
+    var body = tok;
+    var radix: u8 = 10;
+    var exact = false;
+    while (body.len >= 2 and body[0] == '#') {
+        switch (std.ascii.toLower(body[1])) {
+            'x' => radix = 16,
+            'b' => radix = 2,
+            'o' => radix = 8,
+            'd' => radix = 10,
+            'e' => exact = true,
+            'i' => {},
+            else => return null,
+        }
+        body = body[2..];
+    }
+    if (body.len == tok.len) return null;
+    if (body.len > 0 and body[0] == '#') return null;
+    // no exact infinities or NaNs (#e+inf.0)
+    if (exact and (containsIgnoreCase(body, "inf.0") or containsIgnoreCase(body, "nan.0")))
+        return "tokenizer: #e applied to non-finite number";
+    // a rational with a zero denominator
+    if (std.mem.indexOfScalar(u8, body, '/')) |slash| {
+        const n = body[0..slash];
+        const d = body[slash + 1 ..];
+        const nd = if (n.len > 0 and (n[0] == '+' or n[0] == '-')) n[1..] else n;
+        if (nd.len > 0 and allDigits(nd, radix) and d.len > 0 and std.mem.allEqual(u8, d, '0'))
+            return "tokenizer: division by zero in rational literal";
+    }
+    if (num.parseNumber(tok, 10) != null) return null;
+    if (radix == 10) switch (jvmNumberScan(body)) {
+        .err => |m| return m,
+        else => {},
+    };
+    const first = if (body.len > 0 and (body[0] == '+' or body[0] == '-')) body[1..] else body;
+    if (first.len > 0 and (first[0] == '.' or (first[0] < 128 and num.digitOf(first[0], radix) != null)))
+        return "tokenizer: invalid number";
+    return "tokenizer: expected digits in number";
+}
+
+fn allDigits(s: []const u8, radix: u8) bool {
+    for (s) |c| if (num.digitOf(c, radix) == null) return false;
+    return true;
 }
 
 /// A complex or polar number: the whole token when it is one, else the
@@ -654,4 +746,13 @@ fn readWith(t: *Thread, r0: Reader) ?Word {
     label_values.clearRetainingCapacity();
     const w = build(t, node);
     return if (label_values.count() > 0) patch(w) else w;
+}
+
+fn containsIgnoreCase(hay: []const u8, needle: []const u8) bool {
+    if (needle.len > hay.len) return false;
+    var i: usize = 0;
+    while (i + needle.len <= hay.len) : (i += 1) {
+        if (std.ascii.eqlIgnoreCase(hay[i .. i + needle.len], needle)) return true;
+    }
+    return false;
 }

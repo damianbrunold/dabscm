@@ -21,6 +21,7 @@ public class PrimitiveSin extends Primitive {
     @Override
     public Object apply(SourcePos pos, Object[] arguments) {
         checkArgs(pos, arguments, 1, 1);
+        if (arguments[0] instanceof Complex) return Complex.sin(arguments[0]);
         return Math.sin(toReal(arguments[0]));
     }
 }

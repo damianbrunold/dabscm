@@ -9,6 +9,8 @@
 ;;   --rounds: at most this many rounds
 ;;   --cases: cases per generator and round (default 400)
 ;;   --csharp path: the C# scm (default: scm-csharp/repl/bin/Release/net10.0/scm)
+;;   --examples n: examples per group in the report (default 3)
+;;   --keep: keep the programs (build/difftest/<gen>-<seed>-<impl>-<part>.scm)
 ;;
 ;; Each case is an expression; a program evaluates every case in a guard and
 ;; prints its values (as write writes them) or its error message. A value
@@ -20,6 +22,9 @@
 
 (import (scheme base)
         (scheme char)
+        (scheme complex)
+        (scheme inexact)
+        (scheme read)
         (scheme file)
         (scheme process-context)
         (scheme time)
@@ -43,15 +48,19 @@
 (define cases-per-gen 400)
 (define csharp (join-path base-dir "scm-csharp" "repl" "bin" "Release" "net10.0" "scm"))
 (define generators-wanted '())
+(define examples 3)
+(define keep? #f)
 
 (let parse ((args (cdr (command-line))))
   (cond ((null? args) #t)
-        ((and (member (car args) '("--seed" "--time" "--rounds" "--cases" "--csharp")) (pair? (cdr args)))
+        ((string=? (car args) "--keep") (set! keep? #t) (parse (cdr args)))
+        ((and (member (car args) '("--seed" "--time" "--rounds" "--cases" "--csharp" "--examples")) (pair? (cdr args)))
          (let ((v (cadr args)))
            (cond ((string=? (car args) "--seed") (set! seed (string->number v)))
                  ((string=? (car args) "--time") (set! time-limit (string->number v)))
                  ((string=? (car args) "--rounds") (set! max-rounds (string->number v)))
                  ((string=? (car args) "--cases") (set! cases-per-gen (string->number v)))
+                 ((string=? (car args) "--examples") (set! examples (string->number v)))
                  (else (set! csharp v))))
          (parse (cddr args)))
         (else (set! generators-wanted (append generators-wanted (list (car args))))
@@ -103,7 +112,7 @@
 
 (define unary-ops
   '("-" "abs" "exact" "inexact" "sqrt" "exact-integer-sqrt" "floor" "ceiling" "round" "truncate"
-    "numerator" "denominator" "exp" "log" "sin" "cos" "atan" "square" "number->string"
+    "numerator" "denominator" "exp" "log" "sin" "cos" "tan" "asin" "acos" "atan" "square" "number->string"
     "magnitude" "angle" "real-part" "imag-part" "exact-integer?" "integer?" "rational?"
     "real?" "nan?" "infinite?" "finite?" "zero?" "positive?" "negative?" "odd?" "even?"
     "exact?" "(lambda (x) (string->number (number->string x)))"
@@ -240,6 +249,7 @@
                (_ (write-program prog cases))
                (r (guard (e (#t (list 99 "" (if (error-object? e) (error-object-message e) "failed"))))
                     (run-impl-program impl prog)))
+               (_ (unless keep? (delete-if-exists prog)))
                (lines (parse-output (cadr r)))
                (acc (append lines acc))
                (missing (filter (lambda (c) (not (assv (car c) lines))) cases)))
@@ -263,9 +273,14 @@
   (cond ((string=? impl "jvm") (run-program/capture (with-timeout 300 (list "scm" prog))))
         ((string=? impl "csharp") (run-program/capture (with-timeout 300 (list csharp prog))))
         (else
+         ;; each executable is about 95 MB
          (let ((exe (string-append prog ".exe")))
            (compile-program prog exe native-dir '())
-           (run-program/capture (with-timeout 300 (list exe)))))))
+           (let ((r (run-program/capture (with-timeout 300 (list exe)))))
+             (delete-if-exists exe)
+             r)))))
+
+(define (delete-if-exists f) (when (file-exists? f) (delete-file f)))
 
 ;; "17 (ok \"3\")" lines -> ((17 . "(ok \"3\")") ...)
 (define (parse-output out)
@@ -289,11 +304,42 @@
 (define (prefix? p s) (and (>= (string-length s) (string-length p)) (string=? p (substring s 0 (string-length p)))))
 (define (error-result? r) (prefix? "(error " r))
 
-;; 'same, 'minor (errors with different messages) or 'major
+;; 'same, 'minor (errors with different messages, or flonums that differ
+;; in the last bits: the math libraries differ) or 'major
 (define (compare-results rs)
   (cond ((every (lambda (r) (string=? r (car rs))) rs) 'same)
         ((every error-result? rs) 'minor)
+        ((close-values? rs) 'minor)
         (else 'major)))
+
+;; results (ok "v" ...) whose values are numbers within 4 ulps of each other
+(define (close-values? rs)
+  (let ((vs (map (lambda (r) (guard (e (#t #f)) (read (open-input-string r)))) rs)))
+    (and (every (lambda (v) (and (pair? v) (eq? (car v) 'ok))) vs)
+         (apply = (map length vs))
+         (apply every
+                (lambda texts
+                  (let ((ns (map (lambda (t) (and (string? t) (string->number t))) texts)))
+                    (and (every number? ns)
+                         (every (lambda (n) (close? n (car ns))) ns))))
+                (map cdr vs)))))
+
+(define (close? a b)
+  ;; the parts of a complex number relative to its magnitude: a small
+  ;; part computed from large ones carries their rounding
+  (let ((scale (max (magnitude* a) (magnitude* b))))
+    (and (close-real? (real-part a) (real-part b) scale)
+         (close-real? (imag-part a) (imag-part b) scale))))
+
+(define (magnitude* z)
+  (let ((m (max (abs (real-part z)) (abs (imag-part z)))))
+    (if (or (nan? m) (infinite? m)) 0 m)))
+
+(define (close-real? a b scale)
+  (cond ((or (exact? a) (exact? b)) (and (exact? a) (exact? b) (= a b)))
+        ((or (nan? a) (nan? b)) (and (nan? a) (nan? b)))
+        ((or (infinite? a) (infinite? b)) (= a b))
+        (else (<= (abs (- a b)) (* 4 2.220446049250313e-16 (max (abs a) (abs b) scale))))))
 
 (define impls '("jvm" "csharp" "native"))
 (define divergences '()) ; (kind gen case-text (impl . result) ...)
@@ -352,7 +398,7 @@
                                                     (list-ref d 3) "\n") p)
                        (for-each (lambda (impl r) (write-string (string-append "    " impl ": " r "\n") p))
                                  impls (list-ref d 4)))
-                     (let ((l (reverse (cdr g)))) (if (> (length l) 3) (take l 3) l))))
+                     (let ((l (reverse (cdr g)))) (if (> (length l) examples) (take l examples) l))))
          (list-sort (lambda (a b) (string<? (car a) (car b))) groups))))
     (length groups)))
 

@@ -21,7 +21,13 @@ public class PrimitiveAtan extends Primitive {
     @Override
     public Object apply(SourcePos pos, Object[] arguments) {
         checkArgs(pos, arguments, 1, 2);
-        if (arguments.length == 1) return Math.atan(toReal(arguments[0]));
+        if (arguments.length == 1) {
+            if (arguments[0] instanceof Complex) return Complex.atan(arguments[0]);
+            return Math.atan(toReal(arguments[0]));
+        }
+        // (atan y x): both real
+        for (Object a : arguments)
+            if (a instanceof Complex) throw new WrongTypeException(a, "real number");
         return Math.atan2(toReal(arguments[0]), toReal(arguments[1]));
     }
 }

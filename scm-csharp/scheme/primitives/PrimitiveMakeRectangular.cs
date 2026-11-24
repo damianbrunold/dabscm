@@ -21,6 +21,9 @@ public class PrimitiveMakeRectangular : Primitive
     public override object Apply(SourcePos? pos, object[] arguments)
     {
         CheckArgs(pos, arguments, 2, 2);
+        // both parts real: (make-rectangular 1+i 2) is a wrong argument type
+        ComplexMath.Real(arguments[0]);
+        ComplexMath.Real(arguments[1]);
         return Complex.Create(arguments[0], arguments[1]);
     }
 }

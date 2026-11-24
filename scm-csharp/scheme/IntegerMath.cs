@@ -272,7 +272,7 @@ public static class IntegerMath
 
     public static object Gcd(object a, object b)
     {
-        if (a is long la && b is long lb)
+        if (a is long la && b is long lb && la != long.MinValue && lb != long.MinValue)
         {
             la = Math.Abs(la);
             lb = Math.Abs(lb);

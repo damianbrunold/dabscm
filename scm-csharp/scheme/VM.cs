@@ -395,9 +395,9 @@ public class VM
         if (ia is double || ib is double)
         {
             if (ia is Complex || ib is Complex) return Complex.Div(ia, ib);
-            double dib = VmToReal(ib);
-            if (dib == 0.0) throw new SchemeError(pos, "/: Division by ~s", dib);
-            return VmToReal(ia) / dib;
+            // an exact zero divisor is an error, an inexact one follows IEEE
+            if (ib is long ibz && ibz == 0) throw new SchemeError(pos, "/: Division by zero");
+            return VmToReal(ia) / VmToReal(ib);
         }
         if (ia is Complex || ib is Complex) return Complex.Div(ia, ib);
         return Rational.Div(ia, ib);

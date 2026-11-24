@@ -21,6 +21,6 @@ public class PrimitiveCos : Primitive
     public override object Apply(SourcePos? pos, object[] arguments)
     {
         CheckArgs(pos, arguments, 1, 1);
-        return Math.Cos(ToReal(arguments[0]));
+        return ComplexMath.Cos(arguments[0]);
     }
 }

@@ -15,6 +15,12 @@ public class PrimitiveMakeRectangular extends Primitive {
 
     @Override public Object apply(SourcePos pos, Object[] arguments) {
         checkArgs(pos, arguments, 2, 2);
+        for (Object a : arguments)
+            if (!isRealNumber(a)) throw new WrongTypeException(a, "real number");
         return Complex.create(arguments[0], arguments[1]);
+    }
+
+    static boolean isRealNumber(Object a) {
+        return a instanceof Long || a instanceof Double || a instanceof java.math.BigInteger || a instanceof Rational;
     }
 }

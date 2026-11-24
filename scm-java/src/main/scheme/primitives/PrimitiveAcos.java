@@ -21,6 +21,10 @@ public class PrimitiveAcos extends Primitive {
     @Override
     public Object apply(SourcePos pos, Object[] arguments) {
         checkArgs(pos, arguments, 1, 1);
-        return Math.acos(toReal(arguments[0]));
+        if (arguments[0] instanceof Complex) return Complex.acos(arguments[0]);
+        double x = toReal(arguments[0]);
+        // outside [-1, 1]: the principal complex value
+        if (x < -1.0 || x > 1.0) return Complex.acos(x);
+        return Math.acos(x);
     }
 }

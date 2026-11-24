@@ -23,6 +23,6 @@ public class PrimitiveCharDowncase : Primitive
     public override object Apply(SourcePos? pos, object[] arguments)
     {
         CheckArgs(pos, arguments, 1, 1);
-        return Char.ToLower(Value.AsChar(arguments[0]), CultureInfo.InvariantCulture);
+        return UnicodeCaseMap.Downcase(Value.AsChar(arguments[0]));
     }
 }

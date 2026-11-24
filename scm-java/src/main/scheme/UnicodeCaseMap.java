@@ -66,11 +66,29 @@ public class UnicodeCaseMap {
                 case '\uFB04': sb.append("ffl"); break;
                 case '\uFB05': sb.append("st"); break;
                 case '\uFB06': sb.append("st"); break;
+                case '\u1E9E': sb.append("ss"); break;        // ẞ → ss
                 default:
-                    sb.append(Character.toLowerCase(c));
+                    sb.append(foldChar(c));
                     break;
             }
         }
         return sb.toString();
+    }
+
+    /**
+     * Simple case folding (CaseFolding.txt, status C and S): the lower case
+     * of the upper case, so that ς, ϐ, ſ, µ fold like σ, β, s, μ; İ and ı
+     * have no simple folding, Cherokee folds to its upper case.
+     */
+    public static char foldChar(char c) {
+        if (c < 0x80) return (c >= 'A' && c <= 'Z') ? (char) (c + 32) : c;
+        if (c == '\u0130' || c == '\u0131') return c;
+        // status S entries the JDK's case mappings do not give
+        if (c == '\u1FD3') return '\u0390';
+        if (c == '\u1FE3') return '\u03B0';
+        if (c == '\uFB05') return '\uFB06';
+        if ((c >= '\u13A0' && c <= '\u13FD') || (c >= '\uAB70' && c <= '\uABBF'))
+            return Character.toUpperCase(c);
+        return Character.toLowerCase(Character.toUpperCase(c));
     }
 }

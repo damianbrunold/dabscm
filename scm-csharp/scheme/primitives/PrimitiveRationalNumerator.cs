@@ -22,7 +22,7 @@ public class PrimitiveRationalNumerator : Primitive
         {
             double d = (double)arguments[0];
             if (!double.IsFinite(d))
-                throw new SchemeError(pos, "numerator: not a rational number: " + d);
+                throw new SchemeError(pos, "numerator: not a rational number: ~s", d);
             return DoubleNumerator(d);
         }
         throw new SchemeError(pos, "numerator: not a rational number: ~s", arguments[0]);
@@ -54,6 +54,7 @@ public class PrimitiveRationalNumerator : Primitive
             n = mant | (1L << 52);
             shift = 1023 + 52 - biasedExp;
         }
+        if (n == 0) return (d, 1.0);   // 0.0 = 0/1 (-0.0 keeps its sign)
         if (shift <= 0)
         {
             // integer-valued double
@@ -65,7 +66,7 @@ public class PrimitiveRationalNumerator : Primitive
         n >>= reduce;
         shift -= reduce;
         double num = negative ? -(double)n : (double)n;
-        double den = shift <= 62 ? (double)(1L << shift) : double.PositiveInfinity;
+        double den = Math.ScaleB(1.0, shift);   // +inf.0 beyond the double range
         return (num, den);
     }
 

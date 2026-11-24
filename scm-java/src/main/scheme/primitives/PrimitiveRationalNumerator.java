@@ -23,7 +23,7 @@ public class PrimitiveRationalNumerator extends Primitive {
         if (Value.isReal(arguments[0])) {
             double d = (double) arguments[0];
             if (!Double.isFinite(d))
-                throw new SchemeError(pos, "numerator: not a rational number: " + d);
+                throw new SchemeError(pos, "numerator: not a rational number: ~s", d);
             return doubleNumerator(d);
         }
         throw new SchemeError(pos, "numerator: not a rational number: ~s", arguments[0]);
@@ -34,38 +34,14 @@ public class PrimitiveRationalNumerator extends Primitive {
         return doubleToReducedParts(d)[0];
     }
 
+    // The numerator and denominator of the exact value of d, as doubles.
     static double[] doubleToReducedParts(double d) {
-        boolean negative = d < 0;
-        double absD = Math.abs(d);
-        long bits = Double.doubleToLongBits(absD);
-        long mant = bits & 0x000FFFFFFFFFFFFFL;
-        int biasedExp = (int) ((bits >> 52) & 0x7FFL);
-        long n;
-        int shift;
-        if (biasedExp == 0) {
-            n = mant;
-            shift = 1074;
-        } else {
-            n = mant | (1L << 52);
-            shift = 1023 + 52 - biasedExp;
+        if (d == 0.0) return new double[] { d, 1.0 };
+        Object x = Complex.toExact(d);
+        if (Value.isRational(x)) {
+            Rational q = Value.asRational(x);
+            return new double[] { IntegerMath.toDouble(q.numerator), IntegerMath.toDouble(q.denominator) };
         }
-        if (shift <= 0) {
-            double numD = negative ? -absD : absD;
-            return new double[]{numD, 1.0};
-        }
-        int tz = trailingZeros64(n);
-        int reduce = Math.min(tz, shift);
-        n >>= reduce;
-        shift -= reduce;
-        double num = negative ? -(double) n : (double) n;
-        double den = shift <= 62 ? (double) (1L << shift) : Double.POSITIVE_INFINITY;
-        return new double[]{num, den};
-    }
-
-    private static int trailingZeros64(long n) {
-        if (n == 0) return 64;
-        int count = 0;
-        while ((n & 1L) == 0) { n >>= 1; count++; }
-        return count;
+        return new double[] { d, 1.0 };
     }
 }

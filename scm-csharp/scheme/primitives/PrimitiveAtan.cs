@@ -21,7 +21,7 @@ public class PrimitiveAtan : Primitive
     public override object Apply(SourcePos? pos, object[] arguments)
     {
         CheckArgs(pos, arguments, 1, 2);
-        if (arguments.Length == 1) return Math.Atan(ToReal(arguments[0]));
-        else return Math.Atan2(ToReal(arguments[0]), ToReal(arguments[1]));
+        if (arguments.Length == 1) return ComplexMath.Atan(arguments[0]);
+        return Math.Atan2(ComplexMath.Real(arguments[0]), ComplexMath.Real(arguments[1]));
     }
 }

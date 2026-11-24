@@ -31,11 +31,14 @@ public class PrimitiveNumberToString extends Primitive {
         int base = 10;
         if (arguments.length == 2) base = IntegerMath.toInt(arguments[1]);
         if (Value.isComplex(arguments[0])) {
-            return Value.asComplex(arguments[0]).toString().toCharArray();
+            return Value.asComplex(arguments[0]).toString(base).toCharArray();
         } else if (Value.isInteger(arguments[0])) {
             return IntegerMath.toBigInteger(arguments[0]).toString(base).toCharArray();
         } else if (Value.isRational(arguments[0])) {
-            return Value.asRational(arguments[0]).toString().toCharArray();
+            Rational q = Value.asRational(arguments[0]);
+            if (base == 10) return q.toString().toCharArray();
+            return (IntegerMath.toBigInteger(q.numerator).toString(base) + "/"
+                    + IntegerMath.toBigInteger(q.denominator).toString(base)).toCharArray();
         } else if (Value.isReal(arguments[0])) {
             return Value.formatDouble(Value.asReal(arguments[0])).toCharArray();
         }

@@ -42,7 +42,7 @@ fn charMapD(comptime f: fn (u21) u21) P.Prim {
 }
 pub const @"%char-alphabetic?" = charPredD(chars.isAlphabetic);
 pub const @"%char-numeric?" = charPredD(chars.isDigit);
-pub const @"%char-whitespace?" = charPredD(chars.isWhitespace);
+pub const @"%char-whitespace?" = charPredD(chars.isWhiteSpaceProperty);
 pub const @"%char-upper-case?" = charPredD(chars.isUpper);
 pub const @"%char-lower-case?" = charPredD(chars.isLower);
 pub const @"%char-upcase" = charMapD(chars.upcase);
@@ -110,7 +110,7 @@ fn specialCase(cp: u21, comptime mode: CaseMode) ?[]const u21 {
             else => null,
         },
         .fold => switch (cp) {
-            0xDF => &.{ 's', 's' },
+            0xDF, 0x1E9E => &.{ 's', 's' },
             0x130 => &.{ 'i', 0x307 },
             0xFB00 => &.{ 'f', 'f' },
             0xFB01 => &.{ 'f', 'i' },
@@ -320,14 +320,30 @@ pub const @"%bytevector-append" = WN("bytevector-append", bytevectorAppend, 0, a
 
 // --- transcendental functions (flonum results) -------------------------------------
 
-fn floatFnD(comptime f: fn (f64) f64, comptime who: []const u8) P.Prim {
+const tower = num.tower;
+const C = tower.C;
+
+/// A function of one argument: f on a real in its domain (dom), else the
+/// complex function cf (a non-real argument, or a real outside the domain)
+fn floatFnD(comptime f: fn (f64) f64, comptime cf: fn (C) C, comptime dom: fn (f64) bool, comptime who: []const u8) P.Prim {
     const S = struct {
         fn g(t: *Thread) Err!Word {
-            const x = num.toF(try P.numArg(t, who ++ ": not a number", 0)).?;
-            return rt.safeFlo(t, f(x));
+            const w = try P.numArg(t, who ++ ": not a number", 0);
+            if (!tower.isComp(w)) {
+                const x = num.toF(w).?;
+                if (dom(x)) return rt.safeFlo(t, f(x));
+            }
+            return cf(C.of(w)).word(t);
         }
     };
     return P.WD(who, S.g, 1, 1);
+}
+fn anyReal(_: f64) bool {
+    return true;
+}
+/// asin and acos are real on [-1, 1] (and NaN)
+fn unitInterval(x: f64) bool {
+    return !(x < -1.0 or x > 1.0);
 }
 fn fsin(x: f64) f64 {
     return @sin(x);
@@ -344,32 +360,51 @@ fn fasin(x: f64) f64 {
 fn facos(x: f64) f64 {
     return std.math.acos(x);
 }
-fn flog(x: f64) f64 {
-    return @log(x);
+pub const @"%sin" = floatFnD(fsin, C.sin, anyReal, "sin");
+pub const @"%cos" = floatFnD(fcos, C.cos, anyReal, "cos");
+pub const @"%tan" = floatFnD(ftan, C.tan, anyReal, "tan");
+pub const @"%asin" = floatFnD(fasin, C.asin, unitInterval, "asin");
+pub const @"%acos" = floatFnD(facos, C.acos, unitInterval, "acos");
+
+/// The natural logarithm: real for a non-negative real (log 0 is -inf.0),
+/// else ln|z| + i angle z (a negative real, -0.0 too: ln|x| + pi i)
+pub fn logOf(w: Word) C {
+    if (!tower.isComp(w)) {
+        const x = num.toF(w).?;
+        if (!std.math.signbit(x) or std.math.isNan(x)) return .{ .re = @log(x), .im = 0 };
+        return .{ .re = @log(-x), .im = std.math.pi };
+    }
+    return C.log(C.of(w));
 }
-pub const @"%sin" = floatFnD(fsin, "sin");
-pub const @"%cos" = floatFnD(fcos, "cos");
-pub const @"%tan" = floatFnD(ftan, "tan");
-pub const @"%asin" = floatFnD(fasin, "asin");
-pub const @"%acos" = floatFnD(facos, "acos");
+fn isRealLog(w: Word) bool {
+    if (tower.isComp(w)) return false;
+    const x = num.toF(w).?;
+    return !std.math.signbit(x) or std.math.isNan(x);
+}
 
 fn logImpl(t: *Thread) Err!Word {
-    const x = num.toF(try P.numArg(t, "log: not a number", 0)).?;
+    const z = try P.numArg(t, "log: not a number", 0);
     if (t.argc == 2) {
-        const b = num.toF(try P.numArg(t, "log: not a number", 1)).?;
-        return rt.safeFlo(t, @log(x) / @log(b));
+        const b = try P.numArg(t, "log: not a number", 1);
+        if (isRealLog(z) and isRealLog(b)) return rt.safeFlo(t, logOf(z).re / logOf(b).re);
+        return C.div(logOf(z), logOf(b)).word(t);
     }
-    return rt.safeFlo(t, @log(x));
+    if (isRealLog(z)) return rt.safeFlo(t, logOf(z).re);
+    return logOf(z).word(t);
 }
 pub const @"%log" = WD("log", logImpl, 1, 2);
 
 fn atanImpl(t: *Thread) Err!Word {
-    const y = num.toF(try P.numArg(t, "atan: not a number", 0)).?;
     if (t.argc == 2) {
-        const x = num.toF(try P.numArg(t, "atan: not a number", 1)).?;
-        return rt.safeFlo(t, std.math.atan2(y, x));
+        const yw = try P.numArg(t, "atan: not a number", 0);
+        const xw = try P.numArg(t, "atan: not a number", 1);
+        if (tower.isComp(yw)) return raise(t, "Failed in atan: wrong argument type", &.{yw});
+        if (tower.isComp(xw)) return raise(t, "Failed in atan: wrong argument type", &.{xw});
+        return rt.safeFlo(t, std.math.atan2(num.toF(yw).?, num.toF(xw).?));
     }
-    return rt.safeFlo(t, std.math.atan(y));
+    const w = try P.numArg(t, "atan: not a number", 0);
+    if (!tower.isComp(w)) return rt.safeFlo(t, std.math.atan(num.toF(w).?));
+    return C.atan(C.of(w)).word(t);
 }
 pub const @"%atan" = WD("atan", atanImpl, 1, 2);
 

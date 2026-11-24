@@ -21,6 +21,10 @@ public class PrimitiveAsin extends Primitive {
     @Override
     public Object apply(SourcePos pos, Object[] arguments) {
         checkArgs(pos, arguments, 1, 1);
-        return Math.asin(toReal(arguments[0]));
+        if (arguments[0] instanceof Complex) return Complex.asin(arguments[0]);
+        double x = toReal(arguments[0]);
+        // outside [-1, 1]: the principal complex value
+        if (x < -1.0 || x > 1.0) return Complex.asin(x);
+        return Math.asin(x);
     }
 }
