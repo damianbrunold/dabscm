@@ -261,6 +261,11 @@
   (test-equal "-11.0-2.0i" (w (expt 1+2i 3.0)))
   (test-equal "-0.12-0.16i" (w (expt 1+2i -2.0))))
 
+(test-group "infinities and NaNs in any radix"
+  (test-equal "(+inf.0 -inf.0 +nan.0 0.0+inf.0i 1.0+inf.0i 1.0-inf.0i 1.0+nan.0i)"
+              (w (read-string-datum* "#x+inf.0 #b-inf.0 #o+nan.0 #x+inf.0i #x1+inf.0i #b1-inf.0i #x1+nan.0i")))
+  (test-equal 'error (read-string-datum* "#e#x+inf.0")))
+
 (test-group "complex exp with a zero imaginary part"
   (test-equal "+inf.0+0.0i" (w (exp (make-rectangular +inf.0 0.0)))))
 

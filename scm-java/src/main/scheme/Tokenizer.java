@@ -798,14 +798,13 @@ public class Tokenizer {
             c = in.peek();
             if (isDelimiterOrEnd(c))
                 return new Token((forceExact ? "#e" : forceInexact ? "#i" : "") + "0|" + (sign < 0 ? "-1" : "1"), TokenType.COMPLEX, pos);
-            if (radix != 10)
-                throw new SchemeError(pos, new ReadErrorObject("tokenizer: expected digits in number", new Object[0]));
             readI = true;
         }
 
         // Check for +inf.0, -inf.0, +nan.0 (they need their sign: #inan.0
         // is no number)
-        if (signed && radix == 10 && (readI || c == 'i' || c == 'I' || c == 'n' || c == 'N')) {
+        // in any radix (R7RS <real R> includes <infnan>: #x+inf.0)
+        if (signed && (readI || c == 'i' || c == 'I' || c == 'n' || c == 'N')) {
             StringBuilder special = new StringBuilder();
             special.append(sign < 0 ? '-' : '+');
             if (readI) special.append('i');
@@ -823,6 +822,12 @@ public class Tokenizer {
                 if (forceExact)
                     throw new SchemeError(pos, new ReadErrorObject("tokenizer: #e applied to non-finite number", new Object[0]));
                 return new Token("+nan.0", TokenType.REAL, pos);
+            }
+            // a pure imaginary +inf.0i ... -nan.0i
+            if (s.length() == 7 && s.endsWith("i") && (s.startsWith("inf.0", 1) || s.startsWith("nan.0", 1))) {
+                if (forceExact)
+                    throw new SchemeError(pos, new ReadErrorObject("tokenizer: #e applied to non-finite number", new Object[0]));
+                return new Token("0|" + s.substring(0, 6), TokenType.COMPLEX, pos);
             }
             throw new SchemeError(pos, new ReadErrorObject("tokenizer: invalid number: " + special, new Object[0]));
         }

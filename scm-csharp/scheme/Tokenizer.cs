@@ -1146,8 +1146,24 @@ public class Tokenizer
         int sign = reader.Peek();
         reader.Read();
         int c = reader.Peek();
-        if (c == 'i' || c == 'I')
-            imag = (char)sign + "1";
+        if (c == 'i' || c == 'I' || c == 'n' || c == 'N')
+        {
+            // +i, or an infinite or NaN imaginary part (#x1+inf.0i)
+            var w = new StringBuilder();
+            while (c != -1 && "infINFnanNAN.0".IndexOf((char)c) >= 0)
+            {
+                w.Append((char)c);
+                reader.Read();
+                c = reader.Peek();
+            }
+            string word = w.ToString().ToLowerInvariant();
+            if (word == "i") imag = (char)sign + "1";
+            else if (word == "inf.0i" || word == "nan.0i") imag = (char)sign + word.Substring(0, 5);
+            else throw new SchemeError(pos, new ReadErrorObject("tokenizer: invalid complex number", Array.Empty<object>()));
+            if (!IsDelimiterOrEnd(c))
+                throw new SchemeError(pos, new ReadErrorObject("tokenizer: invalid complex number", Array.Empty<object>()));
+            return ComplexToken(realPart, imag, pos);
+        }
         else if (IsDigitInRadix((char)c, radix))
         {
             Token t = ReadPrefixedNumber(reader, radix, false, false, pos);
@@ -1213,13 +1229,12 @@ public class Tokenizer
             c = reader.Peek();
             if (IsDelimiterOrEnd(c))
                 return new Token((forceExact ? "#e" : forceInexact ? "#i" : "") + "0|" + (sign < 0 ? "-1" : "1"), TokenType.COMPLEX, pos);
-            if (radix != 10)
-                throw new SchemeError(pos, new ReadErrorObject("tokenizer: expected digits in number", Array.Empty<object>()));
             readI = true;
         }
 
         // Check for +inf.0, -inf.0, +nan.0 (after sign; "#inan.0" is no number)
-        if (radix == 10 && (readI || c == 'i' || c == 'I' || c == 'n' || c == 'N'))
+        // in any radix (R7RS <real R> includes <infnan>: #x+inf.0)
+        if ((signed || radix == 10) && (readI || c == 'i' || c == 'I' || c == 'n' || c == 'N'))
         {
             if (!signed) throw InvalidNumber(pos);
             StringBuilder special = new StringBuilder();
@@ -1241,6 +1256,13 @@ public class Tokenizer
                 if (forceExact)
                     throw new SchemeError(pos, new ReadErrorObject("tokenizer: #e applied to non-finite number", Array.Empty<object>()));
                 return new Token("+nan.0", TokenType.REAL, pos);
+            }
+            // a pure imaginary +inf.0i ... -nan.0i
+            if (s.Length == 7 && s.EndsWith("i") && (s.Substring(1, 5) == "inf.0" || s.Substring(1, 5) == "nan.0"))
+            {
+                if (forceExact)
+                    throw new SchemeError(pos, new ReadErrorObject("tokenizer: #e applied to non-finite number", Array.Empty<object>()));
+                return new Token("0|" + s.Substring(0, 6), TokenType.COMPLEX, pos);
             }
             throw new SchemeError(pos, new ReadErrorObject("tokenizer: invalid number: " + special, Array.Empty<object>()));
         }
