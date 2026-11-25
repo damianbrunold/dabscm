@@ -54,6 +54,42 @@
             (error (string-append name
                                   ": native command not found on PATH")))))
 
+    ;; GNU tar takes an archive name with a colon (C:/x.tar on Windows) as
+    ;; host:path of a remote archive unless given --force-local; bsdtar
+    ;; (Windows' tar.exe, macOS) has no such option. Cached per tar path.
+    (define %gnu-tar-cache '())
+
+    (define (%gnu-tar? native)
+      (let ((hit (assoc native %gnu-tar-cache)))
+        (if hit
+            (cdr hit)
+            (let* ((r (guard (e (#t #f))
+                        (run-program/capture (list native "--version"))))
+                   (gnu? (and (pair? r)
+                              (zero? (car r))
+                              (%contains? (cadr r) "GNU tar"))))
+              (set! %gnu-tar-cache (cons (cons native gnu?) %gnu-tar-cache))
+              gnu?))))
+
+    (define (%contains? s sub)
+      (let ((n (string-length s)) (m (string-length sub)))
+        (let loop ((i 0))
+          (and (<= (+ i m) n)
+               (or (string=? (substring s i (+ i m)) sub) (loop (+ i 1)))))))
+
+    ;; the native tar command line: bundled flags (e.g. "czf"), the archive
+    ;; and the member paths. GNU tar on Windows (MSYS, Cygwin) cannot stat
+    ;; members written with backslashes, so it gets forward slashes.
+    (define (%tar-command native flags archive paths)
+      (if (%gnu-tar? native)
+          (let ((fix (if (eq? (sys-platform) 'windows)
+                         (lambda (p)
+                           (string-map (lambda (c) (if (char=? c #\\) #\/ c)) p))
+                         (lambda (p) p))))
+            (append (list native "--force-local" (string-append "-" flags) (fix archive))
+                    (map fix paths)))
+          (append (list native flags archive) paths)))
+
     (define (tar-create archive paths . opts)
       "Syntax: (tar-create archive paths [option ...])
 Library: (scm archive)
@@ -84,7 +120,7 @@ Example:
                                  (ext-bz? "j")
                                  (else ""))
                            "f"))
-                   (cmd-list (append (list native flags archive) paths))
+                   (cmd-list (%tar-command native flags archive paths))
                    (r (if work-dir
                           (run-program/capture
                            cmd-list
@@ -123,7 +159,7 @@ Example:
                                  (ext-bz? "j")
                                  (else ""))
                            "f"))
-                   (cmd-list (list native flags archive))
+                   (cmd-list (%tar-command native flags archive '()))
                    (r (if work-dir
                           (run-program/capture
                            cmd-list
@@ -159,7 +195,7 @@ Example:
                                  (ext-bz? "j")
                                  (else ""))
                            "f"))
-                   (r (run-program/capture (list native flags archive))))
+                   (r (run-program/capture (%tar-command native flags archive '()))))
               (if (and (pair? r) (zero? (car r))) (split-lines (cadr r)) '()))
             (if (%needs-native-compression? archive opts)
                 (error

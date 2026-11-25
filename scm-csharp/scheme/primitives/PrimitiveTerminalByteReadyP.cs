@@ -17,6 +17,19 @@ public class PrimitiveTerminalByteReadyP : Primitive
 
     private const short POLLIN = 0x0001;
 
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern nint GetStdHandle(int nStdHandle);
+
+    [DllImport("kernel32.dll")]
+    private static extern uint GetFileType(nint hFile);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool PeekNamedPipe(nint hNamedPipe, nint lpBuffer, uint nBufferSize,
+        nint lpBytesRead, out uint lpTotalBytesAvail, nint lpBytesLeftThisMessage);
+
+    private const int STD_INPUT_HANDLE = -10;
+    private const uint FILE_TYPE_PIPE = 3;
+
     public override string Name()
     {
         return "terminal-byte-ready?";
@@ -73,6 +86,21 @@ public class PrimitiveTerminalByteReadyP : Primitive
                     Thread.Sleep(3);
                 }
                 return (object)true;
+            }
+            // Console.In.Peek() blocks on a pipe until data or EOF arrives
+            // (an idle pipe from a parent process hangs forever), so poll the
+            // pipe like Java's available(); a closed pipe reads EOF at once
+            var h = GetStdHandle(STD_INPUT_HANDLE);
+            if (GetFileType(h) == FILE_TYPE_PIPE)
+            {
+                var deadline = Environment.TickCount64 + timeout;
+                while (true)
+                {
+                    if (!PeekNamedPipe(h, 0, 0, 0, out uint avail, 0)) return (object)true;
+                    if (avail > 0) return (object)true;
+                    if (Environment.TickCount64 >= deadline) return (object)false;
+                    Thread.Sleep(3);
+                }
             }
             return (object)(Console.In.Peek() != -1);
         }

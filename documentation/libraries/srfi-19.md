@@ -560,7 +560,8 @@ Description: Like time-tai->time-utc, but may modify and return time.
 ```
 Syntax: (time-utc->date time [tz-offset])
 Library: (srfi 19)
-Description: Converts a time-utc to a date. If tz-offset is not given, the local timezone is used.
+Description: Converts a time-utc to a date. If tz-offset is not given, the
+  local timezone's offset at that time is used, so DST is taken into account.
 Example:
   (date-year (time-utc->date (make-time time-utc 0 946684800) 0)) => 2000
 ```

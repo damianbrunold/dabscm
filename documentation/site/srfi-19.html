@@ -570,7 +570,8 @@ Description: Like time-tai-&gt;time-utc, but may modify and return time.</pre>
   <div class="entry-name">time-utc-&gt;date</div>
   <pre class="entry-doc">Syntax: (time-utc-&gt;date time [tz-offset])
 Library: (srfi 19)
-Description: Converts a time-utc to a date. If tz-offset is not given, the local timezone is used.
+Description: Converts a time-utc to a date. If tz-offset is not given, the
+  local timezone's offset at that time is used, so DST is taken into account.
 Example:
   (date-year (time-utc-&gt;date (make-time time-utc 0 946684800) 0)) =&gt; 2000</pre>
 </div>

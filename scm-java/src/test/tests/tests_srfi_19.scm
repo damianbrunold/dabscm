@@ -1,6 +1,7 @@
 (import (scheme base)
         (srfi 18)
         (srfi 19)
+        (only (scm datetime) timestamp->string)
         (scm test))
 
 (test-runner-factory scm-test-runner)
@@ -257,6 +258,20 @@
               (let* ((t (make-time time-utc 0 946684800))
                      (d (time-utc->date t 3600))) ;; UTC+1
                 (list (date-hour d) (date-zone-offset d)))))
+
+;; without tz-offset, the local offset at the converted time is used (not
+;; the current one), so times on both sides of a DST change are right;
+;; timestamp->string formats in local time with the offset at that time
+(test-group "time-utc->date local offset at that time"
+  (for-each
+   (lambda (secs) ;; 2021-01-15 and 2021-07-15, 12:00 UTC
+     (let ((d (time-utc->date (make-time time-utc 0 secs))))
+       (test-equal (timestamp->string (* secs 1000) "yyyy-MM-dd HH:mm")
+                   (date->string d "~Y-~m-~d ~H:~M"))
+       (test-equal secs (time-second (date->time-utc d)))
+       (test-equal (date-zone-offset d)
+                   (date-zone-offset (julian-day->date (date->julian-day d))))))
+   '(1610712000 1626350400)))
 
 ;; date->time-utc->date round-trip
 (test-group "date->time-utc->date round-trip"

@@ -52,7 +52,8 @@
   (test-equal #t (glob-match? "[abc]" "b"))
   (test-equal #f (glob-match? "[abc]" "d"))
   (test-equal #t (glob-match? "[a-z]" "m"))
-  (test-equal #f (glob-match? "[a-z]" "A"))
+  ;; on Windows matching ignores case, elsewhere it is exact
+  (test-equal (string=? path-sep "\\") (glob-match? "[a-z]" "A"))
   (test-equal #t (glob-match? "[a-zA-Z]" "A"))
   (test-equal #t (glob-match? "[!abc]" "d"))
   (test-equal #f (glob-match? "[!abc]" "a"))

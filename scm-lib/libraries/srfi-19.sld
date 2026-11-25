@@ -639,10 +639,11 @@ Example:
     (define (time-utc->date t . args)
       "Syntax: (time-utc->date time [tz-offset])
 Library: (srfi 19)
-Description: Converts a time-utc to a date. If tz-offset is not given, the local timezone is used.
+Description: Converts a time-utc to a date. If tz-offset is not given, the
+  local timezone's offset at that time is used, so DST is taken into account.
 Example:
   (date-year (time-utc->date (make-time time-utc 0 946684800) 0)) => 2000"
-      (let ((tz-offset (if (null? args) (%local-tz-offset) (car args))))
+      (let ((tz-offset (if (null? args) (%local-tz-offset (time-second t)) (car args))))
         (%time-utc->date-components (time-second t)
                                     (time-nanosecond t)
                                     tz-offset)))
@@ -654,11 +655,11 @@ Description: Converts a time-tai to a date. Correctly handles leap seconds
   by producing date-second = 60 when the TAI time falls on a leap second.
 Example:
   (date? (time-tai->date (time-utc->time-tai (current-time)))) => #t"
-      (let* ((tz-offset (if (null? args) (%local-tz-offset) (car args)))
-             (tai-second (time-second t))
+      (let* ((tai-second (time-second t))
              (tai-offset (%tai->utc-offset tai-second))
              (utc-second (- tai-second tai-offset))
-             (utc-offset (%utc->tai-offset utc-second)))
+             (utc-offset (%utc->tai-offset utc-second))
+             (tz-offset (if (null? args) (%local-tz-offset utc-second) (car args))))
         (if (> utc-offset tai-offset)
             ;; This TAI second is a leap second: display as second=60
             (let
@@ -750,8 +751,7 @@ Library: (srfi 19)
 Description: Converts a Julian Day to a date.
 Example:
   (date-year (julian-day->date 2451545 0)) => 2000"
-      (let ((tz-offset (if (null? args) (%local-tz-offset) (car args))))
-        (time-utc->date (%jd->time-utc jd) tz-offset)))
+      (apply time-utc->date (%jd->time-utc jd) args))
 
     (define (%time->jd t)
       ;; Use inexact for nanosecond contribution to avoid integer overflow
@@ -831,8 +831,7 @@ Library: (srfi 19)
 Description: Returns the current date. If tz-offset is not given, the local timezone is used.
 Example:
   (date? (current-date)) => #t"
-      (let ((tz-offset (if (null? args) (%local-tz-offset) (car args))))
-        (time-utc->date (current-time time-utc) tz-offset)))
+      (apply time-utc->date (current-time time-utc) args))
 
     (define (current-julian-day)
       "Syntax: (current-julian-day)

@@ -297,10 +297,11 @@ fn nowMs() i64 {
     return @intCast(@divFloor(os.clockNs(.real), 1_000_000));
 }
 
-fn localTzOffset(_: *Thread) Err!Word {
-    return fix(os.localOffset(@divFloor(nowMs(), 1000)));
+fn localTzOffset(t: *Thread) Err!Word {
+    const secs = if (t.argc > 0) try intArg(t, 0) else @divFloor(nowMs(), 1000);
+    return fix(os.localOffset(secs));
 }
-pub const @"%%local-tz-offset" = WD("%local-tz-offset", localTzOffset, 0, 0);
+pub const @"%%local-tz-offset" = WD("%local-tz-offset", localTzOffset, 0, 1);
 
 fn timestamp(_: *Thread) Err!Word {
     return fix(nowMs());
