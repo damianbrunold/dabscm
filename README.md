@@ -45,6 +45,11 @@ The build system is Scheme-based: `builder.sh` (or `builder.bat`) runs
 ./builder.sh test-scm-java.scm
 ./builder.sh build-and-test-scm-java.scm
 
+# Native: scmc and scm in scm-native/build (needs Zig 0.17.1)
+./builder.sh build-scm-native.scm           # compiler on scm-java/scm.jar
+./builder.sh build-scm-native.scm --native  # compiler is the native scmc already built
+./builder.sh build-scm-native.scm scmc      # only scmc (or scm); also --strip, -O mode
+
 # Update documentation (needs an up-to-date scm-java/scm.jar)
 ./builder.sh update-documentation.scm
 
