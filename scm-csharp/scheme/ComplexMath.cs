@@ -37,6 +37,8 @@ public static class ComplexMath
         if (z is not Complex) return Math.Exp(Real(z));
         Parts(z, out double x, out double y);
         double ex = Math.Exp(x);
+        // a zero imaginary part stays (exp +inf.0+0.0i is +inf.0+0.0i, not NaN)
+        if (y == 0.0) return Make(ex, y);
         return Make(ex * Math.Cos(y), ex * Math.Sin(y));
     }
 

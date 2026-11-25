@@ -134,9 +134,11 @@ fn intDivision(t: *Thread, comptime who: []const u8, comptime kind: tower.DivKin
         // implementation): a zero result is 0.0, never -0.0
         const x = num.toF(a).?;
         const y = num.toF(b).?;
-        if (@abs(x) < 4.0e18 and @abs(y) < 4.0e18) {
-            const p: i64 = @intFromFloat(x);
-            const q: i64 = @intFromFloat(y);
+        // an exact fixnum as it is (not through a double: 2^53 and beyond
+        // round)
+        if ((rt.isFix(a) or @abs(x) < 4.0e18) and (rt.isFix(b) or @abs(y) < 4.0e18)) {
+            const p: i64 = if (rt.isFix(a)) rt.unfix(a) else @intFromFloat(x);
+            const q: i64 = if (rt.isFix(b)) rt.unfix(b) else @intFromFloat(y);
             const r: i64 = switch (kind) {
                 .trunc => if (which == 0) @divTrunc(p, q) else @rem(p, q),
                 .floor => if (which == 0) @divFloor(p, q) else @mod(p, q),

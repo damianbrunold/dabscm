@@ -206,7 +206,16 @@ pub fn parseNumber(text0: []const u8, default_radix: u8) ?Lit {
     var text = text0;
     var radix = default_radix;
     var exactness: u8 = 0; // 'e', 'i' or 0
+    var radix_seen = false;
     while (text.len >= 2 and text[0] == '#') {
+        // at most one radix and one exactness prefix
+        switch (std.ascii.toLower(text[1])) {
+            'x', 'b', 'o', 'd' => if (radix_seen) return null else {
+                radix_seen = true;
+            },
+            'e', 'i' => if (exactness != 0) return null,
+            else => {},
+        }
         switch (std.ascii.toLower(text[1])) {
             'x' => radix = 16,
             'b' => radix = 2,

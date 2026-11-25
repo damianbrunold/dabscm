@@ -217,8 +217,15 @@
   (test-equal "(|.lf#tl|)" (w (read-string-datum* ".lf#tl")))
   (test-equal "(#\\#)" (w (read-string-datum* "#\\#;")))
   (test-equal "(x |y z|)" (w (read-string-datum* "x|y z|")))
+  (test-equal "(|+.E12| |-.fe3| |+.e|)" (w (read-string-datum* "+.E12 -.fe3 +.e")))
+  (test-equal "(5000.0 500.0)" (w (read-string-datum* "5.e3 +.5e3")))
+  (test-equal "(() '|1'|)" (w (read-string-datum* "(#!fold-case)'1'")))
+  (test-equal "((a b))" (w (read-string-datum* "(a #!fold-case B)")))
+  (test-equal "(16 16)" (w (read-string-datum* "#x#e10 #e#x10")))
+  (test-equal '(#f #f) (map string->number '("#x#xb" "#e#e1")))
   (for-each (lambda (s) (test-equal s 'error (read-string-datum* s)))
-            '("'" "`" "," ",@" "#;" "#!fold-case#e")))
+            '("'" "`" "," ",@" "#;" "#!fold-case#e" "1e+x" "1.5E+\xe9;" "#x#xb" "#e#e1"
+              "#12#" "(#1# #2=b)")))
 
 (test-group "characters and strings"
   (test-equal #\x3c3 (char-foldcase #\x3c2))
@@ -234,5 +241,17 @@
   (test-error (substring "" 1 1))
   (test-error (substring "abc" 2 1))
   (test-equal "" (substring "abc" 3 3)))
+
+(test-group "+i and -i in any radix"
+  (test-equal "(0-1i 0+1i 0.0-1.0i 0-1i)" (w (read-string-datum* "#b-i #x+i #i-i #o-I")))
+  (test-equal "(0-1i 0+1i)" (w (map string->number '("#b-i" "#x+i"))))
+  (test-equal 'error (read-string-datum* "#b+i1")))
+
+(test-group "integer division of an exact integer beyond 2^53 by an inexact one"
+  (test-equal 2.0 (modulo -97543732255733218 3.0))
+  (test-equal -1.0 (remainder -97543732255733218 3.0)))
+
+(test-group "complex exp with a zero imaginary part"
+  (test-equal "+inf.0+0.0i" (w (exp (make-rectangular +inf.0 0.0)))))
 
 (test-end "r7rs-conformance")

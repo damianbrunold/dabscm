@@ -164,7 +164,8 @@ public class Tokenizer {
                 case 11: // real
                     if ('0' <= ch && ch <= '9') {
                         token.append(ch);
-                    } else if (isExponentMarker(ch)) {
+                    } else if (isExponentMarker(ch) && !(token.length() == 2 && token.charAt(1) == '.' && (token.charAt(0) == '+' || token.charAt(0) == '-'))) {
+                        // (+.e1 and -.f2 are identifiers: R7RS's <sign> . <dot subsequent>)
                         token.append(ch);
                         state = 14; // exponent
                     } else {
@@ -790,11 +791,24 @@ public class Tokenizer {
         if (c == '+') { in.read(); sign = 1; signed = true; c = in.peek(); }
         else if (c == '-') { in.read(); sign = -1; signed = true; c = in.peek(); }
 
+        // +i and -i, in any radix (R7RS <complex R>: + i | - i)
+        boolean readI = false;
+        if (signed && (c == 'i' || c == 'I')) {
+            in.read();
+            c = in.peek();
+            if (isDelimiterOrEnd(c))
+                return new Token((forceExact ? "#e" : forceInexact ? "#i" : "") + "0|" + (sign < 0 ? "-1" : "1"), TokenType.COMPLEX, pos);
+            if (radix != 10)
+                throw new SchemeError(pos, new ReadErrorObject("tokenizer: expected digits in number", new Object[0]));
+            readI = true;
+        }
+
         // Check for +inf.0, -inf.0, +nan.0 (they need their sign: #inan.0
         // is no number)
-        if (signed && radix == 10 && (c == 'i' || c == 'I' || c == 'n' || c == 'N')) {
+        if (signed && radix == 10 && (readI || c == 'i' || c == 'I' || c == 'n' || c == 'N')) {
             StringBuilder special = new StringBuilder();
             special.append(sign < 0 ? '-' : '+');
+            if (readI) special.append('i');
             while (c != -1 && "infINFnanNAN.0".indexOf((char) c) >= 0) {
                 special.append((char) c);
                 in.read();

@@ -61,6 +61,8 @@ pub const Reader = struct {
     /// read-data: datum labels are rejected
     no_labels: bool = false,
     prefix: []const u8 = "",
+    /// a #! directive skipAtmosphere read that is not a comment
+    pending: ?[]u8 = null,
 
     pub const default_max_depth = 10000;
 
@@ -98,6 +100,12 @@ pub const Reader = struct {
                 } else if (d == ';') {
                     _ = r.next();
                     if (try r.datum() == .eof) return r.fail("end of file after #;");
+                } else if (d == '!') {
+                    // #!fold-case and #!no-fold-case are comments (also
+                    // before a close parenthesis), as a script's #! line;
+                    // another directive is left for datum in r.pending (the
+                    // port may have dropped the bytes read)
+                    if (!r.skipDirective()) return;
                 } else {
                     r.port.pos = save;
                     return;
@@ -146,8 +154,49 @@ pub const Reader = struct {
         buf.appendSlice(na(), tmp[0..n]) catch rt.oom();
     }
 
+    /// After #: a #! line or #!fold-case / #!no-fold-case (true), else
+    /// another directive, left in r.pending. Not inlined, as datum and
+    /// list recurse through skipAtmosphere: a larger frame lowers the
+    /// nesting the machine stack holds below max_depth.
+    noinline fn skipDirective(r: *Reader) bool {
+        _ = r.next();
+        if (r.peek() == '/' or r.peek() == ' ') {
+            while (r.next()) |e| if (e == '\n') break;
+            return true;
+        }
+        const tok = r.token('!');
+        if (std.ascii.eqlIgnoreCase(tok, "!fold-case")) {
+            r.fold_case = true;
+        } else if (std.ascii.eqlIgnoreCase(tok, "!no-fold-case")) {
+            r.fold_case = false;
+        } else {
+            r.pending = tok;
+            return false;
+        }
+        return true;
+    }
+
+    /// A #! directive other than #!fold-case and #!no-fold-case (not
+    /// inlined, as skipDirective)
+    noinline fn directive(r: *Reader, tok: []const u8) Error!Node {
+        if (tok.len == 1) return r.fail("bad #! syntax");
+        // a fold-case directive followed by a non-delimiter (as the JVM
+        // implementation)
+        if (std.ascii.startsWithIgnoreCase(tok, "!fold-case") or std.ascii.startsWithIgnoreCase(tok, "!no-fold-case"))
+            return r.fail(std.fmt.allocPrint(pa, "tokenizer: unknown directive: #{s}", .{tok}) catch rt.oom());
+        if (std.mem.eql(u8, tok, "!eof")) return .{ .word = rt.EOF };
+        if (std.mem.eql(u8, tok, "!default")) return .{ .word = rt.DEFAULT };
+        if (std.mem.eql(u8, tok, "!unspecific")) return .{ .word = rt.UNSPEC };
+        // other directives are skipped
+        return r.datum();
+    }
+
     pub fn datum(r: *Reader) Error!Node {
         try r.skipAtmosphere();
+        if (r.pending) |tok| {
+            r.pending = null;
+            return r.directive(tok);
+        }
         const c = r.next() orelse return .eof;
         switch (c) {
             '(', '[' => return r.list(if (c == '(') ')' else ']'),
@@ -206,24 +255,27 @@ pub const Reader = struct {
         var items: std.ArrayList(Node) = .empty;
         while (true) {
             try r.skipAtmosphere();
-            const c = r.peek() orelse return r.fail("end of file in list");
-            if (c == close) {
-                _ = r.next();
-                return .{ .list = .{ .items = items.items, .tail = null } };
-            }
-            if (c == ')' or c == ']') return r.fail("mismatched close parenthesis");
-            if (c == '.') {
-                const save = r.port.pos;
-                _ = r.next();
-                if (r.peek() == null or isDelimiter(r.peek().?)) {
-                    if (items.items.len == 0) return r.fail("dot at the start of a list");
-                    const tail = na().create(Node) catch rt.oom();
-                    tail.* = try r.datum();
-                    try r.skipAtmosphere();
-                    if (r.next() != close) return r.fail("expected one datum after dot");
-                    return .{ .list = .{ .items = items.items, .tail = tail } };
+            // a directive (r.pending) is a datum
+            if (r.pending == null) {
+                const c = r.peek() orelse return r.fail("end of file in list");
+                if (c == close) {
+                    _ = r.next();
+                    return .{ .list = .{ .items = items.items, .tail = null } };
                 }
-                r.port.pos = save;
+                if (c == ')' or c == ']') return r.fail("mismatched close parenthesis");
+                if (c == '.') {
+                    const save = r.port.pos;
+                    _ = r.next();
+                    if (r.peek() == null or isDelimiter(r.peek().?)) {
+                        if (items.items.len == 0) return r.fail("dot at the start of a list");
+                        const tail = na().create(Node) catch rt.oom();
+                        tail.* = try r.datum();
+                        try r.skipAtmosphere();
+                        if (r.pending != null or r.next() != close) return r.fail("expected one datum after dot");
+                        return .{ .list = .{ .items = items.items, .tail = tail } };
+                    }
+                    r.port.pos = save;
+                }
             }
             const d = try r.datum();
             if (d == .eof) return r.fail("end of file in list");
@@ -379,23 +431,8 @@ pub const Reader = struct {
                 return r.quoted("unsyntax");
             },
             '!' => {
-                _ = r.next();
-                if (r.peek() == '/' or r.peek() == ' ') {
-                    // a script's #! line
-                    while (r.next()) |d| if (d == '\n') break;
-                    return r.datum();
-                }
-                r.port.pos -= 1;
-                const tok = r.token(null);
-                if (tok.len == 1) return r.fail("bad #! syntax");
-                // a fold-case directive followed by a non-delimiter (as the
-                // JVM implementation)
-                // (and in any case: #!FOLD-CASE)
-                if ((std.ascii.startsWithIgnoreCase(tok, "!fold-case") and tok.len > "!fold-case".len) or
-                    (std.ascii.startsWithIgnoreCase(tok, "!no-fold-case") and tok.len > "!no-fold-case".len))
-                    return r.fail(std.fmt.allocPrint(pa, "tokenizer: unknown directive: #{s}", .{tok}) catch rt.oom());
-                if (std.ascii.eqlIgnoreCase(tok, "!fold-case")) r.fold_case = true else if (std.ascii.eqlIgnoreCase(tok, "!no-fold-case")) r.fold_case = false else if (std.mem.eql(u8, tok, "!eof")) return .{ .word = rt.EOF } else if (std.mem.eql(u8, tok, "!default")) return .{ .word = rt.DEFAULT } else if (std.mem.eql(u8, tok, "!unspecific")) return .{ .word = rt.UNSPEC };
-                return r.datum();
+                // skipAtmosphere reads every #! (a directive: r.pending)
+                unreachable;
             },
             else => {
                 const tok = r.token('#');
@@ -508,11 +545,12 @@ fn jvmNumberScan(tok: []const u8) Scan {
             11 => switch (c) {
                 '0'...'9' => {},
                 else => {
+                    // +. -. followed by anything: an identifier (+.e1 too)
+                    if (i == 2 and signed) return .whole;
                     if (isExponentMarker(c)) {
                         state = 14;
                         continue;
                     }
-                    if (i == 2 and signed) return .whole; // +. -.
                     return switch (c) {
                         '+', '-', '@' => complexOrError(tok),
                         'i', 'I' => .whole,
@@ -526,8 +564,11 @@ fn jvmNumberScan(tok: []const u8) Scan {
             },
             15 => switch (c) {
                 '0'...'9' => {},
-                '+', '-', '@' => return complexOrError(tok),
-                else => return .{ .prefix = i },
+                // 1e+x: a sign without exponent digits
+                else => if (tok[i - 1] == '+' or tok[i - 1] == '-') return .{ .err = "tokenizer: malformed exponent" } else switch (c) {
+                    '+', '-', '@' => return complexOrError(tok),
+                    else => return .{ .prefix = i },
+                },
             },
             12 => switch (c) {
                 '0'...'9' => state = 11,
@@ -567,8 +608,22 @@ fn prefixedError(tok: []const u8) ?[]const u8 {
     var body = tok;
     var radix: u8 = 10;
     var exact = false;
+    // the kind of the first prefix: 'r' radix, 'x' exactness
+    var first_kind: u8 = 0;
     while (body.len >= 2 and body[0] == '#') {
-        switch (std.ascii.toLower(body[1])) {
+        const c = body[1];
+        const kind: u8 = switch (std.ascii.toLower(c)) {
+            'x', 'b', 'o', 'd' => 'r',
+            'e', 'i' => 'x',
+            else => 0,
+        };
+        // a second prefix must be of the other kind (the JVM's messages)
+        if (first_kind == 'r' and kind != 'x')
+            return std.fmt.allocPrint(pa, "tokenizer: expected #e or #i exactness prefix, got #{c}", .{c}) catch rt.oom();
+        if (first_kind == 'x' and kind != 'r')
+            return std.fmt.allocPrint(pa, "tokenizer: unknown radix prefix: {c}", .{c}) catch rt.oom();
+        if (first_kind != 0 and body.len > 2 and body[2] == '#') return "tokenizer: expected digits in number";
+        switch (std.ascii.toLower(c)) {
             'x' => radix = 16,
             'b' => radix = 2,
             'o' => radix = 8,
@@ -577,6 +632,7 @@ fn prefixedError(tok: []const u8) ?[]const u8 {
             'i' => {},
             else => return null,
         }
+        if (first_kind == 0) first_kind = kind;
         body = body[2..];
     }
     if (body.len == tok.len) return null;
@@ -655,10 +711,16 @@ fn words(n: Node) usize {
 }
 
 threadlocal var label_values: std.AutoHashMapUnmanaged(u64, Word) = .empty;
+/// a datum label reference was built / one had no definition
+threadlocal var label_refs = false;
+threadlocal var label_undefined = false;
 
 /// Replace the placeholders in w (a tree before patching) by the labels
 fn patch(w: Word) Word {
-    if (isPlaceholder(w)) return label_values.get(w >> 16) orelse rt.UNSPEC;
+    if (isPlaceholder(w)) return label_values.get(w >> 16) orelse blk: {
+        label_undefined = true;
+        break :blk rt.UNSPEC;
+    };
     if (rt.isPair(w)) {
         var p = w;
         while (true) {
@@ -718,7 +780,10 @@ fn build(t: *Thread, n: Node) Word {
             label_values.put(pa, l.n, w) catch rt.oom();
             break :blk w;
         },
-        .label_ref => |label| placeholder(label),
+        .label_ref => |label| blk: {
+            label_refs = true;
+            break :blk placeholder(label);
+        },
     };
 }
 
@@ -744,8 +809,16 @@ fn readWith(t: *Thread, r0: Reader) ?Word {
     defer resetNodes();
     t.reserve(words(node));
     label_values.clearRetainingCapacity();
+    label_refs = false;
+    label_undefined = false;
     const w = build(t, node);
-    return if (label_values.count() > 0) patch(w) else w;
+    if (!label_refs) return w;
+    const p = patch(w);
+    if (label_undefined) {
+        _ = rt.failKind(t, rt.ErrorKind.read, if (r.prefix.len > 0) "read-data: undefined datum label" else "read: undefined datum label", &.{});
+        return null;
+    }
+    return p;
 }
 
 fn containsIgnoreCase(hay: []const u8, needle: []const u8) bool {

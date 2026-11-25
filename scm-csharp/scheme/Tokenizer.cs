@@ -315,6 +315,11 @@ public class Tokenizer
                     {
                         token.Append(ch);
                     }
+                    else if (!char.IsDigit(token[token.Length - 1]))
+                    {
+                        // 1e+ without exponent digits
+                        throw new SchemeError(pos, new ReadErrorObject("tokenizer: malformed exponent", Array.Empty<object>()));
+                    }
                     else if (ch == '+' || ch == '-')
                     {
                         return ReadComplexImaginary(reader, token.ToString(), pos);
@@ -1200,12 +1205,26 @@ public class Tokenizer
         if (c == '+') { reader.Read(); sign = 1; c = reader.Peek(); }
         else if (c == '-') { reader.Read(); sign = -1; c = reader.Peek(); }
 
+        // +i and -i, in any radix (R7RS <complex R>: + i | - i)
+        bool readI = false;
+        if (signed && (c == 'i' || c == 'I'))
+        {
+            reader.Read();
+            c = reader.Peek();
+            if (IsDelimiterOrEnd(c))
+                return new Token((forceExact ? "#e" : forceInexact ? "#i" : "") + "0|" + (sign < 0 ? "-1" : "1"), TokenType.COMPLEX, pos);
+            if (radix != 10)
+                throw new SchemeError(pos, new ReadErrorObject("tokenizer: expected digits in number", Array.Empty<object>()));
+            readI = true;
+        }
+
         // Check for +inf.0, -inf.0, +nan.0 (after sign; "#inan.0" is no number)
-        if (radix == 10 && (c == 'i' || c == 'I' || c == 'n' || c == 'N'))
+        if (radix == 10 && (readI || c == 'i' || c == 'I' || c == 'n' || c == 'N'))
         {
             if (!signed) throw InvalidNumber(pos);
             StringBuilder special = new StringBuilder();
             special.Append(sign < 0 ? '-' : '+');
+            if (readI) special.Append('i');
             while (c != -1 && "infINFnanNAN.0".IndexOf((char)c) >= 0)
             {
                 special.Append((char)c);
