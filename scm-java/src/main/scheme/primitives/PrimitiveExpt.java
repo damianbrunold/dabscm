@@ -54,6 +54,23 @@ public class PrimitiveExpt extends Primitive {
             }
             return b > 0 ? r : Complex.div(1L, r);
         }
+        // a complex number to an inexact integral power: repeated squaring,
+        // as to an exact integer power ((expt z 2.0) is (expt z 2) made
+        // inexact; the polar form loses the last digits)
+        if (z1 instanceof Complex && z2 instanceof Double) {
+            double y = (Double) z2;
+            if (y != 0 && Math.rint(y) == y && Math.abs(y) < 9.0e15) {
+                Complex c1 = (Complex) z1;
+                Object sq = Complex.create(Complex.toInexact(c1.real), Complex.toInexact(c1.imag)), r = 1L;
+                long e = (long) Math.abs(y);
+                while (e != 0) {
+                    if ((e & 1) != 0) r = Complex.mul(r, sq);
+                    e >>= 1;
+                    if (e != 0) sq = Complex.mul(sq, sq);
+                }
+                return y > 0 ? r : Complex.div(1L, r);
+            }
+        }
         boolean inexact = !Complex.isExact(z1) && !isExactComplex(z1) || !Complex.isExact(z2) && !isExactComplex(z2);
         if (isZero(z1)) {
             if (isZero(z2)) return 1.0;

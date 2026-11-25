@@ -876,7 +876,7 @@ public class Tokenizer {
             if (digits.length() == 0 && fracDigits.length() == 0)
                 throw new SchemeError(pos, new ReadErrorObject("tokenizer: invalid number", new Object[0]));
             String numStr = (sign < 0 ? "-" : "") + digits + "." + (fracDigits.length() > 0 ? fracDigits.toString() : "0");
-            if ((c == 'e' || c == 'E') && radix == 10) {
+            if (isExponentMarker(c) && radix == 10) { // any marker (#e1f2 as 1f2)
                 numStr += 'e';
                 in.read(); c = in.peek();
                 if (c == '+' || c == '-') { numStr += (char) c; in.read(); c = in.peek(); }
@@ -891,7 +891,7 @@ public class Tokenizer {
             return new Token(Double.toString(dval), TokenType.REAL, pos);
         }
 
-        if ((c == 'e' || c == 'E') && radix == 10) {
+        if (isExponentMarker(c) && radix == 10) { // any marker (#e1f2 as 1f2)
             String numStr = (sign < 0 ? "-" : "") + digits + 'e';
             in.read(); c = in.peek();
             if (c == '+' || c == '-') { numStr += (char) c; in.read(); c = in.peek(); }

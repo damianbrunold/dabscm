@@ -581,7 +581,7 @@ pub fn fromText(t: *Thread, text: []const u8, radix: u8) ?Word {
         if (intSign(d) == 0) return null;
         return makeRational(t, n, d);
     }
-    if (std.mem.indexOfAny(u8, text, ".eE") != null and radix == 10) {
+    if (std.mem.indexOfAny(u8, text, ".eEsSfFdDlL") != null and radix == 10) {
         // #e with a decimal: digits * 10^exp exactly
         return exactDecimal(t, text);
     }
@@ -611,7 +611,8 @@ fn exactDecimal(t: *Thread, text: []const u8) ?Word {
                 digits.append(pa, c) catch oom();
                 if (seen_dot) scale += 1;
             },
-            'e', 'E' => {
+            // any exponent marker (#e1f2 is 100, as 1f2 is 100.0)
+            'e', 'E', 's', 'S', 'f', 'F', 'd', 'D', 'l', 'L' => {
                 exp = std.fmt.parseInt(i64, text[i + 1 ..], 10) catch return null;
                 break;
             },

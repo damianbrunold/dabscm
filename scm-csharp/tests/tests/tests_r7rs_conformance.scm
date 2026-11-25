@@ -251,6 +251,16 @@
   (test-equal 2.0 (modulo -97543732255733218 3.0))
   (test-equal -1.0 (remainder -97543732255733218 3.0)))
 
+(test-group "exponent markers after a prefix"
+  (test-equal "(100 120 100.0 150)" (w (read-string-datum* "#e1f2 #e12s1 #i1d2 #e1.5f2")))
+  (test-equal (expt 10 113) (/ (read (open-input-string "#e10f112")) 1))
+  (test-equal 'error (read-string-datum* "-9/i")))
+
+(test-group "a complex number to an inexact integral power"
+  (test-equal "8.3125-9.75i" (w (expt (make-rectangular -3.25 1.5) 2.0)))
+  (test-equal "-11.0-2.0i" (w (expt 1+2i 3.0)))
+  (test-equal "-0.12-0.16i" (w (expt 1+2i -2.0))))
+
 (test-group "complex exp with a zero imaginary part"
   (test-equal "+inf.0+0.0i" (w (exp (make-rectangular +inf.0 0.0)))))
 

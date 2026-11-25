@@ -419,6 +419,20 @@ fn exptImpl(t: *Thread) Err!Word {
         if (x < 0 and y != @round(y) and !std.math.isInf(y)) return C.pow(C.of(b), C.of(e)).word(t);
         return flo(t, tower.fpow(x, y));
     }
+    // a complex number to an inexact integral power: repeated squaring, as
+    // to an exact integer power ((expt z 2.0) is (expt z 2) made inexact;
+    // the polar form loses the last digits)
+    if (tower.isComp(b) and rt.isFlonum(e)) {
+        const y = rt.flo(e);
+        if (y != 0 and @round(y) == y and @abs(y) < 9.0e15) {
+            const re = num.toF(tower.realPart(b)).?;
+            const im = num.toF(tower.imagPart(b)).?;
+            const z = tower.makeRect(t, flo(t, re), flo(t, im));
+            const n = fix(@intFromFloat(@abs(y)));
+            const r = exptBySquaring(t, z, n);
+            return if (y > 0) r else divide(t, fix(1), r);
+        }
+    }
     // (exp z) is (expt E z)
     if (rt.isFlonum(b) and rt.flo(b) == std.math.e) return C.exp(C.of(e)).word(t);
     return C.pow(C.of(b), C.of(e)).word(t);

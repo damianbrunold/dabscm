@@ -158,6 +158,11 @@ public static class ComplexMath
             if (a < 0 && b != Math.Round(b) && !double.IsInfinity(b)) return Pow(a, 0.0, b, 0.0);
             return Math.Pow(a, b);
         }
+        // a complex number to an inexact integral power: repeated squaring,
+        // as to an exact integer power ((expt z 2.0) is (expt z 2) made
+        // inexact; the polar form loses the last digits)
+        if (z1 is Complex && z2 is double y && y != 0 && Math.Round(y) == y && Math.Abs(y) < 9.0e15)
+            return ExptInteger(Complex.Create(Complex.ToInexact(((Complex)z1).Real), Complex.ToInexact(((Complex)z1).Imag)), (long)y);
         // (exp z) is (expt E z)
         if (z1 is double e && e == Math.E) return Exp(z2);
         Parts(z1, out double ar, out double ai);

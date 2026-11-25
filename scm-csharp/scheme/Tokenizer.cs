@@ -1305,7 +1305,7 @@ public class Tokenizer
             if (digits.Length == 0 && fracDigits.Length == 0) throw InvalidNumber(pos);
             string numStr = (sign < 0 ? "-" : "") + digits + "." + (fracDigits.Length > 0 ? fracDigits.ToString() : "0");
             // Check for exponent
-            if ((c == 'e' || c == 'E') && radix == 10)
+            if (IsExponentMarker(c) && radix == 10) // any marker (#e1f2 as 1f2)
             {
                 numStr += 'e';
                 reader.Read(); c = reader.Peek();
@@ -1321,7 +1321,7 @@ public class Tokenizer
         }
 
         // Exponent on integer (decimal only)
-        if ((c == 'e' || c == 'E') && radix == 10)
+        if (IsExponentMarker(c) && radix == 10) // any marker (#e1f2 as 1f2)
         {
             string numStr = (sign < 0 ? "-" : "") + digits + 'e';
             reader.Read(); c = reader.Peek();

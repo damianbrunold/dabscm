@@ -539,7 +539,9 @@ fn jvmNumberScan(tok: []const u8) Scan {
             13 => switch (c) {
                 '0'...'9' => {},
                 '+', '-', '@' => return complexOrError(tok),
-                'i', 'I' => return .whole,
+                // -9/i: an imaginary part without a denominator (9/i is a
+                // symbol, as on the JVM)
+                'i', 'I' => return if (signed and tok[i - 1] == '/') .{ .err = "tokenizer: invalid number" } else .whole,
                 else => return .{ .prefix = i },
             },
             11 => switch (c) {
