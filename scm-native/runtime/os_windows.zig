@@ -377,6 +377,19 @@ var pending: [8]u8 = undefined;
 var pending_pos: usize = 0;
 var pending_len: usize = 0;
 
+/// A key press that stands for NUL: Ctrl+Space, Ctrl+@ or Ctrl+2 give an
+/// event with character 0 (with VT input, key code '@' and Ctrl), as do
+/// presses of modifier and lock keys alone, which are not NUL
+fn isNulKey(k: KeyEvent) bool {
+    const LEFT_CTRL_PRESSED = 0x0008;
+    const RIGHT_CTRL_PRESSED = 0x0004;
+    if (k.char != 0 or (k.state & (LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED)) == 0) return false;
+    return switch (k.key_code) {
+        0x20, 0x32, 0x40, 0xC0 => true, // space, 2, @ (VT input), ` (some layouts)
+        else => false,
+    };
+}
+
 /// A byte from the console (null at the end); error.NotConsole when standard
 /// input is not a console
 pub fn consoleReadByte() error{NotConsole}!?u8 {
@@ -387,8 +400,16 @@ pub fn consoleReadByte() error{NotConsole}!?u8 {
     const h = stdHandle(STD_INPUT_HANDLE) orelse return error.NotConsole;
     var mode: DWORD = 0;
     if (k32.GetConsoleMode(h, &mode) == 0) return error.NotConsole;
-    var units: [2]u16 = undefined;
     var n: DWORD = 0;
+    // Ctrl+Space (NUL): an event without a character, which ReadConsoleW skips
+    var rec: [1]InputRecord = undefined;
+    if (k32.PeekConsoleInputW(h, &rec, 1, &n) != 0 and n == 1 and rec[0].kind == KEY_EVENT and
+        rec[0].event.key.down != 0 and rec[0].event.key.char == 0 and isNulKey(rec[0].event.key))
+    {
+        _ = k32.ReadConsoleInputW(h, &rec, 1, &n);
+        return 0;
+    }
+    var units: [2]u16 = undefined;
     if (k32.ReadConsoleW(h, &units, 1, &n, null) == 0 or n == 0) return null;
     var len: usize = 1;
     // a high surrogate: its partner follows
@@ -424,7 +445,8 @@ pub fn byteReady(timeout_ms: i64) bool {
         var n: DWORD = 0;
         if (k32.PeekConsoleInputW(h, &rec, 1, &n) == 0) return false;
         if (n == 0) continue;
-        if (rec[0].kind == KEY_EVENT and rec[0].event.key.down != 0 and rec[0].event.key.char != 0) return true;
+        if (rec[0].kind == KEY_EVENT and rec[0].event.key.down != 0 and
+            (rec[0].event.key.char != 0 or isNulKey(rec[0].event.key))) return true;
         _ = k32.ReadConsoleInputW(h, &rec, 1, &n);
     }
 }
