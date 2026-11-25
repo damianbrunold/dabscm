@@ -1,5 +1,7 @@
 (import (scheme base)
+        (scheme file)
         (scheme read)
+        (scm fs)
         (scm io)
         (scm source)
         (scm test))
@@ -133,5 +135,24 @@
     (test-equal '(p:first p:cdr) (map import-binding-name bs))
     (test-equal '(car cdr) (map import-binding-original-name bs))
     (test-equal '(scheme base) (import-binding-library (car bs)))))
+
+(test-group "tools-config finds the scm-tools.toml of a parent directory"
+  ;; absolute-path separates with \ on Windows
+  (let* ((base (mktempdir '(prefix . "scmsrc-test")))
+         (deep (join-path (join-path base "a") "b")))
+    (make-directory (join-path base "a"))
+    (make-directory deep)
+    (call-with-output-file (join-path base "scm-tools.toml")
+      (lambda (p) (write-string "[lint]\nwidth = 66\n" p)))
+    (test-equal 66
+                (tools-config-ref (tools-config (absolute-path (join-path deep "x.sld")))
+                                  '("lint" "width")
+                                  78))
+    ;; a name the file system rejects (* on Windows) is no directory
+    (test-equal 66
+                (tools-config-ref (tools-config (join-path deep "*scratch*"))
+                                  '("lint" "width")
+                                  78))
+    (rm base 'recursive)))
 
 (test-end "scm source")

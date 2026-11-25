@@ -667,14 +667,28 @@ Example:
 
     (define config-cache '())
 
+    (define (path-separator? c) (or (char=? c #\/) (char=? c #\\)))
+
+    (define (root-length dir)
+      ;; the length of an absolute path's root: 1 for / (or \), 3 for a
+      ;; Windows drive C:\ or C:/, 0 for a relative path
+      (cond ((and (>= (string-length dir) 3)
+                  (char-alphabetic? (string-ref dir 0))
+                  (char=? (string-ref dir 1) #\:)
+                  (path-separator? (string-ref dir 2)))
+             3)
+            ((and (> (string-length dir) 0) (path-separator? (string-ref dir 0))) 1)
+            (else 0)))
+
     (define (parent-directory dir)
-      (let loop ((k (- (string-length dir) 1)))
-        (cond ((< k 0) #f)
-              ((char=? (string-ref dir k) #\/)
-               (if (= k 0)
-                   (if (string=? dir "/") #f "/")
-                   (substring dir 0 k)))
-              (else (loop (- k 1))))))
+      ;; the directory above dir, #f at the root; separators are / and \
+      ;; (absolute-path gives \ on Windows)
+      (let ((root (root-length dir)))
+        (and (> (string-length dir) root)
+             (let loop ((k (- (string-length dir) 1)))
+               (cond ((< k root) (and (> root 0) (substring dir 0 root)))
+                     ((path-separator? (string-ref dir k)) (substring dir 0 (max k root)))
+                     (else (loop (- k 1))))))))
 
     (define (tools-config path)
       "Syntax: (tools-config path)
@@ -703,7 +717,9 @@ Example:
                           (cdr cached))
                   (else (let
                             ((file (string-append
-                                    (if (string=? dir "/") "" dir)
+                                    (if (= (string-length dir) (root-length dir))
+                                        (substring dir 0 (- (string-length dir) 1))
+                                        dir)
                                     "/scm-tools.toml")))
                           (if (file-exists? file)
                               (let

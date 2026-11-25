@@ -1,6 +1,7 @@
 package scheme.primitives;
 
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 
 import scheme.*;
 
@@ -24,6 +25,12 @@ public class PrimitiveDirectoryExists extends Primitive {
     public Object apply(SourcePos pos, Object[] arguments) {
         checkArgs(pos, arguments, 1, 1);
         var dir = new String(Value.asString(arguments[0]));
-        return Files.isDirectory(LongPath.of(dir)) ? Value.T : Value.F;
+        try {
+            return Files.isDirectory(LongPath.of(dir)) ? Value.T : Value.F;
+        } catch (InvalidPathException e) {
+            // a name the filesystem rejects (e.g. * on Windows) names no
+            // directory, as with file-exists? and .NET's Directory.Exists
+            return Value.F;
+        }
     }
 }
