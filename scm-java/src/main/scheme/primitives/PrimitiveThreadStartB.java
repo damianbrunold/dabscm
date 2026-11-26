@@ -2,6 +2,8 @@ package scheme.primitives;
 import scheme.*;
 
 public class PrimitiveThreadStartB extends Primitive {
+    private static final String OOM_MESSAGE = "out of memory: raise the JVM heap (-Xmx)";
+
     @Override
     public String name() { return "thread-start!"; }
 
@@ -44,6 +46,13 @@ public class PrimitiveThreadStartB extends Primitive {
                 t.originalError = e;
             } catch (Exception e) {
                 t.exception = e.getMessage();
+            } catch (OutOfMemoryError e) {
+                // the VM could not even raise it as a Scheme error:
+                // thread-join! raises instead of returning as if the
+                // thunk had run (a constant, nothing to allocate)
+                t.exception = OOM_MESSAGE;
+            } catch (Error e) {
+                t.exception = e.toString();
             } finally {
                 t.state = SchemeThread.State.TERMINATED;
             }

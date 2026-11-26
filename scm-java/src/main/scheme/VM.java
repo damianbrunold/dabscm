@@ -416,6 +416,7 @@ public class VM {
     // Continuation.
     static final CodeList CONTINUATION_CODE = new CodeList();
     static {
+        MemoryReserve.init();
         CONTINUATION_CODE.add(new Instruction(Opcode.ARGMV));
         CONTINUATION_CODE.add(new Instruction(Opcode.LVAR, 1, 0));
         CONTINUATION_CODE.add(new Instruction(Opcode.SETCC));
@@ -1234,6 +1235,20 @@ public class VM {
             Instruction at = fn != null && ip > 0 && ip <= fn.codeArr.length ? fn.codeArr[ip - 1] : null;
             pending = new SchemeError(at != null ? at.pos : null,
                 new ErrorObject("stack overflow: data or recursion nested too deeply", new Object[0]));
+        } catch (OutOfMemoryError oom) {
+            // The heap is exhausted: a Scheme error that guard can catch
+            // (a job runner marks the job failed and goes on), not a
+            // silently dead thread. The released reserve gives the
+            // handler room while the failed computation's data is still
+            // reachable; after the guard returns it is garbage. Should the
+            // error itself not fit, the Error escapes as before.
+            MemoryReserve.release();
+            Instruction at = fn != null && ip > 0 && ip <= fn.codeArr.length ? fn.codeArr[ip - 1] : null;
+            String what = oom.getMessage();
+            pending = new SchemeError(at != null ? at.pos : null,
+                new ErrorObject(what != null
+                    ? "out of memory (" + what + "): raise the JVM heap (-Xmx)"
+                    : MemoryReserve.MESSAGE, new Object[0]));
         } catch (FrameCapture fc) {
             if (!act.root) {
                 if (fc.last != act) fc.add(Arrays.copyOfRange(stackArr, act.base + 1, sp), act);

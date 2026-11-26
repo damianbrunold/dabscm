@@ -542,3 +542,24 @@
     (call-with-values (lambda () (apply values xs))
       (lambda all (length all))))
   (=> (same-n 150 (lambda () (args-and-values 1 2 3))) 3))
+
+;; Running out of memory is a Scheme error that guard catches (a job
+;; runner can fail the job and go on), also inside a thread, where
+;; thread-join! raises it instead of returning as if the thunk had run.
+;; The vector is just above .NET's array size limit and near the JVM's,
+;; so it fails at once without allocating, whatever the heap size.
+(test-group (import (srfi 18))
+  (define (caught thunk)
+    (guard (e ((uncaught-exception? e) 'caught)
+              ((error-object? e) 'caught)
+              (#t (list 'raised e)))
+      (thunk)
+      'no-error))
+  (define (huge) (make-vector 2147483600 0))
+  (=> (caught huge) 'caught)
+  (=> (caught huge) 'caught)
+  (=> (caught (lambda ()
+                (let ((t (make-thread huge)))
+                  (thread-start! t)
+                  (thread-join! t))))
+      'caught))

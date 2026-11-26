@@ -273,6 +273,8 @@ Example:
 Syntax: (thread-join! thread [timeout [timeout-val]])
 Library: (srfi 18)
 Description: Waits for thread to terminate. timeout can be a time object or number.
+An error in the thread, also running out of memory, is raised here as an
+uncaught exception (uncaught-exception-reason gives the error).
 Example:
   (thread-join! (thread-start! (make-thread (lambda () 42)))) => 42
 ```

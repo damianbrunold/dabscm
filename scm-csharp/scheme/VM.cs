@@ -1346,6 +1346,15 @@ public class VM
         {
             pending = CastError(fn, ip, e);
         }
+        catch (OutOfMemoryException oom)
+        {
+            // The heap is exhausted: a Scheme error that guard can catch,
+            // as in the JVM VM (see VM.java).
+            SourcePos? at = (fn != null && ip > 0 && ip - 1 < fn.codeArr.Length)
+                ? fn.codeArr[ip - 1].pos : null;
+            pending = new SchemeError(at, new ErrorObject(
+                "out of memory (" + oom.Message + ")", Array.Empty<object>()));
+        }
         catch (FrameCapture fc)
         {
             if (!act.root)
