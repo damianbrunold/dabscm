@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SRFI 19: time and dates — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html" class="active">SRFI 19: time and dates</a>
+    <a class="sub" href="#times">Times</a>
+    <a class="sub" href="#durations-and-differences">Durations and differences</a>
+    <a class="sub" href="#dates">Dates</a>
+    <a class="sub" href="#formatting">Formatting</a>
+    <a class="sub" href="#parsing">Parsing</a>
+    <a class="sub" href="#julian-days">Julian days</a>
+    <a class="sub" href="#example-a-meeting-across-time-zones">Example: a meeting across time zones</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">SRFI 19: time and dates</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="srfi-19-time-and-dates">SRFI 19: time and dates</h1>
+<p>SRFI 19 separates <em>times</em> (a point or a span, in seconds and nanoseconds) from <em>dates</em> (year, month, day, hour … in a time zone). The <a href="tutorial-techniques-07-dates.html">dates and times</a> chapter covers the everyday tasks; this one goes through the library.</p>
+<pre><code class="language-scheme">(import (scheme base) (srfi 19))</code></pre>
+<h2 id="times">Times</h2>
+<p>A time has a type, seconds and nanoseconds:</p>
+<pre><code class="language-scheme">(define t (make-time time-utc 500000000 1700000000))
+(time-type t)                         ;; =&gt; time-utc
+(time-second t)                       ;; =&gt; 1700000000
+(time-nanosecond t)                   ;; =&gt; 500000000
+(time? (current-time))                ;; =&gt; #t
+(eq? (time-type (current-time time-monotonic)) time-monotonic) ;; =&gt; #t</code></pre>
+<table>
+<thead>
+<tr><th>type</th><th>meaning</th></tr>
+</thead>
+<tbody>
+<tr><td><a class="xref" href="srfi-19.html#e66"><code>time-utc</code></a></td><td>seconds since 1970-01-01 UTC (wall clock)</td></tr>
+<tr><td><a class="xref" href="srfi-19.html#e56"><code>time-tai</code></a></td><td>atomic time, without leap-second jumps</td></tr>
+<tr><td><a class="xref" href="srfi-19.html#e44"><code>time-monotonic</code></a></td><td>for measuring intervals; never goes backwards</td></tr>
+<tr><td><a class="xref" href="srfi-19.html#e43"><code>time-duration</code></a></td><td>a span of time, not a point</td></tr>
+</tbody>
+</table>
+<h2 id="durations-and-differences">Durations and differences</h2>
+<pre><code class="language-scheme">(define start (make-time time-utc 0 1000))
+(define end (make-time time-utc 250000000 1090))
+(define d (time-difference end start))
+(time-type d)                         ;; =&gt; time-duration
+(time-second d)                       ;; =&gt; 90
+(time-nanosecond d)                   ;; =&gt; 250000000
+
+(define hour (make-time time-duration 0 3600))
+(time-second (add-duration start hour))      ;; =&gt; 4600
+(time-second (subtract-duration start hour)) ;; =&gt; -2600
+(time&lt;? start end)                    ;; =&gt; #t</code></pre>
+<h2 id="dates">Dates</h2>
+<p><a class="xref" href="srfi-19.html#e29"><code>make-date</code></a> takes nanoseconds, seconds, minutes, hours, day, month, year and the zone offset in seconds east of UTC:</p>
+<pre><code class="language-scheme">(define landing (make-date 0 17 56 20 20 7 1969 0))   ; UTC
+(date-year landing)                   ;; =&gt; 1969
+(date-hour landing)                   ;; =&gt; 20
+(date-week-day landing)               ;; =&gt; 0
+(date-year-day landing)               ;; =&gt; 201
+(date-zone-offset landing)            ;; =&gt; 0</code></pre>
+<p>Converting between times and dates, also into another zone:</p>
+<pre><code class="language-scheme">(define landing-utc (date-&gt;time-utc landing))
+(time-second landing-utc)             ;; =&gt; -14180623
+(define in-houston (time-utc-&gt;date landing-utc (* -5 3600)))
+(list (date-hour in-houston) (date-minute in-houston)) ;; =&gt; (15 56)</code></pre>
+<p>The same moment is 20:56 in UTC and 15:56 in Houston (UTC−5 in July 1969).</p>
+<h2 id="formatting">Formatting</h2>
+<p><a class="xref" href="srfi-19.html#e9"><code>date-&gt;string</code></a> uses <code>~</code> directives:</p>
+<pre><code class="language-scheme">(date-&gt;string landing "~Y-~m-~d")     ;; =&gt; "1969-07-20"
+(date-&gt;string landing "~H:~M:~S")     ;; =&gt; "20:56:17"
+(date-&gt;string landing "~A ~d ~B ~Y")  ;; =&gt; "Sunday 20 July 1969"
+(date-&gt;string landing "~a ~b ~e")     ;; =&gt; "Sun Jul 20"
+(date-&gt;string landing "~5")           ;; =&gt; "1969-07-20T20:56:17"
+(date-&gt;string landing "day ~j of the year") ;; =&gt; "day 201 of the year"</code></pre>
+<p>Common directives: <code>~Y</code> year, <code>~m</code> month, <code>~d</code> day, <code>~H</code> hour, <code>~M</code> minute, <code>~S</code> second, <code>~A</code>/<code>~a</code> weekday name, <code>~B</code>/<code>~b</code> month name, <code>~j</code> day of the year, <code>~z</code> zone offset, <code>~5</code> ISO 8601 date and time.</p>
+<h2 id="parsing">Parsing</h2>
+<p><a class="xref" href="srfi-19.html#e38"><code>string-&gt;date</code></a> reads a date with the same directives:</p>
+<pre><code class="language-scheme">(define d1 (string-&gt;date "2025-11-27 14:30" "~Y-~m-~d ~H:~M"))
+(list (date-year d1) (date-month d1) (date-day d1) (date-hour d1)) ;; =&gt; (2025 11 27 14)</code></pre>
+<h2 id="julian-days">Julian days</h2>
+<p>The Julian day number counts days since a fixed point in 4713 BC, which makes it the easy way to compute with calendar days:</p>
+<pre><code class="language-scheme">(define (jd y m d) (exact (round (date-&gt;julian-day (make-date 0 0 0 12 d m y 0)))))
+(jd 2000 1 1)                         ;; =&gt; 2451545
+(- (jd 2025 12 24) (jd 2025 1 1))     ;; =&gt; 357
+(date-&gt;string (julian-day-&gt;date 2451545 0) "~Y-~m-~d") ;; =&gt; "2000-01-01"</code></pre>
+<h2 id="example-a-meeting-across-time-zones">Example: a meeting across time zones</h2>
+<p>When is 09:00 in Zürich (UTC+1 in winter) in New York (UTC−5) and Tokyo (UTC+9)?</p>
+<pre><code class="language-scheme">(define zones '(("Zürich" . 3600) ("New York" . -18000) ("Tokyo" . 32400)))
+
+(define (meeting-times y m d hour minute home-offset)
+  (let ((t (date-&gt;time-utc (make-date 0 0 minute hour d m y home-offset))))
+    (map (lambda (z)
+           (cons (car z) (date-&gt;string (time-utc-&gt;date t (cdr z)) "~a ~H:~M")))
+         zones)))
+
+(meeting-times 2025 12 3 9 0 3600)
+;; =&gt; (("Zürich" . "Wed 09:00") ("New York" . "Wed 03:00") ("Tokyo" . "Wed 17:00"))</code></pre>
+<p>Fixed offsets ignore daylight saving time; for dates in summer, use the summer offsets.</p>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-techniques-07-dates.html">Dates and times</a> for ISO 8601 and durations.</li>
+<li>Reference: <a class="xref" href="srfi-19.html"><code>(srfi 19)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="srfi-19.html"><code>(srfi 19)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-srfi-18.html">&larr; SRFI 18: threads</a>
+  <a class="next" href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

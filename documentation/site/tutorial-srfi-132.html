@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SRFI 132 and 95: sorting — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html" class="active">SRFI 132 and 95: sorting</a>
+    <a class="sub" href="#lists-and-vectors">Lists and vectors</a>
+    <a class="sub" href="#stability">Stability</a>
+    <a class="sub" href="#merging">Merging</a>
+    <a class="sub" href="#removing-neighbouring-duplicates">Removing neighbouring duplicates</a>
+    <a class="sub" href="#order-statistics">Order statistics</a>
+    <a class="sub" href="#srfi-95-sequence-first-with-a-key">SRFI 95: sequence first, with a key</a>
+    <a class="sub" href="#example-a-leaderboard">Example: a leaderboard</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">SRFI 132 and 95: sorting</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="srfi-132-and-95-sorting">SRFI 132 and 95: sorting</h1>
+<p>SRFI 132 is the modern sort library: the comparison comes first, sorts are stable, and there are in-place variants and order statistics. SRFI 95 is the older interface with the sequence first and an optional key. The <a href="tutorial-techniques-05-sorting.html">sorting and searching</a> chapter shows the common patterns.</p>
+<pre><code class="language-scheme">(import (scheme base) (srfi 132) (only (srfi 95) sort merge sorted?))</code></pre>
+<h2 id="lists-and-vectors">Lists and vectors</h2>
+<pre><code class="language-scheme">(list-sort &lt; '(3 1 2))                    ;; =&gt; (1 2 3)
+(vector-sort &lt; #(3 1 2))                  ;; =&gt; #(1 2 3)
+(vector-sort &lt; #(5 4 3 2 1) 1 4)          ;; =&gt; #(2 3 4)
+(list-sorted? &lt; '(1 2 2 3))               ;; =&gt; #t
+(vector-sorted? &gt; #(3 2 1))               ;; =&gt; #t
+
+(define v (vector 4 2 5 1))
+(vector-sort! &lt; v)
+v                                         ;; =&gt; #(1 2 4 5)</code></pre>
+<p><a class="xref" href="srfi-132.html#e17"><code>vector-sort</code></a> with start and end sorts only that part (and returns only it). The <code>!</code> variants sort in place. All SRFI 132 procedures take the comparison first and the sequence second.</p>
+<h2 id="stability">Stability</h2>
+<p>Elements that compare equal keep their order. Sort people by age, and the ones of the same age stay in their original order:</p>
+<pre><code class="language-scheme">(define people '(("Ada" 36) ("Alan" 41) ("Grace" 36) ("Edsger" 41)))
+(map car (list-stable-sort (lambda (a b) (&lt; (cadr a) (cadr b))) people))
+;; =&gt; ("Ada" "Grace" "Alan" "Edsger")</code></pre>
+<p><a class="xref" href="srfi-132.html#e4"><code>list-sort</code></a> is stable too in dabscm; <a class="xref" href="srfi-132.html#e7"><code>list-stable-sort</code></a> says so explicitly.</p>
+<h2 id="merging">Merging</h2>
+<pre><code class="language-scheme">(list-merge &lt; '(1 4 7) '(2 3 8))          ;; =&gt; (1 2 3 4 7 8)
+(vector-merge &lt; #(1 5) #(2 3))            ;; =&gt; #(1 2 3 5)</code></pre>
+<p>Merging two sorted sequences takes one pass, much less than sorting their concatenation.</p>
+<h2 id="removing-neighbouring-duplicates">Removing neighbouring duplicates</h2>
+<pre><code class="language-scheme">(list-delete-neighbor-dups = '(1 1 2 3 3 3 1)) ;; =&gt; (1 2 3 1)
+(list-delete-neighbor-dups = (list-sort &lt; '(3 1 2 3 1))) ;; =&gt; (1 2 3)
+(vector-delete-neighbor-dups eq? #(a a b b a)) ;; =&gt; #(a b a)</code></pre>
+<p>Sorting first and then deleting neighbouring duplicates removes all duplicates in O(n log n).</p>
+<h2 id="order-statistics">Order statistics</h2>
+<p><a class="xref" href="srfi-132.html#e15"><code>vector-select!</code></a> finds the k-th smallest element without sorting the whole vector; <a class="xref" href="srfi-132.html#e11"><code>vector-find-median</code></a> finds the median:</p>
+<pre><code class="language-scheme">(vector-select! &lt; (vector 9 1 8 2 7 3) 0) ;; =&gt; 1
+(vector-select! &lt; (vector 9 1 8 2 7 3) 2) ;; =&gt; 3
+(vector-find-median &lt; #(9 1 8 2 7) 0)     ;; =&gt; 7
+(vector-find-median &lt; #(4 1 3 2) 0)       ;; =&gt; 5/2</code></pre>
+<p>For an even number of elements the median is the mean of the two middle ones (the last argument is returned for an empty vector).</p>
+<h2 id="srfi-95-sequence-first-with-a-key">SRFI 95: sequence first, with a key</h2>
+<pre><code class="language-scheme">(sort '(3 1 2) &lt;)                         ;; =&gt; (1 2 3)
+(sort '("ccc" "a" "bb") &lt; string-length)  ;; =&gt; ("a" "bb" "ccc")
+(merge '(1 3) '(2) &lt;)                     ;; =&gt; (1 2 3)
+(sorted? '(1 2 3) &lt;)                      ;; =&gt; #t</code></pre>
+<p>The key procedure is applied before comparing, so <code>(sort people &lt; cadr)</code> sorts by age without writing a comparison lambda.</p>
+<h2 id="example-a-leaderboard">Example: a leaderboard</h2>
+<p>Rank players by score, highest first, ties sharing a rank:</p>
+<pre><code class="language-scheme">(define scores '(("ada" . 970) ("alan" . 820) ("grace" . 970) ("edsger" . 640)))
+
+(define (ranking scores)
+  (let loop ((rest (list-sort (lambda (a b) (&gt; (cdr a) (cdr b))) scores))
+             (i 1) (rank 1) (prev #f) (acc '()))
+    (if (null? rest)
+        (reverse acc)
+        (let* ((s (cdar rest))
+               (r (if (and prev (= s prev)) rank i)))
+          (loop (cdr rest) (+ i 1) r s (cons (list r (caar rest) s) acc))))))
+
+(ranking scores)
+;; =&gt; ((1 "ada" 970) (1 "grace" 970) (3 "alan" 820) (4 "edsger" 640))</code></pre>
+<p>Because the sort is stable, "ada" stays ahead of "grace", who has the same score, as in the input.</p>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>.</li>
+<li>Reference: <a class="xref" href="srfi-132.html"><code>(srfi 132)</code></a>, <a class="xref" href="srfi-95.html"><code>(srfi 95)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="srfi-132.html"><code>(srfi 132)</code></a>, <a href="srfi-95.html"><code>(srfi 95)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-srfi-125.html">&larr; SRFI 125 and 128: comparators and hash tables</a>
+  <a class="next" href="tutorial-srfi-133.html">SRFI 133: vectors &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

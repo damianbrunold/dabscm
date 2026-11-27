@@ -59,7 +59,7 @@
 
 <div class="lib-title srfi">(srfi 132)</div>
 <p class="lib-sub">SRFI-132 — Sort libraries: list/vector sort, merge, select, median</p>
-<p class="lib-tutorials">Tutorials: <a href="tutorial-basics-08-records.html">Records</a>, <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a></p>
+<p class="lib-tutorials">Tutorials: <a href="tutorial-basics-08-records.html">Records</a>, <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>, <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a></p>
 <div class="lib-preamble">
 <h2>Overview</h2>
 <p>SRFI-132 is the sort library for lists and vectors: stable sorting, merging, in-place variants, plus selection utilities (find the nth element, the median, or take the smallest k) without fully sorting.</p>
@@ -205,12 +205,14 @@ Example:
 Library: (srfi 132)
 Description: Finds the median of the elements in vector v according to &lt;.
 If v is empty, returns knil. If v has an odd number of elements, returns the
-middle element. If v has an even number of elements and mean is provided,
-returns (mean a b) where a and b are the two middle elements; otherwise
-returns the lower of the two. The original vector is not modified.
+middle element. If v has an even number of elements, returns (mean a b)
+where a and b are the two middle elements; mean defaults to
+(lambda (a b) (/ (+ a b) 2)), as SRFI 132 specifies. The original vector is
+not modified.
 Example:
   (vector-find-median &lt; #(3 1 4 1 5) 0) =&gt; 3
-  (vector-find-median &lt; #(3 1 4 5) 0 (lambda (a b) (/ (+ a b) 2))) =&gt; 7/2</pre>
+  (vector-find-median &lt; #(3 1 4 5) 0) =&gt; 7/2
+  (vector-find-median &lt; #(3 1 4 5) 0 max) =&gt; 4</pre>
 </div>
 <div class="entry" id="e12" data-name="vector-find-median!">
   <div class="entry-name">vector-find-median!</div>
@@ -219,9 +221,10 @@ Example:
 Library: (srfi 132)
 Description: Finds the median of the elements in vector v according to &lt;.
 If v is empty, returns knil. If v has an odd number of elements, returns the
-middle element. If v has an even number of elements and mean is provided,
-returns (mean a b) where a and b are the two middle elements; otherwise
-returns the lower of the two. This variant sorts v in place.
+middle element. If v has an even number of elements, returns (mean a b)
+where a and b are the two middle elements; mean defaults to
+(lambda (a b) (/ (+ a b) 2)), as SRFI 132 specifies. This variant sorts v in
+place.
 Example:
   (vector-find-median! &lt; (vector 3 1 4 1 5) 0) =&gt; 3
   (vector-find-median! &lt; (vector 3 1 4 5) 0 (lambda (a b) (/ (+ a b) 2))) =&gt; 7/2</pre>

@@ -27,6 +27,6 @@ public class PrimitiveMakeThread extends Primitive {
         Lambda lambda = Value.asLambda(arguments[0]);
         SchemeThread t = new SchemeThread(lambda, modules);
         if (arguments.length > 1) t.name = arguments[1];
-        return new NativeValue(t);
+        return t.value();
     }
 }

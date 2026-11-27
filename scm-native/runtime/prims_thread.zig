@@ -346,8 +346,10 @@ fn threadJoin(t: *Thread) Err!Word {
         return threadException(t, "join-timeout-exception", Kind.join_timeout, rt.UNSPEC);
     }
     const flags = rt.unfix(slot(r, 8));
-    if (flags & Flag.exception != 0) return threadException(t, "uncaught-exception", Kind.uncaught, slot(r, 6));
+    // terminated first: a terminated thread also ends with an error (SRFI 18:
+    // joining it raises a terminated-thread exception, as on the JVM)
     if (flags & Flag.terminated != 0) return threadException(t, "terminated-thread-exception", Kind.terminated_thread, rt.UNSPEC);
+    if (flags & Flag.exception != 0) return threadException(t, "uncaught-exception", Kind.uncaught, slot(r, 6));
     return slot(r, 5);
 }
 pub const @"%thread-join!" = WN("thread-join!", threadJoin, 1, 3);

@@ -10,6 +10,19 @@ public class SchemeThread
     [ThreadStatic]
     public static SchemeThread? CurrentThread;
 
+    // the one Scheme value of this thread, so that current-thread,
+    // make-thread and mutex-state give eq? objects (SRFI 18)
+    private NativeValue? value;
+
+    public NativeValue AsValue()
+    {
+        lock (this)
+        {
+            value ??= new NativeValue(this);
+            return value;
+        }
+    }
+
     public Task? task;
     public object result = Value.NIL;
     public Lambda? lambda;

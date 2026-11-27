@@ -77,7 +77,7 @@
 
 <div class="lib-title srfi">(srfi 125)</div>
 <p class="lib-sub">SRFI-125 — Intermediate hash tables: comparator-based hash tables with mapping, folding, and set operations</p>
-<p class="lib-tutorials">Tutorials: <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a></p>
+<p class="lib-tutorials">Tutorials: <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>, <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a></p>
 <div class="lib-preamble">
 <h2>Overview</h2>
 <p>SRFI-125 provides intermediate hash tables built on SRFI-128 comparators, with a broad operation set: mapping, folding, and set-like combinations. Use it when you want comparator-driven tables or the richer API; for simple <code>eq?</code>/<code>equal?</code> tables SRFI-69 is lighter. A comparator's equality is the default comparator's or one of <code>equal?</code>, <code>eqv?</code>, <code>eq?</code>, <code>string=?</code>, <code>string-ci=?</code>, <code>char=?</code>, <code>char-ci=?</code> or <code>=</code>; another equality is an error, since a table cannot call it.</p>

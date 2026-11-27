@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SRFI 64: unit tests — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html" class="active">SRFI 64: unit tests</a>
+    <a class="sub" href="#assertions">Assertions</a>
+    <a class="sub" href="#groups-and-cleanup">Groups and cleanup</a>
+    <a class="sub" href="#expected-failures-and-skips">Expected failures and skips</a>
+    <a class="sub" href="#runners">Runners</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">SRFI 64: unit tests</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="srfi-64-unit-tests">SRFI 64: unit tests</h1>
+<p>SRFI 64 is the standard test library; <a class="xref" href="scm-test.html"><code>(scm test)</code></a> adds a runner with a compact summary. The <a href="tutorial-techniques-10-testing.html">testing</a> chapter shows how to organise tests; this one goes through the library.</p>
+<pre><code class="language-scheme">(import (scheme base) (scheme write) (srfi 64) (only (scm test) scm-test-runner))
+
+(test-runner-factory scm-test-runner)
+(test-begin "srfi-64 tour")</code></pre>
+<p><code>test-begin</code> and <code>test-end</code> delimit a suite; the runner reports when the outermost suite ends.</p>
+<h2 id="assertions">Assertions</h2>
+<pre><code class="language-scheme">(test-equal "equal?" '(1 2) (list 1 2))
+(test-eqv "eqv?" 2.0 (/ 4.0 2))
+(test-eq "eq?" 'a (car '(a b)))
+(test-assert "true value" (string? "s"))
+(test-approximate "within 0.01" 0.333 (/ 1.0 3) 0.01)
+(test-error "any error" (car '()))
+(test-error "an error object" error-object? (raise (make-error-like)))
+
+(define (make-error-like)
+  (guard (e (#t e)) (error "boom")))</code></pre>
+<p>Each form takes an optional name first. <code>test-error</code> with a predicate checks the kind of exception.</p>
+<h2 id="groups-and-cleanup">Groups and cleanup</h2>
+<pre><code class="language-scheme">(test-group "arithmetic"
+  (test-equal 4 (+ 2 2))
+  (test-equal 0 (- 2 2)))
+
+(define log '())
+(test-group-with-cleanup "with a resource"
+  (begin (set! log (cons 'opened log))
+         (test-assert #t))
+  (set! log (cons 'closed log)))
+log                                   ;; =&gt; (closed opened)</code></pre>
+<p><code>test-group-with-cleanup</code> runs its last expression even if the tests in it raise, like <code>dynamic-wind</code>.</p>
+<h2 id="expected-failures-and-skips">Expected failures and skips</h2>
+<pre><code class="language-scheme">(test-expect-fail 1)
+(test-equal "known bug, issue 42" 3 (+ 1 1))
+
+(test-skip "slow test")
+(test-assert "slow test" (begin (car '()) #t))</code></pre>
+<p><code>test-expect-fail</code> and <code>test-skip</code> take a count or a test name. An expected failure is reported as <code>xfail</code>, not as a failure, so a known bug does not break the build, and it turns into <code>xpass</code> when the bug is fixed. A skipped test is not run at all.</p>
+<h2 id="runners">Runners</h2>
+<p>A <em>runner</em> counts results and reports them. The current runner's counters:</p>
+<pre><code class="language-scheme">(define r (test-runner-current))
+(&gt; (test-runner-pass-count r) 0)      ;; =&gt; #t
+(test-runner-xfail-count r)           ;; =&gt; 1
+(test-runner-skip-count r)            ;; =&gt; 1</code></pre>
+<h3 id="a-custom-runner">A custom runner</h3>
+<p>A runner built from <a class="xref" href="srfi-64.html#e43"><code>test-runner-null</code></a> with your own callbacks, here one that collects the names of failing tests:</p>
+<pre><code class="language-scheme">(define (collecting-runner failures)
+  (let ((r (test-runner-null)))
+    (test-runner-on-test-end! r
+      (lambda (runner)
+        (when (eq? (test-result-kind runner) 'fail)
+          (set-car! failures (cons (test-runner-test-name runner) (car failures))))))
+    r))
+
+(define failed (list '()))
+(test-with-runner (collecting-runner failed)
+  (test-begin "inner")
+  (test-equal "ok" 1 1)
+  (test-equal "broken" 1 2)
+  (test-equal "also broken" 'a 'b)
+  (test-end "inner"))
+(reverse (car failed))                ;; =&gt; ("broken" "also broken")</code></pre>
+<p><code>test-with-runner</code> runs its body with another runner and restores the previous one, so this suite's own counts are unaffected. Runners like this can write JUnit XML for a CI server or send results anywhere else.</p>
+<pre><code class="language-scheme">(test-end "srfi-64 tour")</code></pre>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-techniques-10-testing.html">Testing your code</a>.</li>
+<li>Reference: <a class="xref" href="srfi-64.html"><code>(srfi 64)</code></a>, <a class="xref" href="scm-test.html"><code>(scm test)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="srfi-64.html"><code>(srfi 64)</code></a>, <a href="scm-test.html"><code>(scm test)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-srfi-48.html">&larr; SRFI 28 and 48: format</a>
+  <a class="next" href="tutorial-srfi-69.html">SRFI 69: hash tables &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

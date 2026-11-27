@@ -179,12 +179,14 @@ Syntax: (vector-find-median < v knil)
 Library: (srfi 132)
 Description: Finds the median of the elements in vector v according to <.
 If v is empty, returns knil. If v has an odd number of elements, returns the
-middle element. If v has an even number of elements and mean is provided,
-returns (mean a b) where a and b are the two middle elements; otherwise
-returns the lower of the two. The original vector is not modified.
+middle element. If v has an even number of elements, returns (mean a b)
+where a and b are the two middle elements; mean defaults to
+(lambda (a b) (/ (+ a b) 2)), as SRFI 132 specifies. The original vector is
+not modified.
 Example:
   (vector-find-median < #(3 1 4 1 5) 0) => 3
-  (vector-find-median < #(3 1 4 5) 0 (lambda (a b) (/ (+ a b) 2))) => 7/2
+  (vector-find-median < #(3 1 4 5) 0) => 7/2
+  (vector-find-median < #(3 1 4 5) 0 max) => 4
 ```
 
 ### `vector-find-median!`
@@ -195,9 +197,10 @@ Syntax: (vector-find-median! < v knil)
 Library: (srfi 132)
 Description: Finds the median of the elements in vector v according to <.
 If v is empty, returns knil. If v has an odd number of elements, returns the
-middle element. If v has an even number of elements and mean is provided,
-returns (mean a b) where a and b are the two middle elements; otherwise
-returns the lower of the two. This variant sorts v in place.
+middle element. If v has an even number of elements, returns (mean a b)
+where a and b are the two middle elements; mean defaults to
+(lambda (a b) (/ (+ a b) 2)), as SRFI 132 specifies. This variant sorts v in
+place.
 Example:
   (vector-find-median! < (vector 3 1 4 1 5) 0) => 3
   (vector-find-median! < (vector 3 1 4 5) 0 (lambda (a b) (/ (+ a b) 2))) => 7/2

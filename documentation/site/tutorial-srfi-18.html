@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SRFI 18: threads — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html" class="active">SRFI 18: threads</a>
+    <a class="sub" href="#threads">Threads</a>
+    <a class="sub" href="#thread-local-data">Thread-local data</a>
+    <a class="sub" href="#mutexes">Mutexes</a>
+    <a class="sub" href="#condition-variables">Condition variables</a>
+    <a class="sub" href="#time-timeouts-and-termination">Time, timeouts and termination</a>
+    <a class="sub" href="#exceptions-in-threads">Exceptions in threads</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">SRFI 18: threads</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="srfi-18-threads">SRFI 18: threads</h1>
+<p>SRFI 18 gives Scheme real threads with mutexes and condition variables. The <a href="tutorial-techniques-11-concurrency.html">concurrency</a> chapter shows the common patterns; this one goes through the library.</p>
+<pre><code class="language-scheme">(import (scheme base) (srfi 1) (srfi 18))</code></pre>
+<h2 id="threads">Threads</h2>
+<pre><code class="language-scheme">(define t (make-thread (lambda () (* 6 7)) 'answer))
+(thread? t)                                 ;; =&gt; #t
+(thread-name t)                             ;; =&gt; answer
+(thread-start! t)
+(thread-join! t)                            ;; =&gt; 42
+(thread? (current-thread))                  ;; =&gt; #t</code></pre>
+<p>A thread is created stopped; <a class="xref" href="srfi-18.html#e29"><code>thread-start!</code></a> runs it. <a class="xref" href="srfi-18.html#e24"><code>thread-join!</code></a> waits for the result and can be called more than once.</p>
+<h2 id="thread-local-data">Thread-local data</h2>
+<p>Each thread and mutex has a <em>specific</em> field for your own data, for example a per-thread buffer or a worker number:</p>
+<pre><code class="language-scheme">(define (worker n)
+  (make-thread (lambda ()
+                 (thread-specific-set! (current-thread) n)
+                 (* 10 (thread-specific (current-thread))))))
+
+(define ws (map worker '(1 2 3)))
+(for-each thread-start! ws)
+(map thread-join! ws)                       ;; =&gt; (10 20 30)</code></pre>
+<h2 id="mutexes">Mutexes</h2>
+<pre><code class="language-scheme">(define m (make-mutex 'counter))
+(mutex-name m)                              ;; =&gt; counter
+(mutex-state m)                             ;; =&gt; not-abandoned
+(mutex-lock! m)
+(eq? (mutex-state m) (current-thread))      ;; =&gt; #t
+(mutex-unlock! m)
+(mutex-state m)                             ;; =&gt; not-abandoned</code></pre>
+<p><a class="xref" href="srfi-18.html#e18"><code>mutex-state</code></a> is the owning thread while a mutex is locked. A mutex whose owner ended without unlocking it is <em>abandoned</em>; locking it raises <code>abandoned-mutex-exception</code>, so a crashed thread cannot silently leave shared data half-changed.</p>
+<h3 id="example-a-parallel-map">Example: a parallel map</h3>
+<p>Apply a procedure to every element in its own thread, keeping the order:</p>
+<pre><code class="language-scheme">(define (parallel-map f xs)
+  (let ((threads (map (lambda (x) (make-thread (lambda () (f x)))) xs)))
+    (for-each thread-start! threads)
+    (map thread-join! threads)))
+
+(parallel-map (lambda (n) (fold + 0 (iota n))) '(10 100 1000)) ;; =&gt; (45 4950 499500)</code></pre>
+<p>One thread per element suits a few dozen expensive pieces of work. For many small ones, use a pool of workers fed by a queue, as in the concurrency chapter.</p>
+<h2 id="condition-variables">Condition variables</h2>
+<p>A thread waits on a condition variable until another thread signals it. The classic use is a bounded buffer between a producer and a consumer:</p>
+<pre><code class="language-scheme">(define-record-type buffer
+  (%make-buffer items size lock not-empty not-full)
+  buffer?
+  (items buffer-items set-buffer-items!)
+  (size buffer-size)
+  (lock buffer-lock)
+  (not-empty buffer-not-empty)
+  (not-full buffer-not-full))
+
+(define (make-buffer size)
+  (%make-buffer '() size (make-mutex) (make-condition-variable) (make-condition-variable)))
+
+(define (buffer-put! b x)
+  (mutex-lock! (buffer-lock b))
+  (if (&gt;= (length (buffer-items b)) (buffer-size b))
+      (begin (mutex-unlock! (buffer-lock b) (buffer-not-full b))
+             (buffer-put! b x))
+      (begin (set-buffer-items! b (append (buffer-items b) (list x)))
+             (condition-variable-signal! (buffer-not-empty b))
+             (mutex-unlock! (buffer-lock b)))))
+
+(define (buffer-take! b)
+  (mutex-lock! (buffer-lock b))
+  (if (null? (buffer-items b))
+      (begin (mutex-unlock! (buffer-lock b) (buffer-not-empty b))
+             (buffer-take! b))
+      (let ((x (car (buffer-items b))))
+        (set-buffer-items! b (cdr (buffer-items b)))
+        (condition-variable-signal! (buffer-not-full b))
+        (mutex-unlock! (buffer-lock b))
+        x)))
+
+(define buf (make-buffer 2))
+(define producer (make-thread (lambda () (for-each (lambda (i) (buffer-put! buf i)) (iota 10)))))
+(define consumer (make-thread (lambda () (let loop ((n 10) (acc '()))
+                                          (if (= n 0) (reverse acc)
+                                              (loop (- n 1) (cons (buffer-take! buf) acc)))))))
+(thread-start! consumer)
+(thread-start! producer)
+(thread-join! consumer)                     ;; =&gt; (0 1 2 3 4 5 6 7 8 9)</code></pre>
+<p>The buffer never holds more than two items: the producer waits on <code>not-full</code> until the consumer has taken one. <code>(mutex-unlock! m cv)</code> releases the mutex and starts waiting in one atomic step; after waking, the code locks again and re-checks, because another thread may have been faster.</p>
+<h2 id="time-timeouts-and-termination">Time, timeouts and termination</h2>
+<pre><code class="language-scheme">(time? (current-time))                      ;; =&gt; #t
+(real? (time-&gt;seconds (current-time)))      ;; =&gt; #t
+(define slow (make-thread (lambda () (thread-sleep! 10) 'done)))
+(thread-start! slow)
+(thread-join! slow 0.05 'still-running)     ;; =&gt; still-running
+(thread-terminate! slow)
+(guard (e ((terminated-thread-exception? e) 'terminated))
+  (thread-join! slow))                      ;; =&gt; terminated
+(guard (e ((join-timeout-exception? e) 'timeout))
+  (thread-join! (let ((t (make-thread (lambda () (thread-sleep! 10)))))
+                  (thread-start! t) t)
+                0.01))                      ;; =&gt; timeout</code></pre>
+<p>Timeouts are in seconds (or a time object). <a class="xref" href="srfi-18.html#e31"><code>thread-yield!</code></a> gives other threads a chance to run.</p>
+<h2 id="exceptions-in-threads">Exceptions in threads</h2>
+<pre><code class="language-scheme">(define failing (make-thread (lambda () (error "disk full" "/var"))))
+(thread-start! failing)
+(guard (e ((uncaught-exception? e)
+           (error-object-message (uncaught-exception-reason e))))
+  (thread-join! failing))                   ;; =&gt; "disk full"</code></pre>
+<p>The thread's error is wrapped in an <em>uncaught exception</em>; <a class="xref" href="srfi-18.html#e35"><code>uncaught-exception-reason</code></a> unwraps it.</p>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-techniques-11-concurrency.html">Concurrency</a>, <code>run-parallel</code> in <a class="xref" href="scm-system.html"><code>(scm system)</code></a>.</li>
+<li>Reference: <a class="xref" href="srfi-18.html"><code>(srfi 18)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="srfi-18.html"><code>(srfi 18)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-srfi-14.html">&larr; SRFI 14: character sets</a>
+  <a class="next" href="tutorial-srfi-19.html">SRFI 19: time and dates &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

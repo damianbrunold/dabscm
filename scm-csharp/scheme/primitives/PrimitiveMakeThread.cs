@@ -25,6 +25,6 @@ public class PrimitiveMakeThread : Primitive
         SchemeThread t = new SchemeThread(lambda, modules);
         if (arguments.Length > 1)
             t.name = arguments[1];
-        return new NativeValue(t);
+        return t.AsValue();
     }
 }

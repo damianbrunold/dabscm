@@ -17,6 +17,6 @@ public class PrimitiveCurrentThread : Primitive
         SchemeThread? t = SchemeThread.CurrentThread;
         if (t == null)
             throw new SchemeError(pos, "current-thread: no current thread");
-        return new NativeValue(t);
+        return t.AsValue();
     }
 }

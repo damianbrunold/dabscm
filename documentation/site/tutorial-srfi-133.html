@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SRFI 133: vectors — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html" class="active">SRFI 133: vectors</a>
+    <a class="sub" href="#constructing">Constructing</a>
+    <a class="sub" href="#iterating-and-folding">Iterating and folding</a>
+    <a class="sub" href="#searching">Searching</a>
+    <a class="sub" href="#partitioning-and-rearranging">Partitioning and rearranging</a>
+    <a class="sub" href="#example-a-moving-average">Example: a moving average</a>
+    <a class="sub" href="#example-one-step-of-the-game-of-life">Example: one step of the game of life</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">SRFI 133: vectors</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="srfi-133-vectors">SRFI 133: vectors</h1>
+<p>SRFI 133 is the vector counterpart of SRFI 1. Many of its names (<code>vector-map</code>, <code>vector-fill!</code>, <code>vector-copy</code>, …) are also in <a class="xref" href="scheme-base.html"><code>(scheme base)</code></a>, so import only what you need from it to keep imports unambiguous.</p>
+<pre><code class="language-scheme">(import (scheme base)
+        (only (srfi 133)
+              vector-unfold vector-concatenate vector-append-subvectors
+              vector-reverse-copy vector-empty? vector= vector-count vector-cumulate
+              vector-fold vector-fold-right vector-map! vector-any vector-every
+              vector-index vector-index-right vector-skip vector-binary-search
+              vector-partition vector-swap! vector-reverse!
+              reverse-vector-&gt;list reverse-list-&gt;vector))</code></pre>
+<h2 id="constructing">Constructing</h2>
+<pre><code class="language-scheme">(vector-unfold (lambda (i) (* i i)) 5)          ;; =&gt; #(0 1 4 9 16)
+(vector-unfold (lambda (i x) (values x (* x 2))) 5 1) ;; =&gt; #(1 2 4 8 16)
+(vector-concatenate '(#(1) #(2 3) #()))         ;; =&gt; #(1 2 3)
+(vector-append-subvectors #(a b c) 0 2 #(x y z) 1 3) ;; =&gt; #(a b y z)
+(vector-reverse-copy #(1 2 3 4))                ;; =&gt; #(4 3 2 1)
+(reverse-list-&gt;vector '(1 2 3))                 ;; =&gt; #(3 2 1)
+(vector-empty? #())                             ;; =&gt; #t
+(vector= eq? #(a b) #(a b))                     ;; =&gt; #t</code></pre>
+<p>The second <a class="xref" href="srfi-133.html#e37"><code>vector-unfold</code></a> threads a seed: the procedure returns the element and the next seed.</p>
+<h2 id="iterating-and-folding">Iterating and folding</h2>
+<pre><code class="language-scheme">(vector-fold (lambda (acc x) (+ acc x)) 0 #(1 2 3))     ;; =&gt; 6
+(vector-fold-right (lambda (acc x) (cons x acc)) '() #(1 2 3)) ;; =&gt; (1 2 3)
+(vector-count even? #(1 2 3 4))                         ;; =&gt; 2
+(vector-cumulate + 0 #(3 1 4 1 5))                      ;; =&gt; #(3 4 8 9 14)
+(define v (vector 1 2 3))
+(vector-map! (lambda (x) (* x 10)) v)
+v                                                       ;; =&gt; #(10 20 30)</code></pre>
+<p>Unlike <a class="xref" href="srfi-1.html#e72"><code>fold</code></a> on lists, <a class="xref" href="srfi-133.html#e20"><code>vector-fold</code></a> passes the accumulator <em>first</em>. <a class="xref" href="srfi-133.html#e16"><code>vector-cumulate</code></a> gives running results, here the running sums.</p>
+<h2 id="searching">Searching</h2>
+<pre><code class="language-scheme">(vector-index even? #(1 3 4 5 6))              ;; =&gt; 2
+(vector-index-right even? #(1 3 4 5 6))        ;; =&gt; 4
+(vector-skip odd? #(1 3 4 5))                  ;; =&gt; 2
+(vector-any (lambda (x) (and (&gt; x 3) (* x x))) #(1 5 2)) ;; =&gt; 25
+(vector-every positive? #(1 2 3))              ;; =&gt; #t
+(vector-binary-search #(10 20 30 40) 30 -)     ;; =&gt; 2</code></pre>
+<p><a class="xref" href="srfi-133.html#e11"><code>vector-binary-search</code></a> needs a sorted vector and a procedure returning a negative, zero or positive number.</p>
+<h2 id="partitioning-and-rearranging">Partitioning and rearranging</h2>
+<pre><code class="language-scheme">(call-with-values (lambda () (vector-partition even? #(1 2 3 4 5)))
+  list)                                        ;; =&gt; (#(2 4 1 3 5) 2)
+(define w (vector 'a 'b 'c 'd))
+(vector-swap! w 0 3)
+w                                              ;; =&gt; #(d b c a)
+(vector-reverse! w)
+w                                              ;; =&gt; #(a c b d)
+(reverse-vector-&gt;list #(1 2 3))                ;; =&gt; (3 2 1)</code></pre>
+<p><a class="xref" href="srfi-133.html#e28"><code>vector-partition</code></a> returns a new vector with the matching elements first, and how many there are.</p>
+<h2 id="example-a-moving-average">Example: a moving average</h2>
+<pre><code class="language-scheme">(define (moving-average v n)
+  (let* ((sums (vector-cumulate + 0 v))
+         (len (vector-length v)))
+    (vector-unfold
+     (lambda (i)
+       (let* ((end (+ i n -1))
+              (before (if (= i 0) 0 (vector-ref sums (- i 1)))))
+         (/ (- (vector-ref sums end) before) n)))
+     (+ (- len n) 1))))
+
+(moving-average #(10 20 30 40 50) 3)           ;; =&gt; #(20 30 40)</code></pre>
+<p>With the running sums, each average takes two lookups instead of n additions.</p>
+<h2 id="example-one-step-of-the-game-of-life">Example: one step of the game of life</h2>
+<p>A board as a vector of rows; a cell lives on with two or three neighbours, and is born with exactly three:</p>
+<pre><code class="language-scheme">(define (cell board r c)
+  (let ((rows (vector-length board)) (cols (vector-length (vector-ref board 0))))
+    (if (and (&lt; -1 r rows) (&lt; -1 c cols)) (vector-ref (vector-ref board r) c) 0)))
+
+(define (neighbours board r c)
+  (let loop ((dr -1) (dc -1) (n 0))
+    (cond ((&gt; dr 1) n)
+          ((&gt; dc 1) (loop (+ dr 1) -1 n))
+          ((and (= dr 0) (= dc 0)) (loop dr (+ dc 1) n))
+          (else (loop dr (+ dc 1) (+ n (cell board (+ r dr) (+ c dc))))))))
+
+(define (step board)
+  (vector-unfold
+   (lambda (r)
+     (vector-unfold
+      (lambda (c)
+        (let ((n (neighbours board r c)) (alive (= 1 (cell board r c))))
+          (if (or (= n 3) (and alive (= n 2))) 1 0)))
+      (vector-length (vector-ref board 0))))
+   (vector-length board)))
+
+(define blinker #(#(0 0 0) #(1 1 1) #(0 0 0)))
+(step blinker)                                 ;; =&gt; #(#(0 1 0) #(0 1 0) #(0 1 0))
+(step (step blinker))                          ;; =&gt; #(#(0 0 0) #(1 1 1) #(0 0 0))</code></pre>
+<p>The "blinker" turns from horizontal to vertical and back.</p>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>, <a href="tutorial-srfi-132.html">SRFI 132</a>.</li>
+<li>Reference: <a class="xref" href="srfi-133.html"><code>(srfi 133)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="srfi-133.html"><code>(srfi 133)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-srfi-132.html">&larr; SRFI 132 and 95: sorting</a>
+  <a class="next" href="tutorial-srfi-151.html">SRFI 151: bitwise operations &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SRFI 158: generators and accumulators — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html" class="active">SRFI 158: generators and accumulators</a>
+    <a class="sub" href="#making-generators">Making generators</a>
+    <a class="sub" href="#transforming">Transforming</a>
+    <a class="sub" href="#combining">Combining</a>
+    <a class="sub" href="#consuming">Consuming</a>
+    <a class="sub" href="#accumulators">Accumulators</a>
+    <a class="sub" href="#example-streaming-log-analysis">Example: streaming log analysis</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">SRFI 158: generators and accumulators</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="srfi-158-generators-and-accumulators">SRFI 158: generators and accumulators</h1>
+<p>A <em>generator</em> is a procedure without arguments that returns a new value on each call and an end-of-file object when it is exhausted. An <em>accumulator</em> is the opposite: you call it with values, and with an end-of-file object to get the result. Both process data one item at a time, without building intermediate lists. The <a href="tutorial-basics-12-continuations.html">continuations, generators and laziness</a> chapter introduces them.</p>
+<pre><code class="language-scheme">(import (scheme base) (scheme char) (srfi 158))</code></pre>
+<h2 id="making-generators">Making generators</h2>
+<pre><code class="language-scheme">(generator-&gt;list (generator 1 2 3))                ;; =&gt; (1 2 3)
+(generator-&gt;list (list-&gt;generator '(a b)))         ;; =&gt; (a b)
+(generator-&gt;list (vector-&gt;generator #(1 2 3) 1))   ;; =&gt; (2 3)
+(generator-&gt;list (string-&gt;generator "abc"))        ;; =&gt; (#\a #\b #\c)
+(generator-&gt;list (make-iota-generator 4 10 5))     ;; =&gt; (10 15 20 25)
+(generator-&gt;list (make-range-generator 0 1 1/4))   ;; =&gt; (0 1/4 1/2 3/4)
+(generator-&gt;list (gtake (circular-generator 'on 'off) 5)) ;; =&gt; (on off on off on)
+(generator-&gt;list (make-unfold-generator (lambda (s) (&gt; s 100)) (lambda (s) s)
+                                        (lambda (s) (* s 3)) 1))
+;; =&gt; (1 3 9 27 81)</code></pre>
+<p><a class="xref" href="srfi-158.html#e40"><code>make-coroutine-generator</code></a> writes a generator as a procedure that calls <code>yield</code>, which is natural for walking nested data:</p>
+<pre><code class="language-scheme">(define (leaves tree)
+  (make-coroutine-generator
+   (lambda (yield)
+     (let walk ((t tree))
+       (cond ((null? t) #f)
+             ((pair? t) (walk (car t)) (walk (cdr t)))
+             (else (yield t)))))))
+
+(generator-&gt;list (leaves '(1 (2 (3 4)) ((5)))))   ;; =&gt; (1 2 3 4 5)</code></pre>
+<h2 id="transforming">Transforming</h2>
+<pre><code class="language-scheme">(define (g) (make-iota-generator 10))
+(generator-&gt;list (gmap (lambda (x) (* x x)) (g)))  ;; =&gt; (0 1 4 9 16 25 36 49 64 81)
+(generator-&gt;list (gfilter odd? (g)))               ;; =&gt; (1 3 5 7 9)
+(generator-&gt;list (gremove odd? (g)))               ;; =&gt; (0 2 4 6 8)
+(generator-&gt;list (gtake (g) 3))                    ;; =&gt; (0 1 2)
+(generator-&gt;list (gdrop (g) 7))                    ;; =&gt; (7 8 9)
+(generator-&gt;list (gtake-while (lambda (x) (&lt; x 3)) (g))) ;; =&gt; (0 1 2)
+(generator-&gt;list (gdrop-while (lambda (x) (&lt; x 7)) (g))) ;; =&gt; (7 8 9)
+(generator-&gt;list (gdelete 3 (generator 1 3 2 3)))  ;; =&gt; (1 2)
+(generator-&gt;list (gdelete-neighbor-dups (generator 1 1 2 2 1))) ;; =&gt; (1 2 1)
+(generator-&gt;list (gindex (generator 'a 'b 'c 'd) (generator 0 2))) ;; =&gt; (a c)
+(generator-&gt;list (gselect (generator 'a 'b 'c) (generator #t #f #t))) ;; =&gt; (a c)</code></pre>
+<h2 id="combining">Combining</h2>
+<pre><code class="language-scheme">(generator-&gt;list (gappend (generator 1 2) (generator 3))) ;; =&gt; (1 2 3)
+(generator-&gt;list (gcons* 'start (generator 1 2)))  ;; =&gt; (start 1 2)
+(generator-&gt;list (gmap + (generator 1 2 3) (generator 10 20 30))) ;; =&gt; (11 22 33)
+(generator-&gt;list (gmerge &lt; (generator 1 4 7) (generator 2 3 9))) ;; =&gt; (1 2 3 4 7 9)
+(generator-&gt;list (gflatten (generator '(1 2) '() '(3))))  ;; =&gt; (1 2 3)
+(generator-&gt;list (ggroup (make-iota-generator 7) 3))      ;; =&gt; ((0 1 2) (3 4 5) (6))</code></pre>
+<p><a class="xref" href="srfi-158.html#e28"><code>ggroup</code></a> cuts a generator into chunks, which is handy for batch processing.</p>
+<h2 id="consuming">Consuming</h2>
+<pre><code class="language-scheme">(generator-fold + 0 (make-iota-generator 5))           ;; =&gt; 10
+(generator-count even? (make-iota-generator 10))       ;; =&gt; 5
+(generator-find (lambda (x) (&gt; (* x x) 50)) (make-range-generator 0)) ;; =&gt; 8
+(generator-any (lambda (x) (and (&gt; x 3) x)) (generator 1 5 2)) ;; =&gt; 5
+(generator-every number? (generator 1 2))              ;; =&gt; #t
+(generator-&gt;vector (generator 1 2 3))                  ;; =&gt; #(1 2 3)
+(generator-&gt;string (generator #\h #\i))                ;; =&gt; "hi"
+(generator-map-&gt;list (lambda (x) (* x 2)) (generator 1 2)) ;; =&gt; (2 4)
+(let ((total 0))
+  (generator-for-each (lambda (x) (set! total (+ total x))) (generator 1 2 3))
+  total)                                               ;; =&gt; 6</code></pre>
+<p><a class="xref" href="srfi-158.html#e21"><code>generator-find</code></a> stops at the first match, so it works even on the endless <a class="xref" href="srfi-158.html#e43"><code>make-range-generator</code></a>.</p>
+<h2 id="accumulators">Accumulators</h2>
+<pre><code class="language-scheme">(define (feed acc . values)
+  (for-each acc values)
+  (acc (eof-object)))
+
+(feed (list-accumulator) 1 2 3)                    ;; =&gt; (1 2 3)
+(feed (reverse-list-accumulator) 1 2 3)            ;; =&gt; (3 2 1)
+(feed (vector-accumulator) 'a 'b)                  ;; =&gt; #(a b)
+(feed (string-accumulator) #\o #\k)                ;; =&gt; "ok"
+(feed (sum-accumulator) 1 2 3)                     ;; =&gt; 6
+(feed (product-accumulator) 2 3 4)                 ;; =&gt; 24
+(feed (count-accumulator) 'x 'y)                   ;; =&gt; 2
+(feed (make-accumulator max 0 (lambda (m) m)) 3 9 4) ;; =&gt; 9</code></pre>
+<p><a class="xref" href="srfi-158.html#e39"><code>make-accumulator</code></a> builds one from a combining procedure, an initial value and a finisher.</p>
+<h2 id="example-streaming-log-analysis">Example: streaming log analysis</h2>
+<p>Count error lines per hour in a log, reading line by line from a port and never holding the whole file:</p>
+<pre><code class="language-scheme">(define log-text
+  "09:12 INFO start
+09:40 ERROR disk
+10:05 ERROR net
+10:07 INFO ok
+10:59 ERROR net
+11:30 INFO stop")
+
+(define (port-&gt;line-generator port)
+  (lambda () (read-line port)))
+
+(define (errors-per-hour port)
+  (let ((counts (list-accumulator)))
+    (generator-for-each
+     (lambda (hour-and-count) (counts hour-and-count))
+     (count-runs
+      (gmap (lambda (line) (substring line 0 2))
+            (gfilter (lambda (line) (string-contains? line "ERROR"))
+                     (port-&gt;line-generator port)))))
+    (counts (eof-object))))
+
+;; (h h h k) -&gt; generator of (h . 3) (k . 1): counts of consecutive equal items
+(define (count-runs gen)
+  (let ((pending (gen)))
+    (lambda ()
+      (if (eof-object? pending)
+          pending
+          (let loop ((n 1))
+            (let ((next (gen)))
+              (if (and (not (eof-object? next)) (equal? next pending))
+                  (loop (+ n 1))
+                  (let ((result (cons pending n)))
+                    (set! pending next)
+                    result))))))))
+
+(define (string-contains? s part)
+  (let loop ((i 0))
+    (and (&lt;= (+ i (string-length part)) (string-length s))
+         (or (string=? part (substring s i (+ i (string-length part))))
+             (loop (+ i 1))))))
+
+(errors-per-hour (open-input-string log-text))     ;; =&gt; (("09" . 1) ("10" . 2))</code></pre>
+<p>The pipeline reads, filters, maps and groups lazily: each line is read only when the next result is needed.</p>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>, <a href="tutorial-srfi-27.html">SRFI 27 and 194</a></li>
+</ul>
+<p>(random generators).</p>
+<ul>
+<li>Reference: <a class="xref" href="srfi-158.html"><code>(srfi 158)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="srfi-158.html"><code>(srfi 158)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-srfi-151.html">&larr; SRFI 151: bitwise operations</a>
+  <a class="next" href="tutorial-srfi-271.html">SRFI 271: random ports &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

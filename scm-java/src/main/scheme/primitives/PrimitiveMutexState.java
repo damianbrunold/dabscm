@@ -20,7 +20,7 @@ public class PrimitiveMutexState extends Primitive {
         checkArgs(pos, arguments, 1, 1);
         SchemeMutex m = (SchemeMutex) Value.asNativeValue(arguments[0]).value;
         if (m.abandoned) return Value.intern("abandoned");
-        if (m.locked && m.owner != null) return new NativeValue(m.owner);
+        if (m.locked && m.owner != null) return m.owner.value();
         if (m.locked && m.owner == null) return Value.intern("not-owned");
         return Value.intern("not-abandoned");
     }

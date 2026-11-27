@@ -49,6 +49,24 @@
   <a href="tutorial-techniques-10-testing.html">Testing your code</a>
   <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
   <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
   <h2><a href="index.html">Library reference</a></h2>
 </nav>
 
@@ -135,7 +153,33 @@
 </tbody>
 </table>
 <h2 id="library-tutorials">Library tutorials</h2>
-<p>Tutorials for the individual SRFIs and dabscm libraries follow; until then, the techniques above cover the most-used ones, and the <a href="index.html">library reference</a> has an overview and examples for every library.</p>
+<p>Guided tours of the individual libraries, each with worked examples.</p>
+<h3 id="srfis">SRFIs</h3>
+<table>
+<thead>
+<tr><th>tutorial</th><th>covers</th></tr>
+</thead>
+<tbody>
+<tr><td><a href="tutorial-srfi-1.html">SRFI 1: lists</a></td><td>constructing, selecting, folding, searching, alists, lists as sets</td></tr>
+<tr><td><a href="tutorial-srfi-26.html">SRFI 2, 8 and 26</a></td><td><a class="xref" href="srfi-2.html#e0"><code>and-let*</code></a>, <a class="xref" href="srfi-8.html#e0"><code>receive</code></a>, <code>cut</code> and <a class="xref" href="srfi-26.html#e1"><code>cute</code></a></td></tr>
+<tr><td><a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111</a></td><td>boxes, parameters, environment variables, records</td></tr>
+<tr><td><a href="tutorial-srfi-13.html">SRFI 13: strings</a></td><td>searching, trimming, padding, folding, a word wrapper</td></tr>
+<tr><td><a href="tutorial-srfi-14.html">SRFI 14: character sets</a></td><td>building sets, set algebra, a password-strength check</td></tr>
+<tr><td><a href="tutorial-srfi-18.html">SRFI 18: threads</a></td><td>threads, mutexes, condition variables, timeouts, a bounded buffer</td></tr>
+<tr><td><a href="tutorial-srfi-19.html">SRFI 19: time and dates</a></td><td>times, durations, dates, formatting and parsing, time zones</td></tr>
+<tr><td><a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a></td><td>random sources, reproducibility, distributions, shuffling</td></tr>
+<tr><td><a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a></td><td>format strings, numbers, widths, a receipt</td></tr>
+<tr><td><a href="tutorial-srfi-64.html">SRFI 64: unit tests</a></td><td>assertions, groups, expected failures, custom runners</td></tr>
+<tr><td><a href="tutorial-srfi-69.html">SRFI 69: hash tables</a></td><td>the whole API, an inverted index</td></tr>
+<tr><td><a href="tutorial-srfi-125.html">SRFI 125 and 128</a></td><td>comparators, comparator-based hash tables, set operations</td></tr>
+<tr><td><a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a></td><td>stable sorting, merging, order statistics, a leaderboard</td></tr>
+<tr><td><a href="tutorial-srfi-133.html">SRFI 133: vectors</a></td><td>vector operations, a moving average, the game of life</td></tr>
+<tr><td><a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a></td><td>bits, bit fields, permission flags, packed colors</td></tr>
+<tr><td><a href="tutorial-srfi-158.html">SRFI 158: generators</a></td><td>generators and accumulators, a streaming log analysis</td></tr>
+<tr><td><a href="tutorial-srfi-271.html">SRFI 271: random ports</a></td><td>secure random bytes, tokens, UUIDs, reproducible streams</td></tr>
+</tbody>
+</table>
+<p>Tutorials for the dabscm libraries (<code>(scm ...)</code>) follow. Until then, the techniques above cover the most-used ones, and the <a href="index.html">library reference</a> has an overview and examples for every library.</p>
 <h2 id="running-the-examples-yourself">Running the examples yourself</h2>
 <p>Copy a code block into a file, keep the <a class="xref" href="scm-module.html#e10"><code>import</code></a> from the chapter's first block, and run it with <code>scm file.scm</code>. Lines ending in <code>;; =&gt; value</code> show what an expression returns; <code>;; prints:</code> shows what it writes.</p><span id="basics"></span><span id="techniques"></span><span id="libraries"></span>
 <h2 id="by-library">Tutorials by library</h2>
@@ -172,24 +216,36 @@
 <tr><td><a href="scm-system.html"><code>(scm system)</code></a></td><td><a href="tutorial-techniques-11-concurrency.html">Concurrency</a>, <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a></td></tr>
 <tr><td><a href="scm-templating.html"><code>(scm templating)</code></a></td><td><a href="tutorial-techniques-01-strings.html">Strings and text</a></td></tr>
 <tr><td><a href="scm-terminal.html"><code>(scm terminal)</code></a></td><td><a href="tutorial-techniques-09-command-line.html">Command-line programs</a></td></tr>
-<tr><td><a href="scm-test.html"><code>(scm test)</code></a></td><td><a href="tutorial-techniques-10-testing.html">Testing your code</a></td></tr>
+<tr><td><a href="scm-test.html"><code>(scm test)</code></a></td><td><a href="tutorial-techniques-10-testing.html">Testing your code</a>, <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a></td></tr>
 <tr><td><a href="scm-toml.html"><code>(scm toml)</code></a></td><td><a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a></td></tr>
 <tr><td><a href="scm-xml.html"><code>(scm xml)</code></a></td><td><a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a></td></tr>
-<tr><td><a href="srfi-1.html"><code>(srfi 1)</code></a></td><td><a href="tutorial-basics-04-lists.html">Pairs and lists</a>, <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>, <a href="tutorial-basics-08-records.html">Records</a>, <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>, <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a></td></tr>
-<tr><td><a href="srfi-125.html"><code>(srfi 125)</code></a></td><td><a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a></td></tr>
-<tr><td><a href="srfi-128.html"><code>(srfi 128)</code></a></td><td><a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a></td></tr>
-<tr><td><a href="srfi-13.html"><code>(srfi 13)</code></a></td><td><a href="tutorial-techniques-01-strings.html">Strings and text</a>, <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a></td></tr>
-<tr><td><a href="srfi-132.html"><code>(srfi 132)</code></a></td><td><a href="tutorial-basics-08-records.html">Records</a>, <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a></td></tr>
-<tr><td><a href="srfi-133.html"><code>(srfi 133)</code></a></td><td><a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>, <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>, <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a></td></tr>
-<tr><td><a href="srfi-14.html"><code>(srfi 14)</code></a></td><td><a href="tutorial-techniques-02-characters.html">Characters and Unicode</a></td></tr>
-<tr><td><a href="srfi-158.html"><code>(srfi 158)</code></a></td><td><a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>, <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a></td></tr>
-<tr><td><a href="srfi-18.html"><code>(srfi 18)</code></a></td><td><a href="tutorial-techniques-11-concurrency.html">Concurrency</a></td></tr>
-<tr><td><a href="srfi-19.html"><code>(srfi 19)</code></a></td><td><a href="tutorial-techniques-07-dates.html">Dates and times</a></td></tr>
-<tr><td><a href="srfi-26.html"><code>(srfi 26)</code></a></td><td><a href="tutorial-basics-07-higher-order.html">Higher-order programming</a></td></tr>
-<tr><td><a href="srfi-48.html"><code>(srfi 48)</code></a></td><td><a href="tutorial-techniques-01-strings.html">Strings and text</a></td></tr>
-<tr><td><a href="srfi-64.html"><code>(srfi 64)</code></a></td><td><a href="tutorial-techniques-10-testing.html">Testing your code</a></td></tr>
-<tr><td><a href="srfi-69.html"><code>(srfi 69)</code></a></td><td><a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a></td></tr>
-<tr><td><a href="srfi-95.html"><code>(srfi 95)</code></a></td><td><a href="tutorial-techniques-05-sorting.html">Sorting and searching</a></td></tr>
+<tr><td><a href="srfi-1.html"><code>(srfi 1)</code></a></td><td><a href="tutorial-basics-04-lists.html">Pairs and lists</a>, <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>, <a href="tutorial-basics-08-records.html">Records</a>, <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>, <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>, <a href="tutorial-srfi-1.html">SRFI 1: lists</a></td></tr>
+<tr><td><a href="srfi-111.html"><code>(srfi 111)</code></a></td><td><a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a></td></tr>
+<tr><td><a href="srfi-125.html"><code>(srfi 125)</code></a></td><td><a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>, <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a></td></tr>
+<tr><td><a href="srfi-128.html"><code>(srfi 128)</code></a></td><td><a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>, <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a></td></tr>
+<tr><td><a href="srfi-13.html"><code>(srfi 13)</code></a></td><td><a href="tutorial-techniques-01-strings.html">Strings and text</a>, <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>, <a href="tutorial-srfi-13.html">SRFI 13: strings</a></td></tr>
+<tr><td><a href="srfi-132.html"><code>(srfi 132)</code></a></td><td><a href="tutorial-basics-08-records.html">Records</a>, <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>, <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a></td></tr>
+<tr><td><a href="srfi-133.html"><code>(srfi 133)</code></a></td><td><a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>, <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>, <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>, <a href="tutorial-srfi-133.html">SRFI 133: vectors</a></td></tr>
+<tr><td><a href="srfi-14.html"><code>(srfi 14)</code></a></td><td><a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>, <a href="tutorial-srfi-14.html">SRFI 14: character sets</a></td></tr>
+<tr><td><a href="srfi-151.html"><code>(srfi 151)</code></a></td><td><a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>, <a href="tutorial-srfi-271.html">SRFI 271: random ports</a></td></tr>
+<tr><td><a href="srfi-158.html"><code>(srfi 158)</code></a></td><td><a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>, <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>, <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a></td></tr>
+<tr><td><a href="srfi-18.html"><code>(srfi 18)</code></a></td><td><a href="tutorial-techniques-11-concurrency.html">Concurrency</a>, <a href="tutorial-srfi-18.html">SRFI 18: threads</a></td></tr>
+<tr><td><a href="srfi-19.html"><code>(srfi 19)</code></a></td><td><a href="tutorial-techniques-07-dates.html">Dates and times</a>, <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a></td></tr>
+<tr><td><a href="srfi-194.html"><code>(srfi 194)</code></a></td><td><a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a></td></tr>
+<tr><td><a href="srfi-2.html"><code>(srfi 2)</code></a></td><td><a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a></td></tr>
+<tr><td><a href="srfi-26.html"><code>(srfi 26)</code></a></td><td><a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>, <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a></td></tr>
+<tr><td><a href="srfi-27.html"><code>(srfi 27)</code></a></td><td><a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a></td></tr>
+<tr><td><a href="srfi-271-determinized.html"><code>(srfi 271 determinized)</code></a></td><td><a href="tutorial-srfi-271.html">SRFI 271: random ports</a></td></tr>
+<tr><td><a href="srfi-271.html"><code>(srfi 271)</code></a></td><td><a href="tutorial-srfi-271.html">SRFI 271: random ports</a></td></tr>
+<tr><td><a href="srfi-28.html"><code>(srfi 28)</code></a></td><td><a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a></td></tr>
+<tr><td><a href="srfi-39.html"><code>(srfi 39)</code></a></td><td><a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a></td></tr>
+<tr><td><a href="srfi-48.html"><code>(srfi 48)</code></a></td><td><a href="tutorial-techniques-01-strings.html">Strings and text</a>, <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a></td></tr>
+<tr><td><a href="srfi-64.html"><code>(srfi 64)</code></a></td><td><a href="tutorial-techniques-10-testing.html">Testing your code</a>, <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a></td></tr>
+<tr><td><a href="srfi-69.html"><code>(srfi 69)</code></a></td><td><a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>, <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a></td></tr>
+<tr><td><a href="srfi-8.html"><code>(srfi 8)</code></a></td><td><a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a></td></tr>
+<tr><td><a href="srfi-9.html"><code>(srfi 9)</code></a></td><td><a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a></td></tr>
+<tr><td><a href="srfi-95.html"><code>(srfi 95)</code></a></td><td><a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>, <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a></td></tr>
+<tr><td><a href="srfi-98.html"><code>(srfi 98)</code></a></td><td><a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a></td></tr>
 </tbody>
 </table>
 

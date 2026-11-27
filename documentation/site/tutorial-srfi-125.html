@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SRFI 125 and 128: comparators and hash tables — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html" class="active">SRFI 125 and 128: comparators and hash tables</a>
+    <a class="sub" href="#comparators">Comparators</a>
+    <a class="sub" href="#hash-tables-from-comparators">Hash tables from comparators</a>
+    <a class="sub" href="#changing-entries">Changing entries</a>
+    <a class="sub" href="#the-whole-table">The whole table</a>
+    <a class="sub" href="#set-operations">Set operations</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">SRFI 125 and 128: comparators and hash tables</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="srfi-125-and-128-comparators-and-hash-tables">SRFI 125 and 128: comparators and hash tables</h1>
+<p>A <em>comparator</em> (SRFI 128) bundles what you need to compare values of one kind: a type test, equality, an ordering and a hash function. SRFI 125 hash tables are made from a comparator and have a richer API than SRFI 69.</p>
+<pre><code class="language-scheme">(import (scheme base) (scheme char) (srfi 1) (srfi 125) (srfi 128)
+        (only (srfi 132) list-sort))</code></pre>
+<h2 id="comparators">Comparators</h2>
+<pre><code class="language-scheme">(define d (make-default-comparator))
+(=? d "abc" "abc")                         ;; =&gt; #t
+(&lt;? d 1 2 3)                               ;; =&gt; #t
+(&lt;? d "b" "a")                             ;; =&gt; #f
+(&gt;=? d 5 5)                                ;; =&gt; #t
+(comparator-test-type d 'sym)              ;; =&gt; #t
+(integer? ((comparator-hash-function d) '(1 2))) ;; =&gt; #t</code></pre>
+<p>The default comparator handles booleans, characters, numbers, strings, symbols, lists and vectors, and orders values of different types in a fixed way.</p>
+<p>A comparator of your own, for case-insensitive strings:</p>
+<pre><code class="language-scheme">(define ci (make-comparator string? string-ci=? string-ci&lt;? string-ci-hash))
+(=? ci "Zürich" "ZÜRICH")                  ;; =&gt; #t
+(&lt;? ci "apple" "Banana")                   ;; =&gt; #t</code></pre>
+<p>Compound comparators compare structures field by field:</p>
+<pre><code class="language-scheme">(define point (make-pair-comparator d d))
+(&lt;? point '(1 . 9) '(2 . 0))               ;; =&gt; #t
+(&lt;? point '(1 . 2) '(1 . 3))               ;; =&gt; #t
+(define words (make-list-comparator ci list? null? car cdr))
+(=? words '("a" "B") '("A" "b"))           ;; =&gt; #t</code></pre>
+<p><a class="xref" href="srfi-128.html#e12"><code>comparator-if&lt;=&gt;</code></a> branches three ways:</p>
+<pre><code class="language-scheme">(define (compare a b)
+  (comparator-if&lt;=&gt; d a b 'less 'equal 'greater))
+(map compare '(1 2 3) '(2 2 2))            ;; =&gt; (less equal greater)</code></pre>
+<h2 id="hash-tables-from-comparators">Hash tables from comparators</h2>
+<pre><code class="language-scheme">(define t (make-hash-table d))
+(hash-table-set! t 'apples 3 'pears 0 'plums 7)
+(hash-table-size t)                        ;; =&gt; 3
+(hash-table-contains? t 'pears)            ;; =&gt; #t
+(hash-table-ref t 'plums)                  ;; =&gt; 7
+(hash-table-ref t 'kiwis (lambda () 0))    ;; =&gt; 0
+(hash-table-ref t 'apples (lambda () 0) (lambda (v) (* v 10))) ;; =&gt; 30
+(hash-table-empty? t)                      ;; =&gt; #f</code></pre>
+<p><code>hash-table-set!</code> takes several key/value pairs. <code>hash-table-ref</code> takes a "failure" thunk and a "success" procedure applied to the value.</p>
+<p>A table with string keys ignoring case, from the comparator above:</p>
+<pre><code class="language-scheme">(define cities (hash-table ci "Zürich" 'zh "Bern" 'be))
+(hash-table-ref/default cities "ZÜRICH" #f) ;; =&gt; zh</code></pre>
+<h2 id="changing-entries">Changing entries</h2>
+<pre><code class="language-scheme">(hash-table-update!/default t 'apples (lambda (n) (+ n 1)) 0)
+(hash-table-ref t 'apples)                 ;; =&gt; 4
+(hash-table-intern! t 'figs (lambda () 5)) ;; =&gt; 5
+(hash-table-intern! t 'figs (lambda () 99)) ;; =&gt; 5
+(hash-table-delete! t 'pears 'nothing)     ;; =&gt; 1
+(call-with-values (lambda () (hash-table-pop! t)) (lambda (k v) (symbol? k))) ;; =&gt; #t
+(hash-table-size t)                        ;; =&gt; 2</code></pre>
+<p><a class="xref" href="srfi-125.html#e18"><code>hash-table-intern!</code></a> returns the existing value, or stores and returns the thunk's value: the building block of caches. <code>hash-table-delete!</code> returns how many of the given keys were present. <a class="xref" href="srfi-125.html#e25"><code>hash-table-pop!</code></a> removes some entry and returns its key and value.</p>
+<h2 id="the-whole-table">The whole table</h2>
+<pre><code class="language-scheme">(define stock (hash-table d 'apples 3 'pears 0 'plums 7 'figs 0))
+(hash-table-count (lambda (k v) (&gt; v 0)) stock) ;; =&gt; 2
+(list-sort (lambda (a b) (&lt; (cdr a) (cdr b)))
+           (filter (lambda (e) (&gt; (cdr e) 0)) (hash-table-&gt;alist stock)))
+;; =&gt; ((apples . 3) (plums . 7))
+(hash-table-prune! (lambda (k v) (= v 0)) stock)
+(hash-table-size stock)                    ;; =&gt; 2
+(hash-table-map! (lambda (k v) (* v 2)) stock)
+(hash-table-ref stock 'plums)              ;; =&gt; 14
+(fold + 0 (hash-table-map-&gt;list (lambda (k v) v) stock)) ;; =&gt; 20
+(hash-table-find (lambda (k v) (and (&gt; v 10) k)) stock (lambda () #f)) ;; =&gt; plums</code></pre>
+<h2 id="set-operations">Set operations</h2>
+<p>Hash tables can act as sets (or maps) and be combined:</p>
+<pre><code class="language-scheme">(define a (hash-table d 1 'a 2 'b 3 'c))
+(define b (hash-table d 2 'x 4 'y))
+(define (keys t) (list-sort &lt; (hash-table-keys t)))
+(keys (hash-table-union! (hash-table-copy a #t) b))        ;; =&gt; (1 2 3 4)
+(keys (hash-table-intersection! (hash-table-copy a #t) b)) ;; =&gt; (2)
+(keys (hash-table-difference! (hash-table-copy a #t) b))   ;; =&gt; (1 3)
+(keys (hash-table-xor! (hash-table-copy a #t) b))          ;; =&gt; (1 3 4)</code></pre>
+<p>Each operation changes its first table, so the examples work on copies.</p>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-srfi-69.html">SRFI 69</a>, <a href="tutorial-techniques-04-hash-tables.html">hash tables and dictionaries</a>.</li>
+<li>Reference: <a class="xref" href="srfi-125.html"><code>(srfi 125)</code></a>, <a class="xref" href="srfi-128.html"><code>(srfi 128)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="srfi-125.html"><code>(srfi 125)</code></a>, <a href="srfi-128.html"><code>(srfi 128)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-srfi-111.html">&larr; SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a class="next" href="tutorial-srfi-132.html">SRFI 132 and 95: sorting &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

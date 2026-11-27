@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SRFI 2, 8 and 26: small syntax helpers — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html" class="active">SRFI 2, 8 and 26: small syntax helpers</a>
+    <a class="sub" href="#and-let-lookups-that-may-fail">and-let*: lookups that may fail</a>
+    <a class="sub" href="#receive-multiple-values">receive: multiple values</a>
+    <a class="sub" href="#cut-and-cute-partial-application">cut and cute: partial application</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">SRFI 2, 8 and 26: small syntax helpers</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="srfi-2-8-and-26-small-syntax-helpers">SRFI 2, 8 and 26: small syntax helpers</h1>
+<p>Three small libraries that make everyday code shorter:</p>
+<table>
+<thead>
+<tr><th>library</th><th>form</th><th>for</th></tr>
+</thead>
+<tbody>
+<tr><td><a class="xref" href="srfi-2.html"><code>(srfi 2)</code></a></td><td><a class="xref" href="srfi-2.html#e0"><code>and-let*</code></a></td><td>a chain of steps where any step may fail</td></tr>
+<tr><td><a class="xref" href="srfi-8.html"><code>(srfi 8)</code></a></td><td><a class="xref" href="srfi-8.html#e0"><code>receive</code></a></td><td>binding multiple return values</td></tr>
+<tr><td><a class="xref" href="srfi-26.html"><code>(srfi 26)</code></a></td><td><code>cut</code>, <a class="xref" href="srfi-26.html#e1"><code>cute</code></a></td><td>fixing some arguments of a procedure</td></tr>
+</tbody>
+</table>
+<pre><code class="language-scheme">(import (scheme base) (srfi 1) (srfi 2) (srfi 8) (srfi 26))</code></pre>
+<h2 id="and-let-lookups-that-may-fail">and-let*: lookups that may fail</h2>
+<p><a class="xref" href="srfi-2.html#e0"><code>and-let*</code></a> is <a class="xref" href="scheme-base.html#e106"><code>let*</code></a> that stops at the first <code>#f</code>. Each clause is either a binding <code>(name expr)</code>, which stops if the value is <code>#f</code>, or a plain test <code>(expr)</code>:</p>
+<pre><code class="language-scheme">(define config '((db . ((host . "localhost") (port . "5432")))))
+
+(define (db-port cfg)
+  (and-let* ((db (assq 'db cfg))
+             (port (assq 'port (cdr db)))
+             (n (string-&gt;number (cdr port)))
+             ((&lt; 0 n 65536)))
+    n))
+
+(db-port config)                          ;; =&gt; 5432
+(db-port '((db . ((host . "x")))))       ;; =&gt; #f
+(db-port '((db . ((port . "many")))))    ;; =&gt; #f</code></pre>
+<p>Without <a class="xref" href="srfi-2.html#e0"><code>and-let*</code></a>, this is a staircase of nested <a class="xref" href="scheme-base.html#e105"><code>let</code></a> and <a class="xref" href="scheme-base.html#e93"><code>if</code></a>; with it, the steps read top to bottom and any missing piece gives <code>#f</code>.</p>
+<h2 id="receive-multiple-values">receive: multiple values</h2>
+<p><a class="xref" href="srfi-8.html#e0"><code>receive</code></a> binds the values of an expression to names, like <a class="xref" href="scheme-base.html#e109"><code>let-values</code></a> for a single expression:</p>
+<pre><code class="language-scheme">(receive (q r) (floor/ 17 5)
+  (list q r))                             ;; =&gt; (3 2)
+
+(receive (evens odds) (partition even? '(1 2 3 4 5))
+  (list (length evens) (length odds)))    ;; =&gt; (2 3)
+
+(receive (first . rest) (values 1 2 3)
+  (list first rest))                      ;; =&gt; (1 (2 3))</code></pre>
+<p>The formals can end in a rest parameter, as in a <a class="xref" href="scheme-base.html#e102"><code>lambda</code></a>.</p>
+<h2 id="cut-and-cute-partial-application">cut and cute: partial application</h2>
+<p><code>cut</code> creates a procedure from a call with "holes" marked <code>&lt;&gt;</code>:</p>
+<pre><code class="language-scheme">((cut + 1 &lt;&gt;) 41)                         ;; =&gt; 42
+(map (cut * 2 &lt;&gt;) '(1 2 3))               ;; =&gt; (2 4 6)
+(map (cut list 'x &lt;&gt; 'z) '(1 2))          ;; =&gt; ((x 1 z) (x 2 z))
+(filter (cut string-prefix? "app" &lt;&gt;) '("apple" "pear" "applet"))
+;; =&gt; ("apple" "applet")
+((cut &lt;&gt; 3 4) +)                          ;; =&gt; 7
+((cut list 1 &lt;...&gt;) 2 3)                  ;; =&gt; (1 2 3)</code></pre>
+<p><code>&lt;...&gt;</code> at the end passes on any further arguments. The procedure position can be a hole too (<code>(cut &lt;&gt; 3 4)</code>).</p>
+<p><a class="xref" href="srfi-26.html#e1"><code>cute</code></a> evaluates the fixed arguments once, when the procedure is made, instead of at every call:</p>
+<pre><code class="language-scheme">(define counter 0)
+(define (next!) (set! counter (+ counter 1)) counter)
+
+(define f (cut list (next!) &lt;&gt;))
+(list (f 'a) (f 'b))                      ;; =&gt; ((1 a) (2 b))
+(define g (cute list (next!) &lt;&gt;))
+(list (g 'a) (g 'b))                      ;; =&gt; ((3 a) (3 b))</code></pre>
+<p>Use <a class="xref" href="srfi-26.html#e1"><code>cute</code></a> when a fixed argument is expensive to compute or must not be recomputed.</p>
+<pre><code class="language-scheme">(import (only (srfi 13) string-prefix?))</code></pre>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>.</li>
+<li>Reference: <a class="xref" href="srfi-2.html"><code>(srfi 2)</code></a>, <a class="xref" href="srfi-8.html"><code>(srfi 8)</code></a>, <a class="xref" href="srfi-26.html"><code>(srfi 26)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="srfi-2.html"><code>(srfi 2)</code></a>, <a href="srfi-8.html"><code>(srfi 8)</code></a>, <a href="srfi-26.html"><code>(srfi 26)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-srfi-19.html">&larr; SRFI 19: time and dates</a>
+  <a class="next" href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

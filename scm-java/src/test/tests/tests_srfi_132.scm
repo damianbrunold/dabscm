@@ -225,8 +225,9 @@
 (test-group "vector-find-median"
   ;; odd length
   (test-equal 3 (vector-find-median < #(3 1 4 1 5) 0))
-  ;; even length, no mean
-  (test-equal 3 (vector-find-median < #(3 1 4 5) 0))
+  ;; even length, no mean: the arithmetic mean, as SRFI 132 specifies
+  (test-equal 7/2 (vector-find-median < #(3 1 4 5) 0))
+  (test-equal 4 (vector-find-median < #(3 1 4 5) 0 max))
   ;; even length, with mean
   (test-equal 7/2
               (vector-find-median <
@@ -261,7 +262,7 @@
                 (vector-find-median! < v 0)
                 v))
   ;; two elements
-  (test-equal 1 (vector-find-median! < (vector 2 1) 0))
+  (test-equal 3/2 (vector-find-median! < (vector 2 1) 0))
   (test-equal 3/2
               (vector-find-median! <
                                    (vector 2 1)

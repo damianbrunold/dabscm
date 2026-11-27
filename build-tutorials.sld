@@ -206,7 +206,10 @@
                (let ((v (string-trim-both (substring c 2 (string-length c)))))
                  (cons (if (string=? v "error")
                            '(error)
-                           (list 'value (read (open-input-string v))))
+                           (list 'value
+                                 (guard (e (#t (error "tutorial: the expected value is not readable data"
+                                                      v)))
+                                   (read (open-input-string v)))))
                        0)))
               ((and c (string-prefix? "prints:" c))
                (let loop ((i next) (out (list (prints-text c))))
@@ -309,12 +312,20 @@
              (written
               (filter-map
                (lambda (f)
-                 (let ((t (read-tutorial (join-path tutorials-dir f))))
-                   (and (any tested-block? (tutorial-blocks t))
-                        (let ((name (test-file-name (tutorial-id t))))
-                          (call-with-output-file (join-path tests-dir name)
-                            (lambda (out) (write-test-program t out)))
-                          name))))
+                 (guard (e ((error-object? e)
+                            (error (string-append "tutorial " f ": "
+                                                  (error-object-message e))
+                                   (error-object-irritants e))))
+                   (let* ((t (read-tutorial (join-path tutorials-dir f)))
+                          (name (test-file-name (tutorial-id t))))
+                     (and (any tested-block? (tutorial-blocks t))
+                          ;; the program text first, so a bad tutorial leaves no
+                          ;; half-written file
+                          (let ((text (call-with-output-string*
+                                       (lambda (out) (write-test-program t out)))))
+                            (call-with-output-file (join-path tests-dir name)
+                              (lambda (out) (write-string text out)))
+                            name)))))
                (list-sort-strings files))))
         (for-each (lambda (f)
                     (when (and (string-prefix? "tests_tutorial_" f)
@@ -322,6 +333,11 @@
                       (delete-file (join-path tests-dir f))))
                   (directory-files tests-dir))
         written))
+
+    (define (call-with-output-string* proc)
+      (let ((p (open-output-string)))
+        (proc p)
+        (get-output-string p)))
 
     (define (list-sort-strings l)
       (let loop ((l l) (acc '()))

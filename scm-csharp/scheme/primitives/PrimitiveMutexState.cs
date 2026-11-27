@@ -19,7 +19,7 @@ public class PrimitiveMutexState : Primitive
         if (m.abandoned)
             return Value.Intern("abandoned");
         if (m.locked && m.owner != null)
-            return new NativeValue(m.owner);
+            return m.owner.AsValue();
         if (m.locked && m.owner == null)
             return Value.Intern("not-owned");
         return Value.Intern("not-abandoned");

@@ -16,6 +16,15 @@ public class SchemeThread {
     public volatile boolean terminated;
     public State state = State.NEW;
 
+    // the one Scheme value of this thread, so that current-thread,
+    // make-thread and mutex-state give eq? objects (SRFI 18)
+    private NativeValue value;
+
+    public synchronized NativeValue value() {
+        if (value == null) value = new NativeValue(this);
+        return value;
+    }
+
     public SchemeThread(Lambda lambda, Modules modules) {
         this.lambda = lambda;
         this.modules = modules;

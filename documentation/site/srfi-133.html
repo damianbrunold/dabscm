@@ -80,7 +80,7 @@
 
 <div class="lib-title srfi">(srfi 133)</div>
 <p class="lib-sub">SRFI-133 — Vector libraries</p>
-<p class="lib-tutorials">Tutorials: <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>, <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>, <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a></p>
+<p class="lib-tutorials">Tutorials: <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>, <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>, <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>, <a href="tutorial-srfi-133.html">SRFI 133: vectors</a></p>
 <div class="lib-preamble">
 <h2>Overview</h2>
 <p>SRFI-133 is a comprehensive vector library: the higher-order operations, searching, folding, and copying you expect for lists, but for vectors.</p>
@@ -405,11 +405,12 @@ Example:
   <div class="entry-name">vector-partition</div>
   <pre class="entry-doc">Syntax: (vector-partition pred vec)
 Library: (srfi 133)
-Description: Returns two values: a vector of elements satisfying pred, and
-  a vector of elements not satisfying pred, both in their original order.
+Description: Returns two values, as SRFI 133 specifies: a new vector with
+  the elements satisfying pred followed by the others, each in their
+  original order, and the number of elements satisfying pred.
 Example:
   (call-with-values (lambda () (vector-partition even? '#(1 2 3 4 5)))
-    list) =&gt; (#(2 4) #(1 3 5))</pre>
+    list) =&gt; (#(2 4 1 3 5) 2)</pre>
 </div>
 <div class="entry" id="e29" data-name="vector-ref">
   <div class="entry-name">vector-ref</div>

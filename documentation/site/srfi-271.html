@@ -39,6 +39,7 @@
 
 <div class="lib-title srfi">(srfi 271)</div>
 <p class="lib-sub">SRFI-271 — Random ports: cryptographically random bytes as a binary input port</p>
+<p class="lib-tutorials">Tutorials: <a href="tutorial-srfi-271.html">SRFI 271: random ports</a></p>
 <div class="lib-preamble">
 <h2>Overview</h2>
 <p>SRFI-271 provides random data as binary input ports that never return an eof object, so random bytes can be read with <a class="xref" href="scheme-base.html#e168"><code>read-u8</code></a>, <a class="xref" href="scheme-base.html#e162"><code>read-bytevector</code></a> and any other procedure that takes a binary port. <a class="xref" href="srfi-271.html"><code>(srfi 271)</code></a> is the same as <a class="xref" href="srfi-271-randomized.html"><code>(srfi 271 randomized)</code></a>: its ports deliver cryptographically random bytes from the operating system (Java <code>SecureRandom</code>, .NET <code>RandomNumberGenerator</code>) and have no observable state.</p>

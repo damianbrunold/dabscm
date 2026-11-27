@@ -79,8 +79,32 @@ the JVM, .NET and native implementations, so the code works as shown.
 
 ## Library tutorials
 
-Tutorials for the individual SRFIs and dabscm libraries follow; until then,
-the techniques above cover the most-used ones, and the
+Guided tours of the individual libraries, each with worked examples.
+
+### SRFIs
+
+| tutorial | covers |
+|---|---|
+| [SRFI 1: lists](srfi-1.md) | constructing, selecting, folding, searching, alists, lists as sets |
+| [SRFI 2, 8 and 26](srfi-26.md) | `and-let*`, `receive`, `cut` and `cute` |
+| [SRFI 9, 39, 98 and 111](srfi-111.md) | boxes, parameters, environment variables, records |
+| [SRFI 13: strings](srfi-13.md) | searching, trimming, padding, folding, a word wrapper |
+| [SRFI 14: character sets](srfi-14.md) | building sets, set algebra, a password-strength check |
+| [SRFI 18: threads](srfi-18.md) | threads, mutexes, condition variables, timeouts, a bounded buffer |
+| [SRFI 19: time and dates](srfi-19.md) | times, durations, dates, formatting and parsing, time zones |
+| [SRFI 27 and 194: random numbers](srfi-27.md) | random sources, reproducibility, distributions, shuffling |
+| [SRFI 28 and 48: format](srfi-48.md) | format strings, numbers, widths, a receipt |
+| [SRFI 64: unit tests](srfi-64.md) | assertions, groups, expected failures, custom runners |
+| [SRFI 69: hash tables](srfi-69.md) | the whole API, an inverted index |
+| [SRFI 125 and 128](srfi-125.md) | comparators, comparator-based hash tables, set operations |
+| [SRFI 132 and 95: sorting](srfi-132.md) | stable sorting, merging, order statistics, a leaderboard |
+| [SRFI 133: vectors](srfi-133.md) | vector operations, a moving average, the game of life |
+| [SRFI 151: bitwise operations](srfi-151.md) | bits, bit fields, permission flags, packed colors |
+| [SRFI 158: generators](srfi-158.md) | generators and accumulators, a streaming log analysis |
+| [SRFI 271: random ports](srfi-271.md) | secure random bytes, tokens, UUIDs, reproducible streams |
+
+Tutorials for the dabscm libraries (`(scm ...)`) follow. Until then, the
+techniques above cover the most-used ones, and the
 [library reference](../index.md) has an overview and examples for every
 library.
 

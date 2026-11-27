@@ -43,6 +43,7 @@
 
 <div class="lib-title srfi">(srfi 271 determinized)</div>
 <p class="lib-sub">SRFI-271 — Determinized random ports: seedable ports with saveable state (ChaCha20)</p>
+<p class="lib-tutorials">Tutorials: <a href="tutorial-srfi-271.html">SRFI 271: random ports</a></p>
 <div class="lib-preamble">
 <h2>Overview</h2>
 <p>The determinized random ports of SRFI-271: seedable binary input ports whose byte stream is fully determined by their state. A state can be taken from a port at any time, written out, read back, and passed to <a class="xref" href="#e0"><code>make-random-port</code></a> to resume the exact same stream. The algorithm is ChaCha20 (a 256-bit key, see <a class="xref" href="srfi-271-determinized-chacha20.html"><code>(srfi 271 determinized chacha20)</code></a>); a state is the vector <code>#(chacha20 key counter offset)</code>.</p>

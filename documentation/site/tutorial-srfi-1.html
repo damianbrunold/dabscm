@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SRFI 1: lists — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html" class="active">SRFI 1: lists</a>
+    <a class="sub" href="#constructing">Constructing</a>
+    <a class="sub" href="#selecting">Selecting</a>
+    <a class="sub" href="#folding-and-mapping">Folding and mapping</a>
+    <a class="sub" href="#searching">Searching</a>
+    <a class="sub" href="#deleting-and-partitioning">Deleting and partitioning</a>
+    <a class="sub" href="#zipping">Zipping</a>
+    <a class="sub" href="#association-lists">Association lists</a>
+    <a class="sub" href="#lists-as-sets">Lists as sets</a>
+    <a class="sub" href="#example-inventory-changes">Example: inventory changes</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">SRFI 1: lists</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="srfi-1-lists">SRFI 1: lists</h1>
+<p>SRFI 1 is the standard list library. It extends the few list procedures of <a class="xref" href="scheme-base.html"><code>(scheme base)</code></a> with about 150 more. This tutorial goes through them by task; the <a href="tutorial-basics-04-lists.html">pairs and lists</a> chapter covers the basics.</p>
+<pre><code class="language-scheme">(import (scheme base) (scheme char) (srfi 1))</code></pre>
+<h2 id="constructing">Constructing</h2>
+<pre><code class="language-scheme">(iota 4)                          ;; =&gt; (0 1 2 3)
+(iota 4 10 5)                     ;; =&gt; (10 15 20 25)
+(make-list 3 'x)                  ;; =&gt; (x x x)
+(list-tabulate 5 (lambda (i) (* i i))) ;; =&gt; (0 1 4 9 16)
+(cons* 1 2 '(3 4))                ;; =&gt; (1 2 3 4)
+(xcons '(b c) 'a)                 ;; =&gt; (a b c)
+(unfold (lambda (n) (&gt; n 50)) (lambda (n) n) (lambda (n) (* n 2)) 1)
+;; =&gt; (1 2 4 8 16 32)</code></pre>
+<p><a class="xref" href="srfi-1.html#e142"><code>unfold</code></a> is the opposite of <a class="xref" href="srfi-1.html#e72"><code>fold</code></a>: it builds a list from a seed, with a stop test, a value per step and a next-seed procedure.</p>
+<h2 id="selecting">Selecting</h2>
+<pre><code class="language-scheme">(define letters '(a b c d e f))
+(first letters)                   ;; =&gt; a
+(third letters)                   ;; =&gt; c
+(take letters 2)                  ;; =&gt; (a b)
+(drop letters 4)                  ;; =&gt; (e f)
+(take-right letters 2)            ;; =&gt; (e f)
+(drop-right letters 2)            ;; =&gt; (a b c d)
+(last letters)                    ;; =&gt; f
+(call-with-values (lambda () (split-at letters 3)) list)
+;; =&gt; ((a b c) (d e f))
+(take-while symbol? '(a b 1 c))   ;; =&gt; (a b)
+(drop-while symbol? '(a b 1 c))   ;; =&gt; (1 c)</code></pre>
+<h2 id="folding-and-mapping">Folding and mapping</h2>
+<pre><code class="language-scheme">(fold + 0 '(1 2 3 4))             ;; =&gt; 10
+(fold cons '() '(1 2 3))          ;; =&gt; (3 2 1)
+(fold-right cons '() '(1 2 3))    ;; =&gt; (1 2 3)
+(reduce max 0 '(3 8 2))           ;; =&gt; 8
+(fold (lambda (x y acc) (+ acc (* x y))) 0 '(1 2 3) '(4 5 6)) ;; =&gt; 32
+(append-map (lambda (x) (list x x)) '(a b)) ;; =&gt; (a a b b)
+(filter-map (lambda (x) (and (even? x) (* x 10))) '(1 2 3 4)) ;; =&gt; (20 40)
+(pair-fold (lambda (pair acc) (cons (length pair) acc)) '() '(a b c)) ;; =&gt; (1 2 3)</code></pre>
+<p>With several lists, <a class="xref" href="srfi-1.html#e72"><code>fold</code></a> passes one element of each, here for a dot product. <a class="xref" href="srfi-1.html#e113"><code>pair-fold</code></a> hands the procedure the remaining list instead of the element.</p>
+<h2 id="searching">Searching</h2>
+<pre><code class="language-scheme">(find even? '(1 3 4 5 6))         ;; =&gt; 4
+(find-tail even? '(1 3 4 5 6))    ;; =&gt; (4 5 6)
+(any (lambda (x) (and (&gt; x 2) (* x x))) '(1 2 3 4)) ;; =&gt; 9
+(every positive? '(1 2 3))        ;; =&gt; #t
+(list-index even? '(1 3 4))       ;; =&gt; 2
+(count odd? '(1 2 3 4 5))         ;; =&gt; 3
+(call-with-values (lambda () (span even? '(2 4 5 6))) list)
+;; =&gt; ((2 4) (5 6))
+(call-with-values (lambda () (break even? '(1 3 4 5))) list)
+;; =&gt; ((1 3) (4 5))</code></pre>
+<p><a class="xref" href="srfi-1.html#e4"><code>any</code></a> returns the first true value of the predicate, not just <code>#t</code>, which makes it a search and a transformation at once.</p>
+<h2 id="deleting-and-partitioning">Deleting and partitioning</h2>
+<pre><code class="language-scheme">(delete 3 '(1 3 2 3))             ;; =&gt; (1 2)
+(remove even? '(1 2 3 4))         ;; =&gt; (1 3)
+(filter even? '(1 2 3 4))         ;; =&gt; (2 4)
+(delete-duplicates '(1 2 1 3 2)) ;; =&gt; (1 2 3)
+(delete-duplicates '("a" "A" "b") (lambda (x y) (string=? (string-downcase x) (string-downcase y))))
+;; =&gt; ("a" "b")
+(call-with-values (lambda () (partition symbol? '(a 1 b 2))) list)
+;; =&gt; ((a b) (1 2))</code></pre>
+<p>The procedures ending in <code>!</code> (<a class="xref" href="srfi-1.html#e67"><code>filter!</code></a>, <code>delete!</code>, <a class="xref" href="srfi-1.html#e125"><code>reverse!</code></a>, …) may reuse the cells of their argument instead of copying. They are faster, but the argument is destroyed: use them only on lists nobody else holds.</p>
+<h2 id="zipping">Zipping</h2>
+<pre><code class="language-scheme">(zip '(1 2 3) '(a b c))           ;; =&gt; ((1 a) (2 b) (3 c))
+(call-with-values (lambda () (unzip2 '((1 a) (2 b)))) list)
+;; =&gt; ((1 2) (a b))
+(concatenate '((1 2) (3) () (4))) ;; =&gt; (1 2 3 4)
+(append-reverse '(3 2 1) '(4 5))  ;; =&gt; (1 2 3 4 5)</code></pre>
+<h2 id="association-lists">Association lists</h2>
+<pre><code class="language-scheme">(define stock '((apple . 3) (pear . 0) (plum . 7)))
+(alist-cons 'kiwi 2 stock)
+;; =&gt; ((kiwi . 2) (apple . 3) (pear . 0) (plum . 7))
+(alist-delete 'pear stock)        ;; =&gt; ((apple . 3) (plum . 7))
+(alist-copy stock)                ;; =&gt; ((apple . 3) (pear . 0) (plum . 7))</code></pre>
+<p><a class="xref" href="srfi-1.html#e0"><code>alist-cons</code></a> adds an entry in front, which shadows an older entry with the same key, so an alist can record changes cheaply.</p>
+<h2 id="lists-as-sets">Lists as sets</h2>
+<p>The <code>lset-</code> procedures treat lists as sets, with an equality predicate as their first argument:</p>
+<pre><code class="language-scheme">(lset-union eq? '(a b c) '(b d))          ;; =&gt; (d a b c)
+(lset-intersection eq? '(a b c) '(b c d)) ;; =&gt; (b c)
+(lset-difference eq? '(a b c) '(b))       ;; =&gt; (a c)
+(lset-adjoin eq? '(a b) 'c 'a)            ;; =&gt; (c a b)
+(lset&lt;= eq? '(a) '(a b))                  ;; =&gt; #t
+(lset= eq? '(a b) '(b a))                 ;; =&gt; #t</code></pre>
+<p>For large sets, a hash table with the elements as keys is faster.</p>
+<h2 id="example-inventory-changes">Example: inventory changes</h2>
+<p>Compare two inventories and report what was added, removed and changed:</p>
+<pre><code class="language-scheme">(define before '((apple . 3) (pear . 5) (plum . 7)))
+(define after '((apple . 3) (pear . 2) (fig . 4)))
+
+(define (keys inv) (map car inv))
+
+(define (inventory-diff old new)
+  (let ((added (lset-difference eq? (keys new) (keys old)))
+        (removed (lset-difference eq? (keys old) (keys new)))
+        (changed (filter-map (lambda (entry)
+                               (let ((o (assq (car entry) old)))
+                                 (and o (not (= (cdr o) (cdr entry)))
+                                      (list (car entry) (cdr o) (cdr entry)))))
+                             new)))
+    `((added ,@added) (removed ,@removed) (changed ,@changed))))
+
+(inventory-diff before after)
+;; =&gt; ((added fig) (removed plum) (changed (pear 5 2)))</code></pre>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>, <a href="tutorial-techniques-05-sorting.html">sorting and searching</a>.</li>
+<li>Reference: <a class="xref" href="srfi-1.html"><code>(srfi 1)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="srfi-1.html"><code>(srfi 1)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-techniques-12-system.html">&larr; The system: programs, environment, platform</a>
+  <a class="next" href="tutorial-srfi-13.html">SRFI 13: strings &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

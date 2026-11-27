@@ -384,19 +384,21 @@ Example:
     (define (vector-partition pred v)
       "Syntax: (vector-partition pred vec)
 Library: (srfi 133)
-Description: Returns two values: a vector of elements satisfying pred, and
-  a vector of elements not satisfying pred, both in their original order.
+Description: Returns two values, as SRFI 133 specifies: a new vector with
+  the elements satisfying pred followed by the others, each in their
+  original order, and the number of elements satisfying pred.
 Example:
   (call-with-values (lambda () (vector-partition even? '#(1 2 3 4 5)))
-    list) => (#(2 4) #(1 3 5))"
+    list) => (#(2 4 1 3 5) 2)"
       (let* ((len (vector-length v))
              (yes '())
-             (no '()))
+             (no '())
+             (n 0))
         (do ((i (- len 1) (- i 1))) ((< i 0))
           (if (pred (vector-ref v i))
-              (set! yes (cons (vector-ref v i) yes))
+              (begin (set! yes (cons (vector-ref v i) yes)) (set! n (+ n 1)))
               (set! no (cons (vector-ref v i) no))))
-        (values (list->vector yes) (list->vector no))))
+        (values (list->vector (append yes no)) n)))
 
     ;;; --- Mutators ---
 

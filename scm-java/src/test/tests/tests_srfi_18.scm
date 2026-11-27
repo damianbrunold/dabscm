@@ -307,4 +307,25 @@
                 (and (eq? (thread-join! a 30 'hung) 'done)
                      (thread-join! b 30 'hung)))))
 
+(test-group "joining a terminated thread"
+  (let ((t (make-thread (lambda () (thread-sleep! 10) 'done))))
+    (thread-start! t)
+    (thread-sleep! 0.01)
+    (thread-terminate! t)
+    (test-equal 'terminated
+                (guard (e ((terminated-thread-exception? e) 'terminated)
+                          ((uncaught-exception? e) 'uncaught))
+                  (thread-join! t)))))
+
+(test-group "thread identity"
+  ;; one object per thread: current-thread, make-thread and mutex-state agree
+  (test-assert (eq? (current-thread) (current-thread)))
+  (let ((t (make-thread (lambda () (current-thread)))))
+    (thread-start! t)
+    (test-assert (eq? (thread-join! t) t)))
+  (let ((m (make-mutex)))
+    (mutex-lock! m)
+    (test-assert (eq? (mutex-state m) (current-thread)))
+    (mutex-unlock! m)))
+
 (test-end "srfi-18")

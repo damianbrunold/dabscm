@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SRFI 13: strings — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html" class="active">SRFI 13: strings</a>
+    <a class="sub" href="#predicates-and-comparison">Predicates and comparison</a>
+    <a class="sub" href="#searching">Searching</a>
+    <a class="sub" href="#taking-apart">Taking apart</a>
+    <a class="sub" href="#trimming-and-padding">Trimming and padding</a>
+    <a class="sub" href="#building-and-changing">Building and changing</a>
+    <a class="sub" href="#folding">Folding</a>
+    <a class="sub" href="#hashing">Hashing</a>
+    <a class="sub" href="#example-word-wrapping">Example: word wrapping</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">SRFI 13: strings</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="srfi-13-strings">SRFI 13: strings</h1>
+<p>SRFI 13 is the classic string library. Most of its procedures take optional <code>start</code> and <code>end</code> arguments that restrict them to part of the string, and many accept a character, a character set or a predicate where a "thing to look for" is expected. The <a href="tutorial-techniques-01-strings.html">strings</a> chapter shows the everyday uses; this one goes through the library.</p>
+<pre><code class="language-scheme">(import (scheme base) (scheme char) (srfi 13) (srfi 14))</code></pre>
+<h2 id="predicates-and-comparison">Predicates and comparison</h2>
+<pre><code class="language-scheme">(string-null? "")                       ;; =&gt; #t
+(string-every char-numeric? "2025")     ;; =&gt; #t
+(string-any char-whitespace? "no-space") ;; =&gt; #f
+(if (string= "abc" "abc") 'same 'different)       ;; =&gt; same
+(if (string&lt; "apple" "banana") 'before 'after)     ;; =&gt; before
+(if (string-ci= "Zürich" "ZÜRICH") 'same 'different) ;; =&gt; same
+(string-prefix-length "interstellar" "internet") ;; =&gt; 5
+(string-compare "abc" "abd" (lambda (i) 'less) (lambda (i) 'equal) (lambda (i) 'greater))
+;; =&gt; less</code></pre>
+<p>The comparisons return a true value, not necessarily <code>#t</code> (dabscm returns the index where the comparison was decided), so use them in conditions. <a class="xref" href="srfi-13.html#e18"><code>string-compare</code></a> calls one of three procedures with the index where the strings first differ, which gives a three-way comparison in one pass.</p>
+<h2 id="searching">Searching</h2>
+<p>The "thing to look for" can be a character, a character set or a predicate:</p>
+<pre><code class="language-scheme">(define s "Order 4711, shipped 2025-11-27")
+(string-index s #\,)                    ;; =&gt; 10
+(string-index s char-numeric?)          ;; =&gt; 6
+(string-index s char-set:digit 11)      ;; =&gt; 20
+(string-index-right s #\-)              ;; =&gt; 27
+(string-skip s char-alphabetic?)        ;; =&gt; 5
+(string-contains s "shipped")           ;; =&gt; 12
+(string-contains-ci s "ORDER")          ;; =&gt; 0
+(string-count s char-numeric?)          ;; =&gt; 12</code></pre>
+<p>The optional start index (11 above) searches from that position on.</p>
+<h2 id="taking-apart">Taking apart</h2>
+<pre><code class="language-scheme">(string-take "dabscm" 3)                ;; =&gt; "dab"
+(string-drop "dabscm" 3)                ;; =&gt; "scm"
+(string-take-right "report.pdf" 3)      ;; =&gt; "pdf"
+(string-drop-right "report.pdf" 4)      ;; =&gt; "report"
+(string-tokenize "one  two\tthree")     ;; =&gt; ("one" "two" "three")
+(string-tokenize "a1b22c333" char-set:digit) ;; =&gt; ("1" "22" "333")</code></pre>
+<h2 id="trimming-and-padding">Trimming and padding</h2>
+<pre><code class="language-scheme">(string-trim "  hi  ")                  ;; =&gt; "hi  "
+(string-trim-right "  hi  ")            ;; =&gt; "  hi"
+(string-trim-both "  hi  ")             ;; =&gt; "hi"
+(string-trim-both "--hi--" #\-)         ;; =&gt; "hi"
+(string-pad "7" 3 #\0)                  ;; =&gt; "007"
+(string-pad-right "ab" 5 #\.)           ;; =&gt; "ab..."</code></pre>
+<h2 id="building-and-changing">Building and changing</h2>
+<pre><code class="language-scheme">(string-join '("2025" "11" "27") "-")   ;; =&gt; "2025-11-27"
+(string-join '("a" "b") ", " 'suffix)   ;; =&gt; "a, b, "
+(string-concatenate '("ab" "cd" "ef"))  ;; =&gt; "abcdef"
+(string-tabulate (lambda (i) (integer-&gt;char (+ 65 i))) 5) ;; =&gt; "ABCDE"
+(string-reverse "stressed")             ;; =&gt; "desserts"
+(string-replace "Hello, world" "Scheme" 7 12) ;; =&gt; "Hello, Scheme"
+(string-delete char-whitespace? "a b c") ;; =&gt; "abc"
+(string-filter char-upper-case? "Hello World") ;; =&gt; "HW"
+(string-titlecase "hello world")        ;; =&gt; "Hello World"
+(xsubstring "abc" 0 7)                  ;; =&gt; "abcabca"</code></pre>
+<p><a class="xref" href="srfi-13.html#e60"><code>string-replace</code></a> replaces the part between two indexes; <a class="xref" href="srfi-13.html#e93"><code>xsubstring</code></a> treats the string as repeating forever, handy for patterns and rulers.</p>
+<h2 id="folding">Folding</h2>
+<p><a class="xref" href="srfi-13.html#e37"><code>string-fold</code></a> walks the characters like <a class="xref" href="srfi-1.html#e72"><code>fold</code></a> walks a list:</p>
+<pre><code class="language-scheme">(string-fold (lambda (c n) (if (char=? c #\a) (+ n 1) n)) 0 "banana") ;; =&gt; 3
+(string-fold-right cons '() "abc")      ;; =&gt; (#\a #\b #\c)
+(string-unfold null? car cdr '(#\h #\i)) ;; =&gt; "hi"</code></pre>
+<h2 id="hashing">Hashing</h2>
+<pre><code class="language-scheme">(= (string-hash "key") (string-hash "key"))     ;; =&gt; #t
+(= (string-hash-ci "Key") (string-hash-ci "KEY")) ;; =&gt; #t
+(&lt; (string-hash "key" 100) 100)                 ;; =&gt; #t</code></pre>
+<h2 id="example-word-wrapping">Example: word wrapping</h2>
+<p>Wrap a paragraph at a given width, breaking only between words:</p>
+<pre><code class="language-scheme">(define (wrap text width)
+  (let loop ((words (string-tokenize text)) (line "") (lines '()))
+    (cond ((null? words)
+           (reverse (if (string-null? line) lines (cons line lines))))
+          ((string-null? line) (loop (cdr words) (car words) lines))
+          ((&lt;= (+ (string-length line) 1 (string-length (car words))) width)
+           (loop (cdr words) (string-append line " " (car words)) lines))
+          (else (loop words "" (cons line lines))))))
+
+(wrap "The quick brown fox jumps over the lazy dog" 15)
+;; =&gt; ("The quick brown" "fox jumps over" "the lazy dog")</code></pre>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-srfi-14.html">SRFI 14</a>: character sets, which many SRFI 13 procedures accept.</li>
+<li><a href="tutorial-techniques-01-strings.html">Strings and text</a>, reference <a class="xref" href="srfi-13.html"><code>(srfi 13)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="srfi-13.html"><code>(srfi 13)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-srfi-1.html">&larr; SRFI 1: lists</a>
+  <a class="next" href="tutorial-srfi-14.html">SRFI 14: character sets &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

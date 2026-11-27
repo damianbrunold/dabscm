@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SRFI 27 and 194: random numbers — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html" class="active">SRFI 27 and 194: random numbers</a>
+    <a class="sub" href="#random-integers-and-reals">Random integers and reals</a>
+    <a class="sub" href="#reproducible-sequences-with-a-random-source">Reproducible sequences with a random source</a>
+    <a class="sub" href="#shuffling-and-sampling">Shuffling and sampling</a>
+    <a class="sub" href="#distributions-as-generators">Distributions as generators</a>
+    <a class="sub" href="#example-estimating-π">Example: estimating π</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">SRFI 27 and 194: random numbers</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="srfi-27-and-194-random-numbers">SRFI 27 and 194: random numbers</h1>
+<ul>
+<li><a class="xref" href="srfi-27.html"><code>(srfi 27)</code></a> provides random integers and reals and <em>random sources</em>:</li>
+</ul>
+<p>independent generators that can be seeded for reproducible results.</p>
+<ul>
+<li><a class="xref" href="srfi-194.html"><code>(srfi 194)</code></a> builds on it with <em>generators</em> (SRFI 158 style) for many</li>
+</ul>
+<p>distributions.</p>
+<p>The values in this tutorial are random, so the examples check properties (ranges, reproducibility), not particular numbers.</p>
+<pre><code class="language-scheme">(import (scheme base) (srfi 1) (srfi 27) (srfi 132) (srfi 158) (srfi 194))</code></pre>
+<h2 id="random-integers-and-reals">Random integers and reals</h2>
+<pre><code class="language-scheme">(define die (random-integer 6))           ; 0 to 5
+(&lt;= 0 die 5)                              ;; =&gt; #t
+(define r (random-real))                  ; strictly between 0 and 1
+(&lt; 0 r 1)                                 ;; =&gt; #t
+(define (roll) (+ 1 (random-integer 6)))
+(every (lambda (x) (&lt;= 1 x 6)) (list-tabulate 100 (lambda (i) (roll)))) ;; =&gt; #t
+(integer? (random-integer (expt 10 30)))  ;; =&gt; #t</code></pre>
+<p><a class="xref" href="srfi-27.html#e2"><code>random-integer</code></a> works for any size of range, also beyond fixnums.</p>
+<h2 id="reproducible-sequences-with-a-random-source">Reproducible sequences with a random source</h2>
+<p>The default source is seeded differently on each run. For tests and simulations that must give the same results every time, make your own source and seed it:</p>
+<pre><code class="language-scheme">(define (seeded seed)
+  (let ((s (make-random-source)))
+    (random-source-pseudo-randomize! s seed 0)
+    s))
+
+(define (draws source n)
+  (let ((next (random-source-make-integers source)))
+    (list-tabulate n (lambda (i) (next 100)))))
+
+(equal? (draws (seeded 42) 5) (draws (seeded 42) 5)) ;; =&gt; #t
+(equal? (draws (seeded 42) 5) (draws (seeded 43) 5)) ;; =&gt; #f</code></pre>
+<p><a class="xref" href="srfi-27.html#e4"><code>random-source-make-integers</code></a> and <a class="xref" href="srfi-27.html#e5"><code>random-source-make-reals</code></a> return procedures drawing from that source. Independent sources do not affect each other, so two simulations in two threads stay reproducible.</p>
+<h2 id="shuffling-and-sampling">Shuffling and sampling</h2>
+<p>The Fisher–Yates shuffle picks a random position for each element:</p>
+<pre><code class="language-scheme">(define (shuffle lst source)
+  (let ((v (list-&gt;vector lst))
+        (next (random-source-make-integers source)))
+    (do ((i (- (vector-length v) 1) (- i 1)))
+        ((&lt; i 1) (vector-&gt;list v))
+      (let* ((j (next (+ i 1)))
+             (t (vector-ref v i)))
+        (vector-set! v i (vector-ref v j))
+        (vector-set! v j t)))))
+
+(define deck (iota 52))
+(define shuffled (shuffle deck (seeded 7)))
+(length shuffled)                         ;; =&gt; 52
+(equal? (list-sort &lt; shuffled) deck)     ;; =&gt; #t
+(equal? shuffled (shuffle deck (seeded 7))) ;; =&gt; #t</code></pre>
+<h2 id="distributions-as-generators">Distributions as generators</h2>
+<p>SRFI 194's constructors return generators: call them for the next value. They use <a class="xref" href="srfi-194.html#e1"><code>current-random-source</code></a>, which <a class="xref" href="srfi-194.html#e31"><code>with-random-source</code></a> sets:</p>
+<pre><code class="language-scheme">(define dice (make-random-integer-generator 1 7))     ; 1 to 6
+(every (lambda (x) (&lt;= 1 x 6)) (generator-&gt;list (gtake dice 50))) ;; =&gt; #t
+
+(define heights (make-normal-generator 170.0 8.0))   ; mean, deviation
+(real? (heights))                                     ;; =&gt; #t
+
+(define waits (make-exponential-generator 2.0))       ; mean 2
+(every positive? (generator-&gt;list (gtake waits 20)))  ;; =&gt; #t
+
+(define coin (make-bernoulli-generator 0.5))           ; 1 with probability 0.5, else 0
+(every (lambda (x) (or (= x 0) (= x 1))) (generator-&gt;list (gtake coin 10))) ;; =&gt; #t
+
+(define weather (make-categorical-generator #(0.7 0.2 0.1))) ; index 0, 1 or 2
+(every (lambda (i) (and (memv i '(0 1 2)) #t)) (generator-&gt;list (gtake weather 30))) ;; =&gt; #t
+
+(define code-chars (make-random-char-generator "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"))
+(define (voucher) (list-&gt;string (generator-&gt;list (gtake code-chars 6))))
+(string-length (voucher))                             ;; =&gt; 6</code></pre>
+<p>The voucher codes avoid the easily confused characters <code>0 O 1 I</code>. <a class="xref" href="srfi-194.html#e23"><code>make-random-string-generator</code></a> would give strings of random length (up to its first argument), not fixed-length codes.</p>
+<p>Reproducible generators: give them a seeded source.</p>
+<pre><code class="language-scheme">(define (normal-sample seed n)
+  (with-random-source (seeded seed)
+    (lambda () (generator-&gt;list (gtake (make-normal-generator 0.0 1.0) n)))))
+
+(equal? (normal-sample 1 5) (normal-sample 1 5))      ;; =&gt; #t</code></pre>
+<h2 id="example-estimating-π">Example: estimating π</h2>
+<p>Throw random points into the unit square and count those inside the quarter circle; the share approaches π/4:</p>
+<pre><code class="language-scheme">(define (estimate-pi n source)
+  (let ((next (random-source-make-reals source)))
+    (let loop ((i 0) (inside 0))
+      (if (= i n)
+          (* 4.0 (/ inside n))
+          (let ((x (next)) (y (next)))
+            (loop (+ i 1) (if (&lt;= (+ (* x x) (* y y)) 1.0) (+ inside 1) inside)))))))
+
+(&lt; 3.0 (estimate-pi 20000 (seeded 3)) 3.3)            ;; =&gt; #t</code></pre>
+<p>More points give a better estimate, but slowly: the error shrinks with the square root of the number of points.</p>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-srfi-158.html">SRFI 158</a> for working with generators.</li>
+<li>Reference: <a class="xref" href="srfi-27.html"><code>(srfi 27)</code></a>, <a class="xref" href="srfi-194.html"><code>(srfi 194)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="srfi-27.html"><code>(srfi 27)</code></a>, <a href="srfi-194.html"><code>(srfi 194)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-srfi-26.html">&larr; SRFI 2, 8 and 26: small syntax helpers</a>
+  <a class="next" href="tutorial-srfi-48.html">SRFI 28 and 48: format &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

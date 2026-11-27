@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SRFI 151: bitwise operations — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html" class="active">SRFI 151: bitwise operations</a>
+    <a class="sub" href="#the-basic-operations">The basic operations</a>
+    <a class="sub" href="#single-bits">Single bits</a>
+    <a class="sub" href="#bit-fields">Bit fields</a>
+    <a class="sub" href="#example-permission-flags">Example: permission flags</a>
+    <a class="sub" href="#example-packing-a-color">Example: packing a color</a>
+    <a class="sub" href="#big-integers">Big integers</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">SRFI 151: bitwise operations</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="srfi-151-bitwise-operations">SRFI 151: bitwise operations</h1>
+<p>SRFI 151 treats exact integers as sequences of bits (two's complement, so negative numbers have infinitely many leading ones). It works on integers of any size.</p>
+<pre><code class="language-scheme">(import (scheme base) (srfi 151))</code></pre>
+<h2 id="the-basic-operations">The basic operations</h2>
+<pre><code class="language-scheme">(bitwise-and #b1100 #b1010)            ;; =&gt; 8
+(bitwise-ior #b1100 #b1010)            ;; =&gt; 14
+(bitwise-xor #b1100 #b1010)            ;; =&gt; 6
+(bitwise-not 0)                        ;; =&gt; -1
+(arithmetic-shift 1 10)                ;; =&gt; 1024
+(arithmetic-shift 1024 -3)             ;; =&gt; 128
+(number-&gt;string (bitwise-and #xff00 #x0ff0) 16) ;; =&gt; "f00"</code></pre>
+<p><code>#b</code> and <code>#x</code> write numbers in binary and hex. <a class="xref" href="srfi-151.html#e1"><code>arithmetic-shift</code></a> shifts left for a positive count and right for a negative one.</p>
+<h2 id="single-bits">Single bits</h2>
+<p>Bits are numbered from 0, the least significant:</p>
+<pre><code class="language-scheme">(bit-set? 0 5)                         ;; =&gt; #t
+(bit-set? 1 5)                         ;; =&gt; #f
+(copy-bit 1 5 #t)                      ;; =&gt; 7
+(copy-bit 0 5 #f)                      ;; =&gt; 4
+(bit-count 255)                        ;; =&gt; 8
+(integer-length 255)                   ;; =&gt; 8
+(first-set-bit 40)                     ;; =&gt; 3
+(bits-&gt;list 6)                         ;; =&gt; (#f #t #t)
+(list-&gt;bits '(#t #f #t))               ;; =&gt; 5</code></pre>
+<p><a class="xref" href="srfi-151.html#e35"><code>integer-length</code></a> is the number of bits needed; <a class="xref" href="srfi-151.html#e34"><code>first-set-bit</code></a> the position of the lowest one bit (40 is <code>101000</code>).</p>
+<h2 id="bit-fields">Bit fields</h2>
+<p>A <em>field</em> is a range of bits, from <code>start</code> (included) to <code>end</code> (excluded):</p>
+<pre><code class="language-scheme">(bit-field #b110110 1 4)               ;; =&gt; 3
+(bit-field-set #b100000 1 4)           ;; =&gt; 46
+(bit-field-clear #b111111 1 4)         ;; =&gt; 49
+(bit-field-replace #b100000 #b101 1 4) ;; =&gt; 42
+(bit-field-any? #b100000 1 4)          ;; =&gt; #f</code></pre>
+<h2 id="example-permission-flags">Example: permission flags</h2>
+<p>Represent permissions as bits, the way file modes do:</p>
+<pre><code class="language-scheme">(define read 4)
+(define write 2)
+(define exec 1)
+
+(define (perm . flags) (apply bitwise-ior flags))
+(define (has? mode flag) (not (zero? (bitwise-and mode flag))))
+(define (revoke mode flag) (bitwise-and mode (bitwise-not flag)))
+
+(define mode (perm read write))
+(has? mode write)                      ;; =&gt; #t
+(has? mode exec)                       ;; =&gt; #f
+(revoke mode write)                    ;; =&gt; 4
+
+;; a Unix mode: owner, group, others, three bits each
+(define (unix-mode owner group other)
+  (bitwise-ior (arithmetic-shift owner 6) (arithmetic-shift group 3) other))
+(number-&gt;string (unix-mode (perm read write exec) (perm read exec) (perm read)) 8)
+;; =&gt; "754"</code></pre>
+<h2 id="example-packing-a-color">Example: packing a color</h2>
+<p>An RGB color in one integer, 8 bits per channel:</p>
+<pre><code class="language-scheme">(define (rgb r g b) (bitwise-ior (arithmetic-shift r 16) (arithmetic-shift g 8) b))
+(define (red c) (bit-field c 16 24))
+(define (green c) (bit-field c 8 16))
+(define (blue c) (bit-field c 0 8))
+
+(define orange (rgb 255 165 0))
+(number-&gt;string orange 16)             ;; =&gt; "ffa500"
+(list (red orange) (green orange) (blue orange)) ;; =&gt; (255 165 0)</code></pre>
+<h2 id="big-integers">Big integers</h2>
+<p>Everything works beyond 64 bits:</p>
+<pre><code class="language-scheme">(bit-count (- (expt 2 100) 1))         ;; =&gt; 100
+(arithmetic-shift 1 100)               ;; =&gt; 1267650600228229401496703205376</code></pre>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a class="xref" href="scm-bytevector.html"><code>(scm bytevector)</code></a> for reading and writing integers in bytevectors.</li>
+<li>Reference: <a class="xref" href="srfi-151.html"><code>(srfi 151)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="srfi-151.html"><code>(srfi 151)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-srfi-133.html">&larr; SRFI 133: vectors</a>
+  <a class="next" href="tutorial-srfi-158.html">SRFI 158: generators and accumulators &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

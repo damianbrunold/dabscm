@@ -180,11 +180,11 @@
 
 ;; Searching - vector-partition
 (test-group "searching - vector-partition"
-  (test-equal '(#(2 4) #(1 3 5))
+  (test-equal '(#(2 4 1 3 5) 2)
               (call-with-values
                   (lambda () (vector-partition even? '#(1 2 3 4 5)))
                 list))
-  (test-equal '(#() #())
+  (test-equal '(#() 0)
               (call-with-values (lambda () (vector-partition even? '#()))
                 list)))
 

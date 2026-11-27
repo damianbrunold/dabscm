@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SRFI 271: random ports — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html" class="active">SRFI 271: random ports</a>
+    <a class="sub" href="#secure-random-bytes">Secure random bytes</a>
+    <a class="sub" href="#reproducible-streams">Reproducible streams</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">SRFI 271: random ports</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="srfi-271-random-ports">SRFI 271: random ports</h1>
+<p>SRFI 271 provides random bytes as a binary input port that never ends. Any procedure that reads a binary port can read random data: <a class="xref" href="scheme-base.html#e168"><code>read-u8</code></a>, <a class="xref" href="scheme-base.html#e162"><code>read-bytevector</code></a>, your own parsers.</p>
+<ul>
+<li><a class="xref" href="srfi-271.html"><code>(srfi 271)</code></a> (the same as <a class="xref" href="srfi-271-randomized.html"><code>(srfi 271 randomized)</code></a>) delivers</li>
+</ul>
+<p>cryptographically secure random bytes from the operating system. Use it for keys, tokens and passwords.</p>
+<ul>
+<li><a class="xref" href="srfi-271-determinized.html"><code>(srfi 271 determinized)</code></a> delivers a reproducible stream from a seed,</li>
+</ul>
+<p>with a state you can save and resume. Use it for simulations and tests.</p>
+<pre><code class="language-scheme">(import (scheme base) (srfi 151) (srfi 271)
+        (prefix (srfi 271 determinized) d:))</code></pre>
+<h2 id="secure-random-bytes">Secure random bytes</h2>
+<pre><code class="language-scheme">(define rp (make-random-port))
+(random-port? rp)                         ;; =&gt; #t
+(bytevector-length (read-bytevector 16 rp)) ;; =&gt; 16
+(&lt;= 0 (read-u8 rp) 255)                   ;; =&gt; #t</code></pre>
+<p>The port never returns an end-of-file object.</p>
+<h3 id="example-tokens-and-identifiers">Example: tokens and identifiers</h3>
+<p>A URL-safe token from 16 random bytes, and a random version-4 UUID:</p>
+<pre><code class="language-scheme">(define alphabet "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_")
+
+(define (token n)
+  (let ((bytes (read-bytevector n rp)))
+    (let loop ((i 0) (acc '()))
+      (if (= i n)
+          (list-&gt;string (reverse acc))
+          (loop (+ i 1)
+                (cons (string-ref alphabet (modulo (bytevector-u8-ref bytes i) 64)) acc))))))
+
+(string-length (token 16))                ;; =&gt; 16
+
+(define (hex2 b) (let ((s (number-&gt;string b 16))) (if (&lt; b 16) (string-append "0" s) s)))
+
+(define (uuid4)
+  (let ((b (read-bytevector 16 rp)))
+    ;; version 4 in the high nibble of byte 6, variant 10 in the top bits of byte 8
+    (bytevector-u8-set! b 6 (bitwise-ior #x40 (bitwise-and (bytevector-u8-ref b 6) #x0f)))
+    (bytevector-u8-set! b 8 (bitwise-ior #x80 (bitwise-and (bytevector-u8-ref b 8) #x3f)))
+    (let loop ((i 0) (acc ""))
+      (if (= i 16)
+          acc
+          (loop (+ i 1)
+                (string-append acc (if (memv i '(4 6 8 10)) "-" "") (hex2 (bytevector-u8-ref b i))))))))
+
+(define id (uuid4))
+(string-length id)                        ;; =&gt; 36
+(string-ref id 14)                        ;; =&gt; #\4</code></pre>
+<p>The UUID sets the version (4) and variant bits as RFC 9562 asks, with <a class="xref" href="srfi-151.html#e17"><code>bitwise-and</code></a> and <a class="xref" href="srfi-151.html#e24"><code>bitwise-ior</code></a> from <a href="tutorial-srfi-151.html">SRFI 151</a>.</p>
+<h2 id="reproducible-streams">Reproducible streams</h2>
+<p>A determinized port is seeded from 32 bytes read from another binary port:</p>
+<pre><code class="language-scheme">(define (seeded-port seed-byte)
+  (d:make-random-port (open-input-bytevector (make-bytevector 32 seed-byte))))
+
+(equal? (read-bytevector 8 (seeded-port 7)) (read-bytevector 8 (seeded-port 7))) ;; =&gt; #t
+(equal? (read-bytevector 8 (seeded-port 7)) (read-bytevector 8 (seeded-port 8))) ;; =&gt; #f</code></pre>
+<h3 id="saving-and-resuming">Saving and resuming</h3>
+<p><code>random-port-state</code> captures where a port is; a port made from the state continues from exactly there:</p>
+<pre><code class="language-scheme">(define p (seeded-port 1))
+(read-bytevector 100 p)                   ; advance somewhere
+(define saved (d:random-port-state p))
+(define next-from-p (read-bytevector 8 p))
+(equal? next-from-p (read-bytevector 8 (d:make-random-port saved))) ;; =&gt; #t</code></pre>
+<p>That lets a long simulation checkpoint its random stream together with its other state, and continue later with exactly the same numbers.</p>
+<p>A seed of only zero bytes, or fewer than 32 bytes, is rejected:</p>
+<pre><code class="language-scheme">(guard (e ((d:random-port-initialization-error? e) 'bad-seed))
+  (d:make-random-port (open-input-bytevector (make-bytevector 32 0))))
+;; =&gt; bad-seed</code></pre>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-srfi-27.html">SRFI 27 and 194</a> for random numbers and distributions.</li>
+<li><a class="xref" href="scm-crypto-token.html"><code>(scm crypto token)</code></a> for signed, expiring tokens.</li>
+<li>Reference: <a class="xref" href="srfi-271.html"><code>(srfi 271)</code></a>, <a class="xref" href="srfi-271-determinized.html"><code>(srfi 271 determinized)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="srfi-271.html"><code>(srfi 271)</code></a>, <a href="srfi-271-determinized.html"><code>(srfi 271 determinized)</code></a>, <a href="srfi-151.html"><code>(srfi 151)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-srfi-158.html">&larr; SRFI 158: generators and accumulators</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

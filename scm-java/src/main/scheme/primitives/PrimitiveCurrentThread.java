@@ -19,6 +19,6 @@ public class PrimitiveCurrentThread extends Primitive {
         checkArgs(pos, arguments, 0, 0);
         SchemeThread t = SchemeThread.currentThread.get();
         if (t == null) throw new SchemeError(pos, "current-thread: no current thread");
-        return new NativeValue(t);
+        return t.value();
     }
 }
