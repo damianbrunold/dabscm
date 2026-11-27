@@ -78,6 +78,20 @@
   <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
   <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
   <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <a href="tutorial-scm-string.html">(scm string): regular expressions and splitting</a>
+  <a href="tutorial-scm-list.html">(scm list) and (scm macro): small helpers</a>
+  <a href="tutorial-scm-match.html">(scm match): pattern matching</a>
+  <a href="tutorial-scm-io.html">(scm io): ports and formatting</a>
+  <a href="tutorial-scm-text.html">(scm text): Unix text tools in Scheme</a>
+  <a href="tutorial-scm-templating.html">(scm templating) and (scm uri): templates and URLs</a>
+  <a href="tutorial-scm-args.html">(scm args): command-line parsing</a>
+  <a href="tutorial-scm-terminal.html">(scm terminal) and (scm log): terminal output and logging</a>
+  <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a>
+  <a href="tutorial-scm-system.html">(scm system) and (scm sysadmin): processes and the system</a>
+  <a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a>
+  <a href="tutorial-scm-store.html">(scm store): an indexed record store</a>
+  <a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a>
+  <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a>
   <h2><a href="index.html">Library reference</a></h2>
 </nav>
 
@@ -138,9 +152,9 @@
 (string-split-lines "one\ntwo\nthree")     ;; =&gt; ("one" "two" "three")
 (map string-&gt;number (string-split "1.5,2,3" ",")) ;; =&gt; (1.5 2 3)</code></pre>
 <ul>
-<li><a class="xref" href="scm-string.html#e5"><code>string-split</code></a> with a separator splits on that literal text; without one</li>
+<li><a class="xref" href="scm-string.html#e5"><code>string-split</code></a> with a separator splits at that <em>regular expression</em></li>
 </ul>
-<p>it splits on runs of whitespace (leading and trailing space give empty first and last fields);</p>
+<p>(so a dot must be written <code>"\\."</code>); without one it splits on runs of whitespace (leading and trailing space give empty first and last fields);</p>
 <ul>
 <li><a class="xref" href="srfi-13.html#e75"><code>string-tokenize</code></a> (SRFI 13) returns only the non-empty words, which is</li>
 </ul>
@@ -173,7 +187,7 @@
 
 (parse-date "2025-11-27")                  ;; =&gt; (2025 11 27)
 (parse-date "27.11.2025")                  ;; =&gt; #f</code></pre>
-<p><a class="xref" href="scm-string.html#e2"><code>string-matches</code></a> must match the whole string. To find a pattern inside a longer text, use <a class="xref" href="scm-string.html#e0"><code>regex-search</code></a>. It returns a vector of <code>(start . end)</code> positions, for the whole match and each group, or <code>#f</code>:</p>
+<p><a class="xref" href="scm-string.html#e2"><code>string-matches</code></a> finds the first match anywhere in the string; anchor the pattern with <code>^</code> and <code>$</code> when the whole string must match. To get the <em>positions</em> of a match, use <a class="xref" href="scm-string.html#e0"><code>regex-search</code></a>. It returns a vector of <code>(start . end)</code> positions, for the whole match and each group, or <code>#f</code>:</p>
 <pre><code class="language-scheme">(define order "Order #4711 shipped")
 (define m (regex-search order "#([0-9]+)"))
 m                                          ;; =&gt; #((6 . 11) (7 . 11))
@@ -263,7 +277,7 @@ m                                          ;; =&gt; #((6 . 11) (7 . 11))
 <h2 id="where-next">Where next</h2>
 <ul>
 <li><a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>.</li>
-<li><a href="tutorial-srfi-13.html">SRFI 13</a>, <a href="scm-string.html"><a class="xref" href="scm-string.html"><code>(scm string)</code></a></a>, <a href="scm-text.html"><a class="xref" href="scm-text.html"><code>(scm text)</code></a></a></li>
+<li><a href="tutorial-srfi-13.html">SRFI 13</a>, <a href="tutorial-scm-string.html"><a class="xref" href="scm-string.html"><code>(scm string)</code></a></a>, <a href="tutorial-scm-text.html"><a class="xref" href="scm-text.html"><code>(scm text)</code></a></a></li>
 </ul>
 <p>for awk/grep/sed-style processing of whole files.</p>
 </div>

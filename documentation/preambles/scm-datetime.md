@@ -21,8 +21,8 @@ Format epoch seconds back to ISO 8601, and read the clock:
 
 ```scheme
 (format-iso8601 1715862896)   ;; => "2024-05-16T12:34:56Z"
-(now)                         ;; current time, epoch seconds
-(today)                       ;; start of today, epoch seconds
+(now)                         ;; => "2024-05-16 14:34"  local date and time
+(today)                       ;; => "2024-05-16"        local date
 ```
 
 `parse-pubdate` accepts either ISO 8601 or RFC 822 input, which is handy when

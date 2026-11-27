@@ -67,6 +67,20 @@
   <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
   <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
   <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <a href="tutorial-scm-string.html">(scm string): regular expressions and splitting</a>
+  <a href="tutorial-scm-list.html">(scm list) and (scm macro): small helpers</a>
+  <a href="tutorial-scm-match.html">(scm match): pattern matching</a>
+  <a href="tutorial-scm-io.html">(scm io): ports and formatting</a>
+  <a href="tutorial-scm-text.html">(scm text): Unix text tools in Scheme</a>
+  <a href="tutorial-scm-templating.html">(scm templating) and (scm uri): templates and URLs</a>
+  <a href="tutorial-scm-args.html">(scm args): command-line parsing</a>
+  <a href="tutorial-scm-terminal.html">(scm terminal) and (scm log): terminal output and logging</a>
+  <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a>
+  <a href="tutorial-scm-system.html">(scm system) and (scm sysadmin): processes and the system</a>
+  <a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a>
+  <a href="tutorial-scm-store.html">(scm store): an indexed record store</a>
+  <a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a>
+  <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a>
   <h2><a href="index.html">Library reference</a></h2>
 </nav>
 
@@ -179,7 +193,29 @@
 <tr><td><a href="tutorial-srfi-271.html">SRFI 271: random ports</a></td><td>secure random bytes, tokens, UUIDs, reproducible streams</td></tr>
 </tbody>
 </table>
-<p>Tutorials for the dabscm libraries (<code>(scm ...)</code>) follow. Until then, the techniques above cover the most-used ones, and the <a href="index.html">library reference</a> has an overview and examples for every library.</p>
+<h3 id="core-dabscm-libraries">Core dabscm libraries</h3>
+<table>
+<thead>
+<tr><th>tutorial</th><th>covers</th></tr>
+</thead>
+<tbody>
+<tr><td><a href="tutorial-scm-string.html"><a class="xref" href="scm-string.html"><code>(scm string)</code></a></a></td><td>regular expressions, searching and replacing with groups, splitting</td></tr>
+<tr><td><a href="tutorial-scm-list.html"><a class="xref" href="scm-list.html"><code>(scm list)</code></a> and <a class="xref" href="scm-macro.html"><code>(scm macro)</code></a></a></td><td>property lists, neighbouring duplicates, pretty-printing</td></tr>
+<tr><td><a href="tutorial-scm-match.html"><a class="xref" href="scm-match.html"><code>(scm match)</code></a></a></td><td>pattern matching, destructuring data, a symbolic differentiator</td></tr>
+<tr><td><a href="tutorial-scm-io.html"><a class="xref" href="scm-io.html"><code>(scm io)</code></a></a></td><td>string ports, whole-file reading, reading untrusted data</td></tr>
+<tr><td><a href="tutorial-scm-text.html"><a class="xref" href="scm-text.html"><code>(scm text)</code></a></a></td><td>grep, sed, awk, sort, uniq, wc, diff and hexdump in Scheme</td></tr>
+<tr><td><a href="tutorial-scm-templating.html"><a class="xref" href="scm-templating.html"><code>(scm templating)</code></a> and <a class="xref" href="scm-uri.html"><code>(scm uri)</code></a></a></td><td>templates with loops and includes, percent-encoding</td></tr>
+<tr><td><a href="tutorial-scm-args.html"><a class="xref" href="scm-args.html"><code>(scm args)</code></a></a></td><td>command-line options, types, help, errors</td></tr>
+<tr><td><a href="tutorial-scm-terminal.html"><a class="xref" href="scm-terminal.html"><code>(scm terminal)</code></a> and <a class="xref" href="scm-log.html"><code>(scm log)</code></a></a></td><td>colors, display width, raw keys, logging</td></tr>
+<tr><td><a href="tutorial-scm-fs.html"><a class="xref" href="scm-fs.html"><code>(scm fs)</code></a>, <a class="xref" href="scm-fs-find.html"><code>(scm fs-find)</code></a>, <a class="xref" href="scm-glob.html"><code>(scm glob)</code></a></a></td><td>paths, directories, finding files, globs, backup rotation</td></tr>
+<tr><td><a href="tutorial-scm-system.html"><a class="xref" href="scm-system.html"><code>(scm system)</code></a> and <a class="xref" href="scm-sysadmin.html"><code>(scm sysadmin)</code></a></a></td><td>running programs, platform, parallel maps, scripting</td></tr>
+<tr><td><a href="tutorial-scm-archive.html"><a class="xref" href="scm-archive.html"><code>(scm archive)</code></a>, <a class="xref" href="scm-zip.html"><code>(scm zip)</code></a>, <a class="xref" href="scm-compression.html"><code>(scm compression)</code></a></a></td><td>gzip, ZIP and tar archives, compressing bytevectors</td></tr>
+<tr><td><a href="tutorial-scm-store.html"><a class="xref" href="scm-store.html"><code>(scm store)</code></a></a></td><td>an indexed on-disk record store</td></tr>
+<tr><td><a href="tutorial-scm-crypto.html"><a class="xref" href="scm-crypto.html"><code>(scm crypto)</code></a></a></td><td>hashes, HMAC, encryption, passwords, signed tokens</td></tr>
+<tr><td><a href="tutorial-scm-datetime.html"><a class="xref" href="scm-datetime.html"><code>(scm datetime)</code></a> and <a class="xref" href="scm-duration.html"><code>(scm duration)</code></a></a></td><td>parsing and formatting timestamps, durations</td></tr>
+</tbody>
+</table>
+<p>Tutorials for the format, web, database and data libraries follow. Until then, the <a href="index.html">library reference</a> has an overview and examples for every library.</p>
 <h2 id="running-the-examples-yourself">Running the examples yourself</h2>
 <p>Copy a code block into a file, keep the <a class="xref" href="scm-module.html#e10"><code>import</code></a> from the chapter's first block, and run it with <code>scm file.scm</code>. Lines ending in <code>;; =&gt; value</code> show what an expression returns; <code>;; prints:</code> shows what it writes.</p><span id="basics"></span><span id="techniques"></span><span id="libraries"></span>
 <h2 id="by-library">Tutorials by library</h2>
@@ -196,29 +232,40 @@
 <tr><td><a href="scheme-lazy.html"><code>(scheme lazy)</code></a></td><td><a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a></td></tr>
 <tr><td><a href="scheme-process-context.html"><code>(scheme process-context)</code></a></td><td><a href="tutorial-basics-01-getting-started.html">Getting started</a>, <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>, <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a></td></tr>
 <tr><td><a href="scheme-write.html"><code>(scheme write)</code></a></td><td><a href="tutorial-basics-01-getting-started.html">Getting started</a>, <a href="tutorial-basics-02-values.html">Expressions and values</a>, <a href="tutorial-basics-09-errors.html">Errors and exceptions</a></td></tr>
-<tr><td><a href="scm-archive.html"><code>(scm archive)</code></a></td><td><a href="tutorial-techniques-03-files.html">Files and directories</a></td></tr>
-<tr><td><a href="scm-args.html"><code>(scm args)</code></a></td><td><a href="tutorial-techniques-09-command-line.html">Command-line programs</a></td></tr>
+<tr><td><a href="scm-archive.html"><code>(scm archive)</code></a></td><td><a href="tutorial-techniques-03-files.html">Files and directories</a>, <a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a></td></tr>
+<tr><td><a href="scm-args.html"><code>(scm args)</code></a></td><td><a href="tutorial-techniques-09-command-line.html">Command-line programs</a>, <a href="tutorial-scm-args.html">(scm args): command-line parsing</a></td></tr>
+<tr><td><a href="scm-compression.html"><code>(scm compression)</code></a></td><td><a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a></td></tr>
+<tr><td><a href="scm-crypto-password.html"><code>(scm crypto password)</code></a></td><td><a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a></td></tr>
+<tr><td><a href="scm-crypto-token.html"><code>(scm crypto token)</code></a></td><td><a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a></td></tr>
+<tr><td><a href="scm-crypto.html"><code>(scm crypto)</code></a></td><td><a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a></td></tr>
 <tr><td><a href="scm-csv.html"><code>(scm csv)</code></a></td><td><a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a></td></tr>
 <tr><td><a href="scm-data-frame.html"><code>(scm data frame)</code></a></td><td><a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a></td></tr>
 <tr><td><a href="scm-data-io.html"><code>(scm data io)</code></a></td><td><a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a></td></tr>
-<tr><td><a href="scm-datetime.html"><code>(scm datetime)</code></a></td><td><a href="tutorial-techniques-07-dates.html">Dates and times</a></td></tr>
+<tr><td><a href="scm-datetime.html"><code>(scm datetime)</code></a></td><td><a href="tutorial-techniques-07-dates.html">Dates and times</a>, <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a></td></tr>
 <tr><td><a href="scm-dict.html"><code>(scm dict)</code></a></td><td><a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a></td></tr>
-<tr><td><a href="scm-duration.html"><code>(scm duration)</code></a></td><td><a href="tutorial-techniques-07-dates.html">Dates and times</a></td></tr>
-<tr><td><a href="scm-fs-find.html"><code>(scm fs-find)</code></a></td><td><a href="tutorial-techniques-03-files.html">Files and directories</a></td></tr>
-<tr><td><a href="scm-fs.html"><code>(scm fs)</code></a></td><td><a href="tutorial-techniques-03-files.html">Files and directories</a>, <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a></td></tr>
-<tr><td><a href="scm-glob.html"><code>(scm glob)</code></a></td><td><a href="tutorial-techniques-03-files.html">Files and directories</a></td></tr>
-<tr><td><a href="scm-io.html"><code>(scm io)</code></a></td><td><a href="tutorial-techniques-01-strings.html">Strings and text</a>, <a href="tutorial-techniques-03-files.html">Files and directories</a></td></tr>
+<tr><td><a href="scm-duration.html"><code>(scm duration)</code></a></td><td><a href="tutorial-techniques-07-dates.html">Dates and times</a>, <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a></td></tr>
+<tr><td><a href="scm-fs-find.html"><code>(scm fs-find)</code></a></td><td><a href="tutorial-techniques-03-files.html">Files and directories</a>, <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a></td></tr>
+<tr><td><a href="scm-fs.html"><code>(scm fs)</code></a></td><td><a href="tutorial-techniques-03-files.html">Files and directories</a>, <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>, <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a></td></tr>
+<tr><td><a href="scm-glob.html"><code>(scm glob)</code></a></td><td><a href="tutorial-techniques-03-files.html">Files and directories</a>, <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a></td></tr>
+<tr><td><a href="scm-io.html"><code>(scm io)</code></a></td><td><a href="tutorial-techniques-01-strings.html">Strings and text</a>, <a href="tutorial-techniques-03-files.html">Files and directories</a>, <a href="tutorial-scm-io.html">(scm io): ports and formatting</a></td></tr>
 <tr><td><a href="scm-json-simple.html"><code>(scm json simple)</code></a></td><td><a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a></td></tr>
-<tr><td><a href="scm-log.html"><code>(scm log)</code></a></td><td><a href="tutorial-techniques-09-command-line.html">Command-line programs</a></td></tr>
-<tr><td><a href="scm-match.html"><code>(scm match)</code></a></td><td><a href="tutorial-basics-11-macros.html">Macros and pattern matching</a></td></tr>
+<tr><td><a href="scm-list.html"><code>(scm list)</code></a></td><td><a href="tutorial-scm-list.html">(scm list) and (scm macro): small helpers</a></td></tr>
+<tr><td><a href="scm-log.html"><code>(scm log)</code></a></td><td><a href="tutorial-techniques-09-command-line.html">Command-line programs</a>, <a href="tutorial-scm-terminal.html">(scm terminal) and (scm log): terminal output and logging</a></td></tr>
+<tr><td><a href="scm-macro.html"><code>(scm macro)</code></a></td><td><a href="tutorial-scm-list.html">(scm list) and (scm macro): small helpers</a></td></tr>
+<tr><td><a href="scm-match.html"><code>(scm match)</code></a></td><td><a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>, <a href="tutorial-scm-match.html">(scm match): pattern matching</a></td></tr>
 <tr><td><a href="scm-module.html"><code>(scm module)</code></a></td><td><a href="tutorial-basics-10-libraries.html">Libraries and programs</a></td></tr>
-<tr><td><a href="scm-string.html"><code>(scm string)</code></a></td><td><a href="tutorial-techniques-01-strings.html">Strings and text</a>, <a href="tutorial-techniques-03-files.html">Files and directories</a></td></tr>
-<tr><td><a href="scm-system.html"><code>(scm system)</code></a></td><td><a href="tutorial-techniques-11-concurrency.html">Concurrency</a>, <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a></td></tr>
-<tr><td><a href="scm-templating.html"><code>(scm templating)</code></a></td><td><a href="tutorial-techniques-01-strings.html">Strings and text</a></td></tr>
-<tr><td><a href="scm-terminal.html"><code>(scm terminal)</code></a></td><td><a href="tutorial-techniques-09-command-line.html">Command-line programs</a></td></tr>
+<tr><td><a href="scm-store.html"><code>(scm store)</code></a></td><td><a href="tutorial-scm-store.html">(scm store): an indexed record store</a></td></tr>
+<tr><td><a href="scm-string.html"><code>(scm string)</code></a></td><td><a href="tutorial-techniques-01-strings.html">Strings and text</a>, <a href="tutorial-techniques-03-files.html">Files and directories</a>, <a href="tutorial-scm-string.html">(scm string): regular expressions and splitting</a></td></tr>
+<tr><td><a href="scm-sysadmin.html"><code>(scm sysadmin)</code></a></td><td><a href="tutorial-scm-system.html">(scm system) and (scm sysadmin): processes and the system</a></td></tr>
+<tr><td><a href="scm-system.html"><code>(scm system)</code></a></td><td><a href="tutorial-techniques-11-concurrency.html">Concurrency</a>, <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>, <a href="tutorial-scm-system.html">(scm system) and (scm sysadmin): processes and the system</a></td></tr>
+<tr><td><a href="scm-templating.html"><code>(scm templating)</code></a></td><td><a href="tutorial-techniques-01-strings.html">Strings and text</a>, <a href="tutorial-scm-templating.html">(scm templating) and (scm uri): templates and URLs</a></td></tr>
+<tr><td><a href="scm-terminal.html"><code>(scm terminal)</code></a></td><td><a href="tutorial-techniques-09-command-line.html">Command-line programs</a>, <a href="tutorial-scm-terminal.html">(scm terminal) and (scm log): terminal output and logging</a></td></tr>
 <tr><td><a href="scm-test.html"><code>(scm test)</code></a></td><td><a href="tutorial-techniques-10-testing.html">Testing your code</a>, <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a></td></tr>
+<tr><td><a href="scm-text.html"><code>(scm text)</code></a></td><td><a href="tutorial-scm-text.html">(scm text): Unix text tools in Scheme</a></td></tr>
 <tr><td><a href="scm-toml.html"><code>(scm toml)</code></a></td><td><a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a></td></tr>
+<tr><td><a href="scm-uri.html"><code>(scm uri)</code></a></td><td><a href="tutorial-scm-templating.html">(scm templating) and (scm uri): templates and URLs</a></td></tr>
 <tr><td><a href="scm-xml.html"><code>(scm xml)</code></a></td><td><a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a></td></tr>
+<tr><td><a href="scm-zip.html"><code>(scm zip)</code></a></td><td><a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a></td></tr>
 <tr><td><a href="srfi-1.html"><code>(srfi 1)</code></a></td><td><a href="tutorial-basics-04-lists.html">Pairs and lists</a>, <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>, <a href="tutorial-basics-08-records.html">Records</a>, <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>, <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>, <a href="tutorial-srfi-1.html">SRFI 1: lists</a></td></tr>
 <tr><td><a href="srfi-111.html"><code>(srfi 111)</code></a></td><td><a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a></td></tr>
 <tr><td><a href="srfi-125.html"><code>(srfi 125)</code></a></td><td><a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>, <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a></td></tr>

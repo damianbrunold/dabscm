@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm match): pattern matching — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <a href="tutorial-scm-string.html">(scm string): regular expressions and splitting</a>
+  <a href="tutorial-scm-list.html">(scm list) and (scm macro): small helpers</a>
+  <a href="tutorial-scm-match.html" class="active">(scm match): pattern matching</a>
+    <a class="sub" href="#patterns">Patterns</a>
+    <a class="sub" href="#repetition">Repetition</a>
+    <a class="sub" href="#predicates-and-combinations">Predicates and combinations</a>
+    <a class="sub" href="#match-lambda-and-match-let">match-lambda and match-let</a>
+    <a class="sub" href="#destructuring-json-like-data">Destructuring JSON-like data</a>
+    <a class="sub" href="#example-symbolic-differentiation">Example: symbolic differentiation</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-scm-io.html">(scm io): ports and formatting</a>
+  <a href="tutorial-scm-text.html">(scm text): Unix text tools in Scheme</a>
+  <a href="tutorial-scm-templating.html">(scm templating) and (scm uri): templates and URLs</a>
+  <a href="tutorial-scm-args.html">(scm args): command-line parsing</a>
+  <a href="tutorial-scm-terminal.html">(scm terminal) and (scm log): terminal output and logging</a>
+  <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a>
+  <a href="tutorial-scm-system.html">(scm system) and (scm sysadmin): processes and the system</a>
+  <a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a>
+  <a href="tutorial-scm-store.html">(scm store): an indexed record store</a>
+  <a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a>
+  <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm match): pattern matching</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="scm-match-pattern-matching">(scm match): pattern matching</h1>
+<p><a class="xref" href="scm-match.html#e0"><code>match</code></a> compares a value with patterns and runs the body of the first one that fits, binding the parts the pattern names. It is Alex Shinn's widely used matcher. The <a href="tutorial-basics-11-macros.html">macros and pattern matching</a> chapter introduces it.</p>
+<pre><code class="language-scheme">(import (scheme base) (scm match))</code></pre>
+<h2 id="patterns">Patterns</h2>
+<table>
+<thead>
+<tr><th>pattern</th><th>matches</th></tr>
+</thead>
+<tbody>
+<tr><td><code>x</code> (a name)</td><td>anything, binding it to <code>x</code></td></tr>
+<tr><td><code>_</code></td><td>anything, without binding</td></tr>
+<tr><td><code>42</code>, <code>"text"</code>, <code>#t</code></td><td>that literal (compared with <code>equal?</code>)</td></tr>
+<tr><td><code>'sym</code></td><td>that symbol</td></tr>
+<tr><td><code>(p1 p2)</code></td><td>a list of two elements matching <code>p1</code> and <code>p2</code></td></tr>
+<tr><td><code>(p1 . rest)</code></td><td>a pair: first element <code>p1</code>, the rest bound to <a class="xref" href="scm-list.html#e3"><code>rest</code></a></td></tr>
+<tr><td><code>(p ...)</code></td><td>a list whose elements all match <code>p</code></td></tr>
+<tr><td><code>#(p1 p2)</code></td><td>a vector</td></tr>
+<tr><td><code>(? pred p)</code></td><td>a value for which <code>pred</code> is true, then matching <code>p</code></td></tr>
+<tr><td><code>(and p1 p2)</code>, <code>(or p1 p2)</code>, <code>(not p)</code></td><td>combinations</td></tr>
+</tbody>
+</table>
+<pre><code class="language-scheme">(define (describe x)
+  (match x
+    (0 'zero)
+    ((? number? n) (list 'number n))
+    ('() 'empty)
+    ((a) (list 'one a))
+    ((a b) (list 'two a b))
+    ((a . rest) (list 'many a (length rest)))
+    (#(x y) (list 'vector2 x y))
+    (_ 'other)))
+
+(map describe (list 0 7 '() '(a) '(a b) '(a b c d) #(1 2) "s"))
+;; =&gt; (zero (number 7) empty (one a) (two a b) (many a 3) (vector2 1 2) other)</code></pre>
+<p>Clauses are tried in order, so put specific patterns before general ones.</p>
+<h2 id="repetition">Repetition</h2>
+<p><code>...</code> after a pattern matches any number of elements and binds each variable to a list:</p>
+<pre><code class="language-scheme">(match '((ada . 36) (alan . 41))
+  (((names . ages) ...) (list names ages)))   ;; =&gt; ((ada alan) (36 41))
+
+(match '(point 1 2 3)
+  (('point coords ...) (apply + coords)))     ;; =&gt; 6
+
+(match '(1 2 3 4)
+  ((first second rest ...) rest))             ;; =&gt; (3 4)</code></pre>
+<h2 id="predicates-and-combinations">Predicates and combinations</h2>
+<pre><code class="language-scheme">(define (classify n)
+  (match n
+    ((and (? integer?) (? positive?)) 'positive-integer)
+    ((or 'yes 'y #t) 'yes)
+    ((not (? number?)) 'not-a-number)
+    (_ 'other-number)))
+
+(map classify (list 5 'y "hi" -2.5)) ;; =&gt; (positive-integer yes not-a-number other-number)</code></pre>
+<p><code>(and (? pred) x)</code> checks and binds at once; <code>(? pred x)</code> is the short form.</p>
+<h2 id="match-lambda-and-match-let">match-lambda and match-let</h2>
+<pre><code class="language-scheme">(define area
+  (match-lambda
+    (('square s) (* s s))
+    (('rect w h) (* w h))))
+
+(map area '((square 3) (rect 2 5)))           ;; =&gt; (9 10)
+
+(match-let (((x y) '(3 4))
+            ((_ . tail) '(a b c)))
+  (list (+ x y) tail))                         ;; =&gt; (7 (b c))</code></pre>
+<p><a class="xref" href="scm-match.html#e2"><code>match-lambda*</code></a> matches the whole argument list, which gives procedures with several shapes of arguments.</p>
+<h2 id="destructuring-json-like-data">Destructuring JSON-like data</h2>
+<p>Parsed JSON is alists and vectors (see <a class="xref" href="scm-json-simple.html"><code>(scm json simple)</code></a>), and patterns can take it apart directly:</p>
+<pre><code class="language-scheme">(define order
+  '(("id" . 4711)
+    ("customer" . (("name" . "Ada") ("city" . "London")))
+    ("items" . #("book" "pen"))))
+
+(match order
+  ((("id" . id) ("customer" . (("name" . name) _ ...)) ("items" . #(first _ ...)))
+   (list id name first)))                      ;; =&gt; (4711 "Ada" "book")</code></pre>
+<p>Patterns like this depend on the order of the keys; for data from outside, look keys up with <code>assoc</code> and match the values.</p>
+<h2 id="example-symbolic-differentiation">Example: symbolic differentiation</h2>
+<p>Differentiate expressions in x, then simplify a little:</p>
+<pre><code class="language-scheme">(define (d e)
+  (match e
+    ((? number?) 0)
+    ('x 1)
+    ((? symbol?) 0)
+    (('+ a b) `(+ ,(d a) ,(d b)))
+    (('* a b) `(+ (* ,(d a) ,b) (* ,a ,(d b))))
+    (('expt 'x (? number? n)) `(* ,n (expt x ,(- n 1))))))
+
+(define (simplify e)
+  (match e
+    (('+ 0 b) (simplify b))
+    (('+ a 0) (simplify a))
+    (('* 0 _) 0)
+    (('* _ 0) 0)
+    (('* 1 b) (simplify b))
+    (('* a 1) (simplify a))
+    ((op a b) (let ((a2 (simplify a)) (b2 (simplify b)))
+                (if (and (equal? a2 a) (equal? b2 b)) (list op a b) (simplify (list op a2 b2)))))
+    (_ e)))
+
+(simplify (d '(+ (* 3 x) 5)))                  ;; =&gt; 3
+(simplify (d '(* x x)))                        ;; =&gt; (+ x x)
+(simplify (d '(expt x 3)))                     ;; =&gt; (* 3 (expt x 2))</code></pre>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>.</li>
+<li>Reference: <a class="xref" href="scm-match.html"><code>(scm match)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scm-match.html"><code>(scm match)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-scm-list.html">&larr; (scm list) and (scm macro): small helpers</a>
+  <a class="next" href="tutorial-scm-io.html">(scm io): ports and formatting &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

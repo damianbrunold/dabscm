@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm args): command-line parsing — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <a href="tutorial-scm-string.html">(scm string): regular expressions and splitting</a>
+  <a href="tutorial-scm-list.html">(scm list) and (scm macro): small helpers</a>
+  <a href="tutorial-scm-match.html">(scm match): pattern matching</a>
+  <a href="tutorial-scm-io.html">(scm io): ports and formatting</a>
+  <a href="tutorial-scm-text.html">(scm text): Unix text tools in Scheme</a>
+  <a href="tutorial-scm-templating.html">(scm templating) and (scm uri): templates and URLs</a>
+  <a href="tutorial-scm-args.html" class="active">(scm args): command-line parsing</a>
+    <a class="sub" href="#declaring-with-define-cli">Declaring with define-cli</a>
+    <a class="sub" href="#parsing">Parsing</a>
+    <a class="sub" href="#errors">Errors</a>
+    <a class="sub" href="#help">Help</a>
+    <a class="sub" href="#custom-types">Custom types</a>
+    <a class="sub" href="#the-data-form">The data form</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-scm-terminal.html">(scm terminal) and (scm log): terminal output and logging</a>
+  <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a>
+  <a href="tutorial-scm-system.html">(scm system) and (scm sysadmin): processes and the system</a>
+  <a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a>
+  <a href="tutorial-scm-store.html">(scm store): an indexed record store</a>
+  <a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a>
+  <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm args): command-line parsing</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="scm-args-command-line-parsing">(scm args): command-line parsing</h1>
+<p><a class="xref" href="scm-args.html"><code>(scm args)</code></a> turns a declaration of a program's arguments into a parser that converts values, reports usage errors and prints <code>--help</code>. The <a href="tutorial-techniques-09-command-line.html">command-line programs</a> chapter builds a complete tool with it.</p>
+<pre><code class="language-scheme">(import (scheme base) (scheme write) (scm args))</code></pre>
+<h2 id="declaring-with-define-cli">Declaring with define-cli</h2>
+<pre><code class="language-scheme">(define cli
+  (define-cli
+    (program "thumbs")
+    (description "Makes thumbnails of images.")
+    (version "1.2")
+    (option size (short #\s) (long "size") (type arg:integer) (default 128)
+            (help "edge length in pixels"))
+    (option format (long "format") (type (arg:one-of 'png 'jpeg)) (default 'png))
+    (option tags (long "tags") (type (arg:list arg:string)) (default '()))
+    (flag verbose (short #\v) (long "verbose") (help "report every file"))
+    (positional images (repeat) (help "image files"))))</code></pre>
+<h2 id="parsing">Parsing</h2>
+<pre><code class="language-scheme">(define r (parse-args cli '("-v" "--size=64" "--format" "jpeg" "--tags" "a,b" "x.png" "y.png")))
+(args-ref r 'verbose)                       ;; =&gt; #t
+(args-ref r 'size)                          ;; =&gt; 64
+(args-ref r 'format)                        ;; =&gt; jpeg
+(args-ref r 'tags)                          ;; =&gt; ("a" "b")
+(args-ref r 'images)                        ;; =&gt; ("x.png" "y.png")
+
+(define d (parse-args cli '("one.png")))
+(list (args-ref d 'size) (args-ref d 'format) (args-ref d 'verbose)) ;; =&gt; (128 png #f)</code></pre>
+<p>The usual syntaxes work: <code>--size 64</code>, <code>--size=64</code>, <code>-s 64</code>, clustered flags like <code>-vq</code>, <code>--no-verbose</code> to turn a flag off, and <code>--</code> to end the options.</p>
+<h2 id="errors">Errors</h2>
+<p>By default a usage error prints a message to standard error and exits with status 2, as command-line tools do. <code>'on-error 'raise</code> raises an error instead, which is what tests and interactive use want:</p>
+<pre><code class="language-scheme">(define (try args)
+  (guard (e ((error-object? e) 'usage-error))
+    (parse-args cli args 'on-error 'raise)
+    'ok))
+
+(try '("--size" "big"))                     ;; =&gt; usage-error
+(try '("--format" "gif"))                   ;; =&gt; usage-error
+(try '("--unknown"))                        ;; =&gt; usage-error
+(try '("a.png"))                            ;; =&gt; ok</code></pre>
+<h2 id="help">Help</h2>
+<p><code>--help</code> prints a text built from the declaration and exits; <a class="xref" href="scm-args.html#e17"><code>format-help</code></a> returns the same text:</p>
+<pre><code class="language-scheme no-test">(display (format-help cli))</code></pre>
+<pre><code class="language-text">Usage: thumbs [options] [images...]
+
+Makes thumbnails of images.
+
+Arguments:
+  images              image files
+
+Options:
+  -s, --size INTEGER  edge length in pixels (default: 128)
+  ...</code></pre>
+<h2 id="custom-types">Custom types</h2>
+<p>A type is a converter from the argument string to a value:</p>
+<pre><code class="language-scheme">(define arg:port
+  (make-arg-type "PORT"
+    (lambda (s)
+      (let ((n (string-&gt;number s)))
+        (if (and n (exact-integer? n) (&lt;= 1 n 65535)) n (error "not a port number" s))))))
+
+(define server-cli
+  (define-cli
+    (program "serve")
+    (option port (long "port") (type arg:port) (default 8080))
+    (option host (long "host") (default "localhost"))))
+
+(args-ref (parse-args server-cli '("--port" "443")) 'port) ;; =&gt; 443
+(args-&gt;alist (parse-args server-cli '()))   ;; =&gt; ((host . "localhost") (port . 8080))
+(guard (e ((error-object? e) 'rejected))
+  (parse-args server-cli '("--port" "99999") 'on-error 'raise)) ;; =&gt; rejected</code></pre>
+<h2 id="the-data-form">The data form</h2>
+<p><a class="xref" href="scm-args.html#e18"><code>make-arg-parser</code></a> with <a class="xref" href="scm-args.html#e20"><code>opt</code></a>, <a class="xref" href="scm-args.html#e16"><code>flag</code></a> and <a class="xref" href="scm-args.html#e22"><code>pos</code></a> builds the same parser from data, which suits programs that construct their options at run time:</p>
+<pre><code class="language-scheme">(define p
+  (make-arg-parser
+   'program "count"
+   'options (list (flag 'lines 'short #\l) (opt 'min 'long "min" 'type arg:integer 'default 0))
+   'positionals (list (pos 'file 'required #t))))
+
+(define pr (parse-args p '("-l" "notes.txt")))
+(list (args-ref pr 'lines) (args-ref pr 'min) (args-ref pr 'file)) ;; =&gt; (#t 0 "notes.txt")</code></pre>
+<p>Without a positional declaration, extra arguments are collected by <a class="xref" href="scm-args.html#e13"><code>args-rest</code></a>.</p>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-techniques-09-command-line.html">Command-line programs</a>.</li>
+<li>Reference: <a class="xref" href="scm-args.html"><code>(scm args)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scm-args.html"><code>(scm args)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-scm-templating.html">&larr; (scm templating) and (scm uri): templates and URLs</a>
+  <a class="next" href="tutorial-scm-terminal.html">(scm terminal) and (scm log): terminal output and logging &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

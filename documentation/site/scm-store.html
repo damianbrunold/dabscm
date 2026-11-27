@@ -50,6 +50,7 @@
 
 <div class="lib-title scm">(scm store)</div>
 <p class="lib-sub">Immutable on-disk indexed record store</p>
+<p class="lib-tutorials">Tutorials: <a href="tutorial-scm-store.html">(scm store): an indexed record store</a></p>
 <div class="lib-preamble">
 <h2>Overview</h2>
 <p><a class="xref" href="scm-store.html"><code>(scm store)</code></a> is a small immutable, on-disk, indexed record store built on <a class="xref" href="scm-random-access.html"><code>(scm random access)</code></a>. Each record has a dense integer key, an opaque payload (any Scheme datum), and indexed fields — <em>scalar</em> fields (one value per record) and <em>multi</em> fields (a set of values per record). You write a batch once, then run random-access queries that never load the whole dataset.</p>

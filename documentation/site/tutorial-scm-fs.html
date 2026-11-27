@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm fs), (scm fs-find), (scm glob): the file system — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <a href="tutorial-scm-string.html">(scm string): regular expressions and splitting</a>
+  <a href="tutorial-scm-list.html">(scm list) and (scm macro): small helpers</a>
+  <a href="tutorial-scm-match.html">(scm match): pattern matching</a>
+  <a href="tutorial-scm-io.html">(scm io): ports and formatting</a>
+  <a href="tutorial-scm-text.html">(scm text): Unix text tools in Scheme</a>
+  <a href="tutorial-scm-templating.html">(scm templating) and (scm uri): templates and URLs</a>
+  <a href="tutorial-scm-args.html">(scm args): command-line parsing</a>
+  <a href="tutorial-scm-terminal.html">(scm terminal) and (scm log): terminal output and logging</a>
+  <a href="tutorial-scm-fs.html" class="active">(scm fs), (scm fs-find), (scm glob): the file system</a>
+    <a class="sub" href="#paths">Paths</a>
+    <a class="sub" href="#creating-and-inspecting">Creating and inspecting</a>
+    <a class="sub" href="#copying-moving-deleting">Copying, moving, deleting</a>
+    <a class="sub" href="#temporary-files-and-special-folders">Temporary files and special folders</a>
+    <a class="sub" href="#finding-files">Finding files</a>
+    <a class="sub" href="#glob-patterns">Glob patterns</a>
+    <a class="sub" href="#example-rotating-backups">Example: rotating backups</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-scm-system.html">(scm system) and (scm sysadmin): processes and the system</a>
+  <a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a>
+  <a href="tutorial-scm-store.html">(scm store): an indexed record store</a>
+  <a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a>
+  <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm fs), (scm fs-find), (scm glob): the file system</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="scm-fs-scm-fs-find-scm-glob-the-file-system">(scm fs), (scm fs-find), (scm glob): the file system</h1>
+<p>The <a href="tutorial-techniques-03-files.html">files and directories</a> chapter covers reading and writing; this one goes through the file-system libraries. All examples work in a temporary directory.</p>
+<pre><code class="language-scheme">(import (scheme base) (scheme file) (srfi 1) (srfi 132)
+        (scm fs) (scm fs-find) (scm glob))
+
+(define root (mktempdir '(prefix . "fs")))
+(define (at . parts) (apply join-path root parts))
+(define (write-text path text)
+  (call-with-output-file path (lambda (out) (write-string text out))))</code></pre>
+<h2 id="paths">Paths</h2>
+<p>Pure string operations, nothing is read from disk:</p>
+<pre><code class="language-scheme">(join-path "a" "b" "c.txt")                 ;; =&gt; "a/b/c.txt"
+(base-name "/srv/www/index.html")           ;; =&gt; "index.html"
+(directory-name "/srv/www/index.html")      ;; =&gt; "/srv/www"
+(normalized-path "a/./b/../c")              ;; =&gt; "a/c"
+(string? path-sep)                          ;; =&gt; #t
+(string? (absolute-path "x"))               ;; =&gt; #t</code></pre>
+<p><code>absolute-path</code> resolves against the current directory; <a class="xref" href="scm-fs.html#e38"><code>real-path</code></a> also resolves symbolic links.</p>
+<h2 id="creating-and-inspecting">Creating and inspecting</h2>
+<pre><code class="language-scheme">(make-directory (at "docs"))
+(write-text (at "docs" "a.txt") "alpha")
+(write-text (at "docs" "b.md") "# b")
+(make-directory (at "docs" "old"))
+(write-text (at "docs" "old" "c.txt") "gamma, older")
+
+(file-exists? (at "docs" "a.txt"))          ;; =&gt; #t
+(directory-exists? (at "docs" "old"))       ;; =&gt; #t
+(file-size (at "docs" "a.txt"))             ;; =&gt; 5
+(list-sort string&lt;? (directory-files (at "docs")))       ;; =&gt; ("a.txt" "b.md")
+(directory-directories (at "docs"))         ;; =&gt; ("old")
+(integer? (file-modification-timestamp (at "docs" "a.txt"))) ;; =&gt; #t</code></pre>
+<p><code>directory-files</code> lists files only, <code>directory-directories</code> the subdirectories, <a class="xref" href="scm-fs.html#e12"><code>directory-entries</code></a> both.</p>
+<h2 id="copying-moving-deleting">Copying, moving, deleting</h2>
+<pre><code class="language-scheme">(copy-file (at "docs" "a.txt") (at "docs" "a.bak"))
+(move-file (at "docs" "a.bak") (at "a.bak"))
+(file-exists? (at "a.bak"))                 ;; =&gt; #t
+(copy-directory (at "docs") (at "docs-copy"))
+(file-exists? (at "docs-copy" "old" "c.txt")) ;; =&gt; #t
+(rm (at "docs-copy") 'recursive)
+(directory-exists? (at "docs-copy"))        ;; =&gt; #f
+(delete-file (at "a.bak"))</code></pre>
+<p><code>rm</code>, <code>cp</code> and <code>mv</code> take shell-like options: <code>'recursive</code> and <code>'force</code>.</p>
+<h2 id="temporary-files-and-special-folders">Temporary files and special folders</h2>
+<pre><code class="language-scheme">(define tmp (mktemp '(prefix . "upload")))
+(file-exists? tmp)                          ;; =&gt; #t
+(delete-file tmp)
+(string? (special-folder-user-home))        ;; =&gt; #t
+(string? (special-folder-application-data)) ;; =&gt; #t</code></pre>
+<p>Use <code>special-folder-application-data</code> for settings, so a program finds them on Linux, Windows and macOS alike.</p>
+<h2 id="finding-files">Finding files</h2>
+<p><code>find-file</code> walks a tree with criteria, all of which must hold:</p>
+<pre><code class="language-scheme">(define (names paths) (list-sort string&lt;? (map base-name paths)))
+
+(names (find-file root '(name . "*.txt")))  ;; =&gt; ("a.txt" "c.txt")
+(names (find-file (at "docs") '(type . directory))) ;; =&gt; ("docs" "old")
+(names (find-file root '(name . "*.txt")
+                  `(predicate . ,(lambda (p) (&gt; (file-size p) 6)))))
+;; =&gt; ("c.txt")</code></pre>
+<p>The starting directory itself is part of the walk, so it shows up among the directories. Criteria: <code>(name . glob)</code>, <code>(type . file)</code> or <code>(type . directory)</code>, <code>(predicate . procedure)</code>. <code>tree</code> draws a directory tree, <code>du</code> totals sizes and <code>df</code> reports free space:</p>
+<pre><code class="language-scheme">(&gt; (du root) 0)                             ;; =&gt; #t</code></pre>
+<h2 id="glob-patterns">Glob patterns</h2>
+<pre><code class="language-scheme">(glob-match? "*.txt" "notes.txt")           ;; =&gt; #t
+(glob-match? "report-??.pdf" "report-07.pdf") ;; =&gt; #t
+(glob-match? "[abc]*" "beta")               ;; =&gt; #t
+(glob-match? "docs/**/*.txt" "docs/old/c.txt") ;; =&gt; #t
+(names (glob (join-path root "docs" "*")))  ;; =&gt; ("a.txt" "b.md" "old")
+(names (glob (join-path root "**" "*.txt"))) ;; =&gt; ("a.txt" "c.txt")</code></pre>
+<p><code>*</code> matches any run of characters within a name, <code>?</code> one character, <code>[...]</code> a character class (<code>[!...]</code> negated) and <code>**</code> any number of directory levels. <code>glob</code> returns files and directories; names starting with a dot are only matched by a pattern that starts with a dot.</p>
+<h2 id="example-rotating-backups">Example: rotating backups</h2>
+<p>Keep only the newest three backups of a file:</p>
+<pre><code class="language-scheme">(make-directory (at "backups"))
+(for-each (lambda (day) (write-text (at "backups" (string-append "db-2025-11-" day ".bak")) day))
+          '("20" "21" "22" "23" "24"))
+
+(define (rotate dir pattern keep)
+  (let* ((files (list-sort string&gt;? (glob (join-path dir pattern))))
+         (old (if (&gt; (length files) keep) (drop files keep) '())))
+    (for-each delete-file old)
+    (length old)))
+
+(rotate (at "backups") "db-*.bak" 3)        ;; =&gt; 2
+(names (glob (join-path root "backups" "*.bak")))
+;; =&gt; ("db-2025-11-22.bak" "db-2025-11-23.bak" "db-2025-11-24.bak")</code></pre>
+<p>ISO dates in file names sort correctly as strings, so the newest files come first after a descending sort.</p>
+<pre><code class="language-scheme">(rm root 'recursive)</code></pre>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-techniques-03-files.html">Files and directories</a>, <a href="tutorial-scm-archive.html"><a class="xref" href="scm-archive.html"><code>(scm archive)</code></a></a>.</li>
+<li>Reference: <a class="xref" href="scm-fs.html"><code>(scm fs)</code></a>, <a class="xref" href="scm-fs-find.html"><code>(scm fs-find)</code></a>, <a class="xref" href="scm-glob.html"><code>(scm glob)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scm-fs.html"><code>(scm fs)</code></a>, <a href="scm-fs-find.html"><code>(scm fs-find)</code></a>, <a href="scm-glob.html"><code>(scm glob)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-scm-terminal.html">&larr; (scm terminal) and (scm log): terminal output and logging</a>
+  <a class="next" href="tutorial-scm-system.html">(scm system) and (scm sysadmin): processes and the system &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

@@ -42,7 +42,7 @@
 
 <div class="lib-title scm">(scm templating)</div>
 <p class="lib-sub">Text templating with variable substitution</p>
-<p class="lib-tutorials">Tutorials: <a href="tutorial-techniques-01-strings.html">Strings and text</a></p>
+<p class="lib-tutorials">Tutorials: <a href="tutorial-techniques-01-strings.html">Strings and text</a>, <a href="tutorial-scm-templating.html">(scm templating) and (scm uri): templates and URLs</a></p>
 <div class="lib-preamble">
 <h2>Overview</h2>
 <p><a class="xref" href="scm-templating.html"><code>(scm templating)</code></a> fills <code>{{placeholder}}</code> markers in a template string from a context (an association list of name → value). It can render a template given inline or from a file, and a reusable engine can be created for repeated use.</p>
@@ -58,23 +58,53 @@
 
 <div class="entry" id="e0" data-name="make-template-engine">
   <div class="entry-name">make-template-engine</div>
-  <div class="nodoc">(no documentation)</div>
+  <pre class="entry-doc">Syntax: (make-template-engine directory)
+Library: (scm templating)
+Description: A renderer for the templates in directory: use it with
+  template-engine-render and a path relative to directory.
+Example:
+  (define engine (make-template-engine "templates"))</pre>
 </div>
 <div class="entry" id="e1" data-name="template-context">
   <div class="entry-name">template-context</div>
-  <div class="nodoc">(no documentation)</div>
+  <pre class="entry-doc">Syntax: (template-context key value ...)
+Library: (scm templating)
+Description: An alist ((key . value) ...) from alternating keys and values,
+  the context the render procedures take.
+Example:
+  (template-context 'name "Ada" 'year 1843) =&gt; ((name . "Ada") (year . 1843))</pre>
 </div>
 <div class="entry" id="e2" data-name="template-engine-render">
   <div class="entry-name">template-engine-render</div>
-  <div class="nodoc">(no documentation)</div>
+  <pre class="entry-doc">Syntax: (template-engine-render engine path context)
+Library: (scm templating)
+Description: Renders the template file path (relative to the engine's
+  directory) with context, as template-render-file does.
+Example:
+  (template-engine-render engine "page.html" '((title . "News")))</pre>
 </div>
 <div class="entry" id="e3" data-name="template-render">
   <div class="entry-name">template-render</div>
-  <div class="nodoc">(no documentation)</div>
+  <pre class="entry-doc">Syntax: (template-render template context)
+Library: (scm templating)
+Description: Fills the template string from context (an alist with symbol or
+  string keys) and returns the result. {{a.b.0}} inserts a value, following
+  keys and list/vector indexes (missing values give ""); {% for x in path %}
+  ... {% endfor %} loops over a list or vector; {% if path %} ... {% else %}
+  ... {% endif %} tests a value (false when missing, #f, empty or "");
+  {% include "file" %} inserts a template file relative to the current
+  directory. Values are inserted as they are, without HTML escaping.
+Example:
+  (template-render "Hello {{name}}!" '((name . "Ada"))) =&gt; "Hello Ada!"</pre>
 </div>
 <div class="entry" id="e4" data-name="template-render-file">
   <div class="entry-name">template-render-file</div>
-  <div class="nodoc">(no documentation)</div>
+  <pre class="entry-doc">Syntax: (template-render-file path context)
+Library: (scm templating)
+Description: Like template-render, with the template read from the file at
+  path; {% include %} paths are relative to its directory.
+Example:
+  (template-render-file "mail.txt" '((name . "Ada")))</pre>
 </div>
 
 </main>

@@ -91,7 +91,7 @@ Programs started with `run-program` inherit the environment, plus what the
 (string? (special-folder-temp))             ;; => #t
 ```
 
-`sys-platform` is `linux`, `windows` or `macos`; use it (or
+`sys-platform` is `linux`, `windows` or `unknown`; use it (or
 `cond-expand` with the features from `(features)`) where a program must
 behave differently. `special-folder-user-home`, `special-folder-temp` and
 `special-folder-application-data` give the right places for user files,

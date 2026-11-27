@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm crypto): hashing, encryption, passwords, tokens — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <a href="tutorial-scm-string.html">(scm string): regular expressions and splitting</a>
+  <a href="tutorial-scm-list.html">(scm list) and (scm macro): small helpers</a>
+  <a href="tutorial-scm-match.html">(scm match): pattern matching</a>
+  <a href="tutorial-scm-io.html">(scm io): ports and formatting</a>
+  <a href="tutorial-scm-text.html">(scm text): Unix text tools in Scheme</a>
+  <a href="tutorial-scm-templating.html">(scm templating) and (scm uri): templates and URLs</a>
+  <a href="tutorial-scm-args.html">(scm args): command-line parsing</a>
+  <a href="tutorial-scm-terminal.html">(scm terminal) and (scm log): terminal output and logging</a>
+  <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a>
+  <a href="tutorial-scm-system.html">(scm system) and (scm sysadmin): processes and the system</a>
+  <a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a>
+  <a href="tutorial-scm-store.html">(scm store): an indexed record store</a>
+  <a href="tutorial-scm-crypto.html" class="active">(scm crypto): hashing, encryption, passwords, tokens</a>
+    <a class="sub" href="#hashes-hex-and-base64">Hashes, hex and Base64</a>
+    <a class="sub" href="#hmac-proving-a-message-is-authentic">HMAC: proving a message is authentic</a>
+    <a class="sub" href="#secure-random-values">Secure random values</a>
+    <a class="sub" href="#authenticated-encryption">Authenticated encryption</a>
+    <a class="sub" href="#keys-from-passwords">Keys from passwords</a>
+    <a class="sub" href="#storing-passwords">Storing passwords</a>
+    <a class="sub" href="#signed-expiring-tokens">Signed, expiring tokens</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm crypto): hashing, encryption, passwords, tokens</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="scm-crypto-hashing-encryption-passwords-tokens">(scm crypto): hashing, encryption, passwords, tokens</h1>
+<pre><code class="language-scheme">(import (scheme base) (scm crypto) (scm crypto password) (scm crypto token))</code></pre>
+<p>The rule of thumb: use the highest-level tool that fits. Passwords go through <a class="xref" href="scm-crypto-password.html"><code>(scm crypto password)</code></a>, links and API keys through <a class="xref" href="scm-crypto-token.html"><code>(scm crypto token)</code></a>, data through authenticated encryption (AES-GCM or ChaCha20-Poly1305). The lower-level procedures are for protocols that prescribe them.</p>
+<h2 id="hashes-hex-and-base64">Hashes, hex and Base64</h2>
+<pre><code class="language-scheme">(define (hex-of s) (bytevector-&gt;hex (sha256-hash (string-&gt;utf8 s))))
+(hex-of "abc")
+;; =&gt; "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+(bytevector-length (sha512-hash (string-&gt;utf8 "abc"))) ;; =&gt; 64
+(md5-hash "abc")                                       ;; =&gt; "900150983cd24fb0d6963f7d28e17f72"
+(string-length (sha1-hash "abc"))                      ;; =&gt; 40
+(hex-&gt;bytevector "cafe")                               ;; =&gt; #u8(202 254)
+(base64-encode (string-&gt;utf8 "Grüße"))                 ;; =&gt; "R3LDvMOfZQ=="
+(utf8-&gt;string (base64-decode "R3LDvMOfZQ=="))          ;; =&gt; "Grüße"</code></pre>
+<p>The SHA-2 hashes (<a class="xref" href="scm-crypto.html#e23"><code>sha224-hash</code></a> to <a class="xref" href="scm-crypto.html#e27"><code>sha512-hash</code></a>) take a bytevector and return a bytevector, so convert text with <a class="xref" href="scheme-base.html#e181"><code>string-&gt;utf8</code></a> and the result with <code>bytevector-&gt;hex</code>. The older <code>md5-hash</code> and <code>sha1-hash</code> accept strings too and return a hex string directly; use them only where a format requires them, they are not secure any more. <a class="xref" href="scm-crypto.html#e24"><code>sha256-file</code></a> hashes a file without reading it into memory, for checksums of downloads.</p>
+<h2 id="hmac-proving-a-message-is-authentic">HMAC: proving a message is authentic</h2>
+<p>An HMAC is a hash keyed with a secret; only someone with the key can produce it. Webhooks and API signatures work this way:</p>
+<pre><code class="language-scheme">(define key (string-&gt;utf8 "shared-secret"))
+(define (sign msg) (bytevector-&gt;hex (hmac-sha256 key (string-&gt;utf8 msg))))
+(define sig (sign "amount=100&amp;to=ada"))
+(string=? sig (sign "amount=100&amp;to=ada"))              ;; =&gt; #t
+(string=? sig (sign "amount=900&amp;to=ada"))              ;; =&gt; #f
+(constant-time-bytevector=? (hex-&gt;bytevector sig)
+                            (hex-&gt;bytevector (sign "amount=100&amp;to=ada"))) ;; =&gt; #t</code></pre>
+<p>Compare secrets with <a class="xref" href="scm-crypto.html#e11"><code>constant-time-bytevector=?</code></a>: an ordinary comparison stops at the first difference, and the time it takes can leak how much of a forged signature was right.</p>
+<h2 id="secure-random-values">Secure random values</h2>
+<pre><code class="language-scheme">(bytevector-length (random-bytes 32))                  ;; =&gt; 32
+(string-length (random-string "ABCDEFGHJKLMNPQRSTUVWXYZ23456789" 20)) ;; =&gt; 20</code></pre>
+<p><a class="xref" href="scm-crypto.html#e16"><code>random-bytes</code></a> uses the operating system's secure generator; use it for keys, salts and identifiers, never <a class="xref" href="srfi-27.html#e2"><code>random-integer</code></a>.</p>
+<h2 id="authenticated-encryption">Authenticated encryption</h2>
+<p>AES-GCM and ChaCha20-Poly1305 encrypt <em>and</em> detect tampering. Each message needs a fresh nonce (12 bytes), never reused with the same key:</p>
+<pre><code class="language-scheme">(define k (random-bytes 32))
+(define nonce (random-bytes 12))
+(define plaintext (string-&gt;utf8 "meet at noon"))
+
+(define sealed (aes-gcm-encrypt k nonce plaintext))
+(utf8-&gt;string (aes-gcm-decrypt k nonce sealed))        ;; =&gt; "meet at noon"
+
+(define tampered (bytevector-copy sealed))
+(bytevector-u8-set! tampered 0 (modulo (+ 1 (bytevector-u8-ref tampered 0)) 256))
+(guard (e (#t 'rejected)) (aes-gcm-decrypt k nonce tampered)) ;; =&gt; rejected
+
+(define sealed2 (chacha20poly1305-encrypt k nonce plaintext))
+(utf8-&gt;string (chacha20poly1305-decrypt k nonce sealed2)) ;; =&gt; "meet at noon"</code></pre>
+<p>A changed byte makes decryption fail instead of returning garbage. Store the nonce next to the ciphertext; it need not be secret.</p>
+<h2 id="keys-from-passwords">Keys from passwords</h2>
+<p>A password is not a key. <a class="xref" href="scm-crypto.html#e15"><code>pbkdf2-sha256</code></a> and <a class="xref" href="scm-crypto.html#e21"><code>scrypt</code></a> derive one, slowly on purpose, so guessing is expensive:</p>
+<pre><code class="language-scheme">(define salt (random-bytes 16))
+(define key1 (pbkdf2-sha256 (string-&gt;utf8 "correct horse") salt 100000 32))
+(bytevector-length key1)                               ;; =&gt; 32
+(equal? key1 (pbkdf2-sha256 (string-&gt;utf8 "correct horse") salt 100000 32)) ;; =&gt; #t</code></pre>
+<h2 id="storing-passwords">Storing passwords</h2>
+<p><a class="xref" href="scm-crypto-password.html"><code>(scm crypto password)</code></a> does all of the above for passwords: random salt, slow hashing, a self-describing result, constant-time verification:</p>
+<pre><code class="language-scheme">(define stored (password-hash "hunter2"))
+(string? stored)                                       ;; =&gt; #t
+(password-verify "hunter2" stored)                     ;; =&gt; #t
+(password-verify "hunter3" stored)                     ;; =&gt; #f
+(password-verify "anything" #f)                        ;; =&gt; #f
+(boolean? (password-needs-rehash? stored))             ;; =&gt; #t</code></pre>
+<p>Store only the result of <a class="xref" href="scm-crypto-password.html#e0"><code>password-hash</code></a>. <a class="xref" href="scm-crypto-password.html#e3"><code>password-verify</code></a> with <code>#f</code> (an unknown user) takes as long as a real check, so attackers cannot find out which user names exist by timing. When <a class="xref" href="scm-crypto-password.html#e1"><code>password-needs-rehash?</code></a> is true (the hash used older settings), hash the password again at the next login.</p>
+<h2 id="signed-expiring-tokens">Signed, expiring tokens</h2>
+<p><a class="xref" href="scm-crypto-token.html"><code>(scm crypto token)</code></a> makes tokens for password-reset links, e-mail confirmations or API access: the data is signed, can expire, and is bound to a purpose:</p>
+<pre><code class="language-scheme">(define secret (base64-encode (random-bytes 32)))     ; keep in the configuration
+
+(define reset-token (token-sign secret '((user . 42)) 3600 '((purpose . "reset"))))
+(string? reset-token)                                  ;; =&gt; #t
+(token-verify secret reset-token '((purpose . "reset"))) ;; =&gt; ((user . 42))
+(token-verify secret reset-token '((purpose . "login"))) ;; =&gt; #f
+(token-verify (base64-encode (random-bytes 32)) reset-token '((purpose . "reset"))) ;; =&gt; #f</code></pre>
+<p>A token signed for one purpose is rejected for another, so a reset link cannot be used as a login session. The 3600 is the lifetime in seconds.</p>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a class="xref" href="scm-net-http-session.html"><code>(scm net http session)</code></a> for login sessions in cookies.</li>
+<li><a href="tutorial-srfi-271.html">SRFI 271</a> for random byte streams.</li>
+<li>Reference: <a class="xref" href="scm-crypto.html"><code>(scm crypto)</code></a>, <a class="xref" href="scm-crypto-password.html"><code>(scm crypto password)</code></a>, <a class="xref" href="scm-crypto-token.html"><code>(scm crypto token)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scm-crypto.html"><code>(scm crypto)</code></a>, <a href="scm-crypto-password.html"><code>(scm crypto password)</code></a>, <a href="scm-crypto-token.html"><code>(scm crypto token)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-scm-store.html">&larr; (scm store): an indexed record store</a>
+  <a class="next" href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

@@ -24,7 +24,7 @@ public class PrimitiveOpenOutputZipFile extends Primitive {
                "Description: Creates a new ZIP archive at the given filename and returns a ZIP writer object. Entries can be added using zip-add-text-entry or zip-add-binary-entry.\n" +
                "Example:\n" +
                "  (define z (open-output-zip-file \"archive.zip\"))\n" +
-               "  (zip-add-text-entry z \"hello.txt\" \"Hello, world!\")\n" +
+               "  (display \"Hello, world!\" (zip-add-text-entry z \"hello.txt\"))\n" +
                "  (close-output-zip z)";
     }
     

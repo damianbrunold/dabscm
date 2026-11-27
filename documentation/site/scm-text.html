@@ -51,6 +51,7 @@
 
 <div class="lib-title scm">(scm text)</div>
 <p class="lib-sub">Text processing utilities — awk, sed, grep, cut, sort, diff, and more</p>
+<p class="lib-tutorials">Tutorials: <a href="tutorial-scm-text.html">(scm text): Unix text tools in Scheme</a></p>
 <div class="lib-preamble">
 <h2>Overview</h2>
 <p><a class="xref" href="scm-text.html"><code>(scm text)</code></a> is a toolbox of Unix-style text utilities — <a class="xref" href="#e4"><code>grep</code></a>, <a class="xref" href="#e7"><code>sed</code></a>, <a class="xref" href="#e0"><code>awk</code></a>, <a class="xref" href="#e2"><code>cut</code></a>, <a class="xref" href="#e8"><code>sort-lines</code></a>, <a class="xref" href="#e5"><code>head</code></a>, <a class="xref" href="#e9"><code>tail</code></a>, <a class="xref" href="#e12"><code>uniq</code></a>, <a class="xref" href="#e13"><code>wc</code></a>, <a class="xref" href="#e11"><code>tr</code></a>, <a class="xref" href="#e3"><code>diff</code></a>, <a class="xref" href="#e1"><code>cat</code></a>, <a class="xref" href="#e10"><code>tee</code></a>, <a class="xref" href="#e6"><code>hexdump</code></a>. Each takes a <em>source</em> that may be a filename string, a list of strings (one per line), or an input port, so you can pipe data through them in Scheme. Where a matching native tool is on PATH it may be used; pass <code>'pure</code> to force the pure-Scheme path.</p>

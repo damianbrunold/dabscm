@@ -123,3 +123,15 @@
                                      ((_ x) (my-add (my-add x))))))
           (my-double 3))
         5))
+
+(test-group
+    ;; vector patterns (R7RS 4.3.2), also with an ellipsis
+    (define-syntax vp
+      (syntax-rules ()
+        ((_ #(a b)) (list 'two a b))
+        ((_ #(a b ...)) (list 'many a (list b ...)))
+        ((_ x) 'other)))
+  (=> (vp #(1 2)) '(two 1 2))
+  (=> (vp #(1 2 3 4)) '(many 1 (2 3 4)))
+  (=> (vp #(1)) '(many 1 ()))
+  (=> (vp 5) 'other))

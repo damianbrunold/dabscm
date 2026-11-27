@@ -185,6 +185,16 @@ public class SyntaxRulesTransformer
         if (pattern == Value.NIL)
             return IsNil(datum);
 
+        // Vector pattern (before the constants: a vector is not a pair, and
+        // comparing it with Equals would never match)
+        if (Value.IsVector(pattern))
+        {
+            object d = datum is SyntaxObject so ? so.Datum : datum;
+            if (!Value.IsVector(d)) return false;
+            return MatchInner(VectorToList(Value.AsVector(pattern)),
+                VectorToList(Value.AsVector(d)), bindings, modules, useEnv);
+        }
+
         // Non-pair constant: must be equal
         if (!Value.IsPair(pattern))
         {
@@ -194,13 +204,6 @@ public class SyntaxRulesTransformer
             return pattern.Equals(datum);
         }
 
-        // Vector pattern
-        if (Value.IsVector(pattern))
-        {
-            if (!Value.IsVector(datum)) return false;
-            return MatchInner(VectorToList(Value.AsVector(pattern)),
-                VectorToList(Value.AsVector(datum)), bindings, modules, useEnv);
-        }
 
         // Pair pattern (using Stx helpers for SyntaxObject-aware traversal)
         object pCar = Car(pattern);

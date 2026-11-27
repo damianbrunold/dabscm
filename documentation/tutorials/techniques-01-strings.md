@@ -68,7 +68,8 @@ here the file name after the last slash.
 (map string->number (string-split "1.5,2,3" ",")) ;; => (1.5 2 3)
 ```
 
-- `string-split` with a separator splits on that literal text; without one
+- `string-split` with a separator splits at that *regular expression*
+  (so a dot must be written `"\\."`); without one
   it splits on runs of whitespace (leading and trailing space give empty
   first and last fields);
 - `string-tokenize` (SRFI 13) returns only the non-empty words, which is
@@ -117,8 +118,9 @@ string is too long; `string-pad-right` left-aligns.
 (parse-date "27.11.2025")                  ;; => #f
 ```
 
-`string-matches` must match the whole string. To find a pattern inside a
-longer text, use `regex-search`. It returns a vector of `(start . end)`
+`string-matches` finds the first match anywhere in the string; anchor the
+pattern with `^` and `$` when the whole string must match. To get the
+*positions* of a match, use `regex-search`. It returns a vector of `(start . end)`
 positions, for the whole match and each group, or `#f`:
 
 ```scheme

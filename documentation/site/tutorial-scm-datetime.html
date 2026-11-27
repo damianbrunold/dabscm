@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm datetime) and (scm duration): timestamps and durations — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <a href="tutorial-scm-string.html">(scm string): regular expressions and splitting</a>
+  <a href="tutorial-scm-list.html">(scm list) and (scm macro): small helpers</a>
+  <a href="tutorial-scm-match.html">(scm match): pattern matching</a>
+  <a href="tutorial-scm-io.html">(scm io): ports and formatting</a>
+  <a href="tutorial-scm-text.html">(scm text): Unix text tools in Scheme</a>
+  <a href="tutorial-scm-templating.html">(scm templating) and (scm uri): templates and URLs</a>
+  <a href="tutorial-scm-args.html">(scm args): command-line parsing</a>
+  <a href="tutorial-scm-terminal.html">(scm terminal) and (scm log): terminal output and logging</a>
+  <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a>
+  <a href="tutorial-scm-system.html">(scm system) and (scm sysadmin): processes and the system</a>
+  <a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a>
+  <a href="tutorial-scm-store.html">(scm store): an indexed record store</a>
+  <a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a>
+  <a href="tutorial-scm-datetime.html" class="active">(scm datetime) and (scm duration): timestamps and durations</a>
+    <a class="sub" href="#parsing">Parsing</a>
+    <a class="sub" href="#formatting">Formatting</a>
+    <a class="sub" href="#the-clock">The clock</a>
+    <a class="sub" href="#durations">Durations</a>
+    <a class="sub" href="#example-recent-feed-items">Example: recent feed items</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm datetime) and (scm duration): timestamps and durations</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="scm-datetime-and-scm-duration-timestamps-and-durations">(scm datetime) and (scm duration): timestamps and durations</h1>
+<p><a class="xref" href="scm-datetime.html"><code>(scm datetime)</code></a> works with timestamps as numbers: <em>epoch seconds</em> (seconds since 1970-01-01 UTC) for exchange formats, and <em>timestamps</em> in milliseconds for the clock. <a class="xref" href="scm-duration.html"><code>(scm duration)</code></a> reads and writes durations. For calendars and date arithmetic, see <a href="tutorial-srfi-19.html">SRFI 19</a> and the <a href="tutorial-techniques-07-dates.html">dates and times</a> chapter.</p>
+<pre><code class="language-scheme">(import (scheme base) (scm datetime) (scm duration))</code></pre>
+<h2 id="parsing">Parsing</h2>
+<pre><code class="language-scheme">(parse-iso8601 "2024-05-16T12:34:56Z")                 ;; =&gt; 1715862896
+(parse-iso8601 "2024-05-16T14:34:56+02:00")            ;; =&gt; 1715862896
+(parse-rfc822 "Thu, 16 May 2024 12:34:56 GMT")         ;; =&gt; 1715862896
+(parse-pubdate "Thu, 16 May 2024 12:34:56 +0000")      ;; =&gt; 1715862896
+(parse-pubdate "2024-05-16T12:34:56Z")                 ;; =&gt; 1715862896
+(string-&gt;date-seconds "20240516123456")                ;; =&gt; 1715862896
+(string-&gt;date-seconds "garbage")                       ;; =&gt; #f</code></pre>
+<ul>
+<li>ISO 8601 is what JSON APIs use, RFC 822 what e-mail and RSS use;</li>
+<li><code>parse-pubdate</code> accepts either, which is what feed readers need;</li>
+<li><a class="xref" href="scm-datetime.html#e6"><code>string-&gt;date-seconds</code></a> reads compact <code>yyyyMMddHHmmss</code> stamps (also</li>
+</ul>
+<p>shorter ones down to <code>yyyyMMdd</code>), common in file names and exports.</p>
+<h2 id="formatting">Formatting</h2>
+<pre><code class="language-scheme">(format-iso8601 1715862896)                            ;; =&gt; "2024-05-16T12:34:56Z"
+(format-iso8601 0)                                     ;; =&gt; "1970-01-01T00:00:00Z"</code></pre>
+<h2 id="the-clock">The clock</h2>
+<pre><code class="language-scheme">(string-length (now))                                  ;; =&gt; 16
+(string-length (today))                                ;; =&gt; 10
+(string-length (today 'short))                         ;; =&gt; 8
+(string-length (time))                                 ;; =&gt; 5
+(integer? (timestamp))                                 ;; =&gt; #t</code></pre>
+<ul>
+<li><code>now</code> is the local date and time as <code>"2025-11-27 14:03"</code> (<code>'short</code></li>
+</ul>
+<p>gives <code>"20251127-1403"</code>);</p>
+<ul>
+<li><code>today</code> is the local date as <code>"2025-11-27"</code> (<code>'short</code> gives <code>"20251127"</code>,</li>
+</ul>
+<p><code>'dmy</code> gives <code>"27.11.2025"</code>);</p>
+<ul>
+<li><code>time</code> is the local time as <code>"14:03"</code>;</li>
+<li><code>timestamp</code> is milliseconds (counted from the year 1, not 1970), for</li>
+</ul>
+<p>measuring and for <code>timestamp-&gt;string</code>.</p>
+<p>For the current time in epoch seconds, use <a class="xref" href="scheme-time.html#e1"><code>current-second</code></a> from <a class="xref" href="scheme-time.html"><code>(scheme time)</code></a>:</p>
+<pre><code class="language-scheme">(import (scheme time))
+(define (epoch-now) (exact (floor (current-second))))
+(&gt; (epoch-now) (parse-iso8601 "2024-01-01T00:00:00Z")) ;; =&gt; #t</code></pre>
+<h2 id="durations">Durations</h2>
+<pre><code class="language-scheme">(parse-duration "30")                                  ;; =&gt; 30
+(parse-duration "15m")                                 ;; =&gt; 900
+(parse-duration "12h")                                 ;; =&gt; 43200
+(parse-duration "7d")                                  ;; =&gt; 604800
+(parse-duration "1w")                                  ;; =&gt; #f
+(format-duration 900)                                  ;; =&gt; "15m"
+(format-duration 86400)                                ;; =&gt; "1d"
+(format-duration 61)                                   ;; =&gt; "61s"</code></pre>
+<p>Units are <code>s</code>, <code>m</code>, <code>h</code> and <code>d</code>; a bare number is seconds. <code>format-duration</code> picks the largest unit that divides evenly.</p>
+<h2 id="example-recent-feed-items">Example: recent feed items</h2>
+<p>Keep the items of a feed that are newer than a configured age:</p>
+<pre><code class="language-scheme">(define items
+  '(("Release 2.0" . "Thu, 16 May 2024 12:00:00 GMT")
+    ("Bug fix" . "2024-05-15T09:30:00Z")
+    ("Old news" . "Mon, 01 Jan 2024 08:00:00 GMT")))
+
+(define (recent items max-age reference)
+  (let ((limit (- reference (parse-duration max-age))))
+    (filter-items (lambda (item) (&gt;= (parse-pubdate (cdr item)) limit)) items)))
+
+(define (filter-items keep? xs)
+  (cond ((null? xs) '())
+        ((keep? (car xs)) (cons (car xs) (filter-items keep? (cdr xs))))
+        (else (filter-items keep? (cdr xs)))))
+
+(map car (recent items "7d" (parse-iso8601 "2024-05-17T00:00:00Z")))
+;; =&gt; ("Release 2.0" "Bug fix")</code></pre>
+<p>The reference time is a parameter, so the code can be tested without depending on the real clock; in production, pass <code>(epoch-now)</code>.</p>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-srfi-19.html">SRFI 19</a>, <a href="tutorial-techniques-07-dates.html">dates and times</a>, <a class="xref" href="scm-feed.html"><code>(scm feed)</code></a>.</li>
+<li>Reference: <a class="xref" href="scm-datetime.html"><code>(scm datetime)</code></a>, <a class="xref" href="scm-duration.html"><code>(scm duration)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scm-datetime.html"><code>(scm datetime)</code></a>, <a href="scm-duration.html"><code>(scm duration)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-scm-crypto.html">&larr; (scm crypto): hashing, encryption, passwords, tokens</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

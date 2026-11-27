@@ -192,6 +192,7 @@
 
 <div class="lib-title scm">(scm sysadmin)</div>
 <p class="lib-sub">System administration toolkit aggregating fs, archive, remote, logging, and more</p>
+<p class="lib-tutorials">Tutorials: <a href="tutorial-scm-system.html">(scm system) and (scm sysadmin): processes and the system</a></p>
 <div class="lib-preamble">
 <h2>Overview</h2>
 <p><a class="xref" href="scm-sysadmin.html"><code>(scm sysadmin)</code></a> is a convenience bundle for system-administration scripting. It imports and re-exports a curated set of libraries so a single import gives you the tools you typically reach for in an ops script: filesystem and find (<a class="xref" href="scm-fs.html"><code>(scm fs)</code></a>, <a class="xref" href="scm-fs-find.html"><code>(scm fs-find)</code></a>), text processing (<a class="xref" href="scm-text.html"><code>(scm text)</code></a>), archives (<a class="xref" href="scm-archive.html"><code>(scm archive)</code></a>), remote access (<a class="xref" href="scm-net-remote.html"><code>(scm net-remote)</code></a>), process/OS control (<a class="xref" href="scm-system.html"><code>(scm system)</code></a>), date/time and durations (<a class="xref" href="scm-datetime.html"><code>(scm datetime)</code></a>, <a class="xref" href="scm-duration.html"><code>(scm duration)</code></a>), logging (<a class="xref" href="scm-log.html"><code>(scm log)</code></a>), globbing (<a class="xref" href="scm-glob.html"><code>(scm glob)</code></a>), crypto (<a class="xref" href="scm-crypto.html"><code>(scm crypto)</code></a>), URIs (<a class="xref" href="scm-uri.html"><code>(scm uri)</code></a>), and JSON/CSV (<a class="xref" href="scm-json.html"><code>(scm json)</code></a>, <a class="xref" href="scm-csv.html"><code>(scm csv)</code></a>).</p>
@@ -1008,7 +1009,7 @@ Library: (scm core)
 Description: Creates a new ZIP archive at the given filename and returns a ZIP writer object. Entries can be added using zip-add-text-entry or zip-add-binary-entry.
 Example:
   (define z (open-output-zip-file "archive.zip"))
-  (zip-add-text-entry z "hello.txt" "Hello, world!")
+  (display "Hello, world!" (zip-add-text-entry z "hello.txt"))
   (close-output-zip z)</pre>
 </div>
 <div class="entry" id="e78" data-name="parent-pid">

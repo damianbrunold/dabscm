@@ -984,7 +984,7 @@ Library: (scm core)
 Description: Creates a new ZIP archive at the given filename and returns a ZIP writer object. Entries can be added using zip-add-text-entry or zip-add-binary-entry.
 Example:
   (define z (open-output-zip-file "archive.zip"))
-  (zip-add-text-entry z "hello.txt" "Hello, world!")
+  (display "Hello, world!" (zip-add-text-entry z "hello.txt"))
   (close-output-zip z)
 ```
 

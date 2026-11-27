@@ -48,7 +48,7 @@
 
 <div class="lib-title scm">(scm datetime)</div>
 <p class="lib-sub">Date and time operations</p>
-<p class="lib-tutorials">Tutorials: <a href="tutorial-techniques-07-dates.html">Dates and times</a></p>
+<p class="lib-tutorials">Tutorials: <a href="tutorial-techniques-07-dates.html">Dates and times</a>, <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a></p>
 <div class="lib-preamble">
 <h2>Overview</h2>
 <p><a class="xref" href="scm-datetime.html"><code>(scm datetime)</code></a> parses and formats dates and times, working in Unix epoch seconds. It understands ISO 8601, RFC 822, and feed-style publication dates, and provides the current time. For the full SRFI time/date data types see <a class="xref" href="srfi-19.html"><code>(srfi 19)</code></a>; this library is a lightweight convenience layer.</p>
@@ -61,8 +61,8 @@
 (parse-rfc822  "Thu, 16 May 2024 12:34:56 +0200") ;; =&gt; 1715855696</code></pre>
 <p>Format epoch seconds back to ISO 8601, and read the clock:</p>
 <pre><code class="language-scheme">(format-iso8601 1715862896)   ;; =&gt; "2024-05-16T12:34:56Z"
-(now)                         ;; current time, epoch seconds
-(today)                       ;; start of today, epoch seconds</code></pre>
+(now)                         ;; =&gt; "2024-05-16 14:34"  local date and time
+(today)                       ;; =&gt; "2024-05-16"        local date</code></pre>
 <p><a class="xref" href="#e3"><code>parse-pubdate</code></a> accepts either ISO 8601 or RFC 822 input, which is handy when processing feeds (see <a class="xref" href="scm-feed.html"><code>(scm feed)</code></a>).</p>
 </div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>

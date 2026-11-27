@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm templating) and (scm uri): templates and URLs — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <a href="tutorial-scm-string.html">(scm string): regular expressions and splitting</a>
+  <a href="tutorial-scm-list.html">(scm list) and (scm macro): small helpers</a>
+  <a href="tutorial-scm-match.html">(scm match): pattern matching</a>
+  <a href="tutorial-scm-io.html">(scm io): ports and formatting</a>
+  <a href="tutorial-scm-text.html">(scm text): Unix text tools in Scheme</a>
+  <a href="tutorial-scm-templating.html" class="active">(scm templating) and (scm uri): templates and URLs</a>
+    <a class="sub" href="#placeholders">Placeholders</a>
+    <a class="sub" href="#loops-and-conditions">Loops and conditions</a>
+    <a class="sub" href="#templates-in-files">Templates in files</a>
+    <a class="sub" href="#escaping">Escaping</a>
+    <a class="sub" href="#urls-percent-encoding">URLs: percent-encoding</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-scm-args.html">(scm args): command-line parsing</a>
+  <a href="tutorial-scm-terminal.html">(scm terminal) and (scm log): terminal output and logging</a>
+  <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a>
+  <a href="tutorial-scm-system.html">(scm system) and (scm sysadmin): processes and the system</a>
+  <a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a>
+  <a href="tutorial-scm-store.html">(scm store): an indexed record store</a>
+  <a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a>
+  <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm templating) and (scm uri): templates and URLs</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="scm-templating-and-scm-uri-templates-and-urls">(scm templating) and (scm uri): templates and URLs</h1>
+<p><a class="xref" href="scm-templating.html"><code>(scm templating)</code></a> fills text templates from data; <a class="xref" href="scm-uri.html"><code>(scm uri)</code></a> encodes values for URLs.</p>
+<pre><code class="language-scheme">(import (scheme base) (scheme file) (scheme write) (scm templating) (scm uri) (scm fs))</code></pre>
+<h2 id="placeholders">Placeholders</h2>
+<p><code>{{name}}</code> is replaced by the value of <code>name</code> in the context, an alist. Keys can be symbols or strings, and dots walk into nested data:</p>
+<pre><code class="language-scheme">(template-render "Hello {{name}}!" '((name . "Ada")))           ;; =&gt; "Hello Ada!"
+(template-render "{{user.name}} from {{user.city}}"
+                 '((user . ((name . "Ada") (city . "London")))))  ;; =&gt; "Ada from London"
+(template-render "first: {{items.0}}" '((items . #("pen" "ink")))) ;; =&gt; "first: pen"
+(template-render "[{{missing}}]" '())                           ;; =&gt; "[]"
+(template-render "{{n}} items, paid: {{paid}}" '((n . 3) (paid . #t)))
+;; =&gt; "3 items, paid: true"</code></pre>
+<p>A missing value renders as nothing. Numbers, booleans and symbols are converted; other values (lists, vectors) render as nothing too, so pass them to loops instead.</p>
+<p><a class="xref" href="scm-templating.html#e1"><code>template-context</code></a> builds a context from alternating keys and values:</p>
+<pre><code class="language-scheme">(template-context 'name "Ada" 'year 1843)                      ;; =&gt; ((name . "Ada") (year . 1843))</code></pre>
+<h2 id="loops-and-conditions">Loops and conditions</h2>
+<pre><code class="language-scheme">(define invoice
+  "Invoice {{number}}
+{% for item in items %}- {{item.name}}: {{item.price}}
+{% endfor %}{% if discount %}Discount: {{discount}}
+{% else %}No discount
+{% endif %}")
+
+(template-render invoice
+                 '((number . "R-17")
+                   (items . (((name . "Book") (price . "24.00"))
+                             ((name . "Pen") (price . "3.50"))))
+                   (discount . #f)))
+;; =&gt; "Invoice R-17\n- Book: 24.00\n- Pen: 3.50\nNo discount\n"</code></pre>
+<p><code>{% for x in path %}</code> loops over a list or vector; <code>{% if path %}</code> tests a value, which is false when missing, <code>#f</code>, empty or <code>""</code>.</p>
+<h2 id="templates-in-files">Templates in files</h2>
+<p><a class="xref" href="scm-templating.html#e4"><code>template-render-file</code></a> reads the template from a file, and <code>{% include "file" %}</code> pulls in another template relative to it. For a directory of templates, <a class="xref" href="scm-templating.html#e0"><code>make-template-engine</code></a> gives a reusable renderer:</p>
+<pre><code class="language-scheme">(define dir (mktempdir '(prefix . "tmpl")))
+(call-with-output-file (join-path dir "header.txt")
+  (lambda (out) (display "== {{title}} ==\n" out)))
+(call-with-output-file (join-path dir "page.txt")
+  (lambda (out) (display "{% include \"header.txt\" %}{{body}}\n" out)))
+
+(template-render-file (join-path dir "page.txt") '((title . "News") (body . "All quiet.")))
+;; =&gt; "== News ==\nAll quiet.\n"
+
+(define engine (make-template-engine dir))
+(template-engine-render engine "page.txt" '((title . "Weather") (body . "Sunny.")))
+;; =&gt; "== Weather ==\nSunny.\n"
+
+(rm dir 'recursive)</code></pre>
+<h2 id="escaping">Escaping</h2>
+<p>Templates insert values as they are. For HTML pages, escape the values first (see <a class="xref" href="scm-html.html"><code>(scm html)</code></a>), or build the page with <a class="xref" href="scm-html-builder.html"><code>(scm html builder)</code></a>, which escapes automatically. Otherwise a value like <code>&lt;script&gt;</code> ends up in the page as code.</p>
+<h2 id="urls-percent-encoding">URLs: percent-encoding</h2>
+<pre><code class="language-scheme">(percent-encode "Zürich &amp; Bern")           ;; =&gt; "Z%C3%BCrich%20%26%20Bern"
+(percent-decode "Z%C3%BCrich%20%26%20Bern") ;; =&gt; "Zürich &amp; Bern"
+(percent-encode "a-b_c.d~e")               ;; =&gt; "a-b_c.d~e"
+
+(define (query-string params)
+  (let loop ((ps params) (acc ""))
+    (if (null? ps)
+        acc
+        (loop (cdr ps)
+              (string-append acc (if (string=? acc "") "?" "&amp;")
+                             (percent-encode (car (car ps))) "="
+                             (percent-encode (cdr (car ps))))))))
+
+(query-string '(("q" . "scheme tutorials") ("lang" . "de/fr")))
+;; =&gt; "?q=scheme%20tutorials&amp;lang=de%2Ffr"</code></pre>
+<p>Letters, digits and <code>- _ . ~</code> stay as they are; everything else, including non-ASCII text (as UTF-8), becomes <code>%XX</code>.</p>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a class="xref" href="scm-html-builder.html"><code>(scm html builder)</code></a> for HTML, <a class="xref" href="scm-net-http-client.html"><code>(scm net http client)</code></a> for requests.</li>
+<li>Reference: <a class="xref" href="scm-templating.html"><code>(scm templating)</code></a>, <a class="xref" href="scm-uri.html"><code>(scm uri)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scm-templating.html"><code>(scm templating)</code></a>, <a href="scm-uri.html"><code>(scm uri)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-scm-text.html">&larr; (scm text): Unix text tools in Scheme</a>
+  <a class="next" href="tutorial-scm-args.html">(scm args): command-line parsing &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

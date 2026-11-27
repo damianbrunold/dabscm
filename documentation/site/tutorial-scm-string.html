@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm string): regular expressions and splitting — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <a href="tutorial-scm-string.html" class="active">(scm string): regular expressions and splitting</a>
+    <a class="sub" href="#matching">Matching</a>
+    <a class="sub" href="#searching-inside-a-string">Searching inside a string</a>
+    <a class="sub" href="#replacing">Replacing</a>
+    <a class="sub" href="#splitting">Splitting</a>
+    <a class="sub" href="#fast-literal-search">Fast literal search</a>
+    <a class="sub" href="#example-parsing-log-lines">Example: parsing log lines</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-scm-list.html">(scm list) and (scm macro): small helpers</a>
+  <a href="tutorial-scm-match.html">(scm match): pattern matching</a>
+  <a href="tutorial-scm-io.html">(scm io): ports and formatting</a>
+  <a href="tutorial-scm-text.html">(scm text): Unix text tools in Scheme</a>
+  <a href="tutorial-scm-templating.html">(scm templating) and (scm uri): templates and URLs</a>
+  <a href="tutorial-scm-args.html">(scm args): command-line parsing</a>
+  <a href="tutorial-scm-terminal.html">(scm terminal) and (scm log): terminal output and logging</a>
+  <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a>
+  <a href="tutorial-scm-system.html">(scm system) and (scm sysadmin): processes and the system</a>
+  <a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a>
+  <a href="tutorial-scm-store.html">(scm store): an indexed record store</a>
+  <a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a>
+  <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm string): regular expressions and splitting</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="scm-string-regular-expressions-and-splitting">(scm string): regular expressions and splitting</h1>
+<p><a class="xref" href="scm-string.html"><code>(scm string)</code></a> adds what SRFI 13 lacks: regular expressions, splitting and literal replacement. Patterns use the regular-expression syntax that Java and .NET have in common, so a pattern means the same on every implementation.</p>
+<pre><code class="language-scheme">(import (scheme base) (scheme cxr) (scm string))</code></pre>
+<h2 id="matching">Matching</h2>
+<p><a class="xref" href="scm-string.html#e2"><code>string-matches</code></a> finds the first match of the pattern and returns it with its groups, as strings, or <code>#f</code>:</p>
+<pre><code class="language-scheme">(string-matches "abc123" "([a-z]+)([0-9]+)")  ;; =&gt; ("abc123" "abc" "123")
+(string-matches "xx abc123 yy" "([a-z]+)([0-9]+)") ;; =&gt; ("abc123" "abc" "123")
+(string-matches "2025-11-27" "^[0-9]{4}-[0-9]{2}-[0-9]{2}$") ;; =&gt; ("2025-11-27")
+(string-matches "2025-11-27!" "^[0-9]{4}-[0-9]{2}-[0-9]{2}$") ;; =&gt; #f
+(string-matches "ab" "(a)(x)?b")              ;; =&gt; ("ab" "a" #f)</code></pre>
+<p>The match may be anywhere in the string; anchor the pattern with <code>^</code> and <code>$</code> to require the whole string to match, as a validation needs. A group that does not take part in the match gives <code>#f</code>.</p>
+<h2 id="searching-inside-a-string">Searching inside a string</h2>
+<p><a class="xref" href="scm-string.html#e0"><code>regex-search</code></a> finds the first match anywhere and returns the positions of the match and of each group as <code>(start . end)</code> pairs:</p>
+<pre><code class="language-scheme">(define line "2025-11-27 14:03:12 ERROR db: connection refused")
+(define m (regex-search line "([A-Z]+) ([a-z]+):"))
+m                                             ;; =&gt; #((20 . 29) (20 . 25) (26 . 28))</code></pre>
+<p>The whole match is characters 20 to 29 (<code>ERROR db:</code>), the groups <code>ERROR</code> and <code>db</code>. A small helper takes them apart:</p>
+<pre><code class="language-scheme">(define (group s m i)
+  (let ((g (vector-ref m i))) (and g (substring s (car g) (cdr g)))))
+(group line m 1)                              ;; =&gt; "ERROR"
+(group line m 2)                              ;; =&gt; "db"
+(regex-search line "WARN")                    ;; =&gt; #f
+(vector-ref (regex-search "a1b2c3" "[0-9]" 2) 0) ;; =&gt; (3 . 4)</code></pre>
+<p>The optional third argument starts the search at a position, which is how you find all matches in turn:</p>
+<pre><code class="language-scheme">(define (all-matches s pattern)
+  (let loop ((start 0) (acc '()))
+    (let ((m (and (&lt;= start (string-length s)) (regex-search s pattern start))))
+      (if (not m)
+          (reverse acc)
+          (let ((g (vector-ref m 0)))
+            (loop (max (cdr g) (+ (car g) 1))
+                  (cons (substring s (car g) (cdr g)) acc)))))))
+
+(all-matches "call 555-1234 or 555-9876 now" "[0-9]{3}-[0-9]{4}")
+;; =&gt; ("555-1234" "555-9876")</code></pre>
+<h2 id="replacing">Replacing</h2>
+<pre><code class="language-scheme">(string-replace-all "a.b.c" "." "/")                   ;; =&gt; "a/b/c"
+(string-replace-all-regex "a.b.c" "\\." "/")           ;; =&gt; "a/b/c"
+(string-replace-all-regex "2024-01-31" "([0-9]+)-([0-9]+)-([0-9]+)" "~3.~2.~1")
+;; =&gt; "31.01.2024"
+(string-replace-all-regex "  too   many  spaces " " +" " ") ;; =&gt; " too many spaces "</code></pre>
+<p><a class="xref" href="scm-string.html#e3"><code>string-replace-all</code></a> replaces literal text; <a class="xref" href="scm-string.html#e4"><code>string-replace-all-regex</code></a> takes a pattern, and <code>~1</code>, <code>~2</code> … in the replacement insert the groups (<code>~0</code> the whole match, <code>~~</code> a tilde).</p>
+<p>In a Scheme string a backslash must be doubled, so the regular expression <code>\.</code> (a literal dot) is written <code>"\\."</code>.</p>
+<h2 id="splitting">Splitting</h2>
+<p><a class="xref" href="scm-string.html#e5"><code>string-split</code></a> splits at a regular expression (whitespace by default):</p>
+<pre><code class="language-scheme">(string-split "a b  c")                       ;; =&gt; ("a" "b" "c")
+(string-split "a,b;c" "[,;]")                 ;; =&gt; ("a" "b" "c")
+(string-split "1.5.2" "\\.")                  ;; =&gt; ("1" "5" "2")
+(string-split-vector "x y")                   ;; =&gt; #("x" "y")
+(string-split-char "a,,b" #\,)                ;; =&gt; ("a" "" "b")
+(string-split-lines "one\r\ntwo\n")           ;; =&gt; ("one" "two" "")</code></pre>
+<p>Because the separator is a pattern, a dot must be escaped (<code>"\\."</code>); <a class="xref" href="scm-string.html#e6"><code>string-split-char</code></a> splits at a single character literally and keeps empty fields. <a class="xref" href="scm-string.html#e7"><code>string-split-lines</code></a> also removes the carriage return of Windows line endings.</p>
+<h2 id="fast-literal-search">Fast literal search</h2>
+<pre><code class="language-scheme">(string-contains-from "abcabc" "bc" 2)        ;; =&gt; 4
+(symbol-starts-with? 'http-get "http")        ;; =&gt; #t</code></pre>
+<p><a class="xref" href="scm-string.html#e1"><code>string-contains-from</code></a> searches from a position without allocating, which is what hand-written parsers need.</p>
+<h2 id="example-parsing-log-lines">Example: parsing log lines</h2>
+<p>Turn log lines into records with one pattern:</p>
+<pre><code class="language-scheme">(define log-lines
+  '("2025-11-27 14:03:12 ERROR db: connection refused"
+    "2025-11-27 14:03:15 INFO web: request /home 200"
+    "garbage line"
+    "2025-11-27 14:04:01 WARN db: slow query 2.3s"))
+
+(define (parse-log-line l)
+  (let ((m (string-matches l "([0-9-]+) ([0-9:]+) ([A-Z]+) ([a-z]+): (.*)")))
+    (and m (cdr m))))
+
+(define (filter-map* f xs)
+  (let loop ((xs xs) (acc '()))
+    (cond ((null? xs) (reverse acc))
+          ((f (car xs)) =&gt; (lambda (v) (loop (cdr xs) (cons v acc))))
+          (else (loop (cdr xs) acc)))))
+
+(define entries (filter-map* parse-log-line log-lines))
+(length entries)                              ;; =&gt; 3
+(map caddr entries)                           ;; =&gt; ("ERROR" "INFO" "WARN")
+(map (lambda (e) (list-ref e 3)) entries)     ;; =&gt; ("db" "web" "db")</code></pre>
+<p>Lines that do not match give <code>#f</code> and are dropped.</p>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-techniques-01-strings.html">Strings and text</a>, <a href="tutorial-srfi-13.html">SRFI 13</a>.</li>
+<li><a href="tutorial-scm-text.html"><a class="xref" href="scm-text.html"><code>(scm text)</code></a></a> for grep and sed on whole files.</li>
+<li>Reference: <a class="xref" href="scm-string.html"><code>(scm string)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scm-string.html"><code>(scm string)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-srfi-271.html">&larr; SRFI 271: random ports</a>
+  <a class="next" href="tutorial-scm-list.html">(scm list) and (scm macro): small helpers &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

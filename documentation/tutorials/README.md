@@ -103,10 +103,28 @@ Guided tours of the individual libraries, each with worked examples.
 | [SRFI 158: generators](srfi-158.md) | generators and accumulators, a streaming log analysis |
 | [SRFI 271: random ports](srfi-271.md) | secure random bytes, tokens, UUIDs, reproducible streams |
 
-Tutorials for the dabscm libraries (`(scm ...)`) follow. Until then, the
-techniques above cover the most-used ones, and the
-[library reference](../index.md) has an overview and examples for every
-library.
+### Core dabscm libraries
+
+| tutorial | covers |
+|---|---|
+| [`(scm string)`](scm-string.md) | regular expressions, searching and replacing with groups, splitting |
+| [`(scm list)` and `(scm macro)`](scm-list.md) | property lists, neighbouring duplicates, pretty-printing |
+| [`(scm match)`](scm-match.md) | pattern matching, destructuring data, a symbolic differentiator |
+| [`(scm io)`](scm-io.md) | string ports, whole-file reading, reading untrusted data |
+| [`(scm text)`](scm-text.md) | grep, sed, awk, sort, uniq, wc, diff and hexdump in Scheme |
+| [`(scm templating)` and `(scm uri)`](scm-templating.md) | templates with loops and includes, percent-encoding |
+| [`(scm args)`](scm-args.md) | command-line options, types, help, errors |
+| [`(scm terminal)` and `(scm log)`](scm-terminal.md) | colors, display width, raw keys, logging |
+| [`(scm fs)`, `(scm fs-find)`, `(scm glob)`](scm-fs.md) | paths, directories, finding files, globs, backup rotation |
+| [`(scm system)` and `(scm sysadmin)`](scm-system.md) | running programs, platform, parallel maps, scripting |
+| [`(scm archive)`, `(scm zip)`, `(scm compression)`](scm-archive.md) | gzip, ZIP and tar archives, compressing bytevectors |
+| [`(scm store)`](scm-store.md) | an indexed on-disk record store |
+| [`(scm crypto)`](scm-crypto.md) | hashes, HMAC, encryption, passwords, signed tokens |
+| [`(scm datetime)` and `(scm duration)`](scm-datetime.md) | parsing and formatting timestamps, durations |
+
+Tutorials for the format, web, database and data libraries follow. Until
+then, the [library reference](../index.md) has an overview and examples for
+every library.
 
 ## Running the examples yourself
 

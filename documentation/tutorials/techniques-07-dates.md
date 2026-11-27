@@ -136,7 +136,7 @@ Count the weekdays between two dates, inclusive:
 ## The current time and elapsed time
 
 ```scheme no-test
-(now)                       ; epoch seconds, now
+(now)                       ; "2025-11-27 14:03", the local date and time
 (current-date)              ; an SRFI 19 date in the local time zone
 (date->string (current-date) "~Y-~m-~d")
 ```

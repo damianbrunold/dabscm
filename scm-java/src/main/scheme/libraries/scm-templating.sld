@@ -19,6 +19,12 @@
     ;; ---------------------------------------------------------------------------
 
     (define (template-context . pairs)
+      "Syntax: (template-context key value ...)
+Library: (scm templating)
+Description: An alist ((key . value) ...) from alternating keys and values,
+  the context the render procedures take.
+Example:
+  (template-context 'name \"Ada\" 'year 1843) => ((name . \"Ada\") (year . 1843))"
       (let loop ((ps pairs) (acc '()))
         (if (or (null? ps) (null? (cdr ps)))
             (reverse acc)
@@ -279,10 +285,27 @@
     ;; ---------------------------------------------------------------------------
 
     (define (template-render str ctx)
+      "Syntax: (template-render template context)
+Library: (scm templating)
+Description: Fills the template string from context (an alist with symbol or
+  string keys) and returns the result. {{a.b.0}} inserts a value, following
+  keys and list/vector indexes (missing values give \"\"); {% for x in path %}
+  ... {% endfor %} loops over a list or vector; {% if path %} ... {% else %}
+  ... {% endif %} tests a value (false when missing, #f, empty or \"\");
+  {% include \"file\" %} inserts a template file relative to the current
+  directory. Values are inserted as they are, without HTML escaping.
+Example:
+  (template-render \"Hello {{name}}!\" '((name . \"Ada\"))) => \"Hello Ada!\""
       (call-with-output-string
         (lambda (port) (tmpl-render-nodes (tmpl-parse str) ctx "." port))))
 
     (define (template-render-file path ctx)
+      "Syntax: (template-render-file path context)
+Library: (scm templating)
+Description: Like template-render, with the template read from the file at
+  path; {% include %} paths are relative to its directory.
+Example:
+  (template-render-file \"mail.txt\" '((name . \"Ada\")))"
       (let* ((content (tmpl-read-file path))
              (base-dir (directory-name path))
              (ast (tmpl-parse content)))
@@ -290,7 +313,20 @@
           (lambda (port) (tmpl-render-nodes ast ctx base-dir port)))))
 
     (define (make-template-engine base-dir)
+      "Syntax: (make-template-engine directory)
+Library: (scm templating)
+Description: A renderer for the templates in directory: use it with
+  template-engine-render and a path relative to directory.
+Example:
+  (define engine (make-template-engine \"templates\"))"
       (lambda (path ctx)
         (template-render-file (join-path base-dir path) ctx)))
 
-    (define (template-engine-render engine path ctx) (engine path ctx))))
+    (define (template-engine-render engine path ctx)
+      "Syntax: (template-engine-render engine path context)
+Library: (scm templating)
+Description: Renders the template file path (relative to the engine's
+  directory) with context, as template-render-file does.
+Example:
+  (template-engine-render engine \"page.html\" '((title . \"News\")))"
+      (engine path ctx))))

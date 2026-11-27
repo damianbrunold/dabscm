@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm io): ports and formatting — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <a href="tutorial-scm-string.html">(scm string): regular expressions and splitting</a>
+  <a href="tutorial-scm-list.html">(scm list) and (scm macro): small helpers</a>
+  <a href="tutorial-scm-match.html">(scm match): pattern matching</a>
+  <a href="tutorial-scm-io.html" class="active">(scm io): ports and formatting</a>
+    <a class="sub" href="#capturing-output">Capturing output</a>
+    <a class="sub" href="#reading-from-strings">Reading from strings</a>
+    <a class="sub" href="#reading-whole-files">Reading whole files</a>
+    <a class="sub" href="#reading-untrusted-data-safely">Reading untrusted data safely</a>
+    <a class="sub" href="#format">format</a>
+    <a class="sub" href="#line-and-field-separators">Line and field separators</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-scm-text.html">(scm text): Unix text tools in Scheme</a>
+  <a href="tutorial-scm-templating.html">(scm templating) and (scm uri): templates and URLs</a>
+  <a href="tutorial-scm-args.html">(scm args): command-line parsing</a>
+  <a href="tutorial-scm-terminal.html">(scm terminal) and (scm log): terminal output and logging</a>
+  <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a>
+  <a href="tutorial-scm-system.html">(scm system) and (scm sysadmin): processes and the system</a>
+  <a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a>
+  <a href="tutorial-scm-store.html">(scm store): an indexed record store</a>
+  <a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a>
+  <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm io): ports and formatting</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="scm-io-ports-and-formatting">(scm io): ports and formatting</h1>
+<p><a class="xref" href="scm-io.html"><code>(scm io)</code></a> adds conveniences on top of the R7RS ports.</p>
+<pre><code class="language-scheme">(import (scheme base) (scheme read) (scheme write) (scheme file) (scm io) (scm fs))</code></pre>
+<h2 id="capturing-output">Capturing output</h2>
+<pre><code class="language-scheme">(call-with-output-string
+  (lambda (out) (display "total: " out) (write 42 out)))   ;; =&gt; "total: 42"
+(call-with-output-bytevector
+  (lambda (out) (write-u8 1 out) (write-bytevector #u8(2 3) out))) ;; =&gt; #u8(1 2 3)</code></pre>
+<p>Any procedure that writes to a port can be turned into one that returns a string this way, which makes it easy to test.</p>
+<h2 id="reading-from-strings">Reading from strings</h2>
+<pre><code class="language-scheme">(call-with-input-string "(1 2 3) next" read)             ;; =&gt; (1 2 3)
+(with-input-from-string "hello world" read)              ;; =&gt; hello
+(read-chars 3 (open-input-string "abcdef"))              ;; =&gt; "abc"
+(port-position (open-input-string "x"))                  ;; =&gt; ("{string}" 1 0)</code></pre>
+<p><a class="xref" href="scm-io.html#e14"><code>with-input-from-string</code></a> makes the string the <em>current</em> input port for the duration of a thunk, so code that reads from <code>(current-input-port)</code> can be fed test input.</p>
+<h2 id="reading-whole-files">Reading whole files</h2>
+<pre><code class="language-scheme">(define dir (mktempdir '(prefix . "io")))
+(define path (join-path dir "notes.txt"))
+(call-with-output-file path (lambda (out) (display "alpha\nbeta\n" out)))
+
+(read-file-string path)                                  ;; =&gt; "alpha\nbeta\n"
+(read-file-lines path)                                   ;; =&gt; ("alpha" "beta")
+(file-&gt;lines (join-path dir "missing.txt"))              ;; =&gt; #f
+(read-file-lines (join-path dir "missing.txt"))          ;; =&gt; error</code></pre>
+<p>Two flavours: <a class="xref" href="scm-io.html#e13"><code>read-file-string</code></a> and <a class="xref" href="scm-io.html#e12"><code>read-file-lines</code></a> raise an error when the file cannot be read, <a class="xref" href="scm-io.html#e5"><code>file-&gt;string</code></a> and <a class="xref" href="scm-io.html#e4"><code>file-&gt;lines</code></a> return <code>#f</code>. Both take encoding options such as <code>'latin-1</code>.</p>
+<h2 id="reading-untrusted-data-safely">Reading untrusted data safely</h2>
+<p><code>read</code> accepts any Scheme syntax, including datum labels that make cyclic structures. For data from uploads or the network, use <a class="xref" href="scm-io.html#e11"><code>read-data</code></a>, which rejects labels and limits nesting:</p>
+<pre><code class="language-scheme">(read-data (open-input-string "(order 1 (items \"a\" \"b\"))")) ;; =&gt; (order 1 (items "a" "b"))
+(guard (e ((read-error? e) 'rejected))
+  (read-data (open-input-string "#0=(a . #0#)")))        ;; =&gt; rejected
+(guard (e ((read-error? e) 'too-deep))
+  (read-data (open-input-string "((((((x))))))") 3))     ;; =&gt; too-deep</code></pre>
+<h2 id="format">format</h2>
+<p><code>format</code> is the same as in <a href="tutorial-srfi-48.html">SRFI 48</a>: <code>#f</code> returns a string, <code>#t</code> writes to the current output port.</p>
+<pre><code class="language-scheme">(format #f "~a: ~s" 'name "Ada")                         ;; =&gt; "name: \"Ada\""
+(format #f "~8,2f|" 3.14159)                             ;; =&gt; "    3.14|"</code></pre>
+<h2 id="line-and-field-separators">Line and field separators</h2>
+<pre><code class="language-scheme">(string? line-sep)                                       ;; =&gt; #t
+(string? field-sep)                                      ;; =&gt; #t</code></pre>
+<p><a class="xref" href="scm-io.html#e8"><code>line-sep</code></a> is the platform's line ending and <a class="xref" href="scm-io.html#e3"><code>field-sep</code></a> the separator of path lists (<code>:</code> on Unix, <code>;</code> on Windows), for building <code>PATH</code>-like values.</p>
+<pre><code class="language-scheme">(rm dir 'recursive)</code></pre>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-techniques-03-files.html">Files and directories</a>.</li>
+<li>Reference: <a class="xref" href="scm-io.html"><code>(scm io)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scm-io.html"><code>(scm io)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-scm-match.html">&larr; (scm match): pattern matching</a>
+  <a class="next" href="tutorial-scm-text.html">(scm text): Unix text tools in Scheme &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

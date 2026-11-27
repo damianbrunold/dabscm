@@ -177,19 +177,21 @@ public class SyntaxRulesTransformer {
         if (pattern == Value.NIL)
             return isNil(datum);
 
+        // Vector pattern (before the constants: a vector is not a pair, and
+        // comparing it with equals would never match)
+        if (Value.isVector(pattern)) {
+            Object d = datum instanceof SyntaxObject ? ((SyntaxObject) datum).datum : datum;
+            if (!Value.isVector(d)) return false;
+            return matchInner(vectorToList(Value.asVector(pattern)),
+                vectorToList(Value.asVector(d)), bindings, modules, useEnv);
+        }
+
         // Non-pair constant: must be equal
         if (!Value.isPair(pattern)) {
             // Scheme strings are char[] -- need content comparison, not reference
             if (Value.isString(pattern) && Value.isString(datum))
                 return new String(Value.asString(pattern)).equals(new String(Value.asString(datum)));
             return pattern.equals(datum);
-        }
-
-        // Vector pattern
-        if (Value.isVector(pattern)) {
-            if (!Value.isVector(datum)) return false;
-            return matchInner(vectorToList(Value.asVector(pattern)),
-                vectorToList(Value.asVector(datum)), bindings, modules, useEnv);
         }
 
         // Pair pattern (using Stx helpers for SyntaxObject-aware traversal)

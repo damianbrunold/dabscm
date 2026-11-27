@@ -56,6 +56,7 @@
 
 <div class="lib-title scm">(scm zip)</div>
 <p class="lib-sub">ZIP archive creation and entry writing</p>
+<p class="lib-tutorials">Tutorials: <a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a></p>
 <div class="lib-preamble">
 <h2>Overview</h2>
 <p><a class="xref" href="scm-zip.html"><code>(scm zip)</code></a> reads and writes ZIP archives. Entries are written through output ports (text or binary) and read back by name; the <code>call-with-…</code> forms open and reliably close the archive for you.</p>
@@ -180,7 +181,7 @@ Library: (scm core)
 Description: Creates a new ZIP archive at the given filename and returns a ZIP writer object. Entries can be added using zip-add-text-entry or zip-add-binary-entry.
 Example:
   (define z (open-output-zip-file "archive.zip"))
-  (zip-add-text-entry z "hello.txt" "Hello, world!")
+  (display "Hello, world!" (zip-add-text-entry z "hello.txt"))
   (close-output-zip z)</pre>
 </div>
 <div class="entry" id="e10" data-name="zip-add-binary-entry">
