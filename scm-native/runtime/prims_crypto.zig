@@ -174,7 +174,7 @@ pub const @"%scrypt" = WN("scrypt", scrypt, 6, 6);
 fn randomBytes(t: *Thread) Err!Word {
     const n = try intArg(t, 0);
     if (n < 0) return raise(t, "random-bytes: negative length", &.{});
-    t.reserve(data.bvWords(@intCast(n)));
+    try P.reserveObject(t, "random-bytes", data.bvWords(@intCast(n)));
     const bv = data.makeBytevector(t, @intCast(n));
     os.randomBytes(data.bvBytes(bv));
     return bv;

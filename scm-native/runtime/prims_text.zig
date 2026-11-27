@@ -245,7 +245,7 @@ pub const @"%bytevector?" = WD("bytevector?", bytevectorP, 1, 1);
 fn makeBytevector(t: *Thread) Err!Word {
     const n = try P.count(t, arg(t, 0));
     const fill: u8 = if (t.argc > 1) try byteArg(t, 1) else 0;
-    t.reserve(data.bvWords(n));
+    try P.reserveObject(t, "make-bytevector", data.bvWords(n));
     const bv = data.makeBytevector(t, n);
     @memset(data.bvBytes(bv), fill);
     return bv;

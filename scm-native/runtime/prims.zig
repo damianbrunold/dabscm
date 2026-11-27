@@ -24,6 +24,17 @@ pub fn raise(t: *Thread, msg: []const u8, irritants: []const Word) Err {
     return error.Scheme;
 }
 
+/// t.reserve for an object whose size the caller chose (make-vector, …):
+/// one larger than rt.maxObjectWords is an "out of memory" error
+pub fn reserveObject(t: *Thread, who: []const u8, words: usize) Err!void {
+    if (words > rt.maxObjectWords()) {
+        var buf: [96]u8 = undefined;
+        const msg = std.fmt.bufPrint(&buf, "{s}: out of memory (object too large)", .{who}) catch "out of memory";
+        return raise(t, msg, &.{});
+    }
+    t.reserve(words);
+}
+
 /// Standard-convention code for f, with an arity check.
 pub fn W(comptime f: fn (*Thread) Err!Word, comptime min: u64, comptime max: u64) Code {
     return WN("", f, min, max);
@@ -352,7 +363,7 @@ pub const @"%string-set!" = WN("string-set!", stringSet, 3, 3);
 fn makeStringImpl(t: *Thread) Err!Word {
     const n = try count(t, arg(t, 0));
     const fill: u21 = if (t.argc > 1) try charArg(t, 1) else ' ';
-    t.reserve(data.stringWords(n, fill > 255));
+    try reserveObject(t, "make-string", data.stringWords(n, fill > 255));
     const s = data.makeString(t, n, fill > 255);
     for (0..n) |i| data.stringSetFits(s, i, fill);
     return s;
@@ -526,7 +537,7 @@ pub const @"%vector?" = WD("vector?", vectorP, 1, 1);
 
 fn makeVectorImpl(t: *Thread) Err!Word {
     const n = try count(t, arg(t, 0));
-    t.reserve(1 + n);
+    try reserveObject(t, "make-vector", 1 +| n);
     return data.makeVector(t, n, if (t.argc > 1) arg(t, 1) else fix(0));
 }
 pub const @"%make-vector" = WN("make-vector", makeVectorImpl, 1, 2);

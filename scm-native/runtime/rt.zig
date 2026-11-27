@@ -117,6 +117,22 @@ pub fn oom() noreturn {
     os.fatal("out of memory", .{});
 }
 
+/// The largest object (in words) a primitive allocates on request: a
+/// quarter of the computer's memory. A larger request (make-vector of
+/// 2^31 elements) is a Scheme error, as on the JVM and .NET, instead of a
+/// nursery of 2.25 times its size that the system commits lazily and
+/// then kills the process for when it is filled.
+var max_object_words: usize = 0;
+
+pub fn maxObjectWords() usize {
+    const m = @atomicLoad(usize, &max_object_words, .monotonic);
+    if (m != 0) return m;
+    const bytes: u64 = std.process.totalSystemMemory() catch (8 << 30);
+    const w: usize = @intCast(@max(bytes / 32, 1 << 20)); // bytes / 4 / 8
+    @atomicStore(usize, &max_object_words, w, .monotonic);
+    return w;
+}
+
 // ---------------------------------------------------------------------------
 // Thread state (abi.Thread) and the large-object space
 

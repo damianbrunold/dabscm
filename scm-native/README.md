@@ -284,6 +284,11 @@ needs a Java runtime.
   - the syntax-object procedures `datum->syntax`, `syntax->datum`, `identifier?`,
     `generate-temporaries`, `bound-identifier=?` and `free-identifier=?`;
   - `current-module`.
+- **Running out of memory:** `make-vector`, `make-string`, `make-bytevector` and
+  `random-bytes` raise an "out of memory (object too large)" error that `guard` catches
+  for an object larger than a quarter of the computer's memory, as the JVM and .NET do
+  for one beyond their array size limits. When the heap itself is exhausted, the program
+  ends with "fatal: out of memory"; on the JVM and .NET that is a Scheme error.
 - **Minor differences:**
   - `string->number` reads complex numbers;
   - the gzip reader's message for a truncated stream is "Unexpected end of ZLIB input
