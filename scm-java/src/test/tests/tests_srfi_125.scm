@@ -1,4 +1,5 @@
 (import (scheme base)
+        (scheme char)
         (scheme cxr)
         (srfi 125)
         (srfi 128)
@@ -274,5 +275,23 @@
   (define ht (hash-table (make-default-comparator) 'a 1))
   (test-equal 1 (length (hash-table->alist ht)))
   (test-equal 1 (cdar (hash-table->alist ht))))
+
+;; native equivalences, the SRFI 69 form, other equalities an error
+(test-group "comparator equivalences"
+  (let ((ht (make-hash-table (make-comparator string? string-ci=? #f string-ci-hash))))
+    (hash-table-set! ht "Abc" 1)
+    (test-equal 1 (hash-table-ref/default ht "aBC" #f)))
+  (let ((ht (make-hash-table (make-comparator number? = < number-hash))))
+    (hash-table-set! ht 1 'one)
+    (test-equal 'one (hash-table-ref/default ht 1.0 #f)))
+  (let ((ht (make-hash-table string=? string-hash)))
+    (hash-table-set! ht "a" 1)
+    (test-equal 1 (hash-table-ref/default ht "a" #f))
+    (test-assert (comparator? (hash-table-comparator ht)))
+    (test-eq string=? (hash-table-equivalence-function ht)))
+  (test-error (make-hash-table (make-comparator pair? (lambda (a b) #t) #f (lambda (x) 0))))
+  (let ((ht (make-hash-table (make-default-comparator))))
+    (hash-table-set! ht '(1 "a") 1)
+    (test-equal 1 (hash-table-ref/default ht (list 1 "a") #f))))
 
 (test-end "srfi-125")

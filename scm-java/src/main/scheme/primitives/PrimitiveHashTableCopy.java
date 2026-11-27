@@ -8,9 +8,9 @@ public class PrimitiveHashTableCopy extends Primitive {
 
     @Override
     public String info() {
-        return "Syntax: (hash-table-copy ht)\n" +
+        return "Syntax: (hash-table-copy ht [mutable?])\n" +
                "Library: (srfi 69)\n" +
-               "Description: Returns a copy of the hash table ht with the same equality mode and all the same key-value associations.\n" +
+               "Description: Returns a copy of the hash table ht with the same equality mode and all the same key-value associations. The copy is always mutable; mutable? is accepted for SRFI 69.\n" +
                "Example:\n" +
                "  (define ht (make-hash-table equal?))\n" +
                "  (hash-table-set! ht 'a 1)\n" +
@@ -20,7 +20,8 @@ public class PrimitiveHashTableCopy extends Primitive {
 
     @Override
     public Object apply(SourcePos pos, Object[] arguments) {
-        checkArgs(pos, arguments, 1, 1);
+        // (hash-table-copy ht [mutable?]): the copy is always mutable
+        checkArgs(pos, arguments, 1, 2);
         if (!(arguments[0] instanceof SchemeHashTable))
             throw new SchemeError(pos, name() + ": not a hash table");
         SchemeHashTable ht = (SchemeHashTable) arguments[0];

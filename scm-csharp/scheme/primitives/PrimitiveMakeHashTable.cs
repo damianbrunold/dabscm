@@ -5,9 +5,9 @@ public class PrimitiveMakeHashTable : Primitive
     public override string Name() => "make-hash-table";
 
     public override string Info() =>
-        "Syntax: (make-hash-table [equality-proc [hash-proc]])\n" +
+        "Syntax: (make-hash-table [equivalence [hash arg ...]])\n" +
         "Library: (srfi 69)\n" +
-        "Description: Creates a new empty hash table. The optional equality-proc determines key comparison: eq?, eqv?, or equal? (default). The optional hash-proc is accepted but ignored.\n" +
+        "Description: Creates a new empty hash table. equivalence is eq?, eqv? or equal? (default), or a mode symbol (eq eqv equal string-ci char-ci numeric) as (srfi 69) and (srfi 125) pass it for string-ci=?, char-ci=? and =. The hash function and further arguments are accepted and ignored: the table hashes consistently with its equivalence.\n" +
         "Example:\n" +
         "  (define ht (make-hash-table equal?))\n" +
         "  (hash-table-set! ht 'a 1)\n" +
@@ -15,11 +15,13 @@ public class PrimitiveMakeHashTable : Primitive
 
     public override object Apply(SourcePos? pos, object[] arguments)
     {
-        CheckArgs(pos, arguments, 0, 2);
         EqualityMode mode = EqualityMode.Equal;
         if (arguments.Length >= 1)
         {
-            if (arguments[0] is PrimitiveEqP)
+            EqualityMode? m = SchemeHashTable.ModeOfSymbol(arguments[0]);
+            if (m != null)
+                mode = m.Value;
+            else if (arguments[0] is PrimitiveEqP)
                 mode = EqualityMode.Eq;
             else if (arguments[0] is PrimitiveEqvP)
                 mode = EqualityMode.Eqv;

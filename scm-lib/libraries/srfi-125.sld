@@ -1,5 +1,6 @@
 (define-library (srfi 125)
   (import (scheme base)
+          (only (scheme char) char-ci=? string-ci=?)
           (srfi 128))
   (export
    ;; Constructors
@@ -70,6 +71,7 @@
     (define hash-table-clear! (%primitive "hash-table-clear!"))
     (define %set-comparator! (%primitive "%hash-table-set-comparator!"))
     (define %get-comparator (%primitive "%hash-table-comparator"))
+    (define %primitive-name (%primitive "%primitive-name"))
 
     ;; --- Constructors ---
 
@@ -82,10 +84,42 @@ Example:
   (define ht (make-hash-table (make-default-comparator)))
   (hash-table-set! ht 'a 1)
   (hash-table-ref ht 'a) => 1"
-      (let ((eq-pred (comparator-equality-predicate comparator)))
-        (let ((ht (%make-hash-table-prim eq-pred)))
-          (%set-comparator! ht comparator)
-          ht)))
+      (let* ((comparator
+              (if (comparator? comparator)
+                  comparator
+                  ;; the deprecated SRFI 69 form (make-hash-table equiv [hash])
+                  (make-comparator (lambda (x) #t)
+                                   comparator
+                                   #f
+                                   (if (and (pair? args) (procedure? (car args)))
+                                       (car args)
+                                       default-hash))))
+             (ht (%make-hash-table-prim (%comparator-mode comparator))))
+        (%set-comparator! ht comparator)
+        ht))
+
+    ;; The equivalences the hash tables support natively, as the mode the
+    ;; make-hash-table primitive takes; the default comparator compares
+    ;; like equal?. Any other equality predicate is an error: a table
+    ;; cannot call it, and treating it as equal? would give wrong answers
+    ;; silently.
+    (define %default-equality (comparator-equality-predicate default-comparator))
+
+    (define (%comparator-mode comparator)
+      (let* ((e (comparator-equality-predicate comparator))
+             (is? (lambda (p name) (or (eq? e p) (eq? (%primitive-name e) name)))))
+        (cond ((eq? e %default-equality) 'equal)
+              ((is? equal? 'equal?) 'equal)
+              ((is? eqv? 'eqv?) 'eqv)
+              ((is? eq? 'eq?) 'eq)
+              ((is? string=? 'string=?) 'equal)
+              ((is? string-ci=? 'string-ci=?) 'string-ci)
+              ((is? char=? 'char=?) 'eqv)
+              ((is? char-ci=? 'char-ci=?) 'char-ci)
+              ((is? = '=) 'numeric)
+              (else
+               (error "make-hash-table: unsupported comparator equality (use the default comparator or equal?, eqv?, eq?, string=?, string-ci=?, char=?, char-ci=? or =)"
+                      e)))))
 
     (define (hash-table comparator . args)
       "Syntax: (hash-table comparator key1 val1 key2 val2 ...)

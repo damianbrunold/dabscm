@@ -4,9 +4,15 @@ SRFI-69 — Basic hash tables with eq?/eqv?/equal? support
 
 ## Overview
 
-SRFI-69 provides basic hash tables, keyed with `eq?`, `eqv?`, or `equal?`. It's the
-simplest of the hash-table SRFIs; for comparator-based tables with richer
-operations see SRFI-125.
+SRFI-69 provides basic hash tables. It's the simplest of the hash-table SRFIs; for
+comparator-based tables with richer operations see SRFI-125.
+
+A table's equivalence is one of `equal?` (the default), `eqv?`, `eq?`,
+`string=?`, `string-ci=?`, `char=?`, `char-ci=?` or `=`; the table hashes as
+that equivalence needs, so a hash function given to `make-hash-table` is only
+kept for `hash-table-hash-function`. Another predicate is an error, since a
+table cannot call it. Keys of another type compare as with `equal?`
+(`string-ci=?`, `=`) or `eqv?` (`char-ci=?`).
 
 ## Common uses
 
@@ -20,11 +26,32 @@ operations see SRFI-125.
 (hash-table-keys h)                            ;; => ("a")
 ```
 
+```scheme
+(define ci (make-hash-table string-ci=? string-ci-hash))
+(hash-table-set! ci "Zurich" 1)
+(hash-table-ref/default ci "ZURICH" #f)        ;; => 1
+(define n (alist->hash-table '((1 . one)) =))
+(hash-table-ref/default n 1.0 #f)              ;; => one
+```
+
 `hash-table-update!`, `hash-table-delete!`, `hash-table-walk`, and
 `hash-table->alist` cover the usual operations.
 
 
 ## Exports
+
+### `alist->hash-table`
+
+```
+Syntax: (alist->hash-table alist [equivalence [hash arg ...]])
+Library: (srfi 69)
+Description: A new hash table (made as with make-hash-table and the further
+arguments) holding the associations of alist; for a key that occurs more
+than once, the first association wins.
+Example:
+  (define ht (alist->hash-table '((a . 1) (b . 2) (a . 3))))
+  (hash-table-ref ht 'a) => 1
+```
 
 ### `hash`
 
@@ -67,9 +94,9 @@ Example:
 ### `hash-table-copy`
 
 ```
-Syntax: (hash-table-copy ht)
+Syntax: (hash-table-copy ht [mutable?])
 Library: (srfi 69)
-Description: Returns a copy of the hash table ht with the same equality mode and all the same key-value associations.
+Description: Returns a copy of the hash table ht with the same equality mode and all the same key-value associations. The copy is always mutable; mutable? is accepted for SRFI 69.
 Example:
   (define ht (make-hash-table equal?))
   (hash-table-set! ht 'a 1)
@@ -88,6 +115,16 @@ Example:
   (hash-table-set! ht 'x 42)
   (hash-table-delete! ht 'x)
   (hash-table-exists? ht 'x) => #f
+```
+
+### `hash-table-equivalence-function`
+
+```
+Syntax: (hash-table-equivalence-function ht)
+Library: (srfi 69)
+Description: The equivalence predicate ht was made with (equal? by default).
+Example:
+  (hash-table-equivalence-function (make-hash-table eq?)) => eq?
 ```
 
 ### `hash-table-exists?`
@@ -114,6 +151,17 @@ Example:
   (define ht (make-hash-table equal?))
   (hash-table-set! ht 'a 1)
   (hash-table-fold ht (lambda (k v acc) (+ v acc)) 0) => 1
+```
+
+### `hash-table-hash-function`
+
+```
+Syntax: (hash-table-hash-function ht)
+Library: (srfi 69)
+Description: The hash function ht was made with, or the one that goes with
+its equivalence (hash by default).
+Example:
+  (hash-table-hash-function (make-hash-table string=?)) => string-hash
 ```
 
 ### `hash-table-keys`
@@ -146,13 +194,15 @@ Example:
 ### `hash-table-ref`
 
 ```
-Syntax: (hash-table-ref ht key [default-thunk])
+Syntax: (hash-table-ref ht key [thunk])
 Library: (srfi 69)
-Description: Returns the value associated with key in ht. If the key is not found and default-thunk is provided, calls it and returns the result; otherwise raises an error.
+Description: The value of key in ht. When key is missing, the result of
+calling thunk, or an error without thunk.
 Example:
-  (define ht (make-hash-table equal?))
-  (hash-table-set! ht 'x 42)
-  (hash-table-ref ht 'x) => 42
+  (define ht (make-hash-table))
+  (hash-table-set! ht 'a 1)
+  (hash-table-ref ht 'a) => 1
+  (hash-table-ref ht 'b (lambda () 0)) => 0
 ```
 
 ### `hash-table-ref/default`
@@ -300,13 +350,17 @@ Example:
 ### `make-hash-table`
 
 ```
-Syntax: (make-hash-table [equality-proc [hash-proc]])
+Syntax: (make-hash-table [equivalence [hash arg ...]])
 Library: (srfi 69)
-Description: Creates a new empty hash table. The optional equality-proc determines key comparison: eq?, eqv?, or equal? (default). The optional hash-proc is accepted but ignored.
+Description: Creates a new empty hash table. equivalence (default equal?)
+is one of equal?, eqv?, eq?, string=?, string-ci=?, char=?, char-ci=? or
+=; another predicate is an error. The table hashes as its equivalence
+needs: the optional hash function is kept for hash-table-hash-function,
+further arguments are ignored.
 Example:
-  (define ht (make-hash-table equal?))
-  (hash-table-set! ht 'a 1)
-  (hash-table-ref ht 'a) => 1
+  (define ht (make-hash-table string-ci=? string-ci-hash))
+  (hash-table-set! ht "Zurich" 1)
+  (hash-table-ref/default ht "ZURICH" #f) => 1
 ```
 
 ### `string-ci-hash`

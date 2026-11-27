@@ -3,7 +3,9 @@
 SRFI-125 provides intermediate hash tables built on SRFI-128 comparators, with a
 broad operation set: mapping, folding, and set-like combinations. Use it when you
 want comparator-driven tables or the richer API; for simple `eq?`/`equal?` tables
-SRFI-69 is lighter.
+SRFI-69 is lighter. A comparator's equality is the default comparator's or one of
+`equal?`, `eqv?`, `eq?`, `string=?`, `string-ci=?`, `char=?`, `char-ci=?` or `=`;
+another equality is an error, since a table cannot call it.
 
 ## Common uses
 

@@ -10,6 +10,7 @@ const std = @import("std");
 const rt = @import("rt.zig");
 const data = @import("data.zig");
 const tower = @import("tower.zig");
+const chars = @import("chars.zig");
 const P = @import("prims.zig");
 const Word = rt.Word;
 const Thread = rt.Thread;
@@ -24,7 +25,10 @@ const fix = rt.fix;
 const unfix = rt.unfix;
 const ptr = rt.ptr;
 
-pub const Mode = enum(i64) { eq = 0, eqv = 1, equal = 2 };
+/// string_ci: string-ci=? (strings case-folded), char_ci: char-ci=?,
+/// numeric: = (1 and 1.0 are the same key); keys of another type compare
+/// with equal? (string_ci, numeric) or eqv? (char_ci)
+pub const Mode = enum(i64) { eq = 0, eqv = 1, equal = 2, string_ci = 3, char_ci = 4, numeric = 5 };
 
 const F_MOVABLE: i64 = 1;
 
@@ -65,7 +69,26 @@ fn hashBytes(b: []const u8) u64 {
     return std.hash.Wyhash.hash(0, b);
 }
 
+/// a real's hash under =: equal for = numbers (via the double value)
+fn numHash(w: Word) u64 {
+    const x = if (tower.isComp(w)) tower.realPart(w) else w;
+    const d = tower.toFloat(x);
+    if (d == 0) return mix(0);
+    if (std.math.isNan(d)) return mix(1);
+    return mix(@bitCast(d));
+}
+
 fn hash(w: Word, m: Mode, movable: *bool, depth: u32) u64 {
+    switch (m) {
+        .string_ci => if (data.isString(w)) {
+            var h: u64 = 0;
+            for (0..data.stringLen(w)) |i| h = h *% 31 +% chars.foldcase(data.stringRef(w, i));
+            return mix(h);
+        } else return hash(w, .equal, movable, depth),
+        .char_ci => if (rt.isChar(w)) return mix(chars.foldcase(rt.charCode(w))) else return hash(w, .eqv, movable, depth),
+        .numeric => if (tower.isNumber(w)) return numHash(w) else return hash(w, .equal, movable, depth),
+        else => {},
+    }
     if (!rt.isPtr(w)) return mix(w);
     const ty = rt.objType(w);
     if (m != .eq) switch (ty) {
@@ -99,11 +122,33 @@ fn hash(w: Word, m: Mode, movable: *bool, depth: u32) u64 {
     return mix(w);
 }
 
+/// = without allocating: exact numbers by eqv?, others by their doubles
+fn numSame(a: Word, b: Word) bool {
+    if (tower.isComp(a) or tower.isComp(b))
+        return numSame(tower.realPart(a), tower.realPart(b)) and numSame(tower.imagPart(a), tower.imagPart(b));
+    if (!rt.isFlonum(a) and !rt.isFlonum(b)) return data.eqv(a, b);
+    const x = tower.toFloat(a);
+    const y = tower.toFloat(b);
+    return x == y; // false for NaN
+}
+
+fn stringCiSame(a: Word, b: Word) bool {
+    const n = data.stringLen(a);
+    if (n != data.stringLen(b)) return false;
+    for (0..n) |i| {
+        if (chars.foldcase(data.stringRef(a, i)) != chars.foldcase(data.stringRef(b, i))) return false;
+    }
+    return true;
+}
+
 fn same(a: Word, b: Word, m: Mode) bool {
     return switch (m) {
         .eq => a == b,
         .eqv => data.eqv(a, b),
         .equal => data.equal(a, b),
+        .string_ci => if (data.isString(a) and data.isString(b)) stringCiSame(a, b) else data.equal(a, b),
+        .char_ci => if (rt.isChar(a) and rt.isChar(b)) chars.foldcase(rt.charCode(a)) == chars.foldcase(rt.charCode(b)) else data.eqv(a, b),
+        .numeric => if (tower.isNumber(a) and tower.isNumber(b)) numSame(a, b) else data.equal(a, b),
     };
 }
 
@@ -180,8 +225,17 @@ fn newTable(t: *Thread, m: Mode, nbuckets: usize) Word {
     return rt.tagPtr(q);
 }
 
-/// The mode for an equivalence procedure (a primitive's name)
+/// The mode for an equivalence procedure (a primitive's name), or for a
+/// mode symbol as (srfi 69)/(srfi 125) pass it: eq eqv equal string-ci
+/// char-ci numeric
 fn modeOf(w: Word) Mode {
+    if (data.isSymbol(w)) {
+        const name = data.symbolName(w);
+        inline for (.{ .{ "eq", Mode.eq }, .{ "eqv", Mode.eqv }, .{ "equal", Mode.equal }, .{ "string-ci", Mode.string_ci }, .{ "char-ci", Mode.char_ci }, .{ "numeric", Mode.numeric } }) |p| {
+            if (std.mem.eql(u8, name, p[0])) return p[1];
+        }
+        return .equal;
+    }
     if (rt.isPrimitive(w)) {
         const name = data.symbolName(ptr(w)[2]);
         if (std.mem.eql(u8, name, "eq?")) return .eq;
@@ -194,7 +248,9 @@ fn makeHashTable(t: *Thread) Err!Word {
     t.reserve(1 + SLOTS + 1 + 16);
     return newTable(t, if (t.argc > 0) modeOf(arg(t, 0)) else .equal, 16);
 }
-pub const @"%make-hash-table" = WN("make-hash-table", makeHashTable, 0, 2);
+// (make-hash-table [equivalence [hash arg ...]]): hash and the further
+// arguments are ignored (the table hashes as its equivalence needs)
+pub const @"%make-hash-table" = WN("make-hash-table", makeHashTable, 0, P.any);
 
 fn hashTableP(t: *Thread) Err!Word {
     return rt.boolean(isTable(arg(t, 0)) and !isDict(arg(t, 0)));
@@ -372,6 +428,16 @@ fn comparatorSet(t: *Thread) Err!Word {
 }
 pub const @"%%hash-table-comparator" = WD("%hash-table-comparator", comparatorGet, 1, 1);
 pub const @"%%hash-table-set-comparator!" = WD("%hash-table-set-comparator!", comparatorSet, 2, 2);
+
+/// (%primitive-name obj): a primitive's name (a symbol), #f otherwise.
+/// (srfi 69)/(srfi 125) recognize a table's equivalence by it: each
+/// reference to a primitive is its own static object here, so eq? does not
+/// tell primitives apart.
+fn primitiveName(t: *Thread) Err!Word {
+    const w = arg(t, 0);
+    return if (rt.isPrimitive(w)) ptr(w)[2] else rt.FALSE;
+}
+pub const @"%%primitive-name" = WD("%primitive-name", primitiveName, 1, 1);
 
 // --- dicts ((scm dict)) ---------------------------------------------------------------
 //

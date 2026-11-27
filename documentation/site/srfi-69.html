@@ -22,30 +22,33 @@
 
 <nav class="toc">
   <h2>Bindings</h2>
-  <a href="#e0" data-name="hash">hash</a>
-  <a href="#e1" data-name="hash-by-identity">hash-by-identity</a>
-  <a href="#e2" data-name="hash-table-&gt;alist">hash-table-&gt;alist</a>
-  <a href="#e3" data-name="hash-table-copy">hash-table-copy</a>
-  <a href="#e4" data-name="hash-table-delete!">hash-table-delete!</a>
-  <a href="#e5" data-name="hash-table-exists?">hash-table-exists?</a>
-  <a href="#e6" data-name="hash-table-fold">hash-table-fold</a>
-  <a href="#e7" data-name="hash-table-keys">hash-table-keys</a>
-  <a href="#e8" data-name="hash-table-merge!">hash-table-merge!</a>
-  <a href="#e9" data-name="hash-table-ref">hash-table-ref</a>
-  <a href="#e10" data-name="hash-table-ref/default">hash-table-ref/default</a>
-  <a href="#e11" data-name="hash-table-set!">hash-table-set!</a>
-  <a href="#e12" data-name="hash-table-size">hash-table-size</a>
-  <a href="#e13" data-name="hash-table-update!">hash-table-update!</a>
-  <a href="#e14" data-name="hash-table-update!/default">hash-table-update!/default</a>
-  <a href="#e15" data-name="hash-table-values">hash-table-values</a>
-  <a href="#e16" data-name="hash-table-walk">hash-table-walk</a>
-  <a href="#e17" data-name="hash-table/get">hash-table/get</a>
-  <a href="#e18" data-name="hash-table/put!">hash-table/put!</a>
-  <a href="#e19" data-name="hash-table/remove!">hash-table/remove!</a>
-  <a href="#e20" data-name="hash-table?">hash-table?</a>
-  <a href="#e21" data-name="make-hash-table">make-hash-table</a>
-  <a href="#e22" data-name="string-ci-hash">string-ci-hash</a>
-  <a href="#e23" data-name="string-hash">string-hash</a>
+  <a href="#e0" data-name="alist-&gt;hash-table">alist-&gt;hash-table</a>
+  <a href="#e1" data-name="hash">hash</a>
+  <a href="#e2" data-name="hash-by-identity">hash-by-identity</a>
+  <a href="#e3" data-name="hash-table-&gt;alist">hash-table-&gt;alist</a>
+  <a href="#e4" data-name="hash-table-copy">hash-table-copy</a>
+  <a href="#e5" data-name="hash-table-delete!">hash-table-delete!</a>
+  <a href="#e6" data-name="hash-table-equivalence-function">hash-table-equivalence-function</a>
+  <a href="#e7" data-name="hash-table-exists?">hash-table-exists?</a>
+  <a href="#e8" data-name="hash-table-fold">hash-table-fold</a>
+  <a href="#e9" data-name="hash-table-hash-function">hash-table-hash-function</a>
+  <a href="#e10" data-name="hash-table-keys">hash-table-keys</a>
+  <a href="#e11" data-name="hash-table-merge!">hash-table-merge!</a>
+  <a href="#e12" data-name="hash-table-ref">hash-table-ref</a>
+  <a href="#e13" data-name="hash-table-ref/default">hash-table-ref/default</a>
+  <a href="#e14" data-name="hash-table-set!">hash-table-set!</a>
+  <a href="#e15" data-name="hash-table-size">hash-table-size</a>
+  <a href="#e16" data-name="hash-table-update!">hash-table-update!</a>
+  <a href="#e17" data-name="hash-table-update!/default">hash-table-update!/default</a>
+  <a href="#e18" data-name="hash-table-values">hash-table-values</a>
+  <a href="#e19" data-name="hash-table-walk">hash-table-walk</a>
+  <a href="#e20" data-name="hash-table/get">hash-table/get</a>
+  <a href="#e21" data-name="hash-table/put!">hash-table/put!</a>
+  <a href="#e22" data-name="hash-table/remove!">hash-table/remove!</a>
+  <a href="#e23" data-name="hash-table?">hash-table?</a>
+  <a href="#e24" data-name="make-hash-table">make-hash-table</a>
+  <a href="#e25" data-name="string-ci-hash">string-ci-hash</a>
+  <a href="#e26" data-name="string-hash">string-hash</a>
 </nav>
 
 <main>
@@ -62,7 +65,8 @@
 <p class="lib-sub">SRFI-69 — Basic hash tables with eq?/eqv?/equal? support</p>
 <div class="lib-preamble">
 <h2>Overview</h2>
-<p>SRFI-69 provides basic hash tables, keyed with <code>eq?</code>, <code>eqv?</code>, or <code>equal?</code>. It's the simplest of the hash-table SRFIs; for comparator-based tables with richer operations see SRFI-125.</p>
+<p>SRFI-69 provides basic hash tables. It's the simplest of the hash-table SRFIs; for comparator-based tables with richer operations see SRFI-125.</p>
+<p>A table's equivalence is one of <code>equal?</code> (the default), <code>eqv?</code>, <code>eq?</code>, <code>string=?</code>, <code>string-ci=?</code>, <code>char=?</code>, <code>char-ci=?</code> or <code>=</code>; the table hashes as that equivalence needs, so a hash function given to <a class="xref" href="#e24"><code>make-hash-table</code></a> is only kept for <a class="xref" href="#e9"><code>hash-table-hash-function</code></a>. Another predicate is an error, since a table cannot call it. Keys of another type compare as with <code>equal?</code> (<code>string-ci=?</code>, <code>=</code>) or <code>eqv?</code> (<code>char-ci=?</code>).</p>
 <h2>Common uses</h2>
 <pre><code class="language-scheme">(import (srfi 69))
 
@@ -71,12 +75,28 @@
 (hash-table-ref h "a" (lambda () 'missing))   ;; =&gt; 1
 (hash-table-ref/default h "z" 'none)          ;; =&gt; none
 (hash-table-keys h)                            ;; =&gt; ("a")</code></pre>
-<p><a class="xref" href="#e13"><code>hash-table-update!</code></a>, <a class="xref" href="#e4"><code>hash-table-delete!</code></a>, <a class="xref" href="#e16"><code>hash-table-walk</code></a>, and <a class="xref" href="#e2"><code>hash-table-&gt;alist</code></a> cover the usual operations.</p>
+<pre><code class="language-scheme">(define ci (make-hash-table string-ci=? string-ci-hash))
+(hash-table-set! ci "Zurich" 1)
+(hash-table-ref/default ci "ZURICH" #f)        ;; =&gt; 1
+(define n (alist-&gt;hash-table '((1 . one)) =))
+(hash-table-ref/default n 1.0 #f)              ;; =&gt; one</code></pre>
+<p><a class="xref" href="#e16"><code>hash-table-update!</code></a>, <a class="xref" href="#e5"><code>hash-table-delete!</code></a>, <a class="xref" href="#e19"><code>hash-table-walk</code></a>, and <a class="xref" href="#e3"><code>hash-table-&gt;alist</code></a> cover the usual operations.</p>
 </div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
-<p class="export-count">24 bindings</p>
+<p class="export-count">27 bindings</p>
 
-<div class="entry" id="e0" data-name="hash">
+<div class="entry" id="e0" data-name="alist-&gt;hash-table">
+  <div class="entry-name">alist-&gt;hash-table</div>
+  <pre class="entry-doc">Syntax: (alist-&gt;hash-table alist [equivalence [hash arg ...]])
+Library: (srfi 69)
+Description: A new hash table (made as with make-hash-table and the further
+arguments) holding the associations of alist; for a key that occurs more
+than once, the first association wins.
+Example:
+  (define ht (alist-&gt;hash-table '((a . 1) (b . 2) (a . 3))))
+  (hash-table-ref ht 'a) =&gt; 1</pre>
+</div>
+<div class="entry" id="e1" data-name="hash">
   <div class="entry-name">hash</div>
   <pre class="entry-doc">Syntax: (hash obj [bound])
 Library: (srfi 69)
@@ -88,7 +108,7 @@ Example:
   (= (hash "abc") (hash "abc")) =&gt; #t
   (&lt; (hash 'foo 100) 100) =&gt; #t</pre>
 </div>
-<div class="entry" id="e1" data-name="hash-by-identity">
+<div class="entry" id="e2" data-name="hash-by-identity">
   <div class="entry-name">hash-by-identity</div>
   <pre class="entry-doc">Syntax: (hash-by-identity obj [bound])
 Library: (srfi 69)
@@ -98,7 +118,7 @@ Example:
   (integer? (hash-by-identity 'foo)) =&gt; #t
   (&lt; (hash-by-identity 42 100) 100) =&gt; #t</pre>
 </div>
-<div class="entry" id="e2" data-name="hash-table-&gt;alist">
+<div class="entry" id="e3" data-name="hash-table-&gt;alist">
   <div class="entry-name">hash-table-&gt;alist</div>
   <pre class="entry-doc">Syntax: (hash-table-&gt;alist ht)
 Library: (srfi 69)
@@ -108,18 +128,18 @@ Example:
   (hash-table-set! ht 'a 1)
   (hash-table-&gt;alist ht) =&gt; ((a . 1))</pre>
 </div>
-<div class="entry" id="e3" data-name="hash-table-copy">
+<div class="entry" id="e4" data-name="hash-table-copy">
   <div class="entry-name">hash-table-copy</div>
-  <pre class="entry-doc">Syntax: (hash-table-copy ht)
+  <pre class="entry-doc">Syntax: (hash-table-copy ht [mutable?])
 Library: (srfi 69)
-Description: Returns a copy of the hash table ht with the same equality mode and all the same key-value associations.
+Description: Returns a copy of the hash table ht with the same equality mode and all the same key-value associations. The copy is always mutable; mutable? is accepted for SRFI 69.
 Example:
   (define ht (make-hash-table equal?))
   (hash-table-set! ht 'a 1)
   (define ht2 (hash-table-copy ht))
   (hash-table-ref ht2 'a) =&gt; 1</pre>
 </div>
-<div class="entry" id="e4" data-name="hash-table-delete!">
+<div class="entry" id="e5" data-name="hash-table-delete!">
   <div class="entry-name">hash-table-delete!</div>
   <pre class="entry-doc">Syntax: (hash-table-delete! ht key)
 Library: (srfi 69)
@@ -130,7 +150,15 @@ Example:
   (hash-table-delete! ht 'x)
   (hash-table-exists? ht 'x) =&gt; #f</pre>
 </div>
-<div class="entry" id="e5" data-name="hash-table-exists?">
+<div class="entry" id="e6" data-name="hash-table-equivalence-function">
+  <div class="entry-name">hash-table-equivalence-function</div>
+  <pre class="entry-doc">Syntax: (hash-table-equivalence-function ht)
+Library: (srfi 69)
+Description: The equivalence predicate ht was made with (equal? by default).
+Example:
+  (hash-table-equivalence-function (make-hash-table eq?)) =&gt; eq?</pre>
+</div>
+<div class="entry" id="e7" data-name="hash-table-exists?">
   <div class="entry-name">hash-table-exists?</div>
   <pre class="entry-doc">Syntax: (hash-table-exists? ht key)
 Library: (srfi 69)
@@ -141,7 +169,7 @@ Example:
   (hash-table-exists? ht 'x) =&gt; #t
   (hash-table-exists? ht 'y) =&gt; #f</pre>
 </div>
-<div class="entry" id="e6" data-name="hash-table-fold">
+<div class="entry" id="e8" data-name="hash-table-fold">
   <div class="entry-name">hash-table-fold</div>
   <pre class="entry-doc">Syntax: (hash-table-fold ht f init)
 Library: (srfi 69)
@@ -152,7 +180,16 @@ Example:
   (hash-table-set! ht 'a 1)
   (hash-table-fold ht (lambda (k v acc) (+ v acc)) 0) =&gt; 1</pre>
 </div>
-<div class="entry" id="e7" data-name="hash-table-keys">
+<div class="entry" id="e9" data-name="hash-table-hash-function">
+  <div class="entry-name">hash-table-hash-function</div>
+  <pre class="entry-doc">Syntax: (hash-table-hash-function ht)
+Library: (srfi 69)
+Description: The hash function ht was made with, or the one that goes with
+its equivalence (hash by default).
+Example:
+  (hash-table-hash-function (make-hash-table string=?)) =&gt; string-hash</pre>
+</div>
+<div class="entry" id="e10" data-name="hash-table-keys">
   <div class="entry-name">hash-table-keys</div>
   <pre class="entry-doc">Syntax: (hash-table-keys ht)
 Library: (srfi 69)
@@ -163,7 +200,7 @@ Example:
   (hash-table-set! ht 'b 2)
   (list-sort symbol&lt;? (hash-table-keys ht)) =&gt; (a b)</pre>
 </div>
-<div class="entry" id="e8" data-name="hash-table-merge!">
+<div class="entry" id="e11" data-name="hash-table-merge!">
   <div class="entry-name">hash-table-merge!</div>
   <pre class="entry-doc">Syntax: (hash-table-merge! ht1 ht2)
 Library: (srfi 69)
@@ -175,17 +212,19 @@ Example:
   (hash-table-merge! ht1 ht2)
   (hash-table-ref ht1 'a) =&gt; 1</pre>
 </div>
-<div class="entry" id="e9" data-name="hash-table-ref">
+<div class="entry" id="e12" data-name="hash-table-ref">
   <div class="entry-name">hash-table-ref</div>
-  <pre class="entry-doc">Syntax: (hash-table-ref ht key [default-thunk])
+  <pre class="entry-doc">Syntax: (hash-table-ref ht key [thunk])
 Library: (srfi 69)
-Description: Returns the value associated with key in ht. If the key is not found and default-thunk is provided, calls it and returns the result; otherwise raises an error.
+Description: The value of key in ht. When key is missing, the result of
+calling thunk, or an error without thunk.
 Example:
-  (define ht (make-hash-table equal?))
-  (hash-table-set! ht 'x 42)
-  (hash-table-ref ht 'x) =&gt; 42</pre>
+  (define ht (make-hash-table))
+  (hash-table-set! ht 'a 1)
+  (hash-table-ref ht 'a) =&gt; 1
+  (hash-table-ref ht 'b (lambda () 0)) =&gt; 0</pre>
 </div>
-<div class="entry" id="e10" data-name="hash-table-ref/default">
+<div class="entry" id="e13" data-name="hash-table-ref/default">
   <div class="entry-name">hash-table-ref/default</div>
   <pre class="entry-doc">Syntax: (hash-table-ref/default ht key default)
 Library: (srfi 69)
@@ -196,7 +235,7 @@ Example:
   (hash-table-ref/default ht 'x 0) =&gt; 42
   (hash-table-ref/default ht 'y 0) =&gt; 0</pre>
 </div>
-<div class="entry" id="e11" data-name="hash-table-set!">
+<div class="entry" id="e14" data-name="hash-table-set!">
   <div class="entry-name">hash-table-set!</div>
   <pre class="entry-doc">Syntax: (hash-table-set! ht key value)
 Library: (srfi 69)
@@ -206,7 +245,7 @@ Example:
   (hash-table-set! ht 'x 42)
   (hash-table-ref ht 'x) =&gt; 42</pre>
 </div>
-<div class="entry" id="e12" data-name="hash-table-size">
+<div class="entry" id="e15" data-name="hash-table-size">
   <div class="entry-name">hash-table-size</div>
   <pre class="entry-doc">Syntax: (hash-table-size ht)
 Library: (srfi 69)
@@ -217,7 +256,7 @@ Example:
   (hash-table-set! ht 'y 2)
   (hash-table-size ht) =&gt; 2</pre>
 </div>
-<div class="entry" id="e13" data-name="hash-table-update!">
+<div class="entry" id="e16" data-name="hash-table-update!">
   <div class="entry-name">hash-table-update!</div>
   <pre class="entry-doc">Syntax: (hash-table-update! ht key proc [default-thunk])
 Library: (srfi 69)
@@ -229,7 +268,7 @@ Example:
   (hash-table-update! ht 'x (lambda (v) (+ v 1)))
   (hash-table-ref ht 'x) =&gt; 6</pre>
 </div>
-<div class="entry" id="e14" data-name="hash-table-update!/default">
+<div class="entry" id="e17" data-name="hash-table-update!/default">
   <div class="entry-name">hash-table-update!/default</div>
   <pre class="entry-doc">Syntax: (hash-table-update!/default ht key proc default)
 Library: (srfi 69)
@@ -240,7 +279,7 @@ Example:
   (hash-table-update!/default ht 'x (lambda (v) (+ v 1)) 0)
   (hash-table-ref ht 'x) =&gt; 1</pre>
 </div>
-<div class="entry" id="e15" data-name="hash-table-values">
+<div class="entry" id="e18" data-name="hash-table-values">
   <div class="entry-name">hash-table-values</div>
   <pre class="entry-doc">Syntax: (hash-table-values ht)
 Library: (srfi 69)
@@ -251,7 +290,7 @@ Example:
   (hash-table-set! ht 'b 2)
   (list-sort &lt; (hash-table-values ht)) =&gt; (1 2)</pre>
 </div>
-<div class="entry" id="e16" data-name="hash-table-walk">
+<div class="entry" id="e19" data-name="hash-table-walk">
   <div class="entry-name">hash-table-walk</div>
   <pre class="entry-doc">Syntax: (hash-table-walk ht proc)
 Library: (srfi 69)
@@ -261,7 +300,7 @@ Example:
   (hash-table-set! ht 'a 1)
   (hash-table-walk ht (lambda (k v) (display k) (display v)))</pre>
 </div>
-<div class="entry" id="e17" data-name="hash-table/get">
+<div class="entry" id="e20" data-name="hash-table/get">
   <div class="entry-name">hash-table/get</div>
   <pre class="entry-doc">Syntax: (hash-table/get ht key default)
 Library: (srfi 69)
@@ -273,7 +312,7 @@ Example:
   (hash-table/get ht 'x 0) =&gt; 42
   (hash-table/get ht 'y 0) =&gt; 0</pre>
 </div>
-<div class="entry" id="e18" data-name="hash-table/put!">
+<div class="entry" id="e21" data-name="hash-table/put!">
   <div class="entry-name">hash-table/put!</div>
   <pre class="entry-doc">Syntax: (hash-table/put! ht key value)
 Library: (srfi 69)
@@ -284,7 +323,7 @@ Example:
   (hash-table/put! ht 'x 42)
   (hash-table-ref ht 'x) =&gt; 42</pre>
 </div>
-<div class="entry" id="e19" data-name="hash-table/remove!">
+<div class="entry" id="e22" data-name="hash-table/remove!">
   <div class="entry-name">hash-table/remove!</div>
   <pre class="entry-doc">Syntax: (hash-table/remove! ht key)
 Library: (srfi 69)
@@ -296,7 +335,7 @@ Example:
   (hash-table/remove! ht 'x)
   (hash-table-exists? ht 'x) =&gt; #f</pre>
 </div>
-<div class="entry" id="e20" data-name="hash-table?">
+<div class="entry" id="e23" data-name="hash-table?">
   <div class="entry-name">hash-table?</div>
   <pre class="entry-doc">Syntax: (hash-table? obj)
 Library: (srfi 69)
@@ -305,17 +344,21 @@ Example:
   (hash-table? (make-hash-table)) =&gt; #t
   (hash-table? '()) =&gt; #f</pre>
 </div>
-<div class="entry" id="e21" data-name="make-hash-table">
+<div class="entry" id="e24" data-name="make-hash-table">
   <div class="entry-name">make-hash-table</div>
-  <pre class="entry-doc">Syntax: (make-hash-table [equality-proc [hash-proc]])
+  <pre class="entry-doc">Syntax: (make-hash-table [equivalence [hash arg ...]])
 Library: (srfi 69)
-Description: Creates a new empty hash table. The optional equality-proc determines key comparison: eq?, eqv?, or equal? (default). The optional hash-proc is accepted but ignored.
+Description: Creates a new empty hash table. equivalence (default equal?)
+is one of equal?, eqv?, eq?, string=?, string-ci=?, char=?, char-ci=? or
+=; another predicate is an error. The table hashes as its equivalence
+needs: the optional hash function is kept for hash-table-hash-function,
+further arguments are ignored.
 Example:
-  (define ht (make-hash-table equal?))
-  (hash-table-set! ht 'a 1)
-  (hash-table-ref ht 'a) =&gt; 1</pre>
+  (define ht (make-hash-table string-ci=? string-ci-hash))
+  (hash-table-set! ht "Zurich" 1)
+  (hash-table-ref/default ht "ZURICH" #f) =&gt; 1</pre>
 </div>
-<div class="entry" id="e22" data-name="string-ci-hash">
+<div class="entry" id="e25" data-name="string-ci-hash">
   <div class="entry-name">string-ci-hash</div>
   <pre class="entry-doc">Syntax: (string-ci-hash s [bound])
 Library: (srfi 69)
@@ -325,7 +368,7 @@ Example:
   (= (string-ci-hash "Hello") (string-ci-hash "hello")) =&gt; #t
   (&lt; (string-ci-hash "World" 100) 100) =&gt; #t</pre>
 </div>
-<div class="entry" id="e23" data-name="string-hash">
+<div class="entry" id="e26" data-name="string-hash">
   <div class="entry-name">string-hash</div>
   <pre class="entry-doc">Syntax: (string-hash s [bound])
 Library: (srfi 69)

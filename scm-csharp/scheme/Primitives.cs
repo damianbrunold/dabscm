@@ -209,6 +209,7 @@ public class Primitives
         Bind(new PrimitiveHMACSHA256());
         Bind(new PrimitiveHashTableClearB());
         Bind(new PrimitiveHashTableComparator());
+        Bind(new PrimitivePrimitiveName());
         Bind(new PrimitiveHashTableCopy());
         Bind(new PrimitiveHashTableDeleteB());
         Bind(new PrimitiveHashTableExistsP());

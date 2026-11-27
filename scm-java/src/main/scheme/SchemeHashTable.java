@@ -3,6 +3,7 @@ package scheme;
 import scheme.primitives.PrimitiveEqP;
 import scheme.primitives.PrimitiveEqvP;
 import scheme.primitives.PrimitiveEqualP;
+import scheme.primitives.PrimitiveNumequal;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -11,7 +12,78 @@ import java.util.Map;
 
 public class SchemeHashTable {
 
-    public enum EqualityMode { EQ, EQV, EQUAL }
+    // STRING_CI: string-ci=? (keys case-folded), CHAR_CI: char-ci=?,
+    // NUMERIC: = (keys numbers; 1 and 1.0 are the same key)
+    public enum EqualityMode { EQ, EQV, EQUAL, STRING_CI, CHAR_CI, NUMERIC }
+
+    // the mode a symbol names (eq eqv equal string-ci char-ci numeric), or
+    // null: (srfi 69)/(srfi 125) pass the mode for their equivalence
+    public static EqualityMode modeOfSymbol(Object o) {
+        if (!Value.isSymbol(o)) return null;
+        switch (o.toString()) {
+            case "eq": return EqualityMode.EQ;
+            case "eqv": return EqualityMode.EQV;
+            case "equal": return EqualityMode.EQUAL;
+            case "string-ci": return EqualityMode.STRING_CI;
+            case "char-ci": return EqualityMode.CHAR_CI;
+            case "numeric": return EqualityMode.NUMERIC;
+            default: return null;
+        }
+    }
+
+    private static final PrimitiveNumequal NUMEQUAL = new PrimitiveNumequal();
+
+    // keys of another type than the mode's compare as with equal?
+    // (string-ci, numeric) or eqv? (char-ci), as in dabscm native
+
+    // the double value of a number (for hashing under =)
+    private static double realValue(Object v) {
+        if (Value.isReal(v)) return Value.asReal(v);
+        if (Value.isRational(v)) return Value.asRational(v).toDouble();
+        if (Value.isInteger(v)) return IntegerMath.toDouble(v);
+        if (v instanceof Complex) return realValue(((Complex) v).real);
+        return 0.0;
+    }
+
+    private static boolean isNumber(Object v) {
+        return Value.isInteger(v) || Value.isReal(v) || Value.isRational(v) || v instanceof Complex;
+    }
+
+    static int numericHash(Object v) {
+        if (!isNumber(v)) return schemeHash(v, 0);
+        double d = realValue(v);
+        if (d == 0.0) return 0; // 0.0, -0.0 and 0
+        if (Double.isNaN(d)) return 1;
+        return Double.hashCode(d);
+    }
+
+    static boolean numericEquals(Object a, Object b) {
+        if (!isNumber(a) || !isNumber(b)) return PrimitiveEqualP.equal(a, b);
+        return Boolean.TRUE.equals(NUMEQUAL.apply(null, new Object[] { a, b }));
+    }
+
+    static String fold(Object v) {
+        return UnicodeCaseMap.toFold(new String(Value.asString(v)));
+    }
+
+    static int stringCiHash(Object v) {
+        return Value.isString(v) ? fold(v).hashCode() : schemeHash(v, 0);
+    }
+
+    static boolean stringCiEquals(Object a, Object b) {
+        if (Value.isString(a) && Value.isString(b)) return fold(a).equals(fold(b));
+        return PrimitiveEqualP.equal(a, b);
+    }
+
+    static int charCiHash(Object v) {
+        return Value.isChar(v) ? UnicodeCaseMap.foldChar(Value.asChar(v)) : schemeHash(v, 0);
+    }
+
+    static boolean charCiEquals(Object a, Object b) {
+        if (Value.isChar(a) && Value.isChar(b))
+            return UnicodeCaseMap.foldChar(Value.asChar(a)) == UnicodeCaseMap.foldChar(Value.asChar(b));
+        return PrimitiveEqvP.eqv(a, b);
+    }
 
     public EqualityMode mode;
     public Object comparator;
@@ -116,19 +188,27 @@ public class SchemeHashTable {
 
         @Override
         public int hashCode() {
-            if (mode == EqualityMode.EQ) {
-                return System.identityHashCode(value);
+            switch (mode) {
+                case EQ: return System.identityHashCode(value);
+                case STRING_CI: return stringCiHash(value);
+                case CHAR_CI: return charCiHash(value);
+                case NUMERIC: return numericHash(value);
+                default: return schemeHash(value, 0);
             }
-            return schemeHash(value, 0);
         }
 
         @Override
         public boolean equals(Object other) {
             if (!(other instanceof SchemeKey)) return false;
             SchemeKey o = (SchemeKey) other;
-            if (mode == EqualityMode.EQ) return PrimitiveEqP.eq(value, o.value);
-            if (mode == EqualityMode.EQV) return PrimitiveEqvP.eqv(value, o.value);
-            return PrimitiveEqualP.equal(value, o.value);
+            switch (mode) {
+                case EQ: return PrimitiveEqP.eq(value, o.value);
+                case EQV: return PrimitiveEqvP.eqv(value, o.value);
+                case STRING_CI: return stringCiEquals(value, o.value);
+                case CHAR_CI: return charCiEquals(value, o.value);
+                case NUMERIC: return numericEquals(value, o.value);
+                default: return PrimitiveEqualP.equal(value, o.value);
+            }
         }
     }
 }

@@ -1,13 +1,17 @@
 (define-library (srfi 69)
   (import (scheme base)
-          (scheme char))
-  (export hash
+          (scheme char)
+          (only (scheme complex) real-part))
+  (export alist->hash-table
+          hash
           hash-by-identity
           hash-table->alist
           hash-table-copy
           hash-table-delete!
+          hash-table-equivalence-function
           hash-table-exists?
           hash-table-fold
+          hash-table-hash-function
           hash-table-keys
           hash-table-merge!
           hash-table-ref
@@ -26,10 +30,12 @@
           string-ci-hash
           string-hash)
   (begin
-    (define make-hash-table (%primitive "make-hash-table"))
+    (define %make-hash-table (%primitive "make-hash-table"))
+    (define %hash-table-ref (%primitive "hash-table-ref"))
+    (define %table-spec (%primitive "%hash-table-comparator"))
+    (define %set-table-spec! (%primitive "%hash-table-set-comparator!"))
     (define hash-table? (%primitive "hash-table?"))
     (define hash-table-set! (%primitive "hash-table-set!"))
-    (define hash-table-ref (%primitive "hash-table-ref"))
     (define hash-table-ref/default (%primitive "hash-table-ref/default"))
     (define hash-table-delete! (%primitive "hash-table-delete!"))
     (define hash-table-exists? (%primitive "hash-table-exists?"))
@@ -38,6 +44,115 @@
     (define hash-table-values (%primitive "hash-table-values"))
     (define hash-table->alist (%primitive "hash-table->alist"))
     (define hash-table-copy (%primitive "hash-table-copy"))
+
+    ;; The equivalences the hash tables support natively, as the mode the
+    ;; make-hash-table primitive takes. Any other predicate is an error: a
+    ;; table cannot call it, and treating it as equal? would give wrong
+    ;; answers silently.
+    (define %primitive-name (%primitive "%primitive-name"))
+
+    ;; equiv is the procedure p: eq? to it, or the primitive of its name (a
+    ;; primitive need not be eq? to itself across libraries)
+    (define (%is? equiv p name) (or (eq? equiv p) (eq? (%primitive-name equiv) name)))
+
+    (define (%equivalence-mode equiv)
+      (cond ((%is? equiv equal? 'equal?) 'equal)
+            ((%is? equiv eqv? 'eqv?) 'eqv)
+            ((%is? equiv eq? 'eq?) 'eq)
+            ((%is? equiv string=? 'string=?) 'equal)
+            ((%is? equiv string-ci=? 'string-ci=?) 'string-ci)
+            ((%is? equiv char=? 'char=?) 'eqv)
+            ((%is? equiv char-ci=? 'char-ci=?) 'char-ci)
+            ((%is? equiv = '=) 'numeric)
+            (else
+             (error "make-hash-table: unsupported equivalence (use equal?, eqv?, eq?, string=?, string-ci=?, char=?, char-ci=? or =)"
+                    equiv))))
+
+    ;; the hash function SRFI 69 associates with an equivalence
+    (define (%default-hash equiv)
+      (cond ((%is? equiv eq? 'eq?) hash-by-identity)
+            ((%is? equiv string=? 'string=?) string-hash)
+            ((%is? equiv string-ci=? 'string-ci=?) string-ci-hash)
+            (else hash)))
+
+    (define (make-hash-table . args)
+      "Syntax: (make-hash-table [equivalence [hash arg ...]])
+Library: (srfi 69)
+Description: Creates a new empty hash table. equivalence (default equal?)
+is one of equal?, eqv?, eq?, string=?, string-ci=?, char=?, char-ci=? or
+=; another predicate is an error. The table hashes as its equivalence
+needs: the optional hash function is kept for hash-table-hash-function,
+further arguments are ignored.
+Example:
+  (define ht (make-hash-table string-ci=? string-ci-hash))
+  (hash-table-set! ht \"Zurich\" 1)
+  (hash-table-ref/default ht \"ZURICH\" #f) => 1"
+      (if (null? args)
+          (%make-hash-table)
+          (let* ((equiv (car args))
+                 (ht (%make-hash-table (%equivalence-mode equiv))))
+            (%set-table-spec! ht
+                              (vector 'srfi-69
+                                      equiv
+                                      (if (and (pair? (cdr args))
+                                               (procedure? (cadr args)))
+                                          (cadr args)
+                                          (%default-hash equiv))))
+            ht)))
+
+    (define (%spec ht)
+      (let ((s (%table-spec ht)))
+        (and (vector? s) (= (vector-length s) 3) (eq? (vector-ref s 0) 'srfi-69) s)))
+
+    (define (hash-table-equivalence-function ht)
+      "Syntax: (hash-table-equivalence-function ht)
+Library: (srfi 69)
+Description: The equivalence predicate ht was made with (equal? by default).
+Example:
+  (hash-table-equivalence-function (make-hash-table eq?)) => eq?"
+      (let ((s (%spec ht))) (if s (vector-ref s 1) equal?)))
+
+    (define (hash-table-hash-function ht)
+      "Syntax: (hash-table-hash-function ht)
+Library: (srfi 69)
+Description: The hash function ht was made with, or the one that goes with
+its equivalence (hash by default).
+Example:
+  (hash-table-hash-function (make-hash-table string=?)) => string-hash"
+      (let ((s (%spec ht))) (if s (vector-ref s 2) hash)))
+
+    (define %missing (list 'missing))
+
+    (define (hash-table-ref ht key . thunk)
+      "Syntax: (hash-table-ref ht key [thunk])
+Library: (srfi 69)
+Description: The value of key in ht. When key is missing, the result of
+calling thunk, or an error without thunk.
+Example:
+  (define ht (make-hash-table))
+  (hash-table-set! ht 'a 1)
+  (hash-table-ref ht 'a) => 1
+  (hash-table-ref ht 'b (lambda () 0)) => 0"
+      (if (null? thunk)
+          (%hash-table-ref ht key)
+          (let ((v (hash-table-ref/default ht key %missing)))
+            (if (eq? v %missing) ((car thunk)) v))))
+
+    (define (alist->hash-table alist . args)
+      "Syntax: (alist->hash-table alist [equivalence [hash arg ...]])
+Library: (srfi 69)
+Description: A new hash table (made as with make-hash-table and the further
+arguments) holding the associations of alist; for a key that occurs more
+than once, the first association wins.
+Example:
+  (define ht (alist->hash-table '((a . 1) (b . 2) (a . 3))))
+  (hash-table-ref ht 'a) => 1"
+      (let ((ht (apply make-hash-table args)))
+        (for-each (lambda (p)
+                    (unless (hash-table-exists? ht (car p))
+                      (hash-table-set! ht (car p) (cdr p))))
+                  alist)
+        ht))
 
     (define (hash-table-walk ht proc)
       "Syntax: (hash-table-walk ht proc)
@@ -192,7 +307,12 @@ Example:
                                (loop (+ i 1)
                                      (+ (* h 31)
                                         (char->integer (string-ref s i))))))))
-                      ((number? obj) (exact (floor obj)))
+                      ((number? obj)
+                       ;; = numbers hash alike; NaN, infinities -> 0
+                       (let ((x (real-part obj)))
+                         (if (and (= x x) (< (abs x) 1e18))
+                             (exact (floor x))
+                             0)))
                       ((char? obj) (char->integer obj))
                       ((boolean? obj) (if obj 1 0))
                       ((null? obj) 0)
