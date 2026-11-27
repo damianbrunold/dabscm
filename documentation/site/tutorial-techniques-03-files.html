@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Files and directories — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html" class="active">Files and directories</a>
+    <a class="sub" href="#writing-a-text-file">Writing a text file</a>
+    <a class="sub" href="#reading-a-text-file">Reading a text file</a>
+    <a class="sub" href="#appending-and-encodings">Appending and encodings</a>
+    <a class="sub" href="#binary-files">Binary files</a>
+    <a class="sub" href="#example-a-csv-summary">Example: a CSV summary</a>
+    <a class="sub" href="#paths">Paths</a>
+    <a class="sub" href="#directories">Directories</a>
+    <a class="sub" href="#copying-moving-deleting">Copying, moving, deleting</a>
+    <a class="sub" href="#globbing-and-finding-files">Globbing and finding files</a>
+    <a class="sub" href="#compressing">Compressing</a>
+    <a class="sub" href="#cleaning-up">Cleaning up</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#techniques">Techniques</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">Files and directories</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="files-and-directories">Files and directories</h1>
+<p>The examples in this chapter work in a temporary directory, which they delete at the end, so you can run them anywhere.</p>
+<pre><code class="language-scheme">(import (scheme base) (scheme file) (scheme read) (scheme write) (scheme char)
+        (srfi 1) (srfi 13) (srfi 132)
+        (scm io) (scm fs) (scm glob) (scm fs-find) (scm archive)
+        (only (scm string) string-split-char))
+
+(define dir (mktempdir '(prefix . "tutorial")))
+(define (here name) (join-path dir name))</code></pre>
+<p><code>mktempdir</code> creates a new, empty directory in the system's temporary folder; <code>join-path</code> builds a path with the right separator for the platform.</p>
+<h2 id="writing-a-text-file">Writing a text file</h2>
+<pre><code class="language-scheme">(call-with-output-file (here "notes.txt")
+  (lambda (out)
+    (display "first line" out)
+    (newline out)
+    (write '(a list "with a string") out)
+    (newline out)))
+
+(file-exists? (here "notes.txt"))           ;; =&gt; #t
+(file-size (here "notes.txt"))              ;; =&gt; 36</code></pre>
+<p><code>call-with-output-file</code> opens the file, gives the port to your procedure and closes it afterwards, also when an error occurs.</p>
+<h2 id="reading-a-text-file">Reading a text file</h2>
+<p>The whole file at once, as one string or as a list of lines:</p>
+<pre><code class="language-scheme">(file-&gt;string (here "notes.txt"))
+;; =&gt; "first line\n(a list \"with a string\")\n"
+(file-&gt;lines (here "notes.txt"))
+;; =&gt; ("first line" "(a list \"with a string\")")</code></pre>
+<p>Line by line, for files too large to hold in memory:</p>
+<pre><code class="language-scheme">(define (count-lines path)
+  (call-with-input-file path
+    (lambda (in)
+      (let loop ((n 0))
+        (if (eof-object? (read-line in)) n (loop (+ n 1)))))))
+
+(count-lines (here "notes.txt"))            ;; =&gt; 2</code></pre>
+<p>Scheme data written with <code>write</code> can be read back with <code>read</code>, which makes files a simple way to store structured data:</p>
+<pre><code class="language-scheme">(call-with-input-file (here "notes.txt")
+  (lambda (in)
+    (read-line in)
+    (read in)))                             ;; =&gt; (a list "with a string")</code></pre>
+<h2 id="appending-and-encodings">Appending and encodings</h2>
+<p><code>open-output-file</code> and <code>call-with-output-file</code> accept options after the file name. With <code>call-with-output-file</code>, pass a list:</p>
+<pre><code class="language-scheme">(call-with-output-file (list (here "log.txt") 'append)
+  (lambda (out) (display "started\n" out)))
+(call-with-output-file (list (here "log.txt") 'append)
+  (lambda (out) (display "stopped\n" out)))
+(file-&gt;lines (here "log.txt"))              ;; =&gt; ("started" "stopped")
+
+(call-with-output-file (list (here "latin.txt") 'latin-1)
+  (lambda (out) (display "Zürich" out)))
+(file-size (here "latin.txt"))              ;; =&gt; 6
+(call-with-input-file (list (here "latin.txt") 'latin-1) read-line)
+;; =&gt; "Zürich"</code></pre>
+<p>In UTF-8 (the default) "Zürich" takes 7 bytes, in Latin-1 6. Other encodings: <code>'utf-8-bom</code>, <code>'utf-16</code>, <code>'utf-16-le</code>.</p>
+<h2 id="binary-files">Binary files</h2>
+<p>Binary ports read and write bytes:</p>
+<pre><code class="language-scheme">(let ((out (open-binary-output-file (here "data.bin"))))
+  (write-bytevector (bytevector 0 1 2 255) out)
+  (close-output-port out))
+
+(define (read-all-bytes path)
+  (let ((in (open-binary-input-file path)))
+    (let ((bv (read-bytevector (file-size path) in)))
+      (close-input-port in)
+      bv)))
+
+(read-all-bytes (here "data.bin"))          ;; =&gt; #u8(0 1 2 255)</code></pre>
+<h2 id="example-a-csv-summary">Example: a CSV summary</h2>
+<p>Read a small CSV file, total a column per group, and write a report:</p>
+<pre><code class="language-scheme">(call-with-output-file (here "sales.csv")
+  (lambda (out)
+    (display "region,product,amount\n" out)
+    (display "north,apples,120\nsouth,apples,80\nnorth,pears,45\nsouth,pears,60\nnorth,apples,30\n" out)))
+
+(define (read-csv path)
+  (map (lambda (line) (string-split-char line #\,))
+       (cdr (file-&gt;lines path))))           ; without the header
+
+(define (total-by key-index value-index rows)
+  (fold (lambda (row acc)
+          (let* ((key (list-ref row key-index))
+                 (value (string-&gt;number (list-ref row value-index)))
+                 (entry (assoc key acc)))
+            (if entry
+                (begin (set-cdr! entry (+ (cdr entry) value)) acc)
+                (cons (cons key value) acc))))
+        '()
+        rows))
+
+(define rows (read-csv (here "sales.csv")))
+(length rows)                               ;; =&gt; 5
+(reverse (total-by 0 2 rows))               ;; =&gt; (("north" . 195) ("south" . 140))
+(reverse (total-by 1 2 rows))               ;; =&gt; (("apples" . 230) ("pears" . 105))</code></pre>
+<p><a class="xref" href="scm-string.html#e6"><code>string-split-char</code></a> (from <a class="xref" href="scm-string.html"><code>(scm string)</code></a>) splits at every comma and keeps empty fields. For real CSV with quoted fields, use <a class="xref" href="scm-data-io.html"><code>(scm data io)</code></a>'s <code>read-csv</code>; see the <a href="tutorial-techniques-08-structured-data.html">structured data</a> tutorial.</p>
+<h2 id="paths">Paths</h2>
+<p>Path functions are pure string operations; they do not touch the disk:</p>
+<pre><code class="language-scheme">(join-path "reports" "2025" "summary.txt")  ;; =&gt; "reports/2025/summary.txt"
+(base-name "/var/log/app.log")              ;; =&gt; "app.log"
+(directory-name "/var/log/app.log")         ;; =&gt; "/var/log"
+(normalized-path "a/b/../c/./d")            ;; =&gt; "a/c/d"</code></pre>
+<p>On Windows, <code>join-path</code> uses backslashes.</p>
+<h2 id="directories">Directories</h2>
+<pre><code class="language-scheme">(make-directory (here "sub"))
+(call-with-output-file (join-path (here "sub") "inner.txt")
+  (lambda (out) (display "x" out)))
+
+(list-sort string&lt;? (directory-files dir))
+;; =&gt; ("data.bin" "latin.txt" "log.txt" "notes.txt" "sales.csv")
+(directory-directories dir)                 ;; =&gt; ("sub")
+(directory-exists? (here "sub"))            ;; =&gt; #t</code></pre>
+<p><code>directory-files</code> lists the files in a directory and <code>directory-directories</code> the subdirectories, by name. The order is not defined, so the example sorts the names with <a class="xref" href="srfi-132.html#e4"><code>list-sort</code></a> (SRFI 132).</p>
+<h2 id="copying-moving-deleting">Copying, moving, deleting</h2>
+<pre><code class="language-scheme">(copy-file (here "notes.txt") (here "notes.bak"))
+(move-file (here "notes.bak") (here "sub/notes.old"))
+(file-exists? (here "notes.bak"))           ;; =&gt; #f
+(file-exists? (here "sub/notes.old"))       ;; =&gt; #t
+(delete-file (here "sub/notes.old"))
+(file-exists? (here "sub/notes.old"))       ;; =&gt; #f</code></pre>
+<p><code>rm</code> with <code>'recursive</code> deletes a directory tree, like the shell command.</p>
+<h2 id="globbing-and-finding-files">Globbing and finding files</h2>
+<pre><code class="language-scheme">(glob-match? "*.txt" "notes.txt")           ;; =&gt; #t
+(glob-match? "*.txt" "sales.csv")           ;; =&gt; #f
+(map base-name (glob (join-path dir "*.txt")))
+;; =&gt; ("latin.txt" "log.txt" "notes.txt")
+
+(list-sort string&lt;?
+           (map base-name (find-file dir '(name . "*.txt") '(type . file))))
+;; =&gt; ("inner.txt" "latin.txt" "log.txt" "notes.txt")</code></pre>
+<p><code>glob</code> expands a pattern in one directory, <code>find-file</code> searches a whole tree with criteria: name patterns, file type, or any predicate.</p>
+<h2 id="compressing">Compressing</h2>
+<pre><code class="language-scheme">(gzip (here "sales.csv"))
+(file-exists? (here "sales.csv.gz"))        ;; =&gt; #t
+(&lt; (file-size (here "sales.csv.gz")) 200)   ;; =&gt; #t</code></pre>
+<p><a class="xref" href="scm-archive.html"><code>(scm archive)</code></a> also creates and extracts tar and zip archives; see its tutorial.</p>
+<h2 id="cleaning-up">Cleaning up</h2>
+<pre><code class="language-scheme">(rm dir 'recursive)
+(directory-exists? dir)                     ;; =&gt; #f</code></pre>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>.</li>
+<li>Reference: <a class="xref" href="scheme-file.html"><code>(scheme file)</code></a>, <a class="xref" href="scm-fs.html"><code>(scm fs)</code></a>, <a class="xref" href="scm-io.html"><code>(scm io)</code></a>, <a class="xref" href="scm-glob.html"><code>(scm glob)</code></a>,</li>
+</ul>
+<p><a class="xref" href="scm-fs-find.html"><code>(scm fs-find)</code></a>, <a class="xref" href="scm-archive.html"><code>(scm archive)</code></a>.</p>
+</div>
+<p class="tutorial-libs">Reference: <a href="scheme-base.html"><code>(scheme base)</code></a>, <a href="scheme-file.html"><code>(scheme file)</code></a>, <a href="scm-io.html"><code>(scm io)</code></a>, <a href="scm-fs.html"><code>(scm fs)</code></a>, <a href="scm-glob.html"><code>(scm glob)</code></a>, <a href="scm-fs-find.html"><code>(scm fs-find)</code></a>, <a href="scm-archive.html"><code>(scm archive)</code></a>, <a href="scm-string.html"><code>(scm string)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-techniques-02-characters.html">&larr; Characters and Unicode</a>
+  <a class="next" href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

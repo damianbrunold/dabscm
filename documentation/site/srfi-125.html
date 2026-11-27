@@ -11,6 +11,7 @@
 <header>
   <div>
     <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
   </div>
   <div class="search-wrap">
     <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
@@ -76,6 +77,7 @@
 
 <div class="lib-title srfi">(srfi 125)</div>
 <p class="lib-sub">SRFI-125 — Intermediate hash tables: comparator-based hash tables with mapping, folding, and set operations</p>
+<p class="lib-tutorials">Tutorials: <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a></p>
 <div class="lib-preamble">
 <h2>Overview</h2>
 <p>SRFI-125 provides intermediate hash tables built on SRFI-128 comparators, with a broad operation set: mapping, folding, and set-like combinations. Use it when you want comparator-driven tables or the richer API; for simple <code>eq?</code>/<code>equal?</code> tables SRFI-69 is lighter. A comparator's equality is the default comparator's or one of <code>equal?</code>, <code>eqv?</code>, <code>eq?</code>, <code>string=?</code>, <code>string-ci=?</code>, <code>char=?</code>, <code>char-ci=?</code> or <code>=</code>; another equality is an error, since a table cannot call it.</p>
@@ -178,14 +180,13 @@ Example:
 </div>
 <div class="entry" id="e8" data-name="hash-table-delete!">
   <div class="entry-name">hash-table-delete!</div>
-  <pre class="entry-doc">Syntax: (hash-table-delete! ht key)
-Library: (srfi 69)
-Description: Removes the association for key from the hash table ht. Has no effect if key is not present.
+  <pre class="entry-doc">Syntax: (hash-table-delete! ht key ...)
+Library: (srfi 125)
+Description: Removes the associations of the keys from ht; returns the
+number of keys that were present.
 Example:
-  (define ht (make-hash-table equal?))
-  (hash-table-set! ht 'x 42)
-  (hash-table-delete! ht 'x)
-  (hash-table-exists? ht 'x) =&gt; #f</pre>
+  (define ht (hash-table (make-default-comparator) 'a 1 'b 2))
+  (hash-table-delete! ht 'a 'c) =&gt; 1</pre>
 </div>
 <div class="entry" id="e9" data-name="hash-table-difference!">
   <div class="entry-name">hash-table-difference!</div>
@@ -392,13 +393,14 @@ Example:
 </div>
 <div class="entry" id="e29" data-name="hash-table-set!">
   <div class="entry-name">hash-table-set!</div>
-  <pre class="entry-doc">Syntax: (hash-table-set! ht key value)
-Library: (srfi 69)
-Description: Associates key with value in the hash table ht. If the key already exists, its value is updated.
+  <pre class="entry-doc">Syntax: (hash-table-set! ht key value ...)
+Library: (srfi 125)
+Description: Associates each key with the value after it in ht, replacing
+an existing association.
 Example:
-  (define ht (make-hash-table equal?))
-  (hash-table-set! ht 'x 42)
-  (hash-table-ref ht 'x) =&gt; 42</pre>
+  (define ht (make-hash-table (make-default-comparator)))
+  (hash-table-set! ht 'a 1 'b 2)
+  (hash-table-ref ht 'b) =&gt; 2</pre>
 </div>
 <div class="entry" id="e30" data-name="hash-table-size">
   <div class="entry-name">hash-table-size</div>

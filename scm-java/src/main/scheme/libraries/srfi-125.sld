@@ -58,10 +58,10 @@
 
     (define %make-hash-table-prim (%primitive "make-hash-table"))
     (define hash-table? (%primitive "hash-table?"))
-    (define hash-table-set! (%primitive "hash-table-set!"))
+    (define %hash-table-set! (%primitive "hash-table-set!"))
     (define %hash-table-ref (%primitive "hash-table-ref"))
     (define hash-table-ref/default (%primitive "hash-table-ref/default"))
-    (define hash-table-delete! (%primitive "hash-table-delete!"))
+    (define %hash-table-delete! (%primitive "hash-table-delete!"))
     (define %hash-table-exists? (%primitive "hash-table-exists?"))
     (define hash-table-size (%primitive "hash-table-size"))
     (define hash-table-keys (%primitive "hash-table-keys"))
@@ -72,6 +72,36 @@
     (define %set-comparator! (%primitive "%hash-table-set-comparator!"))
     (define %get-comparator (%primitive "%hash-table-comparator"))
     (define %primitive-name (%primitive "%primitive-name"))
+
+    (define (hash-table-set! ht key value . more)
+      "Syntax: (hash-table-set! ht key value ...)
+Library: (srfi 125)
+Description: Associates each key with the value after it in ht, replacing
+an existing association.
+Example:
+  (define ht (make-hash-table (make-default-comparator)))
+  (hash-table-set! ht 'a 1 'b 2)
+  (hash-table-ref ht 'b) => 2"
+      (%hash-table-set! ht key value)
+      (unless (null? more)
+        (if (null? (cdr more))
+            (error "hash-table-set!: a key without a value" (car more))
+            (apply hash-table-set! ht more))))
+
+    (define (hash-table-delete! ht . keys)
+      "Syntax: (hash-table-delete! ht key ...)
+Library: (srfi 125)
+Description: Removes the associations of the keys from ht; returns the
+number of keys that were present.
+Example:
+  (define ht (hash-table (make-default-comparator) 'a 1 'b 2))
+  (hash-table-delete! ht 'a 'c) => 1"
+      (let loop ((keys keys) (n 0))
+        (if (null? keys)
+            n
+            (let ((present (%hash-table-exists? ht (car keys))))
+              (when present (%hash-table-delete! ht (car keys)))
+              (loop (cdr keys) (if present (+ n 1) n))))))
 
     ;; --- Constructors ---
 

@@ -11,6 +11,7 @@
 <header>
   <div>
     <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
   </div>
   <div class="search-wrap">
     <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
@@ -106,7 +107,18 @@
 <div class="lib-preamble">
 <h2>Overview</h2>
 <p>dplyr/tidyr-style operations. Each is a macro (columns as bare names, Scheme values via unquote) and a procedure (<code>df-…</code>, with quoted expressions). <a class="xref" href="#e0"><code>-&gt;</code></a> threads a frame through a pipeline.</p>
-<p>| Rows | <a class="xref" href="#e66"><code>where</code></a> <a class="xref" href="#e3"><code>arrange</code></a> <a class="xref" href="#e37"><code>distinct</code></a> <a class="xref" href="#e44"><code>head</code></a> <a class="xref" href="#e61"><code>tail</code></a> <a class="xref" href="#e58"><code>slice</code></a> <a class="xref" href="#e54"><code>sample-n</code></a> | |---|---| | Columns | <a class="xref" href="#e55"><code>select</code></a> <a class="xref" href="#e52"><code>rename</code></a> <a class="xref" href="#e47"><code>mutate</code></a> <a class="xref" href="#e63"><code>transmute</code></a> <a class="xref" href="#e51"><code>relocate</code></a> <a class="xref" href="#e50"><code>pull</code></a> | | Groups | <a class="xref" href="#e43"><code>group-by</code></a> <a class="xref" href="#e64"><code>ungroup</code></a> <a class="xref" href="#e59"><code>summarise</code></a> <a class="xref" href="#e62"><code>tally</code></a> <a class="xref" href="#e1"><code>add-count</code></a> | | Combining | <a class="xref" href="#e46"><code>left-join</code></a> <a class="xref" href="#e45"><code>inner-join</code></a> <a class="xref" href="#e42"><code>full-join</code></a> <a class="xref" href="#e56"><code>semi-join</code></a> <a class="xref" href="#e2"><code>anti-join</code></a> <a class="xref" href="#e5"><code>bind-rows</code></a> <a class="xref" href="#e4"><code>bind-cols</code></a> | | Reshaping | <a class="xref" href="#e48"><code>pivot-longer</code></a> <a class="xref" href="#e49"><code>pivot-wider</code></a> <a class="xref" href="#e65"><code>unnest-longer</code></a> <a class="xref" href="#e57"><code>separate</code></a> | | Missing | <a class="xref" href="#e38"><code>drop-na</code></a> <a class="xref" href="#e53"><code>replace-na</code></a> <a class="xref" href="#e40"><code>fill-down</code></a> <a class="xref" href="#e41"><code>fill-up</code></a> |</p>
+<table>
+<thead>
+<tr><th>Rows</th><th><a class="xref" href="#e66"><code>where</code></a> <a class="xref" href="#e3"><code>arrange</code></a> <a class="xref" href="#e37"><code>distinct</code></a> <a class="xref" href="#e44"><code>head</code></a> <a class="xref" href="#e61"><code>tail</code></a> <a class="xref" href="#e58"><code>slice</code></a> <a class="xref" href="#e54"><code>sample-n</code></a></th></tr>
+</thead>
+<tbody>
+<tr><td>Columns</td><td><a class="xref" href="#e55"><code>select</code></a> <a class="xref" href="#e52"><code>rename</code></a> <a class="xref" href="#e47"><code>mutate</code></a> <a class="xref" href="#e63"><code>transmute</code></a> <a class="xref" href="#e51"><code>relocate</code></a> <a class="xref" href="#e50"><code>pull</code></a></td></tr>
+<tr><td>Groups</td><td><a class="xref" href="#e43"><code>group-by</code></a> <a class="xref" href="#e64"><code>ungroup</code></a> <a class="xref" href="#e59"><code>summarise</code></a> <a class="xref" href="#e62"><code>tally</code></a> <a class="xref" href="#e1"><code>add-count</code></a></td></tr>
+<tr><td>Combining</td><td><a class="xref" href="#e46"><code>left-join</code></a> <a class="xref" href="#e45"><code>inner-join</code></a> <a class="xref" href="#e42"><code>full-join</code></a> <a class="xref" href="#e56"><code>semi-join</code></a> <a class="xref" href="#e2"><code>anti-join</code></a> <a class="xref" href="#e5"><code>bind-rows</code></a> <a class="xref" href="#e4"><code>bind-cols</code></a></td></tr>
+<tr><td>Reshaping</td><td><a class="xref" href="#e48"><code>pivot-longer</code></a> <a class="xref" href="#e49"><code>pivot-wider</code></a> <a class="xref" href="#e65"><code>unnest-longer</code></a> <a class="xref" href="#e57"><code>separate</code></a></td></tr>
+<tr><td>Missing</td><td><a class="xref" href="#e38"><code>drop-na</code></a> <a class="xref" href="#e53"><code>replace-na</code></a> <a class="xref" href="#e40"><code>fill-down</code></a> <a class="xref" href="#e41"><code>fill-up</code></a></td></tr>
+</tbody>
+</table>
 <h2>Common uses</h2>
 <pre><code class="language-scheme">(-&gt; pts
     (where (in splg ,mfzo-splgs))

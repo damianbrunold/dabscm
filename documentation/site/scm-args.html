@@ -11,6 +11,7 @@
 <header>
   <div>
     <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
   </div>
   <div class="search-wrap">
     <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
@@ -59,6 +60,7 @@
 
 <div class="lib-title scm">(scm args)</div>
 <p class="lib-sub">Declarative command-line argument parsing — options, flags, positionals, typed values</p>
+<p class="lib-tutorials">Tutorials: <a href="tutorial-techniques-09-command-line.html">Command-line programs</a></p>
 <div class="lib-preamble">
 <h2>Overview</h2>
 <p><a class="xref" href="scm-args.html"><code>(scm args)</code></a> is declarative command-line argument parsing. You describe a grammar once — options, flags, key/value options, and positionals, each optionally typed — and hand it to <a class="xref" href="#e21"><code>parse-args</code></a>, which validates the input, converts values to their declared types, and gives you a result to query. It also renders <code>--help</code> and handles <code>--version</code> for you.</p>

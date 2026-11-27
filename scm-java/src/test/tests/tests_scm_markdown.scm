@@ -141,4 +141,29 @@
   ;; code content is escaped too
   (test-equal "<p><code>&lt;x&gt;</code></p>" (markdown->html "`<x>`")))
 
+(test-group "tables"
+  (test-equal '((table (align left right center)
+                       (header ("name") ("n") ("note"))
+                       (row ("a | b") ("1") ((code "x|y")))
+                       (row ((strong "c")) ("22") ())))
+              (parse-markdown "| name | n | note |\n|:-----|--:|:-:|\n| a \\| b | 1 | `x|y` |\n| **c** | 22 |"))
+  ;; outer pipes are optional
+  (test-equal '((table (align #f #f) (header ("a") ("b")) (row ("1") ("2"))))
+              (parse-markdown "a | b\n--|--\n1 | 2"))
+  ;; a pipe without a delimiter row is plain text
+  (test-equal '((paragraph "just | a pipe in a paragraph"))
+              (parse-markdown "just | a pipe\nin a paragraph"))
+  ;; the table ends at a blank line
+  (test-equal '((table (align #f) (header ("h")) (row ("1"))) (paragraph "after"))
+              (parse-markdown "| h |\n|---|\n| 1 |\n\nafter"))
+  (test-equal "<table>\n<thead>\n<tr><th>a</th><th style=\"text-align: right\">b</th></tr>\n</thead>\n<tbody>\n<tr><td>1</td><td style=\"text-align: right\">2</td></tr>\n</tbody>\n</table>"
+              (markdown->html "| a | b |\n|---|--:|\n| 1 | 2 |")))
+
+(test-group "heading ids"
+  (test-equal "hash-tables--dictionaries" (markdown-heading-id "Hash tables & dictionaries"))
+  (test-equal "the-scm-match-library" (markdown-heading-id '("The " (code "scm-match") " library")))
+  (test-equal "<h2 id=\"next-steps\">Next steps</h2>" (markdown->html "## Next steps" 'heading-ids))
+  ;; without the option no ids, as before
+  (test-equal "<h2>Next steps</h2>" (markdown->html "## Next steps")))
+
 (test-end "scm-markdown")

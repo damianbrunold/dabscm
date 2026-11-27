@@ -11,6 +11,7 @@
 <header>
   <div>
     <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
   </div>
   <div class="search-wrap">
     <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
@@ -61,6 +62,7 @@
 
 <div class="lib-title scm">(scm archive)</div>
 <p class="lib-sub">Archive and compression — tar, gzip, bzip2, xz, and zip operations</p>
+<p class="lib-tutorials">Tutorials: <a href="tutorial-techniques-03-files.html">Files and directories</a></p>
 <div class="lib-preamble">
 <h2>Overview</h2>
 <p><a class="xref" href="scm-archive.html"><code>(scm archive)</code></a> works with whole-file archives and compressed files: it creates, extracts, and lists tar archives and compresses/decompresses individual files with gzip, bzip2, and xz. It also re-exports the in-memory ZIP and compression helpers from <a class="xref" href="scm-zip.html"><code>(scm zip)</code></a> and <a class="xref" href="scm-compression.html"><code>(scm compression)</code></a>. The tar/bzip2/xz operations shell out to the corresponding native tools.</p>

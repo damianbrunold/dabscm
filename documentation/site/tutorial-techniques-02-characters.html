@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Characters and Unicode — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html" class="active">Characters and Unicode</a>
+    <a class="sub" href="#characters-and-code-points">Characters and code points</a>
+    <a class="sub" href="#character-classes">Character classes</a>
+    <a class="sub" href="#case">Case</a>
+    <a class="sub" href="#character-sets">Character sets</a>
+    <a class="sub" href="#text-as-bytes">Text as bytes</a>
+    <a class="sub" href="#example-url-slugs">Example: URL slugs</a>
+    <a class="sub" href="#example-a-caesar-cipher">Example: a Caesar cipher</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#techniques">Techniques</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">Characters and Unicode</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="characters-and-unicode">Characters and Unicode</h1>
+<h2 id="characters-and-code-points">Characters and code points</h2>
+<p>A character is written <code>#\a</code>, or by name (<code>#\space</code>, <code>#\newline</code>, <code>#\tab</code>) or by its Unicode code point in hex (<code>#\x41</code>):</p>
+<pre><code class="language-scheme">(import (scheme base) (scheme char) (srfi 13) (srfi 14))
+
+(char-&gt;integer #\A)               ;; =&gt; 65
+(integer-&gt;char 97)                ;; =&gt; #\a
+(char-&gt;integer #\€)               ;; =&gt; 8364
+#\x41                             ;; =&gt; #\A
+(char-&gt;integer #\space)           ;; =&gt; 32
+(string-length "naïve")           ;; =&gt; 5</code></pre>
+<p>dabscm strings are sequences of Unicode characters: <code>"naïve"</code> has five characters whatever its UTF-8 encoding takes.</p>
+<h2 id="character-classes">Character classes</h2>
+<pre><code class="language-scheme">(char-alphabetic? #\ß)            ;; =&gt; #t
+(char-numeric? #\7)               ;; =&gt; #t
+(char-whitespace? #\tab)          ;; =&gt; #t
+(char-upper-case? #\Ä)            ;; =&gt; #t
+(digit-value #\7)                 ;; =&gt; 7
+(digit-value #\x)                 ;; =&gt; #f</code></pre>
+<p><a class="xref" href="scheme-char.html#e20"><code>digit-value</code></a> converts a digit character to its number, or returns <code>#f</code>, which makes it a small parser for single digits.</p>
+<h2 id="case">Case</h2>
+<pre><code class="language-scheme">(char-upcase #\é)                 ;; =&gt; #\É
+(char-downcase #\Ω)               ;; =&gt; #\ω
+(string-upcase "Straße")          ;; =&gt; "STRASSE"
+(string-downcase "ÉCOLE")         ;; =&gt; "école"
+(string-foldcase "Hello")         ;; =&gt; "hello"
+(string-ci=? "Zürich" "ZÜRICH")   ;; =&gt; #t
+(char-ci=? #\a #\A)               ;; =&gt; #t</code></pre>
+<p>Use <a class="xref" href="scheme-char.html#e28"><code>string-foldcase</code></a> (or the <code>-ci</code> comparisons) to compare text without regard to case. <code>string-upcase</code> of "ß" gives "SS", so the length of a string can change with its case.</p>
+<h2 id="character-sets">Character sets</h2>
+<p>SRFI 14 character sets describe groups of characters for searching, trimming and splitting:</p>
+<pre><code class="language-scheme">(define vowels (char-set #\a #\e #\i #\o #\u))
+(char-set-contains? vowels #\e)              ;; =&gt; #t
+(string-count "banana" vowels)               ;; =&gt; 3
+(string-index "hello world" char-set:whitespace) ;; =&gt; 5
+(string-tokenize "red, green;blue" char-set:letter) ;; =&gt; ("red" "green" "blue")
+(string-delete vowels "programming")         ;; =&gt; "prgrmmng"
+(string-filter char-set:digit "tel: +41 44 123 45 67") ;; =&gt; "41441234567"
+(string-trim "...hello!!!" (char-set #\.))   ;; =&gt; "hello!!!"</code></pre>
+<p>Sets combine with <a class="xref" href="srfi-14.html#e34"><code>char-set-union</code></a>, <a class="xref" href="srfi-14.html#e26"><code>char-set-intersection</code></a>, <a class="xref" href="srfi-14.html#e18"><code>char-set-difference</code></a> and <a class="xref" href="srfi-14.html#e7"><code>char-set-complement</code></a>:</p>
+<pre><code class="language-scheme">(define consonants (char-set-difference char-set:letter vowels
+                                        (string-&gt;char-set "AEIOU")))
+(string-count "Scheme is fun" consonants)    ;; =&gt; 7</code></pre>
+<h2 id="text-as-bytes">Text as bytes</h2>
+<p>Files and networks carry bytes. <a class="xref" href="scheme-base.html#e181"><code>string-&gt;utf8</code></a> and <a class="xref" href="scheme-base.html#e210"><code>utf8-&gt;string</code></a> convert, and a character outside ASCII takes more than one byte:</p>
+<pre><code class="language-scheme">(string-&gt;utf8 "a€")                         ;; =&gt; #u8(97 226 130 172)
+(bytevector-length (string-&gt;utf8 "a€"))     ;; =&gt; 4
+(utf8-&gt;string #u8(240 159 152 128))         ;; =&gt; "😀"</code></pre>
+<p>Characters outside the Basic Multilingual Plane, like most emoji, are where the implementations differ: native counts <code>"😀"</code> as one character, the JVM and .NET as two (they store strings as UTF-16). Text in European and most Asian scripts is the same everywhere.</p>
+<p>File ports read and write UTF-8 unless you give another encoding, see <a href="tutorial-techniques-03-files.html">files</a>.</p>
+<h2 id="example-url-slugs">Example: URL slugs</h2>
+<p>Turn a title into a lowercase, hyphen-separated identifier for a URL. Accented letters lose their accents through a small mapping:</p>
+<pre><code class="language-scheme">(define accents
+  '((#\ä . "ae") (#\ö . "oe") (#\ü . "ue") (#\é . "e") (#\è . "e")
+    (#\à . "a") (#\ç . "c") (#\ß . "ss")))
+
+(define (deaccent s)
+  (apply string-append
+         (map (lambda (c)
+                (cond ((assv c accents) =&gt; cdr)
+                      (else (string c))))
+              (string-&gt;list s))))
+
+(define slug-chars (string-&gt;char-set "abcdefghijklmnopqrstuvwxyz0123456789"))
+
+(define (slug title)
+  (string-join (string-tokenize (deaccent (string-downcase title)) slug-chars)
+               "-"))
+
+(slug "Grüße aus Zürich!")                  ;; =&gt; "gruesse-aus-zuerich"
+(slug "  The 10 Best Crème Brûlée Recipes ") ;; =&gt; "the-10-best-creme-br-lee-recipes"</code></pre>
+<p>The last one shows the limit of a hand-written mapping: "û" is not in the table and not in <code>slug-chars</code>, so it splits the word. Add the characters your data contains. (<a class="xref" href="srfi-14.html#e48"><code>char-set:lower-case</code></a> would not help here: it contains every Unicode lowercase letter, "û" included.)</p>
+<h2 id="example-a-caesar-cipher">Example: a Caesar cipher</h2>
+<p>Shift every letter by n places, keeping case and leaving other characters alone:</p>
+<pre><code class="language-scheme">(define (shift-char c n)
+  (define (rotate base)
+    (integer-&gt;char (+ base (modulo (+ (- (char-&gt;integer c) base) n) 26))))
+  (cond ((char&lt;=? #\a c #\z) (rotate (char-&gt;integer #\a)))
+        ((char&lt;=? #\A c #\Z) (rotate (char-&gt;integer #\A)))
+        (else c)))
+
+(define (caesar text n) (string-map (lambda (c) (shift-char c n)) text))
+
+(caesar "Hello, World!" 3)                  ;; =&gt; "Khoor, Zruog!"
+(caesar (caesar "Hello, World!" 3) -3)      ;; =&gt; "Hello, World!"
+(caesar "Attack at dawn" 13)                ;; =&gt; "Nggnpx ng qnja"</code></pre>
+<p><code>char&lt;=?</code> with three arguments checks a range in one call.</p>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-techniques-03-files.html">Files and directories</a>.</li>
+<li><a href="srfi-14.html">SRFI 14</a> for all character-set operations, <a class="xref" href="scheme-char.html"><code>(scheme char)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scheme-base.html"><code>(scheme base)</code></a>, <a href="scheme-char.html"><code>(scheme char)</code></a>, <a href="srfi-13.html"><code>(srfi 13)</code></a>, <a href="srfi-14.html"><code>(srfi 14)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-techniques-01-strings.html">&larr; Strings and text</a>
+  <a class="next" href="tutorial-techniques-03-files.html">Files and directories &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

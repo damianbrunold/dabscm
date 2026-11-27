@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Iteration patterns — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html" class="active">Iteration patterns</a>
+    <a class="sub" href="#which-construct">Which construct?</a>
+    <a class="sub" href="#ranges">Ranges</a>
+    <a class="sub" href="#several-sequences-at-once">Several sequences at once</a>
+    <a class="sub" href="#fold-and-reduce">fold and reduce</a>
+    <a class="sub" href="#named-let-for-everything-else">Named let for everything else</a>
+    <a class="sub" href="#vectors-and-strings">Vectors and strings</a>
+    <a class="sub" href="#generators-for-pipelines">Generators for pipelines</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#techniques">Techniques</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">Iteration patterns</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="iteration-patterns">Iteration patterns</h1>
+<p>Scheme has no single <code>for</code> loop. Instead there is a small family of constructs, each the clearest choice for one kind of loop.</p>
+<pre><code class="language-scheme">(import (scheme base) (scheme char) (scheme write) (srfi 1) (srfi 158)
+        (only (srfi 133) vector-fold))</code></pre>
+<h2 id="which-construct">Which construct?</h2>
+<table>
+<thead>
+<tr><th>you want to</th><th>use</th></tr>
+</thead>
+<tbody>
+<tr><td>transform every element</td><td><code>map</code>, <code>vector-map</code>, <code>string-map</code></td></tr>
+<tr><td>do something with every element</td><td><code>for-each</code>, <code>vector-for-each</code></td></tr>
+<tr><td>combine all elements into one value</td><td><a class="xref" href="srfi-1.html#e72"><code>fold</code></a>, <a class="xref" href="srfi-1.html#e120"><code>reduce</code></a>, <a class="xref" href="srfi-133.html#e20"><code>vector-fold</code></a></td></tr>
+<tr><td>keep some elements</td><td><a class="xref" href="srfi-1.html#e66"><code>filter</code></a>, <a class="xref" href="srfi-1.html#e122"><code>remove</code></a>, <a class="xref" href="srfi-1.html#e117"><code>partition</code></a></td></tr>
+<tr><td>loop with state, stop early, or build something unusual</td><td>named <a class="xref" href="scheme-base.html#e105"><code>let</code></a></td></tr>
+<tr><td>count with side effects</td><td><code>do</code></td></tr>
+<tr><td>produce values lazily, step by step</td><td>generators (SRFI 158)</td></tr>
+</tbody>
+</table>
+<h2 id="ranges">Ranges</h2>
+<p><a class="xref" href="srfi-1.html#e76"><code>iota</code></a> makes a list of numbers, the usual stand-in for a counting loop:</p>
+<pre><code class="language-scheme">(iota 5)                                    ;; =&gt; (0 1 2 3 4)
+(iota 5 1)                                  ;; =&gt; (1 2 3 4 5)
+(iota 4 0 5)                                ;; =&gt; (0 5 10 15)
+(map (lambda (i) (* i i)) (iota 5 1))       ;; =&gt; (1 4 9 16 25)
+(fold + 0 (iota 101))                       ;; =&gt; 5050</code></pre>
+<h2 id="several-sequences-at-once">Several sequences at once</h2>
+<p><code>map</code> and <code>for-each</code> take several lists and walk them in step:</p>
+<pre><code class="language-scheme">(map + '(1 2 3) '(10 20 30))                ;; =&gt; (11 22 33)
+(map list '(a b c) '(1 2 3))                ;; =&gt; ((a 1) (b 2) (c 3))
+(map (lambda (name score) (string-append name ": " (number-&gt;string score)))
+     '("Ada" "Alan") '(97 92))              ;; =&gt; ("Ada: 97" "Alan: 92")</code></pre>
+<p>To number the elements, zip them with a range:</p>
+<pre><code class="language-scheme">(map cons (iota 3 1) '(gold silver bronze)) ;; =&gt; ((1 . gold) (2 . silver) (3 . bronze))</code></pre>
+<h2 id="fold-and-reduce">fold and reduce</h2>
+<p><a class="xref" href="srfi-1.html#e72"><code>fold</code></a> walks left to right with an accumulator. It can return anything:</p>
+<pre><code class="language-scheme">(fold + 0 '(1 2 3))                         ;; =&gt; 6
+(fold cons '() '(1 2 3))                    ;; =&gt; (3 2 1)
+(fold (lambda (x acc) (if (&gt; x acc) x acc)) 0 '(3 9 2)) ;; =&gt; 9
+(reduce max #f '(3 9 2))                    ;; =&gt; 9
+(reduce max #f '())                         ;; =&gt; #f
+(fold-right cons '() '(1 2 3))              ;; =&gt; (1 2 3)</code></pre>
+<p><a class="xref" href="srfi-1.html#e120"><code>reduce</code></a> is <a class="xref" href="srfi-1.html#e72"><code>fold</code></a> that starts with the first element; its second argument is returned for an empty list. <a class="xref" href="srfi-1.html#e73"><code>fold-right</code></a> works from the end and keeps the order when building lists.</p>
+<h3 id="running-totals">Running totals</h3>
+<p>A fold that collects every intermediate value:</p>
+<pre><code class="language-scheme">(define (running-totals xs)
+  (reverse (fold (lambda (x acc) (cons (+ x (if (null? acc) 0 (car acc))) acc))
+                 '()
+                 xs)))
+
+(running-totals '(5 3 8 1))                 ;; =&gt; (5 8 16 17)</code></pre>
+<h2 id="named-let-for-everything-else">Named let for everything else</h2>
+<p>When a loop must stop early, carry several values, or walk two things at a different pace, a named <a class="xref" href="scheme-base.html#e105"><code>let</code></a> is the most direct. Merging two sorted lists:</p>
+<pre><code class="language-scheme">(define (merge-sorted a b)
+  (let loop ((a a) (b b) (acc '()))
+    (cond ((null? a) (append (reverse acc) b))
+          ((null? b) (append (reverse acc) a))
+          ((&lt; (car a) (car b)) (loop (cdr a) b (cons (car a) acc)))
+          (else (loop a (cdr b) (cons (car b) acc))))))
+
+(merge-sorted '(1 4 9) '(2 3 10 11))        ;; =&gt; (1 2 3 4 9 10 11)</code></pre>
+<h3 id="sliding-windows">Sliding windows</h3>
+<p>Averages over the last n values, as used for smoothing measurements:</p>
+<pre><code class="language-scheme">(define (windows n xs)
+  (let loop ((xs xs) (acc '()))
+    (if (&lt; (length xs) n)
+        (reverse acc)
+        (loop (cdr xs) (cons (take xs n) acc)))))
+
+(windows 3 '(1 2 3 4 5))                    ;; =&gt; ((1 2 3) (2 3 4) (3 4 5))
+(map (lambda (w) (/ (fold + 0 w) (length w))) (windows 3 '(10 20 30 40 50)))
+;; =&gt; (20 30 40)</code></pre>
+<h2 id="vectors-and-strings">Vectors and strings</h2>
+<p>Vectors and strings have their own loop procedures, and index loops when the position matters:</p>
+<pre><code class="language-scheme">(vector-map (lambda (x) (* x 2)) #(1 2 3))  ;; =&gt; #(2 4 6)
+(vector-fold (lambda (acc x) (+ acc x)) 0 #(1 2 3)) ;; =&gt; 6
+(string-map char-upcase "abc")              ;; =&gt; "ABC"
+
+(define (vector-swap! v i j)
+  (let ((t (vector-ref v i)))
+    (vector-set! v i (vector-ref v j))
+    (vector-set! v j t)))
+
+(define (vector-reverse! v)
+  (do ((i 0 (+ i 1))
+       (j (- (vector-length v) 1) (- j 1)))
+      ((&gt;= i j) v)
+    (vector-swap! v i j)))
+
+(vector-reverse! (vector 1 2 3 4 5))        ;; =&gt; #(5 4 3 2 1)</code></pre>
+<p>Note the argument order: SRFI 133's <a class="xref" href="srfi-133.html#e20"><code>vector-fold</code></a> passes the accumulator <em>first</em>, <a class="xref" href="srfi-1.html#e72"><code>fold</code></a> on lists passes it last.</p>
+<h2 id="generators-for-pipelines">Generators for pipelines</h2>
+<p>A generator produces values one at a time, so a pipeline of generator steps never builds intermediate lists. That matters when the input is large or endless:</p>
+<pre><code class="language-scheme">(define (squares-of-odd-numbers-below n)
+  (generator-&gt;list
+   (gmap (lambda (x) (* x x))
+         (gfilter odd? (make-iota-generator n)))))
+
+(squares-of-odd-numbers-below 10)           ;; =&gt; (1 9 25 49 81)
+
+(generator-fold + 0 (gtake (make-range-generator 1) 100)) ;; =&gt; 5050
+
+(generator-&gt;list (gtake (gmap (lambda (x) (* x 3)) (make-range-generator 1)) 5))
+;; =&gt; (3 6 9 12 15)</code></pre>
+<p><a class="xref" href="srfi-158.html#e37"><code>list-&gt;generator</code></a>, <a class="xref" href="srfi-158.html#e52"><code>vector-&gt;generator</code></a> and <a class="xref" href="srfi-158.html#e49"><code>string-&gt;generator</code></a> turn existing data into generators, and SRFI 158's accumulators collect the results.</p>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-techniques-07-dates.html">Dates and times</a>.</li>
+<li><a href="srfi-1.html">SRFI 1</a>, <a href="srfi-133.html">SRFI 133</a>, <a href="srfi-158.html">SRFI 158</a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scheme-base.html"><code>(scheme base)</code></a>, <a href="srfi-1.html"><code>(srfi 1)</code></a>, <a href="srfi-133.html"><code>(srfi 133)</code></a>, <a href="srfi-158.html"><code>(srfi 158)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-techniques-05-sorting.html">&larr; Sorting and searching</a>
+  <a class="next" href="tutorial-techniques-07-dates.html">Dates and times &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

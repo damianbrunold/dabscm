@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hash tables and dictionaries — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html" class="active">Hash tables and dictionaries</a>
+    <a class="sub" href="#creating-and-choosing-the-key-equality">Creating and choosing the key equality</a>
+    <a class="sub" href="#setting-getting-deleting">Setting, getting, deleting</a>
+    <a class="sub" href="#case-insensitive-keys">Case-insensitive keys</a>
+    <a class="sub" href="#counting-and-grouping">Counting and grouping</a>
+    <a class="sub" href="#iterating">Iterating</a>
+    <a class="sub" href="#from-and-to-alists">From and to alists</a>
+    <a class="sub" href="#memoization-with-a-table">Memoization with a table</a>
+    <a class="sub" href="#alists-or-hash-tables">Alists or hash tables?</a>
+    <a class="sub" href="#srfi-125-comparators-and-more-operations">SRFI 125: comparators and more operations</a>
+    <a class="sub" href="#scm-dict">(scm dict)</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#techniques">Techniques</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">Hash tables and dictionaries</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="hash-tables-and-dictionaries">Hash tables and dictionaries</h1>
+<p>A hash table maps keys to values with fast lookup, however many entries it holds. dabscm has three flavours:</p>
+<table>
+<thead>
+<tr><th>library</th><th>style</th><th>use when</th></tr>
+</thead>
+<tbody>
+<tr><td><a class="xref" href="srfi-69.html"><code>(srfi 69)</code></a></td><td>classic, small API</td><td>most programs</td></tr>
+<tr><td><a class="xref" href="srfi-125.html"><code>(srfi 125)</code></a> + <a class="xref" href="srfi-128.html"><code>(srfi 128)</code></a></td><td>comparator-based, rich API (map, prune, set operations)</td><td>you need the extra operations</td></tr>
+<tr><td><a class="xref" href="scm-dict.html"><code>(scm dict)</code></a></td><td>minimal dictionary with string or symbol keys</td><td>a quick map in a script</td></tr>
+</tbody>
+</table>
+<p>This tutorial uses SRFI 69 and shows SRFI 125 at the end.</p>
+<pre><code class="language-scheme">(import (scheme base) (scheme char) (srfi 1) (srfi 69) (srfi 132))</code></pre>
+<h2 id="creating-and-choosing-the-key-equality">Creating and choosing the key equality</h2>
+<p><code>make-hash-table</code> takes the equivalence the keys are compared with:</p>
+<pre><code class="language-scheme">(define phone (make-hash-table equal?))      ; any keys, compared by structure
+(define by-id (make-hash-table eqv?))        ; numbers, characters
+(define seen (make-hash-table eq?))          ; symbols, identity
+(define ci (make-hash-table string-ci=?))    ; strings, ignoring case</code></pre>
+<p><code>equal?</code> is the default and right for strings, lists and mixed keys. The table hashes as its equivalence needs, so you do not have to pass a hash function. Supported equivalences are <code>equal?</code>, <code>eqv?</code>, <code>eq?</code>, <code>string=?</code>, <code>string-ci=?</code>, <code>char=?</code>, <code>char-ci=?</code> and <code>=</code>; another predicate is an error.</p>
+<h2 id="setting-getting-deleting">Setting, getting, deleting</h2>
+<pre><code class="language-scheme">(hash-table-set! phone "Ada" "555-1815")
+(hash-table-set! phone "Alan" "555-1912")
+
+(hash-table-ref/default phone "Ada" #f)      ;; =&gt; "555-1815"
+(hash-table-ref/default phone "Grace" #f)    ;; =&gt; #f
+(hash-table-ref phone "Alan")                ;; =&gt; "555-1912"
+(hash-table-ref phone "Grace")               ;; =&gt; error
+(hash-table-ref phone "Grace" (lambda () "unknown")) ;; =&gt; "unknown"
+(hash-table-exists? phone "Ada")             ;; =&gt; #t
+(hash-table-size phone)                      ;; =&gt; 2
+(hash-table-delete! phone "Alan")
+(hash-table-size phone)                      ;; =&gt; 1</code></pre>
+<p><code>hash-table-ref</code> raises an error for a missing key unless you give it a thunk to call instead; <code>hash-table-ref/default</code> returns the default. Use the one that says what a missing key means in your program.</p>
+<h2 id="case-insensitive-keys">Case-insensitive keys</h2>
+<pre><code class="language-scheme">(hash-table-set! ci "Zürich" 'zh)
+(hash-table-ref/default ci "ZÜRICH" #f)      ;; =&gt; zh
+(hash-table-ref/default ci "zürich" #f)      ;; =&gt; zh</code></pre>
+<h2 id="counting-and-grouping">Counting and grouping</h2>
+<p><code>hash-table-update!/default</code> reads, changes and writes back a value in one step, the core of every counting job:</p>
+<pre><code class="language-scheme">(define orders
+  '((ada books 30) (alan games 15) (ada music 12) (grace books 22) (ada books 8)))
+
+(define spent (make-hash-table eq?))
+(for-each (lambda (o)
+            (hash-table-update!/default spent (car o) (lambda (sum) (+ sum (caddr o))) 0))
+          orders)
+
+(list-sort (lambda (a b) (&gt; (cdr a) (cdr b))) (hash-table-&gt;alist spent))
+;; =&gt; ((ada . 50) (grace . 22) (alan . 15))</code></pre>
+<p>Grouping collects values in lists:</p>
+<pre><code class="language-scheme">(define (group-by key xs)
+  (let ((t (make-hash-table equal?)))
+    (for-each (lambda (x) (hash-table-update!/default t (key x) (lambda (l) (cons x l)) '()))
+              xs)
+    t))
+
+(define by-category (group-by cadr orders))
+(map car (hash-table-ref by-category 'books)) ;; =&gt; (ada grace ada)
+(length (hash-table-ref by-category 'music))   ;; =&gt; 1</code></pre>
+<h2 id="iterating">Iterating</h2>
+<p>The order of entries in a hash table is not defined. Sort when the order matters, as above.</p>
+<pre><code class="language-scheme">(define (symbol&lt;? a b) (string&lt;? (symbol-&gt;string a) (symbol-&gt;string b)))
+
+(define stock (make-hash-table eq?))
+(hash-table-set! stock 'apples 12)
+(hash-table-set! stock 'pears 0)
+(hash-table-set! stock 'plums 7)
+
+(list-sort symbol&lt;? (hash-table-keys stock)) ;; =&gt; (apples pears plums)
+(fold + 0 (hash-table-values stock))         ;; =&gt; 19
+(hash-table-fold stock (lambda (k v acc) (if (&gt; v 0) (cons k acc) acc)) '())
+; (plums apples) or (apples plums)</code></pre>
+<p>R7RS has no <code>symbol&lt;?</code>, so the example defines one. The result of <code>hash-table-fold</code> follows the table's order, so it may come out either way. Sort when the order matters:</p>
+<pre><code class="language-scheme">(list-sort symbol&lt;?
+           (hash-table-fold stock (lambda (k v acc) (if (&gt; v 0) (cons k acc) acc)) '()))
+;; =&gt; (apples plums)
+
+(hash-table-walk stock (lambda (k v) (when (= v 0) (hash-table-delete! stock k))))
+(hash-table-size stock)                      ;; =&gt; 2</code></pre>
+<p><a class="xref" href="srfi-69.html#e19"><code>hash-table-walk</code></a> calls a procedure for every entry; deleting the entry being visited is safe.</p>
+<h2 id="from-and-to-alists">From and to alists</h2>
+<pre><code class="language-scheme">(define colours (alist-&gt;hash-table '((red . "#f00") (green . "#0f0")) eq?))
+(hash-table-ref colours 'green)              ;; =&gt; "#0f0"
+(length (hash-table-&gt;alist colours))         ;; =&gt; 2</code></pre>
+<p><code>alist-&gt;hash-table</code> keeps the first entry when a key appears twice, as an alist lookup would.</p>
+<h2 id="memoization-with-a-table">Memoization with a table</h2>
+<p>A table makes a fast cache. Counting the ways to climb n stairs taking one or two steps at a time:</p>
+<pre><code class="language-scheme">(define ways
+  (let ((cache (make-hash-table =)))
+    (lambda (n)
+      (or (hash-table-ref/default cache n #f)
+          (let ((v (if (&lt;= n 1) 1 (+ (ways (- n 1)) (ways (- n 2))))))
+            (hash-table-set! cache n v)
+            v)))))
+
+(ways 10)                                    ;; =&gt; 89
+(ways 100)                                   ;; =&gt; 573147844013817084101</code></pre>
+<h2 id="alists-or-hash-tables">Alists or hash tables?</h2>
+<ul>
+<li>An <strong>alist</strong> is simpler, keeps its order, is easy to print and to write</li>
+</ul>
+<p>as a literal, and is fast enough for a few dozen entries.</p>
+<ul>
+<li>A <strong>hash table</strong> stays fast with thousands of entries and supports</li>
+</ul>
+<p>in-place updates.</p>
+<p>Many programs build data as alists and convert with <code>alist-&gt;hash-table</code> when lookups become frequent.</p>
+<h2 id="srfi-125-comparators-and-more-operations">SRFI 125: comparators and more operations</h2>
+<p>SRFI 125 tables are made from a <em>comparator</em> (SRFI 128), which bundles equality and hashing. Its operation names differ a little:</p>
+<pre><code class="language-scheme">(import (prefix (srfi 125) h:) (only (srfi 128) make-default-comparator))
+
+(define t (h:make-hash-table (make-default-comparator)))
+(h:hash-table-set! t 'a 1 'b 2 'c 3)
+(h:hash-table-contains? t 'b)                ;; =&gt; #t
+(h:hash-table-size t)                        ;; =&gt; 3
+(h:hash-table-count (lambda (k v) (&gt; v 1)) t) ;; =&gt; 2
+(h:hash-table-prune! (lambda (k v) (odd? v)) t)
+(list-sort symbol&lt;? (h:hash-table-keys t))   ;; =&gt; (b)
+(h:hash-table-intern! t 'd (lambda () 4))    ;; =&gt; 4</code></pre>
+<p>The <code>prefix</code> keeps the SRFI 125 names apart from SRFI 69's. Both work on the same kind of table, so you can mix them.</p>
+<h2 id="scm-dict">(scm dict)</h2>
+<p>A minimal dictionary API, for scripts:</p>
+<pre><code class="language-scheme">(import (scm dict))
+
+(define d (make-dict))
+(dict-put d "lang" "Scheme")
+(dict-get d "lang")                          ;; =&gt; "Scheme"
+(dict-contains d "year")                     ;; =&gt; #f</code></pre>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>.</li>
+<li>Reference and tutorials: <a href="srfi-69.html">SRFI 69</a>, <a href="srfi-125.html">SRFI 125</a>,</li>
+</ul>
+<p><a href="srfi-128.html">SRFI 128</a>.</p>
+</div>
+<p class="tutorial-libs">Reference: <a href="srfi-69.html"><code>(srfi 69)</code></a>, <a href="srfi-125.html"><code>(srfi 125)</code></a>, <a href="srfi-128.html"><code>(srfi 128)</code></a>, <a href="scm-dict.html"><code>(scm dict)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-techniques-03-files.html">&larr; Files and directories</a>
+  <a class="next" href="tutorial-techniques-05-sorting.html">Sorting and searching &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

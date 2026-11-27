@@ -499,3 +499,73 @@
   .lib-preamble a.xref code { color: var(--scm); }
   .lib-preamble a.xref:hover { border-bottom-style: solid; }
   .lib-preamble a.xref:hover code { color: var(--text); }
+
+  /* ---- tutorials ---- */
+  .header-link {
+    margin-left: 18px;
+    color: var(--srfi);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+  .header-link:hover { text-decoration: underline; }
+  header > div:first-child { display: flex; align-items: baseline; }
+  .sr-kind.sr-tut { background: var(--srfi-bg); color: var(--srfi); border: 1px solid var(--srfi-border); }
+
+  .start-here {
+    display: block;
+    margin: 0 0 28px;
+    padding: 14px 18px;
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--srfi);
+    border-radius: 8px;
+    background: var(--bg2);
+    text-decoration: none;
+    max-width: 70ch;
+  }
+  .start-here:hover { border-color: #3a4560; }
+  .start-here .name { display: block; color: var(--srfi); font-weight: 700; margin-bottom: 4px; }
+  .start-here .desc { font-size: 0.85rem; color: var(--text-dim); }
+
+  nav.tutorial-nav h2 a { color: inherit; text-decoration: none; }
+  nav.tutorial-nav h3 {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+    margin: 14px 0 4px;
+  }
+  nav.tutorial-nav a.active { color: var(--srfi); font-weight: 600; }
+  nav.tutorial-nav a.sub { padding-left: 14px; font-size: 0.78rem; color: var(--text-dim); }
+
+  main.tutorial { max-width: 82ch; }
+  .tutorial-body h1 { font-size: 1.7rem; margin: 4px 0 14px; }
+  .tutorial-body h2 { margin-top: 30px; }
+  .tutorial-body p, .tutorial-body li { line-height: 1.6; }
+  .tutorial-libs, .lib-tutorials { font-size: 0.85rem; color: var(--text-dim); }
+  .lib-tutorials a { color: var(--srfi); }
+
+  .prev-next {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    margin: 36px 0 24px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+  .prev-next a { text-decoration: none; color: var(--srfi); }
+  .prev-next .next { margin-left: auto; }
+
+  /* ---- tables in preambles and tutorials ---- */
+  .lib-preamble table {
+    border-collapse: collapse;
+    margin: 12px 0 18px;
+    font-size: 0.88rem;
+  }
+  .lib-preamble th, .lib-preamble td {
+    border: 1px solid var(--border);
+    padding: 5px 10px;
+    vertical-align: top;
+    text-align: left;
+  }
+  .lib-preamble th { background: var(--bg3); }

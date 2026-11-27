@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Concurrency — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html" class="active">Concurrency</a>
+    <a class="sub" href="#starting-and-joining-threads">Starting and joining threads</a>
+    <a class="sub" href="#shared-state-needs-a-mutex">Shared state needs a mutex</a>
+    <a class="sub" href="#a-work-queue-with-condition-variables">A work queue with condition variables</a>
+    <a class="sub" href="#errors-in-threads">Errors in threads</a>
+    <a class="sub" href="#sleeping-and-timeouts">Sleeping and timeouts</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#techniques">Techniques</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">Concurrency</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="concurrency">Concurrency</h1>
+<p>dabscm threads (SRFI 18) are real operating-system threads on all three implementations, so CPU-bound work spreads over several cores.</p>
+<pre><code class="language-scheme">(import (scheme base) (srfi 1) (srfi 18) (scm system))</code></pre>
+<h2 id="starting-and-joining-threads">Starting and joining threads</h2>
+<p><a class="xref" href="srfi-18.html#e13"><code>make-thread</code></a> takes a thunk, <a class="xref" href="srfi-18.html#e29"><code>thread-start!</code></a> runs it, and <a class="xref" href="srfi-18.html#e24"><code>thread-join!</code></a> waits for it and returns its result:</p>
+<pre><code class="language-scheme">(define (sum-range from to)
+  (let loop ((i from) (s 0)) (if (&gt; i to) s (loop (+ i 1) (+ s i)))))
+
+(define t1 (make-thread (lambda () (sum-range 1 500000))))
+(define t2 (make-thread (lambda () (sum-range 500001 1000000))))
+(thread-start! t1)
+(thread-start! t2)
+(+ (thread-join! t1) (thread-join! t2))     ;; =&gt; 500000500000</code></pre>
+<p>The two halves run at the same time. For independent pieces of work like these, <code>run-parallel</code> from <a class="xref" href="scm-system.html"><code>(scm system)</code></a> does the same in one call:</p>
+<pre><code class="language-scheme">(run-parallel (lambda (x) (* x x)) '(1 2 3 4)) ;; =&gt; (1 4 9 16)
+(fold + 0 (run-parallel (lambda (r) (sum-range (car r) (cdr r)))
+                        '((1 . 250000) (250001 . 500000)
+                          (500001 . 750000) (750001 . 1000000))))
+;; =&gt; 500000500000</code></pre>
+<h2 id="shared-state-needs-a-mutex">Shared state needs a mutex</h2>
+<p>Threads that change the same data must take turns. Without a lock, two threads can read the same old value and one update gets lost. A mutex makes the read-change-write step atomic:</p>
+<pre><code class="language-scheme">(define counter 0)
+(define lock (make-mutex))
+
+(define (increment-many n)
+  (do ((i 0 (+ i 1))) ((= i n))
+    (mutex-lock! lock)
+    (set! counter (+ counter 1))
+    (mutex-unlock! lock)))
+
+(define workers (map (lambda (_) (make-thread (lambda () (increment-many 10000))))
+                     (iota 4)))
+(for-each thread-start! workers)
+(for-each thread-join! workers)
+counter                                     ;; =&gt; 40000</code></pre>
+<p>A helper that always unlocks, even when the body raises an error:</p>
+<pre><code class="language-scheme">(define (with-lock m thunk)
+  (dynamic-wind
+    (lambda () (mutex-lock! m))
+    thunk
+    (lambda () (mutex-unlock! m))))
+
+(with-lock lock (lambda () (set! counter 0) counter)) ;; =&gt; 0</code></pre>
+<p>The best concurrent code shares little: give each thread its own input, collect results through <a class="xref" href="srfi-18.html#e24"><code>thread-join!</code></a>, and combine them at the end.</p>
+<h2 id="a-work-queue-with-condition-variables">A work queue with condition variables</h2>
+<p>A <em>condition variable</em> lets a thread sleep until another one signals that something changed. Here is a queue that worker threads take jobs from:</p>
+<pre><code class="language-scheme">(define-record-type queue
+  (%make-queue items mutex nonempty closed)
+  queue?
+  (items queue-items set-queue-items!)
+  (mutex queue-mutex)
+  (nonempty queue-nonempty)
+  (closed queue-closed? set-queue-closed!))
+
+(define (make-queue) (%make-queue '() (make-mutex) (make-condition-variable) #f))
+
+(define (queue-put! q x)
+  (mutex-lock! (queue-mutex q))
+  (set-queue-items! q (append (queue-items q) (list x)))
+  (condition-variable-signal! (queue-nonempty q))
+  (mutex-unlock! (queue-mutex q)))
+
+(define (queue-close! q)
+  (mutex-lock! (queue-mutex q))
+  (set-queue-closed! q #t)
+  (condition-variable-broadcast! (queue-nonempty q))
+  (mutex-unlock! (queue-mutex q)))
+
+;; the next item, or #f when the queue is closed and empty
+(define (queue-take! q)
+  (mutex-lock! (queue-mutex q))
+  (let loop ()
+    (cond ((pair? (queue-items q))
+           (let ((x (car (queue-items q))))
+             (set-queue-items! q (cdr (queue-items q)))
+             (mutex-unlock! (queue-mutex q))
+             x))
+          ((queue-closed? q) (mutex-unlock! (queue-mutex q)) #f)
+          (else
+           ;; releases the mutex while waiting, takes it again on wake-up
+           (mutex-unlock! (queue-mutex q) (queue-nonempty q))
+           (mutex-lock! (queue-mutex q))
+           (loop)))))</code></pre>
+<p><a class="xref" href="srfi-18.html#e19"><code>mutex-unlock!</code></a> with a condition variable unlocks and waits in one step, so no signal can slip in between. Three workers process the jobs; each keeps its own results, which the main thread combines:</p>
+<pre><code class="language-scheme">(define jobs (make-queue))
+
+(define (worker)
+  (let loop ((done '()))
+    (let ((n (queue-take! jobs)))
+      (if n (loop (cons (* n n) done)) done))))
+
+(define pool (map (lambda (_) (make-thread worker)) (iota 3)))
+(for-each thread-start! pool)
+(for-each (lambda (n) (queue-put! jobs n)) (iota 10 1))
+(queue-close! jobs)
+
+(define results (append-map thread-join! pool))
+(length results)                            ;; =&gt; 10
+(fold + 0 results)                          ;; =&gt; 385</code></pre>
+<p>Which worker did which job depends on timing; the sum does not.</p>
+<h2 id="errors-in-threads">Errors in threads</h2>
+<p>An error that a thread does not catch ends the thread. <a class="xref" href="srfi-18.html#e24"><code>thread-join!</code></a> then raises an "uncaught exception" in the thread that joins, so failures are not lost:</p>
+<pre><code class="language-scheme">(define broken (make-thread (lambda () (car '()))))
+(thread-start! broken)
+(guard (e ((uncaught-exception? e) 'thread-failed))
+  (thread-join! broken))                    ;; =&gt; thread-failed</code></pre>
+<p><a class="xref" href="srfi-18.html#e35"><code>uncaught-exception-reason</code></a> gives the original error.</p>
+<h2 id="sleeping-and-timeouts">Sleeping and timeouts</h2>
+<pre><code class="language-scheme">(thread-sleep! 0.01)                        ; a hundredth of a second
+(define slow (make-thread (lambda () (thread-sleep! 5) 'late)))
+(thread-start! slow)
+(thread-join! slow 0.05 'timed-out)         ;; =&gt; timed-out
+(thread-terminate! slow)</code></pre>
+<p><a class="xref" href="srfi-18.html#e24"><code>thread-join!</code></a> with a timeout and a default value returns the default if the thread has not finished in time.</p>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>.</li>
+<li><a href="srfi-18.html">SRFI 18</a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="srfi-18.html"><code>(srfi 18)</code></a>, <a href="scm-system.html"><code>(scm system)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-techniques-10-testing.html">&larr; Testing your code</a>
+  <a class="next" href="tutorial-techniques-12-system.html">The system: programs, environment, platform &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

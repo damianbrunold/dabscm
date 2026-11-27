@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Higher-order programming — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html" class="active">Higher-order programming</a>
+    <a class="sub" href="#returning-procedures">Returning procedures</a>
+    <a class="sub" href="#composition">Composition</a>
+    <a class="sub" href="#cut-partial-application">cut: partial application</a>
+    <a class="sub" href="#memoization">Memoization</a>
+    <a class="sub" href="#example-a-small-validation-library">Example: a small validation library</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#basics">Basics</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">Higher-order programming</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="higher-order-programming">Higher-order programming</h1>
+<p>A <em>higher-order</em> procedure takes procedures as arguments or returns one. <code>map</code>, <a class="xref" href="srfi-1.html#e66"><code>filter</code></a> and <a class="xref" href="srfi-1.html#e72"><code>fold</code></a> are examples; this chapter shows how to write your own.</p>
+<h2 id="returning-procedures">Returning procedures</h2>
+<pre><code class="language-scheme">(import (scheme base) (srfi 1) (srfi 26))
+
+(define (adder n) (lambda (x) (+ x n)))
+
+(define add10 (adder 10))
+(add10 5)                         ;; =&gt; 15
+(map (adder 1) '(1 2 3))          ;; =&gt; (2 3 4)</code></pre>
+<p><code>adder</code> returns a new procedure each time; each one remembers its own <code>n</code>. That memory is the closure from the <a href="tutorial-basics-03-procedures.html">procedures</a> chapter.</p>
+<h2 id="composition">Composition</h2>
+<p>Building a pipeline from small steps:</p>
+<pre><code class="language-scheme">(define (compose . fs)
+  (if (null? fs)
+      (lambda (x) x)
+      (lambda (x) ((car fs) ((apply compose (cdr fs)) x)))))
+
+(define (double x) (* 2 x))
+(define (inc x) (+ x 1))
+
+((compose double inc) 5)          ;; =&gt; 12
+((compose inc double) 5)          ;; =&gt; 11</code></pre>
+<p><code>(compose f g)</code> applies <code>g</code> first, then <code>f</code>, like mathematical composition.</p>
+<h2 id="cut-partial-application">cut: partial application</h2>
+<p><a class="xref" href="srfi-26.html"><code>(srfi 26)</code></a> provides <code>cut</code>, which fills some arguments of a call now and leaves the slots marked <code>&lt;&gt;</code> for later. It saves many small lambdas:</p>
+<pre><code class="language-scheme">(map (cut * 2 &lt;&gt;) '(1 2 3))       ;; =&gt; (2 4 6)
+(map (cut - &lt;&gt; 1) '(5 6 7))       ;; =&gt; (4 5 6)
+(filter (cut &gt; &lt;&gt; 2) '(1 2 3 4))  ;; =&gt; (3 4)
+((cut list 'a &lt;&gt; 'c) 'b)          ;; =&gt; (a b c)</code></pre>
+<p><code>(cut * 2 &lt;&gt;)</code> means <code>(lambda (x) (* 2 x))</code>. <code>&lt;...&gt;</code> at the end stands for any remaining arguments.</p>
+<h2 id="memoization">Memoization</h2>
+<p>A procedure that remembers results it has already computed. This makes the naive Fibonacci definition fast:</p>
+<pre><code class="language-scheme">(define (memoize f)
+  (let ((cache '()))
+    (lambda (n)
+      (cond ((assv n cache) =&gt; cdr)
+            (else (let ((v (f n)))
+                    (set! cache (cons (cons n v) cache))
+                    v))))))
+
+(define fib
+  (memoize
+   (lambda (n)
+     (if (&lt; n 2) n (+ (fib (- n 1)) (fib (- n 2)))))))
+
+(fib 30)                          ;; =&gt; 832040
+(fib 90)                          ;; =&gt; 2880067194370816120</code></pre>
+<p>Without memoization <code>(fib 90)</code> would take longer than the age of the universe; with it, 90 additions. For larger caches, use a hash table instead of the alist.</p>
+<h2 id="example-a-small-validation-library">Example: a small validation library</h2>
+<p>Validators are procedures that take a value and return an error message or <code>#f</code>. Combinators build complex validators from simple ones:</p>
+<pre><code class="language-scheme">(define (check pred message)
+  (lambda (value) (if (pred value) #f message)))
+
+(define (all-of . validators)
+  (lambda (value)
+    (let ((errors (filter-map (lambda (v) (v value)) validators)))
+      (if (null? errors) #f errors))))
+
+(define (field name validator)
+  (lambda (record)
+    (let ((r (validator (cdr (assq name record)))))
+      (and r (cons name (if (list? r) r (list r)))))))
+
+(define (form . fields)
+  (lambda (record) (filter-map (lambda (f) (f record)) fields)))
+
+(define validate-signup
+  (form (field 'name (check (lambda (s) (&gt; (string-length s) 0)) "required"))
+        (field 'age (all-of (check integer? "not a number")
+                            (check (lambda (n) (and (integer? n) (&gt;= n 18)))
+                                   "too young")))))
+
+(validate-signup '((name . "Ada") (age . 36)))   ;; =&gt; ()
+(validate-signup '((name . "") (age . 12)))
+;; =&gt; ((name "required") (age "too young"))</code></pre>
+<p>Each piece is a few lines; together they describe the rules declaratively. <a class="xref" href="srfi-1.html#e68"><code>filter-map</code></a> (SRFI 1) maps and keeps only the true results in one pass.</p>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-basics-08-records.html">Records</a>: giving data a proper shape.</li>
+<li><a href="srfi-1.html">SRFI 1</a> and <a href="srfi-26.html">SRFI 26</a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scheme-base.html"><code>(scheme base)</code></a>, <a href="srfi-1.html"><code>(srfi 1)</code></a>, <a href="srfi-26.html"><code>(srfi 26)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-basics-06-data.html">&larr; Vectors, bytevectors and other data</a>
+  <a class="next" href="tutorial-basics-08-records.html">Records &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

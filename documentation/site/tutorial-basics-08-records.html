@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Records — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html" class="active">Records</a>
+    <a class="sub" href="#working-with-collections-of-records">Working with collections of records</a>
+    <a class="sub" href="#updating-without-mutation">Updating without mutation</a>
+    <a class="sub" href="#returning-several-values">Returning several values</a>
+    <a class="sub" href="#records-as-objects">Records as objects</a>
+    <a class="sub" href="#printing-records">Printing records</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#basics">Basics</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">Records</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="records">Records</h1>
+<p>Lists are flexible, but <code>(caddr item)</code> says nothing about what it is. A <em>record type</em> gives data named fields:</p>
+<pre><code class="language-scheme">(import (scheme base) (srfi 1) (srfi 132))
+
+(define-record-type book
+  (make-book title author year pages)
+  book?
+  (title book-title)
+  (author book-author)
+  (year book-year)
+  (pages book-pages set-book-pages!))
+
+(define dune (make-book "Dune" "Frank Herbert" 1965 412))
+
+(book-title dune)                 ;; =&gt; "Dune"
+(book? dune)                      ;; =&gt; #t
+(book? "Dune")                    ;; =&gt; #f
+(set-book-pages! dune 896)
+(book-pages dune)                 ;; =&gt; 896</code></pre>
+<p><code>define-record-type</code> defines, in order:</p>
+<ol>
+<li>the type name (<code>book</code>);</li>
+<li>the constructor and the fields it takes (<code>make-book</code>);</li>
+<li>a predicate (<code>book?</code>);</li>
+<li>one entry per field: its accessor and, optionally, a modifier</li>
+</ol>
+<p>(<code>set-book-pages!</code>).</p>
+<p>Fields without a modifier cannot be changed, which is usually what you want.</p>
+<h2 id="working-with-collections-of-records">Working with collections of records</h2>
+<pre><code class="language-scheme">(define library
+  (list (make-book "Dune" "Frank Herbert" 1965 412)
+        (make-book "Neuromancer" "William Gibson" 1984 271)
+        (make-book "Solaris" "Stanisław Lem" 1961 204)
+        (make-book "Hyperion" "Dan Simmons" 1989 482)))
+
+(map book-title (filter (lambda (b) (&lt; (book-year b) 1970)) library))
+;; =&gt; ("Dune" "Solaris")
+
+(map book-title (list-sort (lambda (a b) (&lt; (book-pages a) (book-pages b)))
+                           library))
+;; =&gt; ("Solaris" "Neuromancer" "Dune" "Hyperion")
+
+(fold + 0 (map book-pages library)) ;; =&gt; 1369</code></pre>
+<p><a class="xref" href="srfi-132.html#e4"><code>list-sort</code></a> (SRFI 132) takes a "less than" procedure; here it compares page counts. <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a> shows more.</p>
+<h2 id="updating-without-mutation">Updating without mutation</h2>
+<p>Instead of modifiers, functional code makes a changed copy:</p>
+<pre><code class="language-scheme">(define (book-with-year b year)
+  (make-book (book-title b) (book-author b) year (book-pages b)))
+
+(define dune-2021 (book-with-year dune 2021))
+(book-year dune-2021)             ;; =&gt; 2021
+(book-year dune)                  ;; =&gt; 1965</code></pre>
+<p>The old value stays valid, which makes such data safe to share, for example between threads.</p>
+<h2 id="returning-several-values">Returning several values</h2>
+<p>A procedure can return several values with <code>values</code>; <a class="xref" href="scheme-base.html#e109"><code>let-values</code></a> receives them:</p>
+<pre><code class="language-scheme">(define (oldest-and-newest books)
+  (let ((sorted (list-sort (lambda (a b) (&lt; (book-year a) (book-year b))) books)))
+    (values (first sorted) (last sorted))))
+
+(let-values (((old new) (oldest-and-newest library)))
+  (list (book-title old) (book-title new)))
+;; =&gt; ("Solaris" "Hyperion")</code></pre>
+<p>That is lighter than building a list or a record just to return two things.</p>
+<h2 id="records-as-objects">Records as objects</h2>
+<p>A record with a procedure in a field, or a closure over a record, gives you objects with behaviour. Here is a bank account whose balance cannot be changed from outside:</p>
+<pre><code class="language-scheme">(define-record-type account
+  (%make-account owner balance)
+  account?
+  (owner account-owner)
+  (balance account-balance %set-balance!))
+
+(define (make-account owner) (%make-account owner 0))
+
+(define (deposit! acc amount)
+  (unless (&gt; amount 0) (error "deposit: amount must be positive" amount))
+  (%set-balance! acc (+ (account-balance acc) amount)))
+
+(define (withdraw! acc amount)
+  (when (&gt; amount (account-balance acc))
+    (error "withdraw: insufficient funds" (account-balance acc)))
+  (%set-balance! acc (- (account-balance acc) amount)))
+
+(define acc (make-account "Grace"))
+(deposit! acc 100)
+(withdraw! acc 30)
+(account-balance acc)             ;; =&gt; 70
+(withdraw! acc 500)               ;; =&gt; error</code></pre>
+<p>The <code>%</code> prefix is a common convention for "internal, do not use". In a library you would simply not export <code>%make-account</code> and <code>%set-balance!</code> (see <a href="tutorial-basics-10-libraries.html">libraries and programs</a>).</p>
+<h2 id="printing-records">Printing records</h2>
+<p><code>write</code> shows a record only as <code>#&lt;record&gt;</code>. When you need to see the fields while debugging, give the type a small procedure that turns it into a list:</p>
+<pre><code class="language-scheme">(define (book-&gt;list b)
+  (list 'book (book-title b) (book-author b) (book-year b)))
+
+(book-&gt;list dune)                 ;; =&gt; (book "Dune" "Frank Herbert" 1965)</code></pre>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-basics-09-errors.html">Errors and exceptions</a>: what <a class="xref" href="scheme-base.html#e70"><code>error</code></a> really does.</li>
+<li>Reference: <a class="xref" href="scheme-base.html"><code>(scheme base)</code></a> for <code>define-record-type</code>, <a class="xref" href="srfi-132.html"><code>(srfi 132)</code></a> for sorting.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scheme-base.html"><code>(scheme base)</code></a>, <a href="srfi-1.html"><code>(srfi 1)</code></a>, <a href="srfi-132.html"><code>(srfi 132)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-basics-07-higher-order.html">&larr; Higher-order programming</a>
+  <a class="next" href="tutorial-basics-09-errors.html">Errors and exceptions &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

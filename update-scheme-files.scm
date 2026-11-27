@@ -5,7 +5,8 @@
         (srfi 13)
         (srfi 132)
         (scm fs)
-        (scm list))
+        (scm list)
+        (build tutorials))
 
 (define base-dir (directory-name script-name))
 
@@ -116,6 +117,12 @@
               (newline)))
           (filter (lambda (f) (string-suffix? ".sld" f))
                   (directory-files libs-src-dir)))
+
+;; Generate the tutorial tests: every ```scheme block of
+;; documentation/tutorials/*.md, as scm-tests/tests/tests_tutorial_*.scm
+(for-each (lambda (f) (display (join-path "tests" f)) (newline))
+          (generate-tutorial-tests (join-path base-dir "documentation" "tutorials")
+                                   (join-path tests-src-dir "tests")))
 
 ;; Sync test category subdirectories
 (for-each (lambda (category)

@@ -11,6 +11,7 @@
 <header>
   <div>
     <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
   </div>
   <div class="search-wrap">
     <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
@@ -290,7 +291,23 @@
 <div class="lib-preamble">
 <h2>Overview</h2>
 <p><a class="xref" href="scm-data.html"><code>(scm data)</code></a> is a small toolkit for data analysis scripts, modelled on R's tidyverse (dplyr, tidyr, ggplot2) and pandas: <strong>read → transform → summarise → chart → report</strong>. It re-exports the <code>(scm data …)</code> libraries, so one import is enough:</p>
-<p>| Library | What it does | |---|---| | <a class="xref" href="scm-data-frame.html"><code>(scm data frame)</code></a> | column-oriented data frames (<a class="xref" href="#e228"><code>tibble</code></a>, <a class="xref" href="#e152"><code>make-df</code></a>, <a class="xref" href="#e68"><code>df-print</code></a>, …) | | <a class="xref" href="scm-data-verbs.html"><code>(scm data verbs)</code></a> | <a class="xref" href="#e239"><code>where</code></a>, <a class="xref" href="#e157"><code>mutate</code></a>, <a class="xref" href="#e223"><code>summarise</code></a>, <a class="xref" href="#e114"><code>group-by</code></a>, <a class="xref" href="#e5"><code>arrange</code></a>, joins, pivots, … | | <a class="xref" href="scm-data-expr.html"><code>(scm data expr)</code></a> | the expression language used inside the verbs | | <a class="xref" href="scm-data-stats.html"><code>(scm data stats)</code></a> | <a class="xref" href="#e155"><code>mean</code></a>, <a class="xref" href="#e156"><code>median</code></a>, <a class="xref" href="#e192"><code>quantile</code></a>, <a class="xref" href="#e214"><code>sd</code></a>, <a class="xref" href="#e13"><code>cor</code></a>, <a class="xref" href="#e111"><code>freq</code></a>, <a class="xref" href="#e16"><code>crosstab</code></a>, … | | <a class="xref" href="scm-data-tests.html"><code>(scm data tests)</code></a> | distributions and hypothesis tests as in R: <a class="xref" href="#e225"><code>t-test</code></a>, <a class="xref" href="#e10"><code>chisq-test</code></a>, <a class="xref" href="#e103"><code>fisher-test</code></a>, <a class="xref" href="#e143"><code>lm</code></a>, … | | <a class="xref" href="scm-data-format.html"><code>(scm data format)</code></a> | <a class="xref" href="#e106"><code>fmt-num</code></a>, <a class="xref" href="#e107"><code>fmt-pct</code></a>, <a class="xref" href="#e108"><code>fmt-pct-change</code></a> (Swiss separators by default) | | <a class="xref" href="scm-data-io.html"><code>(scm data io)</code></a> | CSV, XLSX, JSON, s-expression lines, SQL results, shapefiles, GeoJSON, TopoJSON | | <a class="xref" href="scm-data-plot.html"><code>(scm data plot)</code></a> | ggplot-style charts and maps to SVG, PNG and PDF | | <a class="xref" href="scm-data-report.html"><code>(scm data report)</code></a> | reports with tables and charts to HTML, Markdown and PDF | | <a class="xref" href="scm-data-core.html"><code>(scm data core)</code></a> | the missing value <a class="xref" href="#e158"><code>na</code></a>, dates, type inference |</p>
+<table>
+<thead>
+<tr><th>Library</th><th>What it does</th></tr>
+</thead>
+<tbody>
+<tr><td><a class="xref" href="scm-data-frame.html"><code>(scm data frame)</code></a></td><td>column-oriented data frames (<a class="xref" href="#e228"><code>tibble</code></a>, <a class="xref" href="#e152"><code>make-df</code></a>, <a class="xref" href="#e68"><code>df-print</code></a>, …)</td></tr>
+<tr><td><a class="xref" href="scm-data-verbs.html"><code>(scm data verbs)</code></a></td><td><a class="xref" href="#e239"><code>where</code></a>, <a class="xref" href="#e157"><code>mutate</code></a>, <a class="xref" href="#e223"><code>summarise</code></a>, <a class="xref" href="#e114"><code>group-by</code></a>, <a class="xref" href="#e5"><code>arrange</code></a>, joins, pivots, …</td></tr>
+<tr><td><a class="xref" href="scm-data-expr.html"><code>(scm data expr)</code></a></td><td>the expression language used inside the verbs</td></tr>
+<tr><td><a class="xref" href="scm-data-stats.html"><code>(scm data stats)</code></a></td><td><a class="xref" href="#e155"><code>mean</code></a>, <a class="xref" href="#e156"><code>median</code></a>, <a class="xref" href="#e192"><code>quantile</code></a>, <a class="xref" href="#e214"><code>sd</code></a>, <a class="xref" href="#e13"><code>cor</code></a>, <a class="xref" href="#e111"><code>freq</code></a>, <a class="xref" href="#e16"><code>crosstab</code></a>, …</td></tr>
+<tr><td><a class="xref" href="scm-data-tests.html"><code>(scm data tests)</code></a></td><td>distributions and hypothesis tests as in R: <a class="xref" href="#e225"><code>t-test</code></a>, <a class="xref" href="#e10"><code>chisq-test</code></a>, <a class="xref" href="#e103"><code>fisher-test</code></a>, <a class="xref" href="#e143"><code>lm</code></a>, …</td></tr>
+<tr><td><a class="xref" href="scm-data-format.html"><code>(scm data format)</code></a></td><td><a class="xref" href="#e106"><code>fmt-num</code></a>, <a class="xref" href="#e107"><code>fmt-pct</code></a>, <a class="xref" href="#e108"><code>fmt-pct-change</code></a> (Swiss separators by default)</td></tr>
+<tr><td><a class="xref" href="scm-data-io.html"><code>(scm data io)</code></a></td><td>CSV, XLSX, JSON, s-expression lines, SQL results, shapefiles, GeoJSON, TopoJSON</td></tr>
+<tr><td><a class="xref" href="scm-data-plot.html"><code>(scm data plot)</code></a></td><td>ggplot-style charts and maps to SVG, PNG and PDF</td></tr>
+<tr><td><a class="xref" href="scm-data-report.html"><code>(scm data report)</code></a></td><td>reports with tables and charts to HTML, Markdown and PDF</td></tr>
+<tr><td><a class="xref" href="scm-data-core.html"><code>(scm data core)</code></a></td><td>the missing value <a class="xref" href="#e158"><code>na</code></a>, dates, type inference</td></tr>
+</tbody>
+</table>
 <p>It covers the everyday 80 % of analysis work and deliberately stops there: no lazy evaluation, no modelling beyond linear models and the classic tests, no interactive charts.</p>
 <p><a class="xref" href="scm-data-r.html"><code>(scm data r)</code></a>, imported on its own, translates analysis code between R (tidyverse) and <a class="xref" href="scm-data.html"><code>(scm data)</code></a> in both directions.</p>
 <h2>Common uses</h2>

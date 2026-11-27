@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The system: programs, environment, platform — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html" class="active">The system: programs, environment, platform</a>
+    <a class="sub" href="#running-a-program">Running a program</a>
+    <a class="sub" href="#finding-programs">Finding programs</a>
+    <a class="sub" href="#the-environment">The environment</a>
+    <a class="sub" href="#the-platform">The platform</a>
+    <a class="sub" href="#exit-codes">Exit codes</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#techniques">Techniques</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">The system: programs, environment, platform</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="the-system-programs-environment-platform">The system: programs, environment, platform</h1>
+<pre><code class="language-scheme">(import (scheme base) (scheme process-context) (scm system) (scm fs))</code></pre>
+<h2 id="running-a-program">Running a program</h2>
+<p><a class="xref" href="scm-system.html"><code>(scm system)</code></a> runs external programs. The command is a list: the program followed by its arguments, so there is no shell quoting to get wrong:</p>
+<pre><code class="language-scheme no-test">(run-program '("git" "status" "--short"))           ; =&gt; exit code, output to the terminal
+(run-program/capture '("git" "rev-parse" "HEAD"))
+; =&gt; (0 "f6c17e5...\n" "")                           exit code, stdout, stderr
+(sh "date" "+%Y")                                    ; =&gt; "2025\n", error on failure</code></pre>
+<ul>
+<li><code>run-program</code> lets the program use the terminal and returns its exit</li>
+</ul>
+<p>code;</p>
+<ul>
+<li><code>run-program/capture</code> returns <code>(exit-code stdout stderr)</code>;</li>
+<li><code>sh</code> returns standard output and raises an error if the program fails.</li>
+</ul>
+<p>Options go in an alist: a working directory, text for standard input, extra environment variables:</p>
+<pre><code class="language-scheme no-test">(run-program/capture '("sort")
+                     '((stdin . "pear\napple\nfig\n")))
+; =&gt; (0 "apple\nfig\npear\n" "")
+
+(run-program '("make" "test")
+             '((work-dir . "/home/me/project")
+               (env . (("CI" "1")))))</code></pre>
+<h3 id="example-the-current-git-commit-safely">Example: the current git commit, safely</h3>
+<pre><code class="language-scheme no-test">(define (git-commit dir)
+  (let ((r (run-program/capture '("git" "rev-parse" "--short" "HEAD")
+                                `((work-dir . ,dir)))))
+    (and r
+         (= (car r) 0)
+         (string-trim-right-newline (cadr r)))))
+
+(define (string-trim-right-newline s)
+  (if (and (&gt; (string-length s) 0)
+           (char=? (string-ref s (- (string-length s) 1)) #\newline))
+      (substring s 0 (- (string-length s) 1))
+      s))</code></pre>
+<p><code>run-program/capture</code> returns <code>#f</code> when the program cannot be started at all (for example because it is not installed), and a non-zero exit code when it ran and failed. Checking both makes tools robust.</p>
+<h2 id="finding-programs">Finding programs</h2>
+<pre><code class="language-scheme no-test">(which "git")          ; =&gt; "/usr/bin/git", or #f</code></pre>
+<p>Check with <code>which</code> before relying on a tool, and give a clear message when it is missing.</p>
+<h2 id="the-environment">The environment</h2>
+<pre><code class="language-scheme">(string? (get-environment-variable "PATH")) ;; =&gt; #t
+(list? (get-environment-variables))         ;; =&gt; #t
+(pair? (assoc "PATH" (get-environment-variables))) ;; =&gt; #t</code></pre>
+<p>Programs started with <code>run-program</code> inherit the environment, plus what the <code>env</code> option adds.</p>
+<h2 id="the-platform">The platform</h2>
+<pre><code class="language-scheme">(symbol? (sys-platform))                    ;; =&gt; #t
+(&gt; (sys-num-cpu-cores) 0)                   ;; =&gt; #t
+(string? (special-folder-user-home))        ;; =&gt; #t
+(string? (special-folder-temp))             ;; =&gt; #t</code></pre>
+<p><code>sys-platform</code> is <code>linux</code>, <code>windows</code> or <code>macos</code>; use it (or <a class="xref" href="scheme-base.html#e53"><code>cond-expand</code></a> with the features from <code>(features)</code>) where a program must behave differently. <code>special-folder-user-home</code>, <code>special-folder-temp</code> and <code>special-folder-application-data</code> give the right places for user files, temporary files and settings on every platform.</p>
+<p>The number of cores is a good default for the size of a thread pool (see <a href="tutorial-techniques-11-concurrency.html">concurrency</a>).</p>
+<h2 id="exit-codes">Exit codes</h2>
+<p><a class="xref" href="scheme-process-context.html#e2"><code>exit</code></a> ends the program; a number is the exit status, <code>#t</code> means success and <code>#f</code> failure:</p>
+<pre><code class="language-scheme no-test">(exit 0)      ; success
+(exit 2)      ; e.g. "usage error"
+(exit #f)     ; failure</code></pre>
+<p><a class="xref" href="scheme-process-context.html#e1"><code>emergency-exit</code></a> ends immediately without running <code>dynamic-wind</code> after thunks, for the rare cases where cleanup itself might hang.</p>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li>That ends the techniques. Continue with the library tutorials in the</li>
+</ul>
+<p><a href="tutorials.html">index</a>.</p>
+<ul>
+<li><a class="xref" href="scm-system.html"><code>(scm system)</code></a>, <a class="xref" href="scheme-process-context.html"><code>(scheme process-context)</code></a>, <a class="xref" href="scm-fs.html"><code>(scm fs)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scm-system.html"><code>(scm system)</code></a>, <a href="scheme-process-context.html"><code>(scheme process-context)</code></a>, <a href="scm-fs.html"><code>(scm fs)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-techniques-11-concurrency.html">&larr; Concurrency</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

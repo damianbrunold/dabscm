@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Libraries and programs — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html" class="active">Libraries and programs</a>
+    <a class="sub" href="#programs-import-what-they-use">Programs import what they use</a>
+    <a class="sub" href="#writing-a-library">Writing a library</a>
+    <a class="sub" href="#how-libraries-are-found">How libraries are found</a>
+    <a class="sub" href="#project-layout">Project layout</a>
+    <a class="sub" href="#include">include</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#basics">Basics</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">Libraries and programs</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="libraries-and-programs">Libraries and programs</h1>
+<h2 id="programs-import-what-they-use">Programs import what they use</h2>
+<p>A program starts with <a class="xref" href="scm-module.html#e10"><code>import</code></a>. Nothing is available that is not imported, which keeps programs explicit and portable:</p>
+<pre><code class="language-scheme">(import (scheme base)
+        (scheme write)
+        (only (srfi 1) iota fold)
+        (prefix (srfi 13) s13:))
+
+(fold + 0 (iota 5))               ;; =&gt; 10
+(s13:string-pad "7" 3 #\0)        ;; =&gt; "007"</code></pre>
+<p>The import set can be narrowed or adapted:</p>
+<table>
+<thead>
+<tr><th>form</th><th>effect</th></tr>
+</thead>
+<tbody>
+<tr><td><code>(only lib a b)</code></td><td>import only <code>a</code> and <code>b</code></td></tr>
+<tr><td><code>(except lib a)</code></td><td>everything but <code>a</code></td></tr>
+<tr><td><code>(prefix lib p:)</code></td><td>every name gets the prefix <code>p:</code></td></tr>
+<tr><td><code>(rename lib (a b))</code></td><td>import <code>a</code> under the name <code>b</code></td></tr>
+</tbody>
+</table>
+<p>They nest: <code>(prefix (only (srfi 13) string-pad) s:)</code> imports one name as <code>s:string-pad</code>.</p>
+<p>A program must not import one name from two libraries that define it differently, and must not redefine an imported name. <a class="xref" href="srfi-13.html"><code>(srfi 13)</code></a> and <a class="xref" href="srfi-69.html"><code>(srfi 69)</code></a> both export a <code>string-hash</code>, for instance, and <a class="xref" href="scheme-base.html"><code>(scheme base)</code></a> already has <a class="xref" href="scheme-base.html#e176"><code>square</code></a>. <code>scm</code> is lenient about this by default (the last import wins), <code>scm --strict</code> reports it as an error, as R7RS asks. Use <code>only</code> or <code>except</code> to import just what you need, and run your programs with <code>--strict</code> now and then.</p>
+<h2 id="writing-a-library">Writing a library</h2>
+<p>A library lists what it exports and imports, then its definitions. Save this as <code>geometry/shapes.sld</code>:</p>
+<pre><code class="language-scheme no-test">(define-library (geometry shapes)
+  (export make-circle make-rect area perimeter)
+  (import (scheme base))
+  (begin
+    (define-record-type shape
+      (%make-shape kind a b)
+      shape?
+      (kind shape-kind) (a shape-a) (b shape-b))
+
+    (define pi 3.141592653589793)
+
+    (define (make-circle r) (%make-shape 'circle r #f))
+    (define (make-rect w h) (%make-shape 'rect w h))
+
+    (define (area s)
+      (case (shape-kind s)
+        ((circle) (* pi (shape-a s) (shape-a s)))
+        ((rect) (* (shape-a s) (shape-b s)))))
+
+    (define (perimeter s)
+      (case (shape-kind s)
+        ((circle) (* 2 pi (shape-a s)))
+        ((rect) (* 2 (+ (shape-a s) (shape-b s))))))))</code></pre>
+<p>and use it from a program next to the <code>geometry</code> directory:</p>
+<pre><code class="language-scheme no-test">(import (scheme base) (scheme write) (geometry shapes))
+
+(display (area (make-rect 3 4)))   ; 12
+(newline)</code></pre>
+<p>Only the exported names are visible to the program: <code>%make-shape</code>, <code>shape-kind</code> and <code>pi</code> stay private, so the library can change them later without breaking anybody.</p>
+<h2 id="how-libraries-are-found">How libraries are found</h2>
+<p>A library name maps to a file: <code>(geometry shapes)</code> is <code>geometry/shapes.sld</code> or <code>geometry-shapes.sld</code>, searched in the directory of the program, then in the search path. dabscm's own libraries use the second form: <a class="xref" href="scm-data-frame.html"><code>(scm data frame)</code></a> is <code>scm-data-frame.sld</code>.</p>
+<p><a class="xref" href="scm-module.html"><code>(scm module)</code></a> lets a program add directories to the search path before it imports from them:</p>
+<pre><code class="language-scheme no-test">(import (scheme base) (scm module))
+(module-search-path! (cons "lib" (module-search-path)))
+(import (myapp config))</code></pre>
+<h2 id="project-layout">Project layout</h2>
+<p>A typical small project:</p>
+<pre><code class="language-text">myapp/
+  main.scm            the program
+  myapp/config.sld    (myapp config)
+  myapp/db.sld        (myapp db)
+  tests/
+    test-config.scm   a program importing (myapp config) and (scm test)
+  scm-tools.toml      settings for scm fmt and scm lint</code></pre>
+<p>Keep each library small and focused on one thing; a library per file makes the dependency graph visible in the import lists. <code>scm lint</code> reports unused and conflicting imports, which keeps those lists honest.</p>
+<h2 id="include">include</h2>
+<p><a class="xref" href="scheme-base.html#e94"><code>include</code></a> pastes another file's text into a library body, useful for large data tables or generated code:</p>
+<pre><code class="language-scheme no-test">(define-library (myapp tables)
+  (export country-codes)
+  (import (scheme base))
+  (include "country-codes.scm"))</code></pre>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>.</li>
+<li><a href="tutorial-techniques-10-testing.html">Testing your code</a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scheme-base.html"><code>(scheme base)</code></a>, <a href="scm-module.html"><code>(scm module)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-basics-09-errors.html">&larr; Errors and exceptions</a>
+  <a class="next" href="tutorial-basics-11-macros.html">Macros and pattern matching &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

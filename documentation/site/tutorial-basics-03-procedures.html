@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Definitions and procedures — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html" class="active">Definitions and procedures</a>
+    <a class="sub" href="#naming-things-with-define">Naming things with define</a>
+    <a class="sub" href="#lambda-procedures-as-values">lambda: procedures as values</a>
+    <a class="sub" href="#local-variables-let-let-letrec">Local variables: let, let*, letrec</a>
+    <a class="sub" href="#optional-and-rest-arguments">Optional and rest arguments</a>
+    <a class="sub" href="#several-arities-case-lambda">Several arities: case-lambda</a>
+    <a class="sub" href="#assignment">Assignment</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#basics">Basics</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">Definitions and procedures</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="definitions-and-procedures">Definitions and procedures</h1>
+<h2 id="naming-things-with-define">Naming things with define</h2>
+<p><a class="xref" href="scheme-base.html#e58"><code>define</code></a> gives a name to a value. With a list after it, it defines a procedure:</p>
+<pre><code class="language-scheme">(import (scheme base) (scheme case-lambda))
+
+(define vat-rate 81/1000)
+
+(define (with-vat amount)
+  (* amount (+ 1 vat-rate)))
+
+(with-vat 100)          ;; =&gt; 1081/10
+(inexact (with-vat 100)) ;; =&gt; 108.1</code></pre>
+<p>The exact rate <code>81/1000</code> keeps the computation exact, so no rounding errors creep into money amounts until we decide to convert.</p>
+<h2 id="lambda-procedures-as-values">lambda: procedures as values</h2>
+<p><code>(define (f x) ...)</code> is shorthand for <code>(define f (lambda (x) ...))</code>. A <a class="xref" href="scheme-base.html#e102"><code>lambda</code></a> expression creates a procedure without naming it, which is handy when passing behaviour to another procedure:</p>
+<pre><code class="language-scheme">(define cube (lambda (x) (* x x x)))
+(cube 3)                           ;; =&gt; 27
+(map (lambda (x) (* x 10)) '(1 2 3)) ;; =&gt; (10 20 30)
+((lambda (a b) (- a b)) 10 3)      ;; =&gt; 7</code></pre>
+<p>Procedures are values like numbers or strings: you can store them in lists, pass them as arguments and return them as results. The <a href="tutorial-basics-07-higher-order.html">higher-order programming</a> chapter makes much of that.</p>
+<h2 id="local-variables-let-let-letrec">Local variables: let, let*, letrec</h2>
+<p><a class="xref" href="scheme-base.html#e105"><code>let</code></a> binds names for the duration of its body. All values are computed first, then bound, so one binding cannot see another:</p>
+<pre><code class="language-scheme">(define (circle-stats r)
+  (let ((pi 3.14159)
+        (r2 (* r r)))
+    (list (* 2 pi r) (* pi r2))))
+
+(circle-stats 2)                   ;; =&gt; (12.56636 12.56636)</code></pre>
+<p><a class="xref" href="scheme-base.html#e106"><code>let*</code></a> binds one after the other, so later bindings can use earlier ones:</p>
+<pre><code class="language-scheme">(define (price-summary net)
+  (let* ((vat (* net vat-rate))
+         (gross (+ net vat)))
+    (list net vat gross)))
+
+(price-summary 200)                ;; =&gt; (200 81/5 1081/5)</code></pre>
+<p><a class="xref" href="scheme-base.html#e110"><code>letrec</code></a> (and internal <a class="xref" href="scheme-base.html#e58"><code>define</code></a>s, which mean the same) let local procedures refer to each other, for example for mutual recursion:</p>
+<pre><code class="language-scheme">(define (parity n)
+  (define (even? n) (if (= n 0) #t (odd? (- n 1))))
+  (define (odd? n) (if (= n 0) #f (even? (- n 1))))
+  (if (even? n) 'even 'odd))
+
+(parity 7)                         ;; =&gt; odd
+(parity 10)                        ;; =&gt; even</code></pre>
+<p>Internal definitions are the usual way to give a procedure helpers that nobody else needs.</p>
+<h2 id="optional-and-rest-arguments">Optional and rest arguments</h2>
+<p>A dot before the last parameter collects any remaining arguments in a list:</p>
+<pre><code class="language-scheme">(define (average first . rest)
+  (/ (apply + first rest) (+ 1 (length rest))))
+
+(average 4)                        ;; =&gt; 4
+(average 1 2 3 4)                  ;; =&gt; 5/2</code></pre>
+<p><code>apply</code> calls a procedure with arguments taken from a list; together with rest parameters it lets you forward any number of arguments.</p>
+<p>A lambda with a single symbol instead of a parameter list takes all arguments as a list:</p>
+<pre><code class="language-scheme">(define (count-args . args) (length args))
+(count-args)                       ;; =&gt; 0
+(count-args 'a 'b 'c)              ;; =&gt; 3</code></pre>
+<h2 id="several-arities-case-lambda">Several arities: case-lambda</h2>
+<p><a class="xref" href="scheme-case-lambda.html#e0"><code>case-lambda</code></a> picks the body by the number of arguments, which is the clean way to write optional parameters with defaults:</p>
+<pre><code class="language-scheme">(define greeting
+  (case-lambda
+    ((name) (greeting name "Hello"))
+    ((name word) (string-append word ", " name "!"))))
+
+(greeting "Ada")                   ;; =&gt; "Hello, Ada!"
+(greeting "Ada" "Welcome")         ;; =&gt; "Welcome, Ada!"</code></pre>
+<h2 id="assignment">Assignment</h2>
+<p><a class="xref" href="scheme-base.html#e173"><code>set!</code></a> changes the value of an existing variable. Scheme programs use it sparingly; most code computes new values instead of changing old ones. One good use is a counter hidden inside a procedure:</p>
+<pre><code class="language-scheme">(define make-ticket-counter
+  (lambda ()
+    (let ((n 0))
+      (lambda ()
+        (set! n (+ n 1))
+        n))))
+
+(define next-ticket (make-ticket-counter))
+(next-ticket)                      ;; =&gt; 1
+(next-ticket)                      ;; =&gt; 2
+(define other (make-ticket-counter))
+(other)                            ;; =&gt; 1</code></pre>
+<p>Each call of <code>make-ticket-counter</code> creates a new <code>n</code>, and the returned procedure keeps it alive: that is a <em>closure</em>. Closures are how Scheme hides state without classes.</p>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-basics-04-lists.html">Pairs and lists</a>, the data structure Scheme is famous for.</li>
+<li>Reference: <a class="xref" href="scheme-base.html"><code>(scheme base)</code></a> for <a class="xref" href="scheme-base.html#e58"><code>define</code></a>, <a class="xref" href="scheme-base.html#e102"><code>lambda</code></a>, <a class="xref" href="scheme-base.html#e105"><code>let</code></a>; <a class="xref" href="scheme-case-lambda.html"><code>(scheme case-lambda)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scheme-base.html"><code>(scheme base)</code></a>, <a href="scheme-case-lambda.html"><code>(scheme case-lambda)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-basics-02-values.html">&larr; Expressions and values</a>
+  <a class="next" href="tutorial-basics-04-lists.html">Pairs and lists &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

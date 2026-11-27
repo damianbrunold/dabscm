@@ -1,5 +1,7 @@
 # Scm Library Reference
 
+New to dabscm or Scheme? Start with the [tutorials](tutorials/README.md).
+
 ## R7RS Standard Libraries
 
 | Library | Description |

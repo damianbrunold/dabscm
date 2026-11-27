@@ -1,7 +1,7 @@
 /* Search and per-page filtering for the scm library reference site.
  *
  * Data is provided by search-index.js as window.SEARCH_INDEX: an array of
- *   { k: "lib"|"sym", n: name, l: context label, id: lib-id, a: anchor }
+ *   { k: "tut"|"lib"|"sym", n: name, l: context label, id: page id, a: anchor }
  * Loaded as a plain <script> (not fetched) so the site works from file://. */
 (function () {
   'use strict';
@@ -32,7 +32,7 @@
     out.forEach(function (e) {
       var a = document.createElement('a');
       a.className = 'search-result';
-      a.href = e.k === 'lib' ? (e.id + '.html') : (e.id + '.html#' + e.a);
+      a.href = (e.k === 'lib' || !e.a) ? (e.id + '.html') : (e.id + '.html#' + e.a);
       a.innerHTML =
         '<span class="sr-kind sr-' + e.k + '">' + e.k + '</span>' +
         '<span class="sr-name">' + escapeHtml(e.n) + '</span>' +

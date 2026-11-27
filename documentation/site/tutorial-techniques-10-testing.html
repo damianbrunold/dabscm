@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Testing your code — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html" class="active">Testing your code</a>
+    <a class="sub" href="#the-checks">The checks</a>
+    <a class="sub" href="#groups">Groups</a>
+    <a class="sub" href="#testing-output">Testing output</a>
+    <a class="sub" href="#testing-with-files">Testing with files</a>
+    <a class="sub" href="#layout-and-running">Layout and running</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#techniques">Techniques</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">Testing your code</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="testing-your-code">Testing your code</h1>
+<p><a class="xref" href="scm-test.html"><code>(scm test)</code></a> is SRFI 64, the standard Scheme test library, with a test runner that prints a compact summary. A test file is an ordinary program:</p>
+<pre><code class="language-scheme no-test">(import (scheme base) (scm test) (myapp prices))
+
+(test-runner-factory scm-test-runner)
+(test-begin "prices")
+
+(test-equal "net to gross" 108.1 (with-vat 100))
+(test-assert "positive" (&gt; (with-vat 1) 0))
+(test-error "negative amount" (with-vat -1))
+
+(test-end "prices")</code></pre>
+<pre><code class="language-sh">$ scm tests/test-prices.scm
+  prices                       3 OK</code></pre>
+<p>The program's exit status is non-zero when a test fails, so build scripts and CI can rely on it.</p>
+<h2 id="the-checks">The checks</h2>
+<pre><code class="language-scheme">(import (scheme base) (scheme write) (scheme inexact) (scm test))
+
+(test-runner-factory scm-test-runner)
+(test-begin "checks")
+
+(test-equal "equal? comparison" '(1 2 3) (list 1 2 3))
+(test-eqv "eqv? comparison" 42 (* 6 7))
+(test-assert "any true value" (memq 'b '(a b c)))
+(test-approximate "floating point" 3.14159 (* 4 (atan 1)) 0.00001)
+(test-error "must raise" (vector-ref (vector) 0))
+(test-error "a specific kind" error-object? (error "boom"))</code></pre>
+<p><code>test-equal</code> is the workhorse: give it the expected value first and the expression second. A name in front makes failures easy to find. For floating-point results, <code>test-approximate</code> with a tolerance avoids surprises from rounding.</p>
+<h2 id="groups">Groups</h2>
+<p><code>test-group</code> gives a block of checks a name, which appears in failure messages:</p>
+<pre><code class="language-scheme">(define (fizzbuzz n)
+  (cond ((= 0 (modulo n 15)) "FizzBuzz")
+        ((= 0 (modulo n 3)) "Fizz")
+        ((= 0 (modulo n 5)) "Buzz")
+        (else (number-&gt;string n))))
+
+(test-group "fizzbuzz"
+  (test-equal "1" (fizzbuzz 1))
+  (test-equal "Fizz" (fizzbuzz 9))
+  (test-equal "Buzz" (fizzbuzz 10))
+  (test-equal "FizzBuzz" (fizzbuzz 30)))</code></pre>
+<h2 id="testing-output">Testing output</h2>
+<p>Code that prints can be tested by redirecting the output port into a string:</p>
+<pre><code class="language-scheme">(define (greet name) (display "Hello, ") (display name) (display "!"))
+
+(define (output-of thunk)
+  (let ((p (open-output-string)))
+    (parameterize ((current-output-port p)) (thunk))
+    (get-output-string p)))
+
+(test-equal "Hello, Ada!" (output-of (lambda () (greet "Ada"))))</code></pre>
+<p>Better still is to separate computing from printing, as the <a href="tutorial-techniques-09-command-line.html">command-line</a> chapter does: procedures that return strings or take a port are easy to test.</p>
+<h2 id="testing-with-files">Testing with files</h2>
+<p>Use a temporary directory and remove it at the end, so tests can run in parallel and leave nothing behind:</p>
+<pre><code class="language-scheme">(import (scheme file) (scm fs))
+
+(define (read-lines path)
+  (call-with-input-file path
+    (lambda (in)
+      (let loop ((acc '()))
+        (let ((l (read-line in)))
+          (if (eof-object? l) (reverse acc) (loop (cons l acc))))))))
+
+(define dir (mktempdir '(prefix . "test")))
+(call-with-output-file (join-path dir "in.txt")
+  (lambda (out) (display "x\ny\n" out)))
+(test-equal '("x" "y") (read-lines (join-path dir "in.txt")))
+(rm dir 'recursive)</code></pre>
+<pre><code class="language-scheme">(test-end "checks")</code></pre>
+<h2 id="layout-and-running">Layout and running</h2>
+<pre><code class="language-text">myapp/
+  myapp/prices.sld
+  tests/
+    test-prices.scm
+    test-orders.scm</code></pre>
+<p>Run each test file with <code>scm</code>, <code>scmcs</code> and, compiled, with <code>scmc</code>, to be sure the code works on all three implementations:</p>
+<pre><code class="language-sh">$ for f in tests/test-*.scm; do scm "$f" || exit 1; done
+$ scmc tests/test-prices.scm -o /tmp/t &amp;&amp; /tmp/t</code></pre>
+<p>Write tests while you write the code. Every example in these tutorials is itself a test: the documentation build turns each tutorial into a test program, and dabscm's test suites run it on the JVM, .NET and native.</p>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-techniques-11-concurrency.html">Concurrency</a>.</li>
+<li><a class="xref" href="scm-test.html"><code>(scm test)</code></a>, <a href="srfi-64.html">SRFI 64</a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scm-test.html"><code>(scm test)</code></a>, <a href="srfi-64.html"><code>(srfi 64)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-techniques-09-command-line.html">&larr; Command-line programs</a>
+  <a class="next" href="tutorial-techniques-11-concurrency.html">Concurrency &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

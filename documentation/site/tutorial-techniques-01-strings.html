@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Strings and text — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html" class="active">Strings and text</a>
+    <a class="sub" href="#building-strings">Building strings</a>
+    <a class="sub" href="#searching">Searching</a>
+    <a class="sub" href="#splitting-and-joining">Splitting and joining</a>
+    <a class="sub" href="#trimming-and-padding">Trimming and padding</a>
+    <a class="sub" href="#replacing">Replacing</a>
+    <a class="sub" href="#regular-expressions">Regular expressions</a>
+    <a class="sub" href="#formatting-values">Formatting values</a>
+    <a class="sub" href="#string-ports">String ports</a>
+    <a class="sub" href="#templates">Templates</a>
+    <a class="sub" href="#example-word-frequencies">Example: word frequencies</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#techniques">Techniques</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">Strings and text</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="strings-and-text">Strings and text</h1>
+<p>Text processing draws on several libraries:</p>
+<table>
+<thead>
+<tr><th>library</th><th>for</th></tr>
+</thead>
+<tbody>
+<tr><td><a class="xref" href="scheme-base.html"><code>(scheme base)</code></a></td><td>creating, comparing, slicing strings</td></tr>
+<tr><td><a class="xref" href="scheme-char.html"><code>(scheme char)</code></a></td><td>case conversion, character classes</td></tr>
+<tr><td><a class="xref" href="srfi-13.html"><code>(srfi 13)</code></a></td><td>searching, trimming, padding, joining, tokenizing</td></tr>
+<tr><td><a class="xref" href="scm-string.html"><code>(scm string)</code></a></td><td>regular expressions, splitting, replacing</td></tr>
+<tr><td><a class="xref" href="srfi-48.html"><code>(srfi 48)</code></a> / <a class="xref" href="scm-io.html"><code>(scm io)</code></a></td><td><code>format</code> and string ports</td></tr>
+<tr><td><a class="xref" href="scm-templating.html"><code>(scm templating)</code></a></td><td><code>{{placeholder}}</code> templates</td></tr>
+</tbody>
+</table>
+<pre><code class="language-scheme">(import (scheme base) (scheme char) (scheme write)
+        (srfi 13) (scm string) (srfi 48) (scm templating)
+        (only (scm io) call-with-output-string))</code></pre>
+<h2 id="building-strings">Building strings</h2>
+<pre><code class="language-scheme">(string-append "data" "/" "2025" ".csv")   ;; =&gt; "data/2025.csv"
+(string-join '("a" "b" "c") ", ")          ;; =&gt; "a, b, c"
+(make-string 5 #\*)                        ;; =&gt; "*****"
+(string-upcase "zürich")                   ;; =&gt; "ZÜRICH"
+(string-titlecase "the quick brown fox")   ;; =&gt; "The Quick Brown Fox"
+(number-&gt;string 3.75)                      ;; =&gt; "3.75"
+(symbol-&gt;string 'pending)                  ;; =&gt; "pending"</code></pre>
+<p>Strings are sequences of Unicode characters; <code>string-length</code> counts characters, not bytes.</p>
+<h2 id="searching">Searching</h2>
+<pre><code class="language-scheme">(define path "/var/log/app/2025-11-27.log")
+
+(string-prefix? "/var" path)               ;; =&gt; #t
+(string-suffix? ".log" path)               ;; =&gt; #t
+(string-contains path "app")               ;; =&gt; 9
+(string-contains path "db")                ;; =&gt; #f
+(string-index path #\-)                    ;; =&gt; 17
+(string-index-right path #\/)              ;; =&gt; 12
+(substring path 13 (string-length path))   ;; =&gt; "2025-11-27.log"</code></pre>
+<p><a class="xref" href="srfi-13.html#e24"><code>string-contains</code></a> and <a class="xref" href="srfi-13.html#e43"><code>string-index</code></a> return the position of the match, or <code>#f</code>. Together with <code>substring</code> that is the classic way to cut out a part, here the file name after the last slash.</p>
+<h2 id="splitting-and-joining">Splitting and joining</h2>
+<pre><code class="language-scheme">(string-split "2025-11-27" "-")            ;; =&gt; ("2025" "11" "27")
+(string-split "  many   spaces here ")     ;; =&gt; ("" "many" "spaces" "here" "")
+(string-tokenize "  many   spaces here ")  ;; =&gt; ("many" "spaces" "here")
+(string-split-char "a,b,,c" #\,)           ;; =&gt; ("a" "b" "" "c")
+(string-split-lines "one\ntwo\nthree")     ;; =&gt; ("one" "two" "three")
+(map string-&gt;number (string-split "1.5,2,3" ",")) ;; =&gt; (1.5 2 3)</code></pre>
+<ul>
+<li><a class="xref" href="scm-string.html#e5"><code>string-split</code></a> with a separator splits on that literal text; without one</li>
+</ul>
+<p>it splits on runs of whitespace (leading and trailing space give empty first and last fields);</p>
+<ul>
+<li><a class="xref" href="srfi-13.html#e75"><code>string-tokenize</code></a> (SRFI 13) returns only the non-empty words, which is</li>
+</ul>
+<p>usually what you want for free text;</p>
+<ul>
+<li><a class="xref" href="scm-string.html#e6"><code>string-split-char</code></a> keeps empty fields, as CSV-like data needs.</li>
+</ul>
+<h2 id="trimming-and-padding">Trimming and padding</h2>
+<pre><code class="language-scheme">(string-trim-both "   padded   ")          ;; =&gt; "padded"
+(string-trim "   left")                    ;; =&gt; "left"
+(string-trim-right "right   ")             ;; =&gt; "right"
+(string-pad "42" 6)                        ;; =&gt; "    42"
+(string-pad "42" 6 #\0)                    ;; =&gt; "000042"
+(string-pad-right "Name" 8)                ;; =&gt; "Name    "
+(string-pad "123456" 4)                    ;; =&gt; "3456"</code></pre>
+<p><a class="xref" href="srfi-13.html#e51"><code>string-pad</code></a> pads on the left (right-aligns) and cuts from the left if the string is too long; <a class="xref" href="srfi-13.html#e52"><code>string-pad-right</code></a> left-aligns.</p>
+<h2 id="replacing">Replacing</h2>
+<pre><code class="language-scheme">(string-replace-all "a.b.c" "." "/")                    ;; =&gt; "a/b/c"
+(string-replace-all-regex "call 555-1234 or 555-9876" "[0-9]{3}-[0-9]{4}" "XXX-XXXX")
+;; =&gt; "call XXX-XXXX or XXX-XXXX"</code></pre>
+<p><a class="xref" href="scm-string.html#e3"><code>string-replace-all</code></a> replaces literal text (a <code>.</code> is a dot); <a class="xref" href="scm-string.html#e4"><code>string-replace-all-regex</code></a> takes a regular expression.</p>
+<h2 id="regular-expressions">Regular expressions</h2>
+<p><a class="xref" href="scm-string.html#e2"><code>string-matches</code></a> returns the whole match and the groups, or <code>#f</code>:</p>
+<pre><code class="language-scheme">(string-matches "2025-11-27" "([0-9]{4})-([0-9]{2})-([0-9]{2})")
+;; =&gt; ("2025-11-27" "2025" "11" "27")
+
+(define (parse-date s)
+  (let ((m (string-matches s "([0-9]{4})-([0-9]{2})-([0-9]{2})")))
+    (and m (map string-&gt;number (cdr m)))))
+
+(parse-date "2025-11-27")                  ;; =&gt; (2025 11 27)
+(parse-date "27.11.2025")                  ;; =&gt; #f</code></pre>
+<p><a class="xref" href="scm-string.html#e2"><code>string-matches</code></a> must match the whole string. To find a pattern inside a longer text, use <a class="xref" href="scm-string.html#e0"><code>regex-search</code></a>. It returns a vector of <code>(start . end)</code> positions, for the whole match and each group, or <code>#f</code>:</p>
+<pre><code class="language-scheme">(define order "Order #4711 shipped")
+(define m (regex-search order "#([0-9]+)"))
+m                                          ;; =&gt; #((6 . 11) (7 . 11))
+(let ((group (vector-ref m 1)))
+  (substring order (car group) (cdr group))) ;; =&gt; "4711"
+(regex-search order "[A-Z]{3}")            ;; =&gt; #f</code></pre>
+<p>dabscm accepts the regular-expression syntax that Java and .NET have in common, so a pattern means the same everywhere.</p>
+<h2 id="formatting-values">Formatting values</h2>
+<p><code>format</code> (SRFI 48) fills a template; <code>#f</code> as the first argument returns a string:</p>
+<pre><code class="language-scheme">(format #f "~a items, total ~a" 3 21.7)     ;; =&gt; "3 items, total 21.7"
+(format #f "~s" "quoted")                   ;; =&gt; "\"quoted\""
+(format #f "hex ~x, binary ~b" 255 5)       ;; =&gt; "hex ff, binary 101"</code></pre>
+<p>For money and other fixed decimals, round with exact arithmetic and pad:</p>
+<pre><code class="language-scheme">(define (fixed x places)
+  (let* ((factor (expt 10 places))
+         (n (exact (round (* (abs x) factor))))
+         (whole (quotient n factor))
+         (frac (remainder n factor)))
+    (string-append (if (&lt; x 0) "-" "")
+                   (number-&gt;string whole)
+                   "."
+                   (string-pad (number-&gt;string frac) places #\0))))
+
+(fixed 3.14159 2)                           ;; =&gt; "3.14"
+(fixed 2.5 2)                               ;; =&gt; "2.50"
+(fixed -0.125 2)                            ;; =&gt; "-0.12"
+(fixed 1081/10 2)                           ;; =&gt; "108.10"</code></pre>
+<h3 id="a-text-table">A text table</h3>
+<p>Padding gives aligned columns for reports in a terminal or a log:</p>
+<pre><code class="language-scheme">(define rows '(("apples" 3 1.5) ("bread" 1 3.2) ("cheese" 2 13.8)))
+
+(define (row-&gt;line row)
+  (string-append (string-pad-right (car row) 10)
+                 (string-pad (number-&gt;string (cadr row)) 4)
+                 (string-pad (fixed (caddr row) 2) 9)))
+
+(for-each (lambda (r) (display (row-&gt;line r)) (newline)) rows)
+;; prints: apples       3     1.50
+;; prints: bread        1     3.20
+;; prints: cheese       2    13.80</code></pre>
+<h2 id="string-ports">String ports</h2>
+<p>A string port collects output; <a class="xref" href="scm-io.html#e2"><code>call-with-output-string</code></a> gives you one and returns what was written. That is the efficient way to build a long string piece by piece:</p>
+<pre><code class="language-scheme">(call-with-output-string
+  (lambda (out)
+    (for-each (lambda (n) (write n out) (display " " out)) '(1 2 3))))
+;; =&gt; "1 2 3 "
+
+(define in (open-input-string "first line\nsecond line\n"))
+(read-line in)                              ;; =&gt; "first line"
+(read-line in)                              ;; =&gt; "second line"
+(eof-object? (read-line in))                ;; =&gt; #t</code></pre>
+<p><a class="xref" href="scheme-base.html#e142"><code>open-input-string</code></a> turns a string into an input port, so code written for files also works on strings, which is handy in tests.</p>
+<h2 id="templates">Templates</h2>
+<p><a class="xref" href="scm-templating.html"><code>(scm templating)</code></a> replaces <code>{{name}}</code> placeholders from an alist:</p>
+<pre><code class="language-scheme">(template-render "Dear {{name}}, your order {{id}} has shipped."
+                 '(("name" . "Ada") ("id" . "4711")))
+;; =&gt; "Dear Ada, your order 4711 has shipped."</code></pre>
+<h2 id="example-word-frequencies">Example: word frequencies</h2>
+<p>Count the words of a text, case-insensitively, and list the most common ones. A hash table does the counting (see <a href="tutorial-techniques-04-hash-tables.html">hash tables</a>):</p>
+<pre><code class="language-scheme">(import (srfi 14) (only (srfi 69) make-hash-table hash-table-update!/default hash-table-&gt;alist) (srfi 132))
+
+(define text
+  "The cat sat on the mat. The dog sat on the log. A cat and a dog.")
+
+(define (words s)
+  (string-tokenize (string-downcase s) char-set:letter))
+
+(define (frequencies ws)
+  (let ((t (make-hash-table string=? string-hash)))
+    (for-each (lambda (w) (hash-table-update!/default t w (lambda (n) (+ n 1)) 0))
+              ws)
+    (hash-table-&gt;alist t)))
+
+(define (top n counts)
+  (let ((sorted (list-sort (lambda (a b)
+                             (or (&gt; (cdr a) (cdr b))
+                                 (and (= (cdr a) (cdr b)) (string&lt;? (car a) (car b)))))
+                           counts)))
+    (if (&gt; (length sorted) n) (list-head sorted n) sorted)))
+
+(define (list-head l n) (if (= n 0) '() (cons (car l) (list-head (cdr l) (- n 1)))))
+
+(length (words text))                       ;; =&gt; 17
+(top 4 (frequencies (words text)))
+;; =&gt; (("the" . 4) ("a" . 2) ("cat" . 2) ("dog" . 2))</code></pre>
+<p><a class="xref" href="srfi-13.html#e75"><code>string-tokenize</code></a> with <a class="xref" href="srfi-14.html#e46"><code>char-set:letter</code></a> (SRFI 14) treats everything that is not a letter as a separator, so punctuation disappears. Ties are sorted alphabetically, so the result does not depend on the hash table's order.</p>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>.</li>
+<li><a href="srfi-13.html">SRFI 13</a>, <a href="scm-string.html"><a class="xref" href="scm-string.html"><code>(scm string)</code></a></a>, <a href="scm-text.html"><a class="xref" href="scm-text.html"><code>(scm text)</code></a></a></li>
+</ul>
+<p>for awk/grep/sed-style processing of whole files.</p>
+</div>
+<p class="tutorial-libs">Reference: <a href="scheme-base.html"><code>(scheme base)</code></a>, <a href="scheme-char.html"><code>(scheme char)</code></a>, <a href="srfi-13.html"><code>(srfi 13)</code></a>, <a href="scm-string.html"><code>(scm string)</code></a>, <a href="scm-io.html"><code>(scm io)</code></a>, <a href="srfi-48.html"><code>(srfi 48)</code></a>, <a href="scm-templating.html"><code>(scm templating)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-basics-12-continuations.html">&larr; Continuations, generators and laziness</a>
+  <a class="next" href="tutorial-techniques-02-characters.html">Characters and Unicode &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

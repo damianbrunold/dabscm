@@ -11,6 +11,7 @@
 <header>
   <div>
     <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
   </div>
   <div class="search-wrap">
     <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
@@ -46,6 +47,7 @@
 
 <div class="lib-title scm">(scm xml)</div>
 <p class="lib-sub">XML file reading and navigation</p>
+<p class="lib-tutorials">Tutorials: <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a></p>
 <div class="lib-preamble">
 <h2>Overview</h2>
 <p><a class="xref" href="scm-xml.html"><code>(scm xml)</code></a> is a streaming (pull) XML reader. You open a reader over a file, string, or bytevector, then call <a class="xref" href="#e7"><code>xml-read</code></a> to advance node by node, querying the current node's type, name, value, and attributes as you go. This keeps memory use low for large documents.</p>

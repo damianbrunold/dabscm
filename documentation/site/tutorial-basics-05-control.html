@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Control flow and recursion — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html" class="active">Control flow and recursion</a>
+    <a class="sub" href="#choosing">Choosing</a>
+    <a class="sub" href="#recursion">Recursion</a>
+    <a class="sub" href="#tail-calls-and-loops">Tail calls and loops</a>
+    <a class="sub" href="#a-worked-example-the-collatz-sequence">A worked example: the Collatz sequence</a>
+    <a class="sub" href="#do-loops">do loops</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#basics">Basics</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">Control flow and recursion</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="control-flow-and-recursion">Control flow and recursion</h1>
+<h2 id="choosing">Choosing</h2>
+<p><a class="xref" href="scheme-base.html#e93"><code>if</code></a> has a condition, a "then" and an optional "else" expression. <code>cond</code> chains several conditions; the first true one wins:</p>
+<pre><code class="language-scheme">(import (scheme base) (scheme write))
+
+(define (grade points)
+  (cond ((&gt;= points 90) 'excellent)
+        ((&gt;= points 75) 'good)
+        ((&gt;= points 50) 'pass)
+        (else 'fail)))
+
+(map grade '(95 80 50 12))       ;; =&gt; (excellent good pass fail)</code></pre>
+<p><code>cond</code> has a lesser-known form, <code>=&gt;</code>: it passes the test's value to a procedure, which saves computing it twice:</p>
+<pre><code class="language-scheme">(define stock '((apples . 12) (pears . 0)))
+
+(define (in-stock item)
+  (cond ((assq item stock) =&gt; cdr)
+        (else 0)))
+
+(in-stock 'apples)               ;; =&gt; 12
+(in-stock 'plums)                ;; =&gt; 0</code></pre>
+<p><code>case</code> dispatches on a value compared with <code>eqv?</code>, good for symbols, numbers and characters:</p>
+<pre><code class="language-scheme">(define (weekday-kind day)
+  (case day
+    ((sat sun) 'weekend)
+    ((mon tue wed thu fri) 'workday)
+    (else 'unknown)))
+
+(weekday-kind 'sun)              ;; =&gt; weekend
+(weekday-kind 'wed)              ;; =&gt; workday</code></pre>
+<p><a class="xref" href="scheme-base.html#e225"><code>when</code></a> and <a class="xref" href="scheme-base.html#e209"><code>unless</code></a> run a body only if the condition holds, or does not. Use them for side effects, where <a class="xref" href="scheme-base.html#e93"><code>if</code></a> would have no "else":</p>
+<pre><code class="language-scheme">(define (warn-if-low item)
+  (when (&lt; (in-stock item) 5)
+    (display "low stock: ")
+    (display item)))
+
+(warn-if-low 'pears)             ;; prints: low stock: pears</code></pre>
+<h2 id="recursion">Recursion</h2>
+<p>A procedure that calls itself is the natural way to process a list: handle the first element, recurse on the rest, stop at the empty list.</p>
+<pre><code class="language-scheme">(define (sum xs)
+  (if (null? xs)
+      0
+      (+ (car xs) (sum (cdr xs)))))
+
+(sum '(1 2 3 4))                 ;; =&gt; 10
+
+(define (my-map f xs)
+  (if (null? xs)
+      '()
+      (cons (f (car xs)) (my-map f (cdr xs)))))
+
+(my-map (lambda (x) (* x x)) '(1 2 3)) ;; =&gt; (1 4 9)</code></pre>
+<h2 id="tail-calls-and-loops">Tail calls and loops</h2>
+<p>A call that is the last thing a procedure does is a <em>tail call</em>. Scheme guarantees that tail calls do not grow the stack, so a tail-recursive procedure is a loop and runs in constant space, for a million iterations or a billion:</p>
+<pre><code class="language-scheme">(define (sum-to n)
+  (let loop ((i 1) (acc 0))
+    (if (&gt; i n)
+        acc
+        (loop (+ i 1) (+ acc i)))))
+
+(sum-to 100)                     ;; =&gt; 5050
+(sum-to 1000000)                 ;; =&gt; 500000500000</code></pre>
+<p>This is a <em>named let</em>: <code>loop</code> is a local procedure with the variables <code>i</code> and <code>acc</code>, called right away with 1 and 0. Calling <code>loop</code> again starts the next iteration with new values. The name <code>loop</code> is only a convention.</p>
+<p>The <code>sum</code> above is not tail recursive (it adds after the recursive call returns), so it uses stack space for each element. dabscm handles deep recursion well, but the accumulator style is the safer habit for long lists.</p>
+<p>Collecting results in a loop: build the list backwards with <code>cons</code>, reverse at the end.</p>
+<pre><code class="language-scheme">(define (evens-below n)
+  (let loop ((i 0) (acc '()))
+    (cond ((&gt;= i n) (reverse acc))
+          ((even? i) (loop (+ i 1) (cons i acc)))
+          (else (loop (+ i 1) acc)))))
+
+(evens-below 10)                 ;; =&gt; (0 2 4 6 8)</code></pre>
+<h2 id="a-worked-example-the-collatz-sequence">A worked example: the Collatz sequence</h2>
+<p>Start with n; if it is even, halve it, otherwise take 3n + 1; stop at 1. Nobody has proved that every start reaches 1, but all tested ones do:</p>
+<pre><code class="language-scheme">(define (collatz n)
+  (let loop ((n n) (steps '()))
+    (cond ((= n 1) (reverse (cons 1 steps)))
+          ((even? n) (loop (quotient n 2) (cons n steps)))
+          (else (loop (+ (* 3 n) 1) (cons n steps))))))
+
+(collatz 6)                      ;; =&gt; (6 3 10 5 16 8 4 2 1)
+(length (collatz 27))            ;; =&gt; 112
+
+(define (longest-collatz-below limit)
+  (let loop ((n 1) (best 1) (best-len 1))
+    (if (&gt;= n limit)
+        (list best best-len)
+        (let ((len (length (collatz n))))
+          (if (&gt; len best-len)
+              (loop (+ n 1) n len)
+              (loop (+ n 1) best best-len))))))
+
+(longest-collatz-below 1000)     ;; =&gt; (871 179)</code></pre>
+<h2 id="do-loops">do loops</h2>
+<p><code>do</code> is the classic iteration form: variables with their start values and step expressions, an end test with a result, and a body:</p>
+<pre><code class="language-scheme">(define (multiplication-row n)
+  (do ((i 1 (+ i 1))
+       (acc '() (cons (* n i) acc)))
+      ((&gt; i 5) (reverse acc))))
+
+(multiplication-row 7)           ;; =&gt; (7 14 21 28 35)
+
+(do ((i 1 (+ i 1))) ((&gt; i 3))
+  (display i)
+  (display ";"))                 ;; prints: 1;2;3;</code></pre>
+<p>Named <a class="xref" href="scheme-base.html#e105"><code>let</code></a> is usually clearer than <code>do</code>, but <code>do</code> reads well for counting loops with side effects.</p>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>.</li>
+<li><a href="tutorial-techniques-06-iteration.html">Iteration patterns</a> for folds, generators and</li>
+</ul>
+<p>vector loops.</p>
+</div>
+<p class="tutorial-libs">Reference: <a href="scheme-base.html"><code>(scheme base)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-basics-04-lists.html">&larr; Pairs and lists</a>
+  <a class="next" href="tutorial-basics-06-data.html">Vectors, bytevectors and other data &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

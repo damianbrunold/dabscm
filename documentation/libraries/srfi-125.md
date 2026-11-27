@@ -132,14 +132,13 @@ Example:
 ### `hash-table-delete!`
 
 ```
-Syntax: (hash-table-delete! ht key)
-Library: (srfi 69)
-Description: Removes the association for key from the hash table ht. Has no effect if key is not present.
+Syntax: (hash-table-delete! ht key ...)
+Library: (srfi 125)
+Description: Removes the associations of the keys from ht; returns the
+number of keys that were present.
 Example:
-  (define ht (make-hash-table equal?))
-  (hash-table-set! ht 'x 42)
-  (hash-table-delete! ht 'x)
-  (hash-table-exists? ht 'x) => #f
+  (define ht (hash-table (make-default-comparator) 'a 1 'b 2))
+  (hash-table-delete! ht 'a 'c) => 1
 ```
 
 ### `hash-table-difference!`
@@ -388,13 +387,14 @@ Example:
 ### `hash-table-set!`
 
 ```
-Syntax: (hash-table-set! ht key value)
-Library: (srfi 69)
-Description: Associates key with value in the hash table ht. If the key already exists, its value is updated.
+Syntax: (hash-table-set! ht key value ...)
+Library: (srfi 125)
+Description: Associates each key with the value after it in ht, replacing
+an existing association.
 Example:
-  (define ht (make-hash-table equal?))
-  (hash-table-set! ht 'x 42)
-  (hash-table-ref ht 'x) => 42
+  (define ht (make-hash-table (make-default-comparator)))
+  (hash-table-set! ht 'a 1 'b 2)
+  (hash-table-ref ht 'b) => 2
 ```
 
 ### `hash-table-size`

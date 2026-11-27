@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dates and times — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html" class="active">Dates and times</a>
+    <a class="sub" href="#timestamps-as-epoch-seconds">Timestamps as epoch seconds</a>
+    <a class="sub" href="#durations">Durations</a>
+    <a class="sub" href="#dates-with-fields-srfi-19">Dates with fields: SRFI 19</a>
+    <a class="sub" href="#date-arithmetic-with-julian-days">Date arithmetic with Julian days</a>
+    <a class="sub" href="#converting-between-the-two">Converting between the two</a>
+    <a class="sub" href="#the-current-time-and-elapsed-time">The current time and elapsed time</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#techniques">Techniques</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">Dates and times</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="dates-and-times">Dates and times</h1>
+<p>Two libraries cover dates:</p>
+<ul>
+<li><a class="xref" href="scm-datetime.html"><code>(scm datetime)</code></a> works with <em>epoch seconds</em> (seconds since 1970-01-01 UTC):</li>
+</ul>
+<p>parsing and formatting ISO 8601 and RFC 822 timestamps, as found in logs, APIs and feeds;</p>
+<ul>
+<li><a class="xref" href="srfi-19.html"><code>(srfi 19)</code></a> has date records with fields, formatting with <code>~</code> directives,</li>
+</ul>
+<p>Julian days for date arithmetic, and time differences.</p>
+<p><a class="xref" href="scm-duration.html"><code>(scm duration)</code></a> reads and writes durations like <code>90m</code> or <code>2d</code>.</p>
+<pre><code class="language-scheme">(import (scheme base) (srfi 19) (scm datetime) (scm duration))</code></pre>
+<h2 id="timestamps-as-epoch-seconds">Timestamps as epoch seconds</h2>
+<pre><code class="language-scheme">(parse-iso8601 "2024-05-16T12:34:56Z")             ;; =&gt; 1715862896
+(parse-iso8601 "2024-05-16T14:34:56+02:00")        ;; =&gt; 1715862896
+(parse-rfc822 "Thu, 16 May 2024 12:34:56 +0000")   ;; =&gt; 1715862896
+(format-iso8601 1715862896)                        ;; =&gt; "2024-05-16T12:34:56Z"</code></pre>
+<p>The two ISO strings above are the same moment written in two time zones, so they give the same number. Epoch seconds are the easiest form to store, compare and subtract:</p>
+<pre><code class="language-scheme">(define start (parse-iso8601 "2024-05-16T08:00:00Z"))
+(define end (parse-iso8601 "2024-05-16T17:30:00Z"))
+(- end start)                                      ;; =&gt; 34200
+(/ (- end start) 3600)                             ;; =&gt; 19/2
+(format-iso8601 (+ start (* 3 24 3600)))           ;; =&gt; "2024-05-19T08:00:00Z"</code></pre>
+<h2 id="durations">Durations</h2>
+<pre><code class="language-scheme">(parse-duration "90")                              ;; =&gt; 90
+(parse-duration "15m")                             ;; =&gt; 900
+(parse-duration "2h")                              ;; =&gt; 7200
+(parse-duration "3d")                              ;; =&gt; 259200
+(parse-duration "soon")                            ;; =&gt; #f
+(format-duration 7200)                             ;; =&gt; "2h"
+(format-duration 90)                               ;; =&gt; "90s"</code></pre>
+<p>Configuration files often give timeouts and intervals this way.</p>
+<h2 id="dates-with-fields-srfi-19">Dates with fields: SRFI 19</h2>
+<p><a class="xref" href="srfi-19.html#e29"><code>make-date</code></a> takes nanoseconds, seconds, minutes, hours, day, month, year and the time-zone offset in seconds:</p>
+<pre><code class="language-scheme">(define launch (make-date 0 0 30 9 20 7 1969 0))
+
+(date-year launch)                                 ;; =&gt; 1969
+(date-month launch)                                ;; =&gt; 7
+(date-&gt;string launch "~Y-~m-~d ~H:~M")             ;; =&gt; "1969-07-20 09:30"
+(date-week-day launch)                             ;; =&gt; 0
+(date-&gt;string launch "~A, ~d ~B ~Y")               ;; =&gt; "Sunday, 20 July 1969"</code></pre>
+<p><a class="xref" href="srfi-19.html#e19"><code>date-week-day</code></a> counts from Sunday (0) to Saturday (6).</p>
+<h2 id="date-arithmetic-with-julian-days">Date arithmetic with Julian days</h2>
+<p>The <em>Julian day</em> counts days continuously, which turns date arithmetic into integer arithmetic:</p>
+<pre><code class="language-scheme">(define (date-&gt;day d) (exact (floor (date-&gt;julian-day d))))
+(define (ymd y m d) (make-date 0 0 0 12 d m y 0))
+
+(- (date-&gt;day (ymd 2025 12 25)) (date-&gt;day (ymd 2025 11 27))) ;; =&gt; 28
+
+(define (add-days d n)
+  (julian-day-&gt;date (+ (date-&gt;julian-day d) n) 0))
+
+(date-&gt;string (add-days (ymd 2024 2 27) 3) "~Y-~m-~d") ;; =&gt; "2024-03-01"
+(date-&gt;string (add-days (ymd 2023 2 27) 3) "~Y-~m-~d") ;; =&gt; "2023-03-02"</code></pre>
+<p>The two results differ because 2024 is a leap year. Creating dates at noon (hour 12) keeps rounding away from midnight boundaries.</p>
+<h3 id="example-working-days">Example: working days</h3>
+<p>Count the weekdays between two dates, inclusive:</p>
+<pre><code class="language-scheme">(define (working-days from to)
+  (let loop ((d from) (n 0))
+    (if (&gt; (date-&gt;day d) (date-&gt;day to))
+        n
+        (loop (add-days d 1)
+              (if (memv (date-week-day d) '(0 6)) n (+ n 1))))))
+
+(working-days (ymd 2025 12 1) (ymd 2025 12 31))   ;; =&gt; 23</code></pre>
+<h3 id="example-age-in-years">Example: age in years</h3>
+<pre><code class="language-scheme">(define (age-on birth on)
+  (let ((years (- (date-year on) (date-year birth))))
+    (if (or (&lt; (date-month on) (date-month birth))
+            (and (= (date-month on) (date-month birth))
+                 (&lt; (date-day on) (date-day birth))))
+        (- years 1)
+        years)))
+
+(age-on (ymd 1815 12 10) (ymd 1852 11 27))        ;; =&gt; 36</code></pre>
+<h2 id="converting-between-the-two">Converting between the two</h2>
+<pre><code class="language-scheme">(define (date-&gt;epoch d) (time-second (date-&gt;time-utc d)))
+(define (epoch-&gt;date secs) (time-utc-&gt;date (make-time time-utc 0 secs) 0))
+
+(date-&gt;epoch (ymd 2024 5 16))                      ;; =&gt; 1715860800
+(date-&gt;string (epoch-&gt;date 1715862896) "~Y-~m-~d ~H:~M:~S") ;; =&gt; "2024-05-16 12:34:56"</code></pre>
+<h2 id="the-current-time-and-elapsed-time">The current time and elapsed time</h2>
+<pre><code class="language-scheme no-test">(now)                       ; epoch seconds, now
+(current-date)              ; an SRFI 19 date in the local time zone
+(date-&gt;string (current-date) "~Y-~m-~d")</code></pre>
+<p>To measure how long something takes, use <a class="xref" href="scheme-time.html#e0"><code>current-jiffy</code></a> from <a class="xref" href="scheme-time.html"><code>(scheme time)</code></a>:</p>
+<pre><code class="language-scheme">(import (scheme time))
+
+(define (time-it thunk)
+  (let ((start (current-jiffy)))
+    (thunk)
+    (/ (- (current-jiffy) start) (jiffies-per-second))))
+
+(define (sum-below n) (let loop ((i 0) (s 0)) (if (= i n) s (loop (+ i 1) (+ s i)))))
+
+(real? (time-it (lambda () (sum-below 100000))))   ;; =&gt; #t</code></pre>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>.</li>
+<li><a href="srfi-19.html">SRFI 19</a>, <a class="xref" href="scm-datetime.html"><code>(scm datetime)</code></a>, <a class="xref" href="scm-duration.html"><code>(scm duration)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="srfi-19.html"><code>(srfi 19)</code></a>, <a href="scm-datetime.html"><code>(scm datetime)</code></a>, <a href="scm-duration.html"><code>(scm duration)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-techniques-06-iteration.html">&larr; Iteration patterns</a>
+  <a class="next" href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

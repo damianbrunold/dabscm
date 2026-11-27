@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Getting started — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html" class="active">Getting started</a>
+    <a class="sub" href="#your-first-script">Your first script</a>
+    <a class="sub" href="#the-repl">The REPL</a>
+    <a class="sub" href="#one-liners">One-liners</a>
+    <a class="sub" href="#command-line-arguments">Command-line arguments</a>
+    <a class="sub" href="#which-implementation-am-i-on">Which implementation am I on?</a>
+    <a class="sub" href="#formatting-and-checking-your-code">Formatting and checking your code</a>
+    <a class="sub" href="#native-executables">Native executables</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#basics">Basics</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">Getting started</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="getting-started">Getting started</h1>
+<p>dabscm is an R7RS Scheme with three implementations that run the same code:</p>
+<table>
+<thead>
+<tr><th>implementation</th><th>command</th><th>good for</th></tr>
+</thead>
+<tbody>
+<tr><td>JVM</td><td><code>scm</code> (<code>scmj</code>), <code>java -jar scm.jar</code></td><td>servers, long-running jobs (JIT), the widest platform support</td></tr>
+<tr><td>.NET</td><td><code>scmcs</code></td><td>Windows integration, .NET hosts</td></tr>
+<tr><td>native</td><td><code>scm-native</code>, <code>scmc</code></td><td>small static executables, fast start-up, command-line tools</td></tr>
+</tbody>
+</table>
+<p>Everything in these tutorials runs on all three: every tested example in them is executed by the test suites of each implementation.</p>
+<h2 id="your-first-script">Your first script</h2>
+<p>Save this as <code>hello.scm</code>:</p>
+<pre><code class="language-scheme">(import (scheme base) (scheme write))
+
+(define (greet name)
+  (string-append "Hello, " name "!"))
+
+(display (greet "world"))
+(newline)</code></pre>
+<p>and run it:</p>
+<pre><code class="language-sh">$ scm hello.scm
+Hello, world!</code></pre>
+<p>A script is an R7RS <em>program</em>: it starts with an <a class="xref" href="scm-module.html#e10"><code>import</code></a> of the libraries it uses, and nothing else is visible. <a class="xref" href="scheme-base.html"><code>(scheme base)</code></a> has the core of the language; <a class="xref" href="scheme-write.html"><code>(scheme write)</code></a> adds <code>display</code>, <code>write</code> and <code>newline</code>. The <a href="tutorial-basics-10-libraries.html">libraries and programs</a> chapter explains imports in detail.</p>
+<p>The procedure from the script, tried directly:</p>
+<pre><code class="language-scheme">(greet "Scheme") ;; =&gt; "Hello, Scheme!"</code></pre>
+<h2 id="the-repl">The REPL</h2>
+<p><code>scm</code> without arguments starts an interactive read-eval-print loop. The REPL imports the usual libraries for you, so you can start typing right away:</p>
+<pre><code class="language-text">$ scm
+&gt; (+ 1 2 3)
+6
+&gt; (define xs '(3 1 2))
+xs
+&gt; (map (lambda (x) (* x x)) xs)
+(9 1 4)</code></pre>
+<p>Use the REPL to try things; put everything you want to keep into a file.</p>
+<h2 id="one-liners">One-liners</h2>
+<p><code>-e</code> evaluates an expression and prints its value, handy in shell scripts:</p>
+<pre><code class="language-sh">$ scm -e '(* 6 7)'
+42
+$ scm -e '(import (scheme char)) (string-upcase "shout")'
+"SHOUT"</code></pre>
+<p><code>-f</code> gives the expression the REPL's imports, <code>-b</code> none at all.</p>
+<h2 id="command-line-arguments">Command-line arguments</h2>
+<p><code>(command-line)</code> from <a class="xref" href="scheme-process-context.html"><code>(scheme process-context)</code></a> returns the program name followed by its arguments, as strings:</p>
+<pre><code class="language-scheme no-test">(import (scheme base) (scheme write) (scheme process-context))
+
+(define args (cdr (command-line)))
+(display (length args))
+(display " arguments: ")
+(write args)
+(newline)
+(exit (if (null? args) 1 0))</code></pre>
+<pre><code class="language-sh">$ scm count.scm a b "c d"
+3 arguments: ("a" "b" "c d")</code></pre>
+<p><a class="xref" href="scheme-process-context.html#e2"><code>exit</code></a> ends the program with an exit status (<code>#t</code> or <code>0</code> for success). For real command-line tools with options and help texts, see the <a href="tutorial-techniques-09-command-line.html">command-line programs</a> tutorial.</p>
+<h2 id="which-implementation-am-i-on">Which implementation am I on?</h2>
+<p><code>(features)</code> lists what the running implementation supports; programs can test it with <a class="xref" href="scheme-base.html#e53"><code>cond-expand</code></a>:</p>
+<pre><code class="language-scheme">(import (scheme process-context))
+
+(and (memq 'r7rs (features)) #t) ;; =&gt; #t
+
+(define implementation
+  (cond-expand
+    (dabscm-native "native")
+    (else "JVM or .NET")))
+
+(string? implementation) ;; =&gt; #t</code></pre>
+<h2 id="formatting-and-checking-your-code">Formatting and checking your code</h2>
+<p>Two tools ship with every <code>scm</code>:</p>
+<pre><code class="language-sh">$ scm fmt src/            # format all .scm and .sld files in place
+$ scm fmt --check src/    # list files that would change
+$ scm lint src/           # unbound names, unused imports, arity errors, ...</code></pre>
+<p><code>scm lint</code> finds many mistakes before you run the code, for example a misspelled procedure name or a forgotten import. Run it often.</p>
+<h2 id="native-executables">Native executables</h2>
+<p><code>scmc</code> compiles a program, with every library it imports, into one executable that needs nothing installed:</p>
+<pre><code class="language-sh">$ scmc hello.scm -o hello
+$ ./hello
+Hello, world!</code></pre>
+<p>The executable starts in milliseconds, which makes it the right choice for small tools. The program is compiled as a whole, so <code>eval</code> of arbitrary new code is still possible, but tools that inspect bytecode are not.</p>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-basics-02-values.html">Expressions and values</a>: numbers, booleans, symbols, strings.</li>
+<li>Reference: <a class="xref" href="scheme-base.html"><code>(scheme base)</code></a>, <a class="xref" href="scheme-write.html"><code>(scheme write)</code></a>, <a class="xref" href="scheme-process-context.html"><code>(scheme process-context)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scheme-base.html"><code>(scheme base)</code></a>, <a href="scheme-write.html"><code>(scheme write)</code></a>, <a href="scheme-process-context.html"><code>(scheme process-context)</code></a></p>
+<nav class="prev-next">
+  <a class="next" href="tutorial-basics-02-values.html">Expressions and values &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

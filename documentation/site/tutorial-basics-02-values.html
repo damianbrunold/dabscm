@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Expressions and values — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html" class="active">Expressions and values</a>
+    <a class="sub" href="#numbers">Numbers</a>
+    <a class="sub" href="#booleans">Booleans</a>
+    <a class="sub" href="#symbols">Symbols</a>
+    <a class="sub" href="#characters-and-strings">Characters and strings</a>
+    <a class="sub" href="#display-versus-write">display versus write</a>
+    <a class="sub" href="#equality">Equality</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#basics">Basics</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">Expressions and values</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="expressions-and-values">Expressions and values</h1>
+<p>Scheme has one syntax for everything: a parenthesized list whose first element says what to do. <code>(+ 1 2)</code> calls <code>+</code> with 1 and 2. There are no operator precedence rules to remember, because nesting is always explicit:</p>
+<pre><code class="language-scheme">(import (scheme base) (scheme write) (scheme inexact))
+
+(+ 1 2)                 ;; =&gt; 3
+(* 2 (+ 3 4))           ;; =&gt; 14
+(- 10 1 2 3)            ;; =&gt; 4
+(max 3 9 4)             ;; =&gt; 9</code></pre>
+<p>Most operators take any number of arguments, so <code>(+ 1 2 3 4)</code> is fine. This is ordinary prefix notation: <code>(f x y)</code> is what other languages write as <code>f(x, y)</code>.</p>
+<h2 id="numbers">Numbers</h2>
+<p>Scheme distinguishes <em>exact</em> numbers (integers and fractions, computed without rounding) from <em>inexact</em> ones (floating point).</p>
+<pre><code class="language-scheme">(/ 1 3)                 ;; =&gt; 1/3
+(+ 1/3 1/6)             ;; =&gt; 1/2
+(/ 1.0 3)               ;; =&gt; 0.3333333333333333
+(inexact 1/4)           ;; =&gt; 0.25
+(exact 2.5)             ;; =&gt; 5/2
+(exact? 1/3)            ;; =&gt; #t
+(inexact? 0.5)          ;; =&gt; #t</code></pre>
+<p>Integers never overflow. They grow as large as you need:</p>
+<pre><code class="language-scheme">(define (factorial n)
+  (if (= n 0) 1 (* n (factorial (- n 1)))))
+
+(factorial 25)          ;; =&gt; 15511210043330985984000000
+(expt 2 100)            ;; =&gt; 1267650600228229401496703205376</code></pre>
+<p>Integer division comes in a few flavours. <code>quotient</code> and <code>remainder</code> truncate towards zero; <a class="xref" href="scheme-base.html#e85"><code>floor/</code></a> returns both results at once, rounding down:</p>
+<pre><code class="language-scheme">(quotient 17 5)         ;; =&gt; 3
+(remainder 17 5)        ;; =&gt; 2
+(modulo -7 3)           ;; =&gt; 2
+(remainder -7 3)        ;; =&gt; -1
+(call-with-values (lambda () (floor/ 17 5)) list) ;; =&gt; (3 2)
+(call-with-values (lambda () (exact-integer-sqrt 17)) list) ;; =&gt; (4 1)</code></pre>
+<p><a class="xref" href="scheme-base.html#e85"><code>floor/</code></a> and <a class="xref" href="scheme-base.html#e76"><code>exact-integer-sqrt</code></a> return <em>two</em> values (here the square root 4 and the rest 1); <code>call-with-values</code> hands them to a procedure, <code>list</code> in this case. The <a href="tutorial-basics-08-records.html">records</a> chapter shows <a class="xref" href="scheme-base.html#e109"><code>let-values</code></a>, the more readable way to receive several values.</p>
+<p>Rounding and conversions:</p>
+<pre><code class="language-scheme">(round 2.5)             ;; =&gt; 2.0
+(round 3.5)             ;; =&gt; 4.0
+(round 7/2)             ;; =&gt; 4
+(floor -2.5)            ;; =&gt; -3.0
+(exact (round 2.7))     ;; =&gt; 3
+(number-&gt;string 255 16) ;; =&gt; "ff"
+(string-&gt;number "1e3")  ;; =&gt; 1000.0
+(string-&gt;number "abc")  ;; =&gt; #f
+(sqrt 16)               ;; =&gt; 4
+(sqrt 2)                ;; =&gt; 1.4142135623730951</code></pre>
+<p><code>round</code> rounds to even on a tie (2.5 becomes 2), as most numerical code expects. <code>string-&gt;number</code> returns <code>#f</code> for text that is not a number, which makes it a convenient parser.</p>
+<h2 id="booleans">Booleans</h2>
+<p>There are two booleans, <code>#t</code> and <code>#f</code>. In a condition, <strong>only <code>#f</code> counts as false</strong>: <code>0</code>, the empty list and the empty string are all true.</p>
+<pre><code class="language-scheme">(if 0 'yes 'no)         ;; =&gt; yes
+(if '() 'yes 'no)       ;; =&gt; yes
+(if #f 'yes 'no)        ;; =&gt; no
+(not 3)                 ;; =&gt; #f
+(and 1 2 3)             ;; =&gt; 3
+(or #f 'found)          ;; =&gt; found</code></pre>
+<p><code>and</code> returns its last value if all are true, and <code>or</code> its first true value. That is often used for defaults: <code>(or (lookup key) 'none)</code>.</p>
+<h2 id="symbols">Symbols</h2>
+<p>A symbol is a name used as data. It is written with a quote, so that it is not evaluated as a variable:</p>
+<pre><code class="language-scheme">'apple                  ;; =&gt; apple
+(symbol? 'apple)        ;; =&gt; #t
+(eq? 'apple 'apple)     ;; =&gt; #t
+(symbol-&gt;string 'apple) ;; =&gt; "apple"
+(string-&gt;symbol "pear") ;; =&gt; pear</code></pre>
+<p>Two symbols with the same name are always the same object, so <code>eq?</code> compares them in one step. Symbols are ideal for things like states, colours or keys: <code>'pending</code>, <code>'red</code>, <code>'name</code>.</p>
+<h2 id="characters-and-strings">Characters and strings</h2>
+<p>Characters are written <code>#\a</code>, <code>#\space</code>, <code>#\newline</code>; strings are in double quotes. Both get their own tutorials (<a href="tutorial-techniques-01-strings.html">strings</a>, <a href="tutorial-techniques-02-characters.html">characters</a>); here are the basics:</p>
+<pre><code class="language-scheme">(string-length "Scheme")          ;; =&gt; 6
+(string-ref "Scheme" 0)           ;; =&gt; #\S
+(string-append "Sch" "eme")       ;; =&gt; "Scheme"
+(substring "Scheme" 1 3)          ;; =&gt; "ch"
+(string-&gt;list "abc")              ;; =&gt; (#\a #\b #\c)
+(string=? "abc" "abc")            ;; =&gt; #t
+(number-&gt;string 42)               ;; =&gt; "42"</code></pre>
+<h2 id="display-versus-write">display versus write</h2>
+<p><code>display</code> prints a value for people, <code>write</code> prints it as Scheme would read it back. The difference shows with strings and characters:</p>
+<pre><code class="language-scheme">(display "a \"quoted\" word")     ;; prints: a "quoted" word
+(write "a \"quoted\" word")       ;; prints: "a \"quoted\" word"
+(display #\x)                     ;; prints: x
+(write #\x)                       ;; prints: #\x
+(write '(1 "two" #\3 four))       ;; prints: (1 "two" #\3 four)</code></pre>
+<p>Use <code>display</code> for messages and reports, <code>write</code> for debugging output and for data you want to read back later.</p>
+<h2 id="equality">Equality</h2>
+<p>Scheme has several equality predicates; pick the one that fits the data:</p>
+<table>
+<thead>
+<tr><th>predicate</th><th>compares</th><th>use for</th></tr>
+</thead>
+<tbody>
+<tr><td><code>=</code></td><td>numbers by value</td><td>numbers</td></tr>
+<tr><td><code>eq?</code></td><td>identity</td><td>symbols, booleans, the empty list</td></tr>
+<tr><td><code>eqv?</code></td><td>identity, plus numbers and characters by value</td><td>numbers and characters of the same exactness</td></tr>
+<tr><td><code>equal?</code></td><td>structure, recursively</td><td>lists, strings, vectors</td></tr>
+<tr><td><code>string=?</code>, <code>char=?</code></td><td>strings / characters</td><td>text</td></tr>
+</tbody>
+</table>
+<pre><code class="language-scheme">(= 2 2.0)                         ;; =&gt; #t
+(eqv? 2 2.0)                      ;; =&gt; #f
+(equal? '(1 (2 3)) '(1 (2 3)))    ;; =&gt; #t
+(eq? "abc" "abc")                 ;; =&gt; #f
+(equal? "abc" "abc")              ;; =&gt; #t</code></pre>
+<p>When in doubt, use <code>equal?</code>.</p>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>: naming values, writing functions.</li>
+<li>Reference: <a class="xref" href="scheme-base.html"><code>(scheme base)</code></a> for numbers, <a class="xref" href="scheme-inexact.html"><code>(scheme inexact)</code></a> for <code>sqrt</code>, <code>exp</code>,</li>
+</ul>
+<p><code>sin</code> and friends.</p>
+</div>
+<p class="tutorial-libs">Reference: <a href="scheme-base.html"><code>(scheme base)</code></a>, <a href="scheme-write.html"><code>(scheme write)</code></a>, <a href="scheme-inexact.html"><code>(scheme inexact)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-basics-01-getting-started.html">&larr; Getting started</a>
+  <a class="next" href="tutorial-basics-03-procedures.html">Definitions and procedures &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

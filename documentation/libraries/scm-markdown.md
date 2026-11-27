@@ -41,9 +41,31 @@ LaTeX, …), parse to the AST and walk it yourself:
 ```
 
 Block nodes are `heading`, `paragraph`, `code-block`, `blockquote`,
-`bullet-list`, `ordered-list` and `thematic-break`. Inline nodes are plain
+`bullet-list`, `ordered-list`, `table` and `thematic-break`. Inline nodes are plain
 strings plus `strong`, `emph`, `code` and `link`. See the library source header
 for the exact shapes.
+
+## Tables and heading anchors
+
+GitHub-style pipe tables are supported, with column alignment from the
+delimiter row:
+
+```scheme
+(markdown->html "| fruit | kg |\n|:--|--:|\n| apples | 3 |")
+;; => "<table>\n<thead>\n<tr><th style=\"text-align: left\">fruit</th>..."
+
+(parse-markdown "| a | b |\n|---|---|\n| 1 | 2 |")
+;; => ((table (align #f #f) (header ("a") ("b")) (row ("1") ("2"))))
+```
+
+With the option `'heading-ids`, `markdown->html` gives every heading an `id`
+as GitHub does, so that links like `page.html#next-steps` work;
+`markdown-heading-id` computes such an id:
+
+```scheme
+(markdown->html "## Next steps" 'heading-ids)
+;; => "<h2 id=\"next-steps\">Next steps</h2>"
+```
 
 ## Supported subset
 
@@ -52,10 +74,11 @@ for the exact shapes.
 - Bullet lists (`-`, `*`, `+`) and ordered lists (`1.` / `1)`)
 - Blockquotes (`>`), parsed recursively
 - Thematic breaks (`---`, `***`, `___`)
+- Tables (`| a | b |` with a `|---|:-:|` delimiter row)
 - Inline code, `**strong**`, `*emphasis*`, `[links](url)` and backslash escapes
 
 By design it does **not** handle setext headings, reference links, images, raw
-HTML, tables, or nested lists — keep the input simple and predictable.
+HTML or "loose" lists — keep the input simple and predictable.
 
 
 ## Exports
@@ -63,14 +86,31 @@ HTML, tables, or nested lists — keep the input simple and predictable.
 ### `markdown->html`
 
 ```
-Syntax: (markdown->html s)
+Syntax: (markdown->html s [option ...])
 Library: (scm markdown)
 Description: Renders the Markdown text in string s to an HTML fragment (no
   surrounding <html>/<body>). Text and link URLs are HTML-escaped. See the
-  library header for the supported Markdown subset.
+  library header for the supported Markdown subset. With the option
+  'heading-ids, headings get id attributes (see markdown-heading-id), so
+  that links can point to sections.
 Example:
   (markdown->html "# Hi\n\nA *para*.")
     => "<h1>Hi</h1>\n<p>A <em>para</em>.</p>"
+  (markdown->html "## Next steps" 'heading-ids)
+    => "<h2 id=\"next-steps\">Next steps</h2>"
+```
+
+### `markdown-heading-id`
+
+```
+Syntax: (markdown-heading-id inlines)
+Library: (scm markdown)
+Description: The anchor id of a heading with the given inline nodes (or a
+  plain string), as GitHub makes it: the text in lower case, letters, digits,
+  - and _ kept, spaces turned into -, other characters dropped.
+  markdown->html with 'heading-ids gives headings these ids.
+Example:
+  (markdown-heading-id "Hash tables & dictionaries") => "hash-tables--dictionaries"
 ```
 
 ### `parse-markdown`

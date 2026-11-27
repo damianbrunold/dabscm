@@ -294,4 +294,16 @@
     (hash-table-set! ht '(1 "a") 1)
     (test-equal 1 (hash-table-ref/default ht (list 1 "a") #f))))
 
+(test-group "set and delete several"
+  (let ((ht (make-hash-table (make-default-comparator))))
+    (hash-table-set! ht 'a 1 'b 2 'c 3)
+    (test-equal 3 (hash-table-size ht))
+    (test-equal 2 (hash-table-ref ht 'b))
+    (test-error (hash-table-set! ht 'd 4 'e))
+    (test-equal 2 (hash-table-delete! ht 'a 'c 'zz))
+    (test-equal 0 (hash-table-delete! ht 'a))
+    ;; the error for 'e came after 'd was set
+    (test-equal #t (hash-table-contains? ht 'b))
+    (test-equal #f (hash-table-contains? ht 'a))))
+
 (test-end "srfi-125")

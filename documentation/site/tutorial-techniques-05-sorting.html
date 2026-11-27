@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sorting and searching — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html" class="active">Sorting and searching</a>
+    <a class="sub" href="#sorting-lists-and-vectors">Sorting lists and vectors</a>
+    <a class="sub" href="#sorting-by-a-key">Sorting by a key</a>
+    <a class="sub" href="#several-criteria">Several criteria</a>
+    <a class="sub" href="#stability">Stability</a>
+    <a class="sub" href="#srfi-95-sort-with-a-key-argument">SRFI 95: sort with a key argument</a>
+    <a class="sub" href="#searching">Searching</a>
+    <a class="sub" href="#top-n-and-the-median">Top n and the median</a>
+    <a class="sub" href="#removing-duplicates-while-keeping-order">Removing duplicates while keeping order</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#techniques">Techniques</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">Sorting and searching</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="sorting-and-searching">Sorting and searching</h1>
+<h2 id="sorting-lists-and-vectors">Sorting lists and vectors</h2>
+<p><a class="xref" href="srfi-132.html#e4"><code>list-sort</code></a> and <a class="xref" href="srfi-132.html#e17"><code>vector-sort</code></a> (SRFI 132) take a "less than" procedure first and return a new sorted sequence:</p>
+<pre><code class="language-scheme">(import (scheme base) (scheme char) (srfi 1) (srfi 132)
+        (only (srfi 133) vector-binary-search))
+
+(list-sort &lt; '(5 2 9 1))                    ;; =&gt; (1 2 5 9)
+(list-sort &gt; '(5 2 9 1))                    ;; =&gt; (9 5 2 1)
+(list-sort string&lt;? '("pear" "Apple" "fig")) ;; =&gt; ("Apple" "fig" "pear")
+(list-sort string-ci&lt;? '("pear" "Apple" "fig")) ;; =&gt; ("Apple" "fig" "pear")
+(vector-sort &lt; #(3 1 2))                    ;; =&gt; #(1 2 3)</code></pre>
+<p><code>string&lt;?</code> compares character codes, so all upper-case letters come before lower-case ones; <code>string-ci&lt;?</code> ignores case.</p>
+<h2 id="sorting-by-a-key">Sorting by a key</h2>
+<p>Compare a part of each element. A list of cities with population and canton:</p>
+<pre><code class="language-scheme">(define cities
+  '(("Zürich" 421878 "ZH") ("Geneva" 203856 "GE") ("Basel" 173863 "BS")
+    ("Lausanne" 140202 "VD") ("Bern" 134794 "BE") ("Winterthur" 114220 "ZH")))
+
+(define (name c) (car c))
+(define (population c) (cadr c))
+(define (canton c) (caddr c))
+
+(define (by key less?) (lambda (a b) (less? (key a) (key b))))
+
+(map name (list-sort (by population &lt;) cities))
+;; =&gt; ("Winterthur" "Bern" "Lausanne" "Basel" "Geneva" "Zürich")
+(map name (list-sort (by name string&lt;?) cities))
+;; =&gt; ("Basel" "Bern" "Geneva" "Lausanne" "Winterthur" "Zürich")</code></pre>
+<p><code>by</code> builds a comparison from a key and an order, which keeps sort calls readable.</p>
+<h2 id="several-criteria">Several criteria</h2>
+<p>Sort by canton, and within a canton by population descending:</p>
+<pre><code class="language-scheme">(define (then-by . comparisons)
+  (lambda (a b)
+    (let loop ((cs comparisons))
+      (cond ((null? cs) #f)
+            (((car cs) a b) #t)
+            (((car cs) b a) #f)
+            (else (loop (cdr cs)))))))
+
+(map name (list-sort (then-by (by canton string&lt;?) (by population &gt;)) cities))
+;; =&gt; ("Bern" "Basel" "Geneva" "Lausanne" "Zürich" "Winterthur")</code></pre>
+<p>The combined comparison tries each criterion in turn and only goes to the next one when two elements are equal on the current one.</p>
+<h2 id="stability">Stability</h2>
+<p>SRFI 132 sorts are <em>stable</em>: elements that compare equal keep their order. So sorting twice, first by the minor key and then by the major one, gives the same result as the combined sort:</p>
+<pre><code class="language-scheme">(map name (list-sort (by canton string&lt;?)
+                     (list-sort (by population &gt;) cities)))
+;; =&gt; ("Bern" "Basel" "Geneva" "Lausanne" "Zürich" "Winterthur")</code></pre>
+<h2 id="srfi-95-sort-with-a-key-argument">SRFI 95: sort with a key argument</h2>
+<p>SRFI 95 has the arguments the other way round and takes an optional key procedure:</p>
+<pre><code class="language-scheme">(import (only (srfi 95) sort merge))
+
+(sort '(3 1 2) &lt;)                           ;; =&gt; (1 2 3)
+(map name (sort cities &gt; population))
+;; =&gt; ("Zürich" "Geneva" "Basel" "Lausanne" "Bern" "Winterthur")
+(merge '(1 4 7) '(2 3 9) &lt;)                 ;; =&gt; (1 2 3 4 7 9)</code></pre>
+<h2 id="searching">Searching</h2>
+<p>In a list, search from the start:</p>
+<pre><code class="language-scheme">(find (lambda (c) (string=? (canton c) "VD")) cities)
+;; =&gt; ("Lausanne" 140202 "VD")
+(list-index (lambda (c) (&lt; (population c) 150000)) cities) ;; =&gt; 3
+(filter (lambda (c) (string=? (canton c) "ZH")) cities)
+;; =&gt; (("Zürich" 421878 "ZH") ("Winterthur" 114220 "ZH"))</code></pre>
+<p>In a <em>sorted</em> vector, binary search needs only about 20 comparisons for a million elements. <a class="xref" href="srfi-133.html#e11"><code>vector-binary-search</code></a> (SRFI 133) takes a procedure that returns a negative, zero or positive number, like a three-way comparison:</p>
+<pre><code class="language-scheme">(define primes #(2 3 5 7 11 13 17 19 23 29 31 37 41 43 47))
+
+(vector-binary-search primes 23 -)          ;; =&gt; 8
+(vector-binary-search primes 24 -)          ;; =&gt; #f</code></pre>
+<h2 id="top-n-and-the-median">Top n and the median</h2>
+<p>To find the largest few elements of a long list, sorting everything is wasteful but simple; for a few thousand elements it is fine:</p>
+<pre><code class="language-scheme">(define (top n less? xs)
+  (take (list-sort less? xs) (min n (length xs))))
+
+(map name (top 3 (by population &gt;) cities)) ;; =&gt; ("Zürich" "Geneva" "Basel")
+
+(define (median xs)
+  (let* ((v (list-&gt;vector (list-sort &lt; xs)))
+         (n (vector-length v)))
+    (if (odd? n)
+        (vector-ref v (quotient n 2))
+        (/ (+ (vector-ref v (- (quotient n 2) 1)) (vector-ref v (quotient n 2))) 2))))
+
+(median '(7 1 3))                           ;; =&gt; 3
+(median '(7 1 3 10))                        ;; =&gt; 5</code></pre>
+<p>SRFI 132 also has <a class="xref" href="srfi-132.html#e11"><code>vector-find-median</code></a> and <a class="xref" href="srfi-132.html#e15"><code>vector-select!</code></a> for large vectors, without a full sort.</p>
+<h2 id="removing-duplicates-while-keeping-order">Removing duplicates while keeping order</h2>
+<pre><code class="language-scheme">(delete-duplicates '(3 1 3 2 1))            ;; =&gt; (3 1 2)
+(delete-duplicates (map canton cities))     ;; =&gt; ("ZH" "GE" "BS" "VD" "BE")</code></pre>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>.</li>
+<li><a href="srfi-132.html">SRFI 132</a>, <a href="srfi-95.html">SRFI 95</a>, <a href="srfi-133.html">SRFI 133</a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="srfi-132.html"><code>(srfi 132)</code></a>, <a href="srfi-95.html"><code>(srfi 95)</code></a>, <a href="srfi-1.html"><code>(srfi 1)</code></a>, <a href="srfi-133.html"><code>(srfi 133)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-techniques-04-hash-tables.html">&larr; Hash tables and dictionaries</a>
+  <a class="next" href="tutorial-techniques-06-iteration.html">Iteration patterns &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

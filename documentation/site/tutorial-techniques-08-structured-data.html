@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Structured data: JSON, XML, TOML, CSV — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html" class="active">Structured data: JSON, XML, TOML, CSV</a>
+    <a class="sub" href="#json">JSON</a>
+    <a class="sub" href="#xml">XML</a>
+    <a class="sub" href="#toml">TOML</a>
+    <a class="sub" href="#csv">CSV</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#techniques">Techniques</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">Structured data: JSON, XML, TOML, CSV</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="structured-data-json-xml-toml-csv">Structured data: JSON, XML, TOML, CSV</h1>
+<p>All four formats map to ordinary Scheme data, so once a document is parsed you work with alists, vectors, strings and numbers.</p>
+<pre><code class="language-scheme">(import (scheme base) (scheme file) (scheme write) (srfi 1)
+        (scm json simple) (scm xml) (scm toml) (scm csv)
+        (scm fs) (scm data io) (scm data frame))</code></pre>
+<h2 id="json">JSON</h2>
+<p><a class="xref" href="scm-json-simple.html"><code>(scm json simple)</code></a> maps JSON objects to alists with string keys, arrays to vectors, <code>null</code> to the symbol <code>null</code>:</p>
+<pre><code class="language-scheme">(define doc
+  (json-parse "{\"name\": \"dabscm\", \"version\": [2, 28, 1],
+                \"tags\": [\"scheme\", \"r7rs\"], \"license\": null}"))
+
+doc
+;; =&gt; (("name" . "dabscm") ("version" . #(2 28 1)) ("tags" . #("scheme" "r7rs")) ("license" . null))
+(json-ref doc "name")                       ;; =&gt; "dabscm"
+(vector-&gt;list (json-ref doc "tags"))        ;; =&gt; ("scheme" "r7rs")
+(json-null? (json-ref doc "license"))       ;; =&gt; #t
+(json-ref doc "homepage" "none")            ;; =&gt; "none"</code></pre>
+<p>Arrays are vectors and objects are lists, so the two can never be confused. Writing goes the other way:</p>
+<pre><code class="language-scheme">(json-&gt;string '(("ok" . #t) ("items" . #(1 2 3)) ("next" . null)))
+;; =&gt; "{\"ok\":true,\"items\":[1,2,3],\"next\":null}"
+(json-&gt;string #())                          ;; =&gt; "[]"
+(json-&gt;string '())                          ;; =&gt; "{}"</code></pre>
+<h3 id="example-summarising-api-data">Example: summarising API data</h3>
+<p>A typical JSON response, a list of records. Total the order values per customer:</p>
+<pre><code class="language-scheme">(define orders
+  (json-parse "[{\"customer\": \"ada\", \"total\": 30.5},
+                {\"customer\": \"alan\", \"total\": 12},
+                {\"customer\": \"ada\", \"total\": 9.5}]"))
+
+(define (sum-by key value records)
+  (fold (lambda (r acc)
+          (let* ((k (json-ref r key)) (e (assoc k acc)))
+            (if e
+                (begin (set-cdr! e (+ (cdr e) (json-ref r value))) acc)
+                (cons (cons k (json-ref r value)) acc))))
+        '()
+        (vector-&gt;list records)))
+
+(reverse (sum-by "customer" "total" orders)) ;; =&gt; (("ada" . 40.0) ("alan" . 12))
+(json-&gt;string (reverse (sum-by "customer" "total" orders)))
+;; =&gt; "{\"ada\":40.0,\"alan\":12}"</code></pre>
+<p>The result alist is itself valid JSON data, so <a class="xref" href="scm-json-simple.html#e1"><code>json-&gt;string</code></a> writes it directly.</p>
+<h2 id="xml">XML</h2>
+<p><a class="xref" href="scm-xml.html"><code>(scm xml)</code></a> is a <em>pull parser</em>: you call <a class="xref" href="scm-xml.html#e7"><code>xml-read</code></a> to advance to the next node and ask about the current node. It handles large files without loading them completely:</p>
+<pre><code class="language-scheme">(define feed "&lt;catalog&gt;
+  &lt;book id=\"b1\" year=\"1965\"&gt;&lt;title&gt;Dune&lt;/title&gt;&lt;/book&gt;
+  &lt;book id=\"b2\" year=\"1984\"&gt;&lt;title&gt;Neuromancer&lt;/title&gt;&lt;/book&gt;
+&lt;/catalog&gt;")
+
+(define (book-titles xml)
+  (let ((r (open-xml-string xml)))
+    (let loop ((acc '()))
+      (if (xml-read-to r "title")
+          (loop (cons (xml-value r) acc))
+          (begin (close-xml r) (reverse acc))))))
+
+(book-titles feed)                          ;; =&gt; ("Dune" "Neuromancer")</code></pre>
+<p><a class="xref" href="scm-xml.html#e8"><code>xml-read-to</code></a> skips ahead to the next element with the given name, and <a class="xref" href="scm-xml.html#e9"><code>xml-value</code></a> reads its text. When you need several kinds of nodes, walk all of them with <a class="xref" href="scm-xml.html#e7"><code>xml-read</code></a> and look at each one:</p>
+<pre><code class="language-scheme">
+(define (book-years xml)
+  (let ((r (open-xml-string xml)))
+    (let loop ((acc '()))
+      (if (xml-read r)
+          (loop (if (and (eq? (xml-node-type r) 'element) (equal? (xml-name r) "book"))
+                    (cons (cons (xml-attribute r "id")
+                                (string-&gt;number (xml-attribute r "year")))
+                          acc)
+                    acc))
+          (begin (close-xml r) (reverse acc))))))
+
+(book-years feed)                           ;; =&gt; (("b1" . 1965) ("b2" . 1984))</code></pre>
+<p>For HTML, <a class="xref" href="scm-html-parser.html"><code>(scm html parser)</code></a> builds a tree (SXML) instead, and <a class="xref" href="scm-html-builder.html"><code>(scm html builder)</code></a> writes HTML from such trees.</p>
+<h2 id="toml">TOML</h2>
+<p>TOML is a good format for configuration files. Tables become alists, arrays vectors:</p>
+<pre><code class="language-scheme">(define config
+  (toml-parse "title = \"Shop\"
+[server]
+port = 8080
+hosts = [\"a.example\", \"b.example\"]
+
+[database]
+url = \"postgres://localhost/shop\"
+pool = 4"))
+
+(toml-ref (toml-ref config "server") "port") ;; =&gt; 8080
+(vector-length (toml-ref (toml-ref config "server") "hosts")) ;; =&gt; 2
+(toml-ref (toml-ref config "database") "pool" 1) ;; =&gt; 4
+(toml-ref config "debug" #f)                ;; =&gt; #f
+
+(toml-&gt;string '(("name" . "demo") ("limits" ("max" . 10))))
+;; =&gt; "name = \"demo\"\n\n[limits]\nmax = 10\n"</code></pre>
+<p>Defaults through the optional third argument of <a class="xref" href="scm-toml.html#e7"><code>toml-ref</code></a> make configuration code short: every setting has an obvious fallback.</p>
+<h2 id="csv">CSV</h2>
+<p>For one line, <code>csv-line-&gt;fields</code> splits at a separator and removes quotes:</p>
+<pre><code class="language-scheme">(csv-line-&gt;fields "ada,\"Lovelace\",1815" ",") ;; =&gt; #("ada" "Lovelace" "1815")
+(csv-line-&gt;fields "a; b ;c" ";" 'trim)      ;; =&gt; #("a" "b" "c")</code></pre>
+<p>For whole files, <code>read-csv</code> from <a class="xref" href="scm-data-io.html"><code>(scm data io)</code></a> handles everything RFC 4180 allows (quoted separators, doubled quotes, line breaks in fields), detects the separator, and infers column types. The result is a <em>data frame</em>:</p>
+<pre><code class="language-scheme">(define dir (mktempdir '(prefix . "csv")))
+(define path (join-path dir "people.csv"))
+
+(call-with-output-file path
+  (lambda (out)
+    (display "name;born;city\n" out)
+    (display "\"Lovelace, Ada\";1815;London\n" out)
+    (display "Turing;1912;London\n" out)
+    (display "Hopper;1906;\"New York\"\n" out)))
+
+(define people (read-csv path))
+(df-nrow people)                            ;; =&gt; 3
+(df-names people)                           ;; =&gt; (name born city)
+(vector-ref (df-column people 'name) 0)     ;; =&gt; "Lovelace, Ada"
+(df-column people 'born)                    ;; =&gt; #(1815 1912 1906)
+(df-row people 2)                           ;; =&gt; ((name . "Hopper") (born . 1906) (city . "New York"))
+
+(rm dir 'recursive)</code></pre>
+<p>The semicolon was detected, the quoted comma stayed inside its field, and the <code>born</code> column became numbers. The <a href="scm-data.html">data tutorial</a> shows what to do with frames: filtering, grouping, summarising, plotting and writing to Excel.</p>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-techniques-09-command-line.html">Command-line programs</a>.</li>
+<li><a class="xref" href="scm-json-simple.html"><code>(scm json simple)</code></a>, <a class="xref" href="scm-json.html"><code>(scm json)</code></a> for streaming, <a class="xref" href="scm-xml.html"><code>(scm xml)</code></a>, <a class="xref" href="scm-toml.html"><code>(scm toml)</code></a>,</li>
+</ul>
+<p><a class="xref" href="scm-data-io.html"><code>(scm data io)</code></a>.</p>
+</div>
+<p class="tutorial-libs">Reference: <a href="scm-json-simple.html"><code>(scm json simple)</code></a>, <a href="scm-xml.html"><code>(scm xml)</code></a>, <a href="scm-toml.html"><code>(scm toml)</code></a>, <a href="scm-csv.html"><code>(scm csv)</code></a>, <a href="scm-data-io.html"><code>(scm data io)</code></a>, <a href="scm-data-frame.html"><code>(scm data frame)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-techniques-07-dates.html">&larr; Dates and times</a>
+  <a class="next" href="tutorial-techniques-09-command-line.html">Command-line programs &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

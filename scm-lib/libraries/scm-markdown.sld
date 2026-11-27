@@ -4,6 +4,7 @@
           (srfi 13)
           (scm core))
   (export markdown->html
+          markdown-heading-id
           parse-markdown)
   (begin
 
@@ -22,6 +23,9 @@
     ;;   - nested lists            by indentation (a deeper-indented item
     ;;                             starts a sub-list under the item above it)
     ;;   - thematic breaks         ---  ***  ___
+    ;;   - tables (GFM)            | a | b |  then  |---|:-:|  then rows;
+    ;;                             alignment :-- left, :-: center, --:
+    ;;                             right; \| is a literal pipe in a cell
     ;;   - paragraphs              (soft line breaks join with a space)
     ;;
     ;; Supported inline constructs:
@@ -40,7 +44,7 @@
     ;;                             in a monospace font)
     ;;
     ;; Not supported (by design — keep it small): setext headings,
-    ;; reference links, images, raw HTML, tables, and the full CommonMark
+    ;; reference links, images, raw HTML, and the full CommonMark
     ;; emphasis flanking rules (a pragmatic approximation is used; intraword
     ;; underscores are treated as literal text). Blank lines terminate a
     ;; list, so only "tight" lists are produced.
@@ -53,6 +57,8 @@
     ;;          | (bullet-list <item> ...)
     ;;          | (ordered-list <start> <item> ...)
     ;;          | (thematic-break)
+    ;;          | (table (align <a> ...) (header <cell> ...) (row <cell> ...) ...)
+    ;;            <a> = left | center | right | #f, <cell> = (<inline> ...)
     ;;   item   = (item <inline> ... <list-block> ...)  ; trailing sub-lists
     ;;            where <list-block> is a (bullet-list ...) / (ordered-list ...)
     ;;   inline = <string>                       ; literal text
@@ -337,6 +343,102 @@
             (let ((b (bullet-content line)))
               (and b (list 'bullet b #f (line-indent line)))))))
 
+    ;; ---- tables --------------------------------------------------
+
+    ;; the cells of a table row: split at | outside code spans (\| is a
+    ;; literal pipe), without the optional outer pipes, trimmed
+    (define (table-cells line)
+      (let* ((t (trim-left (trim-right line)))
+             (n (string-length t)))
+        (let loop ((i 0) (start 0) (in-code #f) (acc '()))
+          (cond ((>= i n)
+                 (let* ((cells (reverse (cons (substring t start n) acc)))
+                        (cells (if (and (pair? cells) (string=? (trim-left (car cells)) "")
+                                        (> n 0) (char=? (string-ref t 0) #\|))
+                                   (cdr cells)
+                                   cells))
+                        (cells (if (and (pair? cells) (> n 1)
+                                        (char=? (string-ref t (- n 1)) #\|)
+                                        (not (char=? (string-ref t (- n 2)) #\\))
+                                        (string=? (trim-left (car (reverse cells))) ""))
+                                   (reverse (cdr (reverse cells)))
+                                   cells)))
+                   (map (lambda (c) (unescape-pipes (trim-left (trim-right c)))) cells)))
+                ((and (char=? (string-ref t i) #\\) (< (+ i 1) n)
+                      (char=? (string-ref t (+ i 1)) #\|))
+                 (loop (+ i 2) start in-code acc))
+                ((char=? (string-ref t i) #\`) (loop (+ i 1) start (not in-code) acc))
+                ((and (char=? (string-ref t i) #\|) (not in-code))
+                 (loop (+ i 1) (+ i 1) in-code (cons (substring t start i) acc)))
+                (else (loop (+ i 1) start in-code acc))))))
+
+    (define (unescape-pipes s)
+      (let ((out (open-output-string)) (n (string-length s)))
+        (let loop ((i 0))
+          (when (< i n)
+            (if (and (char=? (string-ref s i) #\\) (< (+ i 1) n)
+                     (char=? (string-ref s (+ i 1)) #\|))
+                (begin (write-char #\| out) (loop (+ i 2)))
+                (begin (write-char (string-ref s i) out) (loop (+ i 1))))))
+        (get-output-string out)))
+
+    (define (trim-right s)
+      (let loop ((i (string-length s)))
+        (if (and (> i 0) (ws? (string-ref s (- i 1))))
+            (loop (- i 1))
+            (substring s 0 i))))
+
+    ;; a delimiter row |---|:-:|: the alignments, or #f
+    (define (table-delimiter line)
+      (and (string-index line #\-)
+           (let ((cells (table-cells line)))
+             (and (pair? cells)
+                  (every-cell?
+                   (lambda (c)
+                     (let ((n (string-length c)))
+                       (and (> n 0)
+                            (let loop ((i 0))
+                              (or (= i n)
+                                  (and (memv (string-ref c i) '(#\- #\:))
+                                       (loop (+ i 1)))))
+                            (string-index c #\-))))
+                   cells)
+                  (map (lambda (c)
+                         (let ((l (char=? (string-ref c 0) #\:))
+                               (r (char=? (string-ref c (- (string-length c) 1)) #\:)))
+                           (cond ((and l r) 'center) (l 'left) (r 'right) (else #f))))
+                       cells)))))
+
+    (define (every-cell? pred l)
+      (or (null? l) (and (pred (car l)) (every-cell? pred (cdr l)))))
+
+    (define (table-start? lines n i)
+      (and (< (+ i 1) n)
+           (string-index (vector-ref lines i) #\|)
+           (let ((align (table-delimiter (vector-ref lines (+ i 1)))))
+             (and align
+                  (= (length align) (length (table-cells (vector-ref lines i))))))))
+
+    (define (collect-table lines n start)
+      (let* ((header (table-cells (vector-ref lines start)))
+             (align (table-delimiter (vector-ref lines (+ start 1))))
+             (width (length header))
+             (fit (lambda (cells)
+                    (let loop ((cs cells) (k 0) (acc '()))
+                      (cond ((= k width) (reverse acc))
+                            ((null? cs) (loop cs (+ k 1) (cons '() acc)))
+                            (else (loop (cdr cs) (+ k 1)
+                                        (cons (parse-inlines (car cs)) acc))))))))
+        (let loop ((i (+ start 2)) (rows '()))
+          (if (and (< i n)
+                   (not (blank-line? (vector-ref lines i)))
+                   (string-index (vector-ref lines i) #\|))
+              (loop (+ i 1) (cons (cons 'row (fit (table-cells (vector-ref lines i)))) rows))
+              (cons `(table (align ,@align)
+                            (header ,@(fit header))
+                            ,@(reverse rows))
+                    i)))))
+
     (define (block-start? line)
       (or (blank-line? line)
           (thematic-break? line)
@@ -382,6 +484,9 @@ Example:
                            (loop (cdr res) (cons (car res) acc)))))
                       ((blockquote-line? line)
                        (let ((res (collect-blockquote lines n i)))
+                         (loop (cdr res) (cons (car res) acc))))
+                      ((table-start? lines n i)
+                       (let ((res (collect-table lines n i)))
                          (loop (cdr res) (cons (car res) acc))))
                       ((or (bullet-content line) (ordered-content line))
                        (let ((res (collect-list lines n i)))
@@ -577,11 +682,79 @@ Example:
     (define (render-inlines nodes)
       (apply string-append (map render-inline nodes)))
 
+    ;; the text of inline nodes, without markup
+    (define (inline-text nodes)
+      (apply string-append
+             (map (lambda (x)
+                    (cond ((string? x) x)
+                          ((not (pair? x)) "")
+                          ((eq? (car x) 'code) (cadr x))
+                          ((eq? (car x) 'link) (inline-text (cadr x)))
+                          ((eq? (car x) 'break) " ")
+                          (else (inline-text (cdr x)))))
+                  nodes)))
+
+    (define (markdown-heading-id inlines)
+      "Syntax: (markdown-heading-id inlines)
+Library: (scm markdown)
+Description: The anchor id of a heading with the given inline nodes (or a
+  plain string), as GitHub makes it: the text in lower case, letters, digits,
+  - and _ kept, spaces turned into -, other characters dropped.
+  markdown->html with 'heading-ids gives headings these ids.
+Example:
+  (markdown-heading-id \"Hash tables & dictionaries\") => \"hash-tables--dictionaries\""
+      (let ((text (if (string? inlines) inlines (inline-text inlines)))
+            (out (open-output-string)))
+        (string-for-each
+         (lambda (c)
+           (cond ((or (char-alphabetic? c) (char-numeric? c) (char=? c #\_) (char=? c #\-))
+                  (write-char (char-downcase c) out))
+                 ((char=? c #\space) (write-char #\- out))))
+         text)
+        (get-output-string out)))
+
+    (define heading-ids (make-parameter #f))
+
+    (define (render-cell tag align cell)
+      (string-append "<" tag
+                     (if align
+                         (string-append " style=\"text-align: "
+                                        (symbol->string align)
+                                        "\"")
+                         "")
+                     ">"
+                     (render-inlines cell)
+                     "</" tag ">"))
+
+    (define (render-table node)
+      (let ((align (cdr (cadr node)))
+            (header (cdr (caddr node)))
+            (rows (map cdr (cdddr node))))
+        (define (row tag cells)
+          (string-append "<tr>"
+                         (apply string-append (map (lambda (a c) (render-cell tag a c))
+                                                   align cells))
+                         "</tr>\n"))
+        (string-append "<table>\n<thead>\n" (row "th" header) "</thead>\n"
+                       (if (null? rows)
+                           ""
+                           (string-append "<tbody>\n"
+                                          (apply string-append (map (lambda (r) (row "td" r)) rows))
+                                          "</tbody>\n"))
+                       "</table>")))
+
     (define (render-block node)
       (case (car node)
+        ((table) (render-table node))
         ((heading)
          (let ((level (number->string (cadr node))))
-           (string-append "<h" level ">"
+           (string-append "<h" level
+                          (if (heading-ids)
+                              (string-append " id=\""
+                                             (esc-attr (markdown-heading-id (cddr node)))
+                                             "\"")
+                              "")
+                          ">"
                           (render-inlines (cddr node))
                           "</h"
                           level
@@ -650,13 +823,18 @@ Example:
     (define (render-blocks blocks)
       (string-join (map render-block blocks) "\n"))
 
-    (define (markdown->html s)
-      "Syntax: (markdown->html s)
+    (define (markdown->html s . options)
+      "Syntax: (markdown->html s [option ...])
 Library: (scm markdown)
 Description: Renders the Markdown text in string s to an HTML fragment (no
   surrounding <html>/<body>). Text and link URLs are HTML-escaped. See the
-  library header for the supported Markdown subset.
+  library header for the supported Markdown subset. With the option
+  'heading-ids, headings get id attributes (see markdown-heading-id), so
+  that links can point to sections.
 Example:
   (markdown->html \"# Hi\\n\\nA *para*.\")
-    => \"<h1>Hi</h1>\\n<p>A <em>para</em>.</p>\""
-      (render-blocks (parse-markdown s)))))
+    => \"<h1>Hi</h1>\\n<p>A <em>para</em>.</p>\"
+  (markdown->html \"## Next steps\" 'heading-ids)
+    => \"<h2 id=\\\"next-steps\\\">Next steps</h2>\""
+      (parameterize ((heading-ids (and (memq 'heading-ids options) #t)))
+        (render-blocks (parse-markdown s))))))

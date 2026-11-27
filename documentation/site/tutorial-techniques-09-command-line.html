@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Command-line programs — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html" class="active">Command-line programs</a>
+    <a class="sub" href="#declaring-the-arguments">Declaring the arguments</a>
+    <a class="sub" href="#the-counting-part">The counting part</a>
+    <a class="sub" href="#putting-it-together">Putting it together</a>
+    <a class="sub" href="#environment-variables">Environment variables</a>
+    <a class="sub" href="#colored-output">Colored output</a>
+    <a class="sub" href="#logging">Logging</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#techniques">Techniques</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">Command-line programs</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="command-line-programs">Command-line programs</h1>
+<p>This chapter builds <code>linecount</code>, a small <code>wc -l</code>-like tool, piece by piece.</p>
+<pre><code class="language-scheme">(import (scheme base) (scheme write) (scheme process-context)
+        (only (srfi 13) string-contains)
+        (scm args) (scm terminal) (scm log))</code></pre>
+<h2 id="declaring-the-arguments">Declaring the arguments</h2>
+<p><a class="xref" href="scm-args.html"><code>(scm args)</code></a> parses options and positional arguments from a declaration:</p>
+<pre><code class="language-scheme">(define cli
+  (make-arg-parser
+   'program "linecount"
+   'description "Counts the lines of files."
+   'options (list (flag 'verbose 'short #\v 'long "verbose"
+                        'help "print a line per file")
+                  (opt 'min 'long "min" 'type arg:integer 'default 0
+                       'help "only count lines with at least N characters"))
+   'positionals (list (pos 'files 'type arg:string 'repeat #t))))
+
+(define r (parse-args cli '("-v" "--min" "3" "a.txt" "b.txt")))
+(args-ref r 'verbose)                       ;; =&gt; #t
+(args-ref r 'min)                           ;; =&gt; 3
+(args-ref r 'files)                         ;; =&gt; ("a.txt" "b.txt")
+
+(define r2 (parse-args cli '("c.txt")))
+(args-ref r2 'verbose)                      ;; =&gt; #f
+(args-ref r2 'min)                          ;; =&gt; 0</code></pre>
+<p>The types convert the text (<code>"3"</code> becomes 3) and reject bad input with a message. Without an argument list, <a class="xref" href="scm-args.html#e21"><code>parse-args</code></a> reads the program's own command line. <code>--help</code> prints a usage text built from the declaration and exits:</p>
+<pre><code class="language-scheme">(string? (format-help cli))                 ;; =&gt; #t</code></pre>
+<h2 id="the-counting-part">The counting part</h2>
+<p>Keep the logic in procedures that take ports, so that they can be tested without files:</p>
+<pre><code class="language-scheme">(define (count-lines in min-length)
+  (let loop ((n 0))
+    (let ((line (read-line in)))
+      (cond ((eof-object? line) n)
+            ((&gt;= (string-length line) min-length) (loop (+ n 1)))
+            (else (loop n))))))
+
+(count-lines (open-input-string "one\n\nthree\n") 0) ;; =&gt; 3
+(count-lines (open-input-string "one\n\nthree\n") 1) ;; =&gt; 2</code></pre>
+<h2 id="putting-it-together">Putting it together</h2>
+<pre><code class="language-scheme no-test">(define (main)
+  (let* ((args (parse-args cli))
+         (files (args-ref args 'files))
+         (min-length (args-ref args 'min)))
+    (if (null? files)
+        ;; no files: read standard input
+        (begin (display (count-lines (current-input-port) min-length))
+               (newline))
+        (let loop ((files files) (total 0) (failed #f))
+          (cond ((null? files)
+                 (display total) (newline)
+                 (exit (if failed 1 0)))
+                ((file-exists? (car files))
+                 (let ((n (call-with-input-file (car files)
+                            (lambda (in) (count-lines in min-length)))))
+                   (when (args-ref args 'verbose)
+                     (display n) (display " ") (display (car files)) (newline))
+                   (loop (cdr files) (+ total n) failed)))
+                (else
+                 (write-string (string-append "linecount: no such file: " (car files) "\n")
+                               (current-error-port))
+                 (loop (cdr files) total #t)))))))
+
+(main)</code></pre>
+<pre><code class="language-sh">$ scm linecount.scm -v notes.txt todo.txt
+12 notes.txt
+3 todo.txt
+15
+$ cat notes.txt | scm linecount.scm --min 1
+11
+$ scmc linecount.scm -o linecount     # a native executable</code></pre>
+<p>Conventions worth keeping:</p>
+<ul>
+<li>errors go to <code>(current-error-port)</code>, results to standard output;</li>
+<li>the exit status is 0 on success and non-zero on failure, so that shell</li>
+</ul>
+<p>scripts can test it;</p>
+<ul>
+<li>with no files, read standard input, so the tool works in pipes.</li>
+</ul>
+<h2 id="environment-variables">Environment variables</h2>
+<pre><code class="language-scheme">(string? (get-environment-variable "PATH")) ;; =&gt; #t
+(get-environment-variable "SURELY_NOT_SET_12345") ;; =&gt; #f
+
+(define (setting name default)
+  (or (get-environment-variable name) default))
+
+(setting "SURELY_NOT_SET_12345" "fallback") ;; =&gt; "fallback"</code></pre>
+<h2 id="colored-output">Colored output</h2>
+<p><a class="xref" href="scm-terminal.html"><code>(scm terminal)</code></a> produces ANSI escape sequences for colors and styles:</p>
+<pre><code class="language-scheme">(string-append (sgr-fg 'red) "error" (sgr-reset)) ;; =&gt; "\x1b;[31merror\x1b;[0m"
+
+(define (status-line ok? message)
+  (string-append (if ok? (sgr-fg 'green) (sgr-fg 'red))
+                 (if ok? "ok  " "FAIL")
+                 (sgr-reset) " " message))
+
+(string-length (status-line #t "compiled")) ;; =&gt; 22</code></pre>
+<p>Only use colors when the output goes to a terminal; when it goes to a file or a pipe, plain text is friendlier. The library also moves the cursor, reads keys in raw mode and reads passwords without echo.</p>
+<h2 id="logging">Logging</h2>
+<p><a class="xref" href="scm-log.html"><code>(scm log)</code></a> writes one structured line per event, with a time stamp, level and category, to <code>log-port</code> (standard error by default):</p>
+<pre><code class="language-scheme no-test">(log-info "import" "read 1200 rows")
+(log-warn "import" "3 rows without a date, skipped")
+(log-error "db" "connection refused")</code></pre>
+<p>Point <code>log-port</code> somewhere else with <code>parameterize</code>, for example into a string port in tests:</p>
+<pre><code class="language-scheme">(define captured
+  (let ((p (open-output-string)))
+    (parameterize ((log-port p))
+      (log-info "demo" "hello"))
+    (get-output-string p)))
+
+(and (string-contains captured "hello") #t)  ;; =&gt; #t</code></pre>
+<p>(<a class="xref" href="srfi-13.html#e24"><code>string-contains</code></a> is from SRFI 13.)</p>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-techniques-10-testing.html">Testing your code</a>.</li>
+<li><a class="xref" href="scm-args.html"><code>(scm args)</code></a>, <a class="xref" href="scm-terminal.html"><code>(scm terminal)</code></a>, <a class="xref" href="scm-log.html"><code>(scm log)</code></a>, <a class="xref" href="scheme-process-context.html"><code>(scheme process-context)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scheme-process-context.html"><code>(scheme process-context)</code></a>, <a href="scm-args.html"><code>(scm args)</code></a>, <a href="scm-terminal.html"><code>(scm terminal)</code></a>, <a href="scm-log.html"><code>(scm log)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-techniques-08-structured-data.html">&larr; Structured data: JSON, XML, TOML, CSV</a>
+  <a class="next" href="tutorial-techniques-10-testing.html">Testing your code &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

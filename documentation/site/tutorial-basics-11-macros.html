@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Macros and pattern matching — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html" class="active">Macros and pattern matching</a>
+    <a class="sub" href="#why-macros">Why macros</a>
+    <a class="sub" href="#hygiene">Hygiene</a>
+    <a class="sub" href="#repetition-with-">Repetition with ...</a>
+    <a class="sub" href="#several-patterns-and-recursion">Several patterns and recursion</a>
+    <a class="sub" href="#a-small-dsl-unit-tests-in-a-table">A small DSL: unit tests in a table</a>
+    <a class="sub" href="#pattern-matching-with-match">Pattern matching with match</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#basics">Basics</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">Macros and pattern matching</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="macros-and-pattern-matching">Macros and pattern matching</h1>
+<h2 id="why-macros">Why macros</h2>
+<p>A procedure always evaluates its arguments first. Some forms must not: <a class="xref" href="scheme-base.html#e93"><code>if</code></a> evaluates only one branch, <a class="xref" href="scheme-base.html#e225"><code>when</code></a> none if the condition is false. A <em>macro</em> rewrites code before it runs, so you can add such forms yourself.</p>
+<pre><code class="language-scheme">(import (scheme base) (scheme write) (scm match))
+
+(define-syntax swap!
+  (syntax-rules ()
+    ((_ a b)
+     (let ((tmp a))
+       (set! a b)
+       (set! b tmp)))))
+
+(define x 1)
+(define y 2)
+(swap! x y)
+(list x y)                        ;; =&gt; (2 1)</code></pre>
+<p><code>syntax-rules</code> lists patterns and templates. <code>_</code> stands for the macro's name; <code>a</code> and <code>b</code> match whatever the user wrote, and the template is filled in with it.</p>
+<h2 id="hygiene">Hygiene</h2>
+<p>The <code>tmp</code> in <code>swap!</code> cannot clash with a user's variable named <code>tmp</code>: the macro system renames it. That is called <em>hygiene</em>:</p>
+<pre><code class="language-scheme">(define tmp 'mine)
+(define other 'yours)
+(swap! tmp other)
+(list tmp other)                  ;; =&gt; (yours mine)</code></pre>
+<h2 id="repetition-with-">Repetition with ...</h2>
+<p><code>...</code> after a pattern matches zero or more items, and repeats in the template. A <code>while</code> loop:</p>
+<pre><code class="language-scheme">(define-syntax while
+  (syntax-rules ()
+    ((_ condition body ...)
+     (let loop ()
+       (when condition
+         body ...
+         (loop))))))
+
+(define i 0)
+(define squares '())
+(while (&lt; i 5)
+  (set! squares (cons (* i i) squares))
+  (set! i (+ i 1)))
+(reverse squares)                 ;; =&gt; (0 1 4 9 16)</code></pre>
+<h2 id="several-patterns-and-recursion">Several patterns and recursion</h2>
+<p>A macro can have several rules and expand into itself. <code>my-or</code> evaluates its arguments until one is true, and evaluates each one only once:</p>
+<pre><code class="language-scheme">(define-syntax my-or
+  (syntax-rules ()
+    ((_) #f)
+    ((_ e) e)
+    ((_ e rest ...)
+     (let ((t e))
+       (if t t (my-or rest ...))))))
+
+(my-or #f #f 3)                   ;; =&gt; 3
+(my-or)                           ;; =&gt; #f
+(let ((calls 0))
+  (my-or (begin (set! calls (+ calls 1)) 'once) 'never)
+  calls)                          ;; =&gt; 1</code></pre>
+<h2 id="a-small-dsl-unit-tests-in-a-table">A small DSL: unit tests in a table</h2>
+<p>Macros shine when they let you write data-like code. This one turns a table of inputs and expected outputs into checks:</p>
+<pre><code class="language-scheme">(define-syntax check-table
+  (syntax-rules (=&gt;)
+    ((_ f (arg ... =&gt; expected) ...)
+     (list (equal? (f arg ...) expected) ...))))
+
+(check-table +
+  (1 2 =&gt; 3)
+  (10 20 30 =&gt; 60)
+  (=&gt; 0))                         ;; =&gt; (#t #t #t)</code></pre>
+<p><code>=&gt;</code> is listed as a <em>literal</em>: it matches only itself.</p>
+<p>Before writing a macro, check whether a procedure would do. Macros are for new syntax (evaluation order, binding names, small languages), not for speed.</p>
+<h2 id="pattern-matching-with-match">Pattern matching with match</h2>
+<p><a class="xref" href="scm-match.html"><code>(scm match)</code></a> matches a value against patterns and binds the parts. Destructuring with <code>car</code> and <code>cdr</code> becomes declarative:</p>
+<pre><code class="language-scheme">(define (describe shape)
+  (match shape
+    (('circle r) (list 'area (* 3 r r)))
+    (('rect w h) (list 'area (* w h)))
+    (('square s) (describe (list 'rect s s)))
+    (_ 'unknown)))
+
+(describe '(circle 2))            ;; =&gt; (area 12)
+(describe '(square 3))            ;; =&gt; (area 9)
+(describe '(triangle 1 2 3))      ;; =&gt; unknown</code></pre>
+<p>Quoted parts (<code>'circle</code>) must match literally, plain names bind, and <code>_</code> matches anything. More patterns:</p>
+<pre><code class="language-scheme">(match '(1 2 3 4)
+  ((first second . rest) (list first second rest)))
+;; =&gt; (1 2 (3 4))
+
+(match '(add 1 2 3)
+  (('add n ...) (apply + n)))     ;; =&gt; 6
+
+(match 15
+  ((? even? n) (list 'even n))
+  ((? odd? n) (list 'odd n)))     ;; =&gt; (odd 15)
+
+(match '(point 3 4)
+  (('point (? number? x) (? number? y)) (+ x y))
+  (_ 'bad-point))                 ;; =&gt; 7</code></pre>
+<p><code>(? pred name)</code> matches if the predicate accepts the value; <code>...</code> matches the rest of a list like in <code>syntax-rules</code>.</p>
+<h3 id="example-an-expression-evaluator">Example: an expression evaluator</h3>
+<p><a class="xref" href="scm-match.html#e0"><code>match</code></a> makes interpreters short. A tiny calculator language with variables:</p>
+<pre><code class="language-scheme">(define (evaluate expr env)
+  (match expr
+    ((? number? n) n)
+    ((? symbol? s) (cdr (assq s env)))
+    (('+ a b) (+ (evaluate a env) (evaluate b env)))
+    (('* a b) (* (evaluate a env) (evaluate b env)))
+    (('let ((name value)) body)
+     (evaluate body (cons (cons name (evaluate value env)) env)))))
+
+(evaluate '(+ 1 (* 2 3)) '())     ;; =&gt; 7
+(evaluate '(let ((x 5)) (* x (+ x 1))) '()) ;; =&gt; 30
+(evaluate '(* rate 100) '((rate . 3/100))) ;; =&gt; 3</code></pre>
+<p><a class="xref" href="scm-match.html#e1"><code>match-lambda</code></a> creates a procedure that matches its argument, and <a class="xref" href="scm-match.html#e3"><code>match-let</code></a> destructures in bindings:</p>
+<pre><code class="language-scheme">(define area
+  (match-lambda
+    (('rect w h) (* w h))
+    (('circle r) (* 3 r r))))
+
+(map area '((rect 2 3) (circle 1))) ;; =&gt; (6 3)
+
+(match-let (((name . age) '("Ada" . 36)))
+  (string-append name " is " (number-&gt;string age))) ;; =&gt; "Ada is 36"</code></pre>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>.</li>
+<li>Reference: <code>syntax-rules</code> in <a class="xref" href="scheme-base.html"><code>(scheme base)</code></a>, <a class="xref" href="scm-match.html"><code>(scm match)</code></a>, <a class="xref" href="scm-macro.html"><code>(scm macro)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scheme-base.html"><code>(scheme base)</code></a>, <a href="scm-match.html"><code>(scm match)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-basics-10-libraries.html">&larr; Libraries and programs</a>
+  <a class="next" href="tutorial-basics-12-continuations.html">Continuations, generators and laziness &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

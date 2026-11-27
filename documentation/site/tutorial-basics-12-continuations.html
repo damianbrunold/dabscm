@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Continuations, generators and laziness — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html" class="active">Continuations, generators and laziness</a>
+    <a class="sub" href="#early-exit-with-callcc">Early exit with call/cc</a>
+    <a class="sub" href="#generators">Generators</a>
+    <a class="sub" href="#laziness-delay-and-force">Laziness: delay and force</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#basics">Basics</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">Continuations, generators and laziness</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="continuations-generators-and-laziness">Continuations, generators and laziness</h1>
+<h2 id="early-exit-with-callcc">Early exit with call/cc</h2>
+<p><code>call-with-current-continuation</code> (short <a class="xref" href="scheme-base.html#e33"><code>call/cc</code></a>) passes "the rest of the computation" to a procedure, as a procedure <code>k</code>. Calling <code>k</code> jumps back to where <a class="xref" href="scheme-base.html#e33"><code>call/cc</code></a> was called, with the given value as its result. The most common use is an early exit from a loop:</p>
+<pre><code class="language-scheme">(import (scheme base) (scheme lazy) (srfi 158))
+
+(define (first-negative numbers)
+  (call/cc
+   (lambda (return)
+     (for-each (lambda (x) (when (&lt; x 0) (return x))) numbers)
+     #f)))
+
+(first-negative '(3 1 -4 1 -5))   ;; =&gt; -4
+(first-negative '(1 2 3))         ;; =&gt; #f</code></pre>
+<p>The same with a product that stops at the first zero, so that a long list is not multiplied in vain:</p>
+<pre><code class="language-scheme">(define (product numbers)
+  (call/cc
+   (lambda (return)
+     (fold-left (lambda (acc x) (if (= x 0) (return 0) (* acc x))) 1 numbers))))
+
+(define (fold-left f init xs)
+  (if (null? xs) init (fold-left f (f init (car xs)) (cdr xs))))
+
+(product '(1 2 3 4))              ;; =&gt; 24
+(product '(5 0 7))                ;; =&gt; 0</code></pre>
+<p>Continuations can do much more (coroutines, backtracking), but in everyday code an escape like this, or <a class="xref" href="scheme-base.html#e91"><code>guard</code></a> from the <a href="tutorial-basics-09-errors.html">errors</a> chapter, is what you need.</p>
+<h2 id="generators">Generators</h2>
+<p>A <em>generator</em> (SRFI 158) is a procedure without arguments that returns the next value each time it is called, and an end-of-file object when it is exhausted. Generators produce values on demand, so they can describe long or even infinite sequences:</p>
+<pre><code class="language-scheme">(define g (make-iota-generator 3))
+(g)                               ;; =&gt; 0
+(g)                               ;; =&gt; 1
+(g)                               ;; =&gt; 2
+(eof-object? (g))                 ;; =&gt; #t
+
+(generator-&gt;list (make-iota-generator 5 10)) ;; =&gt; (10 11 12 13 14)
+(generator-&gt;list (gmap (lambda (x) (* x x)) (make-iota-generator 5)))
+;; =&gt; (0 1 4 9 16)
+(generator-&gt;list (gtake (gfilter odd? (make-range-generator 1)) 4))
+;; =&gt; (1 3 5 7)</code></pre>
+<p><code>(make-range-generator 1)</code> counts 1, 2, 3, … forever; <a class="xref" href="srfi-158.html#e26"><code>gfilter</code></a> and <a class="xref" href="srfi-158.html#e35"><code>gtake</code></a> make it finite. Nothing is computed before it is asked for.</p>
+<p><a class="xref" href="srfi-158.html#e40"><code>make-coroutine-generator</code></a> turns a procedure that "yields" values into a generator. Here are the Fibonacci numbers below 100:</p>
+<pre><code class="language-scheme">(define fibs
+  (make-coroutine-generator
+   (lambda (yield)
+     (let loop ((a 0) (b 1))
+       (yield a)
+       (loop b (+ a b))))))
+
+(generator-&gt;list (gtake-while (lambda (x) (&lt; x 100)) fibs))
+;; =&gt; (0 1 1 2 3 5 8 13 21 34 55 89)</code></pre>
+<p>The <em>accumulators</em> of SRFI 158 are the opposite: you feed them values, and call them with an end-of-file object to get the result:</p>
+<pre><code class="language-scheme">(define total (sum-accumulator))
+(total 3)
+(total 4)
+(total (eof-object))              ;; =&gt; 7
+
+(define words (list-accumulator))
+(for-each words '(alpha beta))
+(words (eof-object))              ;; =&gt; (alpha beta)</code></pre>
+<h2 id="laziness-delay-and-force">Laziness: delay and force</h2>
+<p><code>delay</code> wraps an expression in a <em>promise</em>, which is evaluated the first time it is <code>force</code>d, and only once:</p>
+<pre><code class="language-scheme">(define evaluations 0)
+(define p (delay (begin (set! evaluations (+ evaluations 1)) (* 6 7))))
+evaluations                       ;; =&gt; 0
+(force p)                         ;; =&gt; 42
+(force p)                         ;; =&gt; 42
+evaluations                       ;; =&gt; 1</code></pre>
+<p>Promises give you lazy lists, <em>streams</em>: a pair whose rest is a promise. Only as much of the stream exists as has been looked at:</p>
+<pre><code class="language-scheme">(define (integers-from n)
+  (cons n (delay (integers-from (+ n 1)))))
+
+(define (stream-take s n)
+  (if (= n 0) '() (cons (car s) (stream-take (force (cdr s)) (- n 1)))))
+
+(define (stream-filter pred s)
+  (if (pred (car s))
+      (cons (car s) (delay (stream-filter pred (force (cdr s)))))
+      (stream-filter pred (force (cdr s)))))
+
+(define (sieve s)
+  (cons (car s)
+        (delay (sieve (stream-filter (lambda (x) (not (= 0 (remainder x (car s)))))
+                                     (force (cdr s)))))))
+
+(stream-take (sieve (integers-from 2)) 10)
+;; =&gt; (2 3 5 7 11 13 17 19 23 29)</code></pre>
+<p>That is the sieve of Eratosthenes on the infinite list of integers. In practice, generators are usually the simpler tool; streams are worth knowing when you want to keep and revisit values.</p>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li>That ends the basics. Continue with the <a href="tutorials.html#techniques">techniques</a>:</li>
+</ul>
+<p>strings, files, hash tables and more.</p>
+<ul>
+<li><a href="srfi-158.html">SRFI 158</a> for all generator and accumulator operations.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scheme-base.html"><code>(scheme base)</code></a>, <a href="scheme-lazy.html"><code>(scheme lazy)</code></a>, <a href="srfi-158.html"><code>(srfi 158)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-basics-11-macros.html">&larr; Macros and pattern matching</a>
+  <a class="next" href="tutorial-techniques-01-strings.html">Strings and text &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

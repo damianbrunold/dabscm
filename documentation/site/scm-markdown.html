@@ -11,6 +11,7 @@
 <header>
   <div>
     <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
   </div>
   <div class="search-wrap">
     <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
@@ -23,7 +24,8 @@
 <nav class="toc">
   <h2>Bindings</h2>
   <a href="#e0" data-name="markdown-&gt;html">markdown-&gt;html</a>
-  <a href="#e1" data-name="parse-markdown">parse-markdown</a>
+  <a href="#e1" data-name="markdown-heading-id">markdown-heading-id</a>
+  <a href="#e2" data-name="parse-markdown">parse-markdown</a>
 </nav>
 
 <main>
@@ -40,7 +42,7 @@
 <p class="lib-sub">Markdown parser and HTML renderer (CommonMark subset)</p>
 <div class="lib-preamble">
 <h2>Overview</h2>
-<p><a class="xref" href="scm-markdown.html"><code>(scm markdown)</code></a> is a small, dependency-free Markdown parser and HTML renderer covering a practical CommonMark subset. It has two entry points: <a class="xref" href="#e1"><code>parse-markdown</code></a> turns Markdown text into an s-expression AST you can walk, and <a class="xref" href="#e0"><code>markdown-&gt;html</code></a> renders that AST to an HTML fragment.</p>
+<p><a class="xref" href="scm-markdown.html"><code>(scm markdown)</code></a> is a small, dependency-free Markdown parser and HTML renderer covering a practical CommonMark subset. It has two entry points: <a class="xref" href="#e2"><code>parse-markdown</code></a> turns Markdown text into an s-expression AST you can walk, and <a class="xref" href="#e0"><code>markdown-&gt;html</code></a> renders that AST to an HTML fragment.</p>
 <p>It is the engine behind this documentation site's library preambles, but it is written to be reusable anywhere you need to turn Markdown into HTML or into your own output format.</p>
 <h2>Rendering Markdown to HTML</h2>
 <p>The common case is one call:</p>
@@ -56,7 +58,17 @@
 
 (parse-markdown "See [docs](http://example.com).")
 ;; =&gt; ((paragraph "See " (link ("docs") "http://example.com") "."))</code></pre>
-<p>Block nodes are <code>heading</code>, <code>paragraph</code>, <code>code-block</code>, <code>blockquote</code>, <code>bullet-list</code>, <code>ordered-list</code> and <code>thematic-break</code>. Inline nodes are plain strings plus <code>strong</code>, <code>emph</code>, <code>code</code> and <code>link</code>. See the library source header for the exact shapes.</p>
+<p>Block nodes are <code>heading</code>, <code>paragraph</code>, <code>code-block</code>, <code>blockquote</code>, <code>bullet-list</code>, <code>ordered-list</code>, <code>table</code> and <code>thematic-break</code>. Inline nodes are plain strings plus <code>strong</code>, <code>emph</code>, <code>code</code> and <code>link</code>. See the library source header for the exact shapes.</p>
+<h2>Tables and heading anchors</h2>
+<p>GitHub-style pipe tables are supported, with column alignment from the delimiter row:</p>
+<pre><code class="language-scheme">(markdown-&gt;html "| fruit | kg |\n|:--|--:|\n| apples | 3 |")
+;; =&gt; "&lt;table&gt;\n&lt;thead&gt;\n&lt;tr&gt;&lt;th style=\"text-align: left\"&gt;fruit&lt;/th&gt;..."
+
+(parse-markdown "| a | b |\n|---|---|\n| 1 | 2 |")
+;; =&gt; ((table (align #f #f) (header ("a") ("b")) (row ("1") ("2"))))</code></pre>
+<p>With the option <code>'heading-ids</code>, <a class="xref" href="#e0"><code>markdown-&gt;html</code></a> gives every heading an <code>id</code> as GitHub does, so that links like <code>page.html#next-steps</code> work; <a class="xref" href="#e1"><code>markdown-heading-id</code></a> computes such an id:</p>
+<pre><code class="language-scheme">(markdown-&gt;html "## Next steps" 'heading-ids)
+;; =&gt; "&lt;h2 id=\"next-steps\"&gt;Next steps&lt;/h2&gt;"</code></pre>
 <h2>Supported subset</h2>
 <ul>
 <li>ATX headings (<code>#</code> … <code>######</code>), with trailing <code>#</code>s stripped</li>
@@ -64,25 +76,41 @@
 <li>Bullet lists (<code>-</code>, <code>*</code>, <code>+</code>) and ordered lists (<code>1.</code> / <code>1)</code>)</li>
 <li>Blockquotes (<code>&gt;</code>), parsed recursively</li>
 <li>Thematic breaks (<code>---</code>, <code>***</code>, <code>___</code>)</li>
+<li>Tables (<code>| a | b |</code> with a <code>|---|:-:|</code> delimiter row)</li>
 <li>Inline code, <code>**strong**</code>, <code>*emphasis*</code>, <code>[links](url)</code> and backslash escapes</li>
 </ul>
-<p>By design it does <strong>not</strong> handle setext headings, reference links, images, raw HTML, tables, or nested lists — keep the input simple and predictable.</p>
+<p>By design it does <strong>not</strong> handle setext headings, reference links, images, raw HTML or "loose" lists — keep the input simple and predictable.</p>
 </div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
-<p class="export-count">2 bindings</p>
+<p class="export-count">3 bindings</p>
 
 <div class="entry" id="e0" data-name="markdown-&gt;html">
   <div class="entry-name">markdown-&gt;html</div>
-  <pre class="entry-doc">Syntax: (markdown-&gt;html s)
+  <pre class="entry-doc">Syntax: (markdown-&gt;html s [option ...])
 Library: (scm markdown)
 Description: Renders the Markdown text in string s to an HTML fragment (no
   surrounding &lt;html&gt;/&lt;body&gt;). Text and link URLs are HTML-escaped. See the
-  library header for the supported Markdown subset.
+  library header for the supported Markdown subset. With the option
+  'heading-ids, headings get id attributes (see markdown-heading-id), so
+  that links can point to sections.
 Example:
   (markdown-&gt;html "# Hi\n\nA *para*.")
-    =&gt; "&lt;h1&gt;Hi&lt;/h1&gt;\n&lt;p&gt;A &lt;em&gt;para&lt;/em&gt;.&lt;/p&gt;"</pre>
+    =&gt; "&lt;h1&gt;Hi&lt;/h1&gt;\n&lt;p&gt;A &lt;em&gt;para&lt;/em&gt;.&lt;/p&gt;"
+  (markdown-&gt;html "## Next steps" 'heading-ids)
+    =&gt; "&lt;h2 id=\"next-steps\"&gt;Next steps&lt;/h2&gt;"</pre>
 </div>
-<div class="entry" id="e1" data-name="parse-markdown">
+<div class="entry" id="e1" data-name="markdown-heading-id">
+  <div class="entry-name">markdown-heading-id</div>
+  <pre class="entry-doc">Syntax: (markdown-heading-id inlines)
+Library: (scm markdown)
+Description: The anchor id of a heading with the given inline nodes (or a
+  plain string), as GitHub makes it: the text in lower case, letters, digits,
+  - and _ kept, spaces turned into -, other characters dropped.
+  markdown-&gt;html with 'heading-ids gives headings these ids.
+Example:
+  (markdown-heading-id "Hash tables &amp; dictionaries") =&gt; "hash-tables--dictionaries"</pre>
+</div>
+<div class="entry" id="e2" data-name="parse-markdown">
   <div class="entry-name">parse-markdown</div>
   <pre class="entry-doc">Syntax: (parse-markdown s)
 Library: (scm markdown)

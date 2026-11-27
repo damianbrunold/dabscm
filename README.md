@@ -22,7 +22,9 @@ set of `.sld` library files, kept in sync from a single source of truth.
 - `scm-csharp/` — C# implementation (`scheme/`, `repl/`, `tests/`)
 - `scm-java/` — Java implementation
 - `scm-native/` — native implementation: compiles programs to Zig and static executables (see `scm-native/README.md`)
-- `documentation/` — generated API documentation
+- `documentation/` — generated API documentation (site, Word, Markdown) and the
+  [tutorials](documentation/tutorials/README.md): Scheme basics, techniques
+  and library guides, whose examples are run by the test suites
 - `examples/` — example scripts
 - `scm-bootstrap.jar` — bootstrap interpreter used by the build scripts
 

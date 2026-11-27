@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vectors, bytevectors and other data — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html" class="active">Vectors, bytevectors and other data</a>
+    <a class="sub" href="#vectors">Vectors</a>
+    <a class="sub" href="#bytevectors">Bytevectors</a>
+    <a class="sub" href="#characters-and-strings-in-brief">Characters and strings in brief</a>
+    <a class="sub" href="#choosing-a-structure">Choosing a structure</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#basics">Basics</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">Vectors, bytevectors and other data</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="vectors-bytevectors-and-other-data">Vectors, bytevectors and other data</h1>
+<h2 id="vectors">Vectors</h2>
+<p>A vector is a fixed-size array: access by index takes constant time, whatever the size. Vectors are written <code>#(...)</code>:</p>
+<pre><code class="language-scheme">(import (scheme base) (scheme char)
+        (only (srfi 133) vector-fold vector-index vector-count))
+
+(define v (vector 'a 'b 'c))
+(vector-ref v 1)                  ;; =&gt; b
+(vector-length v)                 ;; =&gt; 3
+(vector-set! v 1 'beta)
+v                                 ;; =&gt; #(a beta c)
+(make-vector 3 0)                 ;; =&gt; #(0 0 0)
+(vector-&gt;list #(1 2 3))           ;; =&gt; (1 2 3)
+(list-&gt;vector '(1 2 3))           ;; =&gt; #(1 2 3)
+(vector-map (lambda (x) (* x x)) #(1 2 3)) ;; =&gt; #(1 4 9)
+(define w (make-vector 2 0))
+(vector-fill! w 'x)
+w                                 ;; =&gt; #(x x)</code></pre>
+<p>A vector literal like <code>#(1 2 3)</code> is a constant; use <code>vector</code> or <code>make-vector</code> for one you want to change.</p>
+<h3 id="example-a-histogram">Example: a histogram</h3>
+<p>Count dice rolls by face. A vector indexed by the face value is the natural counter:</p>
+<pre><code class="language-scheme">(define rolls '(3 6 1 6 2 6 5 3 1 4 6 2))
+
+(define (histogram values size)
+  (let ((counts (make-vector size 0)))
+    (for-each (lambda (x)
+                (vector-set! counts x (+ 1 (vector-ref counts x))))
+              values)
+    counts))
+
+(histogram rolls 7)               ;; =&gt; #(0 2 2 2 1 1 4)</code></pre>
+<p>Face 6 came up four times. <a class="xref" href="srfi-133.html"><code>(srfi 133)</code></a> adds many vector operations; here <a class="xref" href="srfi-133.html#e23"><code>vector-index</code></a> finds the most frequent face:</p>
+<pre><code class="language-scheme">(define counts (histogram rolls 7))
+(define top (vector-fold (lambda (m x) (max m x)) 0 counts))
+(vector-index (lambda (x) (= x top)) counts) ;; =&gt; 6
+(vector-count even? counts)       ;; =&gt; 5</code></pre>
+<h2 id="bytevectors">Bytevectors</h2>
+<p>A bytevector holds bytes (0 to 255): file contents, network messages, images. It is written <code>#u8(...)</code>:</p>
+<pre><code class="language-scheme">(define header (bytevector 137 80 78 71))
+(bytevector-u8-ref header 1)      ;; =&gt; 80
+(bytevector-length header)        ;; =&gt; 4
+(utf8-&gt;string (bytevector 72 105)) ;; =&gt; "Hi"
+(string-&gt;utf8 "é")                ;; =&gt; #u8(195 169)
+(bytevector-append #u8(1 2) #u8(3)) ;; =&gt; #u8(1 2 3)</code></pre>
+<p><a class="xref" href="scheme-base.html#e181"><code>string-&gt;utf8</code></a> and <a class="xref" href="scheme-base.html#e210"><code>utf8-&gt;string</code></a> convert between text and its UTF-8 bytes; "é" takes two bytes. The first bytes of every PNG file are <code>137 80 78 71</code> ("x89PNG"), so that is how a program recognizes one. <a href="tutorial-techniques-03-files.html">Files</a> shows reading and writing binary files.</p>
+<h2 id="characters-and-strings-in-brief">Characters and strings in brief</h2>
+<pre><code class="language-scheme">(char-&gt;integer #\A)               ;; =&gt; 65
+(integer-&gt;char 955)               ;; =&gt; #\λ
+(string #\a #\b)                  ;; =&gt; "ab"
+(make-string 3 #\-)               ;; =&gt; "---"
+(string-copy "hello" 1 3)         ;; =&gt; "el"
+(string-map char-upcase "shout")  ;; =&gt; "SHOUT"</code></pre>
+<p>The <a href="tutorial-techniques-01-strings.html">strings</a> and <a href="tutorial-techniques-02-characters.html">characters</a> tutorials go into depth.</p>
+<h2 id="choosing-a-structure">Choosing a structure</h2>
+<table>
+<thead>
+<tr><th>need</th><th>use</th></tr>
+</thead>
+<tbody>
+<tr><td>a sequence you build and walk from the start</td><td>list</td></tr>
+<tr><td>access by position, fixed size</td><td>vector</td></tr>
+<tr><td>bytes</td><td>bytevector</td></tr>
+<tr><td>lookup by key, few entries</td><td>association list</td></tr>
+<tr><td>lookup by key, many entries</td><td><a href="tutorial-techniques-04-hash-tables.html">hash table</a></td></tr>
+<tr><td>a named group of fields</td><td><a href="tutorial-basics-08-records.html">record</a></td></tr>
+<tr><td>a single mutable cell</td><td>box (<a class="xref" href="srfi-111.html"><code>(srfi 111)</code></a>)</td></tr>
+</tbody>
+</table>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>.</li>
+<li>Reference: <a class="xref" href="scheme-base.html"><code>(scheme base)</code></a>, <a class="xref" href="srfi-133.html"><code>(srfi 133)</code></a> (vectors), <a class="xref" href="scm-bytevector.html"><code>(scm bytevector)</code></a></li>
+</ul>
+<p>(multi-byte integers and floats in bytevectors).</p>
+</div>
+<p class="tutorial-libs">Reference: <a href="scheme-base.html"><code>(scheme base)</code></a>, <a href="scheme-char.html"><code>(scheme char)</code></a>, <a href="srfi-133.html"><code>(srfi 133)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-basics-05-control.html">&larr; Control flow and recursion</a>
+  <a class="next" href="tutorial-basics-07-higher-order.html">Higher-order programming &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

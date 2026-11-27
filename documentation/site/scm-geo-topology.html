@@ -11,6 +11,7 @@
 <header>
   <div>
     <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
   </div>
   <div class="search-wrap">
     <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
@@ -49,7 +50,17 @@
 <h2>Overview</h2>
 <p><a class="xref" href="scm-geo-topology.html"><code>(scm geo topology)</code></a> builds the planar graph of one or more layers of polygon features: every ring is cut at every crossing and wherever a vertex of another ring touches it, edges that coincide are stored once, and the faces the edges enclose are found. Each face knows which features cover it, from whichever layer.</p>
 <p>Most polygon operations are then a matter of giving each face a key and tracing the borders between faces of different keys with <a class="xref" href="#e2"><code>planar-graph-dissolve</code></a>:</p>
-<p>| Operation | Key of a face | |---|---| | dissolve by an attribute | the attribute of the feature covering it | | overlay (union) of two layers | the pair of features covering it | | clip | a key only where the clipping layer covers it | | clean overlaps | one of the features covering it |</p>
+<table>
+<thead>
+<tr><th>Operation</th><th>Key of a face</th></tr>
+</thead>
+<tbody>
+<tr><td>dissolve by an attribute</td><td>the attribute of the feature covering it</td></tr>
+<tr><td>overlay (union) of two layers</td><td>the pair of features covering it</td></tr>
+<tr><td>clip</td><td>a key only where the clipping layer covers it</td></tr>
+<tr><td>clean overlaps</td><td>one of the features covering it</td></tr>
+</tbody>
+</table>
 <p><a class="xref" href="#e7"><code>planar-graph-merge-faces!</code></a> gives faces (gaps, slivers, overlaps) to the neighbour they share the longest border with. Faces with the same key merge; faces with different keys share their borders vertex for vertex, so the result has no gaps or overlaps and <a class="xref" href="scm-geo-topojson.html"><code>(scm geo topojson)</code></a> stores each border once.</p>
 <h2>Common uses</h2>
 <pre><code class="language-scheme">(import (scm geo) (scm geo topology))
