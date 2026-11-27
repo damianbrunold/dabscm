@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm data cluster) — Dabscm Library Reference</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="toc">
+  <h2>Bindings</h2>
+  <a href="#e0" data-name="adjusted-rand-index">adjusted-rand-index</a>
+  <a href="#e1" data-name="cosine-similarity">cosine-similarity</a>
+  <a href="#e2" data-name="cutree">cutree</a>
+  <a href="#e3" data-name="cutree-height">cutree-height</a>
+  <a href="#e4" data-name="distance-matrix">distance-matrix</a>
+  <a href="#e5" data-name="graph-edges">graph-edges</a>
+  <a href="#e6" data-name="graph-size">graph-size</a>
+  <a href="#e7" data-name="graph-strength">graph-strength</a>
+  <a href="#e8" data-name="hclust">hclust</a>
+  <a href="#e9" data-name="jaccard-similarity">jaccard-similarity</a>
+  <a href="#e10" data-name="kmeans">kmeans</a>
+  <a href="#e11" data-name="knn-graph">knn-graph</a>
+  <a href="#e12" data-name="louvain">louvain</a>
+  <a href="#e13" data-name="make-graph">make-graph</a>
+  <a href="#e14" data-name="make-sparse">make-sparse</a>
+  <a href="#e15" data-name="membership-groups">membership-groups</a>
+  <a href="#e16" data-name="modularity">modularity</a>
+  <a href="#e17" data-name="silhouette">silhouette</a>
+  <a href="#e18" data-name="similarity-graph">similarity-graph</a>
+  <a href="#e19" data-name="sparse-&gt;alist">sparse-&gt;alist</a>
+  <a href="#e20" data-name="sparse-dot">sparse-dot</a>
+  <a href="#e21" data-name="sparse-keys">sparse-keys</a>
+  <a href="#e22" data-name="sparse-norm">sparse-norm</a>
+  <a href="#e23" data-name="sparse-ref">sparse-ref</a>
+  <a href="#e24" data-name="sparse-sum">sparse-sum</a>
+  <a href="#e25" data-name="sparse?">sparse?</a>
+  <a href="#e26" data-name="weighted-jaccard-similarity">weighted-jaccard-similarity</a>
+</nav>
+
+<main>
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="index.html">All libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="index.html#sec-scm">Scm Extensions</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm data cluster)</span>
+</nav>
+
+<div class="lib-title scm">(scm data cluster)</div>
+<p class="lib-sub">Similarity, graphs and clustering — cosine/Jaccard, k-NN graphs, Louvain, hclust, k-means</p>
+<div class="lib-preamble">
+<h2>Overview</h2>
+<p>Similarity, graphs and clustering in plain Scheme, for data analysis next to <code>(scm data …)</code>:</p>
+<ul>
+<li>sparse vectors (<a class="xref" href="#e14"><code>make-sparse</code></a>, any keys) with <a class="xref" href="#e1"><code>cosine-similarity</code></a>,</li>
+</ul>
+<p><a class="xref" href="#e9"><code>jaccard-similarity</code></a> and <a class="xref" href="#e26"><code>weighted-jaccard-similarity</code></a></p>
+<ul>
+<li>weighted undirected graphs from an edge list (<a class="xref" href="#e13"><code>make-graph</code></a>) or a</li>
+</ul>
+<p>similarity (<a class="xref" href="#e18"><code>similarity-graph</code></a>, <a class="xref" href="#e11"><code>knn-graph</code></a>)</p>
+<ul>
+<li>community detection: <a class="xref" href="#e12"><code>louvain</code></a> (modularity with a resolution; with</li>
+</ul>
+<p><code>'refine</code> every community is split into its connected parts, the connectivity guarantee of Leiden), <a class="xref" href="#e16"><code>modularity</code></a></p>
+<ul>
+<li>hierarchical clustering: <a class="xref" href="#e8"><code>hclust</code></a> on a <a class="xref" href="#e4"><code>distance-matrix</code></a> (average,</li>
+</ul>
+<p>complete, single, ward linkage), <a class="xref" href="#e2"><code>cutree</code></a>, <a class="xref" href="#e3"><code>cutree-height</code></a></p>
+<ul>
+<li><a class="xref" href="#e10"><code>kmeans</code></a> (k-means++ start) on dense vectors</li>
+<li>quality: <a class="xref" href="#e17"><code>silhouette</code></a>, <a class="xref" href="#e0"><code>adjusted-rand-index</code></a></li>
+</ul>
+<p>A membership is a vector of cluster numbers 0..c-1, numbered by size (largest first). Random steps take a seed, so results are reproducible.</p>
+<h2>Common uses</h2>
+<pre><code class="language-scheme">;; codes described by their hospital volumes; communities of codes
+;; provided by the same hospitals
+(define vecs (map (lambda (c) (make-sparse (code-hospital-counts c))) codes))
+(define m (louvain (knn-graph vecs 15 cosine-similarity) 1.0 'refine))
+(membership-groups m)
+
+;; a dendrogram cut into 8 groups
+(define d (distance-matrix vecs (lambda (a b) (- 1 (cosine-similarity a b)))))
+(cutree (hclust d 'average) 8)</code></pre>
+</div>
+<div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
+<p class="export-count">27 bindings</p>
+
+<div class="entry" id="e0" data-name="adjusted-rand-index">
+  <div class="entry-name">adjusted-rand-index</div>
+  <pre class="entry-doc">Syntax: (adjusted-rand-index a b)
+Library: (scm data cluster)
+Description: Agreement of two memberships of the same items, corrected for
+  chance (Hubert-Arabie): 1 identical, about 0 random, may be negative.
+Example:
+  (adjusted-rand-index #(0 0 1) #(5 5 7)) =&gt; 1.0</pre>
+</div>
+<div class="entry" id="e1" data-name="cosine-similarity">
+  <div class="entry-name">cosine-similarity</div>
+  <pre class="entry-doc">Syntax: (cosine-similarity a b)
+Library: (scm data cluster)
+Description: Cosine of the angle between two sparse vectors (0.0 when one is
+  empty).
+Example:
+  (cosine-similarity (make-sparse '((x . 1))) (make-sparse '((x . 5)))) =&gt; 1.0</pre>
+</div>
+<div class="entry" id="e2" data-name="cutree">
+  <div class="entry-name">cutree</div>
+  <pre class="entry-doc">Syntax: (cutree merges k)
+Library: (scm data cluster)
+Description: The membership with k clusters from hclust's merges.
+Example:
+  (cutree (hclust d) 2) =&gt; #(0 0 0 1 1)</pre>
+</div>
+<div class="entry" id="e3" data-name="cutree-height">
+  <div class="entry-name">cutree-height</div>
+  <pre class="entry-doc">Syntax: (cutree-height merges h)
+Library: (scm data cluster)
+Description: The membership after all merges at height &lt;= h.
+Example:
+  (cutree-height (hclust d) 1.5)</pre>
+</div>
+<div class="entry" id="e4" data-name="distance-matrix">
+  <div class="entry-name">distance-matrix</div>
+  <pre class="entry-doc">Syntax: (distance-matrix items dist)
+Library: (scm data cluster)
+Description: The symmetric n×n matrix (vector of vectors of flonums) of
+  (dist a b) over items; the diagonal is 0.
+Example:
+  (distance-matrix '(0 3) (lambda (a b) (abs (- a b)))) =&gt; #(#(0.0 3.0) #(3.0 0.0))</pre>
+</div>
+<div class="entry" id="e5" data-name="graph-edges">
+  <div class="entry-name">graph-edges</div>
+  <pre class="entry-doc">Syntax: (graph-edges g)
+Library: (scm data cluster)
+Description: The edges ((i j w) …) with i &lt;= j, by i then j.
+Example:
+  (graph-edges (make-graph 2 '((1 0 3)))) =&gt; ((0 1 3))</pre>
+</div>
+<div class="entry" id="e6" data-name="graph-size">
+  <div class="entry-name">graph-size</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e7" data-name="graph-strength">
+  <div class="entry-name">graph-strength</div>
+  <pre class="entry-doc">Syntax: (graph-strength g i)
+Library: (scm data cluster)
+Description: The weighted degree of node i (a self-loop counts once).
+Example:
+  (graph-strength (make-graph 2 '((0 1 2))) 0) =&gt; 2</pre>
+</div>
+<div class="entry" id="e8" data-name="hclust">
+  <div class="entry-name">hclust</div>
+  <pre class="entry-doc">Syntax: (hclust d [linkage])
+Library: (scm data cluster)
+Description: Agglomerative hierarchical clustering of a distance matrix d;
+  linkage average (default, UPGMA), complete, single or ward (Ward on
+  the given distances; give squared Euclidean distances for R's
+  ward.D2 merge order). Nearest-neighbour chain, O(n²) time per merge
+  scan and O(n²) memory. Returns the n-1 merges (a b height size) by
+  height; a, b are leaves 0..n-1 or earlier merges n+t (R's hclust
+  merge with other numbering).
+Example:
+  (cutree (hclust (distance-matrix pts dist)) 3)</pre>
+</div>
+<div class="entry" id="e9" data-name="jaccard-similarity">
+  <div class="entry-name">jaccard-similarity</div>
+  <pre class="entry-doc">Syntax: (jaccard-similarity a b)
+Library: (scm data cluster)
+Description: Shared keys over all keys of two sparse vectors (the values are
+  ignored).
+Example:
+  (jaccard-similarity (make-sparse '((x . 1) (y . 1))) (make-sparse '((x . 9)))) =&gt; 0.5</pre>
+</div>
+<div class="entry" id="e10" data-name="kmeans">
+  <div class="entry-name">kmeans</div>
+  <pre class="entry-doc">Syntax: (kmeans points k ['seed n] ['max-iter n])
+Library: (scm data cluster)
+Description: Lloyd's k-means on dense points (equal-length numeric vectors or
+  lists), k-means++ start with seed (default 1), at most max-iter
+  rounds (default 100). Returns (membership . centres), centres in
+  cluster order.
+Example:
+  (car (kmeans '(#(0) #(1) #(10)) 2)) =&gt; #(0 0 1)</pre>
+</div>
+<div class="entry" id="e11" data-name="knn-graph">
+  <div class="entry-name">knn-graph</div>
+  <pre class="entry-doc">Syntax: (knn-graph items k sim [min-sim])
+Library: (scm data cluster)
+Description: A graph linking every item to its k most similar items (similarity
+  &gt; min-sim, default 0), made symmetric; weights are the similarities.
+  Sparser than similarity-graph for community detection.
+Example:
+  (louvain (knn-graph vecs 10 cosine-similarity))</pre>
+</div>
+<div class="entry" id="e12" data-name="louvain">
+  <div class="entry-name">louvain</div>
+  <pre class="entry-doc">Syntax: (louvain g [resolution] ['refine] ['seed n])
+Library: (scm data cluster)
+Description: Community detection by modularity optimisation (Louvain: local
+  moving, then aggregation, repeated). resolution γ (default 1.0):
+  higher gives smaller communities. 'refine splits every community
+  into its connected parts before aggregating (the connectivity
+  guarantee of Leiden). The node order is shuffled with seed (default
+  1), so the result is reproducible. Returns a membership vector,
+  clusters numbered by size.
+Example:
+  (louvain (make-graph 4 '((0 1) (2 3)))) =&gt; #(0 0 1 1)</pre>
+</div>
+<div class="entry" id="e13" data-name="make-graph">
+  <div class="entry-name">make-graph</div>
+  <pre class="entry-doc">Syntax: (make-graph n edges)
+Library: (scm data cluster)
+Description: An undirected weighted graph with nodes 0..n-1 from edges
+  ((i j w) …) or ((i j) …) (weight 1); repeated edges add up, weights
+  must be positive. Also graph-size, graph-strength, graph-edges.
+Example:
+  (graph-edges (make-graph 3 '((0 1) (1 2 0.5)))) =&gt; ((0 1 1) (1 2 0.5))</pre>
+</div>
+<div class="entry" id="e14" data-name="make-sparse">
+  <div class="entry-name">make-sparse</div>
+  <pre class="entry-doc">Syntax: (make-sparse entries)
+Library: (scm data cluster)
+Description: A sparse vector from an alist ((key . number) …) or a hash table;
+  any keys (equal?), repeated keys add up, zeros are dropped.
+Example:
+  (sparse-ref (make-sparse '((a . 1) (a . 2))) 'a) =&gt; 3</pre>
+</div>
+<div class="entry" id="e15" data-name="membership-groups">
+  <div class="entry-name">membership-groups</div>
+  <pre class="entry-doc">Syntax: (membership-groups m)
+Library: (scm data cluster)
+Description: A membership vector -&gt; vector of member lists by cluster number.
+Example:
+  (membership-groups #(0 1 0)) =&gt; #((0 2) (1))</pre>
+</div>
+<div class="entry" id="e16" data-name="modularity">
+  <div class="entry-name">modularity</div>
+  <pre class="entry-doc">Syntax: (modularity g m [resolution])
+Library: (scm data cluster)
+Description: Newman modularity of membership m in graph g, with resolution γ
+  (default 1.0): 1/2m Σ_c (in_c - γ tot_c² / 2m).
+Example:
+  (modularity g (louvain g))</pre>
+</div>
+<div class="entry" id="e17" data-name="silhouette">
+  <div class="entry-name">silhouette</div>
+  <pre class="entry-doc">Syntax: (silhouette d m)
+Library: (scm data cluster)
+Description: Silhouette widths of membership m under distance matrix d:
+  (mean . per-item vector); an item alone in its cluster scores 0.
+Example:
+  (car (silhouette d (cutree (hclust d) 2)))</pre>
+</div>
+<div class="entry" id="e18" data-name="similarity-graph">
+  <div class="entry-name">similarity-graph</div>
+  <pre class="entry-doc">Syntax: (similarity-graph items sim [min-sim])
+Library: (scm data cluster)
+Description: A graph over items (list or vector) with an edge i-j weighted
+  (sim a b) for every pair whose similarity is positive and &gt;=
+  min-sim (default 0). O(n²) calls of sim.
+Example:
+  (similarity-graph vecs cosine-similarity 0.2)</pre>
+</div>
+<div class="entry" id="e19" data-name="sparse-&gt;alist">
+  <div class="entry-name">sparse-&gt;alist</div>
+  <pre class="entry-doc">Syntax: (sparse-&gt;alist v)
+Library: (scm data cluster)
+Description: The entries ((key . value) …), in no particular order.
+Example:
+  (sparse-&gt;alist (make-sparse '((a . 2)))) =&gt; ((a . 2))</pre>
+</div>
+<div class="entry" id="e20" data-name="sparse-dot">
+  <div class="entry-name">sparse-dot</div>
+  <pre class="entry-doc">Syntax: (sparse-dot a b)
+Library: (scm data cluster)
+Description: The dot product of two sparse vectors.
+Example:
+  (sparse-dot (make-sparse '((x . 2))) (make-sparse '((x . 3) (y . 1)))) =&gt; 6</pre>
+</div>
+<div class="entry" id="e21" data-name="sparse-keys">
+  <div class="entry-name">sparse-keys</div>
+  <pre class="entry-doc">Syntax: (sparse-keys v)
+Library: (scm data cluster)
+Description: The keys with a non-zero value, in no particular order.
+Example:
+  (sparse-keys (make-sparse '((a . 1) (b . 0)))) =&gt; (a)</pre>
+</div>
+<div class="entry" id="e22" data-name="sparse-norm">
+  <div class="entry-name">sparse-norm</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e23" data-name="sparse-ref">
+  <div class="entry-name">sparse-ref</div>
+  <pre class="entry-doc">Syntax: (sparse-ref v key)
+Library: (scm data cluster)
+Description: The value of key in sparse vector v, 0 when absent.
+Example:
+  (sparse-ref (make-sparse '((a . 1))) 'b) =&gt; 0</pre>
+</div>
+<div class="entry" id="e24" data-name="sparse-sum">
+  <div class="entry-name">sparse-sum</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e25" data-name="sparse?">
+  <div class="entry-name">sparse?</div>
+  <div class="nodoc">(no documentation)</div>
+</div>
+<div class="entry" id="e26" data-name="weighted-jaccard-similarity">
+  <div class="entry-name">weighted-jaccard-similarity</div>
+  <pre class="entry-doc">Syntax: (weighted-jaccard-similarity a b)
+Library: (scm data cluster)
+Description: Σ min(a_k, b_k) / Σ max(a_k, b_k) over all keys (Ruzicka
+  similarity; for counts or shares, non-negative).
+Example:
+  (weighted-jaccard-similarity (make-sparse '((x . 1))) (make-sparse '((x . 3)))) =&gt; 0.25</pre>
+</div>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

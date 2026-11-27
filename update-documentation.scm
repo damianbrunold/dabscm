@@ -129,6 +129,9 @@
     ((scm data core)
      .
      "Data-frame base — missing value na, calendar dates, type inference")
+    ((scm data cluster)
+     .
+     "Similarity, graphs and clustering — cosine/Jaccard, k-NN graphs, Louvain, hclust, k-means")
     ((scm data expr)
      .
      "Column expressions for data-frame verbs — vocabulary and compiler")

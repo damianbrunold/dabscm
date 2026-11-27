@@ -68,6 +68,7 @@
 | [`(scm crypto token)`](libraries/scm-crypto-token.md) |  |
 | [`(scm crypto)`](libraries/scm-crypto.md) | Cryptographic hashing and encoding utilities |
 | [`(scm csv)`](libraries/scm-csv.md) | CSV parsing |
+| [`(scm data cluster)`](libraries/scm-data-cluster.md) | Similarity, graphs and clustering — cosine/Jaccard, k-NN graphs, Louvain, hclust, k-means |
 | [`(scm data core)`](libraries/scm-data-core.md) | Data-frame base — missing value na, calendar dates, type inference |
 | [`(scm data expr)`](libraries/scm-data-expr.md) | Column expressions for data-frame verbs — vocabulary and compiler |
 | [`(scm data format)`](libraries/scm-data-format.md) | Number, percent and date formatting with thousands separators |
