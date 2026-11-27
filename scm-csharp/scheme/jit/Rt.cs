@@ -15,8 +15,9 @@ public static class Rt
         {
             Lambda lam = tc.fn;
             JitCode? jit = lam.cl.jit;
-            r = jit != null ? jit.Call(vm, lam, tc.frame, depth + 1)
-                            : vm.ExecuteNested(lam, tc.frame, depth + 1);
+            // beyond MaxDepth in the interpreter, as in Call
+            r = jit != null && depth < Jit.MaxDepth ? jit.Call(vm, lam, tc.frame, depth + 1)
+                                                    : vm.ExecuteNested(lam, tc.frame, depth + 1);
         }
         return r;
     }

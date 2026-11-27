@@ -234,6 +234,53 @@
        (if (< n 3) (k2 (* 10 n)) (list r n))))
    '(2020 3)))
 
+;; Deep recursion through multiple values: the producer of
+;; call-with-values (receive, let-values) is a non-tail call that must
+;; move to the interpreter's heap stack beyond the JIT depth like any
+;; other call (it used to grow the host stack until it overflowed, a
+;; Scheme error on the JVM, a dead process on .NET).
+(test-group
+    (define (split l)
+      (if (null? l)
+          (values '() '())
+          (call-with-values (lambda () (split (cdr l)))
+            (lambda (evens odds)
+              (if (even? (car l))
+                  (values (cons (car l) evens) odds)
+                  (values evens (cons (car l) odds)))))))
+    (define (lv-count l)
+      (if (null? l)
+          (values 0 0)
+          (let-values (((n s) (lv-count (cdr l))))
+            (values (+ n 1) (+ s (car l))))))
+    (define big (iota 200000))
+  (=> (call-with-values (lambda () (split big))
+        (lambda (e o) (list (length e) (length o) (car e) (car o))))
+      '(100000 100000 0 1))
+  (=> (call-with-values (lambda () (lv-count big)) list)
+      '(200000 19999900000))
+  (=> ; escaping from deep inside such a recursion
+   (call/cc
+     (lambda (k)
+       (let walk ((l big))
+         (if (= (car l) 150000)
+             (k 'escaped)
+             (call-with-values (lambda () (walk (cdr l))) list)))))
+   'escaped)
+  ;; (srfi 1) procedures written that way
+  (=> (call-with-values (lambda () (partition even? big))
+        (lambda (e o) (list (length e) (length o))))
+      '(100000 100000))
+  (=> (call-with-values (lambda () (span (lambda (x) (< x 150000)) big))
+        (lambda (a b) (list (length a) (length b))))
+      '(150000 50000))
+  (=> (call-with-values (lambda () (split-at big 199999))
+        (lambda (a b) (list (length a) b)))
+      '(199999 (199999)))
+  (=> (call-with-values (lambda () (unzip2 (map (lambda (x) (list x x)) big)))
+        (lambda (a b) (list (length a) (length b))))
+      '(200000 200000)))
+
 ;; Multiple values through primitive calls and frames.
 (test-group (=> (call-with-values (lambda () (values)) list) '())
   (=> (call-with-values (lambda () (values 1 2)) (lambda (a b) (list b a)))

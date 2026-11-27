@@ -18,8 +18,9 @@ public final class Rt {
             TailCall tc = (TailCall) r;
             Lambda lam = tc.fn;
             JitCode jit = lam.cl.jit;
-            r = jit != null ? jit.call(vm, lam, tc.frame, depth + 1)
-                            : vm.executeNested(lam, tc.frame, depth + 1);
+            // beyond maxDepth in the interpreter, as in call
+            r = jit != null && depth < Jit.maxDepth ? jit.call(vm, lam, tc.frame, depth + 1)
+                                                    : vm.executeNested(lam, tc.frame, depth + 1);
         }
         return r;
     }

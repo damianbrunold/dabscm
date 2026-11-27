@@ -27,8 +27,16 @@ static class JitBuiltins
     }
 
     // f applied to the arguments in frame[1..], as a non-tail call.
+    // Like Rt.Call: beyond Jit.MaxDepth the interpreter runs it (on its
+    // heap stack), so a recursion through call-with-values (receive,
+    // let-values) does not grow the CLR stack without bound.
     internal static object Apply(VM vm, object f, object[] frame, int depth)
     {
+        if (f is Lambda deep && depth >= Jit.MaxDepth)
+        {
+            object rd = vm.ExecuteNested(deep, frame, depth + 1);
+            return rd is TailCall ? Rt.Trampoline(vm, rd, depth) : rd;
+        }
         object r = TailApply(vm, f, frame, depth);
         return r is TailCall ? Rt.Trampoline(vm, r, depth) : r;
     }

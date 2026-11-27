@@ -33,8 +33,15 @@ final class JitBuiltins {
         return Rt.prim(vm, f, frame, NO_POS);
     }
 
-    // f applied to the arguments in frame[1..], as a non-tail call.
+    // f applied to the arguments in frame[1..], as a non-tail call. Like
+    // Rt.call: beyond Jit.maxDepth the interpreter runs it (on its heap
+    // stack), so a recursion through call-with-values (receive,
+    // let-values) does not grow the Java stack without bound.
     static Object apply(VM vm, Object f, Object[] frame, int depth) {
+        if (f instanceof Lambda && depth >= Jit.maxDepth) {
+            Object r = vm.executeNested((Lambda) f, frame, depth + 1);
+            return r instanceof TailCall ? Rt.trampoline(vm, r, depth) : r;
+        }
         Object r = tailApply(vm, f, frame, depth);
         return r instanceof TailCall ? Rt.trampoline(vm, r, depth) : r;
     }
