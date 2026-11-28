@@ -19,6 +19,12 @@
   (test-equal "0.0" (fmt-num -0.04 1))
   (test-equal "1234" (fmt-num 1234 0 #f))
   (test-equal "NA" (fmt-num na 1))
+  ;; 2.675 and 1.005 are stored slightly below; the decimal is rounded
+  (test-equal "2.68" (fmt-num 2.675 2))
+  (test-equal "1.01" (fmt-num 1.005 2))
+  (test-equal "-2.68" (fmt-num -2.675 2))
+  (test-equal "0.13" (fmt-num 1/8 2))
+  (test-equal "1'000'000'000'000'000'000'000" (fmt-num 1e21))
   (parameterize ((data-locale '((thousands . ",") (decimal . "."))))
     (test-equal "1,234.5" (fmt-num 1234.5 1)))
   (parameterize ((data-locale '((thousands . ".") (decimal . ","))))
@@ -26,7 +32,8 @@
 
 (test-group "percent and other formats"
   ;; 0.2345 is 0.23449999999999998... in binary: 23.4 (as in R and Python)
-  (test-equal "23.4 %" (fmt-pct 0.2345))
+  ;; rounded as the decimal written, not its binary approximation
+  (test-equal "23.5 %" (fmt-pct 0.2345))
   (test-equal "23.5 %" (fmt-pct 0.235))
   (test-equal "23 %" (fmt-pct 0.2345 0))
   (test-equal "+23 %" (fmt-pct-change 20316 24973))

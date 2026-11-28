@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>"(scm data cluster): similarity and clustering" — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <a href="tutorial-scm-string.html">(scm string): regular expressions and splitting</a>
+  <a href="tutorial-scm-list.html">(scm list) and (scm macro): small helpers</a>
+  <a href="tutorial-scm-match.html">(scm match): pattern matching</a>
+  <a href="tutorial-scm-io.html">(scm io): ports and formatting</a>
+  <a href="tutorial-scm-text.html">(scm text): Unix text tools in Scheme</a>
+  <a href="tutorial-scm-templating.html">(scm templating) and (scm uri): templates and URLs</a>
+  <a href="tutorial-scm-args.html">(scm args): command-line parsing</a>
+  <a href="tutorial-scm-terminal.html">(scm terminal) and (scm log): terminal output and logging</a>
+  <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a>
+  <a href="tutorial-scm-system.html">(scm system) and (scm sysadmin): processes and the system</a>
+  <a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a>
+  <a href="tutorial-scm-store.html">(scm store): an indexed record store</a>
+  <a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a>
+  <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a>
+  <a href="tutorial-scm-json.html">(scm json simple) and (scm json): JSON</a>
+  <a href="tutorial-scm-xml.html">(scm xml) and (scm feed): XML and news feeds</a>
+  <a href="tutorial-scm-toml.html">(scm toml): configuration files</a>
+  <a href="tutorial-scm-markdown.html">(scm markdown): Markdown to HTML and beyond</a>
+  <a href="tutorial-scm-html.html">(scm html), builder and parser: writing and reading HTML</a>
+  <a href="tutorial-scm-excel.html">(scm ooxml excel) and friends: spreadsheets</a>
+  <a href="tutorial-scm-word.html">(scm ooxml word) and friends: Word and OpenDocument texts</a>
+  <a href="tutorial-scm-presentation.html">(scm ooxml presentation): PowerPoint slides</a>
+  <a href="tutorial-scm-pdf.html">(scm pdf) and (scm svg pdf): PDF documents</a>
+  <a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a>
+  <a href="tutorial-scm-http-server.html">(scm net http server) and (scm net http route): web servers</a>
+  <a href="tutorial-scm-http-client.html">(scm net http client): HTTP requests</a>
+  <a href="tutorial-scm-web-app.html">"Web applications: forms, sessions, middleware, static files, uploads"</a>
+  <a href="tutorial-scm-websocket.html">(scm net sockets) and (scm net websocket): TCP and WebSockets</a>
+  <a href="tutorial-scm-email.html">(scm net email) and (scm net smtp): sending e-mail</a>
+  <a href="tutorial-scm-database.html">"(scm database postgres), sqlserver and migrations: SQL databases"</a>
+  <a href="tutorial-scm-scaffold.html">"(scm scaffold): starting a web application with scm new-app"</a>
+  <a href="tutorial-scm-net-remote.html">"(scm net-remote): ssh, scp, rsync, curl and wget from Scheme"</a>
+  <a href="tutorial-scm-data.html">"(scm data): data frames and verbs"</a>
+  <a href="tutorial-scm-data-reshape.html">"(scm data): joining and reshaping"</a>
+  <a href="tutorial-scm-data-stats.html">"(scm data stats) and (scm data format): describing data"</a>
+  <a href="tutorial-scm-data-tests.html">"(scm data tests): hypothesis tests and linear models"</a>
+  <a href="tutorial-scm-data-io.html">"(scm data io): reading and writing data"</a>
+  <a href="tutorial-scm-data-plot.html">"(scm data plot): charts and maps"</a>
+  <a href="tutorial-scm-data-report.html">"(scm data report): reports in HTML, Markdown and PDF"</a>
+  <a href="tutorial-scm-data-cluster.html" class="active">"(scm data cluster): similarity and clustering"</a>
+    <a class="sub" href="#things-as-vectors">Things as vectors</a>
+    <a class="sub" href="#similarity">Similarity</a>
+    <a class="sub" href="#communities-in-a-graph">Communities in a graph</a>
+    <a class="sub" href="#hierarchical-clustering">Hierarchical clustering</a>
+    <a class="sub" href="#k-means-on-measurements">k-means on measurements</a>
+    <a class="sub" href="#how-good-is-a-clustering">How good is a clustering?</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-scm-data-r.html">"(scm data r): translating between R and (scm data)"</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">"(scm data cluster): similarity and clustering"</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="scm-data-cluster-similarity-and-clustering">(scm data cluster): similarity and clustering</h1>
+<p>Clustering finds groups of similar things without being told the groups: customers who buy alike, products bought together, hospitals with similar case mixes. <a class="xref" href="scm-data-cluster.html"><code>(scm data cluster)</code></a> has the parts:</p>
+<ul>
+<li><strong>Describing:</strong> sparse vectors.</li>
+<li><strong>Comparing:</strong> cosine and Jaccard similarity.</li>
+<li><strong>Grouping:</strong>
+<ul>
+<li>graphs with Louvain communities;</li>
+<li>hierarchical clustering;</li>
+<li>k-means.</li>
+</ul>
+</li>
+<li><strong>Judging the result:</strong> silhouettes and the adjusted Rand index.</li>
+</ul>
+<pre><code class="language-scheme">(import (scheme base) (scheme cxr) (scheme write) (scm data cluster))
+
+(define (round3 x) (/ (round (* 1000 x)) 1000))</code></pre>
+<h2 id="things-as-vectors">Things as vectors</h2>
+<p>Each customer is described by what they bought: a <em>sparse vector</em> from tea to kilograms, which stores only the teas a customer actually bought:</p>
+<pre><code class="language-scheme">(define purchases
+  '(("ada"    (sencha . 4) (gyokuro . 2) (matcha . 1))
+    ("alan"   (sencha . 3) (matcha . 2) (bancha . 1))
+    ("grace"  (assam . 5) (darjeeling . 2))
+    ("edsger" (assam . 3) (ceylon . 2) (darjeeling . 1))
+    ("barbara" (rooibos . 4) (chamomile . 2))
+    ("donald" (rooibos . 2) (chamomile . 3) (sencha . 1))))
+
+(define names (map car purchases))
+(define vecs (map (lambda (p) (make-sparse (cdr p))) purchases))
+
+(sparse-ref (car vecs) 'sencha)             ;; =&gt; 4
+(sparse-ref (car vecs) 'assam)              ;; =&gt; 0</code></pre>
+<h2 id="similarity">Similarity</h2>
+<p><em>Cosine similarity</em> compares the direction of two vectors, so a customer who buys a lot and one who buys a little of the same teas are similar. <em>Jaccard similarity</em> compares only which teas, not how much:</p>
+<pre><code class="language-scheme">(define (sim a b) (cosine-similarity (list-ref vecs a) (list-ref vecs b)))
+(round3 (sim 0 1))                          ;; =&gt; 0.816
+(round3 (sim 0 2))                          ;; =&gt; 0.0
+(round3 (sim 4 5))                          ;; =&gt; 0.837
+(round3 (jaccard-similarity (list-ref vecs 0) (list-ref vecs 1))) ;; =&gt; 0.5</code></pre>
+<p>1 means the same mix, 0 nothing in common. ada and alan share sencha and matcha; ada and grace buy entirely different teas.</p>
+<h2 id="communities-in-a-graph">Communities in a graph</h2>
+<p>A similarity graph links every pair of similar customers, weighted by their similarity. Louvain finds <em>communities</em>, groups more strongly linked inside than to each other:</p>
+<pre><code class="language-scheme">(define g (similarity-graph vecs cosine-similarity 0.1))
+(define m (louvain g))
+m                                           ;; =&gt; #(0 0 1 1 2 2)
+
+(define (named groups) (map (lambda (members) (map (lambda (i) (list-ref names i)) members))
+                            (vector-&gt;list groups)))
+(named (membership-groups m))
+;; =&gt; (("ada" "alan") ("grace" "edsger") ("barbara" "donald"))</code></pre>
+<p>Green-tea, black-tea and herbal customers. donald's one kilogram of sencha links him a little to the green-tea group, not enough to move him. A membership vector gives each item's cluster number, the largest cluster first; <a class="xref" href="scm-data-cluster.html#e15"><code>membership-groups</code></a> lists the members.</p>
+<ul>
+<li>The resolution (<code>(louvain g 1.5)</code>) controls the size: higher gives more, smaller communities.</li>
+<li><code>'refine</code> makes sure every community is connected.</li>
+<li>With many items, <a class="xref" href="scm-data-cluster.html#e11"><code>knn-graph</code></a> links each item to its k most similar ones only, which keeps the graph small and is often what makes communities visible.</li>
+<li>Louvain shuffles the order it visits the nodes in, with a fixed seed, so the result is the same on every run (<code>'seed n</code> picks another).</li>
+</ul>
+<h2 id="hierarchical-clustering">Hierarchical clustering</h2>
+<p>Hierarchical clustering merges the two closest groups, again and again, into a tree; cutting the tree gives any number of clusters. It works on distances, here one minus the similarity:</p>
+<pre><code class="language-scheme">(define d (distance-matrix vecs (lambda (a b) (- 1 (cosine-similarity a b)))))
+(define tree (hclust d 'average))
+
+(cutree tree 3)                             ;; =&gt; #(0 0 1 1 2 2)
+(cutree tree 2)                             ;; =&gt; #(0 0 1 1 0 0)
+(map round3 (map caddr tree))               ;; =&gt; (0.156 0.163 0.184 0.888 1.0)</code></pre>
+<p>The heights of the merges show where the natural cut is: three merges happen at small distances (within the groups), then a jump to 0.89 and 1 (between them). With two clusters, the herbal customers join the green-tea ones, through donald's sencha. <a class="xref" href="scm-data-cluster.html#e3"><code>cutree-height</code></a> cuts at a distance instead of a count.</p>
+<p>The linkage says how the distance between groups is measured: <code>average</code> (the default), <code>complete</code>, <code>single</code>, or <code>ward</code>.</p>
+<h2 id="k-means-on-measurements">k-means on measurements</h2>
+<p>For numeric measurements, k-means finds k centres and puts each point with the nearest. Each customer: kilograms per month and average price per kilogram:</p>
+<pre><code class="language-scheme">(define spend '(#(1.0 120) #(1.2 110) #(0.8 130) #(6.0 30) #(5.5 25) #(7.0 35)))
+
+(define km (kmeans spend 2))
+(car km)                                    ;; =&gt; #(0 0 0 1 1 1)
+(map (lambda (c) (vector-map round3 c)) (cdr km)) ;; =&gt; (#(1.0 120.0) #(6.167 30.0))</code></pre>
+<p>A few kilograms of expensive tea, or a lot of cheap tea. The two columns have very different ranges, and k-means measures plain distances, so large-valued columns dominate: standardise them first (<code>zscore</code> from <a class="xref" href="scm-data-stats.html"><code>(scm data stats)</code></a>) when they should count equally.</p>
+<h2 id="how-good-is-a-clustering">How good is a clustering?</h2>
+<p>The <em>silhouette</em> of an item compares its distance to its own cluster with the distance to the nearest other one: near 1 it sits well, near 0 it is on a border, below 0 it is probably in the wrong cluster:</p>
+<pre><code class="language-scheme">(define s3 (silhouette d (cutree tree 3)))
+(define s2 (silhouette d (cutree tree 2)))
+(round3 (car s3))                           ;; =&gt; 0.817
+(round3 (car s2))                           ;; =&gt; 0.515</code></pre>
+<p>The mean silhouette prefers three clusters here. The <em>adjusted Rand index</em> measures how far two clusterings agree, whatever their numbers (1 the same, about 0 no better than chance):</p>
+<pre><code class="language-scheme">(adjusted-rand-index m (cutree tree 3))     ;; =&gt; 1.0
+(round3 (adjusted-rand-index (cutree tree 2) (cutree tree 3))) ;; =&gt; 0.444</code></pre>
+<p>Louvain and the tree found the same three groups, which is reassuring: a structure that different methods agree on is more likely real.</p>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-scm-data.html">Data frames</a> and <a href="tutorial-scm-data-stats.html">statistics</a> to build the vectors from data and describe the clusters; <a href="tutorial-scm-data-plot.html">charts</a> to show them.</li>
+<li>Reference: <a class="xref" href="scm-data-cluster.html"><code>(scm data cluster)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scm-data-cluster.html"><code>(scm data cluster)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-scm-data-report.html">&larr; "(scm data report): reports in HTML, Markdown and PDF"</a>
+  <a class="next" href="tutorial-scm-data-r.html">"(scm data r): translating between R and (scm data)" &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

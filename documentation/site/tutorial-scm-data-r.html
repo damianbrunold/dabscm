@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>"(scm data r): translating between R and (scm data)" — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <a href="tutorial-scm-string.html">(scm string): regular expressions and splitting</a>
+  <a href="tutorial-scm-list.html">(scm list) and (scm macro): small helpers</a>
+  <a href="tutorial-scm-match.html">(scm match): pattern matching</a>
+  <a href="tutorial-scm-io.html">(scm io): ports and formatting</a>
+  <a href="tutorial-scm-text.html">(scm text): Unix text tools in Scheme</a>
+  <a href="tutorial-scm-templating.html">(scm templating) and (scm uri): templates and URLs</a>
+  <a href="tutorial-scm-args.html">(scm args): command-line parsing</a>
+  <a href="tutorial-scm-terminal.html">(scm terminal) and (scm log): terminal output and logging</a>
+  <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a>
+  <a href="tutorial-scm-system.html">(scm system) and (scm sysadmin): processes and the system</a>
+  <a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a>
+  <a href="tutorial-scm-store.html">(scm store): an indexed record store</a>
+  <a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a>
+  <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a>
+  <a href="tutorial-scm-json.html">(scm json simple) and (scm json): JSON</a>
+  <a href="tutorial-scm-xml.html">(scm xml) and (scm feed): XML and news feeds</a>
+  <a href="tutorial-scm-toml.html">(scm toml): configuration files</a>
+  <a href="tutorial-scm-markdown.html">(scm markdown): Markdown to HTML and beyond</a>
+  <a href="tutorial-scm-html.html">(scm html), builder and parser: writing and reading HTML</a>
+  <a href="tutorial-scm-excel.html">(scm ooxml excel) and friends: spreadsheets</a>
+  <a href="tutorial-scm-word.html">(scm ooxml word) and friends: Word and OpenDocument texts</a>
+  <a href="tutorial-scm-presentation.html">(scm ooxml presentation): PowerPoint slides</a>
+  <a href="tutorial-scm-pdf.html">(scm pdf) and (scm svg pdf): PDF documents</a>
+  <a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a>
+  <a href="tutorial-scm-http-server.html">(scm net http server) and (scm net http route): web servers</a>
+  <a href="tutorial-scm-http-client.html">(scm net http client): HTTP requests</a>
+  <a href="tutorial-scm-web-app.html">"Web applications: forms, sessions, middleware, static files, uploads"</a>
+  <a href="tutorial-scm-websocket.html">(scm net sockets) and (scm net websocket): TCP and WebSockets</a>
+  <a href="tutorial-scm-email.html">(scm net email) and (scm net smtp): sending e-mail</a>
+  <a href="tutorial-scm-database.html">"(scm database postgres), sqlserver and migrations: SQL databases"</a>
+  <a href="tutorial-scm-scaffold.html">"(scm scaffold): starting a web application with scm new-app"</a>
+  <a href="tutorial-scm-net-remote.html">"(scm net-remote): ssh, scp, rsync, curl and wget from Scheme"</a>
+  <a href="tutorial-scm-data.html">"(scm data): data frames and verbs"</a>
+  <a href="tutorial-scm-data-reshape.html">"(scm data): joining and reshaping"</a>
+  <a href="tutorial-scm-data-stats.html">"(scm data stats) and (scm data format): describing data"</a>
+  <a href="tutorial-scm-data-tests.html">"(scm data tests): hypothesis tests and linear models"</a>
+  <a href="tutorial-scm-data-io.html">"(scm data io): reading and writing data"</a>
+  <a href="tutorial-scm-data-plot.html">"(scm data plot): charts and maps"</a>
+  <a href="tutorial-scm-data-report.html">"(scm data report): reports in HTML, Markdown and PDF"</a>
+  <a href="tutorial-scm-data-cluster.html">"(scm data cluster): similarity and clustering"</a>
+  <a href="tutorial-scm-data-r.html" class="active">"(scm data r): translating between R and (scm data)"</a>
+    <a class="sub" href="#r-to-scheme">R to Scheme</a>
+    <a class="sub" href="#what-does-not-translate">What does not translate</a>
+    <a class="sub" href="#scheme-to-r">Scheme to R</a>
+    <a class="sub" href="#files-and-the-command-line">Files and the command line</a>
+    <a class="sub" href="#the-r-syntax-tree">The R syntax tree</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">"(scm data r): translating between R and (scm data)"</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="scm-data-r-translating-between-r-and-scm-data">(scm data r): translating between R and (scm data)</h1>
+<p>Many analyses exist as R scripts, and many readers know R. <a class="xref" href="scm-data-r.html"><code>(scm data r)</code></a> translates the common tidyverse subset in both directions: dplyr and tidyr verbs, pipes, readr/readxl input and output, ggplot2 charts, the classic tests and <code>lm</code>. It is imported on its own, not through <a class="xref" href="scm-data.html"><code>(scm data)</code></a>.</p>
+<pre><code class="language-scheme">(import (scheme base) (scheme write) (scm data r))</code></pre>
+<h2 id="r-to-scheme">R to Scheme</h2>
+<p><a class="xref" href="scm-data-r.html#e1"><code>r-&gt;scm-string</code></a> returns two values: the Scheme program and the list of what it could not translate.</p>
+<pre><code class="language-scheme">(define r-script "library(dplyr)
+sales &lt;- read_csv(\"sales.csv\")
+min_kg &lt;- 2
+per_shop &lt;- sales %&gt;%
+  filter(kg &gt;= min_kg, shop != \"Basel\") %&gt;%
+  group_by(shop) %&gt;%
+  summarise(n = n(), kg = sum(kg)) %&gt;%
+  arrange(desc(kg))
+ggplot(per_shop, aes(x = shop, y = kg)) + geom_col() + labs(title = \"Kilograms\")
+t.test(score ~ method, data = taste)
+")
+
+(define-values (scm-code unsupported) (r-&gt;scm-string r-script))
+(display scm-code)
+;; prints: ;; translated from R by (scm data r)
+;; prints: (import (scheme base) (scheme write) (srfi 1) (scm data))
+;; prints: (define sales (read-csv "sales.csv"))
+;; prints: (define min_kg 2)
+;; prints: (define per_shop
+;; prints:   (-&gt; sales
+;; prints:       (where (&gt;= kg ,min_kg) (!= shop "Basel"))
+;; prints:       (group-by shop)
+;; prints:       (summarise (n (n)) (kg (sum kg)))
+;; prints:       (arrange (desc kg))))
+;; prints: (save-plot (ggplot per_shop
+;; prints:                    (aes (x shop) (y kg))
+;; prints:                    (geom-col)
+;; prints:                    (labs (title "Kilograms")))
+;; prints:            "plot.png")
+;; prints: (htest-print (t-test taste '(score ~ method)))
+unsupported                                 ;; =&gt; ()</code></pre>
+<ul>
+<li><strong>Pipes:</strong> <code>%&gt;%</code> and <code>|&gt;</code> become <code>-&gt;</code>, <a class="xref" href="srfi-1.html#e66"><code>filter</code></a> becomes <code>where</code>.</li>
+<li><strong>Charts:</strong> a ggplot <code>+</code> chain becomes one <code>ggplot</code> form, saved to a file because a script has no plot window.</li>
+<li><strong>Tests:</strong> print as in R.</li>
+<li><strong>Names:</strong> stay as they are (<code>per_shop</code>); R's dots become valid Scheme names.</li>
+</ul>
+<p>Inside a verb, R looks a name up among the columns first, then among the script's variables. The translation decides once: <code>min_kg</code> was assigned in the script, so it is a value and gets the comma; <code>kg</code> and <code>shop</code> were not, so they are columns.</p>
+<h2 id="what-does-not-translate">What does not translate</h2>
+<p>Whatever has no counterpart is marked, never dropped, and the translation always produces a program:</p>
+<pre><code class="language-scheme">(define-values (code2 todo) (r-&gt;scm-string "x &lt;- sapply(1:10, function(i) i^2)\ndf %&gt;% mutate(m = rollmean(v, 3))"))
+todo                                        ;; =&gt; ("sapply(1:10, function(i) i^2)" "rollmean(v, 3)")</code></pre>
+<p>In the code, an unsupported expression appears as <code>(r:unsupported "…")</code> at its place, and a whole statement as a <code>;; TODO (R): …</code> comment, so the result runs up to the first gap and shows what is left to port by hand.</p>
+<h2 id="scheme-to-r">Scheme to R</h2>
+<p><a class="xref" href="scm-data-r.html#e7"><code>scm-&gt;r-string</code></a> goes the other way, writing pipe-style R with the <code>library</code> calls it needs. It takes the program as text or as data:</p>
+<pre><code class="language-scheme">(display (scm-&gt;r-string "(define per-shop (-&gt; sales (where (&gt;= kg ,min-kg)) (group-by shop) (summarise (kg (sum kg))) (arrange (desc kg))))"))
+;; prints: # translated from Scheme by (scm data r)
+;; prints: library(dplyr)
+;; prints:
+;; prints: per_shop &lt;- sales |&gt;
+;; prints:   filter(kg &gt;= min_kg) |&gt;
+;; prints:   group_by(shop) |&gt;
+;; prints:   summarise(kg = sum(kg)) |&gt;
+;; prints:   arrange(desc(kg))</code></pre>
+<p>A value spliced into an expression becomes the variable when it is a name, as above, and <code>!!</code> (dplyr's own unquote) when it is an expression. Reports become R Markdown with <a class="xref" href="scm-data-r.html#e5"><code>report-&gt;rmd</code></a>. This is the way to hand an analysis to colleagues who work in R, or to check a result against R.</p>
+<h2 id="files-and-the-command-line">Files and the command line</h2>
+<p><a class="xref" href="scm-data-r.html#e3"><code>r-file-&gt;scm</code></a> and <a class="xref" href="scm-data-r.html#e8"><code>scm-file-&gt;r</code></a> translate files. The script <code>examples/r-convert.scm</code> in the dabscm repository does it from the shell, choosing the direction from the extension:</p>
+<pre><code class="language-sh">scm examples/r-convert.scm analysis.R        # writes the Scheme version to standard output
+scm examples/r-convert.scm analysis.scm      # writes R</code></pre>
+<h2 id="the-r-syntax-tree">The R syntax tree</h2>
+<p>The translator parses R with its real grammar (precedence, newlines, named arguments, formulas, functions). <a class="xref" href="scm-data-r.html#e4"><code>r-parse</code></a> gives the tree, for tools of your own, and <a class="xref" href="scm-data-r.html#e2"><code>r-deparse</code></a> writes R from a tree:</p>
+<pre><code class="language-scheme">(r-parse "a &lt;- b + 2 * c")
+;; =&gt; ((:call &lt;- (#f . a) (#f :call + (#f . b) (#f :call * (#f . 2) (#f . c)))))
+(display (r-deparse (car (r-parse "f(x, y = 2)"))))
+;; prints: f(x, y = 2)</code></pre>
+<p><a class="xref" href="scm-data-r.html#e4"><code>r-parse</code></a> returns the list of statements. A call is <code>(:call function argument …)</code>; each argument is a pair of its name (<code>#f</code> when positional) and its value.</p>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-scm-data.html">Data frames</a> and the other <a class="xref" href="scm-data.html"><code>(scm data)</code></a> chapters for what the translated code does.</li>
+<li>Reference: <a class="xref" href="scm-data-r.html"><code>(scm data r)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scm-data-r.html"><code>(scm data r)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-scm-data-cluster.html">&larr; "(scm data cluster): similarity and clustering"</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

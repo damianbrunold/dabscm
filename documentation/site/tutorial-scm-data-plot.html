@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>"(scm data plot): charts and maps" — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <a href="tutorial-scm-string.html">(scm string): regular expressions and splitting</a>
+  <a href="tutorial-scm-list.html">(scm list) and (scm macro): small helpers</a>
+  <a href="tutorial-scm-match.html">(scm match): pattern matching</a>
+  <a href="tutorial-scm-io.html">(scm io): ports and formatting</a>
+  <a href="tutorial-scm-text.html">(scm text): Unix text tools in Scheme</a>
+  <a href="tutorial-scm-templating.html">(scm templating) and (scm uri): templates and URLs</a>
+  <a href="tutorial-scm-args.html">(scm args): command-line parsing</a>
+  <a href="tutorial-scm-terminal.html">(scm terminal) and (scm log): terminal output and logging</a>
+  <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a>
+  <a href="tutorial-scm-system.html">(scm system) and (scm sysadmin): processes and the system</a>
+  <a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a>
+  <a href="tutorial-scm-store.html">(scm store): an indexed record store</a>
+  <a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a>
+  <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a>
+  <a href="tutorial-scm-json.html">(scm json simple) and (scm json): JSON</a>
+  <a href="tutorial-scm-xml.html">(scm xml) and (scm feed): XML and news feeds</a>
+  <a href="tutorial-scm-toml.html">(scm toml): configuration files</a>
+  <a href="tutorial-scm-markdown.html">(scm markdown): Markdown to HTML and beyond</a>
+  <a href="tutorial-scm-html.html">(scm html), builder and parser: writing and reading HTML</a>
+  <a href="tutorial-scm-excel.html">(scm ooxml excel) and friends: spreadsheets</a>
+  <a href="tutorial-scm-word.html">(scm ooxml word) and friends: Word and OpenDocument texts</a>
+  <a href="tutorial-scm-presentation.html">(scm ooxml presentation): PowerPoint slides</a>
+  <a href="tutorial-scm-pdf.html">(scm pdf) and (scm svg pdf): PDF documents</a>
+  <a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a>
+  <a href="tutorial-scm-http-server.html">(scm net http server) and (scm net http route): web servers</a>
+  <a href="tutorial-scm-http-client.html">(scm net http client): HTTP requests</a>
+  <a href="tutorial-scm-web-app.html">"Web applications: forms, sessions, middleware, static files, uploads"</a>
+  <a href="tutorial-scm-websocket.html">(scm net sockets) and (scm net websocket): TCP and WebSockets</a>
+  <a href="tutorial-scm-email.html">(scm net email) and (scm net smtp): sending e-mail</a>
+  <a href="tutorial-scm-database.html">"(scm database postgres), sqlserver and migrations: SQL databases"</a>
+  <a href="tutorial-scm-scaffold.html">"(scm scaffold): starting a web application with scm new-app"</a>
+  <a href="tutorial-scm-net-remote.html">"(scm net-remote): ssh, scp, rsync, curl and wget from Scheme"</a>
+  <a href="tutorial-scm-data.html">"(scm data): data frames and verbs"</a>
+  <a href="tutorial-scm-data-reshape.html">"(scm data): joining and reshaping"</a>
+  <a href="tutorial-scm-data-stats.html">"(scm data stats) and (scm data format): describing data"</a>
+  <a href="tutorial-scm-data-tests.html">"(scm data tests): hypothesis tests and linear models"</a>
+  <a href="tutorial-scm-data-io.html">"(scm data io): reading and writing data"</a>
+  <a href="tutorial-scm-data-plot.html" class="active">"(scm data plot): charts and maps"</a>
+    <a class="sub" href="#a-first-chart">A first chart</a>
+    <a class="sub" href="#looking-inside">Looking inside</a>
+    <a class="sub" href="#other-geoms">Other geoms</a>
+    <a class="sub" href="#quick-charts">Quick charts</a>
+    <a class="sub" href="#maps">Maps</a>
+    <a class="sub" href="#on-web-pages">On web pages</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-scm-data-report.html">"(scm data report): reports in HTML, Markdown and PDF"</a>
+  <a href="tutorial-scm-data-cluster.html">"(scm data cluster): similarity and clustering"</a>
+  <a href="tutorial-scm-data-r.html">"(scm data r): translating between R and (scm data)"</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">"(scm data plot): charts and maps"</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="scm-data-plot-charts-and-maps">(scm data plot): charts and maps</h1>
+<p><a class="xref" href="scm-data-plot.html"><code>(scm data plot)</code></a> draws charts in the style of R's ggplot2: a chart is a data frame plus a description of how its columns map to positions, colours and labels. The output is SVG, for web pages and reports, or PNG and PDF.</p>
+<pre><code class="language-scheme">(import (scheme base) (scheme file) (scheme write) (scm fs) (scm image) (scm data))
+
+(define sales
+  (tibble (shop "Zurich" "Bern" "Basel" "Zurich" "Bern" "Basel")
+          (month 'jan 'jan 'jan 'feb 'feb 'feb)
+          (kg 384 124 72 410 150 90)))</code></pre>
+<h2 id="a-first-chart">A first chart</h2>
+<pre><code class="language-scheme">(define p
+  (ggplot sales
+          (aes (x shop) (y kg) (fill month))
+          (geom-col (position dodge))
+          (labs (title "Kilograms per shop") (x #f) (y "kg"))))
+
+(define dir (mktempdir '(prefix . "plots")))
+(save-plot p (join-path dir "kg.svg"))
+(save-plot p (join-path dir "kg.png"))
+(save-plot p (join-path dir "kg.pdf"))</code></pre>
+<ul>
+<li><code>aes</code> (aesthetics) says which column goes where: shop on the x axis, kilograms as the bar height, the month as the colour.</li>
+<li><code>geom-col</code> draws bars; <code>(position dodge)</code> puts the months side by side, the default stacks them, <code>(position fill)</code> stacks them to 100 %.</li>
+<li><code>labs</code> sets the title and axis labels; <code>#f</code> leaves a label out.</li>
+</ul>
+<p><code>save-plot</code> picks the format from the extension. The PNG is rendered at twice the size by default, sharp on high-resolution screens; the PDF is vector graphics with real text:</p>
+<pre><code class="language-scheme">(image-info (plot-&gt;png p))                  ;; =&gt; ((format . png) (width . 1440) (height . 800) (orientation . 1))
+(utf8-&gt;string (bytevector-copy (plot-&gt;pdf p) 0 5)) ;; =&gt; "%PDF-"</code></pre>
+<p>The look is fixed on purpose: thin bars, hairline grid lines, a palette of eight colours that colour-blind readers can tell apart, a legend only when there are two series or more. Charts made by different scripts look like they belong together.</p>
+<h2 id="looking-inside">Looking inside</h2>
+<p><code>plot-&gt;svg</code> returns the chart as SXML, the tree form of <a class="xref" href="scm-html-builder.html"><code>(scm html builder)</code></a>, so a chart can go straight into a page, and a test can look inside it. Every bar carries a tooltip:</p>
+<pre><code class="language-scheme">(define (find-all tree tag)                 ; all elements with this tag
+  (cond ((not (pair? tree)) '())
+        ((eq? (car tree) tag) (cons tree (find-in (cdr tree) tag)))
+        (else (find-in (cdr tree) tag))))
+(define (find-in trees tag)
+  (if (null? trees) '() (append (find-all (car trees) tag) (find-in (cdr trees) tag))))
+(define (tooltips svg) (map cadr (find-all svg 'title)))
+
+(define svg (plot-&gt;svg p))
+(car svg)                                   ;; =&gt; svg
+(tooltips svg)
+;; =&gt; ("Zurich, jan: 384" "Bern, jan: 124" "Basel, jan: 72" "Zurich, feb: 410" "Bern, feb: 150" "Basel, feb: 90")</code></pre>
+<p><code>plot-&gt;svg-string</code> gives a standalone SVG document as text.</p>
+<h2 id="other-geoms">Other geoms</h2>
+<pre><code class="language-scheme">;; lines over time, one per shop, with the points marked
+(define trend (ggplot sales (aes (x month) (y kg) (color shop)) (geom-line) (geom-point)
+                      (scale-x (levels jan feb))))
+
+;; the distribution of one variable
+(define brew (tibble (minutes 3.0 3.5 2.5 4.0 3.0 5.5 3.0 2.0 4.5 3.0)))
+(define hist (ggplot brew (aes (x minutes)) (geom-histogram (bins 4))))
+
+;; horizontal bars with the values written at their ends
+(define ranked (ggplot sales (aes (x shop) (y kg)) (geom-col (labels #t)) (coord-flip)))
+
+;; one small chart per month
+(define small (ggplot sales (aes (x shop) (y kg)) (geom-col) (facet-wrap month)))
+
+(map (lambda (pl) (cdr (assq 'width (image-info (plot-&gt;png pl 1))))) (list trend hist ranked small))
+;; =&gt; (720 720 720 720)</code></pre>
+<table>
+<thead>
+<tr><th>geom</th><th>draws</th></tr>
+</thead>
+<tbody>
+<tr><td><code>geom-col</code></td><td>bars of given heights</td></tr>
+<tr><td><code>geom-bar</code></td><td>bars counting rows</td></tr>
+<tr><td><code>geom-line</code>, <code>geom-area</code></td><td>lines, filled areas</td></tr>
+<tr><td><code>geom-point</code></td><td>points (a scatter plot with <code>x</code> and <code>y</code> numeric)</td></tr>
+<tr><td><code>geom-histogram</code>, <code>geom-boxplot</code></td><td>distributions</td></tr>
+<tr><td><code>geom-text</code></td><td>labels at data positions</td></tr>
+<tr><td><code>geom-hline</code>, <code>geom-vline</code></td><td>reference lines, e.g. a target</td></tr>
+</tbody>
+</table>
+<p><code>scale-x</code> and <code>scale-y</code> set the order of categories (<code>levels</code>), the range (<code>limits</code>), a log scale, and the format of the axis labels: <code>(labels pct)</code>, <code>int</code>, <code>si</code>, or any procedure such as <code>fmt-num</code>. <code>theme</code> sets the size and where the legend goes.</p>
+<h2 id="quick-charts">Quick charts</h2>
+<p>For a first look at data, one call is enough:</p>
+<pre><code class="language-scheme">(plot? (bar-chart sales 'shop 'kg 'month "Kilograms")) ;; =&gt; #t
+(plot? (histogram brew 'minutes))                       ;; =&gt; #t</code></pre>
+<p><code>line-chart</code> and <code>scatter-plot</code> are the other two. They return ordinary plots, so <code>plot-add</code> can add labels or layers to them afterwards.</p>
+<h2 id="maps">Maps</h2>
+<p>A map is a chart of a frame with a geometry column, read with <code>read-sf</code> from GeoJSON, a shapefile or TopoJSON. Here four made-up sales regions as squares:</p>
+<pre><code class="language-scheme">(define (square-feature name x y)
+  (string-append "{\"type\":\"Feature\",\"properties\":{\"region\":\"" name "\"},"
+                 "\"geometry\":{\"type\":\"Polygon\",\"coordinates\":[[["
+                 (number-&gt;string x) "," (number-&gt;string y) "],[" (number-&gt;string (+ x 1)) "," (number-&gt;string y) "],["
+                 (number-&gt;string (+ x 1)) "," (number-&gt;string (+ y 1)) "],[" (number-&gt;string x) "," (number-&gt;string (+ y 1)) "],["
+                 (number-&gt;string x) "," (number-&gt;string y) "]]]}}"))
+
+(call-with-output-file (join-path dir "regions.geojson")
+  (lambda (out)
+    (write-string (string-append "{\"type\":\"FeatureCollection\",\"features\":["
+                                 (square-feature "North" 8 47) "," (square-feature "West" 7 46) ","
+                                 (square-feature "East" 9 46) "," (square-feature "South" 8 45) "]}")
+                  out)))
+
+(define regions (read-sf (join-path dir "regions.geojson")))
+(define shares (tibble (region "North" "West" "East" "South") (share 0.42 0.18 0.27 0.13)))</code></pre>
+<p>Join the values to the geometries, fill each region by its value, label it, and class the values into steps of one colour:</p>
+<pre><code class="language-scheme">(define map-plot
+  (ggplot (left-join regions shares (by region))
+          (aes (fill share) (label region))
+          (geom-sf)
+          (geom-sf-text)
+          (scale-fill-steps (breaks (0.15 0.25 0.35)) (palette green) (labels pct))
+          (labs (title "Share of sales") (fill "Share"))))
+
+(tooltips (plot-&gt;svg map-plot))             ;; =&gt; ("North: 42 %" "West: 18 %" "East: 27 %" "South: 13 %")
+(save-plot map-plot (join-path dir "regions.pdf"))
+(rm dir 'recursive)</code></pre>
+<ul>
+<li><code>scale-fill-steps</code> classes a numeric fill: <code>(breaks quantile)</code> (the default, equally many regions per class), <code>equal</code>, or explicit thresholds as here; <code>(n 5)</code> sets the number of classes.</li>
+<li>One-sided palettes (<code>blue</code>, <code>green</code>, <code>orange</code>, <code>red</code>, <code>violet</code>) are for amounts; two-sided ones (<code>blue-red</code> …) with <code>(midpoint 0)</code> for changes that can go either way.</li>
+<li>Labels are placed in the middle of each region, larger regions first, leaving out labels that would overlap.</li>
+<li>Longitude/latitude data is drawn with the right proportions for its latitude; projected data (Swiss LV95, for example) as it is.</li>
+</ul>
+<h2 id="on-web-pages">On web pages</h2>
+<p>A chart's SXML goes into a page built with <a class="xref" href="scm-html-builder.html"><code>(scm html builder)</code></a> as it is. The chart brings its light colours; <code>plot-css</code> adds the dark-mode colours for pages that switch themes:</p>
+<pre><code class="language-scheme no-test">(html-&gt;string
+ `(html (head (style ,(raw (plot-css))))
+        (body (h1 "Sales") ,(plot-&gt;svg p))))</code></pre>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-scm-data-report.html">Reports</a> with charts and tables to HTML, Markdown and PDF.</li>
+<li><a href="tutorial-scm-data-reshape.html">Joining and reshaping</a>: <code>ggplot</code> wants long frames, one row per bar or point.</li>
+<li><a href="tutorial-scm-pdf.html">PDF</a> and <a href="tutorial-scm-images.html">images</a> for the lower levels.</li>
+<li>Reference: <a class="xref" href="scm-data-plot.html"><code>(scm data plot)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scm-data-plot.html"><code>(scm data plot)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-scm-data-io.html">&larr; "(scm data io): reading and writing data"</a>
+  <a class="next" href="tutorial-scm-data-report.html">"(scm data report): reports in HTML, Markdown and PDF" &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

@@ -404,11 +404,18 @@ Example:
              (pad (lambda (s w r?)
                     (if r? (string-pad s w) (string-pad-right s w))))
              (rowno-w (string-length (number->string (max rows 1))))
+             ;; no trailing blanks after a left-aligned last column
+             (rtrim (lambda (s)
+                      (let loop ((e (string-length s)))
+                        (if (and (> e 0) (char=? (string-ref s (- e 1)) #\space))
+                            (loop (- e 1))
+                            (substring s 0 e)))))
              (line (lambda (prefix strs)
-                     (string-append (string-pad-right prefix rowno-w)
-                                    " "
-                                    (string-join (map pad strs widths right?)
-                                                 "  ")
+                     (string-append (rtrim
+                                     (string-append (string-pad-right prefix rowno-w)
+                                                    " "
+                                                    (string-join (map pad strs widths right?)
+                                                                 "  ")))
                                     "\n")))
              (out (open-output-string)))
         (write-string (string-append "# A data frame: "

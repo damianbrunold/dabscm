@@ -99,6 +99,15 @@
   <a href="tutorial-scm-database.html">"(scm database postgres), sqlserver and migrations: SQL databases"</a>
   <a href="tutorial-scm-scaffold.html">"(scm scaffold): starting a web application with scm new-app"</a>
   <a href="tutorial-scm-net-remote.html">"(scm net-remote): ssh, scp, rsync, curl and wget from Scheme"</a>
+  <a href="tutorial-scm-data.html">"(scm data): data frames and verbs"</a>
+  <a href="tutorial-scm-data-reshape.html">"(scm data): joining and reshaping"</a>
+  <a href="tutorial-scm-data-stats.html">"(scm data stats) and (scm data format): describing data"</a>
+  <a href="tutorial-scm-data-tests.html">"(scm data tests): hypothesis tests and linear models"</a>
+  <a href="tutorial-scm-data-io.html">"(scm data io): reading and writing data"</a>
+  <a href="tutorial-scm-data-plot.html">"(scm data plot): charts and maps"</a>
+  <a href="tutorial-scm-data-report.html">"(scm data report): reports in HTML, Markdown and PDF"</a>
+  <a href="tutorial-scm-data-cluster.html">"(scm data cluster): similarity and clustering"</a>
+  <a href="tutorial-scm-data-r.html">"(scm data r): translating between R and (scm data)"</a>
   <h2><a href="index.html">Library reference</a></h2>
 </nav>
 
@@ -180,6 +189,11 @@
 <tr><td>send an e-mail</td><td><a href="tutorial-scm-email.html">E-mail</a></td></tr>
 <tr><td>query PostgreSQL safely</td><td><a href="tutorial-scm-database.html#parameters">Databases</a></td></tr>
 <tr><td>start a new web application</td><td><a href="tutorial-scm-scaffold.html">Scaffold</a></td></tr>
+<tr><td>filter, group and summarise a table</td><td><a href="tutorial-scm-data.html#groups-group-by-and-summarise">Data frames</a></td></tr>
+<tr><td>join two tables, pivot wide or long</td><td><a href="tutorial-scm-data-reshape.html">Joining and reshaping</a></td></tr>
+<tr><td>compare two groups statistically</td><td><a href="tutorial-scm-data-tests.html#two-groups">Hypothesis tests</a></td></tr>
+<tr><td>draw a bar chart or a map</td><td><a href="tutorial-scm-data-plot.html">Charts and maps</a></td></tr>
+<tr><td>write a report with tables and charts as PDF</td><td><a href="tutorial-scm-data-report.html">Reports</a></td></tr>
 <tr><td>handle an error and continue</td><td><a href="tutorial-basics-09-errors.html#catching-errors-with-guard">Errors and exceptions</a></td></tr>
 <tr><td>destructure data with patterns</td><td><a href="tutorial-basics-11-macros.html#pattern-matching-with-match">Macros and pattern matching</a></td></tr>
 <tr><td>write my own control construct</td><td><a href="tutorial-basics-11-macros.html">Macros</a></td></tr>
@@ -269,7 +283,24 @@
 <tr><td><a href="tutorial-scm-net-remote.html"><a class="xref" href="scm-net-remote.html"><code>(scm net-remote)</code></a></a></td><td>ssh, scp, rsync, curl, wget; a deployment script</td></tr>
 </tbody>
 </table>
-<p>Tutorials for the data libraries and the rest follow. Until then, the <a href="index.html">library reference</a> has an overview and examples for every library.</p>
+<h3 id="data-analysis">Data analysis</h3>
+<table>
+<thead>
+<tr><th>tutorial</th><th>covers</th></tr>
+</thead>
+<tbody>
+<tr><td><a href="tutorial-scm-data.html">Data frames and verbs</a></td><td>frames, CSV, missing values, where/mutate/summarise, expressions, dates</td></tr>
+<tr><td><a href="tutorial-scm-data-reshape.html">Joining and reshaping</a></td><td>joins, stacking, pivots, list columns, window functions, own functions</td></tr>
+<tr><td><a href="tutorial-scm-data-stats.html">Statistics and formatting</a></td><td>centre and spread, correlation, frequency tables, number formats</td></tr>
+<tr><td><a href="tutorial-scm-data-tests.html">Hypothesis tests</a></td><td>t-test, Wilcoxon, proportions, tables, correlation, p-adjust, <code>lm</code></td></tr>
+<tr><td><a href="tutorial-scm-data-io.html">Reading and writing data</a></td><td>CSV, Excel, JSON, Scheme data, SQL results, geometries</td></tr>
+<tr><td><a href="tutorial-scm-data-plot.html">Charts and maps</a></td><td>ggplot-style charts, SVG/PNG/PDF, choropleth maps</td></tr>
+<tr><td><a href="tutorial-scm-data-report.html">Reports</a></td><td>reports as data to HTML, Markdown and PDF</td></tr>
+<tr><td><a href="tutorial-scm-data-cluster.html">Clustering</a></td><td>similarity, Louvain communities, hierarchical clustering, k-means</td></tr>
+<tr><td><a href="tutorial-scm-data-r.html">R translation</a></td><td>tidyverse R to <a class="xref" href="scm-data.html"><code>(scm data)</code></a> and back</td></tr>
+</tbody>
+</table>
+<p>Tutorials for the remaining libraries follow. Until then, the <a href="index.html">library reference</a> has an overview and examples for every library.</p>
 <h2 id="running-the-examples-yourself">Running the examples yourself</h2>
 <p>Copy a code block into a file, keep the <a class="xref" href="scm-module.html#e10"><code>import</code></a> from the chapter's first block, and run it with <code>scm file.scm</code>. Lines ending in <code>;; =&gt; value</code> show what an expression returns; <code>;; prints:</code> shows what it writes.</p><span id="basics"></span><span id="techniques"></span><span id="libraries"></span>
 <h2 id="by-library">Tutorials by library</h2>
@@ -293,8 +324,19 @@
 <tr><td><a href="scm-crypto-token.html"><code>(scm crypto token)</code></a></td><td><a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a></td></tr>
 <tr><td><a href="scm-crypto.html"><code>(scm crypto)</code></a></td><td><a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a></td></tr>
 <tr><td><a href="scm-csv.html"><code>(scm csv)</code></a></td><td><a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a></td></tr>
-<tr><td><a href="scm-data-frame.html"><code>(scm data frame)</code></a></td><td><a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a></td></tr>
-<tr><td><a href="scm-data-io.html"><code>(scm data io)</code></a></td><td><a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a></td></tr>
+<tr><td><a href="scm-data-cluster.html"><code>(scm data cluster)</code></a></td><td><a href="tutorial-scm-data-cluster.html">"(scm data cluster): similarity and clustering"</a></td></tr>
+<tr><td><a href="scm-data-core.html"><code>(scm data core)</code></a></td><td><a href="tutorial-scm-data.html">"(scm data): data frames and verbs"</a></td></tr>
+<tr><td><a href="scm-data-expr.html"><code>(scm data expr)</code></a></td><td><a href="tutorial-scm-data.html">"(scm data): data frames and verbs"</a>, <a href="tutorial-scm-data-reshape.html">"(scm data): joining and reshaping"</a></td></tr>
+<tr><td><a href="scm-data-format.html"><code>(scm data format)</code></a></td><td><a href="tutorial-scm-data-stats.html">"(scm data stats) and (scm data format): describing data"</a></td></tr>
+<tr><td><a href="scm-data-frame.html"><code>(scm data frame)</code></a></td><td><a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>, <a href="tutorial-scm-data.html">"(scm data): data frames and verbs"</a></td></tr>
+<tr><td><a href="scm-data-io.html"><code>(scm data io)</code></a></td><td><a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>, <a href="tutorial-scm-data-io.html">"(scm data io): reading and writing data"</a></td></tr>
+<tr><td><a href="scm-data-plot.html"><code>(scm data plot)</code></a></td><td><a href="tutorial-scm-data-plot.html">"(scm data plot): charts and maps"</a></td></tr>
+<tr><td><a href="scm-data-r.html"><code>(scm data r)</code></a></td><td><a href="tutorial-scm-data-r.html">"(scm data r): translating between R and (scm data)"</a></td></tr>
+<tr><td><a href="scm-data-report.html"><code>(scm data report)</code></a></td><td><a href="tutorial-scm-data-report.html">"(scm data report): reports in HTML, Markdown and PDF"</a></td></tr>
+<tr><td><a href="scm-data-stats.html"><code>(scm data stats)</code></a></td><td><a href="tutorial-scm-data-stats.html">"(scm data stats) and (scm data format): describing data"</a></td></tr>
+<tr><td><a href="scm-data-tests.html"><code>(scm data tests)</code></a></td><td><a href="tutorial-scm-data-tests.html">"(scm data tests): hypothesis tests and linear models"</a></td></tr>
+<tr><td><a href="scm-data-verbs.html"><code>(scm data verbs)</code></a></td><td><a href="tutorial-scm-data.html">"(scm data): data frames and verbs"</a>, <a href="tutorial-scm-data-reshape.html">"(scm data): joining and reshaping"</a></td></tr>
+<tr><td><a href="scm-data.html"><code>(scm data)</code></a></td><td><a href="tutorial-scm-data.html">"(scm data): data frames and verbs"</a></td></tr>
 <tr><td><a href="scm-database-migrations.html"><code>(scm database migrations)</code></a></td><td><a href="tutorial-scm-database.html">"(scm database postgres), sqlserver and migrations: SQL databases"</a></td></tr>
 <tr><td><a href="scm-database-postgres.html"><code>(scm database postgres)</code></a></td><td><a href="tutorial-scm-database.html">"(scm database postgres), sqlserver and migrations: SQL databases"</a></td></tr>
 <tr><td><a href="scm-database-sqlserver.html"><code>(scm database sqlserver)</code></a></td><td><a href="tutorial-scm-database.html">"(scm database postgres), sqlserver and migrations: SQL databases"</a></td></tr>

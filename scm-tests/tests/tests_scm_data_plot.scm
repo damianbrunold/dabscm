@@ -217,6 +217,18 @@
     (test-equal 3 (svg-count svg "viz-halo\"")) ; labels
     ;; north up: the squares' tops (y = 10) are above their bottoms
     (test-assert (string-contains svg "viz-rblue")))
+  ;; explicit thresholds, written as documented and as a flat list
+  (for-each
+   (lambda (svg)
+     (test-assert (string-contains svg ">&lt; 15<"))
+     (test-assert (string-contains svg ">15 – 25<"))
+     (test-assert (string-contains svg ">≥ 25<")))
+   (map (lambda (p)
+          (html->string (plot->svg p)))
+        (let ((d (features->df (geojson->features
+                                (json-read (open-input-string geojson-text))))))
+          (list (ggplot d (aes (fill v)) (geom-sf) (scale-fill-steps (breaks (15 25))))
+                (ggplot d (aes (fill v)) (geom-sf) (scale-fill-steps (breaks 15 25)))))))
   ;; categorical fill, an outline layer with data of its own, lon/lat
   (let* ((d (features->df (geojson->features
                            (json-read (open-input-string geojson-text)))))

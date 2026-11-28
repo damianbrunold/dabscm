@@ -46,6 +46,7 @@
 
 <div class="lib-title scm">(scm data format)</div>
 <p class="lib-sub">Number, percent and date formatting with thousands separators</p>
+<p class="lib-tutorials">Tutorials: <a href="tutorial-scm-data-stats.html">"(scm data stats) and (scm data format): describing data"</a></p>
 <div class="lib-preamble">
 <h2>Overview</h2>
 <p>Formatting for reports, tables and chart axes, rounding half away from zero. The parameter <a class="xref" href="#e0"><code>data-locale</code></a> holds the separators (Swiss <code>'</code> and <code>.</code> by default); <a class="xref" href="#e8"><code>na-string</code></a> the text for missing values.</p>
@@ -84,7 +85,8 @@ Example:
 Library: (scm data format)
 Description: Formats a number with a fixed number of decimals (default 0)
   and thousands separators from data-locale (pass #f as thousands? to
-  leave them out). na gives (na-string).
+  leave them out). na gives (na-string). Rounds half away from zero, on
+  the decimal value as written: 2.675 gives 2.68 with 2 decimals.
 Example:
   (fmt-num 24973.25 1) =&gt; "24'973.3"
   (fmt-num -0.04 1)    =&gt; "0.0"</pre>

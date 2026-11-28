@@ -80,6 +80,11 @@ the JVM, .NET and native implementations, so the code works as shown.
 | send an e-mail | [E-mail](scm-email.md) |
 | query PostgreSQL safely | [Databases](scm-database.md#parameters) |
 | start a new web application | [Scaffold](scm-scaffold.md) |
+| filter, group and summarise a table | [Data frames](scm-data.md#groups-group-by-and-summarise) |
+| join two tables, pivot wide or long | [Joining and reshaping](scm-data-reshape.md) |
+| compare two groups statistically | [Hypothesis tests](scm-data-tests.md#two-groups) |
+| draw a bar chart or a map | [Charts and maps](scm-data-plot.md) |
+| write a report with tables and charts as PDF | [Reports](scm-data-report.md) |
 | handle an error and continue | [Errors and exceptions](basics-09-errors.md#catching-errors-with-guard) |
 | destructure data with patterns | [Macros and pattern matching](basics-11-macros.md#pattern-matching-with-match) |
 | write my own control construct | [Macros](basics-11-macros.md) |
@@ -158,7 +163,21 @@ Guided tours of the individual libraries, each with worked examples.
 | [`(scm scaffold)`](scm-scaffold.md) | the starter applications and `scm new-app` |
 | [`(scm net-remote)`](scm-net-remote.md) | ssh, scp, rsync, curl, wget; a deployment script |
 
-Tutorials for the data libraries and the rest follow. Until then, the
+### Data analysis
+
+| tutorial | covers |
+|---|---|
+| [Data frames and verbs](scm-data.md) | frames, CSV, missing values, where/mutate/summarise, expressions, dates |
+| [Joining and reshaping](scm-data-reshape.md) | joins, stacking, pivots, list columns, window functions, own functions |
+| [Statistics and formatting](scm-data-stats.md) | centre and spread, correlation, frequency tables, number formats |
+| [Hypothesis tests](scm-data-tests.md) | t-test, Wilcoxon, proportions, tables, correlation, p-adjust, `lm` |
+| [Reading and writing data](scm-data-io.md) | CSV, Excel, JSON, Scheme data, SQL results, geometries |
+| [Charts and maps](scm-data-plot.md) | ggplot-style charts, SVG/PNG/PDF, choropleth maps |
+| [Reports](scm-data-report.md) | reports as data to HTML, Markdown and PDF |
+| [Clustering](scm-data-cluster.md) | similarity, Louvain communities, hierarchical clustering, k-means |
+| [R translation](scm-data-r.md) | tidyverse R to `(scm data)` and back |
+
+Tutorials for the remaining libraries follow. Until then, the
 [library reference](../index.md) has an overview and examples for every
 library.
 

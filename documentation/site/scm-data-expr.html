@@ -44,6 +44,7 @@
 
 <div class="lib-title scm">(scm data expr)</div>
 <p class="lib-sub">Column expressions for data-frame verbs — vocabulary and compiler</p>
+<p class="lib-tutorials">Tutorials: <a href="tutorial-scm-data.html">"(scm data): data frames and verbs"</a>, <a href="tutorial-scm-data-reshape.html">"(scm data): joining and reshaping"</a></p>
 <div class="lib-preamble">
 <h2>Overview</h2>
 <p>The expression language of the data-frame verbs. A bare symbol names a column; numbers, strings and quoted data are constants; <code>,x</code> splices in a Scheme value and <code>(,proc a b)</code> calls a Scheme procedure per row. Expressions are compiled once per verb into closures over the row index.</p>

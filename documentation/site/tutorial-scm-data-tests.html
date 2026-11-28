@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>"(scm data tests): hypothesis tests and linear models" — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <a href="tutorial-scm-string.html">(scm string): regular expressions and splitting</a>
+  <a href="tutorial-scm-list.html">(scm list) and (scm macro): small helpers</a>
+  <a href="tutorial-scm-match.html">(scm match): pattern matching</a>
+  <a href="tutorial-scm-io.html">(scm io): ports and formatting</a>
+  <a href="tutorial-scm-text.html">(scm text): Unix text tools in Scheme</a>
+  <a href="tutorial-scm-templating.html">(scm templating) and (scm uri): templates and URLs</a>
+  <a href="tutorial-scm-args.html">(scm args): command-line parsing</a>
+  <a href="tutorial-scm-terminal.html">(scm terminal) and (scm log): terminal output and logging</a>
+  <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a>
+  <a href="tutorial-scm-system.html">(scm system) and (scm sysadmin): processes and the system</a>
+  <a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a>
+  <a href="tutorial-scm-store.html">(scm store): an indexed record store</a>
+  <a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a>
+  <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a>
+  <a href="tutorial-scm-json.html">(scm json simple) and (scm json): JSON</a>
+  <a href="tutorial-scm-xml.html">(scm xml) and (scm feed): XML and news feeds</a>
+  <a href="tutorial-scm-toml.html">(scm toml): configuration files</a>
+  <a href="tutorial-scm-markdown.html">(scm markdown): Markdown to HTML and beyond</a>
+  <a href="tutorial-scm-html.html">(scm html), builder and parser: writing and reading HTML</a>
+  <a href="tutorial-scm-excel.html">(scm ooxml excel) and friends: spreadsheets</a>
+  <a href="tutorial-scm-word.html">(scm ooxml word) and friends: Word and OpenDocument texts</a>
+  <a href="tutorial-scm-presentation.html">(scm ooxml presentation): PowerPoint slides</a>
+  <a href="tutorial-scm-pdf.html">(scm pdf) and (scm svg pdf): PDF documents</a>
+  <a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a>
+  <a href="tutorial-scm-http-server.html">(scm net http server) and (scm net http route): web servers</a>
+  <a href="tutorial-scm-http-client.html">(scm net http client): HTTP requests</a>
+  <a href="tutorial-scm-web-app.html">"Web applications: forms, sessions, middleware, static files, uploads"</a>
+  <a href="tutorial-scm-websocket.html">(scm net sockets) and (scm net websocket): TCP and WebSockets</a>
+  <a href="tutorial-scm-email.html">(scm net email) and (scm net smtp): sending e-mail</a>
+  <a href="tutorial-scm-database.html">"(scm database postgres), sqlserver and migrations: SQL databases"</a>
+  <a href="tutorial-scm-scaffold.html">"(scm scaffold): starting a web application with scm new-app"</a>
+  <a href="tutorial-scm-net-remote.html">"(scm net-remote): ssh, scp, rsync, curl and wget from Scheme"</a>
+  <a href="tutorial-scm-data.html">"(scm data): data frames and verbs"</a>
+  <a href="tutorial-scm-data-reshape.html">"(scm data): joining and reshaping"</a>
+  <a href="tutorial-scm-data-stats.html">"(scm data stats) and (scm data format): describing data"</a>
+  <a href="tutorial-scm-data-tests.html" class="active">"(scm data tests): hypothesis tests and linear models"</a>
+    <a class="sub" href="#two-groups">Two groups</a>
+    <a class="sub" href="#tests-as-data-frames">Tests as data frames</a>
+    <a class="sub" href="#proportions">Proportions</a>
+    <a class="sub" href="#tables">Tables</a>
+    <a class="sub" href="#correlation-and-normality">Correlation and normality</a>
+    <a class="sub" href="#many-tests">Many tests</a>
+    <a class="sub" href="#linear-models">Linear models</a>
+    <a class="sub" href="#distributions">Distributions</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-scm-data-io.html">"(scm data io): reading and writing data"</a>
+  <a href="tutorial-scm-data-plot.html">"(scm data plot): charts and maps"</a>
+  <a href="tutorial-scm-data-report.html">"(scm data report): reports in HTML, Markdown and PDF"</a>
+  <a href="tutorial-scm-data-cluster.html">"(scm data cluster): similarity and clustering"</a>
+  <a href="tutorial-scm-data-r.html">"(scm data r): translating between R and (scm data)"</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">"(scm data tests): hypothesis tests and linear models"</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="scm-data-tests-hypothesis-tests-and-linear-models">(scm data tests): hypothesis tests and linear models</h1>
+<p><a class="xref" href="scm-data-tests.html"><code>(scm data tests)</code></a> has the classic tests and linear models of R's <code>stats</code> package, with the same names, defaults and results (they are checked against R). An analysis written in R can be redone here and give the same p-values.</p>
+<pre><code class="language-scheme">(import (scheme base) (scheme write) (scm data))
+
+(define (round4 x) (/ (round (* 10000 x)) 10000))</code></pre>
+<h2 id="two-groups">Two groups</h2>
+<p>Twelve tasters scored the same tea, half of them brewed in a pot, half from a bag. Is the difference more than chance?</p>
+<pre><code class="language-scheme">(define taste
+  (tibble (method "pot" "pot" "pot" "pot" "pot" "pot" "bag" "bag" "bag" "bag" "bag" "bag")
+          (score 7.5 8 6.5 8.5 7 9 6 5.5 7 6.5 5 6)))
+
+(define h (t-test taste '(score ~ method)))
+(round4 (htest-ref h 'statistic))           ;; =&gt; -3.6556
+(round4 (htest-ref h 'p-value))             ;; =&gt; 0.005
+(map round4 (htest-ref h 'conf-int))        ;; =&gt; (-2.8275 -0.6725)</code></pre>
+<p>The formula <code>score ~ method</code> reads "score, by method". The test takes a data frame and a formula, or two lists of numbers. <code>htest-print</code> shows the result as R does:</p>
+<pre><code class="language-text">	Welch Two Sample t-test
+
+data:  score by method
+t = -3.6556, df = 9.3077, p-value = 0.004982
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ -2.827493 -0.6725073
+sample estimates:
+mean in group bag mean in group pot
+                6              7.75</code></pre>
+<ul>
+<li>The p-value of 0.005 says: if the method made no difference, a gap this large would turn up in about 1 of 200 such tastings. That is usually taken as evidence of a real difference.</li>
+<li>The confidence interval says by how much: the bag scores between 0.7 and 2.8 points lower. It is often more useful than the p-value.</li>
+<li>The default is Welch's test, which does not assume equal variances, as in R. <code>'var-equal #t</code> gives the classic pooled test, <code>'paired #t</code> the paired test for before/after measurements on the same people.</li>
+</ul>
+<p>Options are pairs of a symbol and a value, after the data:</p>
+<pre><code class="language-scheme">(round4 (htest-ref (t-test taste '(score ~ method) 'alternative 'less) 'p-value)) ;; =&gt; 0.0025
+(round4 (htest-ref (t-test (list 3.0 3.5 2.5 4.0 3.0 5.5 3.0 2.0 4.5 3.0) 'mu 3) 'p-value)) ;; =&gt; 0.2471</code></pre>
+<p>The first asks only whether bag scores are <em>lower</em> (a one-sided test); the second whether a mean differs from 3.</p>
+<p>Scores are not really measurements on a scale, and twelve tasters are few. The Wilcoxon rank-sum test assumes less, only that higher means better:</p>
+<pre><code class="language-scheme">(round4 (htest-ref (wilcox-test taste '(score ~ method)) 'p-value)) ;; =&gt; 0.0126</code></pre>
+<h2 id="tests-as-data-frames">Tests as data frames</h2>
+<p><code>tidy</code> turns a result into a one-row data frame, so that many tests can be collected into one table with <code>bind-rows</code>, for a report:</p>
+<pre><code class="language-scheme">(df-names (tidy h))
+;; =&gt; (estimate estimate1 estimate2 statistic p-value parameter conf-low conf-high method alternative)
+(df-column (tidy h) 'method)                ;; =&gt; #("Welch Two Sample t-test")</code></pre>
+<h2 id="proportions">Proportions</h2>
+<p>14 of 20 visitors preferred the new blend. Is that more than half?</p>
+<pre><code class="language-scheme">(define b (binom-test 14 20 0.5))
+(round4 (htest-ref b 'p-value))             ;; =&gt; 0.1153
+(map round4 (htest-ref b 'conf-int))        ;; =&gt; (0.4572 0.8811)
+(round4 (htest-ref (prop-test 14 20) 'p-value)) ;; =&gt; 0.1175</code></pre>
+<p>70 % sounds clear, but with 20 people it could easily be chance: the interval reaches down to 46 %. <code>binom-test</code> is exact, <code>prop-test</code> the normal approximation; with small numbers prefer the exact test.</p>
+<h2 id="tables">Tables</h2>
+<p>Does the preference depend on the city? A table of counts:</p>
+<pre><code class="language-scheme">(define tab
+  (crosstab '("Zurich" "Zurich" "Bern" "Bern" "Zurich" "Bern" "Zurich" "Bern")
+            '("yes" "no" "no" "no" "yes" "yes" "yes" "no")))
+(df-print tab)
+;; prints: # A data frame: 2 × 3
+;; prints:   row        no    yes
+;; prints:   &lt;chr&gt;   &lt;int&gt;  &lt;int&gt;
+;; prints: 1 Bern        3      1
+;; prints: 2 Zurich      1      3
+
+(round4 (htest-ref (fisher-test tab) 'p-value)) ;; =&gt; 0.4857</code></pre>
+<p>Fisher's exact test is right for small 2×2 tables like this one; for larger tables and larger counts, <code>chisq-test</code>. It also tests counts against expected shares (a goodness-of-fit test):</p>
+<pre><code class="language-scheme">;; 60 sales: do they follow the planned shares of 50, 30 and 20 %?
+(round4 (htest-ref (chisq-test '(30 20 10) 'p '(0.5 0.3 0.2)) 'p-value)) ;; =&gt; 0.7575</code></pre>
+<h2 id="correlation-and-normality">Correlation and normality</h2>
+<pre><code class="language-scheme">(define c (cor-test '(70 75 80 85 90 95) '(2 3 3 5 6 8)))
+(round4 (htest-ref c 'estimate))            ;; =&gt; 0.9704
+(round4 (htest-ref c 'p-value))             ;; =&gt; 0.0013
+(round4 (htest-ref (cor-test '(70 75 80 85 90 95) '(2 3 3 5 6 8) 'method 'spearman) 'estimate)) ;; =&gt; 0.9856
+
+(round4 (htest-ref (shapiro-test (list 3.0 3.5 2.5 4.0 3.0 5.5 3.0 2.0 4.5 3.0)) 'p-value)) ;; =&gt; 0.3619</code></pre>
+<p>A Shapiro-Wilk p-value above 0.05 means the data do not contradict a normal distribution; with few values the test has little power, so look at a histogram too. <code>ks-test</code> compares a sample with a distribution or two samples with each other; <code>oneway-test</code> and <code>kruskal-test</code> compare more than two groups.</p>
+<h2 id="many-tests">Many tests</h2>
+<p>Test twenty teas and one will look "significant" by chance at the 5 % level. <code>p-adjust</code> corrects a list of p-values:</p>
+<pre><code class="language-scheme">(define ps '(0.01 0.04 0.03 0.2))
+(p-adjust ps 'bonferroni)                   ;; =&gt; (0.04 0.16 0.12 0.8)
+(map round4 (p-adjust ps 'holm))            ;; =&gt; (0.04 0.09 0.09 0.2)
+(map round4 (p-adjust ps 'BH))              ;; =&gt; (0.04 0.0533 0.0533 0.2)</code></pre>
+<p>Bonferroni and Holm control the chance of <em>any</em> false finding; BH (Benjamini-Hochberg) the expected <em>share</em> of false findings, which keeps more power when many tests are run.</p>
+<h2 id="linear-models">Linear models</h2>
+<p>How does bitterness depend on water temperature and brewing time? <code>lm</code> fits a model with several predictors:</p>
+<pre><code class="language-scheme">(define brews
+  (tibble (temp 70 75 80 85 90 95) (minutes 3 2 4 3 5 4) (bitter 2 3 3 5 6 8)))
+
+(define m (lm brews '(bitter ~ temp + minutes)))
+(round4 (vector-ref (predict m (tibble (temp 88) (minutes 3))) 0)) ;; =&gt; 6.1167</code></pre>
+<p><code>lm-print</code> writes the summary in R's layout:</p>
+<pre><code class="language-text">Call:
+lm(formula = bitter ~ temp + minutes)
+
+Coefficients:
+            Estimate Std. Error t value Pr(&gt;|t|)
+(Intercept)  -15.778     2.5469  -6.195  0.00847 **
+temp         0.26111   0.038356   6.808  0.00648 **
+minutes     -0.36111    0.34209  -1.056    0.369
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 0.6009 on 3 degrees of freedom
+Multiple R-squared:  0.9575,	Adjusted R-squared:  0.9292
+F-statistic: 33.81 on 2 and 3 DF,  p-value: 0.008757</code></pre>
+<p>Each degree adds about 0.26 points of bitterness at a fixed brewing time; the brewing time has no clear effect in these six brews (p = 0.37). A text column among the predictors is coded as dummy variables, as in R. <code>lm-summary</code> gives the same numbers as data.</p>
+<h2 id="distributions">Distributions</h2>
+<p>The tests are built on the distributions, which are there as well, with R's names: <code>d…</code> the density, <code>p…</code> the cumulative probability, <code>q…</code> the quantile:</p>
+<pre><code class="language-scheme">(round4 (pnorm 1.96))                       ;; =&gt; 0.975
+(round4 (qnorm 0.975))                      ;; =&gt; 1.96
+(round4 (qt 0.975 10))                      ;; =&gt; 2.2281
+(round4 (dbinom 3 10 0.5))                  ;; =&gt; 0.1172
+(round4 (pchisq 3.84 1))                    ;; =&gt; 0.95</code></pre>
+<p>The F distribution's density is <code>dF</code>, not R's <code>df</code>, which is what every script calls its data frame.</p>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-scm-data-stats.html">Statistics</a>, <a href="tutorial-scm-data-plot.html">charts</a> to look at the data before testing it, <a href="tutorial-scm-data-report.html">reports</a>.</li>
+<li>Reference: <a class="xref" href="scm-data-tests.html"><code>(scm data tests)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scm-data-tests.html"><code>(scm data tests)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-scm-data-stats.html">&larr; "(scm data stats) and (scm data format): describing data"</a>
+  <a class="next" href="tutorial-scm-data-io.html">"(scm data io): reading and writing data" &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

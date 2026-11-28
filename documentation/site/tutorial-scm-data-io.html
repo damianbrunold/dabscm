@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>"(scm data io): reading and writing data" — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <a href="tutorial-scm-string.html">(scm string): regular expressions and splitting</a>
+  <a href="tutorial-scm-list.html">(scm list) and (scm macro): small helpers</a>
+  <a href="tutorial-scm-match.html">(scm match): pattern matching</a>
+  <a href="tutorial-scm-io.html">(scm io): ports and formatting</a>
+  <a href="tutorial-scm-text.html">(scm text): Unix text tools in Scheme</a>
+  <a href="tutorial-scm-templating.html">(scm templating) and (scm uri): templates and URLs</a>
+  <a href="tutorial-scm-args.html">(scm args): command-line parsing</a>
+  <a href="tutorial-scm-terminal.html">(scm terminal) and (scm log): terminal output and logging</a>
+  <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a>
+  <a href="tutorial-scm-system.html">(scm system) and (scm sysadmin): processes and the system</a>
+  <a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a>
+  <a href="tutorial-scm-store.html">(scm store): an indexed record store</a>
+  <a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a>
+  <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a>
+  <a href="tutorial-scm-json.html">(scm json simple) and (scm json): JSON</a>
+  <a href="tutorial-scm-xml.html">(scm xml) and (scm feed): XML and news feeds</a>
+  <a href="tutorial-scm-toml.html">(scm toml): configuration files</a>
+  <a href="tutorial-scm-markdown.html">(scm markdown): Markdown to HTML and beyond</a>
+  <a href="tutorial-scm-html.html">(scm html), builder and parser: writing and reading HTML</a>
+  <a href="tutorial-scm-excel.html">(scm ooxml excel) and friends: spreadsheets</a>
+  <a href="tutorial-scm-word.html">(scm ooxml word) and friends: Word and OpenDocument texts</a>
+  <a href="tutorial-scm-presentation.html">(scm ooxml presentation): PowerPoint slides</a>
+  <a href="tutorial-scm-pdf.html">(scm pdf) and (scm svg pdf): PDF documents</a>
+  <a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a>
+  <a href="tutorial-scm-http-server.html">(scm net http server) and (scm net http route): web servers</a>
+  <a href="tutorial-scm-http-client.html">(scm net http client): HTTP requests</a>
+  <a href="tutorial-scm-web-app.html">"Web applications: forms, sessions, middleware, static files, uploads"</a>
+  <a href="tutorial-scm-websocket.html">(scm net sockets) and (scm net websocket): TCP and WebSockets</a>
+  <a href="tutorial-scm-email.html">(scm net email) and (scm net smtp): sending e-mail</a>
+  <a href="tutorial-scm-database.html">"(scm database postgres), sqlserver and migrations: SQL databases"</a>
+  <a href="tutorial-scm-scaffold.html">"(scm scaffold): starting a web application with scm new-app"</a>
+  <a href="tutorial-scm-net-remote.html">"(scm net-remote): ssh, scp, rsync, curl and wget from Scheme"</a>
+  <a href="tutorial-scm-data.html">"(scm data): data frames and verbs"</a>
+  <a href="tutorial-scm-data-reshape.html">"(scm data): joining and reshaping"</a>
+  <a href="tutorial-scm-data-stats.html">"(scm data stats) and (scm data format): describing data"</a>
+  <a href="tutorial-scm-data-tests.html">"(scm data tests): hypothesis tests and linear models"</a>
+  <a href="tutorial-scm-data-io.html" class="active">"(scm data io): reading and writing data"</a>
+    <a class="sub" href="#csv">CSV</a>
+    <a class="sub" href="#large-csv-files">Large CSV files</a>
+    <a class="sub" href="#excel">Excel</a>
+    <a class="sub" href="#json">JSON</a>
+    <a class="sub" href="#scheme-data">Scheme data</a>
+    <a class="sub" href="#databases">Databases</a>
+    <a class="sub" href="#geometries">Geometries</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-scm-data-plot.html">"(scm data plot): charts and maps"</a>
+  <a href="tutorial-scm-data-report.html">"(scm data report): reports in HTML, Markdown and PDF"</a>
+  <a href="tutorial-scm-data-cluster.html">"(scm data cluster): similarity and clustering"</a>
+  <a href="tutorial-scm-data-r.html">"(scm data r): translating between R and (scm data)"</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">"(scm data io): reading and writing data"</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="scm-data-io-reading-and-writing-data">(scm data io): reading and writing data</h1>
+<p>Data frames come from files and go back to files. Every reader infers the column types; options come after the required arguments as symbol and value pairs.</p>
+<table>
+<thead>
+<tr><th>format</th><th>read</th><th>write</th></tr>
+</thead>
+<tbody>
+<tr><td>CSV</td><td><code>read-csv</code>, <code>read-csv-string</code>, <code>csv-for-each</code></td><td><code>write-csv</code>, <code>df-&gt;csv-string</code></td></tr>
+<tr><td>Excel <code>.xlsx</code></td><td><code>read-xlsx</code></td><td><code>write-xlsx</code></td></tr>
+<tr><td>JSON</td><td><code>read-json-records</code>, <code>read-jsonl</code></td><td><code>write-json-records</code>, <code>write-jsonl</code></td></tr>
+<tr><td>Scheme data</td><td><code>read-sexp-lines</code></td><td><code>write-sexp-lines</code></td></tr>
+<tr><td>SQL results</td><td><code>query-result-&gt;df</code></td><td></td></tr>
+<tr><td>geometries</td><td><code>read-sf</code></td><td><code>write-geojson</code></td></tr>
+</tbody>
+</table>
+<pre><code class="language-scheme">(import (scheme base) (scheme file) (scheme write) (scm fs) (scm data))
+
+(define dir (mktempdir '(prefix . "data-io")))
+(define (at name) (join-path dir name))
+(define (write-text! name text) (call-with-output-file (at name) (lambda (p) (write-string text p))))</code></pre>
+<h2 id="csv">CSV</h2>
+<p>A CSV file from a Swiss or German system often has semicolons and decimal commas, a title line above the header and its own marker for missing values:</p>
+<pre><code class="language-scheme">(write-text! "stock.csv"
+  "Export 2025-03-07\nArtikel;Name;Lager kg;Preis\n0101;Sencha;12,5;48,00\n0102;Assam;-;22,50\n0207;Matcha;0,8;160,00\n")
+
+(define stock (read-csv (at "stock.csv") 'skip 1 'sep #\; 'decimal #\, 'na '("-")))
+(df-print stock)
+;; prints: # A data frame: 3 × 4
+;; prints:   Artikel  Name    Lager kg  Preis
+;; prints:   &lt;chr&gt;    &lt;chr&gt;      &lt;dbl&gt;  &lt;dbl&gt;
+;; prints: 1 0101     Sencha      12.5     48
+;; prints: 2 0102     Assam         NA   22.5
+;; prints: 3 0207     Matcha       0.8    160</code></pre>
+<ul>
+<li><code>'skip 1</code> skips the title line, <code>'sep</code> and <code>'decimal</code> set the separators (without <code>'sep</code> it is guessed from the header line).</li>
+<li>The article numbers stay strings because of their leading zeros; <code>'col-types '((Artikel . string))</code> says so explicitly, which is safer when every number in a column happens to have no zero.</li>
+<li>A column name with a space is fine; in verbs write it as <code>|Lager kg|</code>, or <code>rename</code> it.</li>
+</ul>
+<p><code>write-csv</code> writes a frame back. <code>'bom #t</code> starts the file with a byte order mark, so that Excel opens UTF-8 files with umlauts correctly:</p>
+<pre><code class="language-scheme">(define tidy-stock (rename stock (article Artikel) (name Name) (kg |Lager kg|) (chf Preis)))
+(write-csv tidy-stock (at "stock-out.csv") 'sep #\; 'decimal #\, 'bom #t)
+(df-&gt;csv-string (head tidy-stock 2))       ;; =&gt; "article,name,kg,chf\r\n0101,Sencha,12.5,48\r\n0102,Assam,,22.5\r\n"</code></pre>
+<p>Missing values are written as empty cells unless <code>'na</code> says otherwise.</p>
+<h2 id="large-csv-files">Large CSV files</h2>
+<p><code>read-csv</code> builds the whole frame in memory. For files of millions of lines, <code>csv-for-each</code> passes one record at a time, as an alist of strings, so the program can count or filter without keeping them:</p>
+<pre><code class="language-scheme">(write-text! "log.csv" "time,status,bytes\n10:00,200,512\n10:01,404,0\n10:02,200,2048\n10:03,500,0\n")
+
+(define errors 0)
+(csv-for-each (at "log.csv")
+  (lambda (r) (when (&gt;= (string-&gt;number (cdr (assq 'status r))) 400) (set! errors (+ errors 1)))))
+errors                                      ;; =&gt; 2</code></pre>
+<p><code>'n-max</code> reads only the first rows of a big file, for a quick look.</p>
+<h2 id="excel">Excel</h2>
+<p><code>write-xlsx</code> writes one frame or several sheets, with a bold, frozen header row, a filter and fitted column widths; <code>read-xlsx</code> reads a sheet back:</p>
+<pre><code class="language-scheme">(define by-origin (tibble (origin "Japan" "India") (kg 13.3 0)))
+(write-xlsx `(("Stock" . ,tidy-stock) ("By origin" . ,by-origin)) (at "stock.xlsx"))
+
+(define back (read-xlsx (at "stock.xlsx") 'sheet "By origin"))
+(df-column back 'kg)                        ;; =&gt; #(13.3 0.0)
+(df-column (read-xlsx (at "stock.xlsx")) 'article) ;; =&gt; #("0101" "0102" "0207")</code></pre>
+<p>Numbers stay numbers and text stays text. <code>'sheet</code> takes a name or a number, <code>'skip</code> skips rows above the header. The <a href="tutorial-scm-excel.html">Excel tutorial</a> covers formatting, formulas and templates.</p>
+<h2 id="json">JSON</h2>
+<p>An array of objects is a frame, one row per object; <code>null</code> is <code>na</code>:</p>
+<pre><code class="language-scheme">(write-text! "orders.json" "[{\"id\": 1, \"tea\": \"Sencha\", \"gift\": true},
+                             {\"id\": 2, \"tea\": \"Assam\", \"gift\": null}]")
+(define orders (read-json-records (at "orders.json")))
+(df-types orders)                           ;; =&gt; ((id . int) (tea . string) (gift . bool))
+
+(write-json-records orders (at "orders-out.json"))
+(call-with-input-file (at "orders-out.json") (lambda (p) (read-line p)))
+;; =&gt; "[{\"id\":1,\"tea\":\"Sencha\",\"gift\":true},{\"id\":2,\"tea\":\"Assam\",\"gift\":null}]"</code></pre>
+<p>JSON Lines, one object per line, is the usual format for logs and exports that grow: <code>read-jsonl</code> and <code>write-jsonl</code>.</p>
+<h2 id="scheme-data">Scheme data</h2>
+<p>A file of Scheme data, one alist per line, is the most direct format for data a Scheme program produces itself. Entries with several values become list cells:</p>
+<pre><code class="language-scheme">(write-text! "runs.scm" "((tea \"Sencha\") (kg 2.5) (tasters \"ada\" \"alan\"))\n((tea \"Assam\") (kg 1) (tasters \"grace\"))\n")
+
+(define runs (read-sexp-lines (at "runs.scm") 'list-cols '(tasters) 'add '((year . 2025))))
+(df-column runs 'tasters)                   ;; =&gt; #(("ada" "alan") ("grace"))
+(df-column runs 'year)                      ;; =&gt; #(2025 2025)
+(df-column (unnest-longer runs tasters) 'tasters) ;; =&gt; #("ada" "alan" "grace")</code></pre>
+<p><code>'add</code> adds constant columns, handy when several files (one per year, say) are read and stacked with <code>bind-rows</code>.</p>
+<h2 id="databases">Databases</h2>
+<p>A query result of <a class="xref" href="scm-database-postgres.html"><code>(scm database postgres)</code></a> or <a class="xref" href="scm-database-sqlserver.html"><code>(scm database sqlserver)</code></a> becomes a frame with <code>query-result-&gt;df</code>; NULL is <code>na</code>:</p>
+<pre><code class="language-scheme no-test">(define sales (query-result-&gt;df (pg-query conn "SELECT shop, tea, kg FROM sales WHERE day &gt;= $1" "2025-03-01")))</code></pre>
+<p>Aggregating in SQL first (<code>GROUP BY</code> in the query) keeps large tables in the database and only the result in memory.</p>
+<h2 id="geometries">Geometries</h2>
+<p><code>read-sf</code> reads shapefiles, GeoJSON and TopoJSON into a frame with a <code>geometry</code> column next to the attributes, for maps with <code>geom-sf</code> (see <a href="tutorial-scm-data-plot.html">charts and maps</a>):</p>
+<pre><code class="language-scheme">(write-text! "shops.geojson" "{\"type\": \"FeatureCollection\", \"features\": [
+  {\"type\": \"Feature\", \"properties\": {\"shop\": \"Zurich\", \"kg\": 384},
+   \"geometry\": {\"type\": \"Point\", \"coordinates\": [8.54, 47.37]}},
+  {\"type\": \"Feature\", \"properties\": {\"shop\": \"Bern\", \"kg\": 124},
+   \"geometry\": {\"type\": \"Point\", \"coordinates\": [7.45, 46.95]}}]}")
+
+(define shops (read-sf (at "shops.geojson")))
+(df-names shops)                            ;; =&gt; (shop kg geometry)
+(df-column shops 'kg)                       ;; =&gt; #(384 124)
+
+(write-geojson (mutate shops (kg2 (* 2 kg))) (at "shops-out.geojson"))
+(df-column (read-sf (at "shops-out.geojson")) 'kg2) ;; =&gt; #(768 248)
+(rm dir 'recursive)</code></pre>
+<p>Shapefiles name their character set in a <code>.cpg</code> file; <code>'encoding 'latin-1</code> overrides it for old files without one. A TopoJSON file holds several layers, chosen with <code>'layer</code>.</p>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-scm-data.html">Data frames</a>, <a href="tutorial-scm-data-plot.html">charts and maps</a>, <a href="tutorial-scm-data-report.html">reports</a>.</li>
+<li><a href="tutorial-techniques-08-structured-data.html#csv">CSV</a>, <a href="tutorial-scm-json.html">JSON</a> and <a href="tutorial-scm-excel.html">Excel</a> without data frames.</li>
+<li>Reference: <a class="xref" href="scm-data-io.html"><code>(scm data io)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scm-data-io.html"><code>(scm data io)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-scm-data-tests.html">&larr; "(scm data tests): hypothesis tests and linear models"</a>
+  <a class="next" href="tutorial-scm-data-plot.html">"(scm data plot): charts and maps" &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

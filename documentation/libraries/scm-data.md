@@ -1036,7 +1036,8 @@ Syntax: (fmt-num x [decimals [thousands?]])
 Library: (scm data format)
 Description: Formats a number with a fixed number of decimals (default 0)
   and thousands separators from data-locale (pass #f as thousands? to
-  leave them out). na gives (na-string).
+  leave them out). na gives (na-string). Rounds half away from zero, on
+  the decimal value as written: 2.675 gives 2.68 with 2 decimals.
 Example:
   (fmt-num 24973.25 1) => "24'973.3"
   (fmt-num -0.04 1)    => "0.0"

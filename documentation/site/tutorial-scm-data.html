@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>"(scm data): data frames and verbs" — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <a href="tutorial-scm-string.html">(scm string): regular expressions and splitting</a>
+  <a href="tutorial-scm-list.html">(scm list) and (scm macro): small helpers</a>
+  <a href="tutorial-scm-match.html">(scm match): pattern matching</a>
+  <a href="tutorial-scm-io.html">(scm io): ports and formatting</a>
+  <a href="tutorial-scm-text.html">(scm text): Unix text tools in Scheme</a>
+  <a href="tutorial-scm-templating.html">(scm templating) and (scm uri): templates and URLs</a>
+  <a href="tutorial-scm-args.html">(scm args): command-line parsing</a>
+  <a href="tutorial-scm-terminal.html">(scm terminal) and (scm log): terminal output and logging</a>
+  <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a>
+  <a href="tutorial-scm-system.html">(scm system) and (scm sysadmin): processes and the system</a>
+  <a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a>
+  <a href="tutorial-scm-store.html">(scm store): an indexed record store</a>
+  <a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a>
+  <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a>
+  <a href="tutorial-scm-json.html">(scm json simple) and (scm json): JSON</a>
+  <a href="tutorial-scm-xml.html">(scm xml) and (scm feed): XML and news feeds</a>
+  <a href="tutorial-scm-toml.html">(scm toml): configuration files</a>
+  <a href="tutorial-scm-markdown.html">(scm markdown): Markdown to HTML and beyond</a>
+  <a href="tutorial-scm-html.html">(scm html), builder and parser: writing and reading HTML</a>
+  <a href="tutorial-scm-excel.html">(scm ooxml excel) and friends: spreadsheets</a>
+  <a href="tutorial-scm-word.html">(scm ooxml word) and friends: Word and OpenDocument texts</a>
+  <a href="tutorial-scm-presentation.html">(scm ooxml presentation): PowerPoint slides</a>
+  <a href="tutorial-scm-pdf.html">(scm pdf) and (scm svg pdf): PDF documents</a>
+  <a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a>
+  <a href="tutorial-scm-http-server.html">(scm net http server) and (scm net http route): web servers</a>
+  <a href="tutorial-scm-http-client.html">(scm net http client): HTTP requests</a>
+  <a href="tutorial-scm-web-app.html">"Web applications: forms, sessions, middleware, static files, uploads"</a>
+  <a href="tutorial-scm-websocket.html">(scm net sockets) and (scm net websocket): TCP and WebSockets</a>
+  <a href="tutorial-scm-email.html">(scm net email) and (scm net smtp): sending e-mail</a>
+  <a href="tutorial-scm-database.html">"(scm database postgres), sqlserver and migrations: SQL databases"</a>
+  <a href="tutorial-scm-scaffold.html">"(scm scaffold): starting a web application with scm new-app"</a>
+  <a href="tutorial-scm-net-remote.html">"(scm net-remote): ssh, scp, rsync, curl and wget from Scheme"</a>
+  <a href="tutorial-scm-data.html" class="active">"(scm data): data frames and verbs"</a>
+    <a class="sub" href="#a-data-frame">A data frame</a>
+    <a class="sub" href="#reading-csv">Reading CSV</a>
+    <a class="sub" href="#missing-values">Missing values</a>
+    <a class="sub" href="#rows-where-arrange-head">Rows: where, arrange, head</a>
+    <a class="sub" href="#columns-select-mutate-rename">Columns: select, mutate, rename</a>
+    <a class="sub" href="#groups-group-by-and-summarise">Groups: group-by and summarise</a>
+    <a class="sub" href="#the-expression-language">The expression language</a>
+    <a class="sub" href="#dates">Dates</a>
+    <a class="sub" href="#example-what-sold-on-which-day">Example: what sold on which day</a>
+    <a class="sub" href="#building-verbs-at-run-time">Building verbs at run time</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-scm-data-reshape.html">"(scm data): joining and reshaping"</a>
+  <a href="tutorial-scm-data-stats.html">"(scm data stats) and (scm data format): describing data"</a>
+  <a href="tutorial-scm-data-tests.html">"(scm data tests): hypothesis tests and linear models"</a>
+  <a href="tutorial-scm-data-io.html">"(scm data io): reading and writing data"</a>
+  <a href="tutorial-scm-data-plot.html">"(scm data plot): charts and maps"</a>
+  <a href="tutorial-scm-data-report.html">"(scm data report): reports in HTML, Markdown and PDF"</a>
+  <a href="tutorial-scm-data-cluster.html">"(scm data cluster): similarity and clustering"</a>
+  <a href="tutorial-scm-data-r.html">"(scm data r): translating between R and (scm data)"</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">"(scm data): data frames and verbs"</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="scm-data-data-frames-and-verbs">(scm data): data frames and verbs</h1>
+<p><a class="xref" href="scm-data.html"><code>(scm data)</code></a> is a toolkit for analysis scripts in the style of R's tidyverse and pandas: read a table, transform it, summarise it, chart it, write a report. This chapter covers the table itself and the <em>verbs</em> that transform it. Joins and reshaping, statistics, tests, charts and reports have chapters of their own (see the end).</p>
+<pre><code class="language-scheme">(import (scheme base) (scheme write) (scm data))</code></pre>
+<p>One import brings all the <code>(scm data …)</code> libraries.</p>
+<h2 id="a-data-frame">A data frame</h2>
+<p>A data frame is a table of named columns of equal length. <code>tibble</code> makes one column by column, and <code>df-print</code> shows it with the column types:</p>
+<pre><code class="language-scheme">(define teas
+  (tibble (tea "Sencha" "Assam" "Matcha" "Rooibos")
+          (origin "Japan" "India" "Japan" "South Africa")
+          (price 48 22 160 18)))
+
+(df-print teas)
+;; prints: # A data frame: 4 × 3
+;; prints:   tea      origin        price
+;; prints:   &lt;chr&gt;    &lt;chr&gt;         &lt;int&gt;
+;; prints: 1 Sencha   Japan            48
+;; prints: 2 Assam    India            22
+;; prints: 3 Matcha   Japan           160
+;; prints: 4 Rooibos  South Africa     18
+
+(df-names teas)                             ;; =&gt; (tea origin price)
+(df-nrow teas)                              ;; =&gt; 4
+(df-column teas 'price)                     ;; =&gt; #(48 22 160 18)
+(df-row teas 2)                             ;; =&gt; ((tea . "Matcha") (origin . "Japan") (price . 160))</code></pre>
+<p>Columns are vectors, rows come out as alists. A frame never changes: every operation returns a new one (sharing the columns it did not touch), so a frame can be passed around without copying.</p>
+<p><code>alists-&gt;df</code> builds a frame from rows, the shape data often arrives in:</p>
+<pre><code class="language-scheme">(df-nrow (alists-&gt;df '(((tea . "Gyokuro") (price . 95)) ((tea . "Bancha") (price . 14))))) ;; =&gt; 2</code></pre>
+<h2 id="reading-csv">Reading CSV</h2>
+<p>Real data comes from files. <code>read-csv</code> reads a file, <code>read-csv-string</code> text; the column types are inferred:</p>
+<pre><code class="language-scheme">(define sales
+  (read-csv-string
+   "date,shop,tea,kg,plz
+2025-03-03,Zurich,Sencha,2.5,8001
+2025-03-03,Bern,Assam,1,3011
+2025-03-04,Zurich,Assam,4,8001
+2025-03-04,Basel,Sencha,1.5,4051
+2025-03-05,Bern,Rooibos,3,3011
+2025-03-05,Zurich,Matcha,0.5,8001
+2025-03-06,Basel,Assam,,4051
+2025-03-07,Zurich,Sencha,2,8001
+2025-03-07,Bern,Sencha,1,3011
+"))
+
+(df-types sales)                            ;; =&gt; ((date . date) (shop . string) (tea . string) (kg . real) (plz . int))</code></pre>
+<ul>
+<li>ISO dates become dates, numbers become integers or reals.</li>
+<li>The empty <code>kg</code> on 6 March is a <em>missing value</em>, <code>na</code>.</li>
+<li>A value with a leading zero (<code>"08001"</code>) would stay a string, so codes do not lose their zeros. <code>'col-types '((plz . string))</code> sets a type explicitly; postcodes are codes, not quantities.</li>
+</ul>
+<p><code>read-csv</code> takes <code>'sep #\;</code> and <code>'decimal #\,</code> for the European variant of CSV. The <a href="tutorial-scm-data-io.html">I/O chapter</a> has the other formats.</p>
+<h2 id="missing-values">Missing values</h2>
+<p><code>na</code> is a value of its own. In the expressions of the verbs (below), arithmetic and comparisons with it give <code>na</code>; summaries skip it:</p>
+<pre><code class="language-scheme">(na? (vector-ref (df-column sales 'kg) 6)) ;; =&gt; #t
+(sum (df-column sales 'kg))                ;; =&gt; 15.5
+(mean (list 1 2 na 3))                     ;; =&gt; 2.0
+(na? (vector-ref (df-column (mutate sales (grams (* 1000 kg))) 'grams) 6)) ;; =&gt; #t</code></pre>
+<p>Outside the verbs <code>na</code> is an ordinary Scheme value: <code>(+ 1 na)</code> is an error, so test with <code>na?</code> first.</p>
+<h2 id="rows-where-arrange-head">Rows: where, arrange, head</h2>
+<p><code>where</code> keeps the rows for which a condition holds. Inside a verb a bare name is a column:</p>
+<pre><code class="language-scheme">(df-print (where sales (= shop "Zurich") (&gt;= kg 2)))
+;; prints: # A data frame: 3 × 5
+;; prints:   date        shop    tea        kg    plz
+;; prints:   &lt;date&gt;      &lt;chr&gt;   &lt;chr&gt;   &lt;dbl&gt;  &lt;int&gt;
+;; prints: 1 2025-03-03  Zurich  Sencha    2.5   8001
+;; prints: 2 2025-03-04  Zurich  Assam       4   8001
+;; prints: 3 2025-03-07  Zurich  Sencha      2   8001</code></pre>
+<p>Several conditions must all hold. A row whose condition is <code>na</code> (the missing <code>kg</code>) is dropped. <code>arrange</code> sorts, <code>desc</code> reverses a key, and <code>head</code> takes the first rows:</p>
+<pre><code class="language-scheme">(df-print (head (arrange sales (desc kg)) 3))
+;; prints: # A data frame: 3 × 5
+;; prints:   date        shop    tea         kg    plz
+;; prints:   &lt;date&gt;      &lt;chr&gt;   &lt;chr&gt;    &lt;dbl&gt;  &lt;int&gt;
+;; prints: 1 2025-03-04  Zurich  Assam        4   8001
+;; prints: 2 2025-03-05  Bern    Rooibos      3   3011
+;; prints: 3 2025-03-03  Zurich  Sencha     2.5   8001</code></pre>
+<p><code>slice</code>, <code>tail</code>, <code>distinct</code> and <code>sample-n</code> are the other row verbs.</p>
+<h2 id="columns-select-mutate-rename">Columns: select, mutate, rename</h2>
+<pre><code class="language-scheme">(define with-price (left-join sales teas (by tea)))
+
+(df-print (-&gt; with-price
+              (mutate (revenue (* kg price)))
+              (select date shop tea revenue)
+              (head 3)))
+;; prints: # A data frame: 3 × 4
+;; prints:   date        shop    tea     revenue
+;; prints:   &lt;date&gt;      &lt;chr&gt;   &lt;chr&gt;     &lt;dbl&gt;
+;; prints: 1 2025-03-03  Zurich  Sencha      120
+;; prints: 2 2025-03-03  Bern    Assam        22
+;; prints: 3 2025-03-04  Zurich  Assam        88</code></pre>
+<p><code>left-join</code> added the price of each tea from the first table (more on joins in the <a href="tutorial-scm-data-reshape.html">next chapter</a>). <code>mutate</code> computes a column per row, <code>select</code> keeps columns in the given order. <code>-&gt;</code> threads the frame through the steps: each step gets the result of the one before as its first argument. Read it as "then".</p>
+<h2 id="groups-group-by-and-summarise">Groups: group-by and summarise</h2>
+<p><code>summarise</code> reduces rows to one per group:</p>
+<pre><code class="language-scheme">(df-print (-&gt; with-price
+              (mutate (revenue (* kg price)))
+              (group-by shop)
+              (summarise (sales (n)) (kg (sum kg)) (revenue (sum revenue)))
+              (arrange (desc revenue))))
+;; prints: # A data frame: 3 × 4
+;; prints:   shop    sales     kg  revenue
+;; prints:   &lt;chr&gt;   &lt;int&gt;  &lt;dbl&gt;    &lt;dbl&gt;
+;; prints: 1 Zurich      4      9      384
+;; prints: 2 Bern        3      5      124
+;; prints: 3 Basel       2    1.5       72</code></pre>
+<p><code>(n)</code> counts the rows of the group. <code>tally</code> is the short form of counting alone:</p>
+<pre><code class="language-scheme">(df-print (tally (group-by sales tea)))
+;; prints: # A data frame: 4 × 2
+;; prints:   tea          n
+;; prints:   &lt;chr&gt;    &lt;int&gt;
+;; prints: 1 Assam        3
+;; prints: 2 Matcha       1
+;; prints: 3 Rooibos      1
+;; prints: 4 Sencha       4</code></pre>
+<p>On a grouped frame <code>mutate</code> computes per group, so aggregates refer to the group, for example each sale's share of its shop's kilograms, in per cent:</p>
+<pre><code class="language-scheme">(df-column (-&gt; sales (drop-na kg) (group-by shop) (mutate (pct (round (* 100 (/ kg (sum kg)))))))
+           'pct)
+;; =&gt; #(28.0 20.0 44.0 100.0 60.0 6.0 22.0 20.0)</code></pre>
+<h2 id="the-expression-language">The expression language</h2>
+<p>The expressions inside verbs are not ordinary Scheme: they are compiled once and then run per row, with bare names standing for columns. The vocabulary has arithmetic and comparisons, <code>and</code>/<code>or</code>/<code>not</code>, <a class="xref" href="scheme-base.html#e93"><code>if</code></a>, <code>case-when</code>, <code>in</code>, <code>coalesce</code>, string functions (<code>str-upper</code>, <code>str-detect</code>, <code>str-sub</code> …), date functions (<code>year</code>, <code>weekday</code>, <code>days-between</code> …), aggregates (<code>n</code> <code>sum</code> <code>mean</code> <code>median</code> <code>sd</code> <code>min</code> <code>max</code> …) and window functions (<code>lag</code> <code>cumsum</code> <code>rank</code> …):</p>
+<pre><code class="language-scheme">(df-print (-&gt; sales
+              (mutate (size (case-when ((&lt; kg 1) 'small) ((&lt; kg 3) 'medium) (else 'large)))
+                      (day (weekday date)))
+              (where (in tea ("Sencha" "Matcha")))
+              (select tea kg size day)))
+;; prints: # A data frame: 5 × 4
+;; prints:   tea        kg  size      day
+;; prints:   &lt;chr&gt;   &lt;dbl&gt;  &lt;sym&gt;   &lt;int&gt;
+;; prints: 1 Sencha    2.5  medium      1
+;; prints: 2 Sencha    1.5  medium      2
+;; prints: 3 Matcha    0.5  small       3
+;; prints: 4 Sencha      2  medium      5
+;; prints: 5 Sencha      1  medium      5</code></pre>
+<p><code>weekday</code> counts Monday as 1. <code>case-when</code> takes the first branch whose condition is true; a missing value makes a condition false, so a row with no <code>kg</code> would land in <code>else</code>, as in R.</p>
+<p>A Scheme value from outside goes in with unquote, and <code>(,proc …)</code> calls a Scheme procedure per row:</p>
+<pre><code class="language-scheme">(define minimum 2)
+(define (label shop kg) (string-append shop ": " (number-&gt;string kg) " kg"))
+
+(df-column (-&gt; sales (where (&gt;= kg ,minimum)) (mutate (text (,label shop kg)))) 'text)
+;; =&gt; #("Zurich: 2.5 kg" "Zurich: 4.0 kg" "Bern: 3.0 kg" "Zurich: 2.0 kg")</code></pre>
+<p>Without the comma, <code>minimum</code> would be taken for a column, and there is none of that name:</p>
+<pre><code class="language-scheme">(where sales (&gt;= kg minimum))               ;; =&gt; error</code></pre>
+<h2 id="dates">Dates</h2>
+<p>A date is a day number; the date functions work on it, and comparisons work as for numbers:</p>
+<pre><code class="language-scheme">(define d (string-&gt;day "2025-03-05"))
+(day-&gt;string d)                             ;; =&gt; "2025-03-05"
+(day-&gt;ymd d)                                ;; =&gt; (2025 3 5)
+(day-&gt;string (ymd-&gt;day 2025 12 24))         ;; =&gt; "2025-12-24"
+(day-&gt;string (string-&gt;day "24.12.2025"))    ;; =&gt; "2025-12-24"
+
+(df-nrow (where sales (&gt;= date ,(string-&gt;day "2025-03-05")))) ;; =&gt; 5
+(df-column (-&gt; sales (mutate (age (days-between date ,(ymd-&gt;day 2025 3 7)))) (head 2)) 'age) ;; =&gt; #(4 4)</code></pre>
+<h2 id="example-what-sold-on-which-day">Example: what sold on which day</h2>
+<p>Raw sales rows to a weekday summary, the kind of table that ends up in a report: kilograms per weekday, the best-selling tea of each day, and the day's share of the week.</p>
+<pre><code class="language-scheme">(define day-names #("Mon" "Tue" "Wed" "Thu" "Fri" "Sat" "Sun"))
+(define (day-name n) (vector-ref day-names (- n 1)))
+
+(define per-day
+  (-&gt; sales
+      (drop-na kg)
+      (mutate (day (,day-name (weekday date))))
+      (group-by day tea)
+      (summarise (kg (sum kg)))
+      (group-by day)
+      (mutate (best (= kg (max kg))))
+      (where best)
+      (ungroup)
+      (select day tea kg)))
+
+(df-print per-day)
+;; prints: # A data frame: 4 × 3
+;; prints:   day    tea         kg
+;; prints:   &lt;chr&gt;  &lt;chr&gt;    &lt;dbl&gt;
+;; prints: 1 Fri    Sencha       3
+;; prints: 2 Mon    Sencha     2.5
+;; prints: 3 Tue    Assam        4
+;; prints: 4 Wed    Rooibos      3</code></pre>
+<p>The second <code>group-by</code> regroups the per-tea sums by day, so <code>(max kg)</code> is the maximum of the day, and <code>where</code> keeps that row. Thursday is missing: its only sale has no weight and was dropped. <code>summarise</code> sorts by its groups, which puts the days in alphabetical order; to get them in calendar order, keep the weekday number and sort by it.</p>
+<h2 id="building-verbs-at-run-time">Building verbs at run time</h2>
+<p>Each verb is a macro, and has a procedure behind it that takes the expressions as data: <code>df-filter</code>, <code>df-mutate</code>, <code>df-summarise</code>, <code>df-arrange</code>, <code>df-select</code> … They are for code that builds an analysis from a configuration or user input:</p>
+<pre><code class="language-scheme">(define rules '((&gt;= kg 2) (= shop "Zurich")))
+(df-nrow (df-filter sales rules))           ;; =&gt; 3
+(df-column (df-mutate (head sales 2) '((grams . (* 1000 kg)))) 'grams) ;; =&gt; #(2500.0 1000.0)</code></pre>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-scm-data-reshape.html">Joining and reshaping</a>: joins, pivots, missing values, window functions, your own functions.</li>
+<li><a href="tutorial-scm-data-stats.html">Statistics and formatting</a>, <a href="tutorial-scm-data-tests.html">hypothesis tests</a>, <a href="tutorial-scm-data-io.html">reading and writing data</a>, <a href="tutorial-scm-data-plot.html">charts and maps</a>, <a href="tutorial-scm-data-report.html">reports</a>, <a href="tutorial-scm-data-cluster.html">clustering</a>, <a href="tutorial-scm-data-r.html">R translation</a>.</li>
+<li>Reference: <a class="xref" href="scm-data.html"><code>(scm data)</code></a>, <a class="xref" href="scm-data-frame.html"><code>(scm data frame)</code></a>, <a class="xref" href="scm-data-verbs.html"><code>(scm data verbs)</code></a>, <a class="xref" href="scm-data-expr.html"><code>(scm data expr)</code></a>, <a class="xref" href="scm-data-core.html"><code>(scm data core)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scm-data.html"><code>(scm data)</code></a>, <a href="scm-data-frame.html"><code>(scm data frame)</code></a>, <a href="scm-data-verbs.html"><code>(scm data verbs)</code></a>, <a href="scm-data-expr.html"><code>(scm data expr)</code></a>, <a href="scm-data-core.html"><code>(scm data core)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-scm-net-remote.html">&larr; "(scm net-remote): ssh, scp, rsync, curl and wget from Scheme"</a>
+  <a class="next" href="tutorial-scm-data-reshape.html">"(scm data): joining and reshaping" &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

@@ -288,6 +288,7 @@
 
 <div class="lib-title scm">(scm data)</div>
 <p class="lib-sub">Data analysis in one import — frames, verbs, stats, tests, IO, charts, maps, reports</p>
+<p class="lib-tutorials">Tutorials: <a href="tutorial-scm-data.html">"(scm data): data frames and verbs"</a></p>
 <div class="lib-preamble">
 <h2>Overview</h2>
 <p><a class="xref" href="scm-data.html"><code>(scm data)</code></a> is a small toolkit for data analysis scripts, modelled on R's tidyverse (dplyr, tidyr, ggplot2) and pandas: <strong>read → transform → summarise → chart → report</strong>. It re-exports the <code>(scm data …)</code> libraries, so one import is enough:</p>
@@ -1158,7 +1159,8 @@ Example:
 Library: (scm data format)
 Description: Formats a number with a fixed number of decimals (default 0)
   and thousands separators from data-locale (pass #f as thousands? to
-  leave them out). na gives (na-string).
+  leave them out). na gives (na-string). Rounds half away from zero, on
+  the decimal value as written: 2.675 gives 2.68 with 2 decimals.
 Example:
   (fmt-num 24973.25 1) =&gt; "24'973.3"
   (fmt-num -0.04 1)    =&gt; "0.0"</pre>

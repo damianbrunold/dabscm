@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>"(scm data stats) and (scm data format): describing data" — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <a href="tutorial-scm-string.html">(scm string): regular expressions and splitting</a>
+  <a href="tutorial-scm-list.html">(scm list) and (scm macro): small helpers</a>
+  <a href="tutorial-scm-match.html">(scm match): pattern matching</a>
+  <a href="tutorial-scm-io.html">(scm io): ports and formatting</a>
+  <a href="tutorial-scm-text.html">(scm text): Unix text tools in Scheme</a>
+  <a href="tutorial-scm-templating.html">(scm templating) and (scm uri): templates and URLs</a>
+  <a href="tutorial-scm-args.html">(scm args): command-line parsing</a>
+  <a href="tutorial-scm-terminal.html">(scm terminal) and (scm log): terminal output and logging</a>
+  <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a>
+  <a href="tutorial-scm-system.html">(scm system) and (scm sysadmin): processes and the system</a>
+  <a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a>
+  <a href="tutorial-scm-store.html">(scm store): an indexed record store</a>
+  <a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a>
+  <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a>
+  <a href="tutorial-scm-json.html">(scm json simple) and (scm json): JSON</a>
+  <a href="tutorial-scm-xml.html">(scm xml) and (scm feed): XML and news feeds</a>
+  <a href="tutorial-scm-toml.html">(scm toml): configuration files</a>
+  <a href="tutorial-scm-markdown.html">(scm markdown): Markdown to HTML and beyond</a>
+  <a href="tutorial-scm-html.html">(scm html), builder and parser: writing and reading HTML</a>
+  <a href="tutorial-scm-excel.html">(scm ooxml excel) and friends: spreadsheets</a>
+  <a href="tutorial-scm-word.html">(scm ooxml word) and friends: Word and OpenDocument texts</a>
+  <a href="tutorial-scm-presentation.html">(scm ooxml presentation): PowerPoint slides</a>
+  <a href="tutorial-scm-pdf.html">(scm pdf) and (scm svg pdf): PDF documents</a>
+  <a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a>
+  <a href="tutorial-scm-http-server.html">(scm net http server) and (scm net http route): web servers</a>
+  <a href="tutorial-scm-http-client.html">(scm net http client): HTTP requests</a>
+  <a href="tutorial-scm-web-app.html">"Web applications: forms, sessions, middleware, static files, uploads"</a>
+  <a href="tutorial-scm-websocket.html">(scm net sockets) and (scm net websocket): TCP and WebSockets</a>
+  <a href="tutorial-scm-email.html">(scm net email) and (scm net smtp): sending e-mail</a>
+  <a href="tutorial-scm-database.html">"(scm database postgres), sqlserver and migrations: SQL databases"</a>
+  <a href="tutorial-scm-scaffold.html">"(scm scaffold): starting a web application with scm new-app"</a>
+  <a href="tutorial-scm-net-remote.html">"(scm net-remote): ssh, scp, rsync, curl and wget from Scheme"</a>
+  <a href="tutorial-scm-data.html">"(scm data): data frames and verbs"</a>
+  <a href="tutorial-scm-data-reshape.html">"(scm data): joining and reshaping"</a>
+  <a href="tutorial-scm-data-stats.html" class="active">"(scm data stats) and (scm data format): describing data"</a>
+    <a class="sub" href="#centre-and-spread">Centre and spread</a>
+    <a class="sub" href="#ranks-standard-scores-change">Ranks, standard scores, change</a>
+    <a class="sub" href="#two-variables">Two variables</a>
+    <a class="sub" href="#frequency-tables-and-crosstabs">Frequency tables and crosstabs</a>
+    <a class="sub" href="#statistics-per-group">Statistics per group</a>
+    <a class="sub" href="#formatting-for-reports">Formatting for reports</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-scm-data-tests.html">"(scm data tests): hypothesis tests and linear models"</a>
+  <a href="tutorial-scm-data-io.html">"(scm data io): reading and writing data"</a>
+  <a href="tutorial-scm-data-plot.html">"(scm data plot): charts and maps"</a>
+  <a href="tutorial-scm-data-report.html">"(scm data report): reports in HTML, Markdown and PDF"</a>
+  <a href="tutorial-scm-data-cluster.html">"(scm data cluster): similarity and clustering"</a>
+  <a href="tutorial-scm-data-r.html">"(scm data r): translating between R and (scm data)"</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">"(scm data stats) and (scm data format): describing data"</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="scm-data-stats-and-scm-data-format-describing-data">(scm data stats) and (scm data format): describing data</h1>
+<ul>
+<li><a class="xref" href="scm-data-stats.html"><code>(scm data stats)</code></a> computes descriptive statistics on lists and vectors, and frequency tables as data frames.</li>
+<li><a class="xref" href="scm-data-format.html"><code>(scm data format)</code></a> writes numbers the way reports show them.</li>
+</ul>
+<p>Hypothesis tests and linear models are in the <a href="tutorial-scm-data-tests.html">next chapter</a>.</p>
+<pre><code class="language-scheme">(import (scheme base) (scheme write) (scm data))
+
+;; brewing times in minutes that ten customers chose for the same tea
+(define brew '(3.0 3.5 2.5 4.0 3.0 5.5 3.0 2.0 4.5 3.0))</code></pre>
+<h2 id="centre-and-spread">Centre and spread</h2>
+<pre><code class="language-scheme">(mean brew)                                 ;; =&gt; 3.4
+(median brew)                               ;; =&gt; 3.0
+(quantile brew 0.25)                        ;; =&gt; 3.0
+(quantile brew '(0.1 0.9))                  ;; =&gt; (2.45 4.6)
+(value-range brew)                          ;; =&gt; (2.0 5.5)
+(iqr brew)                                  ;; =&gt; 0.875
+(define (round3 x) (/ (round (* 1000 x)) 1000))
+(round3 (sd brew))                          ;; =&gt; 1.022
+(round3 (var brew))                         ;; =&gt; 1.044</code></pre>
+<ul>
+<li>The mean is pulled up by the one customer who brews 5.5 minutes; the median is not, which is why reports on skewed data (incomes, waiting times) give the median.</li>
+<li><code>quantile</code> computes as R does by default (type 7), so results match an R analysis of the same data.</li>
+<li><code>sd</code> and <code>var</code> divide by n − 1, the sample estimates.</li>
+</ul>
+<p>All of them accept lists or vectors (a data frame column) and skip <code>na</code>:</p>
+<pre><code class="language-scheme">(mean (vector 1 2 na 3))                    ;; =&gt; 2.0
+(sum (list 10 na 5))                        ;; =&gt; 15</code></pre>
+<p>A weighted mean, for example the average price per kilogram over what was sold:</p>
+<pre><code class="language-scheme">(weighted-mean '(48 22 160) '(2.5 5 0.5))  ;; =&gt; 38.75</code></pre>
+<h2 id="ranks-standard-scores-change">Ranks, standard scores, change</h2>
+<pre><code class="language-scheme">(ranks '(30 10 20 10))                      ;; =&gt; (4 1.5 3 1.5)
+(zscore '(1 2 3))                           ;; =&gt; (-1.0 0.0 1.0)
+(cumsum '(1 2 3))                           ;; =&gt; (1 3 6)
+(pct-change 80 100)                         ;; =&gt; 0.25</code></pre>
+<p>Ties share the average rank, as in R. <code>zscore</code> says how many standard deviations each value is from the mean, which puts measurements of different sizes on one scale.</p>
+<h2 id="two-variables">Two variables</h2>
+<pre><code class="language-scheme">(define temperature '(70 75 80 85 90 95))    ; water temperature in °C
+(define bitterness '(2 3 3 5 6 8))            ; tasters' score
+
+(round3 (cor temperature bitterness))       ;; =&gt; 0.97
+(round3 (cor temperature bitterness 'spearman)) ;; =&gt; 0.986
+(map (lambda (p) (cons (car p) (round3 (cdr p)))) (lm-simple temperature bitterness))
+;; =&gt; ((intercept . -14.829) (slope . 0.234) (r2 . 0.942) (n . 6))</code></pre>
+<p>Pearson's correlation measures a straight-line relationship, Spearman's any steadily rising one (it correlates the ranks). <code>lm-simple</code> fits a straight line: each degree adds about 0.23 points of bitterness. For several predictors, confidence intervals and p-values, use <code>lm</code> from <a href="tutorial-scm-data-tests.html">the tests chapter</a>.</p>
+<h2 id="frequency-tables-and-crosstabs">Frequency tables and crosstabs</h2>
+<p>These return data frames, ready for <code>df-print</code>, a report table or a chart:</p>
+<pre><code class="language-scheme">(define orders '("Sencha" "Assam" "Sencha" "Matcha" "Sencha" "Assam"))
+
+(df-print (freq orders 'by-count))
+;; prints: # A data frame: 3 × 3
+;; prints:   value       n   share
+;; prints:   &lt;chr&gt;   &lt;int&gt;   &lt;dbl&gt;
+;; prints: 1 Sencha      3     0.5
+;; prints: 2 Assam       2  0.3333
+;; prints: 3 Matcha      1  0.1667
+
+(df-print (crosstab '("Zurich" "Bern" "Zurich" "Basel") '("Sencha" "Assam" "Assam" "Sencha")))
+;; prints: # A data frame: 3 × 3
+;; prints:   row     Assam  Sencha
+;; prints:   &lt;chr&gt;   &lt;int&gt;   &lt;int&gt;
+;; prints: 1 Basel       0       1
+;; prints: 2 Bern        1       0
+;; prints: 3 Zurich      1       1</code></pre>
+<p>Without <code>'by-count</code>, <code>freq</code> sorts by value. <code>histogram-bins</code> counts values in equal-width bins:</p>
+<pre><code class="language-scheme">(df-print (histogram-bins brew 4))
+;; prints: # A data frame: 4 × 3
+;; prints:    from     to      n
+;; prints:   &lt;dbl&gt;  &lt;dbl&gt;  &lt;int&gt;
+;; prints: 1     2  2.875      2
+;; prints: 2 2.875   3.75      5
+;; prints: 3  3.75  4.625      2
+;; prints: 4 4.625    5.5      1</code></pre>
+<h2 id="statistics-per-group">Statistics per group</h2>
+<p>The same functions work inside the verbs, per group:</p>
+<pre><code class="language-scheme">(define tastings
+  (tibble (tea "Sencha" "Sencha" "Sencha" "Assam" "Assam" "Assam" "Assam")
+          (score 7 8 6 5 9 6 7)))
+
+(df-print (-&gt; tastings
+              (group-by tea)
+              (summarise (n (n)) (mean (mean score)) (median (median score)) (sd (sd score)))))
+;; prints: # A data frame: 2 × 5
+;; prints:   tea         n   mean  median      sd
+;; prints:   &lt;chr&gt;   &lt;int&gt;  &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;
+;; prints: 1 Assam       4   6.75     6.5  1.7078
+;; prints: 2 Sencha      3      7       7       1</code></pre>
+<p><code>df-print</code> rounds what it shows to a few digits; the frame keeps the full values.</p>
+<h2 id="formatting-for-reports">Formatting for reports</h2>
+<p>Tables and texts in reports need numbers formatted: thousands separators, a fixed number of decimals, percentages. Rounding is half away from zero, on the number as written:</p>
+<pre><code class="language-scheme">(fmt-num 24973.25 1)                        ;; =&gt; "24'973.3"
+(fmt-num 2.675 2)                           ;; =&gt; "2.68"
+(fmt-int 1234567)                           ;; =&gt; "1'234'567"
+(fmt-pct 0.2345)                            ;; =&gt; "23.5 %"
+(fmt-pct 0.2345 0)                          ;; =&gt; "23 %"
+(fmt-pct-change 20316 24973)                ;; =&gt; "+23 %"
+(fmt-pct-change 100 96)                     ;; =&gt; "-4 %"
+(fmt-si 2500000)                            ;; =&gt; "2.5M"
+(fmt-num na 1)                              ;; =&gt; "NA"
+(fmt-date (ymd-&gt;day 2025 3 7))              ;; =&gt; "2025-03-07"</code></pre>
+<p>(2.675 is stored as a binary number slightly below 2.675; a plain rounding of that value would give 2.67, which nobody reading "2.675" expects.)</p>
+<p>The separators come from the parameter <code>data-locale</code>, Swiss by default; <code>na-string</code> sets the text for missing values:</p>
+<pre><code class="language-scheme">(parameterize ((data-locale '((thousands . ",") (decimal . ".")))) (fmt-num 1234.5 1)) ;; =&gt; "1,234.5"
+(parameterize ((data-locale '((thousands . ".") (decimal . ",")))) (fmt-num 1234.5 1)) ;; =&gt; "1.234,5"
+(parameterize ((na-string "–")) (fmt-num na))                                         ;; =&gt; "–"</code></pre>
+<p>Formatting is the last step: compute with numbers, format when writing the report, so that sums and sorting still work on the values.</p>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-scm-data-tests.html">Hypothesis tests and linear models</a>, <a href="tutorial-scm-data-plot.html">charts</a>, <a href="tutorial-scm-data-report.html">reports</a>.</li>
+<li>Reference: <a class="xref" href="scm-data-stats.html"><code>(scm data stats)</code></a>, <a class="xref" href="scm-data-format.html"><code>(scm data format)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scm-data-stats.html"><code>(scm data stats)</code></a>, <a href="scm-data-format.html"><code>(scm data format)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-scm-data-reshape.html">&larr; "(scm data): joining and reshaping"</a>
+  <a class="next" href="tutorial-scm-data-tests.html">"(scm data tests): hypothesis tests and linear models" &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

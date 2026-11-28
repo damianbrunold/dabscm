@@ -1993,7 +1993,10 @@ Example:
              (breaks (cond ((opt-list sopts 'breaks)
                             =>
                             (lambda (l)
-                              (if (and (= (length l) 1) (symbol? (car l)))
+                              ;; (breaks quantile), (breaks (t1 t2 …)) as
+                              ;; documented, or (breaks t1 t2 …)
+                              (if (and (= (length l) 1)
+                                       (or (symbol? (car l)) (pair? (car l))))
                                   (car l)
                                   l)))
                            (continuous? 'equal)

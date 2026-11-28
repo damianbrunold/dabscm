@@ -44,12 +44,22 @@
                          (map (lambda (s) (string-append sep s)) acc))
                   (loop (- i 3) (cons (substring digits (- i 3) i) acc)))))))
 
+    ;; the number as the decimal it is written as: 2.675 is stored a little
+    ;; below 2.675, and rounding its exact binary value would give 2.67;
+    ;; reports round the decimal people see
+    (define (decimal-exact x)
+      (if (exact? x)
+          x
+          (or (string->number (string-append "#e" (number->string x)))
+              (exact x))))
+
     (define (fmt-num x . opts)
       "Syntax: (fmt-num x [decimals [thousands?]])
 Library: (scm data format)
 Description: Formats a number with a fixed number of decimals (default 0)
   and thousands separators from data-locale (pass #f as thousands? to
-  leave them out). na gives (na-string).
+  leave them out). na gives (na-string). Rounds half away from zero, on
+  the decimal value as written: 2.675 gives 2.68 with 2 decimals.
 Example:
   (fmt-num 24973.25 1) => \"24'973.3\"
   (fmt-num -0.04 1)    => \"0.0\""
@@ -63,7 +73,7 @@ Example:
               ((and (inexact? x) (or (= x +inf.0) (= x -inf.0)))
                (if (> x 0) "Inf" "-Inf"))
               (else (let* ((scale (expt 10 decimals))
-                           (e (exact x))
+                           (e (decimal-exact x))
                            (neg (< e 0))
                            (r (floor (+ (* (abs e) scale) 1/2)))
                            (int-part (quotient r scale))
@@ -100,7 +110,7 @@ Example:
   (fmt-pct 0.2345) => \"23.5 %\""
       (if (na? x)
           (na-string)
-          (string-append (fmt-num (* 100 x) (if (pair? opts) (car opts) 1))
+          (string-append (fmt-num (* 100 (decimal-exact x)) (if (pair? opts) (car opts) 1))
                          " %")))
 
     (define (fmt-pct-change a b . opts)

@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>"(scm data report): reports in HTML, Markdown and PDF" — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <a href="tutorial-scm-string.html">(scm string): regular expressions and splitting</a>
+  <a href="tutorial-scm-list.html">(scm list) and (scm macro): small helpers</a>
+  <a href="tutorial-scm-match.html">(scm match): pattern matching</a>
+  <a href="tutorial-scm-io.html">(scm io): ports and formatting</a>
+  <a href="tutorial-scm-text.html">(scm text): Unix text tools in Scheme</a>
+  <a href="tutorial-scm-templating.html">(scm templating) and (scm uri): templates and URLs</a>
+  <a href="tutorial-scm-args.html">(scm args): command-line parsing</a>
+  <a href="tutorial-scm-terminal.html">(scm terminal) and (scm log): terminal output and logging</a>
+  <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a>
+  <a href="tutorial-scm-system.html">(scm system) and (scm sysadmin): processes and the system</a>
+  <a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a>
+  <a href="tutorial-scm-store.html">(scm store): an indexed record store</a>
+  <a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a>
+  <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a>
+  <a href="tutorial-scm-json.html">(scm json simple) and (scm json): JSON</a>
+  <a href="tutorial-scm-xml.html">(scm xml) and (scm feed): XML and news feeds</a>
+  <a href="tutorial-scm-toml.html">(scm toml): configuration files</a>
+  <a href="tutorial-scm-markdown.html">(scm markdown): Markdown to HTML and beyond</a>
+  <a href="tutorial-scm-html.html">(scm html), builder and parser: writing and reading HTML</a>
+  <a href="tutorial-scm-excel.html">(scm ooxml excel) and friends: spreadsheets</a>
+  <a href="tutorial-scm-word.html">(scm ooxml word) and friends: Word and OpenDocument texts</a>
+  <a href="tutorial-scm-presentation.html">(scm ooxml presentation): PowerPoint slides</a>
+  <a href="tutorial-scm-pdf.html">(scm pdf) and (scm svg pdf): PDF documents</a>
+  <a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a>
+  <a href="tutorial-scm-http-server.html">(scm net http server) and (scm net http route): web servers</a>
+  <a href="tutorial-scm-http-client.html">(scm net http client): HTTP requests</a>
+  <a href="tutorial-scm-web-app.html">"Web applications: forms, sessions, middleware, static files, uploads"</a>
+  <a href="tutorial-scm-websocket.html">(scm net sockets) and (scm net websocket): TCP and WebSockets</a>
+  <a href="tutorial-scm-email.html">(scm net email) and (scm net smtp): sending e-mail</a>
+  <a href="tutorial-scm-database.html">"(scm database postgres), sqlserver and migrations: SQL databases"</a>
+  <a href="tutorial-scm-scaffold.html">"(scm scaffold): starting a web application with scm new-app"</a>
+  <a href="tutorial-scm-net-remote.html">"(scm net-remote): ssh, scp, rsync, curl and wget from Scheme"</a>
+  <a href="tutorial-scm-data.html">"(scm data): data frames and verbs"</a>
+  <a href="tutorial-scm-data-reshape.html">"(scm data): joining and reshaping"</a>
+  <a href="tutorial-scm-data-stats.html">"(scm data stats) and (scm data format): describing data"</a>
+  <a href="tutorial-scm-data-tests.html">"(scm data tests): hypothesis tests and linear models"</a>
+  <a href="tutorial-scm-data-io.html">"(scm data io): reading and writing data"</a>
+  <a href="tutorial-scm-data-plot.html">"(scm data plot): charts and maps"</a>
+  <a href="tutorial-scm-data-report.html" class="active">"(scm data report): reports in HTML, Markdown and PDF"</a>
+    <a class="sub" href="#a-report">A report</a>
+    <a class="sub" href="#blocks-built-in-code">Blocks built in code</a>
+    <a class="sub" href="#html-markdown-pdf">HTML, Markdown, PDF</a>
+    <a class="sub" href="#example-a-monthly-report-script">Example: a monthly report script</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-scm-data-cluster.html">"(scm data cluster): similarity and clustering"</a>
+  <a href="tutorial-scm-data-r.html">"(scm data r): translating between R and (scm data)"</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">"(scm data report): reports in HTML, Markdown and PDF"</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="scm-data-report-reports-in-html-markdown-and-pdf">(scm data report): reports in HTML, Markdown and PDF</h1>
+<p>The last step of an analysis is a document for people. <a class="xref" href="scm-data-report.html"><code>(scm data report)</code></a> describes a report as data (headings, text, tables from data frames, charts) and renders the same description as an HTML page, Markdown or PDF.</p>
+<pre><code class="language-scheme">(import (scheme base) (scheme file) (scheme write) (only (srfi 13) string-contains)
+        (scm fs) (scm data))
+
+(define per-shop
+  (tibble (shop "Zurich" "Bern" "Basel")
+          (kg 384.5 124 72)
+          (share 0.66 0.21 0.12)))
+
+(define chart (ggplot per-shop (aes (x shop) (y kg)) (geom-col) (labs (x #f) (y "kg"))))</code></pre>
+<h2 id="a-report">A report</h2>
+<p><code>report</code> quasiquotes its blocks, so computed values, frames and charts come in with unquote:</p>
+<pre><code class="language-scheme">(define r
+  (report
+   (title "Sales March 2025")
+   (date "2025-04-01")
+   (h2 "Summary")
+   (p "Zurich sold " (b ,(fmt-num 384.5)) " kg, " (i "two thirds") " of the total.")
+   (table ,per-shop
+          (columns (shop "Shop") (kg "Kilograms" num) (share "Share" pct))
+          (total-row "Total" (kg)))
+   (figure ,chart (caption "Kilograms per shop"))
+   (ul "Zurich up" "Basel new")
+   (note "Preliminary figures.")))</code></pre>
+<p>As Markdown, the structure is easy to see:</p>
+<pre><code class="language-scheme">(display (report-&gt;markdown r))
+;; prints: # Sales March 2025
+;; prints:
+;; prints: 2025-04-01
+;; prints:
+;; prints: ## Summary
+;; prints:
+;; prints: Zurich sold **385** kg, *two thirds* of the total.
+;; prints:
+;; prints: | Shop | Kilograms | Share |
+;; prints: |---|---:|---:|
+;; prints: | Zurich | 385 | 66 % |
+;; prints: | Bern | 124 | 21 % |
+;; prints: | Basel | 72 | 12 % |
+;; prints: | **Total** | **581** |  |
+;; prints:
+;; prints: *[Figure 1]*
+;; prints:
+;; prints: *Figure 1: Kilograms per shop*
+;; prints:
+;; prints: - Zurich up
+;; prints: - Basel new
+;; prints:
+;; prints: &gt; Preliminary figures.
+;; prints:</code></pre>
+<ul>
+<li><strong>Blocks:</strong> <code>title</code>, <code>subtitle</code>, <code>date</code> (today without an argument), <code>h1</code>–<code>h3</code>, <code>p</code>, <code>ul</code>, <code>ol</code>, <code>note</code>, <code>pre</code>, <code>hr</code>, <code>page-break</code>, <code>table</code>, <code>figure</code>.</li>
+<li><strong>Inline:</strong> strings, numbers, <code>b</code>, <code>i</code>, <code>code</code>, <code>(link url text)</code>, <code>br</code>.</li>
+<li><strong>Table columns:</strong> a label and a format, here <code>num</code> (thousands separators) and <code>pct</code>. The others are <code>int</code>, <code>pct1</code>, <code>dec1</code>, <code>dec2</code>, <code>text</code>, or any procedure such as <code>(lambda (x) (fmt-num x 2))</code>.</li>
+<li><strong>Total row:</strong> sums the named columns, or the numeric ones without a percent format. <code>(max-rows n)</code> cuts long tables.</li>
+<li><strong>Markdown figures:</strong> without a place for image files, a figure is a placeholder; <code>write-report</code> writes the images (below).</li>
+</ul>
+<h2 id="blocks-built-in-code">Blocks built in code</h2>
+<p><code>,@</code> splices a list of blocks, for parts that depend on the data:</p>
+<pre><code class="language-scheme">(define (warnings frame)
+  (let ((low (where frame (&lt; kg 100))))
+    (if (zero? (df-nrow low))
+        '()
+        `((h2 "Attention")
+          (p ,(number-&gt;string (df-nrow low)) " shop(s) sold less than 100 kg.")))))
+
+(define r2 (report (title "Check") ,@(warnings per-shop)))
+(and (string-contains (report-&gt;markdown r2) "1 shop(s) sold less than 100 kg.") #t) ;; =&gt; #t
+(report-&gt;markdown (report (title "Check") ,@(warnings (where per-shop (&gt; kg 100)))))
+;; =&gt; "# Check\n\n"</code></pre>
+<h2 id="html-markdown-pdf">HTML, Markdown, PDF</h2>
+<p><code>write-report</code> picks the format by the file extension:</p>
+<pre><code class="language-scheme">(define dir (mktempdir '(prefix . "report")))
+(write-report r (join-path dir "march.html"))
+(write-report r (join-path dir "march.md"))
+(write-report r (join-path dir "march.pdf"))
+
+(map (lambda (f) (file-exists? (join-path dir f))) '("march.html" "march.md" "march-fig1.png" "march.pdf"))
+;; =&gt; (#t #t #t #t)</code></pre>
+<ul>
+<li><strong>HTML</strong> is one self-contained page: the CSS (with a dark theme) and the charts as inline SVG are inside, so the file can be mailed or put on a share as it is. With three or more <code>h2</code> headings it gets a table of contents.</li>
+<li><strong>Markdown</strong> links its figures as image files next to it (<code>march-fig1.png</code>; pass <code>'svg</code> for SVG). Good for a wiki or a Git repository.</li>
+<li><strong>PDF</strong> has A4 pages, embedded fonts, tables whose header repeats on every page, charts as vector graphics, bookmarks for the headings and a footer with the title and page numbers. <code>report-&gt;pdf</code> takes options for the page size, margins, font size and font.</li>
+</ul>
+<p>The same renderers are there as procedures returning strings or bytes, for a web server that answers with a report:</p>
+<pre><code class="language-scheme">(define page (report-&gt;html r))
+(substring page 0 15)                       ;; =&gt; "&lt;!DOCTYPE html&gt;"
+(and (string-contains page "&lt;svg") #t)      ;; =&gt; #t
+(utf8-&gt;string (bytevector-copy (report-&gt;pdf r) 0 5)) ;; =&gt; "%PDF-"
+(rm dir 'recursive)</code></pre>
+<h2 id="example-a-monthly-report-script">Example: a monthly report script</h2>
+<p>A script that a scheduled job runs on the first of each month: read the month's sales, summarise them, write the report. The analysis is ordinary verbs; the report only arranges the results.</p>
+<pre><code class="language-scheme no-test">(import (scheme base) (scheme process-context) (scm data))
+
+(define month (or (and (pair? (cdr (command-line))) (cadr (command-line))) "2025-03"))
+(define sales (read-csv (string-append "exports/sales-" month ".csv")))
+
+(define per-shop
+  (-&gt; sales
+      (group-by shop)
+      (summarise (kg (sum kg)) (revenue (sum (* kg price))))
+      (mutate (share (/ revenue (sum revenue))))
+      (arrange (desc revenue))))
+
+(define per-day
+  (-&gt; sales (group-by date) (summarise (revenue (sum (* kg price))))))
+
+(write-report
+ (report
+  (title "Sales " ,month)
+  (date)
+  (p "Revenue: " (b ,(fmt-num (sum (df-column per-shop 'revenue)))) " CHF.")
+  (h2 "Shops")
+  (table ,per-shop (columns (shop "Shop") (kg "kg" dec1) (revenue "CHF" num) (share "Share" pct))
+         (total-row "Total" (kg revenue)))
+  (h2 "Days")
+  (figure ,(ggplot per-day (aes (x date) (y revenue)) (geom-line) (labs (x #f) (y "CHF")))))
+ (string-append "reports/sales-" month ".pdf"))</code></pre>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-scm-data-plot.html">Charts</a>, <a href="tutorial-scm-data-stats.html">statistics and formatting</a>, <a href="tutorial-scm-data.html">data frames</a>.</li>
+<li><a href="tutorial-scm-markdown.html">Markdown</a>, <a href="tutorial-scm-pdf.html">PDF</a> and <a href="tutorial-scm-word.html">Word</a> for documents built by hand.</li>
+<li><a class="xref" href="scm-data-r.html"><code>(scm data r)</code></a> turns a report into R Markdown: <a href="tutorial-scm-data-r.html">R translation</a>.</li>
+<li>Reference: <a class="xref" href="scm-data-report.html"><code>(scm data report)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scm-data-report.html"><code>(scm data report)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-scm-data-plot.html">&larr; "(scm data plot): charts and maps"</a>
+  <a class="next" href="tutorial-scm-data-cluster.html">"(scm data cluster): similarity and clustering" &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>
