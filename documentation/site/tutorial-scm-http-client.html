@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm net http client): HTTP requests — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <a href="tutorial-scm-string.html">(scm string): regular expressions and splitting</a>
+  <a href="tutorial-scm-list.html">(scm list) and (scm macro): small helpers</a>
+  <a href="tutorial-scm-match.html">(scm match): pattern matching</a>
+  <a href="tutorial-scm-io.html">(scm io): ports and formatting</a>
+  <a href="tutorial-scm-text.html">(scm text): Unix text tools in Scheme</a>
+  <a href="tutorial-scm-templating.html">(scm templating) and (scm uri): templates and URLs</a>
+  <a href="tutorial-scm-args.html">(scm args): command-line parsing</a>
+  <a href="tutorial-scm-terminal.html">(scm terminal) and (scm log): terminal output and logging</a>
+  <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a>
+  <a href="tutorial-scm-system.html">(scm system) and (scm sysadmin): processes and the system</a>
+  <a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a>
+  <a href="tutorial-scm-store.html">(scm store): an indexed record store</a>
+  <a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a>
+  <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a>
+  <a href="tutorial-scm-json.html">(scm json simple) and (scm json): JSON</a>
+  <a href="tutorial-scm-xml.html">(scm xml) and (scm feed): XML and news feeds</a>
+  <a href="tutorial-scm-toml.html">(scm toml): configuration files</a>
+  <a href="tutorial-scm-markdown.html">(scm markdown): Markdown to HTML and beyond</a>
+  <a href="tutorial-scm-html.html">(scm html), builder and parser: writing and reading HTML</a>
+  <a href="tutorial-scm-excel.html">(scm ooxml excel) and friends: spreadsheets</a>
+  <a href="tutorial-scm-word.html">(scm ooxml word) and friends: Word and OpenDocument texts</a>
+  <a href="tutorial-scm-presentation.html">(scm ooxml presentation): PowerPoint slides</a>
+  <a href="tutorial-scm-pdf.html">(scm pdf) and (scm svg pdf): PDF documents</a>
+  <a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a>
+  <a href="tutorial-scm-http-server.html">(scm net http server) and (scm net http route): web servers</a>
+  <a href="tutorial-scm-http-client.html" class="active">(scm net http client): HTTP requests</a>
+    <a class="sub" href="#get">GET</a>
+    <a class="sub" href="#sending-data">Sending data</a>
+    <a class="sub" href="#any-request">Any request</a>
+    <a class="sub" href="#binary-bodies">Binary bodies</a>
+    <a class="sub" href="#redirects">Redirects</a>
+    <a class="sub" href="#timeouts-and-errors">Timeouts and errors</a>
+    <a class="sub" href="#example-an-api-client-with-retries">Example: an API client with retries</a>
+    <a class="sub" href="#https">HTTPS</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-scm-web-app.html">"Web applications: forms, sessions, middleware, static files, uploads"</a>
+  <a href="tutorial-scm-websocket.html">(scm net sockets) and (scm net websocket): TCP and WebSockets</a>
+  <a href="tutorial-scm-email.html">(scm net email) and (scm net smtp): sending e-mail</a>
+  <a href="tutorial-scm-database.html">"(scm database postgres), sqlserver and migrations: SQL databases"</a>
+  <a href="tutorial-scm-scaffold.html">"(scm scaffold): starting a web application with scm new-app"</a>
+  <a href="tutorial-scm-net-remote.html">"(scm net-remote): ssh, scp, rsync, curl and wget from Scheme"</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm net http client): HTTP requests</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="scm-net-http-client-http-requests">(scm net http client): HTTP requests</h1>
+<p><a class="xref" href="scm-net-http-client.html"><code>(scm net http client)</code></a> sends HTTP and HTTPS requests and returns the response as a value with a status, headers and a body. The examples here talk to a small server started on this machine, so that they run without the internet; the <a href="tutorial-scm-http-server.html">server tutorial</a> explains that part.</p>
+<pre><code class="language-scheme">(import (scheme base) (scheme write) (srfi 18) (scm json simple)
+        (scm net http request) (scm net http response) (scm net http route)
+        (scm net http server) (scm net http client))
+
+;; a server that describes each request it receives, as JSON
+(define (describe req params)
+  (json-response
+   (json-&gt;string
+    `(("method" . ,(http-request-method req))
+      ("url" . ,(http-request-url req))
+      ("type" . ,(or (http-request-header req "Content-Type") 'null))
+      ("token" . ,(or (http-request-bearer-token req) 'null))
+      ("body" . ,(or (http-request-body req) 'null))))))
+
+(define r (make-router))
+(for-each (lambda (m) (router-add! r m "/echo" describe)) '("GET" "POST" "PUT" "PATCH" "DELETE"))
+(router-add! r "GET" "/old-menu" (lambda (req p) (http-permanent-redirect "/menu")))
+(router-add! r "GET" "/menu" (lambda (req p) (text-response "Sencha, Assam, Rooibos")))
+(router-add! r "GET" "/logo.png" (lambda (req p) (make-http-response 200 '(("Content-Type" . "image/png"))
+                                                                      (bytevector 137 80 78 71))))
+(router-add! r "GET" "/slow" (lambda (req p) (thread-sleep! 3) (text-response "finally")))
+
+(define server (start-app-with-router r 18902 8 "127.0.0.1"))
+(define base "http://127.0.0.1:18902")
+(define (at path) (string-append base path))</code></pre>
+<h2 id="get">GET</h2>
+<pre><code class="language-scheme">(define resp (http-get (at "/menu")))
+(http-response-status resp)                 ;; =&gt; 200
+(http-response-body resp)                   ;; =&gt; "Sencha, Assam, Rooibos"
+(http-response-header resp "Content-Type")  ;; =&gt; "text/plain; charset=utf-8"
+(http-response-status (http-get (at "/coffee"))) ;; =&gt; 404</code></pre>
+<p>A 404 or 500 is a normal response, not an error: check the status. <a class="xref" href="scm-net-http-response.html#e9"><code>http-response-header</code></a> finds a header whatever its case; the names in <a class="xref" href="scm-net-http-response.html#e10"><code>http-response-headers</code></a> are lower case on some implementations and as sent on others, so look headers up rather than comparing the alist.</p>
+<h2 id="sending-data">Sending data</h2>
+<p><a class="xref" href="scm-net-http-client.html#e4"><code>http-post</code></a> and <a class="xref" href="scm-net-http-client.html#e6"><code>http-put</code></a> take a body; an optional alist adds headers:</p>
+<pre><code class="language-scheme">(define (echo resp) (json-parse (http-response-body resp)))
+
+(json-ref (echo (http-post (at "/echo") "name,kg\nSencha,2\n" '(("Content-Type" . "text/csv")))) "type")
+;; =&gt; "text/csv"
+(json-ref (echo (http-put (at "/echo") "new price list")) "method") ;; =&gt; "PUT"
+(json-ref (echo (http-delete (at "/echo"))) "method") ;; =&gt; "DELETE"</code></pre>
+<p>For JSON APIs, <a class="xref" href="scm-net-http-client.html#e5"><code>http-post-json</code></a> sets the content type and <a class="xref" href="scm-net-http-client.html#e3"><code>http-get-json</code></a> asks for JSON with <code>Accept</code>. The body is a JSON string, so build it with <a class="xref" href="scm-json-simple.html#e1"><code>json-&gt;string</code></a> from <a class="xref" href="scm-json-simple.html"><code>(scm json simple)</code></a> and parse the answer with <a class="xref" href="scm-json-simple.html#e3"><code>json-parse</code></a>:</p>
+<pre><code class="language-scheme">(define order `(("tea" . "Sencha") ("kg" . 2)))
+(define answer (echo (http-post-json (at "/echo") (json-&gt;string order))))
+(json-ref answer "type")                    ;; =&gt; "application/json"
+(json-parse (json-ref answer "body"))       ;; =&gt; (("tea" . "Sencha") ("kg" . 2))</code></pre>
+<h2 id="any-request">Any request</h2>
+<p><a class="xref" href="scm-net-http-client.html#e7"><code>http-send</code></a> sends a request built with <a class="xref" href="scm-net-http-request.html#e9"><code>make-http-request</code></a>: any method, headers and body, plus a timeout. API tokens go in an <code>Authorization</code> header:</p>
+<pre><code class="language-scheme">(define patch
+  (make-http-request "PATCH" (at "/echo")
+                     '(("Authorization" . "Bearer s3cr3t") ("Content-Type" . "application/json"))
+                     "{\"kg\": 3}"))
+(define seen (echo (http-send patch)))
+(list (json-ref seen "method") (json-ref seen "token")) ;; =&gt; ("PATCH" "s3cr3t")</code></pre>
+<p>A string body is sent as UTF-8, a bytevector as it is.</p>
+<h2 id="binary-bodies">Binary bodies</h2>
+<p>Text responses (<code>text/*</code>, JSON, XML, anything with a <code>charset</code>) come back as strings, everything else as bytevectors. <a class="xref" href="scm-net-http-client.html#e2"><code>http-get-bytevector</code></a> always gives the bytes, for downloads:</p>
+<pre><code class="language-scheme">(http-response-body (http-get (at "/logo.png"))) ;; =&gt; #u8(137 80 78 71)
+(http-response-body (http-get-bytevector (at "/menu")))
+;; =&gt; #u8(83 101 110 99 104 97 44 32 65 115 115 97 109 44 32 82 111 111 105 98 111 115)</code></pre>
+<h2 id="redirects">Redirects</h2>
+<p>Redirects are followed, and the final response is returned. To see the redirect itself, pass <code>#f</code> for following redirects after the timeout:</p>
+<pre><code class="language-scheme">(http-response-body (http-get (at "/old-menu"))) ;; =&gt; "Sencha, Assam, Rooibos"
+
+(define moved (http-send (make-http-request "GET" (at "/old-menu") '() #f 30 #f)))
+(http-response-status moved)                ;; =&gt; 301
+(http-response-header moved "Location")     ;; =&gt; "/menu"</code></pre>
+<p>That is how a client sees the <code>Set-Cookie</code> of a login that redirects. A redirect from HTTPS to plain HTTP is never followed.</p>
+<h2 id="timeouts-and-errors">Timeouts and errors</h2>
+<p>Requests wait up to 600 seconds by default; the GET procedures take a timeout after the headers, <a class="xref" href="scm-net-http-request.html#e9"><code>make-http-request</code></a> before the redirect flag. A timeout, a refused connection or an unknown host raises an error:</p>
+<pre><code class="language-scheme">(http-get (at "/slow") '() 1)              ;; =&gt; error
+(server-stop server)
+(http-get (at "/menu"))                     ;; =&gt; error</code></pre>
+<p>The messages name the procedure and the cause, but their wording differs between the implementations, so a program should not parse them.</p>
+<h2 id="example-an-api-client-with-retries">Example: an API client with retries</h2>
+<p>A client for a service that sometimes fails: retry server errors and network errors a few times, with a growing pause, but not client errors like 404, which would only fail again:</p>
+<pre><code class="language-scheme">(define (with-retries attempts thunk)
+  (let loop ((n 1) (pause 0.05))
+    (let ((resp (guard (e ((and (error-object? e) (&lt; n attempts)) #f))
+                  (thunk))))
+      (cond ((and resp (&lt; (http-response-status resp) 500)) resp)
+            ((&lt; n attempts) (thread-sleep! pause) (loop (+ n 1) (* 2 pause)))
+            (else resp)))))
+
+;; a flaky service: the first two calls fail with 503
+(define calls 0)
+(define flaky (make-router))
+(router-add! flaky "GET" "/stock/:tea"
+  (lambda (req params)
+    (set! calls (+ calls 1))
+    (if (&lt;= calls 2)
+        (make-http-response 503 '() "busy")
+        (json-response (json-&gt;string `(("tea" . ,(params-ref params "tea")) ("kg" . 40)))))))
+(define server2 (start-app-with-router flaky 18903 4 "127.0.0.1"))
+
+(define (stock tea)
+  (let ((resp (with-retries 4 (lambda () (http-get-json (string-append "http://127.0.0.1:18903/stock/" tea))))))
+    (and (= (http-response-status resp) 200)
+         (json-ref (json-parse (http-response-body resp)) "kg"))))
+
+(stock "Sencha")                            ;; =&gt; 40
+calls                                       ;; =&gt; 3
+(server-stop server2)</code></pre>
+<p>Only retry requests that may safely run twice: a GET, or a POST the service deduplicates (for example by an idempotency key header).</p>
+<h2 id="https">HTTPS</h2>
+<p>HTTPS URLs work the same way. Server certificates are checked against the system's trusted certificates; the reference page explains which stores each implementation reads (including the Windows store and corporate CAs under WSL), and the <code>SCM_TLS_DEBUG</code> and <code>SCM_TLS_INSECURE</code> environment variables for diagnosing certificate trouble.</p>
+<pre><code class="language-scheme no-test">(define status (http-get-json "https://api.example.com/v1/status"))
+(json-ref (json-parse (http-response-body status)) "state")</code></pre>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-scm-http-server.html">HTTP servers</a>, <a href="tutorial-scm-json.html">JSON</a>, <a href="tutorial-scm-websocket.html">WebSockets</a> for two-way connections.</li>
+<li><a class="xref" href="scm-net-remote.html"><code>(scm net-remote)</code></a>'s <code>curl</code> runs the curl program, for options this library lacks (client certificates, proxies).</li>
+<li>Reference: <a class="xref" href="scm-net-http-client.html"><code>(scm net http client)</code></a>, <a class="xref" href="scm-net-http-request.html"><code>(scm net http request)</code></a>, <a class="xref" href="scm-net-http-response.html"><code>(scm net http response)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scm-net-http-client.html"><code>(scm net http client)</code></a>, <a href="scm-net-http-request.html"><code>(scm net http request)</code></a>, <a href="scm-net-http-response.html"><code>(scm net http response)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-scm-http-server.html">&larr; (scm net http server) and (scm net http route): web servers</a>
+  <a class="next" href="tutorial-scm-web-app.html">"Web applications: forms, sessions, middleware, static files, uploads" &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

@@ -40,6 +40,7 @@
 
 <div class="lib-title scm">(scm database migrations)</div>
 <p class="lib-sub">Forward-only SQL migration runner</p>
+<p class="lib-tutorials">Tutorials: <a href="tutorial-scm-database.html">"(scm database postgres), sqlserver and migrations: SQL databases"</a></p>
 <div class="lib-preamble">
 <h2>Overview</h2>
 <p><a class="xref" href="scm-database-migrations.html"><code>(scm database migrations)</code></a> is a forward-only SQL migration runner. It applies the <code>.sql</code> files in a directory in lexical order (conventionally <code>NNNN_name.sql</code>), records each applied file in a tracking table so it never runs twice, and wraps each migration in its own transaction. It is database-agnostic: you supply two callbacks that talk to your actual connection, so it works with PostgreSQL, SQL Server, SQLite, or an in-memory test database.</p>
@@ -103,7 +104,7 @@ Example:
     (lambda (sql) (pg-exec conn sql))
     (lambda (sql) (pg-result-rows (pg-query conn sql)))
     "./migrations"
-    '((log-proc ,(lambda (m) (display m) (newline)))))</pre>
+    `((log-proc . ,(lambda (m) (display m) (newline)))))</pre>
 </div>
 
 </main>

@@ -63,14 +63,12 @@ public class PrimitiveRunProgramCapture : Primitive
             var process = new Process();
             process.StartInfo = psi;
 
-            var stdoutBuf = new StringBuilder();
-            var stderrBuf = new StringBuilder();
-            process.OutputDataReceived += (s, e) => { if (e.Data != null) stdoutBuf.AppendLine(e.Data); };
-            process.ErrorDataReceived  += (s, e) => { if (e.Data != null) stderrBuf.AppendLine(e.Data); };
-
             process.Start();
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
+            // the output as it is, read to the end on both pipes at once (no
+            // deadlock when one fills up); line-by-line reading would turn
+            // CRLF into LF and add a newline the program did not write
+            var stdoutTask = process.StandardOutput.ReadToEndAsync();
+            var stderrTask = process.StandardError.ReadToEndAsync();
 
             if (stdinText != null)
             {
@@ -78,11 +76,13 @@ public class PrimitiveRunProgramCapture : Primitive
                 process.StandardInput.Close();
             }
 
+            string stdoutText = stdoutTask.GetAwaiter().GetResult();
+            string stderrText = stderrTask.GetAwaiter().GetResult();
             process.WaitForExit();
 
             object result = Value.NIL;
-            result = new Pair(stderrBuf.ToString().ToCharArray(), result);
-            result = new Pair(stdoutBuf.ToString().ToCharArray(), result);
+            result = new Pair(stderrText.ToCharArray(), result);
+            result = new Pair(stdoutText.ToCharArray(), result);
             result = new Pair((long) process.ExitCode, result);
             return result;
         }

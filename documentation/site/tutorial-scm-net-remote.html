@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>"(scm net-remote): ssh, scp, rsync, curl and wget from Scheme" — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <a href="tutorial-scm-string.html">(scm string): regular expressions and splitting</a>
+  <a href="tutorial-scm-list.html">(scm list) and (scm macro): small helpers</a>
+  <a href="tutorial-scm-match.html">(scm match): pattern matching</a>
+  <a href="tutorial-scm-io.html">(scm io): ports and formatting</a>
+  <a href="tutorial-scm-text.html">(scm text): Unix text tools in Scheme</a>
+  <a href="tutorial-scm-templating.html">(scm templating) and (scm uri): templates and URLs</a>
+  <a href="tutorial-scm-args.html">(scm args): command-line parsing</a>
+  <a href="tutorial-scm-terminal.html">(scm terminal) and (scm log): terminal output and logging</a>
+  <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a>
+  <a href="tutorial-scm-system.html">(scm system) and (scm sysadmin): processes and the system</a>
+  <a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a>
+  <a href="tutorial-scm-store.html">(scm store): an indexed record store</a>
+  <a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a>
+  <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a>
+  <a href="tutorial-scm-json.html">(scm json simple) and (scm json): JSON</a>
+  <a href="tutorial-scm-xml.html">(scm xml) and (scm feed): XML and news feeds</a>
+  <a href="tutorial-scm-toml.html">(scm toml): configuration files</a>
+  <a href="tutorial-scm-markdown.html">(scm markdown): Markdown to HTML and beyond</a>
+  <a href="tutorial-scm-html.html">(scm html), builder and parser: writing and reading HTML</a>
+  <a href="tutorial-scm-excel.html">(scm ooxml excel) and friends: spreadsheets</a>
+  <a href="tutorial-scm-word.html">(scm ooxml word) and friends: Word and OpenDocument texts</a>
+  <a href="tutorial-scm-presentation.html">(scm ooxml presentation): PowerPoint slides</a>
+  <a href="tutorial-scm-pdf.html">(scm pdf) and (scm svg pdf): PDF documents</a>
+  <a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a>
+  <a href="tutorial-scm-http-server.html">(scm net http server) and (scm net http route): web servers</a>
+  <a href="tutorial-scm-http-client.html">(scm net http client): HTTP requests</a>
+  <a href="tutorial-scm-web-app.html">"Web applications: forms, sessions, middleware, static files, uploads"</a>
+  <a href="tutorial-scm-websocket.html">(scm net sockets) and (scm net websocket): TCP and WebSockets</a>
+  <a href="tutorial-scm-email.html">(scm net email) and (scm net smtp): sending e-mail</a>
+  <a href="tutorial-scm-database.html">"(scm database postgres), sqlserver and migrations: SQL databases"</a>
+  <a href="tutorial-scm-scaffold.html">"(scm scaffold): starting a web application with scm new-app"</a>
+  <a href="tutorial-scm-net-remote.html" class="active">"(scm net-remote): ssh, scp, rsync, curl and wget from Scheme"</a>
+    <a class="sub" href="#options">Options</a>
+    <a class="sub" href="#ssh">ssh</a>
+    <a class="sub" href="#copying-scp-and-rsync">Copying: scp and rsync</a>
+    <a class="sub" href="#fetching-curl-and-wget">Fetching: curl and wget</a>
+    <a class="sub" href="#example-a-deployment-script">Example: a deployment script</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">"(scm net-remote): ssh, scp, rsync, curl and wget from Scheme"</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="scm-net-remote-ssh-scp-rsync-curl-and-wget-from-scheme">(scm net-remote): ssh, scp, rsync, curl and wget from Scheme</h1>
+<p><a class="xref" href="scm-net-remote.html"><code>(scm net-remote)</code></a> runs the usual command-line tools for remote work, with their options written as Scheme data. The programs must be installed; <code>ssh</code> uses your SSH keys and configuration as it does on the command line.</p>
+<pre><code class="language-scheme">(import (scheme base) (scheme write) (scm net-remote)
+        (scm net http request) (scm net http response) (scm net http route) (scm net http server))</code></pre>
+<h2 id="options">Options</h2>
+<p>Every procedure takes its options after the required arguments: a symbol for a flag, a pair for an option with a value.</p>
+<pre><code class="language-scheme no-test">(rsync "build/" "deploy@web1:/srv/app/" 'archive 'delete '(exclude . ("*.log" "tmp/")))
+;; runs: rsync -a --delete --exclude *.log --exclude tmp/ build/ deploy@web1:/srv/app/</code></pre>
+<p>The arguments go to the program directly, not through a shell, so file names with spaces or quotes need no escaping.</p>
+<h2 id="ssh">ssh</h2>
+<p><code>ssh</code> runs a command on another machine and returns its exit code, output and error output:</p>
+<pre><code class="language-scheme no-test">(ssh "deploy@web1" "df -h /srv")
+;; =&gt; (0 "Filesystem  Size  Used Avail Use% Mounted on\n/dev/sda1  ...\n" "")
+
+(ssh "web1" "systemctl is-active tea-shop" '(user . "deploy") '(port . 2222) '(key . "~/.ssh/deploy"))
+;; =&gt; (0 "active\n" "")</code></pre>
+<p>A host that cannot be reached is not an error: ssh's exit code 255 comes back, with its message:</p>
+<pre><code class="language-scheme no-test">(ssh "web9.invalid" "true")
+;; =&gt; (255 "" "ssh: Could not resolve hostname web9.invalid: Name or service not known\r\n")</code></pre>
+<p><code>'(stdin . text)</code> feeds text to the remote command, for example a SQL script to <code>psql</code>.</p>
+<h2 id="copying-scp-and-rsync">Copying: scp and rsync</h2>
+<pre><code class="language-scheme no-test">(scp "dist/tea-shop.tar.gz" "deploy@web1:/srv/releases/")       ; =&gt; #t
+(scp "deploy@web1:/var/log/tea-shop/access.log" "logs/" 'quiet)
+(rsync "static/" "deploy@web1:/srv/tea-shop/static/" 'archive 'compress 'delete)
+(rsync "static/" "deploy@web1:/srv/tea-shop/static/" 'archive 'dry-run 'verbose)  ; only show</code></pre>
+<p>Both return <code>#t</code> when the copy succeeded. <code>rsync</code> copies only what changed, which makes it the tool for directories; <code>'delete</code> removes files at the destination that the source no longer has, so try a <code>'dry-run</code> first.</p>
+<h2 id="fetching-curl-and-wget">Fetching: curl and wget</h2>
+<p><code>curl</code> returns the body of a response, or with <code>'include-status</code> the status and the body. The option <code>'pure</code> uses <a class="xref" href="scm-net-http-client.html"><code>(scm net http client)</code></a> instead of the curl program, so it works where curl is not installed:</p>
+<pre><code class="language-scheme">(define r (make-router))
+(router-add! r "GET" "/version" (lambda (req p) (text-response "2.31.0")))
+(router-add! r "POST" "/echo" (lambda (req p) (text-response (string-append "got " (http-request-body req)))))
+(define server (start-app-with-router r 18930 4 "127.0.0.1"))
+
+(curl "http://127.0.0.1:18930/version" 'pure) ;; =&gt; "2.31.0"
+(curl "http://127.0.0.1:18930/missing" 'pure 'include-status) ;; =&gt; (404 . "Not Found")
+(curl "http://127.0.0.1:18930/echo" '(data . "order 117") 'pure) ;; =&gt; "got order 117"
+(server-stop server)</code></pre>
+<p>Without <code>'pure</code> the same calls run curl, and the curl options work: <code>'follow-redirects</code>, <code>'(timeout . 10)</code>, <code>'fail-on-error</code>, <code>'(output . "file")</code> to save the body. <code>wget</code> downloads files, with <code>'continue</code> to resume a broken download:</p>
+<pre><code class="language-scheme no-test">(curl "https://api.example.com/v1/status" 'silent 'follow-redirects '(timeout . 10))
+(wget "https://downloads.example.com/data-2025.zip" '(output . "data/2025.zip") 'quiet 'continue)</code></pre>
+<p>For anything more than fetching a URL, <a class="xref" href="scm-net-http-client.html"><code>(scm net http client)</code></a> is the better choice: it returns headers and binary bodies and raises clear errors (<a href="tutorial-scm-http-client.html">HTTP client</a>).</p>
+<h2 id="example-a-deployment-script">Example: a deployment script</h2>
+<p>Copy a release to each server, switch a symlink to it, restart the service and check that it answers, stopping at the first problem:</p>
+<pre><code class="language-scheme no-test">(define servers '("deploy@web1" "deploy@web2"))
+(define release "tea-shop-2.31.0")
+
+(define (run-on host command)
+  (let ((r (ssh host command)))
+    (unless (zero? (car r))
+      (error "remote command failed" host command (caddr r)))
+    (cadr r)))
+
+(define (deploy host)
+  (display (string-append "deploying to " host "\n"))
+  (unless (rsync (string-append "dist/" release "/")
+                 (string-append host ":/srv/releases/" release "/") 'archive 'compress)
+    (error "copy failed" host))
+  (run-on host (string-append "ln -sfn /srv/releases/" release " /srv/tea-shop"))
+  (run-on host "sudo systemctl restart tea-shop")
+  (run-on host "curl -fsS http://127.0.0.1:8070/healthz"))
+
+(for-each deploy servers)</code></pre>
+<p>One server at a time keeps the others serving while each restarts.</p>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-techniques-12-system.html">Running programs</a> for local processes, <a href="tutorial-scm-http-client.html">HTTP client</a>, <a href="tutorial-scm-scaffold.html">scaffold</a> for the starters' own <code>deploy/install.sh</code>.</li>
+<li>Reference: <a class="xref" href="scm-net-remote.html"><code>(scm net-remote)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scm-net-remote.html"><code>(scm net-remote)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-scm-scaffold.html">&larr; "(scm scaffold): starting a web application with scm new-app"</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

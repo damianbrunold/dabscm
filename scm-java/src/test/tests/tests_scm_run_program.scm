@@ -128,6 +128,13 @@
   (for-each (lambda (f) (when (file-exists? f) (delete-file f)))
             (list out-file err-file in-file)))
 
+(test-group "run-program/capture keeps the output as written"
+  ;; no newline added at the end, CR LF kept (.NET once read line by line)
+  (unless windows?
+    (test-equal '(0 "a\r\nb" "") (run-program/capture '("printf" "a\\r\\nb")))
+    (test-equal '(0 "x" "") (run-program/capture '("printf" "x")))
+    (test-equal '(0 "" "e\r\n") (run-program/capture '("sh" "-c" "printf 'e\\r\\n' >&2")))))
+
 (test-group "run-program redirections"
   (clean)
   (test-equal "stdin text to a stdout file" 0

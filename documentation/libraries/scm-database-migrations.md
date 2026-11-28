@@ -82,6 +82,6 @@ Example:
     (lambda (sql) (pg-exec conn sql))
     (lambda (sql) (pg-result-rows (pg-query conn sql)))
     "./migrations"
-    '((log-proc ,(lambda (m) (display m) (newline)))))
+    `((log-proc . ,(lambda (m) (display m) (newline)))))
 ```
 

@@ -1,6 +1,8 @@
 (import (scheme base)
         (scheme write)
         (srfi 18)
+        (only (srfi 1) iota filter)
+        (only (srfi 69) make-hash-table hash-table-set! hash-table-ref/default)
         (scm test))
 
 (test-runner-factory scm-test-runner)
@@ -327,5 +329,24 @@
     (mutex-lock! m)
     (test-assert (eq? (mutex-state m) (current-thread)))
     (mutex-unlock! m)))
+
+(test-group "eq? tables survive collections made by another thread"
+  ;; identity hashes change when objects move: a table must rehash after
+  ;; any thread's collection, not only after its own (native once kept a
+  ;; per-thread count, so the main thread's tables lost their entries)
+  (let ((table (make-hash-table eq?))
+        (keys (map (lambda (i) (list 'key i)) (iota 200))))
+    (for-each (lambda (k) (hash-table-set! table k (cadr k))) keys)
+    (let ((t (make-thread
+              (lambda ()
+                (let loop ((i 0) (acc '()))
+                  (if (< i 2000000)
+                      (loop (+ i 1) (if (> (length acc) 100) '() (cons (make-vector 8 i) acc)))
+                      'done))))))
+      (thread-start! t)
+      (thread-join! t))
+    (test-equal 200
+                (length (filter (lambda (k) (eqv? (hash-table-ref/default table k #f) (cadr k)))
+                                keys)))))
 
 (test-end "srfi-18")

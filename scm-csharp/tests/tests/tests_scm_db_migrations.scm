@@ -158,6 +158,17 @@
                 "applying 0003_index.sql" "migrations complete")
               (reverse logs)))
 
+(test-group "options as an alist of pairs"
+  (reset-state!)
+  (set! logs '())
+  (migrations-applied capture-exec! empty-rows '((table-name . "_mig2")))
+  (test-equal #t
+              (begins-with? (last *exec-log*)
+                            "CREATE TABLE IF NOT EXISTS _mig2 "))
+  (reset-state!)
+  (run-migrations! fake-exec! fake-query-rows tmpdir `((log-proc . ,log)))
+  (test-equal "migrations complete" (car logs)))
+
 (test-group "missing directory raises"
   (test-equal #t
               (guard (exn (#t #t))

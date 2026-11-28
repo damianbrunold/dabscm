@@ -28,7 +28,11 @@ public class PrimitiveHttpSend : Primitive
         if (req.BodyBytes != null)
             message.Content = new ByteArrayContent(req.BodyBytes);
         else if (req.Body != null)
+        {
             message.Content = new StringContent(req.Body, Encoding.UTF8);
+            // no Content-Type unless the request gives one, as on the JVM and native
+            message.Content.Headers.ContentType = null;
+        }
         // Content-Type and the other entity headers belong to the content, not
         // the message: added to message.Headers they are silently dropped.
         foreach (var (name, value) in req.Headers)

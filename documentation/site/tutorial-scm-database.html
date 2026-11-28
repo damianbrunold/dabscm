@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>"(scm database postgres), sqlserver and migrations: SQL databases" — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <a href="tutorial-scm-string.html">(scm string): regular expressions and splitting</a>
+  <a href="tutorial-scm-list.html">(scm list) and (scm macro): small helpers</a>
+  <a href="tutorial-scm-match.html">(scm match): pattern matching</a>
+  <a href="tutorial-scm-io.html">(scm io): ports and formatting</a>
+  <a href="tutorial-scm-text.html">(scm text): Unix text tools in Scheme</a>
+  <a href="tutorial-scm-templating.html">(scm templating) and (scm uri): templates and URLs</a>
+  <a href="tutorial-scm-args.html">(scm args): command-line parsing</a>
+  <a href="tutorial-scm-terminal.html">(scm terminal) and (scm log): terminal output and logging</a>
+  <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a>
+  <a href="tutorial-scm-system.html">(scm system) and (scm sysadmin): processes and the system</a>
+  <a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a>
+  <a href="tutorial-scm-store.html">(scm store): an indexed record store</a>
+  <a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a>
+  <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a>
+  <a href="tutorial-scm-json.html">(scm json simple) and (scm json): JSON</a>
+  <a href="tutorial-scm-xml.html">(scm xml) and (scm feed): XML and news feeds</a>
+  <a href="tutorial-scm-toml.html">(scm toml): configuration files</a>
+  <a href="tutorial-scm-markdown.html">(scm markdown): Markdown to HTML and beyond</a>
+  <a href="tutorial-scm-html.html">(scm html), builder and parser: writing and reading HTML</a>
+  <a href="tutorial-scm-excel.html">(scm ooxml excel) and friends: spreadsheets</a>
+  <a href="tutorial-scm-word.html">(scm ooxml word) and friends: Word and OpenDocument texts</a>
+  <a href="tutorial-scm-presentation.html">(scm ooxml presentation): PowerPoint slides</a>
+  <a href="tutorial-scm-pdf.html">(scm pdf) and (scm svg pdf): PDF documents</a>
+  <a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a>
+  <a href="tutorial-scm-http-server.html">(scm net http server) and (scm net http route): web servers</a>
+  <a href="tutorial-scm-http-client.html">(scm net http client): HTTP requests</a>
+  <a href="tutorial-scm-web-app.html">"Web applications: forms, sessions, middleware, static files, uploads"</a>
+  <a href="tutorial-scm-websocket.html">(scm net sockets) and (scm net websocket): TCP and WebSockets</a>
+  <a href="tutorial-scm-email.html">(scm net email) and (scm net smtp): sending e-mail</a>
+  <a href="tutorial-scm-database.html" class="active">"(scm database postgres), sqlserver and migrations: SQL databases"</a>
+    <a class="sub" href="#connecting-and-querying">Connecting and querying</a>
+    <a class="sub" href="#parameters">Parameters</a>
+    <a class="sub" href="#transactions">Transactions</a>
+    <a class="sub" href="#servers-a-connection-pool">Servers: a connection pool</a>
+    <a class="sub" href="#large-results-cursors">Large results: cursors</a>
+    <a class="sub" href="#sql-server">SQL Server</a>
+    <a class="sub" href="#migrations">Migrations</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-scm-scaffold.html">"(scm scaffold): starting a web application with scm new-app"</a>
+  <a href="tutorial-scm-net-remote.html">"(scm net-remote): ssh, scp, rsync, curl and wget from Scheme"</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">"(scm database postgres), sqlserver and migrations: SQL databases"</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="scm-database-postgres-sqlserver-and-migrations-sql-databases">(scm database postgres), sqlserver and migrations: SQL databases</h1>
+<table>
+<thead>
+<tr><th>library</th><th>does</th></tr>
+</thead>
+<tbody>
+<tr><td><a class="xref" href="scm-database-postgres.html"><code>(scm database postgres)</code></a></td><td>PostgreSQL client, <code>pg-</code> procedures</td></tr>
+<tr><td><a class="xref" href="scm-database-sqlserver.html"><code>(scm database sqlserver)</code></a></td><td>Microsoft SQL Server client, the same API with <code>ss-</code></td></tr>
+<tr><td><a class="xref" href="scm-database-migrations.html"><code>(scm database migrations)</code></a></td><td>applies <code>.sql</code> schema changes in order, once each</td></tr>
+</tbody>
+</table>
+<p>Both clients are written in Scheme over plain sockets, so they need no driver installed. Most examples need a running database and are shown only; the parts that work without one (building SQL, migrations) are tested.</p>
+<pre><code class="language-scheme">(import (scheme base) (scheme file) (scheme write) (only (srfi 13) string-prefix? string-index)
+        (scm fs) (scm database postgres) (scm database sqlserver) (scm database migrations))</code></pre>
+<h2 id="connecting-and-querying">Connecting and querying</h2>
+<pre><code class="language-scheme no-test">(define conn (pg-connect "localhost" 5432 "teashop" "secret" "teashop"))
+
+(define res (pg-query conn "SELECT id, name, kg FROM teas ORDER BY name"))
+(pg-result-columns res)          ; =&gt; ("id" "name" "kg")
+(pg-result-rows res)             ; =&gt; (#(3 "Assam" 12) #(1 "Sencha" 40))
+(pg-result-&gt;alist-list res)      ; =&gt; ((("id" . 3) ("name" . "Assam") ("kg" . 12)) ...)
+
+(pg-close conn)</code></pre>
+<ul>
+<li>Rows are vectors in column order, or alists keyed by column name.</li>
+<li>Values come back as Scheme values: integers, strings, <code>#t</code>/<code>#f</code>, and the symbol <code>null</code> for SQL NULL.</li>
+<li><a class="xref" href="scm-database-postgres.html#e20"><code>with-pg-connection</code></a> closes the connection however the procedure ends.</li>
+<li>Passwords are checked with SCRAM-SHA-256 (the PostgreSQL default), MD5, or trust.</li>
+</ul>
+<h2 id="parameters">Parameters</h2>
+<p>Values go into a query as <code>$1</code>, <code>$2</code> … placeholders, never by pasting strings together:</p>
+<pre><code class="language-scheme no-test">(pg-query conn "SELECT * FROM teas WHERE origin = $1 AND kg &gt;= $2" "Japan" 10)
+(pg-exec conn "INSERT INTO teas (name, origin, kg) VALUES ($1, $2, $3)" "Gyokuro" "Japan" 5)</code></pre>
+<p>The client turns each value into a correctly quoted SQL literal. <a class="xref" href="scm-database-postgres.html#e9"><code>pg-format-sql</code></a> shows the SQL that is sent:</p>
+<pre><code class="language-scheme">(pg-format-sql "SELECT * FROM teas WHERE name = $1 AND kg &gt; $2 AND organic = $3"
+               '("Lu'an Melon Seed" 2.5 #t))
+;; =&gt; "SELECT * FROM teas WHERE name = 'Lu''an Melon Seed' AND kg &gt; 2.5 AND organic = TRUE"
+
+(pg-format-sql "INSERT INTO photos VALUES ($1, $2, $3)" (list 'null #f (bytevector 1 2)))
+;; =&gt; "INSERT INTO photos VALUES (NULL, FALSE, '\\x0102'::bytea)"
+
+(pg-format-sql "SELECT * FROM teas WHERE id IN $1" '((3 5 8)))
+;; =&gt; "SELECT * FROM teas WHERE id IN (3, 5, 8)"</code></pre>
+<p>The quote in "Lu'an" is doubled, so a name can never end the string and start a command of its own (SQL injection). A list becomes a parenthesised list, for <code>IN</code>. Placeholders inside strings and comments are left alone, and a missing parameter is an error:</p>
+<pre><code class="language-scheme">(pg-format-sql "SELECT '$1 each', $1 -- $2 not used" '(4))
+;; =&gt; "SELECT '$1 each', 4 -- $2 not used"
+(pg-format-sql "SELECT $2" '(7))           ;; =&gt; error
+(pg-quote-literal "O'Brien")                ;; =&gt; "'O''Brien'"
+(pg-quote-int "42; DROP TABLE teas")        ;; =&gt; error</code></pre>
+<p><a class="xref" href="scm-database-postgres.html#e16"><code>pg-quote-literal</code></a> and <a class="xref" href="scm-database-postgres.html#e15"><code>pg-quote-int</code></a> are for the rare SQL that has to be built by hand.</p>
+<h2 id="transactions">Transactions</h2>
+<p><a class="xref" href="scm-database-postgres.html#e23"><code>with-pg-transaction</code></a> runs a procedure between <code>BEGIN</code> and <code>COMMIT</code>; if it raises, the transaction is rolled back and the error raised again, so either all statements take effect or none:</p>
+<pre><code class="language-scheme no-test">(define (sell! conn tea kg)
+  (with-pg-transaction conn
+    (lambda (c)
+      (let ((left (vector-ref (car (pg-result-rows (pg-query c "SELECT kg FROM teas WHERE name = $1 FOR UPDATE" tea))) 0)))
+        (when (&lt; left kg) (error "not enough in stock" tea left))
+        (pg-exec c "UPDATE teas SET kg = kg - $1 WHERE name = $2" kg tea)
+        (pg-exec c "INSERT INTO sales (tea, kg) VALUES ($1, $2)" tea kg)))))</code></pre>
+<h2 id="servers-a-connection-pool">Servers: a connection pool</h2>
+<p>Opening a connection takes a network round trip or several, and the login. A web server keeps a few open in a pool and lends them to requests:</p>
+<pre><code class="language-scheme no-test">(define pool (make-pg-pool "localhost" 5432 "teashop" (get-environment-variable "PGPASSWORD") "teashop" 8))
+
+(define (teas-from origin)
+  (with-pg-pool-connection pool
+    (lambda (c)
+      (pg-result-&gt;alist-list (pg-query c "SELECT name, kg FROM teas WHERE origin = $1" origin)))))
+
+;; at shutdown
+(pg-pool-close-all! pool)</code></pre>
+<p>At most 8 connections are opened, on demand. A connection whose procedure raised is closed instead of returned, as its state is unknown.</p>
+<h2 id="large-results-cursors">Large results: cursors</h2>
+<p><a class="xref" href="scm-database-postgres.html#e14"><code>pg-query</code></a> reads the whole result into memory. A cursor fetches it in batches, for exports and reports over millions of rows:</p>
+<pre><code class="language-scheme no-test">(with-pg-transaction conn
+  (lambda (c)
+    (let ((cur (pg-cursor-open c "SELECT * FROM sales WHERE sold_at &gt;= $1" "2025-01-01")))
+      (pg-cursor-for-each cur (lambda (row) (write-csv-row row)) 1000))))</code></pre>
+<p>(PostgreSQL cursors live inside a transaction.)</p>
+<h2 id="sql-server">SQL Server</h2>
+<p><a class="xref" href="scm-database-sqlserver.html"><code>(scm database sqlserver)</code></a> has the same procedures with <code>ss-</code> instead of <code>pg-</code>. The port may be a named instance, looked up through the SQL Server Browser; the connection is encrypted with TLS by default:</p>
+<pre><code class="language-scheme no-test">(define conn (ss-connect "dbhost" "SQLEXPRESS" "report" "secret" "Sales"))
+(ss-result-&gt;alist-list (ss-query conn "SELECT TOP 10 name, kg FROM dbo.teas WHERE origin = $1" "Japan"))
+(ss-close conn)</code></pre>
+<p>T-SQL literals are written differently: strings get an <code>N</code> prefix (Unicode), booleans are bits:</p>
+<pre><code class="language-scheme">(ss-format-sql "SELECT * FROM teas WHERE name = $1 AND organic = $2" '("Lu'an" #t))
+;; =&gt; "SELECT * FROM teas WHERE name = N'Lu''an' AND organic = 1"
+(ss-sql-literal "Grüße")                    ;; =&gt; "N'Grüße'"</code></pre>
+<h2 id="migrations">Migrations</h2>
+<p>A database schema changes as the program does. The usual way to keep every copy (development, test, production) in step is a directory of numbered SQL files, applied in order, each exactly once:</p>
+<pre><code class="language-scheme">(define migrations (mktempdir '(prefix . "migrations")))
+(define (migration! name sql)
+  (call-with-output-file (join-path migrations name) (lambda (p) (write-string sql p))))
+
+(migration! "0001_teas.sql" "CREATE TABLE teas (id serial PRIMARY KEY, name text NOT NULL, kg int NOT NULL);")
+(migration! "0002_origin.sql" "ALTER TABLE teas ADD COLUMN origin text;")</code></pre>
+<p><a class="xref" href="scm-database-migrations.html#e2"><code>run-migrations!</code></a> takes two procedures, one that runs a statement and one that runs a query and returns its rows as vectors, so it works with any database. With PostgreSQL:</p>
+<pre><code class="language-scheme no-test">(run-migrations! (lambda (sql) (pg-exec conn sql))
+                 (lambda (sql) (pg-result-rows (pg-query conn sql)))
+                 "db/migrations")</code></pre>
+<p>To see what it does, here is a stand-in that only records the statements and remembers the bookkeeping table <code>schema_migrations</code>:</p>
+<pre><code class="language-scheme">(define executed '())                       ; every statement, newest first
+(define applied '())                        ; what schema_migrations holds
+
+(define (between-quotes s)
+  (let* ((i (string-index s #\')) (j (string-index s #\' (+ i 1))))
+    (substring s (+ i 1) j)))
+
+(define (fake-exec! sql)
+  (set! executed (cons sql executed))
+  (when (string-prefix? "INSERT INTO schema_migrations" sql)
+    (set! applied (append applied (list (between-quotes sql))))))
+
+(define (fake-rows sql)
+  (if (string-prefix? "SELECT filename FROM schema_migrations" sql)
+      (map vector applied)
+      '()))
+
+(migrations-pending fake-exec! fake-rows migrations) ;; =&gt; ("0001_teas.sql" "0002_origin.sql")
+
+(define messages '())
+(run-migrations! fake-exec! fake-rows migrations `((log-proc . ,(lambda (m) (set! messages (cons m messages))))))
+applied                                     ;; =&gt; ("0001_teas.sql" "0002_origin.sql")
+(migrations-pending fake-exec! fake-rows migrations) ;; =&gt; ()
+(reverse messages)                          ;; =&gt; ("applying 0001_teas.sql" "applying 0002_origin.sql" "migrations complete")</code></pre>
+<p>Each file ran in a transaction of its own, together with the line that records it:</p>
+<pre><code class="language-scheme">(define (statements) (reverse executed))
+(define (only-main sql) (not (string-prefix? "CREATE TABLE IF NOT EXISTS schema_migrations" sql)))
+(let loop ((ss (statements)) (acc '()))
+  (cond ((null? ss) (reverse acc))
+        ((only-main (car ss)) (loop (cdr ss) (cons (car ss) acc)))
+        (else (loop (cdr ss) acc))))
+;; =&gt; ("BEGIN" "CREATE TABLE teas (id serial PRIMARY KEY, name text NOT NULL, kg int NOT NULL);" "INSERT INTO schema_migrations (filename) VALUES ('0001_teas.sql')" "COMMIT" "BEGIN" "ALTER TABLE teas ADD COLUMN origin text;" "INSERT INTO schema_migrations (filename) VALUES ('0002_origin.sql')" "COMMIT")</code></pre>
+<p>Running again does nothing; a new file is applied on the next run:</p>
+<pre><code class="language-scheme">(run-migrations! fake-exec! fake-rows migrations)
+(length applied)                            ;; =&gt; 2
+(migration! "0003_stock_index.sql" "CREATE INDEX teas_name ON teas (name);")
+(run-migrations! fake-exec! fake-rows migrations)
+applied                                     ;; =&gt; ("0001_teas.sql" "0002_origin.sql" "0003_stock_index.sql")
+(rm migrations 'recursive)</code></pre>
+<ul>
+<li>Never edit a migration that has run anywhere: add a new one.</li>
+<li>Name files with a fixed-width number, so that their order as strings is their order as numbers (<code>0010</code> after <code>0009</code>).</li>
+<li>A failing migration is rolled back and stops the run, so the schema is never half-changed (PostgreSQL rolls back DDL too; some databases don't).</li>
+<li>Run the migrations when the program starts, before it serves requests.</li>
+</ul>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-scm-web-app.html">Web applications</a> and the <code>starter-admin</code> and <code>starter-api</code> starters of <a href="tutorial-scm-scaffold.html">scaffold</a>, which come with a database, a pool and migrations.</li>
+<li><a class="xref" href="scm-data.html"><code>(scm data)</code></a> data frames for analysing query results.</li>
+<li>Reference: <a class="xref" href="scm-database-postgres.html"><code>(scm database postgres)</code></a>, <a class="xref" href="scm-database-sqlserver.html"><code>(scm database sqlserver)</code></a>, <a class="xref" href="scm-database-migrations.html"><code>(scm database migrations)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scm-database-postgres.html"><code>(scm database postgres)</code></a>, <a href="scm-database-sqlserver.html"><code>(scm database sqlserver)</code></a>, <a href="scm-database-migrations.html"><code>(scm database migrations)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-scm-email.html">&larr; (scm net email) and (scm net smtp): sending e-mail</a>
+  <a class="next" href="tutorial-scm-scaffold.html">"(scm scaffold): starting a web application with scm new-app" &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

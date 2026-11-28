@@ -319,4 +319,30 @@
 (delete-file big)
 (delete-directory dir)
 
+(test-group "the client sends the content type it is given, and no other"
+  (with-server 18128
+    (lambda (req)
+      (make-http-response 200 '()
+        (or (http-request-header req "Content-Type") "none")))
+    '()
+    (lambda ()
+      (define url "http://127.0.0.1:18128/")
+      (test-equal "application/json"
+                  (http-response-body (retry (lambda () (http-post-json url "{}")))))
+      (test-equal "text/csv"
+                  (http-response-body (http-post url "a,b" '(("Content-Type" . "text/csv")))))
+      (test-equal "none" (http-response-body (http-post url "x")))
+      (test-equal "none" (http-response-body (http-put url "x")))
+      (test-equal "text/csv"
+                  (http-response-body
+                   (http-send (make-http-request "PATCH" url '(("Content-Type" . "text/csv")) "a")))))))
+
+(test-group "closing a listener wakes a thread blocked in tcp-accept"
+  (let* ((l (tcp-listen 18129))
+         (t (make-thread (lambda () (guard (e (#t 'raised)) (tcp-accept l))))))
+    (thread-start! t)
+    (thread-sleep! 0.2)
+    (socket-close l)
+    (test-equal 'raised (thread-join! t 5 'still-blocked))))
+
 (test-end "scm-http-large")

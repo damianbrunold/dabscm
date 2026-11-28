@@ -43,6 +43,7 @@
 
 <div class="lib-title scm">(scm net websocket)</div>
 <p class="lib-sub">WebSocket client and server — also in HTTP servers via http-websocket-upgrade</p>
+<p class="lib-tutorials">Tutorials: <a href="tutorial-scm-websocket.html">(scm net sockets) and (scm net websocket): TCP and WebSockets</a></p>
 <div class="lib-preamble">
 <h2>Overview</h2>
 <p><a class="xref" href="scm-net-websocket.html"><code>(scm net websocket)</code></a> speaks WebSocket (RFC 6455) on both sides of a connection. A server gets its connections from an HTTP route that returns <a class="xref" href="scm-net-http-response.html#e16"><code>http-websocket-upgrade</code></a> (see <a class="xref" href="scm-net-http-response.html"><code>(scm net http response)</code></a>), or from a raw TCP socket with <a class="xref" href="#e0"><code>ws-accept</code></a>; a client opens one with <a class="xref" href="#e2"><code>ws-connect</code></a>. Then <a class="xref" href="#e4"><code>ws-send</code></a>, <a class="xref" href="#e3"><code>ws-receive</code></a> and <a class="xref" href="#e1"><code>ws-close</code></a> exchange messages.</p>

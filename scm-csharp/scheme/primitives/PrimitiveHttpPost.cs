@@ -29,6 +29,12 @@ public class PrimitiveHttpPost : Primitive
         client.Timeout = timeoutSeconds > 0
             ? System.TimeSpan.FromSeconds(timeoutSeconds)
             : System.Threading.Timeout.InfiniteTimeSpan;
+        // as the other implementations: no Content-Type unless the caller gives
+        // one; Content-Type and the other entity headers go on the content (on
+        // the client's default headers they would be dropped)
+        var content = new StringContent(body, Encoding.UTF8);
+        content.Headers.ContentType = null;
+        var message = new HttpRequestMessage(HttpMethod.Post, url) { Content = content };
         if (arguments.Length >= 3)
         {
             object hlist = arguments[2];
@@ -38,12 +44,15 @@ public class PrimitiveHttpPost : Primitive
                 Pair kv = (Pair)hp.car;
                 string key = new String(Value.AsString(kv.car));
                 string val = new String(Value.AsString(kv.cdr));
-                client.DefaultRequestHeaders.TryAddWithoutValidation(key, val);
+                if (!message.Headers.TryAddWithoutValidation(key, val))
+                {
+                    content.Headers.Remove(key);
+                    content.Headers.TryAddWithoutValidation(key, val);
+                }
                 hlist = hp.cdr;
             }
         }
-        var content = new StringContent(body, Encoding.UTF8);
-        var response = client.PostAsync(url, content).GetAwaiter().GetResult();
+        var response = client.SendAsync(message).GetAwaiter().GetResult();
         return PrimitiveHttpGet.BuildResponse(response);
     }
 }

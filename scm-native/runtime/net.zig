@@ -229,6 +229,9 @@ pub const Listener = struct {
 
     pub fn close(l: *Listener) void {
         if (l.closed) return;
+        // a thread blocked in accept wakes up with an error, as on the JVM
+        // and .NET (on Linux closing the socket alone leaves it blocked)
+        if (!is_windows) _ = std.c.shutdown(l.handle(), 2); // SHUT_RDWR
         l.server.deinit(os.io);
         l.closed = true;
     }

@@ -752,6 +752,9 @@ var world_cond: std.Io.Condition = .init;
 /// collection (their nurseries may hold live objects)
 var threads: std.ArrayList(*Thread) = .empty;
 var stopping = false; // a collection is under way
+/// collections so far, of all threads: tables hashed by address (prims_hash.zig)
+/// rehash when it changed, whichever thread collected
+pub var gc_epoch: u64 = 0;
 var stopped: usize = 0; // threads stopped at a safepoint or in a blocking call
 var heap_target: usize = 0;
 var ended_count: usize = 0; // ended threads not yet freed
@@ -899,6 +902,7 @@ fn gc(t: *Thread, need: usize) void {
 
 fn collect(t: *Thread, need: usize) void {
     t.gc_count += 1;
+    gc_epoch += 1;
     var used: usize = 0;
     for (threads.items) |o| used += nurseryUsed(o);
     const stress_major = if (stress) |st| (minor_count + major_count + 1) % st.major == 0 else false;

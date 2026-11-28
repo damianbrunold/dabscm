@@ -101,6 +101,7 @@ public class PrimitiveStartProgram : Primitive
             proc.StartInfo = psi;
 
             var sp = new SchemeProcess(proc);
+            var readingStarted = new System.Threading.ManualResetEventSlim(false);
 
             if (logfile != null)
             {
@@ -117,8 +118,12 @@ public class PrimitiveStartProgram : Primitive
                 proc.EnableRaisingEvents = true;
                 // After the output still in the pipes (the async handlers
                 // see it after the exit; closing at once lost the last lines).
+                // A child that exits at once can fire Exited before the reads
+                // below have begun; WaitForExit then does not wait for the
+                // pipes, so wait for the reads to start first.
                 proc.Exited += (s, e) => Task.Run(() =>
                 {
+                    readingStarted.Wait(2000);
                     Task.Run(() => proc.WaitForExit()).Wait(2000);
                     sp.CloseLog();
                 });
@@ -130,6 +135,7 @@ public class PrimitiveStartProgram : Primitive
             {
                 proc.BeginOutputReadLine();
                 proc.BeginErrorReadLine();
+                readingStarted.Set();
             }
             redirects.Start(proc);
             sp.redirects = redirects;

@@ -91,6 +91,14 @@
   <a href="tutorial-scm-presentation.html">(scm ooxml presentation): PowerPoint slides</a>
   <a href="tutorial-scm-pdf.html">(scm pdf) and (scm svg pdf): PDF documents</a>
   <a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a>
+  <a href="tutorial-scm-http-server.html">(scm net http server) and (scm net http route): web servers</a>
+  <a href="tutorial-scm-http-client.html">(scm net http client): HTTP requests</a>
+  <a href="tutorial-scm-web-app.html">"Web applications: forms, sessions, middleware, static files, uploads"</a>
+  <a href="tutorial-scm-websocket.html">(scm net sockets) and (scm net websocket): TCP and WebSockets</a>
+  <a href="tutorial-scm-email.html">(scm net email) and (scm net smtp): sending e-mail</a>
+  <a href="tutorial-scm-database.html">"(scm database postgres), sqlserver and migrations: SQL databases"</a>
+  <a href="tutorial-scm-scaffold.html">"(scm scaffold): starting a web application with scm new-app"</a>
+  <a href="tutorial-scm-net-remote.html">"(scm net-remote): ssh, scp, rsync, curl and wget from Scheme"</a>
   <h2><a href="index.html">Library reference</a></h2>
 </nav>
 
@@ -165,6 +173,13 @@
 <tr><td>test my code</td><td><a href="tutorial-techniques-10-testing.html">Testing</a></td></tr>
 <tr><td>use several cores</td><td><a href="tutorial-techniques-11-concurrency.html">Concurrency</a></td></tr>
 <tr><td>run an external program and capture its output</td><td><a href="tutorial-techniques-12-system.html#running-a-program">The system</a></td></tr>
+<tr><td>write a small web server or JSON API</td><td><a href="tutorial-scm-http-server.html#example-a-json-api">HTTP servers</a></td></tr>
+<tr><td>call a web API</td><td><a href="tutorial-scm-http-client.html">HTTP client</a></td></tr>
+<tr><td>add a login to a web app</td><td><a href="tutorial-scm-web-app.html#example-tasting-notes-with-a-login">Web applications</a></td></tr>
+<tr><td>accept file uploads</td><td><a href="tutorial-scm-web-app.html#uploads">Web applications</a></td></tr>
+<tr><td>send an e-mail</td><td><a href="tutorial-scm-email.html">E-mail</a></td></tr>
+<tr><td>query PostgreSQL safely</td><td><a href="tutorial-scm-database.html#parameters">Databases</a></td></tr>
+<tr><td>start a new web application</td><td><a href="tutorial-scm-scaffold.html">Scaffold</a></td></tr>
 <tr><td>handle an error and continue</td><td><a href="tutorial-basics-09-errors.html#catching-errors-with-guard">Errors and exceptions</a></td></tr>
 <tr><td>destructure data with patterns</td><td><a href="tutorial-basics-11-macros.html#pattern-matching-with-match">Macros and pattern matching</a></td></tr>
 <tr><td>write my own control construct</td><td><a href="tutorial-basics-11-macros.html">Macros</a></td></tr>
@@ -238,7 +253,23 @@
 <tr><td><a href="tutorial-scm-images.html">Images, QR codes, SVG</a></td><td>PNG and JPEG, thumbnails, drawing, QR codes, SVG to PNG</td></tr>
 </tbody>
 </table>
-<p>Tutorials for the web, database and data libraries follow. Until then, the <a href="index.html">library reference</a> has an overview and examples for every library.</p>
+<h3 id="web-network-and-databases">Web, network and databases</h3>
+<table>
+<thead>
+<tr><th>tutorial</th><th>covers</th></tr>
+</thead>
+<tbody>
+<tr><td><a href="tutorial-scm-http-server.html">HTTP servers and routing</a></td><td>handlers, responses, routes, a JSON API, streaming, production</td></tr>
+<tr><td><a href="tutorial-scm-http-client.html"><a class="xref" href="scm-net-http-client.html"><code>(scm net http client)</code></a></a></td><td>requests, JSON APIs, tokens, binary bodies, redirects, errors, retries</td></tr>
+<tr><td><a href="tutorial-scm-web-app.html">Web applications</a></td><td>forms, passwords, sessions, a login app, middleware, static files, uploads</td></tr>
+<tr><td><a href="tutorial-scm-websocket.html">Sockets and WebSockets</a></td><td>a TCP line protocol, binary framing, TLS, a WebSocket chat room</td></tr>
+<tr><td><a href="tutorial-scm-email.html">E-mail</a></td><td>messages, Cc and Bcc, a local mail catcher, sending one or many</td></tr>
+<tr><td><a href="tutorial-scm-database.html">SQL databases</a></td><td>PostgreSQL and SQL Server, parameters, transactions, pools, migrations</td></tr>
+<tr><td><a href="tutorial-scm-scaffold.html"><a class="xref" href="scm-scaffold.html"><code>(scm scaffold)</code></a></a></td><td>the starter applications and <code>scm new-app</code></td></tr>
+<tr><td><a href="tutorial-scm-net-remote.html"><a class="xref" href="scm-net-remote.html"><code>(scm net-remote)</code></a></a></td><td>ssh, scp, rsync, curl, wget; a deployment script</td></tr>
+</tbody>
+</table>
+<p>Tutorials for the data libraries and the rest follow. Until then, the <a href="index.html">library reference</a> has an overview and examples for every library.</p>
 <h2 id="running-the-examples-yourself">Running the examples yourself</h2>
 <p>Copy a code block into a file, keep the <a class="xref" href="scm-module.html#e10"><code>import</code></a> from the chapter's first block, and run it with <code>scm file.scm</code>. Lines ending in <code>;; =&gt; value</code> show what an expression returns; <code>;; prints:</code> shows what it writes.</p><span id="basics"></span><span id="techniques"></span><span id="libraries"></span>
 <h2 id="by-library">Tutorials by library</h2>
@@ -264,6 +295,9 @@
 <tr><td><a href="scm-csv.html"><code>(scm csv)</code></a></td><td><a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a></td></tr>
 <tr><td><a href="scm-data-frame.html"><code>(scm data frame)</code></a></td><td><a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a></td></tr>
 <tr><td><a href="scm-data-io.html"><code>(scm data io)</code></a></td><td><a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a></td></tr>
+<tr><td><a href="scm-database-migrations.html"><code>(scm database migrations)</code></a></td><td><a href="tutorial-scm-database.html">"(scm database postgres), sqlserver and migrations: SQL databases"</a></td></tr>
+<tr><td><a href="scm-database-postgres.html"><code>(scm database postgres)</code></a></td><td><a href="tutorial-scm-database.html">"(scm database postgres), sqlserver and migrations: SQL databases"</a></td></tr>
+<tr><td><a href="scm-database-sqlserver.html"><code>(scm database sqlserver)</code></a></td><td><a href="tutorial-scm-database.html">"(scm database postgres), sqlserver and migrations: SQL databases"</a></td></tr>
 <tr><td><a href="scm-datetime.html"><code>(scm datetime)</code></a></td><td><a href="tutorial-techniques-07-dates.html">Dates and times</a>, <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a></td></tr>
 <tr><td><a href="scm-dict.html"><code>(scm dict)</code></a></td><td><a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a></td></tr>
 <tr><td><a href="scm-duration.html"><code>(scm duration)</code></a></td><td><a href="tutorial-techniques-07-dates.html">Dates and times</a>, <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a></td></tr>
@@ -284,6 +318,22 @@
 <tr><td><a href="scm-markdown.html"><code>(scm markdown)</code></a></td><td><a href="tutorial-scm-markdown.html">(scm markdown): Markdown to HTML and beyond</a></td></tr>
 <tr><td><a href="scm-match.html"><code>(scm match)</code></a></td><td><a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>, <a href="tutorial-scm-match.html">(scm match): pattern matching</a></td></tr>
 <tr><td><a href="scm-module.html"><code>(scm module)</code></a></td><td><a href="tutorial-basics-10-libraries.html">Libraries and programs</a></td></tr>
+<tr><td><a href="scm-net-email.html"><code>(scm net email)</code></a></td><td><a href="tutorial-scm-email.html">(scm net email) and (scm net smtp): sending e-mail</a></td></tr>
+<tr><td><a href="scm-net-http-client.html"><code>(scm net http client)</code></a></td><td><a href="tutorial-scm-http-client.html">(scm net http client): HTTP requests</a></td></tr>
+<tr><td><a href="scm-net-http-cookies.html"><code>(scm net http cookies)</code></a></td><td><a href="tutorial-scm-web-app.html">"Web applications: forms, sessions, middleware, static files, uploads"</a></td></tr>
+<tr><td><a href="scm-net-http-forms.html"><code>(scm net http forms)</code></a></td><td><a href="tutorial-scm-web-app.html">"Web applications: forms, sessions, middleware, static files, uploads"</a></td></tr>
+<tr><td><a href="scm-net-http-middleware.html"><code>(scm net http middleware)</code></a></td><td><a href="tutorial-scm-web-app.html">"Web applications: forms, sessions, middleware, static files, uploads"</a></td></tr>
+<tr><td><a href="scm-net-http-multipart.html"><code>(scm net http multipart)</code></a></td><td><a href="tutorial-scm-web-app.html">"Web applications: forms, sessions, middleware, static files, uploads"</a></td></tr>
+<tr><td><a href="scm-net-http-request.html"><code>(scm net http request)</code></a></td><td><a href="tutorial-scm-http-server.html">(scm net http server) and (scm net http route): web servers</a>, <a href="tutorial-scm-http-client.html">(scm net http client): HTTP requests</a></td></tr>
+<tr><td><a href="scm-net-http-response.html"><code>(scm net http response)</code></a></td><td><a href="tutorial-scm-http-server.html">(scm net http server) and (scm net http route): web servers</a>, <a href="tutorial-scm-http-client.html">(scm net http client): HTTP requests</a></td></tr>
+<tr><td><a href="scm-net-http-route.html"><code>(scm net http route)</code></a></td><td><a href="tutorial-scm-http-server.html">(scm net http server) and (scm net http route): web servers</a></td></tr>
+<tr><td><a href="scm-net-http-server.html"><code>(scm net http server)</code></a></td><td><a href="tutorial-scm-http-server.html">(scm net http server) and (scm net http route): web servers</a></td></tr>
+<tr><td><a href="scm-net-http-session.html"><code>(scm net http session)</code></a></td><td><a href="tutorial-scm-web-app.html">"Web applications: forms, sessions, middleware, static files, uploads"</a></td></tr>
+<tr><td><a href="scm-net-http-static.html"><code>(scm net http static)</code></a></td><td><a href="tutorial-scm-web-app.html">"Web applications: forms, sessions, middleware, static files, uploads"</a></td></tr>
+<tr><td><a href="scm-net-remote.html"><code>(scm net-remote)</code></a></td><td><a href="tutorial-scm-net-remote.html">"(scm net-remote): ssh, scp, rsync, curl and wget from Scheme"</a></td></tr>
+<tr><td><a href="scm-net-smtp.html"><code>(scm net smtp)</code></a></td><td><a href="tutorial-scm-email.html">(scm net email) and (scm net smtp): sending e-mail</a></td></tr>
+<tr><td><a href="scm-net-sockets.html"><code>(scm net sockets)</code></a></td><td><a href="tutorial-scm-websocket.html">(scm net sockets) and (scm net websocket): TCP and WebSockets</a></td></tr>
+<tr><td><a href="scm-net-websocket.html"><code>(scm net websocket)</code></a></td><td><a href="tutorial-scm-websocket.html">(scm net sockets) and (scm net websocket): TCP and WebSockets</a></td></tr>
 <tr><td><a href="scm-odf-spreadsheet.html"><code>(scm odf spreadsheet)</code></a></td><td><a href="tutorial-scm-excel.html">(scm ooxml excel) and friends: spreadsheets</a></td></tr>
 <tr><td><a href="scm-odf-writer.html"><code>(scm odf writer)</code></a></td><td><a href="tutorial-scm-word.html">(scm ooxml word) and friends: Word and OpenDocument texts</a></td></tr>
 <tr><td><a href="scm-ooxml-excel-reader.html"><code>(scm ooxml excel-reader)</code></a></td><td><a href="tutorial-scm-excel.html">(scm ooxml excel) and friends: spreadsheets</a></td></tr>
@@ -295,6 +345,7 @@
 <tr><td><a href="scm-pdf.html"><code>(scm pdf)</code></a></td><td><a href="tutorial-scm-pdf.html">(scm pdf) and (scm svg pdf): PDF documents</a></td></tr>
 <tr><td><a href="scm-png.html"><code>(scm png)</code></a></td><td><a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a></td></tr>
 <tr><td><a href="scm-qr.html"><code>(scm qr)</code></a></td><td><a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a></td></tr>
+<tr><td><a href="scm-scaffold.html"><code>(scm scaffold)</code></a></td><td><a href="tutorial-scm-scaffold.html">"(scm scaffold): starting a web application with scm new-app"</a></td></tr>
 <tr><td><a href="scm-store.html"><code>(scm store)</code></a></td><td><a href="tutorial-scm-store.html">(scm store): an indexed record store</a></td></tr>
 <tr><td><a href="scm-string.html"><code>(scm string)</code></a></td><td><a href="tutorial-techniques-01-strings.html">Strings and text</a>, <a href="tutorial-techniques-03-files.html">Files and directories</a>, <a href="tutorial-scm-string.html">(scm string): regular expressions and splitting</a></td></tr>
 <tr><td><a href="scm-svg-core.html"><code>(scm svg core)</code></a></td><td><a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a></td></tr>

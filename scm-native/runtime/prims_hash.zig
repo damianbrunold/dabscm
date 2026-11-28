@@ -155,7 +155,7 @@ fn same(a: Word, b: Word, m: Mode) bool {
 /// Rehash a table whose identity hashes may have changed
 fn refresh(t: *Thread, h: Word) void {
     const s = slots(h);
-    if (unfix(s[5]) & F_MOVABLE == 0 or s[4] == fix(@intCast(t.gc_count))) return;
+    if (unfix(s[5]) & F_MOVABLE == 0 or s[4] == fix(@intCast(rt.gc_epoch))) return;
     rehashInto(t, h, buckets(h));
 }
 
@@ -190,7 +190,7 @@ fn rehashInto(t: *Thread, h: Word, nb: Word) void {
     }
     s[2] = nb;
     rt.barrier(t, h, nb);
-    s[4] = fix(@intCast(t.gc_count));
+    s[4] = fix(@intCast(rt.gc_epoch));
     s[5] = fix((unfix(s[5]) & ~F_MOVABLE) | (if (movable) F_MOVABLE else 0));
 }
 
@@ -220,7 +220,7 @@ fn newTable(t: *Thread, m: Mode, nbuckets: usize) Word {
     q[2] = fix(0);
     q[3] = b;
     q[4] = rt.FALSE;
-    q[5] = fix(@intCast(t.gc_count));
+    q[5] = fix(@intCast(rt.gc_epoch));
     q[6] = fix(0);
     return rt.tagPtr(q);
 }

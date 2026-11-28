@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm net email) and (scm net smtp): sending e-mail — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <a href="tutorial-scm-string.html">(scm string): regular expressions and splitting</a>
+  <a href="tutorial-scm-list.html">(scm list) and (scm macro): small helpers</a>
+  <a href="tutorial-scm-match.html">(scm match): pattern matching</a>
+  <a href="tutorial-scm-io.html">(scm io): ports and formatting</a>
+  <a href="tutorial-scm-text.html">(scm text): Unix text tools in Scheme</a>
+  <a href="tutorial-scm-templating.html">(scm templating) and (scm uri): templates and URLs</a>
+  <a href="tutorial-scm-args.html">(scm args): command-line parsing</a>
+  <a href="tutorial-scm-terminal.html">(scm terminal) and (scm log): terminal output and logging</a>
+  <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a>
+  <a href="tutorial-scm-system.html">(scm system) and (scm sysadmin): processes and the system</a>
+  <a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a>
+  <a href="tutorial-scm-store.html">(scm store): an indexed record store</a>
+  <a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a>
+  <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a>
+  <a href="tutorial-scm-json.html">(scm json simple) and (scm json): JSON</a>
+  <a href="tutorial-scm-xml.html">(scm xml) and (scm feed): XML and news feeds</a>
+  <a href="tutorial-scm-toml.html">(scm toml): configuration files</a>
+  <a href="tutorial-scm-markdown.html">(scm markdown): Markdown to HTML and beyond</a>
+  <a href="tutorial-scm-html.html">(scm html), builder and parser: writing and reading HTML</a>
+  <a href="tutorial-scm-excel.html">(scm ooxml excel) and friends: spreadsheets</a>
+  <a href="tutorial-scm-word.html">(scm ooxml word) and friends: Word and OpenDocument texts</a>
+  <a href="tutorial-scm-presentation.html">(scm ooxml presentation): PowerPoint slides</a>
+  <a href="tutorial-scm-pdf.html">(scm pdf) and (scm svg pdf): PDF documents</a>
+  <a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a>
+  <a href="tutorial-scm-http-server.html">(scm net http server) and (scm net http route): web servers</a>
+  <a href="tutorial-scm-http-client.html">(scm net http client): HTTP requests</a>
+  <a href="tutorial-scm-web-app.html">"Web applications: forms, sessions, middleware, static files, uploads"</a>
+  <a href="tutorial-scm-websocket.html">(scm net sockets) and (scm net websocket): TCP and WebSockets</a>
+  <a href="tutorial-scm-email.html" class="active">(scm net email) and (scm net smtp): sending e-mail</a>
+    <a class="sub" href="#a-message">A message</a>
+    <a class="sub" href="#on-the-wire">On the wire</a>
+    <a class="sub" href="#a-mail-catcher">A mail catcher</a>
+    <a class="sub" href="#send-email">send-email</a>
+    <a class="sub" href="#many-messages-one-connection">Many messages, one connection</a>
+    <a class="sub" href="#real-mail-servers">Real mail servers</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-scm-database.html">"(scm database postgres), sqlserver and migrations: SQL databases"</a>
+  <a href="tutorial-scm-scaffold.html">"(scm scaffold): starting a web application with scm new-app"</a>
+  <a href="tutorial-scm-net-remote.html">"(scm net-remote): ssh, scp, rsync, curl and wget from Scheme"</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm net email) and (scm net smtp): sending e-mail</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="scm-net-email-and-scm-net-smtp-sending-e-mail">(scm net email) and (scm net smtp): sending e-mail</h1>
+<ul>
+<li><a class="xref" href="scm-net-email.html"><code>(scm net email)</code></a> builds plain-text messages in the format mail servers expect.</li>
+<li><a class="xref" href="scm-net-smtp.html"><code>(scm net smtp)</code></a> hands them to a mail server with SMTP, the protocol every mail provider speaks.</li>
+</ul>
+<pre><code class="language-scheme">(import (scheme base) (scheme char) (scheme write) (srfi 18) (only (srfi 13) string-prefix?)
+        (scm string) (scm net sockets) (scm net email) (scm net smtp))</code></pre>
+<h2 id="a-message">A message</h2>
+<pre><code class="language-scheme">(define order-mail
+  (make-email "shop@tea.example"
+              (list "ada@example.com" "alan@example.com")
+              "Your order 117"
+              "Dear Ada,\n\nyour tea has shipped.\n"
+              "accounts@tea.example"                 ; Cc
+              "archive@tea.example"))                ; Bcc
+
+(email-to order-mail)                       ;; =&gt; ("ada@example.com" "alan@example.com")
+(email-subject order-mail)                  ;; =&gt; "Your order 117"
+(email-recipients order-mail)
+;; =&gt; ("ada@example.com" "alan@example.com" "accounts@tea.example" "archive@tea.example")</code></pre>
+<p><code>to</code>, <code>cc</code> and <code>bcc</code> take one address or a list. <a class="xref" href="scm-net-email.html#e7"><code>email-recipients</code></a> is everybody the server must deliver to, the Bcc address included.</p>
+<h2 id="on-the-wire">On the wire</h2>
+<p><a class="xref" href="scm-net-email.html#e0"><code>email-&gt;string</code></a> gives the message as it is sent: header lines, an empty line, the body, with CRLF line ends:</p>
+<pre><code class="language-scheme">(define (lines text) (string-split text "\r\n"))
+(define (filter-lines keep? ls)
+  (cond ((null? ls) '())
+        ((keep? (car ls)) (cons (car ls) (filter-lines keep? (cdr ls))))
+        (else (filter-lines keep? (cdr ls)))))
+
+(define wire (email-&gt;string order-mail))
+(filter-lines (lambda (l) (not (or (string-prefix? "Date:" l) (string-prefix? "Message-ID:" l))))
+              (lines wire))
+;; =&gt; ("From: shop@tea.example" "To: ada@example.com, alan@example.com" "Cc: accounts@tea.example" "Subject: Your order 117" "MIME-Version: 1.0" "Content-Type: text/plain; charset=utf-8" "Content-Transfer-Encoding: 7bit" "" "Dear Ada," "" "your tea has shipped." "")</code></pre>
+<p>A date and a unique Message-ID are added, which is why they are left out above. The Bcc address appears nowhere in the message: that is what makes it blind.</p>
+<p>Mail headers are ASCII. A subject with other characters is encoded, and so is a body that is not plain ASCII; mail programs decode both:</p>
+<pre><code class="language-scheme">(define greeting (lines (email-&gt;string (make-email "shop@tea.example" "heidi@example.ch" "Grüezi" "Merci für Ihre Bestellung.\n"))))
+(filter-lines (lambda (l) (or (string-prefix? "Subject" l) (string-prefix? "Content-Transfer" l))) greeting)
+;; =&gt; ("Subject: =?utf-8?B?R3LDvGV6aQ==?=" "Content-Transfer-Encoding: base64")
+(rfc2047-encode-header "Order 117")         ;; =&gt; "Order 117"</code></pre>
+<h2 id="a-mail-catcher">A mail catcher</h2>
+<p>Programs that send mail need a server to test against, and it should not deliver anything. A few dozen lines make one: it accepts connections, answers the SMTP commands with "OK" and keeps what it received. (Tools like Mailpit do the same, with a web page to read the mail.)</p>
+<pre><code class="language-scheme">(define caught '())                         ; (sender recipients data), newest first
+(define caught-lock (make-mutex))
+
+(define (catch-session sock)
+  (let ((out (socket-output-port sock)))
+    (define (reply text) (write-string text out) (write-string "\r\n" out) (flush-output-port out))
+    (define (address line) (let ((i (string-index* line #\&lt;)) (j (string-index* line #\&gt;)))
+                             (if (and i j) (substring line (+ i 1) j) line)))
+    (reply "220 catcher ready")
+    (let loop ((from #f) (to '()))
+      (let* ((line (socket-read-line sock))
+             (verb (if (eof-object? line) "" (string-upcase (substring line 0 (min 4 (string-length line)))))))
+        (cond ((eof-object? line) (socket-close sock))
+              ((string=? verb "EHLO") (reply "250-catcher") (reply "250 SIZE 10000000") (loop from to))
+              ((string=? verb "MAIL") (reply "250 OK") (loop (address line) '()))
+              ((string=? verb "RCPT") (reply "250 OK") (loop from (append to (list (address line)))))
+              ((string=? verb "DATA")
+               (reply "354 go ahead")
+               (let read-data ((acc '()))
+                 (let ((l (socket-read-line sock)))
+                   (if (or (eof-object? l) (string=? l "."))
+                       (begin
+                         (mutex-lock! caught-lock)
+                         (set! caught (cons (list from to (reverse acc)) caught))
+                         (mutex-unlock! caught-lock)
+                         (reply "250 OK queued")
+                         (loop #f '()))
+                       (read-data (cons l acc))))))
+              ((string=? verb "QUIT") (reply "221 bye") (socket-close sock))
+              (else (reply "250 OK") (loop from to)))))))
+
+(define (string-index* s ch)
+  (let loop ((i 0))
+    (cond ((= i (string-length s)) #f) ((char=? (string-ref s i) ch) i) (else (loop (+ i 1))))))
+
+(define (start-catcher port)
+  (let* ((listener (tcp-listen port))
+         (t (make-thread
+             (lambda ()
+               (let loop ()
+                 (let ((sock (guard (e (#t #f)) (tcp-accept listener))))
+                   (when sock
+                     (thread-start! (make-thread (lambda () (catch-session sock))))
+                     (loop))))))))
+    (thread-start! t)
+    (lambda () (socket-close listener) (thread-join! t))))   ; stops the catcher
+
+(define stop-catcher (start-catcher 18921))</code></pre>
+<h2 id="send-email">send-email</h2>
+<p><a class="xref" href="scm-net-smtp.html#e0"><code>send-email</code></a> connects, sends one message and disconnects. Here it goes to the catcher with no encryption, which is fine on the local machine:</p>
+<pre><code class="language-scheme">(send-email "127.0.0.1" 18921 'plaintext
+            "shop@tea.example" "ada@example.com"
+            "Your order 117" "Dear Ada,\nyour tea has shipped.\n") ;; =&gt; #t
+
+(define received (car caught))
+(car received)                              ;; =&gt; "shop@tea.example"
+(cadr received)                             ;; =&gt; ("ada@example.com")
+(filter-lines (lambda (l) (string-prefix? "Subject:" l)) (caddr received)) ;; =&gt; ("Subject: Your order 117")</code></pre>
+<p>The server's address and security are the first arguments; with a user name and password after the body it logs in first.</p>
+<h2 id="many-messages-one-connection">Many messages, one connection</h2>
+<p>A newsletter to many customers should not open a connection for each. The session procedures take the steps one by one: the envelope sender (<a class="xref" href="scm-net-smtp.html#e8"><code>smtp-mail-from</code></a>), each recipient (<a class="xref" href="scm-net-smtp.html#e11"><code>smtp-rcpt-to</code></a>), the message (<a class="xref" href="scm-net-smtp.html#e4"><code>smtp-data</code></a>), as often as needed, then <a class="xref" href="scm-net-smtp.html#e10"><code>smtp-quit</code></a>:</p>
+<pre><code class="language-scheme">(define customers '(("Ada" . "ada@example.com") ("Alan" . "alan@example.com") ("Grace" . "grace@example.com")))
+
+(define (newsletter customer)
+  (let ((m (make-email "news@tea.example" (cdr customer) "Spring teas are here"
+                       (string-append "Dear " (car customer) ",\n\nthe first flush Darjeeling has arrived.\n"))))
+    (list (email-from m) (email-recipients m) (email-&gt;string m))))
+
+(define (send-all host port security messages)
+  (let ((s (smtp-open host port security)))
+    (guard (e (#t (smtp-close s) (raise e)))
+      (for-each (lambda (m)
+                  (smtp-mail-from s (car m))
+                  (for-each (lambda (r) (smtp-rcpt-to s r)) (cadr m))
+                  (smtp-data s (caddr m)))
+                messages)
+      (smtp-quit s))))
+
+(set! caught '())
+(send-all "127.0.0.1" 18921 'plaintext (map newsletter customers))
+
+(map cadr (reverse caught))                 ;; =&gt; (("ada@example.com") ("alan@example.com") ("grace@example.com"))
+(stop-catcher)</code></pre>
+<p>Each customer gets a message of their own, so nobody sees the other addresses. <a class="xref" href="scm-net-smtp.html#e4"><code>smtp-data</code></a> also takes care of <em>dot-stuffing</em>: a body line that starts with a period is sent with two, because a lone <code>.</code> ends the message:</p>
+<pre><code class="language-scheme">(smtp-stuff-dots ".hidden file")            ;; =&gt; "..hidden file"</code></pre>
+<h2 id="real-mail-servers">Real mail servers</h2>
+<p>Mail providers want an encrypted connection and a login, usually with an app password rather than the account's password:</p>
+<table>
+<thead>
+<tr><th>port</th><th>security</th><th>used by</th></tr>
+</thead>
+<tbody>
+<tr><td>587</td><td><code>'starttls</code></td><td>most providers: connect, then switch to TLS</td></tr>
+<tr><td>465</td><td><code>'tls</code></td><td>TLS from the start ("SMTPS")</td></tr>
+<tr><td>25</td><td><code>'plaintext</code></td><td>server-to-server only; often blocked</td></tr>
+</tbody>
+</table>
+<pre><code class="language-scheme no-test">(define (env name) (or (get-environment-variable name) (error "missing setting" name)))
+
+(send-email (env "SMTP_HOST") 587 'starttls
+            "shop@tea.example" "ada@example.com"
+            "Your order 117" "Dear Ada,\nyour tea has shipped.\n"
+            (env "SMTP_USER") (env "SMTP_PASSWORD"))</code></pre>
+<ul>
+<li>Keep the password out of the source: environment variables, a configuration file outside the repository, or a secrets store.</li>
+<li>The server's certificate is checked; <a class="xref" href="scm-net-smtp.html#e9"><code>smtp-open</code></a> with a fourth argument <code>#f</code> turns that off, for test servers only.</li>
+<li><a class="xref" href="scm-net-smtp.html#e7"><code>smtp-has-capability?</code></a> tells what the server offers, e.g. <code>"SIZE"</code> for the largest message it accepts.</li>
+<li>An error is raised when the server refuses a step (an unknown recipient, a failed login); a web request should not wait for that, so send from a background thread or a job queue.</li>
+<li>The messages are plain text. Attachments and HTML mail need MIME multipart messages, which this library does not build.</li>
+</ul>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-scm-websocket.html">Sockets</a> for the line protocol underneath, <a href="tutorial-srfi-18.html">threads</a>, <a href="tutorial-scm-templating.html">templating</a> for message texts.</li>
+<li>Reference: <a class="xref" href="scm-net-email.html"><code>(scm net email)</code></a>, <a class="xref" href="scm-net-smtp.html"><code>(scm net smtp)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scm-net-email.html"><code>(scm net email)</code></a>, <a href="scm-net-smtp.html"><code>(scm net smtp)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-scm-websocket.html">&larr; (scm net sockets) and (scm net websocket): TCP and WebSockets</a>
+  <a class="next" href="tutorial-scm-database.html">"(scm database postgres), sqlserver and migrations: SQL databases" &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

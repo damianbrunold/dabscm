@@ -64,10 +64,13 @@
 
     ;; --- options handling ---
 
+    ;; options are an alist, (key . value); the older (key value) form is
+    ;; accepted too (no option value is a list)
     (define (opt opts key default)
       (let ((p (assq key opts)))
-        (cond (p (cadr p))
-              (else default))))
+        (cond ((not p) default)
+              ((and (pair? (cdr p)) (null? (cddr p))) (cadr p))
+              (else (cdr p)))))
 
     (define (resolve-options opts)
       (let* ((table (opt opts 'table-name default-table-name))
@@ -149,7 +152,7 @@ Example:
     (lambda (sql) (pg-exec conn sql))
     (lambda (sql) (pg-result-rows (pg-query conn sql)))
     \"./migrations\"
-    '((log-proc ,(lambda (m) (display m) (newline)))))"
+    `((log-proc . ,(lambda (m) (display m) (newline)))))"
       (when (not (directory-exists? dir))
         (error "run-migrations!: migrations directory does not exist" dir))
       (call-with-values

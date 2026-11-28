@@ -47,6 +47,7 @@
 
 <div class="lib-title scm">(scm net http request)</div>
 <p class="lib-sub">HTTP request construction and accessors</p>
+<p class="lib-tutorials">Tutorials: <a href="tutorial-scm-http-server.html">(scm net http server) and (scm net http route): web servers</a>, <a href="tutorial-scm-http-client.html">(scm net http client): HTTP requests</a></p>
 <div class="lib-preamble">
 <h2>Overview</h2>
 <p><a class="xref" href="scm-net-http-request.html"><code>(scm net http request)</code></a> is the HTTP request value type shared by the client and server libraries: a method, URL, headers, and body, with constructors and accessors. The client uses it to describe outgoing requests; a server handler receives one as its argument.</p>
@@ -85,7 +86,7 @@ Example:
   <div class="entry-name">http-request-body-bytes</div>
   <pre class="entry-doc">Syntax: (http-request-body-bytes request)
 Library: (scm net http request)
-Description: Returns the body of the HTTP request as a bytevector, or #f if there is no body. Unlike http-request-body which decodes the body as UTF-8 text, this preserves the raw bytes and is the correct accessor for binary uploads.
+Description: Returns the body of the HTTP request as a bytevector, or #f if there is no body. Unlike http-request-body which decodes the body as UTF-8 text, this preserves the raw bytes and is the correct accessor for binary uploads. A request made by make-http-request with a string body gives that string's UTF-8 bytes.
 Example:
   (http-request-body-bytes req) =&gt; #u8(72 101 108 108 111)</pre>
 </div>

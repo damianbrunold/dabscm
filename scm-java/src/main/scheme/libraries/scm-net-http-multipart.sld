@@ -284,6 +284,17 @@ Example:
         (bytevector-copy! out 0 bv start end)
         out))
 
+    ;; part headers: browsers send non-ASCII file names as UTF-8 (RFC 7578);
+    ;; bytes that are not UTF-8 are taken as Latin-1
+    (define (bv->header-string bv)
+      (guard (e (#t (bv->string-ascii bv)))
+        (let ((s (utf8->string bv)))
+          (if (let loop ((i 0))
+                (and (< i (string-length s))
+                     (or (char=? (string-ref s i) #\xFFFD) (loop (+ i 1)))))
+              (bv->string-ascii bv)
+              s))))
+
     (define (bv->string-ascii bv)
       (let* ((n (bytevector-length bv))
              (out (open-output-string)))
@@ -354,7 +365,7 @@ Example:
                                                                 body-start
                                                                 next))
                                                    (hdrs-str
-                                                    (bv->string-ascii
+                                                    (bv->header-string
                                                      (bv-subcopy body
                                                                  hdr-start
                                                                  hdr-end)))

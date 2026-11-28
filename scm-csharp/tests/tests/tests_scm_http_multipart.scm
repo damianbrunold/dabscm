@@ -1,5 +1,6 @@
 (import (scheme base)
         (scm net http multipart)
+        (scm net http request)
         (scm test))
 
 (test-runner-factory scm-test-runner)
@@ -55,5 +56,17 @@
     (test-equal "1" (utf8->string (part-ref (car parts) 'body)))
     (test-equal "hello" (utf8->string (part-ref (cadr parts) 'body)))
     (test-equal "hi.txt" (part-ref (cadr parts) 'filename))))
+
+(test-group "a request made with a string body has its bytes"
+  ;; so a handler reading http-request-body-bytes can be tested with
+  ;; requests built by make-http-request
+  (let* ((body "--b\r\nContent-Disposition: form-data; name=\"f\"; filename=\"ü.txt\"\r\n\r\nGrüße\r\n--b--\r\n")
+         (req (make-http-request "POST" "/" '() body)))
+    (test-equal (string->utf8 body) (http-request-body-bytes req))
+    (let ((parts (parse-multipart-bytes (http-request-body-bytes req) "b")))
+      (test-equal "ü.txt" (part-ref (car parts) 'filename))
+      (test-equal (string->utf8 "Grüße") (part-ref (car parts) 'body))))
+  (test-equal #f (http-request-body-bytes (make-http-request "GET" "/" '() #f)))
+  (test-equal "AB" (http-request-body (make-http-request "POST" "/" '() (bytevector 65 66)))))
 
 (test-end "scm-http-multipart")

@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>"Web applications: forms, sessions, middleware, static files, uploads" — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <a href="tutorial-scm-string.html">(scm string): regular expressions and splitting</a>
+  <a href="tutorial-scm-list.html">(scm list) and (scm macro): small helpers</a>
+  <a href="tutorial-scm-match.html">(scm match): pattern matching</a>
+  <a href="tutorial-scm-io.html">(scm io): ports and formatting</a>
+  <a href="tutorial-scm-text.html">(scm text): Unix text tools in Scheme</a>
+  <a href="tutorial-scm-templating.html">(scm templating) and (scm uri): templates and URLs</a>
+  <a href="tutorial-scm-args.html">(scm args): command-line parsing</a>
+  <a href="tutorial-scm-terminal.html">(scm terminal) and (scm log): terminal output and logging</a>
+  <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a>
+  <a href="tutorial-scm-system.html">(scm system) and (scm sysadmin): processes and the system</a>
+  <a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a>
+  <a href="tutorial-scm-store.html">(scm store): an indexed record store</a>
+  <a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a>
+  <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a>
+  <a href="tutorial-scm-json.html">(scm json simple) and (scm json): JSON</a>
+  <a href="tutorial-scm-xml.html">(scm xml) and (scm feed): XML and news feeds</a>
+  <a href="tutorial-scm-toml.html">(scm toml): configuration files</a>
+  <a href="tutorial-scm-markdown.html">(scm markdown): Markdown to HTML and beyond</a>
+  <a href="tutorial-scm-html.html">(scm html), builder and parser: writing and reading HTML</a>
+  <a href="tutorial-scm-excel.html">(scm ooxml excel) and friends: spreadsheets</a>
+  <a href="tutorial-scm-word.html">(scm ooxml word) and friends: Word and OpenDocument texts</a>
+  <a href="tutorial-scm-presentation.html">(scm ooxml presentation): PowerPoint slides</a>
+  <a href="tutorial-scm-pdf.html">(scm pdf) and (scm svg pdf): PDF documents</a>
+  <a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a>
+  <a href="tutorial-scm-http-server.html">(scm net http server) and (scm net http route): web servers</a>
+  <a href="tutorial-scm-http-client.html">(scm net http client): HTTP requests</a>
+  <a href="tutorial-scm-web-app.html" class="active">"Web applications: forms, sessions, middleware, static files, uploads"</a>
+    <a class="sub" href="#forms">Forms</a>
+    <a class="sub" href="#passwords">Passwords</a>
+    <a class="sub" href="#sessions">Sessions</a>
+    <a class="sub" href="#example-tasting-notes-with-a-login">Example: tasting notes with a login</a>
+    <a class="sub" href="#error-pages-logs-and-security-headers">Error pages, logs and security headers</a>
+    <a class="sub" href="#static-files">Static files</a>
+    <a class="sub" href="#uploads">Uploads</a>
+    <a class="sub" href="#putting-it-together">Putting it together</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-scm-websocket.html">(scm net sockets) and (scm net websocket): TCP and WebSockets</a>
+  <a href="tutorial-scm-email.html">(scm net email) and (scm net smtp): sending e-mail</a>
+  <a href="tutorial-scm-database.html">"(scm database postgres), sqlserver and migrations: SQL databases"</a>
+  <a href="tutorial-scm-scaffold.html">"(scm scaffold): starting a web application with scm new-app"</a>
+  <a href="tutorial-scm-net-remote.html">"(scm net-remote): ssh, scp, rsync, curl and wget from Scheme"</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">"Web applications: forms, sessions, middleware, static files, uploads"</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="web-applications-forms-sessions-middleware-static-files-uploads">Web applications: forms, sessions, middleware, static files, uploads</h1>
+<p>The <a href="tutorial-scm-http-server.html">server tutorial</a> covers handlers and routing. A web application for people, not programs, needs more:</p>
+<table>
+<thead>
+<tr><th>library</th><th>does</th></tr>
+</thead>
+<tbody>
+<tr><td><a class="xref" href="scm-net-http-forms.html"><code>(scm net http forms)</code></a></td><td>reads submitted HTML forms</td></tr>
+<tr><td><a class="xref" href="scm-net-http-cookies.html"><code>(scm net http cookies)</code></a></td><td>reads <code>Cookie</code>, writes <code>Set-Cookie</code></td></tr>
+<tr><td><a class="xref" href="scm-net-http-session.html"><code>(scm net http session)</code></a></td><td>keeps a login in a signed cookie</td></tr>
+<tr><td><a class="xref" href="scm-net-http-middleware.html"><code>(scm net http middleware)</code></a></td><td>error pages, access log, security headers</td></tr>
+<tr><td><a class="xref" href="scm-net-http-static.html"><code>(scm net http static)</code></a></td><td>serves CSS, scripts, images and downloads</td></tr>
+<tr><td><a class="xref" href="scm-net-http-multipart.html"><code>(scm net http multipart)</code></a></td><td>reads file uploads</td></tr>
+</tbody>
+</table>
+<pre><code class="language-scheme">(import (scheme base) (scheme file) (scheme write) (only (srfi 13) string-contains string-index)
+        (scm fs) (scm log) (scm crypto) (scm crypto password) (scm html builder)
+        (scm net http request) (scm net http response) (scm net http route)
+        (scm net http forms) (scm net http cookies) (scm net http session)
+        (scm net http middleware) (scm net http static) (scm net http multipart))</code></pre>
+<h2 id="forms">Forms</h2>
+<p>A browser sends a form as <code>name=value</code> pairs joined by <code>&amp;</code>, with special characters percent-encoded and spaces as <code>+</code>:</p>
+<pre><code class="language-scheme">(parse-www-form "tea=Sencha&amp;rating=4&amp;notes=grassy%2C+sweet")
+;; =&gt; (("tea" . "Sencha") ("rating" . "4") ("notes" . "grassy, sweet"))
+
+(define form (parse-www-form "tea=Gyokuro&amp;tag-green=on&amp;tag-japan=on"))
+(form-ref form "tea")                       ;; =&gt; "Gyokuro"
+(form-ref form "rating" "3")                ;; =&gt; "3"
+(map car (form-refs-by-prefix form "tag-")) ;; =&gt; ("tag-green" "tag-japan")</code></pre>
+<p>A checkbox is only sent when it is ticked, so a default is the normal case; <a class="xref" href="scm-net-http-forms.html#e1"><code>form-refs-by-prefix</code></a> collects a group of them. In a handler, <a class="xref" href="scm-net-http-forms.html#e2"><code>http-request-form</code></a> parses the body of the request:</p>
+<pre><code class="language-scheme">(define post (make-http-request "POST" "/notes"
+                                '(("Content-Type" . "application/x-www-form-urlencoded"))
+                                "tea=Assam&amp;rating=5"))
+(http-request-form post)                    ;; =&gt; (("tea" . "Assam") ("rating" . "5"))</code></pre>
+<p>Every value is a string, and anyone can send any value: check the input before using it.</p>
+<pre><code class="language-scheme">(define (rating-of form)
+  (let ((n (string-&gt;number (form-ref form "rating" ""))))
+    (and n (exact-integer? n) (&lt;= 1 n 5) n)))
+
+(rating-of (parse-www-form "rating=4"))     ;; =&gt; 4
+(rating-of (parse-www-form "rating=11"))    ;; =&gt; #f
+(rating-of (parse-www-form "rating=%3Cb%3E")) ;; =&gt; #f</code></pre>
+<h2 id="passwords">Passwords</h2>
+<p>Store only a slow, salted hash of each password. <a class="xref" href="scm-crypto-password.html"><code>(scm crypto password)</code></a> makes and checks one (the <a href="tutorial-scm-crypto.html">crypto tutorial</a> has more):</p>
+<pre><code class="language-scheme">(define users `(("ada" . ,(password-hash "correct horse battery"))))
+(define no-user (password-hash "nobody has this password"))
+
+(define (check-login name password)
+  (let ((u (assoc name users)))
+    ;; check a hash even for unknown names, so that the time taken
+    ;; does not tell which names exist
+    (and (password-verify password (if u (cdr u) no-user)) u name)))
+
+(check-login "ada" "correct horse battery") ;; =&gt; "ada"
+(check-login "ada" "guess")                 ;; =&gt; #f
+(check-login "bob" "correct horse battery") ;; =&gt; #f</code></pre>
+<h2 id="sessions">Sessions</h2>
+<p>After a login, the browser has to prove on every request who it is. <a class="xref" href="scm-net-http-session.html"><code>(scm net http session)</code></a> puts the user in a cookie signed with a secret key; a changed cookie fails the check, and there is no session store on the server:</p>
+<pre><code class="language-scheme">(define sessions
+  (make-session-config "notes_session" (random-bytes 32) (* 8 60 60) '((secure? . #f))))
+
+(define set-cookie (session-set-cookie sessions '((user . "ada"))))
+(car set-cookie)                            ;; =&gt; "Set-Cookie"
+
+(define (cookie-attributes header)          ; what follows name=value
+  (substring header (string-index header #\;) (string-length header)))
+(cookie-attributes (cdr set-cookie))        ;; =&gt; "; Path=/; Max-Age=28800; HttpOnly; SameSite=Strict"</code></pre>
+<ul>
+<li><code>HttpOnly</code> keeps scripts in the page from reading the cookie.</li>
+<li><code>SameSite=Strict</code> stops other sites from sending requests with it, so forms need no extra CSRF token.</li>
+<li><code>Secure</code> (HTTPS only) is on by default; it is switched off here with <code>(secure? . #f)</code> because the examples use plain HTTP.</li>
+</ul>
+<p>The browser sends the cookie back in a <code>Cookie</code> header, and <a class="xref" href="scm-net-http-session.html#e4"><code>session-ref</code></a> checks it:</p>
+<pre><code class="language-scheme">(define (cookie-of header)                  ; "name=value" of a Set-Cookie value
+  (substring header 0 (string-index header #\;)))
+
+(define (request-with cookie)
+  (make-http-request "GET" "/" (list (cons "Cookie" cookie)) #f))
+
+(session-ref sessions (request-with (cookie-of (cdr set-cookie)))) ;; =&gt; ((user . "ada"))
+(session-ref sessions (request-with "notes_session=forged.signature")) ;; =&gt; #f
+(session-ref sessions (make-http-request "GET" "/" '() #f)) ;; =&gt; #f</code></pre>
+<p>The cookie is signed, not encrypted: the user can read what it holds, so keep it to an id. A real application reads its secret from its configuration (<a class="xref" href="scm-crypto.html#e16"><code>random-bytes</code></a> here means every restart logs everyone out). <a class="xref" href="scm-net-http-session.html#e1"><code>session-clear-cookie</code></a> logs out, and <a class="xref" href="scm-net-http-cookies.html"><code>(scm net http cookies)</code></a> reads and writes other cookies, a theme or a language:</p>
+<pre><code class="language-scheme">(parse-cookie-header "notes_session=abc; theme=dark") ;; =&gt; (("notes_session" . "abc") ("theme" . "dark"))
+(cookie-ref (parse-cookie-header "notes_session=abc; theme=dark") "theme") ;; =&gt; "dark"
+(format-set-cookie "theme" "dark" (* 365 24 60 60) "/" 'no-secure)
+;; =&gt; "theme=dark; Path=/; Max-Age=31536000; HttpOnly; SameSite=Strict"</code></pre>
+<h2 id="example-tasting-notes-with-a-login">Example: tasting notes with a login</h2>
+<p>Signed-in users write tasting notes; everyone else is sent to the login page. After a successful POST the app redirects (303 See Other), so reloading the page does not submit the form again: this is Post/Redirect/Get.</p>
+<pre><code class="language-scheme">(define notes '())                          ; (user tea rating), newest first
+
+(define (page title . body)
+  (html-response
+   (html-&gt;string `(html (head (title ,title)) (body (h1 ,title) ,@body)))))
+
+(define (current-user req)
+  (let ((s (session-ref sessions req)))
+    (and s (cdr (assq 'user s)))))
+
+(define (login-page req params)
+  (page "Sign in"
+        `(form (@ (method "post") (action "/login"))
+               (input (@ (name "user"))) (input (@ (name "password") (type "password")))
+               (button "Sign in"))))
+
+(define (login req params)
+  (let* ((form (http-request-form req))
+         (user (check-login (form-ref form "user" "") (form-ref form "password" ""))))
+    (if user
+        (make-http-response 303 (list (cons "Location" "/") (session-set-cookie sessions `((user . ,user)))) "")
+        (http-see-other "/login?failed=1"))))
+
+(define (home req params)
+  (let ((user (current-user req)))
+    (if (not user)
+        (http-see-other "/login")
+        (page (string-append user "'s notes")
+              `(ul ,@(map (lambda (n) `(li ,(cadr n) ": " ,(number-&gt;string (caddr n)) "/5"))
+                          (filter-notes user)))))))
+
+(define (filter-notes user)
+  (let loop ((ns notes) (acc '()))
+    (cond ((null? ns) (reverse acc))
+          ((equal? (car (car ns)) user) (loop (cdr ns) (cons (car ns) acc)))
+          (else (loop (cdr ns) acc)))))
+
+(define (add-note req params)
+  (let ((user (current-user req)) (form (http-request-form req)))
+    (cond ((not user) (http-forbidden))
+          ((not (rating-of form)) (http-bad-request "rating must be 1 to 5"))
+          (else (set! notes (cons (list user (form-ref form "tea" "?") (rating-of form)) notes))
+                (http-see-other "/")))))
+
+(define (logout req params)
+  (make-http-response 303 (list (cons "Location" "/login") (session-clear-cookie sessions)) ""))
+
+(define app (make-router))
+(router-add! app "GET" "/login" login-page)
+(router-add! app "POST" "/login" login)
+(router-add! app "GET" "/" home)
+(router-add! app "POST" "/notes" add-note)
+(router-add! app "POST" "/logout" logout)</code></pre>
+<p>To try it out without a browser, a few lines play one: they keep the cookie a response sets and send it with every following request.</p>
+<pre><code class="language-scheme">(define jar #f)                             ; the session cookie, "name=value"
+
+(define (browse method path . body)
+  (let* ((headers (append (if jar (list (cons "Cookie" jar)) '())
+                          (if (null? body) '()
+                              '(("Content-Type" . "application/x-www-form-urlencoded")))))
+         (resp (router-dispatch app (make-http-request method path headers
+                                                       (if (null? body) #f (car body)))))
+         (set (http-response-header resp "Set-Cookie")))
+    (when set
+      (set! jar (if (string-contains set "Max-Age=0") #f (cookie-of set))))
+    resp))
+
+(http-response-header (browse "GET" "/") "Location") ;; =&gt; "/login"
+(http-response-header (browse "POST" "/login" "user=ada&amp;password=guess") "Location")
+;; =&gt; "/login?failed=1"
+(http-response-header (browse "POST" "/login" "user=ada&amp;password=correct+horse+battery") "Location")
+;; =&gt; "/"
+(http-response-status (browse "POST" "/notes" "tea=Sencha&amp;rating=4")) ;; =&gt; 303
+(http-response-status (browse "POST" "/notes" "tea=Matcha&amp;rating=9")) ;; =&gt; 400
+(browse "POST" "/notes" "tea=&lt;b&gt;Bancha&lt;/b&gt;&amp;rating=5")
+(http-response-body (browse "GET" "/"))
+;; =&gt; "&lt;html&gt;&lt;head&gt;&lt;title&gt;ada&amp;#39;s notes&lt;/title&gt;&lt;/head&gt;&lt;body&gt;&lt;h1&gt;ada&amp;#39;s notes&lt;/h1&gt;&lt;ul&gt;&lt;li&gt;&amp;lt;b&amp;gt;Bancha&amp;lt;/b&amp;gt;: 5/5&lt;/li&gt;&lt;li&gt;Sencha: 4/5&lt;/li&gt;&lt;/ul&gt;&lt;/body&gt;&lt;/html&gt;"
+(browse "POST" "/logout")
+jar                                         ;; =&gt; #f
+(http-response-status (browse "POST" "/notes" "tea=Assam&amp;rating=3")) ;; =&gt; 403</code></pre>
+<p>The note with HTML in its name shows as text: <a class="xref" href="scm-html-builder.html"><code>(scm html builder)</code></a> escapes it (and the apostrophe, which matters inside attributes).</p>
+<h2 id="error-pages-logs-and-security-headers">Error pages, logs and security headers</h2>
+<p><a class="xref" href="scm-net-http-middleware.html"><code>(scm net http middleware)</code></a> wraps a handler in another handler:</p>
+<ul>
+<li><a class="xref" href="scm-net-http-middleware.html#e2"><code>with-error-handler</code></a> turns an error into a 500 page and logs it: the visitor never sees the error message.</li>
+<li><a class="xref" href="scm-net-http-middleware.html#e1"><code>with-access-log</code></a> logs one line per request.</li>
+<li><a class="xref" href="scm-net-http-middleware.html#e4"><code>with-security-headers</code></a> adds headers that tell browsers to load scripts, styles and frames only from the site itself.</li>
+</ul>
+<pre><code class="language-scheme">(router-add! app "GET" "/broken" (lambda (req params) (error "database unreachable" "notes")))
+
+(define handler
+  (with-access-log
+   (with-security-headers
+    (with-error-handler (router-&gt;handler app)
+                        (lambda (req) (page "Sorry" '(p "Something went wrong. Please try again later.")))))))
+
+(define log (open-output-string))
+(define broken
+  (parameterize ((log-port log))
+    (handler (make-http-request "GET" "/broken?id=7" '() #f))))
+(http-response-status broken)               ;; =&gt; 500
+(http-response-header broken "X-Frame-Options") ;; =&gt; "DENY"
+(integer? (string-contains (http-response-body broken) "Something went wrong")) ;; =&gt; #t</code></pre>
+<p>The log has the error and the access line, and no query string, which may hold search terms or tokens:</p>
+<pre><code class="language-scheme">(define logged (get-output-string log))
+(define (contains? text part) (and (string-contains text part) #t))
+
+(contains? logged "ERROR [http] GET /broken raised: database unreachable") ;; =&gt; #t
+(contains? logged "INFO  [http] GET /broken -&gt; 500") ;; =&gt; #t
+(contains? logged "id=7")                   ;; =&gt; #f</code></pre>
+<p>The order matters: the error handler goes innermost, so the access log sees the 500 it produced. Logging goes through <a class="xref" href="scm-log.html"><code>(scm log)</code></a>, to the error port unless <code>log-port</code> says otherwise.</p>
+<h2 id="static-files">Static files</h2>
+<p>CSS, scripts and images come from a directory, served under a wildcard route. <a class="xref" href="scm-net-http-static.html#e2"><code>make-static-url</code></a> adds the file's modification time to the URL, so browsers may cache assets for a year and still get each new version:</p>
+<pre><code class="language-scheme">(define site (mktempdir '(prefix . "notes-site")))
+(make-directory (join-path site "static"))
+(call-with-output-file (join-path site "static/site.css")
+  (lambda (p) (write-string "body { font-family: sans-serif; }" p)))
+
+(router-add! app "GET" "/static/*" (make-static-handler (join-path site "static")))
+(define static-url (make-static-url (join-path site "static") "/static"))
+
+(define css-url (static-url "site.css"))
+(contains? css-url "/static/site.css?v=")   ;; =&gt; #t
+
+(define css (router-dispatch app (make-http-request "GET" css-url '() #f)))
+(http-response-header css "Content-Type")   ;; =&gt; "text/css; charset=utf-8"
+(http-response-header css "Cache-Control")  ;; =&gt; "public, max-age=31536000, immutable"</code></pre>
+<p>A browser that has the file already asks with its ETag and gets a short 304 Not Modified. Paths that try to leave the directory, and hidden files, get 404:</p>
+<pre><code class="language-scheme">(define again (router-dispatch app (make-http-request "GET" "/static/site.css"
+                                                      (list (cons "If-None-Match" (http-response-header css "ETag"))) #f)))
+(http-response-status again)                ;; =&gt; 304
+(http-response-status (router-dispatch app (make-http-request "GET" "/static/../secret" '() #f))) ;; =&gt; 404
+(http-response-status (router-dispatch app (make-http-request "GET" "/static/.env" '() #f))) ;; =&gt; 404
+(mime-type "logo.SVG")                      ;; =&gt; "image/svg+xml"</code></pre>
+<p><a class="xref" href="scm-net-http-static.html#e0"><code>file-response</code></a> sends a single file, and <code>(filename . …)</code> makes it a download:</p>
+<pre><code class="language-scheme">(call-with-output-file (join-path site "notes.csv") (lambda (p) (write-string "tea,rating\nSencha,4\n" p)))
+(define download (file-response (join-path site "notes.csv") '((filename . "my notes.csv"))))
+(http-response-header download "Content-Disposition") ;; =&gt; "attachment; filename=\"my notes.csv\"; filename*=UTF-8''my%20notes.csv"</code></pre>
+<p>The second form of the name is for names with non-ASCII characters, which the first cannot carry everywhere. Range requests work too (pass <code>(request . req)</code>), so videos can seek and broken downloads resume.</p>
+<h2 id="uploads">Uploads</h2>
+<p>A form with <code>enctype="multipart/form-data"</code> sends files. Each part has a name, for a file a file name and content type, and a body:</p>
+<pre><code class="language-scheme">(define upload-body
+  (string-append
+   "--b0undary\r\nContent-Disposition: form-data; name=\"tea\"\r\n\r\nSencha\r\n"
+   "--b0undary\r\nContent-Disposition: form-data; name=\"photo\"; filename=\"cup.txt\"\r\n"
+   "Content-Type: text/plain\r\n\r\na picture of a cup\r\n--b0undary--\r\n"))
+
+(define upload (make-http-request "POST" "/photos"
+                                  '(("Content-Type" . "multipart/form-data; boundary=b0undary"))
+                                  upload-body))
+
+(define (save-upload req dir)
+  (let* ((boundary (multipart-boundary (http-request-header req "Content-Type")))
+         (parts (parse-multipart-bytes (http-request-body-bytes req) boundary))
+         (file (let loop ((ps parts))
+                 (cond ((null? ps) #f)
+                       ((part-ref (car ps) 'filename) (car ps))
+                       (else (loop (cdr ps)))))))
+    (and file
+         (let ((out (open-binary-output-file (join-path dir "photo-1.bin"))))
+           (write-bytevector (part-ref file 'body) out)
+           (close-port out)
+           (list (part-ref file 'filename) (part-ref file 'content-type)
+                 (bytevector-length (part-ref file 'body)))))))
+
+(save-upload upload site)                   ;; =&gt; ("cup.txt" "text/plain" 18)
+(rm site 'recursive)</code></pre>
+<ul>
+<li><a class="xref" href="scm-net-http-multipart.html#e2"><code>parse-multipart-bytes</code></a> keeps binary files intact; <a class="xref" href="scm-net-http-multipart.html#e1"><code>parse-multipart</code></a> is for text-only forms.</li>
+<li>Never use the uploaded file name as a path: it comes from the client. Store under a name of your own, as here, and keep the original name as data.</li>
+<li>Check what arrived (<a class="xref" href="scm-image.html"><code>(scm image)</code></a>'s <a class="xref" href="scm-image.html#e8"><code>image-info</code></a> for pictures).</li>
+<li>Bodies above 4 MB get 413 unless the server is started with a larger limit; bodies above 1 MB are spooled to a temporary file (<a class="xref" href="scm-net-http-request.html#e3"><code>http-request-body-file</code></a>), which can be moved into place.</li>
+</ul>
+<h2 id="putting-it-together">Putting it together</h2>
+<pre><code class="language-scheme no-test">(define server
+  (tcp-http-serve 8080 handler 32 "127.0.0.1" 0 (* 50 1024 1024)))   ; uploads up to 50 MB
+(server-install-shutdown-hook server)
+(server-wait server)</code></pre>
+<p><code>scm new-app starter-login</code> writes a complete application along these lines: users in a database, login, sessions, templates, static assets and tests (<a href="tutorial-scm-scaffold.html">scaffold</a>).</p>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-scm-html.html">HTML</a> for pages, <a href="tutorial-scm-templating.html">templating</a>, <a href="tutorial-scm-crypto.html">crypto</a> for passwords and tokens, <a href="tutorial-scm-database.html">databases</a> for keeping the notes.</li>
+<li>Reference: <a class="xref" href="scm-net-http-forms.html"><code>(scm net http forms)</code></a>, <a class="xref" href="scm-net-http-cookies.html"><code>(scm net http cookies)</code></a>, <a class="xref" href="scm-net-http-session.html"><code>(scm net http session)</code></a>, <a class="xref" href="scm-net-http-middleware.html"><code>(scm net http middleware)</code></a>, <a class="xref" href="scm-net-http-static.html"><code>(scm net http static)</code></a>, <a class="xref" href="scm-net-http-multipart.html"><code>(scm net http multipart)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scm-net-http-forms.html"><code>(scm net http forms)</code></a>, <a href="scm-net-http-cookies.html"><code>(scm net http cookies)</code></a>, <a href="scm-net-http-session.html"><code>(scm net http session)</code></a>, <a href="scm-net-http-middleware.html"><code>(scm net http middleware)</code></a>, <a href="scm-net-http-static.html"><code>(scm net http static)</code></a>, <a href="scm-net-http-multipart.html"><code>(scm net http multipart)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-scm-http-client.html">&larr; (scm net http client): HTTP requests</a>
+  <a class="next" href="tutorial-scm-websocket.html">(scm net sockets) and (scm net websocket): TCP and WebSockets &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

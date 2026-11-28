@@ -54,7 +54,7 @@ Example:
 ```
 Syntax: (http-request-body-bytes request)
 Library: (scm net http request)
-Description: Returns the body of the HTTP request as a bytevector, or #f if there is no body. Unlike http-request-body which decodes the body as UTF-8 text, this preserves the raw bytes and is the correct accessor for binary uploads.
+Description: Returns the body of the HTTP request as a bytevector, or #f if there is no body. Unlike http-request-body which decodes the body as UTF-8 text, this preserves the raw bytes and is the correct accessor for binary uploads. A request made by make-http-request with a string body gives that string's UTF-8 bytes.
 Example:
   (http-request-body-bytes req) => #u8(72 101 108 108 111)
 ```

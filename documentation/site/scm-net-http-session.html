@@ -42,6 +42,7 @@
 </nav>
 
 <div class="lib-title scm">(scm net http session)</div>
+<p class="lib-tutorials">Tutorials: <a href="tutorial-scm-web-app.html">"Web applications: forms, sessions, middleware, static files, uploads"</a></p>
 <div class="lib-preamble">
 <h2>Overview</h2>
 <p><a class="xref" href="scm-net-http-session.html"><code>(scm net http session)</code></a> keeps a login session in a signed cookie, with no server-side session store. The cookie holds a <a class="xref" href="scm-crypto-token.html"><code>(scm crypto token)</code></a> token and is always <code>HttpOnly</code> and <code>SameSite=Strict</code>, and <code>Secure</code> unless configured off for local HTTP. <code>SameSite=Strict</code> also stops other sites from posting forms with the user's session, so no separate CSRF token is needed.</p>

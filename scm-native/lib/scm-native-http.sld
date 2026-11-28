@@ -286,7 +286,9 @@
           (and (request-file r)
                (let ((bv (file->bytevector (request-file r))))
                  (set-request-bytes! r bv)
-                 bv))))
+                 bv))
+          ;; a request made with a string body: its UTF-8 bytes
+          (and (request-body-string r) (string->utf8 (request-body-string r)))))
     (define (http-request-body r)
       (or (request-body-string r)
           (let ((bv (http-request-body-bytes r)))

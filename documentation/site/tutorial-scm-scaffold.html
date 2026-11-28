@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>"(scm scaffold): starting a web application with scm new-app" — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <a href="tutorial-scm-string.html">(scm string): regular expressions and splitting</a>
+  <a href="tutorial-scm-list.html">(scm list) and (scm macro): small helpers</a>
+  <a href="tutorial-scm-match.html">(scm match): pattern matching</a>
+  <a href="tutorial-scm-io.html">(scm io): ports and formatting</a>
+  <a href="tutorial-scm-text.html">(scm text): Unix text tools in Scheme</a>
+  <a href="tutorial-scm-templating.html">(scm templating) and (scm uri): templates and URLs</a>
+  <a href="tutorial-scm-args.html">(scm args): command-line parsing</a>
+  <a href="tutorial-scm-terminal.html">(scm terminal) and (scm log): terminal output and logging</a>
+  <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a>
+  <a href="tutorial-scm-system.html">(scm system) and (scm sysadmin): processes and the system</a>
+  <a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a>
+  <a href="tutorial-scm-store.html">(scm store): an indexed record store</a>
+  <a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a>
+  <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a>
+  <a href="tutorial-scm-json.html">(scm json simple) and (scm json): JSON</a>
+  <a href="tutorial-scm-xml.html">(scm xml) and (scm feed): XML and news feeds</a>
+  <a href="tutorial-scm-toml.html">(scm toml): configuration files</a>
+  <a href="tutorial-scm-markdown.html">(scm markdown): Markdown to HTML and beyond</a>
+  <a href="tutorial-scm-html.html">(scm html), builder and parser: writing and reading HTML</a>
+  <a href="tutorial-scm-excel.html">(scm ooxml excel) and friends: spreadsheets</a>
+  <a href="tutorial-scm-word.html">(scm ooxml word) and friends: Word and OpenDocument texts</a>
+  <a href="tutorial-scm-presentation.html">(scm ooxml presentation): PowerPoint slides</a>
+  <a href="tutorial-scm-pdf.html">(scm pdf) and (scm svg pdf): PDF documents</a>
+  <a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a>
+  <a href="tutorial-scm-http-server.html">(scm net http server) and (scm net http route): web servers</a>
+  <a href="tutorial-scm-http-client.html">(scm net http client): HTTP requests</a>
+  <a href="tutorial-scm-web-app.html">"Web applications: forms, sessions, middleware, static files, uploads"</a>
+  <a href="tutorial-scm-websocket.html">(scm net sockets) and (scm net websocket): TCP and WebSockets</a>
+  <a href="tutorial-scm-email.html">(scm net email) and (scm net smtp): sending e-mail</a>
+  <a href="tutorial-scm-database.html">"(scm database postgres), sqlserver and migrations: SQL databases"</a>
+  <a href="tutorial-scm-scaffold.html" class="active">"(scm scaffold): starting a web application with scm new-app"</a>
+    <a class="sub" href="#the-starters">The starters</a>
+    <a class="sub" href="#creating-an-application">Creating an application</a>
+    <a class="sub" href="#the-layout">The layout</a>
+    <a class="sub" href="#running-testing-developing">Running, testing, developing</a>
+    <a class="sub" href="#deploying">Deploying</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-scm-net-remote.html">"(scm net-remote): ssh, scp, rsync, curl and wget from Scheme"</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">"(scm scaffold): starting a web application with scm new-app"</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="scm-scaffold-starting-a-web-application-with-scm-new-app">(scm scaffold): starting a web application with scm new-app</h1>
+<p>The <a href="tutorial-scm-web-app.html">web tutorials</a> show the parts. A real application also needs a configuration file, tests, an auto-reloading development server, a systemd service and a reverse proxy configuration. dabscm comes with four <em>starters</em>, complete small applications that have all of that, and <code>scm new-app</code> copies one under the name of your application.</p>
+<pre><code class="language-scheme">(import (scheme base) (scheme file) (scheme write) (scm fs) (scm scaffold))</code></pre>
+<h2 id="the-starters">The starters</h2>
+<pre><code class="language-scheme">(starter-names)                             ;; =&gt; ("starter-public" "starter-login" "starter-admin" "starter-api")</code></pre>
+<table>
+<thead>
+<tr><th>starter</th><th>what it is</th><th>data</th></tr>
+</thead>
+<tbody>
+<tr><td><code>starter-public</code></td><td>a public page rendered from data, no login</td><td>a JSON file</td></tr>
+<tr><td><code>starter-login</code></td><td>a private app behind a login, with a profile page</td><td>a Scheme data file</td></tr>
+<tr><td><code>starter-admin</code></td><td>users, roles and an admin area</td><td>PostgreSQL with migrations</td></tr>
+<tr><td><code>starter-api</code></td><td>a JSON API with bearer tokens, for a single-page or mobile app</td><td>Scheme data files</td></tr>
+</tbody>
+</table>
+<p>Each one builds on the one before. All of them use the libraries of the web tutorials: the middleware stack, a strict Content-Security-Policy (no inline scripts), signed sessions, password hashes that are upgraded at sign-in, static files with cache-busting URLs, light and dark themes.</p>
+<h2 id="creating-an-application">Creating an application</h2>
+<p>From the command line, name the starter and the new directory; the last part of the directory is the application's name:</p>
+<pre><code class="language-sh">scm new-app starter-login ~/projects/tea-notes
+cd ~/projects/tea-notes
+scm bin/server.scm              # http://127.0.0.1:8071</code></pre>
+<p>The same from Scheme, here into a temporary directory, with two small helpers to look at the result:</p>
+<pre><code class="language-scheme">(define (string-prefix-of? prefix s)
+  (and (&lt;= (string-length prefix) (string-length s))
+       (string=? prefix (substring s 0 (string-length prefix)))))
+
+(define (filter-files keep? fs)
+  (cond ((null? fs) '()) ((keep? (car fs)) (cons (car fs) (filter-files keep? (cdr fs))))
+        (else (filter-files keep? (cdr fs)))))</code></pre>
+<pre><code class="language-scheme">(define work (mktempdir '(prefix . "scaffold")))
+(define app-dir (join-path work "tea-shop"))
+
+(define files (new-app "starter-public" app-dir))
+(length files)                              ;; =&gt; 23
+(filter-files (lambda (f) (string-prefix-of? "deploy/systemd/" f)) files)
+;; =&gt; ("deploy/systemd/tea-shop-health.service" "deploy/systemd/tea-shop-health.timer" "deploy/systemd/tea-shop-restart.service" "deploy/systemd/tea-shop-restart.timer" "deploy/systemd/tea-shop.service")</code></pre>
+<p>The starter's name is replaced everywhere, in file names and in file contents, in each of its spellings:</p>
+<pre><code class="language-scheme">(app-name-variants "tea-shop")              ;; =&gt; ("tea-shop" "tea_shop" "Tea Shop" "TEA_SHOP")
+
+(define (first-line path)
+  (call-with-input-file (join-path app-dir path) read-line))
+(first-line "README.md")                    ;; =&gt; "# tea-shop"
+(first-line "config.example.scm")           ;; =&gt; ";; tea-shop configuration: a list of (define name value) forms, read"</code></pre>
+<p>So the service is <code>tea-shop.service</code>, the database user in <code>starter-admin</code> <code>tea_shop</code>, the page title "Tea Shop" and the environment variables <code>TEA_SHOP_…</code>. A third argument gives a name different from the directory's. <a class="xref" href="scm-scaffold.html#e1"><code>new-app</code></a> refuses to overwrite:</p>
+<pre><code class="language-scheme">(new-app "starter-public" app-dir)          ;; =&gt; error
+(new-app "starter-public" (join-path work "x") "Tea Shop") ;; =&gt; error
+(new-app "starter-blog" (join-path work "blog")) ;; =&gt; error
+(rm work 'recursive)</code></pre>
+<p>The name must be in kebab case (<code>tea-shop</code>), and the starter one of <a class="xref" href="scm-scaffold.html#e3"><code>starter-names</code></a>. Files the starter's <code>.gitignore</code> lists, such as a local <code>config.scm</code>, are not copied, and shell scripts come out executable.</p>
+<h2 id="the-layout">The layout</h2>
+<pre><code class="language-text">bin/server.scm        reads the configuration, serves the app
+bin/dev-server.scm    the same, restarted when a source file changes
+bin/init-config.scm   writes a configuration with a fresh secret
+src/app-config.sld    reads the configuration
+src/app-web.sld       routes, pages, middleware: make-app
+config.example.scm    every setting, documented
+static/               CSS, scripts, icons
+tests/                test_pure_*.scm, run without a server
+deploy/               install script, systemd units, nginx example, health probe</code></pre>
+<p><code>make-app</code> in <code>src/app-web.sld</code> returns the request handler. The server passes it to <a class="xref" href="scm-net-http-server.html#e1"><code>serve-forever</code></a>; the tests call it directly with requests made by <a class="xref" href="scm-net-http-request.html#e9"><code>make-http-request</code></a>, as the <a href="tutorial-scm-http-server.html">server tutorial</a> does, so they need no server and no network.</p>
+<h2 id="running-testing-developing">Running, testing, developing</h2>
+<pre><code class="language-sh">scm bin/server.scm                                # uses config.scm, created on the first run
+scm bin/dev-server.scm                            # restarts on changes to src/ or the config
+for t in tests/test_*.scm; do scm "$t" || exit 1; done</code></pre>
+<p>The configuration is a list of <code>(define name value)</code> forms, read as data rather than run:</p>
+<pre><code class="language-scheme no-test">(define http-host "127.0.0.1")
+(define http-port 8070)
+(define url-prefix "")          ; e.g. "/shop" to mount the app under a path</code></pre>
+<h2 id="deploying">Deploying</h2>
+<p><code>deploy/install.sh</code> installs the application on a Linux server: the code in <code>/opt/&lt;app&gt;</code>, the configuration in <code>/etc/&lt;app&gt;/config.scm</code>, data in <code>/var/lib/&lt;app&gt;</code>, a system user, a hardened systemd service, a health probe and a daily restart. <code>deploy/nginx.conf.example</code> puts nginx in front for HTTPS. <a class="xref" href="scm-deb-webapp.html"><code>(scm deb webapp)</code></a> packages the same layout as a Debian package.</p>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-scm-http-server.html">HTTP servers</a>, <a href="tutorial-scm-web-app.html">web applications</a>, <a href="tutorial-scm-database.html">databases</a>, <a href="tutorial-scm-crypto.html">crypto</a>.</li>
+<li>The starters' own README files explain each one in detail.</li>
+<li>Reference: <a class="xref" href="scm-scaffold.html"><code>(scm scaffold)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scm-scaffold.html"><code>(scm scaffold)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-scm-database.html">&larr; "(scm database postgres), sqlserver and migrations: SQL databases"</a>
+  <a class="next" href="tutorial-scm-net-remote.html">"(scm net-remote): ssh, scp, rsync, curl and wget from Scheme" &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

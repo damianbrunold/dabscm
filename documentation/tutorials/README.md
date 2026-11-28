@@ -73,6 +73,13 @@ the JVM, .NET and native implementations, so the code works as shown.
 | test my code | [Testing](techniques-10-testing.md) |
 | use several cores | [Concurrency](techniques-11-concurrency.md) |
 | run an external program and capture its output | [The system](techniques-12-system.md#running-a-program) |
+| write a small web server or JSON API | [HTTP servers](scm-http-server.md#example-a-json-api) |
+| call a web API | [HTTP client](scm-http-client.md) |
+| add a login to a web app | [Web applications](scm-web-app.md#example-tasting-notes-with-a-login) |
+| accept file uploads | [Web applications](scm-web-app.md#uploads) |
+| send an e-mail | [E-mail](scm-email.md) |
+| query PostgreSQL safely | [Databases](scm-database.md#parameters) |
+| start a new web application | [Scaffold](scm-scaffold.md) |
 | handle an error and continue | [Errors and exceptions](basics-09-errors.md#catching-errors-with-guard) |
 | destructure data with patterns | [Macros and pattern matching](basics-11-macros.md#pattern-matching-with-match) |
 | write my own control construct | [Macros](basics-11-macros.md) |
@@ -138,7 +145,20 @@ Guided tours of the individual libraries, each with worked examples.
 | [`(scm pdf)` and `(scm svg pdf)`](scm-pdf.md) | PDF pages, text, wrapping, an invoice, SVG as vectors |
 | [Images, QR codes, SVG](scm-images.md) | PNG and JPEG, thumbnails, drawing, QR codes, SVG to PNG |
 
-Tutorials for the web, database and data libraries follow. Until then, the
+### Web, network and databases
+
+| tutorial | covers |
+|---|---|
+| [HTTP servers and routing](scm-http-server.md) | handlers, responses, routes, a JSON API, streaming, production |
+| [`(scm net http client)`](scm-http-client.md) | requests, JSON APIs, tokens, binary bodies, redirects, errors, retries |
+| [Web applications](scm-web-app.md) | forms, passwords, sessions, a login app, middleware, static files, uploads |
+| [Sockets and WebSockets](scm-websocket.md) | a TCP line protocol, binary framing, TLS, a WebSocket chat room |
+| [E-mail](scm-email.md) | messages, Cc and Bcc, a local mail catcher, sending one or many |
+| [SQL databases](scm-database.md) | PostgreSQL and SQL Server, parameters, transactions, pools, migrations |
+| [`(scm scaffold)`](scm-scaffold.md) | the starter applications and `scm new-app` |
+| [`(scm net-remote)`](scm-net-remote.md) | ssh, scp, rsync, curl, wget; a deployment script |
+
+Tutorials for the data libraries and the rest follow. Until then, the
 [library reference](../index.md) has an overview and examples for every
 library.
 
