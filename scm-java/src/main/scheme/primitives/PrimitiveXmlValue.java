@@ -14,10 +14,9 @@ public class PrimitiveXmlValue extends Primitive {
     public String info() {
         return "Syntax: (xml-value xml-reader)\n" +
                "Library: (scm xml)\n" +
-               "Description: Reads and returns the text content of the current element as a string, or #f if there is no value.\n" +
+               "Description: Reads the text content of the current element (which must contain no child elements) and returns it as a string, \"\" for an empty element. The reader is left on the element's end-element node.\n" +
                "Example:\n" +
-               "  (xml-value reader) => \"John Doe\"\n" +
-               "  (xml-value reader) => #f";
+               "  (xml-value reader) => \"John Doe\"";
     }
     
     @Override

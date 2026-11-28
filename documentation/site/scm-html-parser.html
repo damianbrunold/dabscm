@@ -45,15 +45,15 @@
 
 <div class="lib-title scm">(scm html parser)</div>
 <p class="lib-sub">Forgiving HTML parser producing SXML, as browsers read pages</p>
+<p class="lib-tutorials">Tutorials: <a href="tutorial-scm-html.html">(scm html), builder and parser: writing and reading HTML</a></p>
 <div class="lib-preamble">
 <h2>Overview</h2>
 <p><a class="xref" href="scm-html-parser.html"><code>(scm html parser)</code></a> reads HTML into SXML the way browsers read real pages: end tags the markup leaves out are implied (<code>&lt;p&gt;</code>, <code>&lt;li&gt;</code>, <code>&lt;td&gt;</code>, <code>&lt;option&gt;</code> …), stray end tags are ignored, void elements need no end tag, and the contents of <code>&lt;script&gt;</code>, <code>&lt;style&gt;</code>, <code>&lt;title&gt;</code> and <code>&lt;textarea&gt;</code> are read as text. Character references are decoded with the complete HTML5 list (see <a class="xref" href="scm-html.html#e2"><code>html-unescape</code></a> in <a class="xref" href="scm-html.html"><code>(scm html)</code></a>). It accepts any input without raising an error.</p>
 <p>The tree has the shape <a class="xref" href="scm-html-builder.html"><code>(scm html builder)</code></a> renders, so a parsed page can be changed and written back with <a class="xref" href="scm-html-builder.html#e1"><code>html-&gt;string</code></a>:</p>
 <ul>
 <li><code>"text"</code> — text, references decoded</li>
-<li><code>(tag (@ (name "value") ...) child ...)</code> — an element; tag and attribute names</li>
+<li><code>(tag (@ (name "value") ...) child ...)</code> — an element; tag and attribute names are lower-case symbols, the <code>(@ ...)</code> list is left out when there are no attributes</li>
 </ul>
-<p>are lower-case symbols, the <code>(@ ...)</code> list is left out when there are no attributes</p>
 <h2>Common uses</h2>
 <pre><code class="language-scheme">(import (scm html parser))
 

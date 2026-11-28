@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm ooxml presentation): PowerPoint slides — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <a href="tutorial-scm-string.html">(scm string): regular expressions and splitting</a>
+  <a href="tutorial-scm-list.html">(scm list) and (scm macro): small helpers</a>
+  <a href="tutorial-scm-match.html">(scm match): pattern matching</a>
+  <a href="tutorial-scm-io.html">(scm io): ports and formatting</a>
+  <a href="tutorial-scm-text.html">(scm text): Unix text tools in Scheme</a>
+  <a href="tutorial-scm-templating.html">(scm templating) and (scm uri): templates and URLs</a>
+  <a href="tutorial-scm-args.html">(scm args): command-line parsing</a>
+  <a href="tutorial-scm-terminal.html">(scm terminal) and (scm log): terminal output and logging</a>
+  <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a>
+  <a href="tutorial-scm-system.html">(scm system) and (scm sysadmin): processes and the system</a>
+  <a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a>
+  <a href="tutorial-scm-store.html">(scm store): an indexed record store</a>
+  <a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a>
+  <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a>
+  <a href="tutorial-scm-json.html">(scm json simple) and (scm json): JSON</a>
+  <a href="tutorial-scm-xml.html">(scm xml) and (scm feed): XML and news feeds</a>
+  <a href="tutorial-scm-toml.html">(scm toml): configuration files</a>
+  <a href="tutorial-scm-markdown.html">(scm markdown): Markdown to HTML and beyond</a>
+  <a href="tutorial-scm-html.html">(scm html), builder and parser: writing and reading HTML</a>
+  <a href="tutorial-scm-excel.html">(scm ooxml excel) and friends: spreadsheets</a>
+  <a href="tutorial-scm-word.html">(scm ooxml word) and friends: Word and OpenDocument texts</a>
+  <a href="tutorial-scm-presentation.html" class="active">(scm ooxml presentation): PowerPoint slides</a>
+    <a class="sub" href="#units">Units</a>
+    <a class="sub" href="#text">Text</a>
+    <a class="sub" href="#shapes-lines-and-builds">Shapes, lines and builds</a>
+    <a class="sub" href="#tables-and-pictures">Tables and pictures</a>
+    <a class="sub" href="#saving">Saving</a>
+    <a class="sub" href="#example-one-slide-per-record">Example: one slide per record</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-scm-pdf.html">(scm pdf) and (scm svg pdf): PDF documents</a>
+  <a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm ooxml presentation): PowerPoint slides</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="scm-ooxml-presentation-powerpoint-slides">(scm ooxml presentation): PowerPoint slides</h1>
+<p><a class="xref" href="scm-ooxml-presentation.html"><code>(scm ooxml presentation)</code></a> writes <code>.pptx</code> files. A slide is a canvas: shapes, text boxes, tables and pictures are placed at absolute positions, which suits generated decks (reports, dashboards, exports).</p>
+<pre><code class="language-scheme">(import (scheme base) (scheme cxr) (scheme write) (srfi 1) (only (srfi 13) string-prefix?)
+        (scm fs) (scm zip) (scm png) (scm ooxml presentation))
+
+(define dir (mktempdir '(prefix . "pptx")))
+(define (at name) (join-path dir name))</code></pre>
+<h2 id="units">Units</h2>
+<p>Positions and sizes are in EMU, English Metric Units: 914400 per inch, 12700 per point. A default slide is 16:9, 13.33 × 7.5 inches:</p>
+<pre><code class="language-scheme">(inches-&gt;emu 1)                             ;; =&gt; 914400
+(points-&gt;emu 12)                            ;; =&gt; 152400
+(define (in x) (inches-&gt;emu x))</code></pre>
+<p>Colours are <code>"RRGGBB"</code> strings, font sizes points.</p>
+<h2 id="text">Text</h2>
+<p>Text is a list of paragraphs; a paragraph has <em>runs</em> and options such as alignment and bullets:</p>
+<pre><code class="language-scheme">(define (run text . opts) `((text . ,text) ,@opts))
+(define (para runs . opts) `((runs . ,runs) ,@opts))
+
+(define deck (make-presentation))
+(presentation-set-title! deck "Teashop 2025")
+
+(define title-slide (presentation-add-slide! deck))
+(slide-set-background! title-slide "1F3A2E")
+(slide-add-shape! title-slide 'text (in 1) (in 2.5) (in 11.3) (in 1.5)
+  `((text . (,(para (list (run "Teashop 2025" '(size . 54) '(bold . #t) '(color . "FFFFFF")))
+                    '(align . center))
+             ,(para (list (run "Year in review" '(size . 28) '(color . "C8E6C9")))
+                    '(align . center))))
+    (anchor . middle)))</code></pre>
+<p>Bulleted lists are paragraphs with a bullet character and a hanging indent:</p>
+<pre><code class="language-scheme">(define (bullet text)
+  (para (list (run text '(size . 24))) '(bullet . "•") '(margin-left . 342900) '(indent . -342900)))
+
+(define facts (presentation-add-slide! deck))
+(slide-add-shape! facts 'text (in 0.8) (in 0.4) (in 11) (in 1)
+  `((text . (,(para (list (run "Highlights" '(size . 40) '(bold . #t))))))))
+(slide-add-shape! facts 'text (in 0.8) (in 1.6) (in 6) (in 4)
+  `((text . ,(map bullet '("18 % more visitors" "Matcha sold out twice" "New shop in Basel")))))</code></pre>
+<h2 id="shapes-lines-and-builds">Shapes, lines and builds</h2>
+<p>Shapes are <code>rect</code>, <code>rounded</code>, <code>ellipse</code>, <code>triangle</code>, <code>arrow</code>, <code>chevron</code> and <code>text</code>. With <code>(build . (order effect))</code> they appear one after the other during the presentation:</p>
+<pre><code class="language-scheme">(for-each (lambda (label i)
+            (slide-add-shape! facts 'chevron (in (+ 7.2 (* i 1.9))) (in 2) (in 1.8) (in 1)
+              `((fill . "2E7D32")
+                (text . (,(para (list (run label '(size . 16) '(color . "FFFFFF"))) '(align . center))))
+                (anchor . middle)
+                (build . (,(+ i 1) fade)))))
+          '("Buy" "Brew" "Enjoy") '(0 1 2))
+(slide-add-line! facts (in 0.8) (in 1.4) (in 11.7) 0 '((color . "2E7D32") (width . 25400)))
+(slide-set-transition! facts 'push-left 600)
+(slide-set-notes! facts (list (para (list (run "Mention the Basel opening date.")))))</code></pre>
+<p>Speaker notes are shown in the presenter view, not on the slide.</p>
+<h2 id="tables-and-pictures">Tables and pictures</h2>
+<pre><code class="language-scheme">(define (cell text . opts)
+  `((text . (,(para (list (run text '(size . 18))) '(align . center)))) (anchor . middle) ,@opts))
+
+(define numbers (presentation-add-slide! deck))
+(slide-add-table! numbers (in 0.8) (in 1) (in 6) (in 2)
+  (list (list (cell "Tea" '(fill . "C8E6C9")) (cell "Kg" '(fill . "C8E6C9")))
+        (list (cell "Sencha") (cell "1 240"))
+        (list (cell "Matcha") (cell "310")))
+  '((header . #t)))
+
+(define pixel (png-encode-rgb 2 2 (bytevector 46 125 50  200 230 201  200 230 201  46 125 50)))
+(slide-add-picture! numbers pixel "image/png" (in 7.5) (in 1) (in 4) (in 4)
+                    '((description . "Sales chart")))</code></pre>
+<p>Pictures are bytevectors or file names (PNG, JPEG or GIF). The description is the alternative text for screen readers. A chart from <a class="xref" href="scm-data-plot.html"><code>(scm data plot)</code></a> or an SVG rendered with <a class="xref" href="scm-svg-raster.html"><code>(scm svg raster)</code></a> fits here.</p>
+<h2 id="saving">Saving</h2>
+<pre><code class="language-scheme">(presentation-save deck (at "review.pptx"))
+(define z (open-input-zip-file (at "review.pptx")))
+(filter (lambda (n) (string-prefix? "ppt/slides/slide" n)) (zip-entry-names z))
+;; =&gt; ("ppt/slides/slide1.xml" "ppt/slides/slide2.xml" "ppt/slides/slide3.xml")
+(close-input-zip z)</code></pre>
+<p>A <code>.pptx</code> file is a ZIP archive with one XML part per slide. <a class="xref" href="scm-ooxml-presentation.html#e3"><code>presentation-&gt;bytevector</code></a> returns the bytes instead of writing a file.</p>
+<h2 id="example-one-slide-per-record">Example: one slide per record</h2>
+<pre><code class="language-scheme">(define shops '(("Zurich" 5400 "+12 %") ("Bern" 3100 "+4 %") ("Basel" 900 "new")))
+
+(define report (make-presentation))
+(for-each
+ (lambda (shop)
+   (let ((s (presentation-add-slide! report)))
+     (slide-add-shape! s 'text (in 0.8) (in 0.5) (in 11) (in 1)
+       `((text . (,(para (list (run (car shop) '(size . 44) '(bold . #t))))))))
+     (slide-add-shape! s 'rounded (in 0.8) (in 2) (in 5) (in 3)
+       `((fill . "2E7D32")
+         (text . (,(para (list (run (number-&gt;string (cadr shop)) '(size . 60) '(color . "FFFFFF")))
+                         '(align . center))
+                  ,(para (list (run "visitors" '(size . 20) '(color . "FFFFFF"))) '(align . center))))
+         (anchor . middle)))
+     (slide-add-shape! s 'text (in 6.5) (in 2) (in 5) (in 3)
+       `((text . (,(para (list (run (caddr shop) '(size . 60) '(color . "2E7D32")))
+                         '(align . center))))
+         (anchor . middle)))))
+ shops)
+(presentation-save report (at "shops.pptx"))
+(file-exists? (at "shops.pptx"))           ;; =&gt; #t
+
+(rm dir 'recursive)</code></pre>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-scm-word.html">Word documents</a>, <a href="tutorial-scm-images.html">images</a> for pictures, <a class="xref" href="scm-data-plot.html"><code>(scm data plot)</code></a> for charts.</li>
+<li>Reference: <a class="xref" href="scm-ooxml-presentation.html"><code>(scm ooxml presentation)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scm-ooxml-presentation.html"><code>(scm ooxml presentation)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-scm-word.html">&larr; (scm ooxml word) and friends: Word and OpenDocument texts</a>
+  <a class="next" href="tutorial-scm-pdf.html">(scm pdf) and (scm svg pdf): PDF documents &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

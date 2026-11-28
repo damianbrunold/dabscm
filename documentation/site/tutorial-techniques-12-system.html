@@ -87,6 +87,16 @@
   <a href="tutorial-scm-store.html">(scm store): an indexed record store</a>
   <a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a>
   <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a>
+  <a href="tutorial-scm-json.html">(scm json simple) and (scm json): JSON</a>
+  <a href="tutorial-scm-xml.html">(scm xml) and (scm feed): XML and news feeds</a>
+  <a href="tutorial-scm-toml.html">(scm toml): configuration files</a>
+  <a href="tutorial-scm-markdown.html">(scm markdown): Markdown to HTML and beyond</a>
+  <a href="tutorial-scm-html.html">(scm html), builder and parser: writing and reading HTML</a>
+  <a href="tutorial-scm-excel.html">(scm ooxml excel) and friends: spreadsheets</a>
+  <a href="tutorial-scm-word.html">(scm ooxml word) and friends: Word and OpenDocument texts</a>
+  <a href="tutorial-scm-presentation.html">(scm ooxml presentation): PowerPoint slides</a>
+  <a href="tutorial-scm-pdf.html">(scm pdf) and (scm svg pdf): PDF documents</a>
+  <a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a>
   <h2><a href="index.html">Library reference</a></h2>
 </nav>
 
@@ -110,10 +120,7 @@
 ; =&gt; (0 "f6c17e5...\n" "")                           exit code, stdout, stderr
 (sh "date" "+%Y")                                    ; =&gt; "2025\n", error on failure</code></pre>
 <ul>
-<li><code>run-program</code> lets the program use the terminal and returns its exit</li>
-</ul>
-<p>code;</p>
-<ul>
+<li><code>run-program</code> lets the program use the terminal and returns its exit code;</li>
 <li><code>run-program/capture</code> returns <code>(exit-code stdout stderr)</code>;</li>
 <li><code>sh</code> returns standard output and raises an error if the program fails.</li>
 </ul>
@@ -162,10 +169,7 @@
 <p><a class="xref" href="scheme-process-context.html#e1"><code>emergency-exit</code></a> ends immediately without running <code>dynamic-wind</code> after thunks, for the rare cases where cleanup itself might hang.</p>
 <h2 id="where-next">Where next</h2>
 <ul>
-<li>That ends the techniques. Continue with the library tutorials in the</li>
-</ul>
-<p><a href="tutorials.html">index</a>.</p>
-<ul>
+<li>That ends the techniques. Continue with the library tutorials in the <a href="tutorials.html">index</a>.</li>
 <li><a class="xref" href="scm-system.html"><code>(scm system)</code></a>, <a class="xref" href="scheme-process-context.html"><code>(scheme process-context)</code></a>, <a class="xref" href="scm-fs.html"><code>(scm fs)</code></a>.</li>
 </ul>
 </div>

@@ -84,6 +84,16 @@
   <a href="tutorial-scm-store.html">(scm store): an indexed record store</a>
   <a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a>
   <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a>
+  <a href="tutorial-scm-json.html">(scm json simple) and (scm json): JSON</a>
+  <a href="tutorial-scm-xml.html">(scm xml) and (scm feed): XML and news feeds</a>
+  <a href="tutorial-scm-toml.html">(scm toml): configuration files</a>
+  <a href="tutorial-scm-markdown.html">(scm markdown): Markdown to HTML and beyond</a>
+  <a href="tutorial-scm-html.html">(scm html), builder and parser: writing and reading HTML</a>
+  <a href="tutorial-scm-excel.html">(scm ooxml excel) and friends: spreadsheets</a>
+  <a href="tutorial-scm-word.html">(scm ooxml word) and friends: Word and OpenDocument texts</a>
+  <a href="tutorial-scm-presentation.html">(scm ooxml presentation): PowerPoint slides</a>
+  <a href="tutorial-scm-pdf.html">(scm pdf) and (scm svg pdf): PDF documents</a>
+  <a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a>
   <h2><a href="index.html">Library reference</a></h2>
 </nav>
 
@@ -101,13 +111,9 @@
 <h1 id="srfi-271-random-ports">SRFI 271: random ports</h1>
 <p>SRFI 271 provides random bytes as a binary input port that never ends. Any procedure that reads a binary port can read random data: <a class="xref" href="scheme-base.html#e168"><code>read-u8</code></a>, <a class="xref" href="scheme-base.html#e162"><code>read-bytevector</code></a>, your own parsers.</p>
 <ul>
-<li><a class="xref" href="srfi-271.html"><code>(srfi 271)</code></a> (the same as <a class="xref" href="srfi-271-randomized.html"><code>(srfi 271 randomized)</code></a>) delivers</li>
+<li><a class="xref" href="srfi-271.html"><code>(srfi 271)</code></a> (the same as <a class="xref" href="srfi-271-randomized.html"><code>(srfi 271 randomized)</code></a>) delivers cryptographically secure random bytes from the operating system. Use it for keys, tokens and passwords.</li>
+<li><a class="xref" href="srfi-271-determinized.html"><code>(srfi 271 determinized)</code></a> delivers a reproducible stream from a seed, with a state you can save and resume. Use it for simulations and tests.</li>
 </ul>
-<p>cryptographically secure random bytes from the operating system. Use it for keys, tokens and passwords.</p>
-<ul>
-<li><a class="xref" href="srfi-271-determinized.html"><code>(srfi 271 determinized)</code></a> delivers a reproducible stream from a seed,</li>
-</ul>
-<p>with a state you can save and resume. Use it for simulations and tests.</p>
 <pre><code class="language-scheme">(import (scheme base) (srfi 151) (srfi 271)
         (prefix (srfi 271 determinized) d:))</code></pre>
 <h2 id="secure-random-bytes">Secure random bytes</h2>

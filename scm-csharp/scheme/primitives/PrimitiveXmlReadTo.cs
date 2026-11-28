@@ -14,7 +14,7 @@ public class PrimitiveXmlReadTo : Primitive
         return
             "Syntax: (xml-read-to xml-reader name)\n" +
             "Library: (scm xml)\n" +
-            "Description: Advances xml-reader forward until it reaches an element with the given name. Returns #t if found, or #f if the end of the document is reached first.\n" +
+            "Description: Advances xml-reader forward until it reaches an element whose qualified or local name is name (a string or symbol). Returns #t if found, or #f if the end of the document is reached first.\n" +
             "Example:\n" +
             "  (xml-read-to reader \"Customer\") => #t\n" +
             "  (xml-read-to reader 'Item) => #f";
@@ -25,26 +25,20 @@ public class PrimitiveXmlReadTo : Primitive
         CheckArgs(pos, arguments, 2, 2);
         try
         {
-            XmlReader reader = (XmlReader) Value.AsNativeValue(arguments[0]).value;
-            if (Value.IsSymbol(arguments[1]))
+            var x = (XmlPull) Value.AsNativeValue(arguments[0]).value;
+            string name = Value.IsSymbol(arguments[1]) ? Value.AsSymbol(arguments[1]) : new String(Value.AsString(arguments[1]));
+            string colonName = ":" + name;
+            while (x.Read())
             {
-                if (reader.ReadToFollowing(Value.AsSymbol(arguments[1])))
-                {
+                if (x.Current == XmlPull.Kind.Element
+                    && (x.CurrentName == name || x.CurrentName.EndsWith(colonName)))
                     return Value.T;
-                }
-            }
-            else
-            {
-                if (reader.ReadToFollowing(new String(Value.AsString(arguments[1]))))
-                {
-                    return Value.T;
-                }
             }
             return Value.F;
         }
-        catch (Exception)
+        catch (Exception e)
         {
-            throw new SchemeError(pos, "xml-read-to failed");
+            throw new SchemeError(pos, "xml-read-to failed: ~s", e.Message);
         }
     }
 }

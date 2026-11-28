@@ -122,9 +122,25 @@ Guided tours of the individual libraries, each with worked examples.
 | [`(scm crypto)`](scm-crypto.md) | hashes, HMAC, encryption, passwords, signed tokens |
 | [`(scm datetime)` and `(scm duration)`](scm-datetime.md) | parsing and formatting timestamps, durations |
 
-Tutorials for the format, web, database and data libraries follow. Until
-then, the [library reference](../index.md) has an overview and examples for
-every library.
+### Formats
+
+| tutorial | covers |
+|---|---|
+| [`(scm json simple)` and `(scm json)`](scm-json.md) | JSON mapping, lookups, writing, API responses, streaming large files |
+| [`(scm xml)` and `(scm feed)`](scm-xml.md) | the XML pull reader, records from streams, namespaces, Atom and RSS feeds |
+| [`(scm toml)`](scm-toml.md) | configuration files, defaults, validation, layered settings |
+| `(scm csv)` | see [structured data](techniques-08-structured-data.md#csv) |
+| [`(scm markdown)`](scm-markdown.md) | Markdown to HTML, the tree, custom renderers, tables of contents |
+| [`(scm html)`, builder and parser](scm-html.md) | safe HTML from trees, components, parsing and scraping pages |
+| [Excel and OpenDocument spreadsheets](scm-excel.md) | `.xlsx` writing, streaming, reading, templates; `.ods` |
+| [Word and OpenDocument texts](scm-word.md) | `.docx` documents and letters, reading Word files; `.odt` |
+| [`(scm ooxml presentation)`](scm-presentation.md) | PowerPoint slides with shapes, tables, pictures, notes |
+| [`(scm pdf)` and `(scm svg pdf)`](scm-pdf.md) | PDF pages, text, wrapping, an invoice, SVG as vectors |
+| [Images, QR codes, SVG](scm-images.md) | PNG and JPEG, thumbnails, drawing, QR codes, SVG to PNG |
+
+Tutorials for the web, database and data libraries follow. Until then, the
+[library reference](../index.md) has an overview and examples for every
+library.
 
 ## Running the examples yourself
 

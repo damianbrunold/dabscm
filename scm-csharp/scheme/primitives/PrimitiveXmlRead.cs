@@ -14,7 +14,7 @@ public class PrimitiveXmlRead : Primitive
         return
             "Syntax: (xml-read xml-reader)\n" +
             "Library: (scm xml)\n" +
-            "Description: Advances xml-reader to the next node in the XML document. Returns #t if a node was read, or #f if the end of the document was reached.\n" +
+            "Description: Advances xml-reader to the next node and returns #t, or #f at the end of the document. The XML declaration, a doctype and white space outside the root element are skipped.\n" +
             "Example:\n" +
             "  (xml-read reader) => #t\n" +
             "  (xml-read reader) => #f";
@@ -25,13 +25,11 @@ public class PrimitiveXmlRead : Primitive
         CheckArgs(pos, arguments, 1, 1);
         try
         {
-            XmlReader reader = (XmlReader) Value.AsNativeValue(arguments[0]).value;
-            if (reader.Read()) return Value.T;
-            return Value.F;
+            return ((XmlPull) Value.AsNativeValue(arguments[0]).value).Read() ? Value.T : Value.F;
         }
-        catch (Exception)
+        catch (Exception e)
         {
-            throw new SchemeError(pos, "xml-read failed");
+            throw new SchemeError(pos, "xml-read failed ~s", e.Message);
         }
     }
 }

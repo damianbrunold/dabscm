@@ -28,7 +28,7 @@ public class PrimitiveOpenXmlString : Primitive
         try
         {
             var reader = XmlReader.Create(new StringReader(source), XmlInput.Settings());
-            return new NativeValue(reader);
+            return new NativeValue(new XmlPull(reader));
         }
         catch (Exception)
         {

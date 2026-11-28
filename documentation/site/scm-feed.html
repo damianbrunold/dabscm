@@ -42,6 +42,7 @@
 
 <div class="lib-title scm">(scm feed)</div>
 <p class="lib-sub">Atom and RSS 2.0 feed parsing</p>
+<p class="lib-tutorials">Tutorials: <a href="tutorial-scm-xml.html">(scm xml) and (scm feed): XML and news feeds</a></p>
 <div class="lib-preamble">
 <h2>Overview</h2>
 <p><a class="xref" href="scm-feed.html"><code>(scm feed)</code></a> parses Atom and RSS 2.0 feeds. The three entry points differ only in where the bytes come from; each returns <code>(cons feed-title entries)</code>, where <code>entries</code> is a list of alists with the string keys <code>title</code>, <code>link</code>, <code>guid</code>, <code>summary</code>, and <code>published</code> (missing fields default to <code>""</code>).</p>

@@ -166,4 +166,29 @@
   ;; without the option no ids, as before
   (test-equal "<h2>Next steps</h2>" (markdown->html "## Next steps")))
 
+(test-group "list items continued on the next lines"
+  (test-equal '((bullet-list (item "a continued here") (item "b")))
+              (parse-markdown "- a\n  continued\n  here\n- b"))
+  (test-equal "lazy continuation (no indent)"
+              '((bullet-list (item "one two")))
+              (parse-markdown "- one\ntwo"))
+  (test-equal "continued item with a sub-list"
+              '((bullet-list (item "a b" (bullet-list (item "c"))) (item "d")))
+              (parse-markdown "- a\n  b\n  - c\n- d"))
+  (test-equal "ordered"
+              '((ordered-list 1 (item "first " (code "x")) (item "second")))
+              (parse-markdown "1. first\n   `x`\n2. second"))
+  (test-equal "a heading, fence or blank line ends the item"
+              '((bullet-list (item "a")) (heading 2 "H"))
+              (parse-markdown "- a\n## H"))
+  (test-equal '((bullet-list (item "a")) (paragraph "p"))
+              (parse-markdown "- a\n\np"))
+  (test-equal "<ul>\n<li>a b</li>\n</ul>" (markdown->html "- a\n  b")))
+
+(test-group "parentheses in link URLs"
+  (test-equal '((paragraph (link ("Scheme") "https://en.wikipedia.org/wiki/Scheme_(programming_language)")))
+              (parse-markdown "[Scheme](https://en.wikipedia.org/wiki/Scheme_(programming_language))"))
+  (test-equal '((paragraph "(see " (link ("x") "a.html") ")"))
+              (parse-markdown "(see [x](a.html))")))
+
 (test-end "scm-markdown")

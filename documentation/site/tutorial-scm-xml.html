@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm xml) and (scm feed): XML and news feeds — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <a href="tutorial-scm-string.html">(scm string): regular expressions and splitting</a>
+  <a href="tutorial-scm-list.html">(scm list) and (scm macro): small helpers</a>
+  <a href="tutorial-scm-match.html">(scm match): pattern matching</a>
+  <a href="tutorial-scm-io.html">(scm io): ports and formatting</a>
+  <a href="tutorial-scm-text.html">(scm text): Unix text tools in Scheme</a>
+  <a href="tutorial-scm-templating.html">(scm templating) and (scm uri): templates and URLs</a>
+  <a href="tutorial-scm-args.html">(scm args): command-line parsing</a>
+  <a href="tutorial-scm-terminal.html">(scm terminal) and (scm log): terminal output and logging</a>
+  <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a>
+  <a href="tutorial-scm-system.html">(scm system) and (scm sysadmin): processes and the system</a>
+  <a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a>
+  <a href="tutorial-scm-store.html">(scm store): an indexed record store</a>
+  <a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a>
+  <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a>
+  <a href="tutorial-scm-json.html">(scm json simple) and (scm json): JSON</a>
+  <a href="tutorial-scm-xml.html" class="active">(scm xml) and (scm feed): XML and news feeds</a>
+    <a class="sub" href="#nodes">Nodes</a>
+    <a class="sub" href="#attributes-and-text">Attributes and text</a>
+    <a class="sub" href="#the-basic-loop">The basic loop</a>
+    <a class="sub" href="#records-from-a-stream">Records from a stream</a>
+    <a class="sub" href="#a-whole-tree">A whole tree</a>
+    <a class="sub" href="#namespaces">Namespaces</a>
+    <a class="sub" href="#safety">Safety</a>
+    <a class="sub" href="#news-feeds-with-scm-feed">News feeds with (scm feed)</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-scm-toml.html">(scm toml): configuration files</a>
+  <a href="tutorial-scm-markdown.html">(scm markdown): Markdown to HTML and beyond</a>
+  <a href="tutorial-scm-html.html">(scm html), builder and parser: writing and reading HTML</a>
+  <a href="tutorial-scm-excel.html">(scm ooxml excel) and friends: spreadsheets</a>
+  <a href="tutorial-scm-word.html">(scm ooxml word) and friends: Word and OpenDocument texts</a>
+  <a href="tutorial-scm-presentation.html">(scm ooxml presentation): PowerPoint slides</a>
+  <a href="tutorial-scm-pdf.html">(scm pdf) and (scm svg pdf): PDF documents</a>
+  <a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm xml) and (scm feed): XML and news feeds</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="scm-xml-and-scm-feed-xml-and-news-feeds">(scm xml) and (scm feed): XML and news feeds</h1>
+<p><a class="xref" href="scm-xml.html"><code>(scm xml)</code></a> is a <em>pull reader</em>: the program asks for one node after the other and decides what to keep. It needs little memory however large the file is. <a class="xref" href="scm-feed.html"><code>(scm feed)</code></a> is built on it and reads Atom and RSS feeds.</p>
+<pre><code class="language-scheme">(import (scheme base) (scheme cxr) (scheme write) (srfi 1)
+        (scm xml) (scm feed))</code></pre>
+<h2 id="nodes">Nodes</h2>
+<p><a class="xref" href="scm-xml.html#e7"><code>xml-read</code></a> moves to the next node and returns <code>#f</code> at the end. Each node has a type and, for elements, a name:</p>
+<pre><code class="language-scheme">(define (nodes text)
+  (let ((r (open-xml-string text)))
+    (let loop ((acc '()))
+      (if (xml-read r)
+          (loop (cons (list (xml-node-type r) (xml-name r)) acc))
+          (begin (close-xml r) (reverse acc))))))
+
+(nodes "&lt;?xml version=\"1.0\"?&gt;&lt;order id=\"7\"&gt;&lt;item&gt;tea &amp;amp; cake&lt;/item&gt;&lt;gift/&gt;&lt;!-- note --&gt;&lt;/order&gt;")
+;; =&gt; ((element "order") (element "item") (text "") (end-element "item") (element "gift") (end-element "gift") (comment "") (end-element "order"))</code></pre>
+<ul>
+<li><code>element</code> and <code>end-element</code>; an empty element like <code>&lt;gift/&gt;</code> gives both;</li>
+<li><code>text</code>: a run of character data, with <code>&amp;amp;</code> and CDATA sections already merged in;</li>
+<li><code>comment</code> and <code>pi</code> (processing instructions).</li>
+</ul>
+<p>The XML declaration and white space outside the root element give no nodes.</p>
+<h2 id="attributes-and-text">Attributes and text</h2>
+<p>On an element, <a class="xref" href="scm-xml.html#e4"><code>xml-attribute</code></a> reads an attribute (<code>#f</code> if it is missing) and <a class="xref" href="scm-xml.html#e9"><code>xml-value</code></a> reads the element's text:</p>
+<pre><code class="language-scheme">(define r (open-xml-string "&lt;item sku=\"T-1\" qty=\"2\"&gt;Green tea&lt;/item&gt;"))
+(xml-read r)
+(xml-attribute r "sku")                     ;; =&gt; "T-1"
+(xml-attribute r 'qty)                      ;; =&gt; "2"
+(xml-attribute r "price")                   ;; =&gt; #f
+(xml-value r)                               ;; =&gt; "Green tea"
+(xml-node-type r)                           ;; =&gt; end-element
+(close-xml r)</code></pre>
+<p><a class="xref" href="scm-xml.html#e9"><code>xml-value</code></a> leaves the reader on the element's end, so the loop goes on with the next sibling. It expects text only: an element with child elements is an error.</p>
+<h2 id="the-basic-loop">The basic loop</h2>
+<p><a class="xref" href="scm-xml.html#e8"><code>xml-read-to</code></a> skips to the next element with a name. Most extraction code is this loop:</p>
+<pre><code class="language-scheme">(define catalog "&lt;catalog&gt;
+  &lt;book isbn=\"978-0441013593\"&gt;&lt;title&gt;Dune&lt;/title&gt;&lt;year&gt;1965&lt;/year&gt;&lt;/book&gt;
+  &lt;book isbn=\"978-0441569595\"&gt;&lt;title&gt;Neuromancer&lt;/title&gt;&lt;year&gt;1984&lt;/year&gt;&lt;/book&gt;
+  &lt;book isbn=\"978-0553283686\"&gt;&lt;title&gt;Hyperion&lt;/title&gt;&lt;year&gt;1989&lt;/year&gt;&lt;/book&gt;
+&lt;/catalog&gt;")
+
+(define (collect text element proc)
+  (let ((r (open-xml-string text)))
+    (let loop ((acc '()))
+      (if (xml-read-to r element)
+          (loop (cons (proc r) acc))
+          (begin (close-xml r) (reverse acc))))))
+
+(collect catalog "title" xml-value)         ;; =&gt; ("Dune" "Neuromancer" "Hyperion")
+(collect catalog "book" (lambda (r) (xml-attribute r "isbn")))
+;; =&gt; ("978-0441013593" "978-0441569595" "978-0553283686")</code></pre>
+<h2 id="records-from-a-stream">Records from a stream</h2>
+<p>To build one record per <code>book</code> from its children, read until the book ends. A small state machine keeps track of where the reader is:</p>
+<pre><code class="language-scheme">(define (read-books text)
+  (let ((r (open-xml-string text)))
+    (let loop ((books '()) (current #f))
+      (if (not (xml-read r))
+          (begin (close-xml r) (reverse books))
+          (case (xml-node-type r)
+            ((element)
+             (cond ((equal? (xml-name r) "book")
+                    (loop books `((isbn . ,(xml-attribute r "isbn")))))
+                   ((and current (member (xml-name r) '("title" "year")))
+                    (let* ((key (string-&gt;symbol (xml-name r)))
+                           (text (xml-value r)))
+                      (loop books (cons (cons key (if (eq? key 'year) (string-&gt;number text) text))
+                                        current))))
+                   (else (loop books current))))
+            ((end-element)
+             (if (equal? (xml-name r) "book")
+                 (loop (cons (reverse current) books) #f)
+                 (loop books current)))
+            (else (loop books current)))))))
+
+(define books (read-books catalog))
+(car books)
+;; =&gt; ((isbn . "978-0441013593") (title . "Dune") (year . 1965))
+(map (lambda (b) (cdr (assq 'title b)))
+     (filter (lambda (b) (&gt; (cdr (assq 'year b)) 1980)) books))
+;; =&gt; ("Neuromancer" "Hyperion")</code></pre>
+<p>Only one book is in memory at a time, so the same code handles a catalogue of millions: read from <a class="xref" href="scm-xml.html#e2"><code>open-xml-file</code></a> instead of a string, and process each record as it is completed instead of collecting them.</p>
+<h2 id="a-whole-tree">A whole tree</h2>
+<p>For small documents a tree is handier. This builds SXML, the <code>(tag (@ (attr "value") ...) child ...)</code> form that <a class="xref" href="scm-html-builder.html"><code>(scm html builder)</code></a> writes and <a class="xref" href="scm-html-parser.html"><code>(scm html parser)</code></a> reads. The attributes have to be read while the reader is on the element; this version reads <code>id</code> and <code>class</code> and leaves text out:</p>
+<pre><code class="language-scheme">(define (xml-&gt;tree text)
+  (let ((r (open-xml-string text)))
+    (define (element)
+      (let* ((name (string-&gt;symbol (xml-name r)))
+             (attrs (filter-map (lambda (a)
+                                  (let ((v (xml-attribute r a)))
+                                    (and v (list (string-&gt;symbol a) v))))
+                                '("id" "class"))))
+        (let loop ((kids '()))
+          (xml-read r)
+          (case (xml-node-type r)
+            ((end-element) (append (list name)
+                                   (if (null? attrs) '() (list (cons '@ attrs)))
+                                   (reverse kids)))
+            ((element) (loop (cons (element) kids)))
+            (else (loop kids))))))
+    (let ((tree (and (xml-read r) (element))))
+      (close-xml r)
+      tree)))
+
+(xml-&gt;tree "&lt;menu id=\"m\"&gt;&lt;entry class=\"hot\"/&gt;&lt;entry/&gt;&lt;/menu&gt;")
+;; =&gt; (menu (@ (id "m")) (entry (@ (class "hot"))) (entry))</code></pre>
+<h2 id="namespaces">Namespaces</h2>
+<p><a class="xref" href="scm-xml.html#e5"><code>xml-name</code></a> gives the qualified name with its prefix; <a class="xref" href="scm-xml.html#e8"><code>xml-read-to</code></a> and <a class="xref" href="scm-xml.html#e4"><code>xml-attribute</code></a> accept the qualified or the local name:</p>
+<pre><code class="language-scheme">(define sitemap "&lt;urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\"
+                         xmlns:img=\"http://www.google.com/schemas/sitemap-image/1.1\"&gt;
+  &lt;url&gt;&lt;loc&gt;https://example.org/&lt;/loc&gt;&lt;img:image&gt;&lt;img:loc&gt;https://example.org/a.png&lt;/img:loc&gt;&lt;/img:image&gt;&lt;/url&gt;
+  &lt;url&gt;&lt;loc&gt;https://example.org/about&lt;/loc&gt;&lt;/url&gt;
+&lt;/urlset&gt;")
+
+(collect sitemap "loc" xml-value)
+;; =&gt; ("https://example.org/" "https://example.org/a.png" "https://example.org/about")
+(collect sitemap "img:loc" xml-value)       ;; =&gt; ("https://example.org/a.png")</code></pre>
+<p>The local name <code>loc</code> also matches <code>img:loc</code>; the qualified name picks only the images.</p>
+<h2 id="safety">Safety</h2>
+<p>XML from outside can attack the reader: entity definitions that expand to gigabytes, or external entities that read local files. <a class="xref" href="scm-xml.html"><code>(scm xml)</code></a> does not process DTDs and never loads external entities; a document that relies on them is refused:</p>
+<pre><code class="language-scheme">(define (try-read text)
+  (guard (e (#t 'refused))
+    (collect text "r" xml-value)))
+
+(try-read "&lt;!DOCTYPE r [&lt;!ENTITY x SYSTEM \"file:///etc/passwd\"&gt;]&gt;&lt;r&gt;&amp;x;&lt;/r&gt;") ;; =&gt; refused
+(try-read "&lt;r&gt;a &amp;lt; b&lt;/r&gt;")                ;; =&gt; ("a &lt; b")</code></pre>
+<p>Malformed documents raise an error at the point where the problem is found, so wrap reads of untrusted data in a <a class="xref" href="scheme-base.html#e91"><code>guard</code></a>.</p>
+<h2 id="news-feeds-with-scm-feed">News feeds with (scm feed)</h2>
+<p><a class="xref" href="scm-feed.html#e3"><code>parse-feed-string</code></a>, <a class="xref" href="scm-feed.html#e2"><code>parse-feed-file</code></a> and <a class="xref" href="scm-feed.html#e1"><code>parse-feed-bytevector</code></a> read Atom and RSS 2.0 alike and return the feed title and a list of entries, each an alist with the keys <code>title</code>, <code>link</code>, <code>guid</code>, <code>summary</code> and <code>published</code>:</p>
+<pre><code class="language-scheme">(define rss "&lt;?xml version=\"1.0\"?&gt;
+&lt;rss version=\"2.0\"&gt;&lt;channel&gt;
+  &lt;title&gt;dabscm news&lt;/title&gt;
+  &lt;item&gt;&lt;title&gt;2.29 released&lt;/title&gt;&lt;link&gt;https://example.org/229&lt;/link&gt;
+        &lt;guid&gt;n229&lt;/guid&gt;&lt;pubDate&gt;Thu, 27 Nov 2025 10:00:00 GMT&lt;/pubDate&gt;
+        &lt;description&gt;Tutorials for every library.&lt;/description&gt;&lt;/item&gt;
+  &lt;item&gt;&lt;title&gt;2.28 released&lt;/title&gt;&lt;link&gt;https://example.org/228&lt;/link&gt;
+        &lt;guid&gt;n228&lt;/guid&gt;&lt;pubDate&gt;Mon, 10 Nov 2025 09:00:00 GMT&lt;/pubDate&gt;&lt;/item&gt;
+&lt;/channel&gt;&lt;/rss&gt;")
+
+(define feed (parse-feed-string rss))
+(car feed)                                  ;; =&gt; "dabscm news"
+(map (lambda (e) (cdr (assoc "title" e))) (cdr feed))
+;; =&gt; ("2.29 released" "2.28 released")
+(cdr (assoc "published" (cadr feed)))       ;; =&gt; "Thu, 27 Nov 2025 10:00:00 GMT"
+(cdr (assoc "summary" (caddr feed)))        ;; =&gt; ""</code></pre>
+<p>Missing fields are empty strings. <code>parse-pubdate</code> from <a class="xref" href="scm-datetime.html"><code>(scm datetime)</code></a> turns the dates of both formats into epoch seconds, for sorting and filtering (see the <a href="tutorial-scm-datetime.html">feed example there</a>).</p>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-scm-html.html"><a class="xref" href="scm-html.html"><code>(scm html)</code></a></a> for HTML, which is not XML; <a href="tutorial-techniques-08-structured-data.html">structured data</a>.</li>
+<li>Reference: <a class="xref" href="scm-xml.html"><code>(scm xml)</code></a>, <a class="xref" href="scm-feed.html"><code>(scm feed)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scm-xml.html"><code>(scm xml)</code></a>, <a href="scm-feed.html"><code>(scm feed)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-scm-json.html">&larr; (scm json simple) and (scm json): JSON</a>
+  <a class="next" href="tutorial-scm-toml.html">(scm toml): configuration files &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

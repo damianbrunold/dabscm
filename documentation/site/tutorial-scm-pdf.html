@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm pdf) and (scm svg pdf): PDF documents — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <a href="tutorial-scm-string.html">(scm string): regular expressions and splitting</a>
+  <a href="tutorial-scm-list.html">(scm list) and (scm macro): small helpers</a>
+  <a href="tutorial-scm-match.html">(scm match): pattern matching</a>
+  <a href="tutorial-scm-io.html">(scm io): ports and formatting</a>
+  <a href="tutorial-scm-text.html">(scm text): Unix text tools in Scheme</a>
+  <a href="tutorial-scm-templating.html">(scm templating) and (scm uri): templates and URLs</a>
+  <a href="tutorial-scm-args.html">(scm args): command-line parsing</a>
+  <a href="tutorial-scm-terminal.html">(scm terminal) and (scm log): terminal output and logging</a>
+  <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a>
+  <a href="tutorial-scm-system.html">(scm system) and (scm sysadmin): processes and the system</a>
+  <a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a>
+  <a href="tutorial-scm-store.html">(scm store): an indexed record store</a>
+  <a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a>
+  <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a>
+  <a href="tutorial-scm-json.html">(scm json simple) and (scm json): JSON</a>
+  <a href="tutorial-scm-xml.html">(scm xml) and (scm feed): XML and news feeds</a>
+  <a href="tutorial-scm-toml.html">(scm toml): configuration files</a>
+  <a href="tutorial-scm-markdown.html">(scm markdown): Markdown to HTML and beyond</a>
+  <a href="tutorial-scm-html.html">(scm html), builder and parser: writing and reading HTML</a>
+  <a href="tutorial-scm-excel.html">(scm ooxml excel) and friends: spreadsheets</a>
+  <a href="tutorial-scm-word.html">(scm ooxml word) and friends: Word and OpenDocument texts</a>
+  <a href="tutorial-scm-presentation.html">(scm ooxml presentation): PowerPoint slides</a>
+  <a href="tutorial-scm-pdf.html" class="active">(scm pdf) and (scm svg pdf): PDF documents</a>
+    <a class="sub" href="#pages-and-coordinates">Pages and coordinates</a>
+    <a class="sub" href="#text">Text</a>
+    <a class="sub" href="#wrapping-paragraphs">Wrapping paragraphs</a>
+    <a class="sub" href="#shapes-and-colours">Shapes and colours</a>
+    <a class="sub" href="#images-links-bookmarks-metadata">Images, links, bookmarks, metadata</a>
+    <a class="sub" href="#example-an-invoice-table">Example: an invoice table</a>
+    <a class="sub" href="#example-page-numbers">Example: page numbers</a>
+    <a class="sub" href="#svg-as-vectors">SVG as vectors</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm pdf) and (scm svg pdf): PDF documents</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="scm-pdf-and-scm-svg-pdf-pdf-documents">(scm pdf) and (scm svg pdf): PDF documents</h1>
+<p><a class="xref" href="scm-pdf.html"><code>(scm pdf)</code></a> writes PDF files from nothing: pages, text, shapes, images, links and bookmarks. <a class="xref" href="scm-svg-pdf.html"><code>(scm svg pdf)</code></a> draws SVG on its pages as vectors, which is how charts get into PDF reports.</p>
+<pre><code class="language-scheme">(import (scheme base) (scheme cxr) (scheme write) (srfi 1)
+        (scm fs) (scm png) (scm pdf) (scm svg pdf))
+
+(define dir (mktempdir '(prefix . "pdf")))
+(define (at name) (join-path dir name))</code></pre>
+<h2 id="pages-and-coordinates">Pages and coordinates</h2>
+<pre><code class="language-scheme">(define doc (make-pdf))
+(define page (pdf-add-page! doc))           ; A4
+(list (pdf-page-width page) (pdf-page-height page)) ;; =&gt; (595 842)
+pdf-page-size-letter                        ;; =&gt; (612 . 792)</code></pre>
+<p>Units are points (1/72 inch). The origin is the <strong>bottom left</strong> corner, so y grows upwards: the top of an A4 page is y = 842. Other sizes are pairs or two numbers: <code>(pdf-add-page! doc 842 595)</code> is A4 landscape.</p>
+<h2 id="text">Text</h2>
+<p>The 14 standard fonts need no font file: <code>helvetica</code>, <code>times-roman</code>, <code>courier</code>, their bold and italic variants, <code>symbol</code> and <code>zapf-dingbats</code>.</p>
+<pre><code class="language-scheme">(define helv (pdf-use-font doc 'helvetica))
+(define bold (pdf-use-font doc 'helvetica-bold))
+
+(pdf-draw-text page bold 20 72 770 "Teashop")
+(pdf-draw-text page helv 11 72 750 "Bahnhofstrasse 1, 8001 Zurich")</code></pre>
+<p><a class="xref" href="scm-pdf.html#e13"><code>pdf-draw-text</code></a> puts the <em>baseline</em> of the text at (x, y). Measuring comes before placing, for right-aligned or centred text:</p>
+<pre><code class="language-scheme">(define (round2 x) (/ (round (* 100 x)) 100))
+(round2 (pdf-text-width helv 12 "Hello"))   ;; =&gt; 27.34
+(round2 (pdf-text-width bold 12 "Hello"))   ;; =&gt; 29.34
+
+(define (draw-right page font size right-x y text)
+  (pdf-draw-text page font size (- right-x (pdf-text-width font size text)) y text))
+
+(draw-right page helv 11 523 770 "Invoice 2025-117")</code></pre>
+<p>The standard fonts cover Latin-1 (umlauts and accents are fine). For other scripts, or a corporate font, embed a TrueType font with <a class="xref" href="scm-pdf.html#e16"><code>pdf-embed-truetype-font</code></a>.</p>
+<h2 id="wrapping-paragraphs">Wrapping paragraphs</h2>
+<p><a class="xref" href="scm-pdf.html#e22"><code>pdf-flow-text</code></a> sets text into a rectangle <code>(x y width height)</code>, wrapping at words. It returns the text that did not fit and where the next line would go, so text can continue in another column or on the next page:</p>
+<pre><code class="language-scheme">(define story (apply string-append (make-list 20 "Tea is the most consumed drink after water. ")))
+
+(define-values (rest next-y)
+  (pdf-flow-text page helv 10 '(72 560 220 120) story 'align 'justify))
+(&gt; (string-length rest) 0)                  ;; =&gt; #t
+(&lt; next-y 560)                              ;; =&gt; #t
+(define-values (rest2 next-y2) (pdf-flow-text page helv 10 '(303 560 220 120) rest 'align 'justify))
+(string-length rest2)                       ;; =&gt; 0</code></pre>
+<p>The first column overflowed, the second took the rest. Alignment is <code>'left</code>, <code>'right</code>, <code>'center</code> or <code>'justify</code>; <code>'leading</code> sets the line spacing.</p>
+<h2 id="shapes-and-colours">Shapes and colours</h2>
+<p>Paths are built with <a class="xref" href="scm-pdf.html#e45"><code>pdf-move-to</code></a>, <a class="xref" href="scm-pdf.html#e44"><code>pdf-line-to</code></a>, <a class="xref" href="scm-pdf.html#e10"><code>pdf-curve-to</code></a> and <a class="xref" href="scm-pdf.html#e57"><code>pdf-rect</code></a>, then painted with <a class="xref" href="scm-pdf.html#e78"><code>pdf-stroke</code></a>, <a class="xref" href="scm-pdf.html#e18"><code>pdf-fill</code></a> or both. <a class="xref" href="scm-pdf.html#e83"><code>pdf-with-state</code></a> keeps colours and transforms from leaking out:</p>
+<pre><code class="language-scheme">(pdf-with-state page
+  (lambda ()
+    (pdf-set-fill-rgb page 0.18 0.49 0.2)
+    (pdf-rect page 72 700 451 3)
+    (pdf-fill page)))
+
+(pdf-with-state page
+  (lambda ()
+    (pdf-translate page 470 600)
+    (pdf-rotate page 30)
+    (pdf-set-stroke-rgb page 0.8 0.1 0.1)
+    (pdf-set-line-width page 2)
+    (pdf-rect page -40 -12 80 24)
+    (pdf-stroke page)
+    (pdf-draw-text page bold 12 -22 -4 "PAID")))</code></pre>
+<p>Dashes, caps, joins, CMYK and grey colours, opacity and clipping are there as well (<a class="xref" href="scm-pdf.html#e64"><code>pdf-set-dash</code></a>, <a class="xref" href="scm-pdf.html#e65"><code>pdf-set-fill-cmyk</code></a>, <a class="xref" href="scm-pdf.html#e73"><code>pdf-set-opacity</code></a>, <a class="xref" href="scm-pdf.html#e6"><code>pdf-clip</code></a>).</p>
+<h2 id="images-links-bookmarks-metadata">Images, links, bookmarks, metadata</h2>
+<pre><code class="language-scheme">(define logo (pdf-embed-png doc (png-encode-rgb 2 2 (bytevector 46 125 50  255 255 255  255 255 255  46 125 50))))
+(pdf-draw-image page logo 480 760 40 40)
+
+(pdf-draw-text page helv 10 72 100 "Order online: https://tea.example")
+(pdf-add-link page '(72 95 260 110) "https://tea.example")
+(pdf-add-outline! doc page "Invoice")
+(pdf-set-metadata! doc 'title "Invoice 2025-117" 'author "Teashop")
+
+(pdf-save doc (at "invoice.pdf"))
+(utf8-&gt;string (bytevector-copy (pdf-&gt;bytevector doc) 0 8)) ;; =&gt; "%PDF-1.4"</code></pre>
+<p><a class="xref" href="scm-pdf.html#e14"><code>pdf-embed-jpeg</code></a> takes JPEG files as they are, without re-encoding. <a class="xref" href="scm-pdf.html#e1"><code>pdf-&gt;bytevector</code></a> returns the document as bytes, for an HTTP response.</p>
+<h2 id="example-an-invoice-table">Example: an invoice table</h2>
+<p>A table is text in columns plus a few lines. Keep the layout in one place, a list of columns with their width and alignment:</p>
+<pre><code class="language-scheme">(define columns '(("Item" 230 left) ("Kg" 60 right) ("Price" 80 right) ("Total" 80 right)))
+
+(define (money x) (let ((cents (exact (round (* 100 x)))))
+                    (string-append (number-&gt;string (quotient cents 100)) "."
+                                   (let ((c (number-&gt;string (remainder cents 100))))
+                                     (if (&lt; (string-length c) 2) (string-append "0" c) c)))))
+
+(define (draw-row page font y cells)
+  (let loop ((x 72) (cols columns) (cells cells))
+    (unless (null? cols)
+      (let ((w (cadar cols)) (align (caddar cols)) (text (car cells)))
+        (if (eq? align 'right)
+            (draw-right page font 10 (+ x w -4) y text)
+            (pdf-draw-text page font 10 (+ x 4) y text))
+        (loop (+ x w) (cdr cols) (cdr cells))))))
+
+(define (invoice lines)
+  (let* ((doc (make-pdf)) (page (pdf-add-page! doc))
+         (helv (pdf-use-font doc 'helvetica)) (bold (pdf-use-font doc 'helvetica-bold)))
+    (pdf-draw-text page bold 16 72 770 "Invoice")
+    (draw-row page bold 700 (map car columns))
+    (let loop ((y 682) (lines lines) (sum 0))
+      (if (null? lines)
+          (begin
+            (pdf-set-line-width page 0.5)
+            (pdf-move-to page 72 (+ y 12)) (pdf-line-to page 522 (+ y 12)) (pdf-stroke page)
+            (draw-row page bold y (list "Total" "" "" (money sum)))
+            (values doc sum))
+          (let* ((l (car lines)) (total (* (cadr l) (caddr l))))
+            (draw-row page helv y (list (car l) (number-&gt;string (cadr l)) (money (caddr l)) (money total)))
+            (loop (- y 18) (cdr lines) (+ sum total)))))))
+
+(define-values (inv sum) (invoice '(("Sencha" 2 24.5) ("Matcha" 0.5 96) ("Assam" 1 18.4))))
+(money sum)                                 ;; =&gt; "115.40"
+(pdf-save inv (at "invoice2.pdf"))
+(file-exists? (at "invoice2.pdf"))          ;; =&gt; #t</code></pre>
+<h2 id="example-page-numbers">Example: page numbers</h2>
+<p>"Page 3 of 7" needs the total, so draw the footers after all pages exist:</p>
+<pre><code class="language-scheme">(define report (make-pdf))
+(define rfont (pdf-use-font report 'times-roman))
+(define pages
+  (map (lambda (n)
+         (let ((p (pdf-add-page! report)))
+           (pdf-draw-text p rfont 14 72 770 (string-append "Chapter " (number-&gt;string n)))
+           p))
+       (iota 3 1)))
+(for-each (lambda (p n)
+            (let ((label (string-append "Page " (number-&gt;string n) " of " (number-&gt;string (length pages)))))
+              (pdf-draw-text p rfont 9 (- 297 (/ (pdf-text-width rfont 9 label) 2)) 30 label)))
+          pages (iota (length pages) 1))
+(pdf-page-count report)                     ;; =&gt; 3</code></pre>
+<h2 id="svg-as-vectors">SVG as vectors</h2>
+<p><a class="xref" href="scm-svg-pdf.html"><code>(scm svg pdf)</code></a> draws SVG on a page: paths stay paths and text stays text, so a chart prints sharp and its labels can be searched:</p>
+<pre><code class="language-scheme">(define chart "&lt;svg xmlns='http://www.w3.org/2000/svg' width='300' height='120'&gt;
+  &lt;rect x='10' y='60' width='60' height='50' fill='#2e7d32'/&gt;
+  &lt;rect x='90' y='20' width='60' height='90' fill='#66bb6a'/&gt;
+  &lt;text x='10' y='12' font-size='12'&gt;Kg sold&lt;/text&gt;&lt;/svg&gt;")
+
+(call-with-values (lambda () (svg-size chart)) list) ;; =&gt; (300.0 120.0)
+(call-with-values
+  (lambda () (svg-&gt;pdf-page! report (car pages) chart 72 740 '((width . 450))))
+  list)                                     ;; =&gt; (450.0 180.0)
+(pdf-save report (at "report.pdf"))
+
+(define single (svg-&gt;pdf chart '((margin . 10))))
+(utf8-&gt;string (bytevector-copy single 0 5)) ;; =&gt; "%PDF-"
+(rm dir 'recursive)</code></pre>
+<p><a class="xref" href="scm-svg-pdf.html#e1"><code>svg-&gt;pdf-page!</code></a> puts the drawing's top-left corner at (x, y) and scales it to the given width; <a class="xref" href="scm-svg-pdf.html#e0"><code>svg-&gt;pdf</code></a> makes a one-page PDF the size of the drawing. <a class="xref" href="scm-data-plot.html"><code>(scm data plot)</code></a> and <a class="xref" href="scm-data-report.html"><code>(scm data report)</code></a> use these for charts in PDF reports.</p>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-scm-images.html">Images, QR codes and SVG</a>, <a href="tutorial-scm-word.html">Word documents</a>, <a class="xref" href="scm-truetype.html"><code>(scm truetype)</code></a> for fonts, <a class="xref" href="scm-data-report.html"><code>(scm data report)</code></a> for whole reports.</li>
+<li>Reference: <a class="xref" href="scm-pdf.html"><code>(scm pdf)</code></a>, <a class="xref" href="scm-svg-pdf.html"><code>(scm svg pdf)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scm-pdf.html"><code>(scm pdf)</code></a>, <a href="scm-svg-pdf.html"><code>(scm svg pdf)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-scm-presentation.html">&larr; (scm ooxml presentation): PowerPoint slides</a>
+  <a class="next" href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

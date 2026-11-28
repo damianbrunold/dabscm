@@ -47,7 +47,7 @@
 
 <div class="lib-title scm">(scm xml)</div>
 <p class="lib-sub">XML file reading and navigation</p>
-<p class="lib-tutorials">Tutorials: <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a></p>
+<p class="lib-tutorials">Tutorials: <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>, <a href="tutorial-scm-xml.html">(scm xml) and (scm feed): XML and news feeds</a></p>
 <div class="lib-preamble">
 <h2>Overview</h2>
 <p><a class="xref" href="scm-xml.html"><code>(scm xml)</code></a> is a streaming (pull) XML reader. You open a reader over a file, string, or bytevector, then call <a class="xref" href="#e7"><code>xml-read</code></a> to advance node by node, querying the current node's type, name, value, and attributes as you go. This keeps memory use low for large documents.</p>
@@ -60,6 +60,15 @@
 (xml-node-type r)     ;; =&gt; element
 (xml-name r)          ;; =&gt; "a"
 (xml-attribute r "x") ;; =&gt; "1"</code></pre>
+<h2>The event stream</h2>
+<p>The three implementations produce the same nodes:</p>
+<ul>
+<li><code>element</code> and <code>end-element</code>, also for an empty element such as <code>&lt;br/&gt;</code>;</li>
+<li><code>text</code>: one node per run of character data, with character references (<code>&amp;amp;</code>) and CDATA sections merged into it (a comment splits it);</li>
+<li><code>comment</code> and <code>pi</code> (processing instruction).</li>
+</ul>
+<p>The XML declaration, a doctype and white space outside the root element give no nodes; DTDs are not processed and external entities are never loaded. After the root element's end (and trailing comments), <a class="xref" href="#e7"><code>xml-read</code></a> returns <code>#f</code>.</p>
+<p><a class="xref" href="#e5"><code>xml-name</code></a> is the qualified name (<code>"ns:item"</code>) of an element or end element, <code>""</code> otherwise; <a class="xref" href="#e8"><code>xml-read-to</code></a> and <a class="xref" href="#e4"><code>xml-attribute</code></a> accept the qualified or the local name. <a class="xref" href="#e9"><code>xml-value</code></a> reads the text of the current element and leaves the reader on its end, so the next <a class="xref" href="#e8"><code>xml-read-to</code></a> finds the following sibling.</p>
 <p>Drive it in a loop until <a class="xref" href="#e7"><code>xml-read</code></a> returns <code>#f</code>. <a class="xref" href="#e9"><code>xml-value</code></a> reads text content, <a class="xref" href="#e8"><code>xml-read-to</code></a> skips ahead to a named element, and <a class="xref" href="#e0"><code>close-xml</code></a> releases the reader. Open from a file or bytes with <a class="xref" href="#e2"><code>open-xml-file</code></a> / <a class="xref" href="#e1"><code>open-xml-bytevector</code></a>.</p>
 </div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
@@ -105,7 +114,7 @@ Example:
   <div class="entry-name">xml-attribute</div>
   <pre class="entry-doc">Syntax: (xml-attribute xml-reader name)
 Library: (scm xml)
-Description: Returns the value of the named attribute from the current element of xml-reader as a string, or #f if the attribute does not exist.
+Description: Returns the value of the attribute with the given qualified or local name of the current element as a string, or #f if the attribute does not exist or the current node is not an element.
 Example:
   (xml-attribute reader "id") =&gt; "42"
   (xml-attribute reader 'class) =&gt; #f</pre>
@@ -114,7 +123,7 @@ Example:
   <div class="entry-name">xml-name</div>
   <pre class="entry-doc">Syntax: (xml-name xml-reader)
 Library: (scm xml)
-Description: Returns the qualified name of the current XML element or attribute node as a string.
+Description: Returns the qualified name (prefix:local) of the current element or end-element node as a string, "" for other nodes.
 Example:
   (xml-name reader) =&gt; "Customer"
   (xml-name reader) =&gt; "ns:Element"</pre>
@@ -123,7 +132,7 @@ Example:
   <div class="entry-name">xml-node-type</div>
   <pre class="entry-doc">Syntax: (xml-node-type xml-reader)
 Library: (scm xml)
-Description: Returns a symbol identifying the type of the current XML node: element, end-element, text, cdata, comment, pi, xml-decl, doc, doc-type, entity-ref, or #f for unrecognized types.
+Description: Returns a symbol for the current node: element, end-element (also after an empty element such as &lt;br/&gt;), text (one node per run of character data, with character references and CDATA sections merged), comment or pi; #f before the first xml-read and at the end.
 Example:
   (xml-node-type reader) =&gt; element
   (xml-node-type reader) =&gt; text</pre>
@@ -132,7 +141,7 @@ Example:
   <div class="entry-name">xml-read</div>
   <pre class="entry-doc">Syntax: (xml-read xml-reader)
 Library: (scm xml)
-Description: Advances xml-reader to the next node in the XML document. Returns #t if a node was read, or #f if the end of the document was reached.
+Description: Advances xml-reader to the next node and returns #t, or #f at the end of the document. The XML declaration, a doctype and white space outside the root element are skipped.
 Example:
   (xml-read reader) =&gt; #t
   (xml-read reader) =&gt; #f</pre>
@@ -141,7 +150,7 @@ Example:
   <div class="entry-name">xml-read-to</div>
   <pre class="entry-doc">Syntax: (xml-read-to xml-reader name)
 Library: (scm xml)
-Description: Advances xml-reader forward until it reaches an element with the given name. Returns #t if found, or #f if the end of the document is reached first.
+Description: Advances xml-reader forward until it reaches an element whose qualified or local name is name (a string or symbol). Returns #t if found, or #f if the end of the document is reached first.
 Example:
   (xml-read-to reader "Customer") =&gt; #t
   (xml-read-to reader 'Item) =&gt; #f</pre>
@@ -150,10 +159,9 @@ Example:
   <div class="entry-name">xml-value</div>
   <pre class="entry-doc">Syntax: (xml-value xml-reader)
 Library: (scm xml)
-Description: Reads and returns the text content of the current element as a string, or #f if there is no value.
+Description: Reads the text content of the current element (which must contain no child elements) and returns it as a string, "" for an empty element. The reader is left on the element's end-element node.
 Example:
-  (xml-value reader) =&gt; "John Doe"
-  (xml-value reader) =&gt; #f</pre>
+  (xml-value reader) =&gt; "John Doe"</pre>
 </div>
 
 </main>

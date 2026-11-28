@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm markdown): Markdown to HTML and beyond — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <a href="tutorial-scm-string.html">(scm string): regular expressions and splitting</a>
+  <a href="tutorial-scm-list.html">(scm list) and (scm macro): small helpers</a>
+  <a href="tutorial-scm-match.html">(scm match): pattern matching</a>
+  <a href="tutorial-scm-io.html">(scm io): ports and formatting</a>
+  <a href="tutorial-scm-text.html">(scm text): Unix text tools in Scheme</a>
+  <a href="tutorial-scm-templating.html">(scm templating) and (scm uri): templates and URLs</a>
+  <a href="tutorial-scm-args.html">(scm args): command-line parsing</a>
+  <a href="tutorial-scm-terminal.html">(scm terminal) and (scm log): terminal output and logging</a>
+  <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a>
+  <a href="tutorial-scm-system.html">(scm system) and (scm sysadmin): processes and the system</a>
+  <a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a>
+  <a href="tutorial-scm-store.html">(scm store): an indexed record store</a>
+  <a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a>
+  <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a>
+  <a href="tutorial-scm-json.html">(scm json simple) and (scm json): JSON</a>
+  <a href="tutorial-scm-xml.html">(scm xml) and (scm feed): XML and news feeds</a>
+  <a href="tutorial-scm-toml.html">(scm toml): configuration files</a>
+  <a href="tutorial-scm-markdown.html" class="active">(scm markdown): Markdown to HTML and beyond</a>
+    <a class="sub" href="#rendering">Rendering</a>
+    <a class="sub" href="#what-is-supported">What is supported</a>
+    <a class="sub" href="#tables-and-heading-anchors">Tables and heading anchors</a>
+    <a class="sub" href="#the-tree">The tree</a>
+    <a class="sub" href="#a-plain-text-renderer">A plain-text renderer</a>
+    <a class="sub" href="#a-table-of-contents">A table of contents</a>
+    <a class="sub" href="#collecting-links">Collecting links</a>
+    <a class="sub" href="#markdown-in-a-web-page">Markdown in a web page</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-scm-html.html">(scm html), builder and parser: writing and reading HTML</a>
+  <a href="tutorial-scm-excel.html">(scm ooxml excel) and friends: spreadsheets</a>
+  <a href="tutorial-scm-word.html">(scm ooxml word) and friends: Word and OpenDocument texts</a>
+  <a href="tutorial-scm-presentation.html">(scm ooxml presentation): PowerPoint slides</a>
+  <a href="tutorial-scm-pdf.html">(scm pdf) and (scm svg pdf): PDF documents</a>
+  <a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm markdown): Markdown to HTML and beyond</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="scm-markdown-markdown-to-html-and-beyond">(scm markdown): Markdown to HTML and beyond</h1>
+<p><a class="xref" href="scm-markdown.html"><code>(scm markdown)</code></a> turns Markdown into HTML, or into a tree you can walk to produce anything else. It renders the pages of this documentation, these tutorials included.</p>
+<pre><code class="language-scheme">(import (scheme base) (scheme write) (srfi 1) (srfi 13) (scm markdown))</code></pre>
+<h2 id="rendering">Rendering</h2>
+<pre><code class="language-scheme">(markdown-&gt;html "# Shopping\n\nBuy **tea** and *cake*, see [the list](list.html).")
+;; =&gt; "&lt;h1&gt;Shopping&lt;/h1&gt;\n&lt;p&gt;Buy &lt;strong&gt;tea&lt;/strong&gt; and &lt;em&gt;cake&lt;/em&gt;, see &lt;a href=\"list.html\"&gt;the list&lt;/a&gt;.&lt;/p&gt;"
+
+(markdown-&gt;html "- tea\n- cake\n  (chocolate)")
+;; =&gt; "&lt;ul&gt;\n&lt;li&gt;tea&lt;/li&gt;\n&lt;li&gt;cake (chocolate)&lt;/li&gt;\n&lt;/ul&gt;"</code></pre>
+<p>Text is escaped, and links with dangerous schemes are not made links, so Markdown from users (comments, descriptions) can be shown as it is:</p>
+<pre><code class="language-scheme">(markdown-&gt;html "1 &lt; 2 &amp; &lt;script&gt;alert(1)&lt;/script&gt;")
+;; =&gt; "&lt;p&gt;1 &amp;lt; 2 &amp;amp; &amp;lt;script&amp;gt;alert(1)&amp;lt;/script&amp;gt;&lt;/p&gt;"
+(markdown-&gt;html "[click](javascript:alert(1))") ;; =&gt; "&lt;p&gt;click&lt;/p&gt;"</code></pre>
+<h2 id="what-is-supported">What is supported</h2>
+<table>
+<thead>
+<tr><th>Markdown</th><th>gives</th></tr>
+</thead>
+<tbody>
+<tr><td><code># Title</code> … <code>###### Title</code></td><td>headings</td></tr>
+<tr><td>blank-line separated text</td><td>paragraphs; two trailing spaces or <code>\</code> force a line break</td></tr>
+<tr><td><code>- item</code>, <code>* item</code>, <code>1. item</code></td><td>lists, nested by indentation; an item may continue on the next lines</td></tr>
+<tr><td><code>&gt; text</code></td><td>block quotes</td></tr>
+<tr><td><code>```</code> fences, with a language | code blocks |</td><td></td></tr>
+<tr><td><code>---</code></td><td>a horizontal rule</td></tr>
+<tr><td><code>| a | b |</code> with a <code>|---|---|</code> row</td><td>tables, aligned with <code>:</code></td></tr>
+<tr><td><code>**strong**</code>, <code>*emphasis*</code>, <code>`code`</code>, <code>[text](url)</code></td><td>inline markup</td></tr>
+</tbody>
+</table>
+<p>Images, raw HTML, reference links and setext headings (underlined with <code>===</code>) are left out on purpose: the subset is small and predictable.</p>
+<h2 id="tables-and-heading-anchors">Tables and heading anchors</h2>
+<pre><code class="language-scheme">(markdown-&gt;html "| tea | price |\n|:--|--:|\n| green | 4.50 |")
+;; =&gt; "&lt;table&gt;\n&lt;thead&gt;\n&lt;tr&gt;&lt;th style=\"text-align: left\"&gt;tea&lt;/th&gt;&lt;th style=\"text-align: right\"&gt;price&lt;/th&gt;&lt;/tr&gt;\n&lt;/thead&gt;\n&lt;tbody&gt;\n&lt;tr&gt;&lt;td style=\"text-align: left\"&gt;green&lt;/td&gt;&lt;td style=\"text-align: right\"&gt;4.50&lt;/td&gt;&lt;/tr&gt;\n&lt;/tbody&gt;\n&lt;/table&gt;"
+
+(markdown-&gt;html "## Next steps" 'heading-ids)
+;; =&gt; "&lt;h2 id=\"next-steps\"&gt;Next steps&lt;/h2&gt;"</code></pre>
+<p>With <code>'heading-ids</code>, headings get the ids GitHub gives them, so links like <code>page.html#next-steps</code> work.</p>
+<h2 id="the-tree">The tree</h2>
+<p><a class="xref" href="scm-markdown.html#e2"><code>parse-markdown</code></a> returns the blocks of the document as lists:</p>
+<pre><code class="language-scheme">(parse-markdown "# Teas\n\nWe sell *green* tea.\n\n1. Sencha\n2. Matcha\n\n```scheme\n(brew 'sencha)\n```")
+;; =&gt; ((heading 1 "Teas") (paragraph "We sell " (emph "green") " tea.") (ordered-list 1 (item "Sencha") (item "Matcha")) (code-block "scheme" "(brew 'sencha)"))</code></pre>
+<p>Blocks are <code>heading</code>, <code>paragraph</code>, <code>bullet-list</code>, <code>ordered-list</code> (with the start number), <code>blockquote</code>, <code>code-block</code> (language or <code>#f</code>, text), <code>thematic-break</code> and <code>table</code>. Inside them, text is strings and <code>strong</code>, <code>emph</code>, <code>code</code>, <code>link</code> (text, URL) and <a class="xref" href="srfi-1.html#e14"><code>break</code></a> nodes. A list item holds its text followed by any nested lists.</p>
+<h2 id="a-plain-text-renderer">A plain-text renderer</h2>
+<p>Walking the tree gives other output formats. Plain text, for e-mails or a terminal:</p>
+<pre><code class="language-scheme">(define (inline-&gt;text x)
+  (cond ((string? x) x)
+        ((eq? (car x) 'link)
+         (string-append (inlines-&gt;text (cadr x)) " &lt;" (caddr x) "&gt;"))
+        ((eq? (car x) 'break) "\n")
+        ((eq? (car x) 'code) (cadr x))
+        (else (inlines-&gt;text (cdr x)))))
+
+(define (inlines-&gt;text xs) (apply string-append (map inline-&gt;text xs)))
+
+(define (block-&gt;text b)
+  (case (car b)
+    ((heading) (let ((t (inlines-&gt;text (cddr b))))
+                 (string-append t "\n" (make-string (string-length t) (if (= (cadr b) 1) #\= #\-)))))
+    ((paragraph) (inlines-&gt;text (cdr b)))
+    ((bullet-list) (string-join (map (lambda (it) (string-append "* " (item-&gt;text it))) (cdr b)) "\n"))
+    ((ordered-list)
+     (string-join (map (lambda (it n) (string-append (number-&gt;string n) ". " (item-&gt;text it)))
+                       (cddr b) (iota (length (cddr b)) (cadr b)))
+                  "\n"))
+    ((code-block) (string-join (map (lambda (l) (string-append "    " l))
+                                    (string-tokenize (caddr b) (char-set-complement (char-set #\newline))))
+                               "\n"))
+    (else "")))
+
+(define (item-&gt;text it)
+  (inlines-&gt;text (filter (lambda (x) (or (string? x) (memq (car x) '(strong emph code link break)))) (cdr it))))
+
+(define (markdown-&gt;text md)
+  (string-join (map block-&gt;text (parse-markdown md)) "\n\n"))
+
+(display (markdown-&gt;text "# Order 42\n\nThanks for buying **tea**, see [your account](https://shop.example/me).\n\n1. Sencha\n2. Matcha"))
+;; prints: Order 42
+;; prints: ========
+;; prints: 
+;; prints: Thanks for buying tea, see your account &lt;https://shop.example/me&gt;.
+;; prints: 
+;; prints: 1. Sencha
+;; prints: 2. Matcha</code></pre>
+<h2 id="a-table-of-contents">A table of contents</h2>
+<p>The headings and <a class="xref" href="scm-markdown.html#e1"><code>markdown-heading-id</code></a> give a table of contents that links to the anchors <code>'heading-ids</code> creates:</p>
+<pre><code class="language-scheme">(define (toc md)
+  (filter-map (lambda (b)
+                (and (eq? (car b) 'heading) (&gt; (cadr b) 1)
+                     (let ((t (inlines-&gt;text (cddr b))))
+                       (string-append (make-string (* 2 (- (cadr b) 2)) #\space)
+                                      "- [" t "](#" (markdown-heading-id t) ")"))))
+              (parse-markdown md)))
+
+(toc "# Guide\n\n## Getting started\n\n### Installing on Linux\n\n## FAQ")
+;; =&gt; ("- [Getting started](#getting-started)" "  - [Installing on Linux](#installing-on-linux)" "- [FAQ](#faq)")</code></pre>
+<p>The result is Markdown again, ready to be put in front of the document.</p>
+<h2 id="collecting-links">Collecting links</h2>
+<p>Before publishing, list the links to check them:</p>
+<pre><code class="language-scheme">(define (links md)
+  (define (walk x)
+    (cond ((string? x) '())
+          ((eq? (car x) 'link) (cons (caddr x) (append-map walk (cadr x))))
+          ((eq? (car x) 'code-block) '())
+          (else (append-map walk (filter pair? (cdr x))))))
+  (append-map walk (parse-markdown md)))
+
+(links "See [the guide](guide.html) and [Scheme](https://en.wikipedia.org/wiki/Scheme_(programming_language)).\n\n- [x](x.html)")
+;; =&gt; ("guide.html" "https://en.wikipedia.org/wiki/Scheme_(programming_language)" "x.html")</code></pre>
+<h2 id="markdown-in-a-web-page">Markdown in a web page</h2>
+<p>Rendered Markdown is HTML that is safe to embed: insert it with <a class="xref" href="scm-html-builder.html#e3"><code>raw</code></a> from <a href="tutorial-scm-html.html"><a class="xref" href="scm-html-builder.html"><code>(scm html builder)</code></a></a>, which would otherwise escape it again:</p>
+<pre><code class="language-scheme">(import (scm html builder))
+
+(define comment "Great **tea**! &lt;b&gt;really&lt;/b&gt;")
+(html-&gt;string `(article (@ (class "comment")) ,(raw (markdown-&gt;html comment))))
+;; =&gt; "&lt;article class=\"comment\"&gt;&lt;p&gt;Great &lt;strong&gt;tea&lt;/strong&gt;! &amp;lt;b&amp;gt;really&amp;lt;/b&amp;gt;&lt;/p&gt;&lt;/article&gt;"</code></pre>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-scm-html.html"><a class="xref" href="scm-html.html"><code>(scm html)</code></a></a>, <a class="xref" href="scm-ooxml-word.html"><code>(scm ooxml word)</code></a> (the Word version of this documentation is rendered from the same tree).</li>
+<li>Reference: <a class="xref" href="scm-markdown.html"><code>(scm markdown)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scm-markdown.html"><code>(scm markdown)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-scm-toml.html">&larr; (scm toml): configuration files</a>
+  <a class="next" href="tutorial-scm-html.html">(scm html), builder and parser: writing and reading HTML &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

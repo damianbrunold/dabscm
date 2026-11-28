@@ -47,29 +47,13 @@
 <h2>Overview</h2>
 <p><a class="xref" href="scm-source-format.html"><code>(scm source format)</code></a> is the formatter behind <code>scm fmt</code>. It reads a file with <a href="scm-source.md">(scm source)</a>, sorts the import and export lists and lays the code out again within a line width (78 by default) using Emacs scheme-mode indentation:</p>
 <ul>
-<li>a form that fits on the rest of its line stays on one line, unless it</li>
+<li>a form that fits on the rest of its line stays on one line, unless it is a body form with several body expressions, a <code>cond</code> or <code>case</code> with several clauses, a <a class="xref" href="scheme-base.html#e105"><code>let</code></a> whose bindings are calls, or an import/export list with several entries;</li>
+<li>body forms (<code>define...</code>, <a class="xref" href="scheme-base.html#e102"><code>lambda</code></a>, the <a class="xref" href="scheme-base.html#e105"><code>let</code></a> family, <a class="xref" href="scheme-base.html#e225"><code>when</code></a>, <code>case</code>, <code>do</code>, ...) keep their distinguished arguments on the first line and indent the body by 2; distinguished arguments that must break go to +4;</li>
+<li>other calls keep the first argument on the operator's line and align the rest under it (leading atom arguments share that line while they fit), or put all arguments at +1 when the operator is too long;</li>
+<li>data (quoted lists, vectors, lists headed by a non-symbol) aligns under the first element, atoms are filled up to the width;</li>
+<li>comments stay where they are: end-of-line comments at the end of their line, others on lines of their own at the code's indentation; one blank line is kept wherever the source had one or more;</li>
+<li>strings, here-strings, block comments and atoms are copied verbatim and never split, so docstrings keep their layout; <code>[ ]</code> become <code>( )</code>.</li>
 </ul>
-<p>is a body form with several body expressions, a <code>cond</code> or <code>case</code> with several clauses, a <a class="xref" href="scheme-base.html#e105"><code>let</code></a> whose bindings are calls, or an import/export list with several entries;</p>
-<ul>
-<li>body forms (<code>define...</code>, <a class="xref" href="scheme-base.html#e102"><code>lambda</code></a>, the <a class="xref" href="scheme-base.html#e105"><code>let</code></a> family, <a class="xref" href="scheme-base.html#e225"><code>when</code></a>, <code>case</code>,</li>
-</ul>
-<p><code>do</code>, ...) keep their distinguished arguments on the first line and indent the body by 2; distinguished arguments that must break go to +4;</p>
-<ul>
-<li>other calls keep the first argument on the operator's line and align</li>
-</ul>
-<p>the rest under it (leading atom arguments share that line while they fit), or put all arguments at +1 when the operator is too long;</p>
-<ul>
-<li>data (quoted lists, vectors, lists headed by a non-symbol) aligns under</li>
-</ul>
-<p>the first element, atoms are filled up to the width;</p>
-<ul>
-<li>comments stay where they are: end-of-line comments at the end of their</li>
-</ul>
-<p>line, others on lines of their own at the code's indentation; one blank line is kept wherever the source had one or more;</p>
-<ul>
-<li>strings, here-strings, block comments and atoms are copied verbatim and</li>
-</ul>
-<p>never split, so docstrings keep their layout; <code>[ ]</code> become <code>( )</code>.</p>
 <p>With <code>keep-breaks</code> (<code>scm fmt --keep-breaks</code>) the line breaks of the source are kept and only the indentation is redone; lines still too long are broken.</p>
 <p>Imports are grouped as <code>(scheme ...)</code>, <code>(srfi ...)</code> (numerically), <code>(scm ...)</code>, then everything else, each group sorted by library name; exports are sorted alphabetically. Comments in such a list split it into groups sorted separately. Because the last import of a name wins, the imports are only reordered when every name imported more than once denotes the same binding everywhere; otherwise the list is left as it is and a note says why (for example <code>string-hash comes from both (srfi 13) and (srfi 69)</code>).</p>
 <p>Every result is checked before it is used: it must read back to the same datums as the input and formatting it again must not change it. If either check fails, the formatter raises an "internal formatter error" and the file is not written.</p>

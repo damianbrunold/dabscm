@@ -92,6 +92,16 @@
   <a href="tutorial-scm-store.html">(scm store): an indexed record store</a>
   <a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a>
   <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a>
+  <a href="tutorial-scm-json.html">(scm json simple) and (scm json): JSON</a>
+  <a href="tutorial-scm-xml.html">(scm xml) and (scm feed): XML and news feeds</a>
+  <a href="tutorial-scm-toml.html">(scm toml): configuration files</a>
+  <a href="tutorial-scm-markdown.html">(scm markdown): Markdown to HTML and beyond</a>
+  <a href="tutorial-scm-html.html">(scm html), builder and parser: writing and reading HTML</a>
+  <a href="tutorial-scm-excel.html">(scm ooxml excel) and friends: spreadsheets</a>
+  <a href="tutorial-scm-word.html">(scm ooxml word) and friends: Word and OpenDocument texts</a>
+  <a href="tutorial-scm-presentation.html">(scm ooxml presentation): PowerPoint slides</a>
+  <a href="tutorial-scm-pdf.html">(scm pdf) and (scm svg pdf): PDF documents</a>
+  <a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a>
   <h2><a href="index.html">Library reference</a></h2>
 </nav>
 
@@ -152,14 +162,8 @@
 (string-split-lines "one\ntwo\nthree")     ;; =&gt; ("one" "two" "three")
 (map string-&gt;number (string-split "1.5,2,3" ",")) ;; =&gt; (1.5 2 3)</code></pre>
 <ul>
-<li><a class="xref" href="scm-string.html#e5"><code>string-split</code></a> with a separator splits at that <em>regular expression</em></li>
-</ul>
-<p>(so a dot must be written <code>"\\."</code>); without one it splits on runs of whitespace (leading and trailing space give empty first and last fields);</p>
-<ul>
-<li><a class="xref" href="srfi-13.html#e75"><code>string-tokenize</code></a> (SRFI 13) returns only the non-empty words, which is</li>
-</ul>
-<p>usually what you want for free text;</p>
-<ul>
+<li><a class="xref" href="scm-string.html#e5"><code>string-split</code></a> with a separator splits at that <em>regular expression</em> (so a dot must be written <code>"\\."</code>); without one it splits on runs of whitespace (leading and trailing space give empty first and last fields);</li>
+<li><a class="xref" href="srfi-13.html#e75"><code>string-tokenize</code></a> (SRFI 13) returns only the non-empty words, which is usually what you want for free text;</li>
 <li><a class="xref" href="scm-string.html#e6"><code>string-split-char</code></a> keeps empty fields, as CSV-like data needs.</li>
 </ul>
 <h2 id="trimming-and-padding">Trimming and padding</h2>
@@ -277,9 +281,8 @@ m                                          ;; =&gt; #((6 . 11) (7 . 11))
 <h2 id="where-next">Where next</h2>
 <ul>
 <li><a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>.</li>
-<li><a href="tutorial-srfi-13.html">SRFI 13</a>, <a href="tutorial-scm-string.html"><a class="xref" href="scm-string.html"><code>(scm string)</code></a></a>, <a href="tutorial-scm-text.html"><a class="xref" href="scm-text.html"><code>(scm text)</code></a></a></li>
+<li><a href="tutorial-srfi-13.html">SRFI 13</a>, <a href="tutorial-scm-string.html"><a class="xref" href="scm-string.html"><code>(scm string)</code></a></a>, <a href="tutorial-scm-text.html"><a class="xref" href="scm-text.html"><code>(scm text)</code></a></a> for awk/grep/sed-style processing of whole files.</li>
 </ul>
-<p>for awk/grep/sed-style processing of whole files.</p>
 </div>
 <p class="tutorial-libs">Reference: <a href="scheme-base.html"><code>(scheme base)</code></a>, <a href="scheme-char.html"><code>(scheme char)</code></a>, <a href="srfi-13.html"><code>(srfi 13)</code></a>, <a href="scm-string.html"><code>(scm string)</code></a>, <a href="scm-io.html"><code>(scm io)</code></a>, <a href="srfi-48.html"><code>(srfi 48)</code></a>, <a href="scm-templating.html"><code>(scm templating)</code></a></p>
 <nav class="prev-next">

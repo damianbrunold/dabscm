@@ -14,7 +14,7 @@ public class PrimitiveXmlName : Primitive
         return
             "Syntax: (xml-name xml-reader)\n" +
             "Library: (scm xml)\n" +
-            "Description: Returns the qualified name of the current XML element or attribute node as a string.\n" +
+            "Description: Returns the qualified name (prefix:local) of the current element or end-element node as a string, \"\" for other nodes.\n" +
             "Example:\n" +
             "  (xml-name reader) => \"Customer\"\n" +
             "  (xml-name reader) => \"ns:Element\"";
@@ -23,7 +23,9 @@ public class PrimitiveXmlName : Primitive
     public override object Apply(SourcePos? pos, object[] arguments)
     {
         CheckArgs(pos, arguments, 1, 1);
-        XmlReader reader = (XmlReader) Value.AsNativeValue(arguments[0]).value;
-        return reader.Name.ToCharArray();
+        var x = (XmlPull) Value.AsNativeValue(arguments[0]).value;
+        if (x.Current == XmlPull.Kind.Element || x.Current == XmlPull.Kind.EndElement)
+            return x.CurrentName.ToCharArray();
+        return "".ToCharArray();
     }
 }

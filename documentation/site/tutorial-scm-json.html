@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm json simple) and (scm json): JSON — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <a href="tutorial-scm-string.html">(scm string): regular expressions and splitting</a>
+  <a href="tutorial-scm-list.html">(scm list) and (scm macro): small helpers</a>
+  <a href="tutorial-scm-match.html">(scm match): pattern matching</a>
+  <a href="tutorial-scm-io.html">(scm io): ports and formatting</a>
+  <a href="tutorial-scm-text.html">(scm text): Unix text tools in Scheme</a>
+  <a href="tutorial-scm-templating.html">(scm templating) and (scm uri): templates and URLs</a>
+  <a href="tutorial-scm-args.html">(scm args): command-line parsing</a>
+  <a href="tutorial-scm-terminal.html">(scm terminal) and (scm log): terminal output and logging</a>
+  <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a>
+  <a href="tutorial-scm-system.html">(scm system) and (scm sysadmin): processes and the system</a>
+  <a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a>
+  <a href="tutorial-scm-store.html">(scm store): an indexed record store</a>
+  <a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a>
+  <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a>
+  <a href="tutorial-scm-json.html" class="active">(scm json simple) and (scm json): JSON</a>
+    <a class="sub" href="#the-mapping">The mapping</a>
+    <a class="sub" href="#looking-things-up">Looking things up</a>
+    <a class="sub" href="#writing">Writing</a>
+    <a class="sub" href="#errors">Errors</a>
+    <a class="sub" href="#example-an-api-response">Example: an API response</a>
+    <a class="sub" href="#example-merging-configuration">Example: merging configuration</a>
+    <a class="sub" href="#streaming-with-scm-json">Streaming with (scm json)</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-scm-xml.html">(scm xml) and (scm feed): XML and news feeds</a>
+  <a href="tutorial-scm-toml.html">(scm toml): configuration files</a>
+  <a href="tutorial-scm-markdown.html">(scm markdown): Markdown to HTML and beyond</a>
+  <a href="tutorial-scm-html.html">(scm html), builder and parser: writing and reading HTML</a>
+  <a href="tutorial-scm-excel.html">(scm ooxml excel) and friends: spreadsheets</a>
+  <a href="tutorial-scm-word.html">(scm ooxml word) and friends: Word and OpenDocument texts</a>
+  <a href="tutorial-scm-presentation.html">(scm ooxml presentation): PowerPoint slides</a>
+  <a href="tutorial-scm-pdf.html">(scm pdf) and (scm svg pdf): PDF documents</a>
+  <a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm json simple) and (scm json): JSON</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="scm-json-simple-and-scm-json-json">(scm json simple) and (scm json): JSON</h1>
+<ul>
+<li><a class="xref" href="scm-json-simple.html"><code>(scm json simple)</code></a> parses a whole document into ordinary Scheme data and writes data back as JSON;</li>
+<li><a class="xref" href="scm-json.html"><code>(scm json)</code></a> streams the top-level objects of a large file one by one.</li>
+</ul>
+<p>The <a href="tutorial-techniques-08-structured-data.html">structured data</a> chapter has a first look; this one goes further.</p>
+<pre><code class="language-scheme">(import (scheme base) (scheme char) (scheme write) (srfi 1)
+        (scm json simple) (scm json))</code></pre>
+<h2 id="the-mapping">The mapping</h2>
+<table>
+<thead>
+<tr><th>JSON</th><th>Scheme</th></tr>
+</thead>
+<tbody>
+<tr><td>object <code>{"a": 1}</code></td><td>alist with string keys <code>(("a" . 1))</code>, in document order</td></tr>
+<tr><td>array <code>[1, 2]</code></td><td>vector <code>#(1 2)</code></td></tr>
+<tr><td>string</td><td>string</td></tr>
+<tr><td>number</td><td>exact integer if integral, else inexact real</td></tr>
+<tr><td><code>true</code> / <code>false</code></td><td><code>#t</code> / <code>#f</code></td></tr>
+<tr><td><code>null</code></td><td>the symbol <code>null</code></td></tr>
+</tbody>
+</table>
+<pre><code class="language-scheme">(json-parse "{\"name\": \"Ada\", \"born\": 1815, \"langs\": [\"en\", \"fr\"], \"died\": null}")
+;; =&gt; (("name" . "Ada") ("born" . 1815) ("langs" . #("en" "fr")) ("died" . null))
+(json-parse "[1, 2.5, 1e3, true]")         ;; =&gt; #(1 2.5 1000.0 #t)
+(json-parse "{\"e\": {}, \"a\": []}")      ;; =&gt; (("e") ("a" . #()))
+(json-parse "\"caf\\u00e9\"")             ;; =&gt; "café"</code></pre>
+<p>The empty object is the empty list, so <code>("e")</code> above is the pair <code>("e" . ())</code>. Because objects are lists and arrays vectors, the two can always be told apart.</p>
+<h2 id="looking-things-up">Looking things up</h2>
+<p><a class="xref" href="scm-json-simple.html#e5"><code>json-ref</code></a> takes an object, a key and an optional default:</p>
+<pre><code class="language-scheme">(define release
+  (json-parse "{\"tag\": \"v2.29\", \"author\": {\"login\": \"dab\"},
+                \"assets\": [{\"name\": \"scm.deb\", \"size\": 5120},
+                             {\"name\": \"scm.zip\", \"size\": 7340}]}"))
+
+(json-ref release "tag")                   ;; =&gt; "v2.29"
+(json-ref (json-ref release "author") "login") ;; =&gt; "dab"
+(json-ref release "draft" #f)              ;; =&gt; #f</code></pre>
+<p>Deeply nested data reads better with a small path helper: strings index objects, numbers index arrays, and a missing step gives the default:</p>
+<pre><code class="language-scheme">(define (json-path doc path . default)
+  (let ((missing (if (pair? default) (car default) #f)))
+    (let loop ((v doc) (path path))
+      (cond ((null? path) v)
+            ((and (string? (car path)) (list? v) (assoc (car path) v))
+             =&gt; (lambda (e) (loop (cdr e) (cdr path))))
+            ((and (exact-integer? (car path)) (vector? v)
+                  (&lt; -1 (car path) (vector-length v)))
+             (loop (vector-ref v (car path)) (cdr path)))
+            (else missing)))))
+
+(json-path release '("assets" 1 "name"))   ;; =&gt; "scm.zip"
+(json-path release '("assets" 5 "name") "?") ;; =&gt; "?"
+(json-path release '("author" "email"))    ;; =&gt; #f
+(map (lambda (a) (json-ref a "size")) (vector-&gt;list (json-ref release "assets")))
+;; =&gt; (5120 7340)</code></pre>
+<h2 id="writing">Writing</h2>
+<pre><code class="language-scheme">(json-&gt;string '(("ok" . #t) ("count" . 3) ("items" . #("a" "b")) ("next" . null)))
+;; =&gt; "{\"ok\":true,\"count\":3,\"items\":[\"a\",\"b\"],\"next\":null}"
+(json-&gt;string "quote \" and newline\n")    ;; =&gt; "\"quote \\\" and newline\\n\""
+(json-&gt;string 2.5)                          ;; =&gt; "2.5"
+
+(display (json-&gt;pretty-string '(("name" . "demo") ("ports" . #(80 443)))))
+;; prints: {
+;; prints:   "name": "demo",
+;; prints:   "ports": [
+;; prints:     80,
+;; prints:     443
+;; prints:   ]
+;; prints: }</code></pre>
+<p>Keys must be strings; a symbol key is an error, which catches the common slip of writing <code>'((a . 1))</code>:</p>
+<pre><code class="language-scheme">(json-&gt;string '((a . 1)))                   ;; =&gt; error</code></pre>
+<p><a class="xref" href="scm-json-simple.html#e6"><code>json-write</code></a> and <a class="xref" href="scm-json-simple.html#e7"><code>json-write-pretty</code></a> write to a port, <a class="xref" href="scm-json-simple.html#e4"><code>json-read</code></a> reads a whole port:</p>
+<pre><code class="language-scheme">(define out (open-output-string))
+(json-write '(("x" . 1)) out)
+(get-output-string out)                     ;; =&gt; "{\"x\":1}"
+(json-read (open-input-string "[1, 2, 3]")) ;; =&gt; #(1 2 3)</code></pre>
+<h2 id="errors">Errors</h2>
+<p>Malformed input raises an error:</p>
+<pre><code class="language-scheme">(define (safe-parse text)
+  (guard (e ((error-object? e) #f))
+    (json-parse text)))
+
+(safe-parse "{\"a\": 1}")                   ;; =&gt; (("a" . 1))
+(safe-parse "{\"a\": 1,}")                  ;; =&gt; #f
+(safe-parse "{bad")                         ;; =&gt; #f</code></pre>
+<p>Parse data from outside (requests, uploads) with such a guard and answer with an error message instead of failing.</p>
+<h2 id="example-an-api-response">Example: an API response</h2>
+<p>Records from a database as alists with symbol keys, turned into the JSON a client expects, with camel-case keys and <code>null</code> for missing values:</p>
+<pre><code class="language-scheme">(define users
+  '(((id . 1) (first-name . "Ada") (email . "ada@example.org"))
+    ((id . 2) (first-name . "Alan") (email . #f))))
+
+(define (camel s)
+  (let loop ((cs (string-&gt;list s)) (up #f) (acc '()))
+    (cond ((null? cs) (list-&gt;string (reverse acc)))
+          ((char=? (car cs) #\-) (loop (cdr cs) #t acc))
+          (else (loop (cdr cs) #f
+                      (cons (if up (char-upcase (car cs)) (car cs)) acc))))))
+
+(define (record-&gt;json r)
+  (map (lambda (field)
+         (cons (camel (symbol-&gt;string (car field)))
+               (or (cdr field) 'null)))
+       r))
+
+(json-&gt;string `(("total" . ,(length users))
+                ("users" . ,(list-&gt;vector (map record-&gt;json users)))))
+;; =&gt; "{\"total\":2,\"users\":[{\"id\":1,\"firstName\":\"Ada\",\"email\":\"ada@example.org\"},{\"id\":2,\"firstName\":\"Alan\",\"email\":null}]}"</code></pre>
+<h2 id="example-merging-configuration">Example: merging configuration</h2>
+<p>Defaults overridden by a user file, object by object:</p>
+<pre><code class="language-scheme">(define (json-merge base over)
+  (if (and (list? base) (list? over))
+      (append (map (lambda (b)
+                     (let ((o (assoc (car b) over)))
+                       (if o (cons (car b) (json-merge (cdr b) (cdr o))) b)))
+                   base)
+              (filter (lambda (o) (not (assoc (car o) base))) over))
+      over))
+
+(define defaults (json-parse "{\"port\": 8080, \"log\": {\"level\": \"info\", \"file\": \"app.log\"}}"))
+(define user (json-parse "{\"log\": {\"level\": \"debug\"}, \"tls\": true}"))
+(json-&gt;string (json-merge defaults user))
+;; =&gt; "{\"port\":8080,\"log\":{\"level\":\"debug\",\"file\":\"app.log\"},\"tls\":true}"</code></pre>
+<p>Arrays (vectors) are replaced, not merged, which is what configuration usually wants.</p>
+<h2 id="streaming-with-scm-json">Streaming with (scm json)</h2>
+<p><a class="xref" href="scm-json-simple.html"><code>(scm json simple)</code></a> reads the whole document into memory. For a file with millions of records, <a class="xref" href="scm-json.html"><code>(scm json)</code></a> hands out one top-level object at a time: the elements of a top-level array, or the objects of a newline-delimited file (one JSON object per line, as log shippers write them):</p>
+<pre><code class="language-scheme">(define log-lines
+  "{\"level\": \"info\", \"ms\": 12}
+{\"level\": \"error\", \"ms\": 950}
+{\"level\": \"info\", \"ms\": 40}
+")
+
+(define (slow-requests text limit)
+  (let ((r (open-json-string text)))
+    (let loop ((n 0))
+      (let ((o (json-next-object r)))
+        (if o
+            (loop (if (&gt; (json-attribute o 'ms) limit) (+ n 1) n))
+            (begin (close-json r) n))))))
+
+(slow-requests log-lines 30)                ;; =&gt; 2</code></pre>
+<pre><code class="language-scheme">(define r (open-json-string "[{\"id\": 1, \"tags\": [\"a\", \"b\"], \"note\": null}, {\"id\": 2}]"))
+(define first-object (json-next-object r))
+(json-attribute first-object 'id)           ;; =&gt; 1
+(json-attribute first-object 'tags)         ;; =&gt; ("a" "b")
+(json-attribute first-object 'note)         ;; =&gt; ()
+(json-attribute first-object 'size 0)       ;; =&gt; 0
+(json-attribute (json-next-object r) "id")  ;; =&gt; 2
+(json-next-object r)                        ;; =&gt; #f
+(close-json r)</code></pre>
+<p><code>json-attribute</code> reads a field of such an object, by symbol or string, with an optional default. In this reader arrays come back as lists and <code>null</code> as the empty list. <code>open-json-file</code> reads a file the same way, so memory use stays flat however large the file is.</p>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-techniques-08-structured-data.html">Structured data</a>, <a href="tutorial-scm-xml.html"><a class="xref" href="scm-xml.html"><code>(scm xml)</code></a></a>, <a class="xref" href="scm-net-http-client.html"><code>(scm net http client)</code></a> for fetching JSON.</li>
+<li>Reference: <a class="xref" href="scm-json-simple.html"><code>(scm json simple)</code></a>, <a class="xref" href="scm-json.html"><code>(scm json)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scm-json-simple.html"><code>(scm json simple)</code></a>, <a href="scm-json.html"><code>(scm json)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-scm-datetime.html">&larr; (scm datetime) and (scm duration): timestamps and durations</a>
+  <a class="next" href="tutorial-scm-xml.html">(scm xml) and (scm feed): XML and news feeds &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

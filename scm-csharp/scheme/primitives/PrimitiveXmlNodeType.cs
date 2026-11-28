@@ -14,7 +14,7 @@ public class PrimitiveXmlNodeType : Primitive
         return
             "Syntax: (xml-node-type xml-reader)\n" +
             "Library: (scm xml)\n" +
-            "Description: Returns a symbol identifying the type of the current XML node: element, end-element, text, cdata, comment, pi, xml-decl, doc, doc-type, entity-ref, or #f for unrecognized types.\n" +
+            "Description: Returns a symbol for the current node: element, end-element (also after an empty element such as <br/>), text (one node per run of character data, with character references and CDATA sections merged), comment or pi; #f before the first xml-read and at the end.\n" +
             "Example:\n" +
             "  (xml-node-type reader) => element\n" +
             "  (xml-node-type reader) => text";
@@ -23,32 +23,14 @@ public class PrimitiveXmlNodeType : Primitive
     public override object Apply(SourcePos? pos, object[] arguments)
     {
         CheckArgs(pos, arguments, 1, 1);
-        XmlReader reader = (XmlReader) Value.AsNativeValue(arguments[0]).value;
-        switch (reader.NodeType)
+        switch (((XmlPull) Value.AsNativeValue(arguments[0]).value).Current)
         {
-            case XmlNodeType.Element:
-                return Value.Intern("element");
-            case XmlNodeType.Text:
-            case XmlNodeType.Whitespace:
-                return Value.Intern("text");
-            case XmlNodeType.CDATA:
-                return Value.Intern("cdata");
-            case XmlNodeType.ProcessingInstruction:
-                return Value.Intern("pi");
-            case XmlNodeType.Comment:
-                return Value.Intern("comment");
-            case XmlNodeType.XmlDeclaration:
-                return Value.Intern("xml-decl");
-            case XmlNodeType.Document:
-                return Value.Intern("doc");
-            case XmlNodeType.DocumentType:
-                return Value.Intern("doc-type");
-            case XmlNodeType.EntityReference:
-                return Value.Intern("entity-ref");
-            case XmlNodeType.EndElement:
-                return Value.Intern("end-element");
-            default:
-                return Value.F;
+            case XmlPull.Kind.Element: return Value.Intern("element");
+            case XmlPull.Kind.EndElement: return Value.Intern("end-element");
+            case XmlPull.Kind.Text: return Value.Intern("text");
+            case XmlPull.Kind.Comment: return Value.Intern("comment");
+            case XmlPull.Kind.Pi: return Value.Intern("pi");
+            default: return Value.F;
         }
     }
 }

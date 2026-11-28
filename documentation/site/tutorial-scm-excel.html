@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm ooxml excel) and friends: spreadsheets — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <a href="tutorial-scm-string.html">(scm string): regular expressions and splitting</a>
+  <a href="tutorial-scm-list.html">(scm list) and (scm macro): small helpers</a>
+  <a href="tutorial-scm-match.html">(scm match): pattern matching</a>
+  <a href="tutorial-scm-io.html">(scm io): ports and formatting</a>
+  <a href="tutorial-scm-text.html">(scm text): Unix text tools in Scheme</a>
+  <a href="tutorial-scm-templating.html">(scm templating) and (scm uri): templates and URLs</a>
+  <a href="tutorial-scm-args.html">(scm args): command-line parsing</a>
+  <a href="tutorial-scm-terminal.html">(scm terminal) and (scm log): terminal output and logging</a>
+  <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a>
+  <a href="tutorial-scm-system.html">(scm system) and (scm sysadmin): processes and the system</a>
+  <a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a>
+  <a href="tutorial-scm-store.html">(scm store): an indexed record store</a>
+  <a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a>
+  <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a>
+  <a href="tutorial-scm-json.html">(scm json simple) and (scm json): JSON</a>
+  <a href="tutorial-scm-xml.html">(scm xml) and (scm feed): XML and news feeds</a>
+  <a href="tutorial-scm-toml.html">(scm toml): configuration files</a>
+  <a href="tutorial-scm-markdown.html">(scm markdown): Markdown to HTML and beyond</a>
+  <a href="tutorial-scm-html.html">(scm html), builder and parser: writing and reading HTML</a>
+  <a href="tutorial-scm-excel.html" class="active">(scm ooxml excel) and friends: spreadsheets</a>
+    <a class="sub" href="#a-workbook">A workbook</a>
+    <a class="sub" href="#reading">Reading</a>
+    <a class="sub" href="#large-tables-as-a-stream">Large tables as a stream</a>
+    <a class="sub" href="#templates">Templates</a>
+    <a class="sub" href="#opendocument-spreadsheets">OpenDocument spreadsheets</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-scm-word.html">(scm ooxml word) and friends: Word and OpenDocument texts</a>
+  <a href="tutorial-scm-presentation.html">(scm ooxml presentation): PowerPoint slides</a>
+  <a href="tutorial-scm-pdf.html">(scm pdf) and (scm svg pdf): PDF documents</a>
+  <a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm ooxml excel) and friends: spreadsheets</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="scm-ooxml-excel-and-friends-spreadsheets">(scm ooxml excel) and friends: spreadsheets</h1>
+<table>
+<thead>
+<tr><th>library</th><th>does</th></tr>
+</thead>
+<tbody>
+<tr><td><a class="xref" href="scm-ooxml-excel.html"><code>(scm ooxml excel)</code></a></td><td>writes <code>.xlsx</code> workbooks, also huge ones as a stream</td></tr>
+<tr><td><a class="xref" href="scm-ooxml-excel-reader.html"><code>(scm ooxml excel-reader)</code></a></td><td>reads the values of <code>.xlsx</code> workbooks</td></tr>
+<tr><td><a class="xref" href="scm-ooxml-excel-template.html"><code>(scm ooxml excel template)</code></a></td><td>fills in an existing, designed workbook</td></tr>
+<tr><td><a class="xref" href="scm-odf-spreadsheet.html"><code>(scm odf spreadsheet)</code></a></td><td>writes OpenDocument <code>.ods</code> files, with the same API</td></tr>
+</tbody>
+</table>
+<pre><code class="language-scheme">(import (scheme base) (scheme cxr) (scheme write) (srfi 1)
+        (scm fs) (scm ooxml excel) (scm ooxml excel-reader) (scm ooxml excel template))
+
+(define dir (mktempdir '(prefix . "xlsx")))
+(define (at name) (join-path dir name))</code></pre>
+<h2 id="a-workbook">A workbook</h2>
+<pre><code class="language-scheme">(define sales
+  '(("Sencha" "green" 12.5 4.5)
+    ("Matcha" "green" 3 12)
+    ("Assam" "black" 20 3.2)))
+
+(define wb (make-workbook))
+(define ws (workbook-add-worksheet! wb "Sales"))
+(define header (workbook-add-style wb (font bold color: white) (fill fgcolor: darkblue)))
+(define money (workbook-add-style wb (alignment horizontal: right)))
+
+(for-each (lambda (title col) (worksheet-set-cell! ws (row-col-&gt;cell-id 1 col) title 'string header))
+          '("Tea" "Kind" "Kg" "Price") '(1 2 3 4))
+(for-each (lambda (row r)
+            (worksheet-set-cell! ws (row-col-&gt;cell-id r 1) (car row) 'string #f)
+            (worksheet-set-cell! ws (row-col-&gt;cell-id r 2) (cadr row) 'string #f)
+            (worksheet-set-cell! ws (row-col-&gt;cell-id r 3) (caddr row) 'num #f)
+            (worksheet-set-cell! ws (row-col-&gt;cell-id r 4) (cadddr row) 'num money))
+          sales (iota (length sales) 2))
+
+(worksheet-set-col-width! ws "A" 18)
+(worksheet-freeze-panes! ws "A2")
+(worksheet-set-autofilter! ws "A1:D4")
+(workbook-set-properties! wb '((title . "Tea sales") (creator . "Teashop")))
+(workbook-save wb (at "sales.xlsx"))
+(file-exists? (at "sales.xlsx"))           ;; =&gt; #t</code></pre>
+<ul>
+<li>Cells are addressed as <code>"B3"</code>; <code>row-col-&gt;cell-id</code> builds the address from numbers (row 1, column 1 is <code>"A1"</code>), <code>col-index-&gt;string</code> the column letters (<code>28</code> is <code>"AB"</code>).</li>
+<li>The type is <code>'string</code> or <code>'num</code>; the last argument is a style or <code>#f</code>.</li>
+<li><code>workbook-add-style</code> takes <code>font</code>, <code>fill</code>, <code>border</code> and <code>alignment</code> sections and returns the style's number.</li>
+<li>Frozen panes keep the header visible while scrolling; the autofilter gives the header drop-down filters.</li>
+</ul>
+<p><a class="xref" href="scm-ooxml-excel.html#e26"><code>worksheet-merge-cells!</code></a>, <code>worksheet-set-row-height!</code>, <a class="xref" href="scm-ooxml-excel.html#e24"><code>worksheet-add-image!</code></a> and <a class="xref" href="scm-ooxml-excel.html#e31"><code>worksheet-set-page-setup!</code></a> do what their names say; <code>workbook-save-to-bytevector</code> returns the file as bytes, for a download.</p>
+<pre><code class="language-scheme">(row-col-&gt;cell-id 3 28)                     ;; =&gt; "AB3"
+(col-index-&gt;string 28)                      ;; =&gt; "AB"</code></pre>
+<h2 id="reading">Reading</h2>
+<pre><code class="language-scheme">(define book (read-workbook (at "sales.xlsx")))
+(workbook-sheet-names book)                 ;; =&gt; ("Sales")
+(define sheet (workbook-sheet book "Sales"))
+(sheet-dimensions sheet)                    ;; =&gt; (4 . 4)
+(sheet-ref sheet 1 1)                       ;; =&gt; "Tea"
+(sheet-ref sheet 3 4)                       ;; =&gt; 12
+(sheet-rows sheet)
+;; =&gt; (("Tea" "Kind" "Kg" "Price") ("Sencha" "green" 12.5 4.5) ("Matcha" "green" 3 12) ("Assam" "black" 20 3.2))</code></pre>
+<p>Values come back as strings, numbers and booleans, dates as ISO 8601 strings; empty cells are <code>#f</code>. Styles are not read. A sheet as records, keyed by the header row:</p>
+<pre><code class="language-scheme">(define (sheet-&gt;records sheet)
+  (let ((rows (sheet-rows sheet)))
+    (map (lambda (row) (map cons (map string-&gt;symbol (car rows)) row))
+         (cdr rows))))
+
+(define records (sheet-&gt;records sheet))
+(car records)                               ;; =&gt; ((Tea . "Sencha") (Kind . "green") (Kg . 12.5) (Price . 4.5))
+(fold + 0 (map (lambda (r) (* (cdr (assq 'Kg r)) (cdr (assq 'Price r)))) records))
+;; =&gt; 156.25</code></pre>
+<p><a class="xref" href="scm-ooxml-excel-reader.html#e1"><code>read-workbook-from-bytevector</code></a> reads an upload without a temporary file.</p>
+<h2 id="large-tables-as-a-stream">Large tables as a stream</h2>
+<p>A workbook built with <code>make-workbook</code> lives in memory until it is saved. For hundreds of thousands of rows, write a stream instead: rows go to the file as they are written:</p>
+<pre><code class="language-scheme">(call-with-streaming-table (at "squares.xlsx") "Data" 3
+  (lambda (wb table)
+    (let ((bold (workbook-add-style wb (font bold))))
+      (streaming-table-write-styled-row! table '("n" "n²" "even") (list bold bold bold))
+      (do ((n 1 (+ n 1))) ((&gt; n 10000))
+        (streaming-table-write-row! table (list n (* n n) (if (even? n) "yes" "no")))))))
+
+(define squares (workbook-sheet (read-workbook (at "squares.xlsx")) 0))
+(sheet-dimensions squares)                  ;; =&gt; (10001 . 3)
+(list (sheet-ref squares 10001 1) (sheet-ref squares 10001 2)) ;; =&gt; (10000 100000000)</code></pre>
+<p>Memory use stays flat however many rows are written.</p>
+<h2 id="templates">Templates</h2>
+<p>Reports often have to look exactly like a designed workbook: logos, colours, formulas, a sheet with explanations. Design it in Excel and fill in only the data. <a class="xref" href="scm-ooxml-excel-template.html"><code>(scm ooxml excel template)</code></a> opens any <code>.xlsx</code> and changes cells while keeping everything else:</p>
+<pre><code class="language-scheme">(define tpl (open-xlsx-template (at "sales.xlsx")))
+(xlsx-sheet-names tpl)                      ;; =&gt; ("Sales")
+(xlsx-set-cells! tpl "Sales"
+                 (list (list "A5" "Total")
+                       (list "C5" (xlsx-formula "SUM(C2:C4)"))))
+(xlsx-full-calc-on-load! tpl)
+(xlsx-save tpl (at "report.xlsx"))
+
+(sheet-ref (workbook-sheet (read-workbook (at "report.xlsx")) 0) 5 1) ;; =&gt; "Total"
+(sheet-ref (workbook-sheet (read-workbook (at "report.xlsx")) 0) 5 3) ;; =&gt; #f</code></pre>
+<p>The formula cell reads as <code>#f</code>: its value is computed by the spreadsheet program when the file is opened (<a class="xref" href="scm-ooxml-excel-template.html#e11"><code>xlsx-full-calc-on-load!</code></a> asks for that). Cells keep their style unless a third element gives a new one.</p>
+<p>To replace a whole table below a header, <a class="xref" href="scm-ooxml-excel-template.html#e18"><code>xlsx-replace-sheet-data!</code></a> takes a writer that emits rows as the file is saved, so it handles large data:</p>
+<pre><code class="language-scheme">(define tpl2 (open-xlsx-template (at "sales.xlsx")))
+(xlsx-replace-sheet-data! tpl2 "Sales" 1
+  (lambda (emit)
+    (emit '("Oolong" "blue" 7 6.8))
+    (emit (list "Total" #f (xlsx-formula "SUM(C2:C2)") #f))))
+(xlsx-save tpl2 (at "report2.xlsx"))
+(sheet-rows (workbook-sheet (read-workbook (at "report2.xlsx")) 0))
+;; =&gt; (("Tea" "Kind" "Kg" "Price") ("Oolong" "blue" 7 6.8) ("Total" #f #f #f))</code></pre>
+<p><a class="xref" href="scm-ooxml-excel-template.html#e19"><code>xlsx-replace-text!</code></a> replaces placeholders like <code>{DATE}</code> in texts and text boxes, and further procedures add conditional formats, data validations and defined names.</p>
+<h2 id="opendocument-spreadsheets">OpenDocument spreadsheets</h2>
+<p><a class="xref" href="scm-odf-spreadsheet.html"><code>(scm odf spreadsheet)</code></a> has the same procedures and writes <code>.ods</code> files for LibreOffice. Import it with a prefix when both are used:</p>
+<pre><code class="language-scheme">(import (prefix (scm odf spreadsheet) ods:))
+
+(define o (ods:make-workbook))
+(define osheet (ods:workbook-add-worksheet! o "Sales"))
+(ods:worksheet-set-cell! osheet "A1" "Tea" 'string #f)
+(ods:worksheet-set-cell! osheet "B1" 12.5 'num #f)
+(ods:workbook-save o (at "sales.ods"))
+(file-exists? (at "sales.ods"))             ;; =&gt; #t
+
+(rm dir 'recursive)</code></pre>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-scm-word.html"><code>(scm word)</code></a>, <a class="xref" href="scm-data-io.html"><code>(scm data io)</code></a> for data frames to and from Excel, <a class="xref" href="scm-ooxml-docprops.html"><code>(scm ooxml docprops)</code></a> for document properties.</li>
+<li>Reference: <a class="xref" href="scm-ooxml-excel.html"><code>(scm ooxml excel)</code></a>, <a class="xref" href="scm-ooxml-excel-reader.html"><code>(scm ooxml excel-reader)</code></a>, <a class="xref" href="scm-ooxml-excel-template.html"><code>(scm ooxml excel template)</code></a>, <a class="xref" href="scm-odf-spreadsheet.html"><code>(scm odf spreadsheet)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scm-ooxml-excel.html"><code>(scm ooxml excel)</code></a>, <a href="scm-ooxml-excel-reader.html"><code>(scm ooxml excel-reader)</code></a>, <a href="scm-ooxml-excel-template.html"><code>(scm ooxml excel template)</code></a>, <a href="scm-odf-spreadsheet.html"><code>(scm odf spreadsheet)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-scm-html.html">&larr; (scm html), builder and parser: writing and reading HTML</a>
+  <a class="next" href="tutorial-scm-word.html">(scm ooxml word) and friends: Word and OpenDocument texts &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

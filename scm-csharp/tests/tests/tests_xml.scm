@@ -92,4 +92,57 @@
     (test-equal #t (string? (xml-value r)))
     (close-xml r)))
 
+(test-group "the same event stream on every implementation"
+  ;; the node types and names of a whole document
+  (define (events s)
+    (let ((r (open-xml-string s)))
+      (let loop ((acc '()))
+        (if (xml-read r)
+            (loop (cons (list (xml-node-type r) (xml-name r)) acc))
+            (begin (close-xml r) (reverse acc))))))
+  (test-equal "declaration and outside white space skipped, empty element ends, text merged"
+              '((element "a") (comment "") (element "b") (text "") (end-element "b")
+                (element "c") (end-element "c") (element "d") (text "") (end-element "d")
+                (element "ns:e") (text "") (end-element "ns:e") (end-element "a"))
+              (events "<?xml version=\"1.0\"?>\n<a x=\"1\"><!-- c --><b>hi &amp; ho</b><c/><d>x<![CDATA[<raw>]]>y</d><ns:e xmlns:ns=\"urn:x\">t</ns:e></a>\n"))
+  (test-equal "doctype skipped"
+              '((element "r") (end-element "r"))
+              (events "<!DOCTYPE r><r/>"))
+  (test-equal "comment splits text"
+              '((element "r") (text "") (comment "") (text "") (end-element "r"))
+              (events "<r>a<!--x-->b</r>"))
+  (test-equal "xml-read is #f once the document has ended" #f
+              (let ((r (open-xml-string "<r/>")))
+                (xml-read r) (xml-read r)
+                (let ((more (xml-read r))) (close-xml r) more)))
+  ;; xml-value leaves the reader on the end of the element, so adjacent
+  ;; elements are all found
+  (test-equal "adjacent elements" '("1" "" "3 & 4")
+              (let ((r (open-xml-string "<r><v>1</v><v/><v>3 &amp; <![CDATA[4]]></v></r>")))
+                (let loop ((acc '()))
+                  (if (xml-read-to r "v")
+                      (loop (cons (xml-value r) acc))
+                      (begin (close-xml r) (reverse acc))))))
+  (let ((r (open-xml-string "<r><v>1</v><w/></r>")))
+    (xml-read-to r "v")
+    (xml-value r)
+    (test-equal 'end-element (xml-node-type r))
+    (test-equal "v" (xml-name r))
+    (test-equal #t (xml-read r))
+    (test-equal "w" (xml-name r))
+    (close-xml r))
+  ;; qualified or local names
+  (let ((r (open-xml-string "<f xmlns:m=\"urn:m\"><m:item m:id=\"7\" kind=\"k\"/><m:item m:id=\"8\"/></f>")))
+    (test-equal #t (xml-read-to r "item"))
+    (test-equal "m:item" (xml-name r))
+    (test-equal "7" (xml-attribute r "id"))
+    (test-equal "7" (xml-attribute r "m:id"))
+    (test-equal "k" (xml-attribute r 'kind))
+    (test-equal #f (xml-attribute r "nope"))
+    (test-equal #t (xml-read-to r "m:item"))
+    (test-equal "8" (xml-attribute r "m:id"))
+    (xml-read r)
+    (test-equal #f (xml-attribute r "m:id"))
+    (close-xml r)))
+
 (test-end "xml")

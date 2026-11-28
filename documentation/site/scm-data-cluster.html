@@ -68,22 +68,10 @@
 <h2>Overview</h2>
 <p>Similarity, graphs and clustering in plain Scheme, for data analysis next to <code>(scm data …)</code>:</p>
 <ul>
-<li>sparse vectors (<a class="xref" href="#e14"><code>make-sparse</code></a>, any keys) with <a class="xref" href="#e1"><code>cosine-similarity</code></a>,</li>
-</ul>
-<p><a class="xref" href="#e9"><code>jaccard-similarity</code></a> and <a class="xref" href="#e26"><code>weighted-jaccard-similarity</code></a></p>
-<ul>
-<li>weighted undirected graphs from an edge list (<a class="xref" href="#e13"><code>make-graph</code></a>) or a</li>
-</ul>
-<p>similarity (<a class="xref" href="#e18"><code>similarity-graph</code></a>, <a class="xref" href="#e11"><code>knn-graph</code></a>)</p>
-<ul>
-<li>community detection: <a class="xref" href="#e12"><code>louvain</code></a> (modularity with a resolution; with</li>
-</ul>
-<p><code>'refine</code> every community is split into its connected parts, the connectivity guarantee of Leiden), <a class="xref" href="#e16"><code>modularity</code></a></p>
-<ul>
-<li>hierarchical clustering: <a class="xref" href="#e8"><code>hclust</code></a> on a <a class="xref" href="#e4"><code>distance-matrix</code></a> (average,</li>
-</ul>
-<p>complete, single, ward linkage), <a class="xref" href="#e2"><code>cutree</code></a>, <a class="xref" href="#e3"><code>cutree-height</code></a></p>
-<ul>
+<li>sparse vectors (<a class="xref" href="#e14"><code>make-sparse</code></a>, any keys) with <a class="xref" href="#e1"><code>cosine-similarity</code></a>, <a class="xref" href="#e9"><code>jaccard-similarity</code></a> and <a class="xref" href="#e26"><code>weighted-jaccard-similarity</code></a></li>
+<li>weighted undirected graphs from an edge list (<a class="xref" href="#e13"><code>make-graph</code></a>) or a similarity (<a class="xref" href="#e18"><code>similarity-graph</code></a>, <a class="xref" href="#e11"><code>knn-graph</code></a>)</li>
+<li>community detection: <a class="xref" href="#e12"><code>louvain</code></a> (modularity with a resolution; with <code>'refine</code> every community is split into its connected parts, the connectivity guarantee of Leiden), <a class="xref" href="#e16"><code>modularity</code></a></li>
+<li>hierarchical clustering: <a class="xref" href="#e8"><code>hclust</code></a> on a <a class="xref" href="#e4"><code>distance-matrix</code></a> (average, complete, single, ward linkage), <a class="xref" href="#e2"><code>cutree</code></a>, <a class="xref" href="#e3"><code>cutree-height</code></a></li>
 <li><a class="xref" href="#e10"><code>kmeans</code></a> (k-means++ start) on dense vectors</li>
 <li>quality: <a class="xref" href="#e17"><code>silhouette</code></a>, <a class="xref" href="#e0"><code>adjusted-rand-index</code></a></li>
 </ul>

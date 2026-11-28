@@ -69,17 +69,10 @@
 <h2>Overview</h2>
 <p><a class="xref" href="scm-geo.html"><code>(scm geo)</code></a> is the base of the geo libraries: features (a geometry with properties), polygon rings and the planar geometry done on them. Coordinates are plain numbers in any planar system (metres in a national grid, say); nothing is projected.</p>
 <ul>
-<li>A <strong>feature</strong> is made with <a class="xref" href="#e11"><code>make-feature</code></a> from an alist of properties</li>
+<li>A <strong>feature</strong> is made with <a class="xref" href="#e11"><code>make-feature</code></a> from an alist of properties (string keys, as <a class="xref" href="scm-json-simple.html"><code>(scm json simple)</code></a> uses) and a geometry.</li>
+<li>A <strong>geometry</strong> is a tagged list: <code>(polygon ring ...)</code>, <code>(polyline path ...)</code> or <code>(multipoint point ...)</code>, made with <a class="xref" href="#e13"><code>make-polygon</code></a>, <a class="xref" href="#e14"><code>make-polyline</code></a> and <a class="xref" href="#e12"><code>make-multipoint</code></a>.</li>
+<li>A <strong>ring</strong> or path is a flat vector of coordinates <code>#(x0 y0 x1 y1 ...)</code>; a ring is closed, its last point equal to its first. A polygon's rings may come in any order and orientation: the area inside an odd number of them is the polygon. <a class="xref" href="#e25"><code>rings-&gt;polygons</code></a> sorts them into outer rings and holes.</li>
 </ul>
-<p>(string keys, as <a class="xref" href="scm-json-simple.html"><code>(scm json simple)</code></a> uses) and a geometry.</p>
-<ul>
-<li>A <strong>geometry</strong> is a tagged list: <code>(polygon ring ...)</code>, <code>(polyline path ...)</code></li>
-</ul>
-<p>or <code>(multipoint point ...)</code>, made with <a class="xref" href="#e13"><code>make-polygon</code></a>, <a class="xref" href="#e14"><code>make-polyline</code></a> and <a class="xref" href="#e12"><code>make-multipoint</code></a>.</p>
-<ul>
-<li>A <strong>ring</strong> or path is a flat vector of coordinates <code>#(x0 y0 x1 y1 ...)</code>; a</li>
-</ul>
-<p>ring is closed, its last point equal to its first. A polygon's rings may come in any order and orientation: the area inside an odd number of them is the polygon. <a class="xref" href="#e25"><code>rings-&gt;polygons</code></a> sorts them into outer rings and holes.</p>
 <h2>Common uses</h2>
 <pre><code class="language-scheme">(import (scm geo))
 

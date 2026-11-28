@@ -14,7 +14,7 @@ public class PrimitiveXmlAttribute extends Primitive {
     public String info() {
         return "Syntax: (xml-attribute xml-reader name)\n" +
                "Library: (scm xml)\n" +
-               "Description: Returns the value of the named attribute from the current element of xml-reader as a string, or #f if the attribute does not exist.\n" +
+               "Description: Returns the value of the attribute with the given qualified or local name of the current element as a string, or #f if the attribute does not exist or the current node is not an element.\n" +
                "Example:\n" +
                "  (xml-attribute reader \"id\") => \"42\"\n" +
                "  (xml-attribute reader 'class) => #f";
@@ -30,8 +30,12 @@ public class PrimitiveXmlAttribute extends Primitive {
         } else {
             name = new String(Value.asString(arguments[1]));
         }
+        if (reader.getEventType() != javax.xml.stream.XMLStreamConstants.START_ELEMENT) return Value.F;
         for (var i = 0; i < reader.getAttributeCount(); i++) {
-            if (reader.getAttributeLocalName(i).equals(name)) {
+            String prefix = reader.getAttributePrefix(i);
+            String local = reader.getAttributeLocalName(i);
+            if (local.equals(name)
+                || (prefix != null && !prefix.isEmpty() && name.equals(prefix + ":" + local))) {
                 return reader.getAttributeValue(i).toCharArray();
             }
         }

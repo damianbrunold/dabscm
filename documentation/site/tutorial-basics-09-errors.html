@@ -88,6 +88,16 @@
   <a href="tutorial-scm-store.html">(scm store): an indexed record store</a>
   <a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a>
   <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a>
+  <a href="tutorial-scm-json.html">(scm json simple) and (scm json): JSON</a>
+  <a href="tutorial-scm-xml.html">(scm xml) and (scm feed): XML and news feeds</a>
+  <a href="tutorial-scm-toml.html">(scm toml): configuration files</a>
+  <a href="tutorial-scm-markdown.html">(scm markdown): Markdown to HTML and beyond</a>
+  <a href="tutorial-scm-html.html">(scm html), builder and parser: writing and reading HTML</a>
+  <a href="tutorial-scm-excel.html">(scm ooxml excel) and friends: spreadsheets</a>
+  <a href="tutorial-scm-word.html">(scm ooxml word) and friends: Word and OpenDocument texts</a>
+  <a href="tutorial-scm-presentation.html">(scm ooxml presentation): PowerPoint slides</a>
+  <a href="tutorial-scm-pdf.html">(scm pdf) and (scm svg pdf): PDF documents</a>
+  <a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a>
   <h2><a href="index.html">Library reference</a></h2>
 </nav>
 
@@ -181,13 +191,9 @@
 <p>The file procedures <code>call-with-input-file</code> and <code>call-with-output-file</code> close their port for you, also on errors, so you rarely need <code>dynamic-wind</code> for files.</p>
 <h2 id="errors-in-other-threads-and-jobs">Errors in other threads and jobs</h2>
 <ul>
-<li>In a thread (SRFI 18), an error that is not caught ends the thread;</li>
+<li>In a thread (SRFI 18), an error that is not caught ends the thread; <a class="xref" href="srfi-18.html#e24"><code>thread-join!</code></a> then raises it in the joining thread.</li>
+<li>Running out of memory is an error object too, on all implementations, so a long-running server can catch it, fail one job and continue.</li>
 </ul>
-<p><a class="xref" href="srfi-18.html#e24"><code>thread-join!</code></a> then raises it in the joining thread.</p>
-<ul>
-<li>Running out of memory is an error object too, on all implementations, so a</li>
-</ul>
-<p>long-running server can catch it, fail one job and continue.</p>
 <h2 id="where-next">Where next</h2>
 <ul>
 <li><a href="tutorial-basics-10-libraries.html">Libraries and programs</a>.</li>

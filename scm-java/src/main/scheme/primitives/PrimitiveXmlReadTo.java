@@ -15,7 +15,7 @@ public class PrimitiveXmlReadTo extends Primitive {
     public String info() {
         return "Syntax: (xml-read-to xml-reader name)\n" +
                "Library: (scm xml)\n" +
-               "Description: Advances xml-reader forward until it reaches an element with the given name. Returns #t if found, or #f if the end of the document is reached first.\n" +
+               "Description: Advances xml-reader forward until it reaches an element whose qualified or local name is name (a string or symbol). Returns #t if found, or #f if the end of the document is reached first.\n" +
                "Example:\n" +
                "  (xml-read-to reader \"Customer\") => #t\n" +
                "  (xml-read-to reader 'Item) => #f";
@@ -32,10 +32,9 @@ public class PrimitiveXmlReadTo extends Primitive {
             } else {
                 name = new String(Value.asString(arguments[1]));
             }
-            while (reader.hasNext()) {
-                int event = reader.next();
-                if (event == XMLStreamConstants.START_ELEMENT
-                        && name.equals(reader.getLocalName())) {
+            while (XmlInput.next(reader)) {
+                if (reader.getEventType() == XMLStreamConstants.START_ELEMENT
+                        && (name.equals(reader.getLocalName()) || name.equals(XmlInput.qname(reader)))) {
                     return Value.T;
                 }
             }

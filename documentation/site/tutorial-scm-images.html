@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm image), (scm png), (scm qr), (scm svg raster): images — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <a href="tutorial-scm-string.html">(scm string): regular expressions and splitting</a>
+  <a href="tutorial-scm-list.html">(scm list) and (scm macro): small helpers</a>
+  <a href="tutorial-scm-match.html">(scm match): pattern matching</a>
+  <a href="tutorial-scm-io.html">(scm io): ports and formatting</a>
+  <a href="tutorial-scm-text.html">(scm text): Unix text tools in Scheme</a>
+  <a href="tutorial-scm-templating.html">(scm templating) and (scm uri): templates and URLs</a>
+  <a href="tutorial-scm-args.html">(scm args): command-line parsing</a>
+  <a href="tutorial-scm-terminal.html">(scm terminal) and (scm log): terminal output and logging</a>
+  <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a>
+  <a href="tutorial-scm-system.html">(scm system) and (scm sysadmin): processes and the system</a>
+  <a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a>
+  <a href="tutorial-scm-store.html">(scm store): an indexed record store</a>
+  <a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a>
+  <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a>
+  <a href="tutorial-scm-json.html">(scm json simple) and (scm json): JSON</a>
+  <a href="tutorial-scm-xml.html">(scm xml) and (scm feed): XML and news feeds</a>
+  <a href="tutorial-scm-toml.html">(scm toml): configuration files</a>
+  <a href="tutorial-scm-markdown.html">(scm markdown): Markdown to HTML and beyond</a>
+  <a href="tutorial-scm-html.html">(scm html), builder and parser: writing and reading HTML</a>
+  <a href="tutorial-scm-excel.html">(scm ooxml excel) and friends: spreadsheets</a>
+  <a href="tutorial-scm-word.html">(scm ooxml word) and friends: Word and OpenDocument texts</a>
+  <a href="tutorial-scm-presentation.html">(scm ooxml presentation): PowerPoint slides</a>
+  <a href="tutorial-scm-pdf.html">(scm pdf) and (scm svg pdf): PDF documents</a>
+  <a href="tutorial-scm-images.html" class="active">(scm image), (scm png), (scm qr), (scm svg raster): images</a>
+    <a class="sub" href="#pixels-and-png-files">Pixels and PNG files</a>
+    <a class="sub" href="#reading-images">Reading images</a>
+    <a class="sub" href="#checking-uploads">Checking uploads</a>
+    <a class="sub" href="#thumbnails-crops-jpeg">Thumbnails, crops, JPEG</a>
+    <a class="sub" href="#drawing">Drawing</a>
+    <a class="sub" href="#qr-codes">QR codes</a>
+    <a class="sub" href="#svg-to-pixels">SVG to pixels</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm image), (scm png), (scm qr), (scm svg raster): images</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="scm-image-scm-png-scm-qr-scm-svg-raster-images">(scm image), (scm png), (scm qr), (scm svg raster): images</h1>
+<table>
+<thead>
+<tr><th>library</th><th>does</th></tr>
+</thead>
+<tbody>
+<tr><td><a class="xref" href="scm-png.html"><code>(scm png)</code></a></td><td>writes PNG files from raw pixels</td></tr>
+<tr><td><a class="xref" href="scm-image.html"><code>(scm image)</code></a></td><td>decodes PNG and JPEG, scales, crops, encodes PNG and JPEG</td></tr>
+<tr><td><a class="xref" href="scm-qr.html"><code>(scm qr)</code></a></td><td>makes QR codes</td></tr>
+<tr><td><a class="xref" href="scm-svg-raster.html"><code>(scm svg raster)</code></a></td><td>renders SVG into pixels</td></tr>
+</tbody>
+</table>
+<pre><code class="language-scheme">(import (scheme base) (scheme write) (srfi 1) (only (srfi 13) string-prefix?)
+        (scm fs) (scm png) (scm image) (scm qr) (scm svg raster) (scm raster))
+
+(define dir (mktempdir '(prefix . "img")))
+(define (at name) (join-path dir name))</code></pre>
+<h2 id="pixels-and-png-files">Pixels and PNG files</h2>
+<p>An image is a bytevector of pixels, row by row from the top. In RGB each pixel is three bytes:</p>
+<pre><code class="language-scheme">(define (gradient width height)
+  (let ((px (make-bytevector (* 3 width height))))
+    (do ((y 0 (+ y 1))) ((= y height) px)
+      (do ((x 0 (+ x 1))) ((= x width))
+        (let ((i (* 3 (+ x (* y width)))))
+          (bytevector-u8-set! px i (quotient (* 255 x) (- width 1)))       ; red grows to the right
+          (bytevector-u8-set! px (+ i 1) 80)
+          (bytevector-u8-set! px (+ i 2) (quotient (* 255 y) (- height 1)))))))) ; blue downwards
+
+(define png (png-encode-rgb 64 32 (gradient 64 32)))
+(write-png-file (at "gradient.png") png)
+(bytevector-copy png 1 4)                   ;; =&gt; #u8(80 78 71)</code></pre>
+<p>The bytes 2–4 of every PNG file spell "PNG". <a class="xref" href="scm-png.html#e2"><code>png-encode-grayscale</code></a> (one byte per pixel), <a class="xref" href="scm-png.html#e4"><code>png-encode-rgba</code></a> (four, with transparency) and <a class="xref" href="scm-png.html#e1"><code>png-encode</code></a> (any of the four colour types) work the same way.</p>
+<h2 id="reading-images">Reading images</h2>
+<p><a class="xref" href="scm-image.html"><code>(scm image)</code></a> decodes PNG and JPEG into RGBA images, four bytes per pixel:</p>
+<pre><code class="language-scheme">(define img (image-decode png))
+(list (image-width img) (image-height img)) ;; =&gt; (64 32)
+(bytevector-copy (image-pixels img) 0 4)    ;; =&gt; #u8(0 80 0 255)</code></pre>
+<p><a class="xref" href="scm-image.html#e11"><code>image-read</code></a> reads a file. JPEGs are turned upright by their EXIF orientation, as browsers show them.</p>
+<h2 id="checking-uploads">Checking uploads</h2>
+<p><a class="xref" href="scm-image.html#e8"><code>image-info</code></a> reads only the header: the format and size, or <code>#f</code> for something that is not a PNG or JPEG. Check uploads with it before decoding, so a file cannot claim a gigantic size and use up the memory:</p>
+<pre><code class="language-scheme">(image-info png)                            ;; =&gt; ((format . png) (width . 64) (height . 32) (orientation . 1))
+(image-info (string-&gt;utf8 "GIF89a..."))     ;; =&gt; #f
+
+(define (acceptable-upload? bytes)
+  (let ((info (image-info bytes)))
+    (and info
+         (&lt;= (* (cdr (assq 'width info)) (cdr (assq 'height info))) 40000000))))
+
+(acceptable-upload? png)                    ;; =&gt; #t
+(acceptable-upload? (bytevector 1 2 3))     ;; =&gt; #f</code></pre>
+<p><a class="xref" href="scm-image.html#e5"><code>image-decode</code></a> refuses more than 50 million pixels by default anyway (option <code>max-pixels</code>).</p>
+<h2 id="thumbnails-crops-jpeg">Thumbnails, crops, JPEG</h2>
+<pre><code class="language-scheme">(define big (image-decode png))
+(define thumb (image-fit big 16 16))
+(list (image-width thumb) (image-height thumb)) ;; =&gt; (16 8)
+(define cropped (image-crop big 16 0 32 32))
+(list (image-width cropped) (image-height cropped)) ;; =&gt; (32 32)
+(define wide (image-resize big 128 32))
+(image-width wide)                          ;; =&gt; 128
+
+(define jpeg (image-&gt;jpeg thumb 80))
+(image-info jpeg)                           ;; =&gt; ((format . jpeg) (width . 16) (height . 8) (orientation . 1))
+(image-info (image-&gt;png cropped))            ;; =&gt; ((format . png) (width . 32) (height . 32) (orientation . 1))</code></pre>
+<p><a class="xref" href="scm-image.html#e6"><code>image-fit</code></a> keeps the aspect ratio and never enlarges; <a class="xref" href="scm-image.html#e12"><code>image-resize</code></a> scales to an exact size (box filter when shrinking, bilinear when enlarging). JPEG is the format for photos, PNG for graphics with sharp edges or transparency.</p>
+<h2 id="drawing">Drawing</h2>
+<p><a class="xref" href="scm-raster.html"><code>(scm raster)</code></a> draws anti-aliased shapes on a canvas; images and canvases convert into each other, so a photo can get a caption or a watermark:</p>
+<pre><code class="language-scheme">(define c (image-&gt;canvas big))
+(canvas-fill-path! c (path-rect 0 20 64 12) (rgba 0 0 0 0.6))
+(canvas-fill-path! c (path-circle 56 8 5) (rgba 255 255 255))
+(define marked (canvas-&gt;image c))
+(bytevector-copy (image-pixels marked) (* 4 (+ 1 (* 30 64))) (+ 4 (* 4 (+ 1 (* 30 64)))))
+;; =&gt; #u8(2 32 98 255)</code></pre>
+<p>The pixel at (1, 30), under the dark band, is now much darker than the gradient was there.</p>
+<h2 id="qr-codes">QR codes</h2>
+<pre><code class="language-scheme">(define code (qr-encode "https://tea.example/order/117"))
+(qr-matrix-size code)                       ;; =&gt; 29
+(qr-matrix-size (qr-encode "https://tea.example/order/117" 'H)) ;; =&gt; 33
+
+(define qr-png (qr-&gt;png code 6))
+(image-info qr-png)                         ;; =&gt; ((format . png) (width . 222) (height . 222) (orientation . 1))
+(write-png-file (at "order.png") qr-png)
+(string-prefix? "&lt;svg" (qr-&gt;svg code 4 4))  ;; =&gt; #t</code></pre>
+<ul>
+<li>The size grows with the data and the error-correction level (<code>'L</code>, <code>'M</code> default, <code>'Q</code>, <code>'H</code>), which trades size for robustness: <code>'H</code> still reads with 30 % of the code damaged, so a logo can cover the middle.</li>
+<li><a class="xref" href="scm-qr.html#e1"><code>qr-&gt;png</code></a> takes the pixels per module (6 here) and the quiet zone in modules (4 by default, as scanners need): (29 + 2 × 4) × 6 = 222.</li>
+<li><a class="xref" href="scm-qr.html#e2"><code>qr-&gt;svg</code></a> gives a vector image for web pages and print; <a class="xref" href="scm-qr.html#e0"><code>qr-&gt;ascii</code></a> shows the code in a terminal.</li>
+</ul>
+<p><a class="xref" href="scm-qr.html#e6"><code>qr-matrix-ref</code></a> reads single modules, for drawing the code yourself.</p>
+<h2 id="svg-to-pixels">SVG to pixels</h2>
+<p><a class="xref" href="scm-svg-raster.html"><code>(scm svg raster)</code></a> renders SVG (text or SXML) to a canvas or a PNG, with shapes, paths, gradients, text in DejaVu Sans or a TrueType font, CSS styles and transforms:</p>
+<pre><code class="language-scheme">(define badge "&lt;svg xmlns='http://www.w3.org/2000/svg' width='120' height='40'&gt;
+  &lt;rect width='120' height='40' rx='8' fill='#2e7d32'/&gt;
+  &lt;text x='60' y='26' font-size='16' text-anchor='middle' fill='white'&gt;Organic&lt;/text&gt;&lt;/svg&gt;")
+
+(define badge-png (svg-&gt;png badge '((scale . 2))))
+(image-info badge-png)                      ;; =&gt; ((format . png) (width . 240) (height . 80) (orientation . 1))
+(bytevector-copy (image-pixels (image-decode badge-png)) (* 4 (+ 20 (* 40 240))) (+ 4 (* 4 (+ 20 (* 40 240)))))
+;; =&gt; #u8(46 125 50 255)
+
+(svg-text-&gt;sxml "&lt;svg width='10'&gt;&lt;rect height='2'/&gt;&lt;/svg&gt;")
+;; =&gt; (svg (@ (width "10")) (rect (@ (height "2"))))
+(rm dir 'recursive)</code></pre>
+<p><code>(scale . 2)</code> renders at twice the size, for high-resolution screens. An SVG built as SXML with <a class="xref" href="scm-html-builder.html"><code>(scm html builder)</code></a>'s tree form can be rendered directly, without writing it out as text. <a class="xref" href="scm-svg-core.html"><code>(scm svg core)</code></a> has the shared parsing (paths, transforms, CSS) for writing other renderers.</p>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-scm-pdf.html">PDF</a> for SVG as vectors, <a href="tutorial-scm-presentation.html">presentations</a> for pictures on slides, <a class="xref" href="scm-data-plot.html"><code>(scm data plot)</code></a> for charts, <a class="xref" href="scm-truetype.html"><code>(scm truetype)</code></a> for fonts.</li>
+<li>Reference: <a class="xref" href="scm-image.html"><code>(scm image)</code></a>, <a class="xref" href="scm-png.html"><code>(scm png)</code></a>, <a class="xref" href="scm-qr.html"><code>(scm qr)</code></a>, <a class="xref" href="scm-svg-raster.html"><code>(scm svg raster)</code></a>, <a class="xref" href="scm-raster.html"><code>(scm raster)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scm-image.html"><code>(scm image)</code></a>, <a href="scm-png.html"><code>(scm png)</code></a>, <a href="scm-qr.html"><code>(scm qr)</code></a>, <a href="scm-svg-raster.html"><code>(scm svg raster)</code></a>, <a href="scm-svg-core.html"><code>(scm svg core)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-scm-pdf.html">&larr; (scm pdf) and (scm svg pdf): PDF documents</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

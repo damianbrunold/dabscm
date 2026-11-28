@@ -87,6 +87,16 @@
     <a class="sub" href="#durations">Durations</a>
     <a class="sub" href="#example-recent-feed-items">Example: recent feed items</a>
     <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-scm-json.html">(scm json simple) and (scm json): JSON</a>
+  <a href="tutorial-scm-xml.html">(scm xml) and (scm feed): XML and news feeds</a>
+  <a href="tutorial-scm-toml.html">(scm toml): configuration files</a>
+  <a href="tutorial-scm-markdown.html">(scm markdown): Markdown to HTML and beyond</a>
+  <a href="tutorial-scm-html.html">(scm html), builder and parser: writing and reading HTML</a>
+  <a href="tutorial-scm-excel.html">(scm ooxml excel) and friends: spreadsheets</a>
+  <a href="tutorial-scm-word.html">(scm ooxml word) and friends: Word and OpenDocument texts</a>
+  <a href="tutorial-scm-presentation.html">(scm ooxml presentation): PowerPoint slides</a>
+  <a href="tutorial-scm-pdf.html">(scm pdf) and (scm svg pdf): PDF documents</a>
+  <a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a>
   <h2><a href="index.html">Library reference</a></h2>
 </nav>
 
@@ -115,9 +125,8 @@
 <ul>
 <li>ISO 8601 is what JSON APIs use, RFC 822 what e-mail and RSS use;</li>
 <li><code>parse-pubdate</code> accepts either, which is what feed readers need;</li>
-<li><a class="xref" href="scm-datetime.html#e6"><code>string-&gt;date-seconds</code></a> reads compact <code>yyyyMMddHHmmss</code> stamps (also</li>
+<li><a class="xref" href="scm-datetime.html#e6"><code>string-&gt;date-seconds</code></a> reads compact <code>yyyyMMddHHmmss</code> stamps (also shorter ones down to <code>yyyyMMdd</code>), common in file names and exports.</li>
 </ul>
-<p>shorter ones down to <code>yyyyMMdd</code>), common in file names and exports.</p>
 <h2 id="formatting">Formatting</h2>
 <pre><code class="language-scheme">(format-iso8601 1715862896)                            ;; =&gt; "2024-05-16T12:34:56Z"
 (format-iso8601 0)                                     ;; =&gt; "1970-01-01T00:00:00Z"</code></pre>
@@ -128,18 +137,11 @@
 (string-length (time))                                 ;; =&gt; 5
 (integer? (timestamp))                                 ;; =&gt; #t</code></pre>
 <ul>
-<li><code>now</code> is the local date and time as <code>"2025-11-27 14:03"</code> (<code>'short</code></li>
-</ul>
-<p>gives <code>"20251127-1403"</code>);</p>
-<ul>
-<li><code>today</code> is the local date as <code>"2025-11-27"</code> (<code>'short</code> gives <code>"20251127"</code>,</li>
-</ul>
-<p><code>'dmy</code> gives <code>"27.11.2025"</code>);</p>
-<ul>
+<li><code>now</code> is the local date and time as <code>"2025-11-27 14:03"</code> (<code>'short</code> gives <code>"20251127-1403"</code>);</li>
+<li><code>today</code> is the local date as <code>"2025-11-27"</code> (<code>'short</code> gives <code>"20251127"</code>, <code>'dmy</code> gives <code>"27.11.2025"</code>);</li>
 <li><code>time</code> is the local time as <code>"14:03"</code>;</li>
-<li><code>timestamp</code> is milliseconds (counted from the year 1, not 1970), for</li>
+<li><code>timestamp</code> is milliseconds (counted from the year 1, not 1970), for measuring and for <code>timestamp-&gt;string</code>.</li>
 </ul>
-<p>measuring and for <code>timestamp-&gt;string</code>.</p>
 <p>For the current time in epoch seconds, use <a class="xref" href="scheme-time.html#e1"><code>current-second</code></a> from <a class="xref" href="scheme-time.html"><code>(scheme time)</code></a>:</p>
 <pre><code class="language-scheme">(import (scheme time))
 (define (epoch-now) (exact (floor (current-second))))
@@ -182,6 +184,7 @@
 <p class="tutorial-libs">Reference: <a href="scm-datetime.html"><code>(scm datetime)</code></a>, <a href="scm-duration.html"><code>(scm duration)</code></a></p>
 <nav class="prev-next">
   <a class="prev" href="tutorial-scm-crypto.html">&larr; (scm crypto): hashing, encryption, passwords, tokens</a>
+  <a class="next" href="tutorial-scm-json.html">(scm json simple) and (scm json): JSON &rarr;</a>
 </nav>
 
 </main>

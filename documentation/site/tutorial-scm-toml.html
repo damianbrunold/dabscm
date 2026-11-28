@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>(scm toml): configuration files — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <a href="tutorial-scm-string.html">(scm string): regular expressions and splitting</a>
+  <a href="tutorial-scm-list.html">(scm list) and (scm macro): small helpers</a>
+  <a href="tutorial-scm-match.html">(scm match): pattern matching</a>
+  <a href="tutorial-scm-io.html">(scm io): ports and formatting</a>
+  <a href="tutorial-scm-text.html">(scm text): Unix text tools in Scheme</a>
+  <a href="tutorial-scm-templating.html">(scm templating) and (scm uri): templates and URLs</a>
+  <a href="tutorial-scm-args.html">(scm args): command-line parsing</a>
+  <a href="tutorial-scm-terminal.html">(scm terminal) and (scm log): terminal output and logging</a>
+  <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a>
+  <a href="tutorial-scm-system.html">(scm system) and (scm sysadmin): processes and the system</a>
+  <a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a>
+  <a href="tutorial-scm-store.html">(scm store): an indexed record store</a>
+  <a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a>
+  <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a>
+  <a href="tutorial-scm-json.html">(scm json simple) and (scm json): JSON</a>
+  <a href="tutorial-scm-xml.html">(scm xml) and (scm feed): XML and news feeds</a>
+  <a href="tutorial-scm-toml.html" class="active">(scm toml): configuration files</a>
+    <a class="sub" href="#reading">Reading</a>
+    <a class="sub" href="#paths-and-defaults">Paths and defaults</a>
+    <a class="sub" href="#validation">Validation</a>
+    <a class="sub" href="#errors-in-the-file">Errors in the file</a>
+    <a class="sub" href="#dates-and-times">Dates and times</a>
+    <a class="sub" href="#writing">Writing</a>
+    <a class="sub" href="#example-layered-settings">Example: layered settings</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-scm-markdown.html">(scm markdown): Markdown to HTML and beyond</a>
+  <a href="tutorial-scm-html.html">(scm html), builder and parser: writing and reading HTML</a>
+  <a href="tutorial-scm-excel.html">(scm ooxml excel) and friends: spreadsheets</a>
+  <a href="tutorial-scm-word.html">(scm ooxml word) and friends: Word and OpenDocument texts</a>
+  <a href="tutorial-scm-presentation.html">(scm ooxml presentation): PowerPoint slides</a>
+  <a href="tutorial-scm-pdf.html">(scm pdf) and (scm svg pdf): PDF documents</a>
+  <a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">(scm toml): configuration files</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="scm-toml-configuration-files">(scm toml): configuration files</h1>
+<p>TOML is made for configuration: readable, with comments, typed values and sections. <a class="xref" href="scm-toml.html"><code>(scm toml)</code></a> reads it into the same shapes as <a href="tutorial-scm-json.html"><a class="xref" href="scm-json-simple.html"><code>(scm json simple)</code></a></a>: tables become alists with string keys, arrays vectors.</p>
+<pre><code class="language-scheme">(import (scheme base) (scheme cxr) (scheme write) (srfi 1) (scm toml))</code></pre>
+<h2 id="reading">Reading</h2>
+<pre><code class="language-scheme">(define config (toml-parse "
+# the shop's settings
+name = \"Teashop\"
+version = 3
+ratio = 0.25
+debug = false
+\"display name\" = 'Tea &amp; Co'
+
+[server]
+host = \"0.0.0.0\"
+port = 8080
+
+[server.tls]
+cert = \"/etc/shop/cert.pem\"
+
+[[product]]
+sku = \"T-1\"
+price = 4.5
+tags = [\"green\", \"loose\"]
+
+[[product]]
+sku = \"C-2\"
+price = 12
+"))
+
+(toml-ref config "name")                    ;; =&gt; "Teashop"
+(toml-ref config "debug")                   ;; =&gt; #f
+(toml-ref config "display name")            ;; =&gt; "Tea &amp; Co"
+(toml-ref (toml-ref config "server") "port") ;; =&gt; 8080
+(toml-ref (toml-ref (toml-ref config "server") "tls") "cert") ;; =&gt; "/etc/shop/cert.pem"</code></pre>
+<table>
+<thead>
+<tr><th>TOML</th><th>Scheme</th></tr>
+</thead>
+<tbody>
+<tr><td>table <code>[server]</code> or <code>{ x = 1 }</code></td><td>alist <code>(("x" . 1))</code></td></tr>
+<tr><td>array <code>[1, 2]</code></td><td>vector <code>#(1 2)</code></td></tr>
+<tr><td>array of tables <code>[[product]]</code></td><td>vector of alists</td></tr>
+<tr><td>string (basic <code>"..."</code>, literal <code>'...'</code>, multi-line <code>"""..."""</code>)</td><td>string</td></tr>
+<tr><td>integer / float</td><td>exact integer / inexact real</td></tr>
+<tr><td>boolean</td><td><code>#t</code> / <code>#f</code></td></tr>
+<tr><td>date, time, date-time</td><td>a <code>toml-datetime</code> record</td></tr>
+</tbody>
+</table>
+<p><code>[server.tls]</code> nests a table inside <code>server</code>. Arrays of tables are lists of records, the natural place for repeated entries:</p>
+<pre><code class="language-scheme">(define products (vector-&gt;list (toml-ref config "product")))
+(map (lambda (p) (toml-ref p "sku")) products) ;; =&gt; ("T-1" "C-2")
+(map (lambda (p) (toml-ref p "tags" #())) products) ;; =&gt; (#("green" "loose") #())
+(fold + 0 (map (lambda (p) (toml-ref p "price")) products)) ;; =&gt; 16.5</code></pre>
+<h2 id="paths-and-defaults">Paths and defaults</h2>
+<p>A helper for dotted paths keeps configuration code short. Every setting gets a default, so a minimal file works:</p>
+<pre><code class="language-scheme">(define (setting cfg path default)
+  (let loop ((v cfg) (keys path))
+    (cond ((null? keys) v)
+          ((and (list? v) (assoc (car keys) v)) =&gt; (lambda (e) (loop (cdr e) (cdr keys))))
+          (else default))))
+
+(setting config '("server" "port") 80)      ;; =&gt; 8080
+(setting config '("server" "workers") 4)    ;; =&gt; 4
+(setting config '("db" "url") "sqlite:shop.db") ;; =&gt; "sqlite:shop.db"</code></pre>
+<h2 id="validation">Validation</h2>
+<p>Configuration errors should be reported at startup, with the key, not as a strange failure later. A small checker over a list of rules:</p>
+<pre><code class="language-scheme">(define rules
+  `((("server" "port") ,(lambda (v) (and (exact-integer? v) (&lt; 0 v 65536))) "a port number")
+    (("server" "host") ,string? "a host name")
+    (("name") ,string? "a string")))
+
+(define (config-errors cfg)
+  (filter-map (lambda (rule)
+                (let ((v (setting cfg (car rule) #f)))
+                  (and (not ((cadr rule) v))
+                       (string-append (apply string-append
+                                             (cdr (append-map (lambda (k) (list "." k)) (car rule))))
+                                      " must be " (caddr rule)))))
+              rules))
+
+(config-errors config)                      ;; =&gt; ()
+(config-errors (toml-parse "name = 1\n[server]\nport = 70000"))
+;; =&gt; ("server.port must be a port number" "server.host must be a host name" "name must be a string")</code></pre>
+<h2 id="errors-in-the-file">Errors in the file</h2>
+<p>Syntax errors and duplicate keys raise an error:</p>
+<pre><code class="language-scheme">(define (try text) (guard (e ((error-object? e) 'invalid)) (toml-parse text) 'ok))
+(try "a = 1")                               ;; =&gt; ok
+(try "a = ")                                ;; =&gt; invalid
+(try "a = 1\na = 2")                        ;; =&gt; invalid</code></pre>
+<h2 id="dates-and-times">Dates and times</h2>
+<p>TOML dates are values of their own. They come back as <code>toml-datetime</code> records holding their kind and their text, so they never pass for strings:</p>
+<pre><code class="language-scheme">(define release (toml-parse "day = 2025-11-27\nat = 2025-11-27T10:30:00Z\nalarm = 07:15:00"))
+(define day (toml-ref release "day"))
+(toml-datetime? day)                        ;; =&gt; #t
+(toml-datetime-kind day)                    ;; =&gt; local-date
+(toml-datetime-text day)                    ;; =&gt; "2025-11-27"
+(toml-datetime-kind (toml-ref release "at")) ;; =&gt; offset-date-time
+(toml-datetime-kind (toml-ref release "alarm")) ;; =&gt; local-time</code></pre>
+<p>The text is ISO 8601, so <code>parse-iso8601</code> from <a href="tutorial-scm-datetime.html"><a class="xref" href="scm-datetime.html"><code>(scm datetime)</code></a></a> turns an offset date-time into epoch seconds.</p>
+<h2 id="writing">Writing</h2>
+<p><a class="xref" href="scm-toml.html#e1"><code>toml-&gt;string</code></a> writes scalar values first, then tables as sections and vectors of alists as arrays of tables:</p>
+<pre><code class="language-scheme">(display (toml-&gt;string
+          `(("title" . "Release notes")
+            ("draft" . #f)
+            ("authors" . #("ada" "alan"))
+            ("build" ("target" . "x86_64") ("jobs" . 8))
+            ("change" . #((("kind" . "fix") ("text" . "Markdown lists"))
+                          (("kind" . "new") ("text" . "Tutorials")))))))
+;; prints: title = "Release notes"
+;; prints: draft = false
+;; prints: authors = ["ada", "alan"]
+;; prints: 
+;; prints: [build]
+;; prints: target = "x86_64"
+;; prints: jobs = 8
+;; prints: 
+;; prints: [[change]]
+;; prints: kind = "fix"
+;; prints: text = "Markdown lists"
+;; prints: 
+;; prints: [[change]]
+;; prints: kind = "new"
+;; prints: text = "Tutorials"</code></pre>
+<p>Comments are not kept: a program that rewrites a hand-edited file loses them. Write generated settings to their own file instead.</p>
+<h2 id="example-layered-settings">Example: layered settings</h2>
+<p>Built-in defaults, then a system file, then a user file: each layer overrides single keys of the one before:</p>
+<pre><code class="language-scheme">(define (merge base over)
+  (if (and (list? base) (list? over))
+      (append (map (lambda (b)
+                     (let ((o (assoc (car b) over)))
+                       (if o (cons (car b) (merge (cdr b) (cdr o))) b)))
+                   base)
+              (remove (lambda (o) (assoc (car o) base)) over))
+      over))
+
+(define defaults (toml-parse "[server]\nport = 8080\nhost = \"localhost\"\n[log]\nlevel = \"info\""))
+(define system (toml-parse "[server]\nhost = \"0.0.0.0\""))
+(define user (toml-parse "[log]\nlevel = \"debug\"\nfile = \"shop.log\""))
+
+(define effective (fold (lambda (layer acc) (merge acc layer)) defaults (list system user)))
+(setting effective '("server" "host") #f)   ;; =&gt; "0.0.0.0"
+(setting effective '("server" "port") #f)   ;; =&gt; 8080
+(setting effective '("log" "level") #f)     ;; =&gt; "debug"
+(setting effective '("log" "file") #f)      ;; =&gt; "shop.log"</code></pre>
+<p>With files, read each layer with <code>(call-with-input-file path toml-read)</code>, skipping the ones that do not exist.</p>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-techniques-08-structured-data.html">Structured data</a>, <a href="tutorial-scm-json.html"><a class="xref" href="scm-json-simple.html"><code>(scm json simple)</code></a></a>, <a href="tutorial-scm-args.html"><a class="xref" href="scm-args.html"><code>(scm args)</code></a></a> for settings from the command line.</li>
+<li>Reference: <a class="xref" href="scm-toml.html"><code>(scm toml)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scm-toml.html"><code>(scm toml)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-scm-xml.html">&larr; (scm xml) and (scm feed): XML and news feeds</a>
+  <a class="next" href="tutorial-scm-markdown.html">(scm markdown): Markdown to HTML and beyond &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

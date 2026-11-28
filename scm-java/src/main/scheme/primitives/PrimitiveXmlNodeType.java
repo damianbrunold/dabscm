@@ -15,7 +15,7 @@ public class PrimitiveXmlNodeType extends Primitive {
     public String info() {
         return "Syntax: (xml-node-type xml-reader)\n" +
                "Library: (scm xml)\n" +
-               "Description: Returns a symbol identifying the type of the current XML node: element, end-element, text, cdata, comment, pi, xml-decl, doc, doc-type, entity-ref, or #f for unrecognized types.\n" +
+               "Description: Returns a symbol for the current node: element, end-element (also after an empty element such as <br/>), text (one node per run of character data, with character references and CDATA sections merged), comment or pi; #f before the first xml-read and at the end.\n" +
                "Example:\n" +
                "  (xml-node-type reader) => element\n" +
                "  (xml-node-type reader) => text";
@@ -29,6 +29,7 @@ public class PrimitiveXmlNodeType extends Primitive {
             case XMLEvent.START_ELEMENT:
                 return Value.intern("element");
             case XMLEvent.CHARACTERS:
+            case XMLEvent.SPACE:
                 return Value.intern("text");
             case XMLEvent.CDATA:
                 return Value.intern("cdata");

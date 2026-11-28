@@ -25,9 +25,7 @@ public class PrimitiveCloseXml : Primitive
         CheckArgs(pos, arguments, 1, 1);
         try
         {
-            XmlReader reader = (XmlReader) Value.AsNativeValue(arguments[0]).value;
-            reader.Close();
-            reader.Dispose();
+            ((XmlPull) Value.AsNativeValue(arguments[0]).value).Close();
             return new Values();
         }
         catch (Exception)

@@ -32,7 +32,7 @@ public class PrimitiveOpenXmlFile : Primitive
         {
             var reader = XmlReader.Create(filename, XmlInput.Settings());
             reader.Read();
-            return new NativeValue(reader);
+            return new NativeValue(new XmlPull(reader));
         }
         catch (Exception)
         {

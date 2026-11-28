@@ -51,13 +51,9 @@
 <h2>Overview</h2>
 <p>Translates analysis code between R and <a class="xref" href="scm-data.html"><code>(scm data)</code></a>, best effort, in both directions. It covers the common subset of the tidyverse: pipes (<code>%&gt;%</code>, <code>|&gt;</code>), the dplyr and tidyr verbs, readr/readxl/writexl/sf input and output, ggplot2 chains (geoms, <code>labs</code>, scales, facets, maps with <code>geom_sf</code>), the stats tests and <code>lm</code>.</p>
 <ul>
-<li><strong>R → Scheme</strong>: <a class="xref" href="#e1"><code>r-&gt;scm-string</code></a> (or <a class="xref" href="#e3"><code>r-file-&gt;scm</code></a>) parses R with its real</li>
+<li><strong>R → Scheme</strong>: <a class="xref" href="#e1"><code>r-&gt;scm-string</code></a> (or <a class="xref" href="#e3"><code>r-file-&gt;scm</code></a>) parses R with its real grammar (precedence, newlines, named arguments, formulas, functions) and maps pipes to <code>-&gt;</code>, verbs to verbs and ggplot <code>+</code> chains to <code>ggplot</code> forms. Inside verbs a name is a column unless the script assigned it, then it is spliced in with unquote. What has no counterpart is marked <code>(r:unsupported "…")</code> inline or <code>;; TODO (R): …</code> for a whole statement or step, and listed as the second value; the translation never fails.</li>
+<li><strong>Scheme → R</strong>: <a class="xref" href="#e7"><code>scm-&gt;r-string</code></a> (or <a class="xref" href="#e8"><code>scm-file-&gt;r</code></a>) writes pipe-style R with the <code>library()</code> calls it needs; values unquoted into verb expressions become <code>!!</code>, reports become R Markdown (<a class="xref" href="#e5"><code>report-&gt;rmd</code></a>). Unknown forms become R calls with R-style names, or <code>stop("TODO scheme: …")</code>.</li>
 </ul>
-<p>grammar (precedence, newlines, named arguments, formulas, functions) and maps pipes to <code>-&gt;</code>, verbs to verbs and ggplot <code>+</code> chains to <code>ggplot</code> forms. Inside verbs a name is a column unless the script assigned it, then it is spliced in with unquote. What has no counterpart is marked <code>(r:unsupported "…")</code> inline or <code>;; TODO (R): …</code> for a whole statement or step, and listed as the second value; the translation never fails.</p>
-<ul>
-<li><strong>Scheme → R</strong>: <a class="xref" href="#e7"><code>scm-&gt;r-string</code></a> (or <a class="xref" href="#e8"><code>scm-file-&gt;r</code></a>) writes pipe-style R with</li>
-</ul>
-<p>the <code>library()</code> calls it needs; values unquoted into verb expressions become <code>!!</code>, reports become R Markdown (<a class="xref" href="#e5"><code>report-&gt;rmd</code></a>). Unknown forms become R calls with R-style names, or <code>stop("TODO scheme: …")</code>.</p>
 <p><a class="xref" href="#e4"><code>r-parse</code></a>/<a class="xref" href="#e2"><code>r-deparse</code></a> give access to the R syntax tree, <a class="xref" href="#e9"><code>scm-pretty</code></a> to the code printer.</p>
 <h2>Common uses</h2>
 <pre><code class="language-scheme">(import (scm data r))

@@ -18,7 +18,8 @@
     ;;   - ATX headings            # .. ###### (trailing #'s stripped)
     ;;   - fenced code blocks      ``` or ~~~, with optional info string
     ;;   - blockquotes             > ... (parsed recursively)
-    ;;   - bullet lists            -, *, + markers
+    ;;   - bullet lists            -, *, + markers; an item's text may
+    ;;                             continue on the following lines
     ;;   - ordered lists           1. / 1) markers
     ;;   - nested lists            by indentation (a deeper-indented item
     ;;                             starts a sub-list under the item above it)
@@ -197,8 +198,14 @@
                (if (> depth 1)
                    (find-close (+ j 1) (- depth 1))
                    (if (and (< (+ j 1) n) (char=? (string-ref s (+ j 1)) #\())
-                       (let url-find ((k (+ j 2)))
+                       ;; the URL may contain balanced parentheses, as in
+                       ;; .../Scheme_(programming_language)
+                       (let url-find ((k (+ j 2)) (parens 0))
                          (cond ((>= k n) #f)
+                               ((char=? (string-ref s k) #\()
+                                (url-find (+ k 1) (+ parens 1)))
+                               ((and (char=? (string-ref s k) #\)) (> parens 0))
+                                (url-find (+ k 1) (- parens 1)))
                                ((char=? (string-ref s k) #\))
                                 (cons (list
                                        'link
@@ -206,7 +213,7 @@
                                        (string-trim-both
                                         (substring s (+ j 2) k)))
                                       (+ k 1)))
-                               (else (url-find (+ k 1)))))
+                               (else (url-find (+ k 1) parens))))
                        #f)))
               (else (find-close (+ j 1) depth)))))
 
@@ -530,11 +537,22 @@ Example:
             (if (and it
                      (eq? (eq? (car it) 'ordered) ordered)
                      (= (list-ref it 3) level))
-                ;; A sibling item at this level. Consume it, then absorb any
-                ;; deeper-indented lines that follow as nested child lists.
-                (let ((content (cadr it))
-                      (num (caddr it)))
-                  (let gather ((j (+ i 1))
+                ;; A sibling item at this level. Consume it with the lines
+                ;; that continue its text (not blank, not an item, not
+                ;; another block), then absorb any deeper-indented items
+                ;; that follow as nested child lists.
+                (let* ((num (caddr it))
+                       (text (let cont ((j (+ i 1)) (body (list (cadr it))))
+                               (let ((l (and (< j n) (vector-ref lines j))))
+                                 (if (and l
+                                          (not (blank-line? l))
+                                          (not (list-item l))
+                                          (not (block-start? l))
+                                          (not (table-start? lines n j)))
+                                     (cont (+ j 1) (cons l body))
+                                     (cons (reverse body) j)))))
+                       (inlines (paragraph-inlines (car text))))
+                  (let gather ((j (cdr text))
                                (children '()))
                     (let ((nx (and (< j n) (list-item (vector-ref lines j)))))
                       (if (and nx (> (list-ref nx 3) level))
@@ -543,7 +561,7 @@ Example:
                           (loop j
                                 (cons (cons
                                        'item
-                                       (append (parse-inlines content)
+                                       (append inlines
                                                (reverse children)))
                                       items)
                                 (or start-num num))))))

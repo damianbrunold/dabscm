@@ -81,6 +81,16 @@
   <a href="tutorial-scm-store.html">(scm store): an indexed record store</a>
   <a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a>
   <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a>
+  <a href="tutorial-scm-json.html">(scm json simple) and (scm json): JSON</a>
+  <a href="tutorial-scm-xml.html">(scm xml) and (scm feed): XML and news feeds</a>
+  <a href="tutorial-scm-toml.html">(scm toml): configuration files</a>
+  <a href="tutorial-scm-markdown.html">(scm markdown): Markdown to HTML and beyond</a>
+  <a href="tutorial-scm-html.html">(scm html), builder and parser: writing and reading HTML</a>
+  <a href="tutorial-scm-excel.html">(scm ooxml excel) and friends: spreadsheets</a>
+  <a href="tutorial-scm-word.html">(scm ooxml word) and friends: Word and OpenDocument texts</a>
+  <a href="tutorial-scm-presentation.html">(scm ooxml presentation): PowerPoint slides</a>
+  <a href="tutorial-scm-pdf.html">(scm pdf) and (scm svg pdf): PDF documents</a>
+  <a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a>
   <h2><a href="index.html">Library reference</a></h2>
 </nav>
 
@@ -92,14 +102,8 @@
 <p>Every tested example in these tutorials is run by dabscm's test suites, on the JVM, .NET and native implementations, so the code works as shown.</p>
 <h2 id="where-to-start">Where to start</h2>
 <ul>
-<li><strong>New to Scheme?</strong> Read the <a href="#basics">basics</a> in order. Each chapter</li>
-</ul>
-<p>builds on the previous one.</p>
-<ul>
-<li><strong>Know Scheme, new to dabscm?</strong> Skim <a href="tutorial-basics-01-getting-started.html">getting started</a>,</li>
-</ul>
-<p>then go to the <a href="#techniques">techniques</a> you need.</p>
-<ul>
+<li><strong>New to Scheme?</strong> Read the <a href="#basics">basics</a> in order. Each chapter builds on the previous one.</li>
+<li><strong>Know Scheme, new to dabscm?</strong> Skim <a href="tutorial-basics-01-getting-started.html">getting started</a>, then go to the <a href="#techniques">techniques</a> you need.</li>
 <li><strong>Looking for a specific task?</strong> See <a href="#find-by-task">find by task</a> below.</li>
 </ul>
 <h2 id="basics">Basics</h2>
@@ -215,7 +219,26 @@
 <tr><td><a href="tutorial-scm-datetime.html"><a class="xref" href="scm-datetime.html"><code>(scm datetime)</code></a> and <a class="xref" href="scm-duration.html"><code>(scm duration)</code></a></a></td><td>parsing and formatting timestamps, durations</td></tr>
 </tbody>
 </table>
-<p>Tutorials for the format, web, database and data libraries follow. Until then, the <a href="index.html">library reference</a> has an overview and examples for every library.</p>
+<h3 id="formats">Formats</h3>
+<table>
+<thead>
+<tr><th>tutorial</th><th>covers</th></tr>
+</thead>
+<tbody>
+<tr><td><a href="tutorial-scm-json.html"><a class="xref" href="scm-json-simple.html"><code>(scm json simple)</code></a> and <a class="xref" href="scm-json.html"><code>(scm json)</code></a></a></td><td>JSON mapping, lookups, writing, API responses, streaming large files</td></tr>
+<tr><td><a href="tutorial-scm-xml.html"><a class="xref" href="scm-xml.html"><code>(scm xml)</code></a> and <a class="xref" href="scm-feed.html"><code>(scm feed)</code></a></a></td><td>the XML pull reader, records from streams, namespaces, Atom and RSS feeds</td></tr>
+<tr><td><a href="tutorial-scm-toml.html"><a class="xref" href="scm-toml.html"><code>(scm toml)</code></a></a></td><td>configuration files, defaults, validation, layered settings</td></tr>
+<tr><td><a class="xref" href="scm-csv.html"><code>(scm csv)</code></a></td><td>see <a href="tutorial-techniques-08-structured-data.html#csv">structured data</a></td></tr>
+<tr><td><a href="tutorial-scm-markdown.html"><a class="xref" href="scm-markdown.html"><code>(scm markdown)</code></a></a></td><td>Markdown to HTML, the tree, custom renderers, tables of contents</td></tr>
+<tr><td><a href="tutorial-scm-html.html"><a class="xref" href="scm-html.html"><code>(scm html)</code></a>, builder and parser</a></td><td>safe HTML from trees, components, parsing and scraping pages</td></tr>
+<tr><td><a href="tutorial-scm-excel.html">Excel and OpenDocument spreadsheets</a></td><td><code>.xlsx</code> writing, streaming, reading, templates; <code>.ods</code></td></tr>
+<tr><td><a href="tutorial-scm-word.html">Word and OpenDocument texts</a></td><td><code>.docx</code> documents and letters, reading Word files; <code>.odt</code></td></tr>
+<tr><td><a href="tutorial-scm-presentation.html"><a class="xref" href="scm-ooxml-presentation.html"><code>(scm ooxml presentation)</code></a></a></td><td>PowerPoint slides with shapes, tables, pictures, notes</td></tr>
+<tr><td><a href="tutorial-scm-pdf.html"><a class="xref" href="scm-pdf.html"><code>(scm pdf)</code></a> and <a class="xref" href="scm-svg-pdf.html"><code>(scm svg pdf)</code></a></a></td><td>PDF pages, text, wrapping, an invoice, SVG as vectors</td></tr>
+<tr><td><a href="tutorial-scm-images.html">Images, QR codes, SVG</a></td><td>PNG and JPEG, thumbnails, drawing, QR codes, SVG to PNG</td></tr>
+</tbody>
+</table>
+<p>Tutorials for the web, database and data libraries follow. Until then, the <a href="index.html">library reference</a> has an overview and examples for every library.</p>
 <h2 id="running-the-examples-yourself">Running the examples yourself</h2>
 <p>Copy a code block into a file, keep the <a class="xref" href="scm-module.html#e10"><code>import</code></a> from the chapter's first block, and run it with <code>scm file.scm</code>. Lines ending in <code>;; =&gt; value</code> show what an expression returns; <code>;; prints:</code> shows what it writes.</p><span id="basics"></span><span id="techniques"></span><span id="libraries"></span>
 <h2 id="by-library">Tutorials by library</h2>
@@ -244,27 +267,48 @@
 <tr><td><a href="scm-datetime.html"><code>(scm datetime)</code></a></td><td><a href="tutorial-techniques-07-dates.html">Dates and times</a>, <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a></td></tr>
 <tr><td><a href="scm-dict.html"><code>(scm dict)</code></a></td><td><a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a></td></tr>
 <tr><td><a href="scm-duration.html"><code>(scm duration)</code></a></td><td><a href="tutorial-techniques-07-dates.html">Dates and times</a>, <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a></td></tr>
+<tr><td><a href="scm-feed.html"><code>(scm feed)</code></a></td><td><a href="tutorial-scm-xml.html">(scm xml) and (scm feed): XML and news feeds</a></td></tr>
 <tr><td><a href="scm-fs-find.html"><code>(scm fs-find)</code></a></td><td><a href="tutorial-techniques-03-files.html">Files and directories</a>, <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a></td></tr>
 <tr><td><a href="scm-fs.html"><code>(scm fs)</code></a></td><td><a href="tutorial-techniques-03-files.html">Files and directories</a>, <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>, <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a></td></tr>
 <tr><td><a href="scm-glob.html"><code>(scm glob)</code></a></td><td><a href="tutorial-techniques-03-files.html">Files and directories</a>, <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a></td></tr>
+<tr><td><a href="scm-html-builder.html"><code>(scm html builder)</code></a></td><td><a href="tutorial-scm-html.html">(scm html), builder and parser: writing and reading HTML</a></td></tr>
+<tr><td><a href="scm-html-parser.html"><code>(scm html parser)</code></a></td><td><a href="tutorial-scm-html.html">(scm html), builder and parser: writing and reading HTML</a></td></tr>
+<tr><td><a href="scm-html.html"><code>(scm html)</code></a></td><td><a href="tutorial-scm-html.html">(scm html), builder and parser: writing and reading HTML</a></td></tr>
+<tr><td><a href="scm-image.html"><code>(scm image)</code></a></td><td><a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a></td></tr>
 <tr><td><a href="scm-io.html"><code>(scm io)</code></a></td><td><a href="tutorial-techniques-01-strings.html">Strings and text</a>, <a href="tutorial-techniques-03-files.html">Files and directories</a>, <a href="tutorial-scm-io.html">(scm io): ports and formatting</a></td></tr>
-<tr><td><a href="scm-json-simple.html"><code>(scm json simple)</code></a></td><td><a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a></td></tr>
+<tr><td><a href="scm-json-simple.html"><code>(scm json simple)</code></a></td><td><a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>, <a href="tutorial-scm-json.html">(scm json simple) and (scm json): JSON</a></td></tr>
+<tr><td><a href="scm-json.html"><code>(scm json)</code></a></td><td><a href="tutorial-scm-json.html">(scm json simple) and (scm json): JSON</a></td></tr>
 <tr><td><a href="scm-list.html"><code>(scm list)</code></a></td><td><a href="tutorial-scm-list.html">(scm list) and (scm macro): small helpers</a></td></tr>
 <tr><td><a href="scm-log.html"><code>(scm log)</code></a></td><td><a href="tutorial-techniques-09-command-line.html">Command-line programs</a>, <a href="tutorial-scm-terminal.html">(scm terminal) and (scm log): terminal output and logging</a></td></tr>
 <tr><td><a href="scm-macro.html"><code>(scm macro)</code></a></td><td><a href="tutorial-scm-list.html">(scm list) and (scm macro): small helpers</a></td></tr>
+<tr><td><a href="scm-markdown.html"><code>(scm markdown)</code></a></td><td><a href="tutorial-scm-markdown.html">(scm markdown): Markdown to HTML and beyond</a></td></tr>
 <tr><td><a href="scm-match.html"><code>(scm match)</code></a></td><td><a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>, <a href="tutorial-scm-match.html">(scm match): pattern matching</a></td></tr>
 <tr><td><a href="scm-module.html"><code>(scm module)</code></a></td><td><a href="tutorial-basics-10-libraries.html">Libraries and programs</a></td></tr>
+<tr><td><a href="scm-odf-spreadsheet.html"><code>(scm odf spreadsheet)</code></a></td><td><a href="tutorial-scm-excel.html">(scm ooxml excel) and friends: spreadsheets</a></td></tr>
+<tr><td><a href="scm-odf-writer.html"><code>(scm odf writer)</code></a></td><td><a href="tutorial-scm-word.html">(scm ooxml word) and friends: Word and OpenDocument texts</a></td></tr>
+<tr><td><a href="scm-ooxml-excel-reader.html"><code>(scm ooxml excel-reader)</code></a></td><td><a href="tutorial-scm-excel.html">(scm ooxml excel) and friends: spreadsheets</a></td></tr>
+<tr><td><a href="scm-ooxml-excel-template.html"><code>(scm ooxml excel template)</code></a></td><td><a href="tutorial-scm-excel.html">(scm ooxml excel) and friends: spreadsheets</a></td></tr>
+<tr><td><a href="scm-ooxml-excel.html"><code>(scm ooxml excel)</code></a></td><td><a href="tutorial-scm-excel.html">(scm ooxml excel) and friends: spreadsheets</a></td></tr>
+<tr><td><a href="scm-ooxml-presentation.html"><code>(scm ooxml presentation)</code></a></td><td><a href="tutorial-scm-presentation.html">(scm ooxml presentation): PowerPoint slides</a></td></tr>
+<tr><td><a href="scm-ooxml-word-reader.html"><code>(scm ooxml word-reader)</code></a></td><td><a href="tutorial-scm-word.html">(scm ooxml word) and friends: Word and OpenDocument texts</a></td></tr>
+<tr><td><a href="scm-ooxml-word.html"><code>(scm ooxml word)</code></a></td><td><a href="tutorial-scm-word.html">(scm ooxml word) and friends: Word and OpenDocument texts</a></td></tr>
+<tr><td><a href="scm-pdf.html"><code>(scm pdf)</code></a></td><td><a href="tutorial-scm-pdf.html">(scm pdf) and (scm svg pdf): PDF documents</a></td></tr>
+<tr><td><a href="scm-png.html"><code>(scm png)</code></a></td><td><a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a></td></tr>
+<tr><td><a href="scm-qr.html"><code>(scm qr)</code></a></td><td><a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a></td></tr>
 <tr><td><a href="scm-store.html"><code>(scm store)</code></a></td><td><a href="tutorial-scm-store.html">(scm store): an indexed record store</a></td></tr>
 <tr><td><a href="scm-string.html"><code>(scm string)</code></a></td><td><a href="tutorial-techniques-01-strings.html">Strings and text</a>, <a href="tutorial-techniques-03-files.html">Files and directories</a>, <a href="tutorial-scm-string.html">(scm string): regular expressions and splitting</a></td></tr>
+<tr><td><a href="scm-svg-core.html"><code>(scm svg core)</code></a></td><td><a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a></td></tr>
+<tr><td><a href="scm-svg-pdf.html"><code>(scm svg pdf)</code></a></td><td><a href="tutorial-scm-pdf.html">(scm pdf) and (scm svg pdf): PDF documents</a></td></tr>
+<tr><td><a href="scm-svg-raster.html"><code>(scm svg raster)</code></a></td><td><a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a></td></tr>
 <tr><td><a href="scm-sysadmin.html"><code>(scm sysadmin)</code></a></td><td><a href="tutorial-scm-system.html">(scm system) and (scm sysadmin): processes and the system</a></td></tr>
 <tr><td><a href="scm-system.html"><code>(scm system)</code></a></td><td><a href="tutorial-techniques-11-concurrency.html">Concurrency</a>, <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>, <a href="tutorial-scm-system.html">(scm system) and (scm sysadmin): processes and the system</a></td></tr>
 <tr><td><a href="scm-templating.html"><code>(scm templating)</code></a></td><td><a href="tutorial-techniques-01-strings.html">Strings and text</a>, <a href="tutorial-scm-templating.html">(scm templating) and (scm uri): templates and URLs</a></td></tr>
 <tr><td><a href="scm-terminal.html"><code>(scm terminal)</code></a></td><td><a href="tutorial-techniques-09-command-line.html">Command-line programs</a>, <a href="tutorial-scm-terminal.html">(scm terminal) and (scm log): terminal output and logging</a></td></tr>
 <tr><td><a href="scm-test.html"><code>(scm test)</code></a></td><td><a href="tutorial-techniques-10-testing.html">Testing your code</a>, <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a></td></tr>
 <tr><td><a href="scm-text.html"><code>(scm text)</code></a></td><td><a href="tutorial-scm-text.html">(scm text): Unix text tools in Scheme</a></td></tr>
-<tr><td><a href="scm-toml.html"><code>(scm toml)</code></a></td><td><a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a></td></tr>
+<tr><td><a href="scm-toml.html"><code>(scm toml)</code></a></td><td><a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>, <a href="tutorial-scm-toml.html">(scm toml): configuration files</a></td></tr>
 <tr><td><a href="scm-uri.html"><code>(scm uri)</code></a></td><td><a href="tutorial-scm-templating.html">(scm templating) and (scm uri): templates and URLs</a></td></tr>
-<tr><td><a href="scm-xml.html"><code>(scm xml)</code></a></td><td><a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a></td></tr>
+<tr><td><a href="scm-xml.html"><code>(scm xml)</code></a></td><td><a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>, <a href="tutorial-scm-xml.html">(scm xml) and (scm feed): XML and news feeds</a></td></tr>
 <tr><td><a href="scm-zip.html"><code>(scm zip)</code></a></td><td><a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a></td></tr>
 <tr><td><a href="srfi-1.html"><code>(srfi 1)</code></a></td><td><a href="tutorial-basics-04-lists.html">Pairs and lists</a>, <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>, <a href="tutorial-basics-08-records.html">Records</a>, <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>, <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>, <a href="tutorial-srfi-1.html">SRFI 1: lists</a></td></tr>
 <tr><td><a href="srfi-111.html"><code>(srfi 111)</code></a></td><td><a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a></td></tr>

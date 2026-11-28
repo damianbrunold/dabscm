@@ -1,10 +1,10 @@
 //! Primitives: the forward-only XML reader of (scm xml), with the event
-//! stream of the JVM implementation's StAX reader (DTDs not processed,
-//! external entities off): the document start, elements (an empty element
-//! gives a start and an end), text (split at every entity and character
-//! reference; CDATA sections are text), comments, processing instructions,
-//! a doctype event and the document end. The XML declaration and
-//! whitespace outside the root element give no events.
+//! stream of the JVM and .NET implementations (DTDs not processed,
+//! external entities off): elements (an empty element gives a start and an
+//! end), text (one event per run of character data: references and CDATA
+//! sections merged), comments and processing instructions. The XML
+//! declaration, a doctype and whitespace outside the root element give no
+//! events; at the end of the document next returns false.
 const std = @import("std");
 const rt = @import("rt.zig");
 const data = @import("data.zig");
@@ -22,7 +22,7 @@ const pa = std.heap.c_allocator;
 
 const Event = enum { doc, element, end_element, text, comment, pi, doctype, end_doc };
 
-const Attr = struct { local: []const u8, value: []const u8 };
+const Attr = struct { name: []const u8, local: []const u8, value: []const u8 };
 
 /// A byte that is a character XML 1.0 does not allow (the control
 /// characters other than tab, newline and carriage return), as the JVM's
@@ -148,7 +148,7 @@ const Reader = struct {
                     return r.fail("An invalid XML character (Unicode: 0x{x}) was found in the value of attribute \"{s}\" and element is \"{s}\".", .{ d, n, r.name });
                 } else v.append(pa, if (d == '\t' or d == '\n' or d == '\r') ' ' else d) catch rt.oom();
             }
-            r.attrs.append(pa, .{ .local = localOf(n), .value = v.toOwnedSlice(pa) catch rt.oom() }) catch rt.oom();
+            r.attrs.append(pa, .{ .name = n, .local = localOf(n), .value = v.toOwnedSlice(pa) catch rt.oom() }) catch rt.oom();
         }
     }
 
@@ -168,12 +168,10 @@ const Reader = struct {
             const c = r.peek() orelse {
                 if (!outside) return r.fail("XML document structures must start and end within the same entity.", .{});
                 if (!r.root_seen) return r.fail("Premature end of file.", .{});
-                if (r.event == .end_doc) {
-                    r.finished = true;
-                    return false;
-                }
+                r.finished = true;
                 r.event = .end_doc;
-                return true;
+                r.name = "";
+                return false;
             };
             if (c == '<') {
                 if (r.startsWith("<?")) {
@@ -197,13 +195,7 @@ const Reader = struct {
                 }
                 if (r.startsWith("<![CDATA[")) {
                     if (outside) return r.fail("The markup in the document following the root element must be well-formed.", .{});
-                    const end = std.mem.indexOfPos(u8, r.s, r.pos + 9, "]]>") orelse return r.fail("The CDATA section must end with \"]]>\".", .{});
-                    r.text.clearRetainingCapacity();
-                    r.text.appendSlice(pa, r.s[r.pos + 9 .. end]) catch rt.oom();
-                    r.pos = end + 3;
-                    r.event = .text;
-                    r.name = "";
-                    return true;
+                    return r.charData();
                 }
                 if (r.startsWith("<!DOCTYPE")) {
                     // skipped, with its internal subset (DTDs are not processed)
@@ -214,9 +206,7 @@ const Reader = struct {
                         if (d == ']' and depth > 0) depth -= 1;
                         if (d == '>' and depth == 0) break;
                     }
-                    r.event = .doctype;
-                    r.name = "";
-                    return true;
+                    continue;
                 }
                 if (r.startsWith("</")) {
                     r.pos += 2;
@@ -255,23 +245,32 @@ const Reader = struct {
                 return true;
             }
             if (outside) return r.fail("Content is not allowed in {s}.", .{if (r.root_done) "trailing section" else "prolog"});
-            // character data up to the next markup or reference
-            r.text.clearRetainingCapacity();
-            if (c == '&') {
+            return r.charData();
+        }
+    }
+
+    /// One text event: character data, references and CDATA sections up to
+    /// the next other markup
+    fn charData(r: *Reader) error{Xml}!bool {
+        r.text.clearRetainingCapacity();
+        while (r.peek()) |d| {
+            if (d == '&') {
                 r.pos += 1;
                 try r.reference(&r.text);
+            } else if (d == '<') {
+                if (!r.startsWith("<![CDATA[")) break;
+                const end = std.mem.indexOfPos(u8, r.s, r.pos + 9, "]]>") orelse return r.fail("The CDATA section must end with \"]]>\".", .{});
+                r.text.appendSlice(pa, r.s[r.pos + 9 .. end]) catch rt.oom();
+                r.pos = end + 3;
             } else {
-                while (r.peek()) |d| {
-                    if (d == '<' or d == '&') break;
-                    if (invalidChar(d)) return r.fail("An invalid XML character (Unicode: 0x{x}) was found in the element content of the document.", .{d});
-                    r.text.append(pa, d) catch rt.oom();
-                    r.pos += 1;
-                }
+                if (invalidChar(d)) return r.fail("An invalid XML character (Unicode: 0x{x}) was found in the element content of the document.", .{d});
+                r.text.append(pa, d) catch rt.oom();
+                r.pos += 1;
             }
-            r.event = .text;
-            r.name = "";
-            return true;
         }
+        r.event = .text;
+        r.name = "";
+        return true;
     }
 
     /// getElementText: the text of the current (start) element, leaving the
@@ -403,7 +402,7 @@ fn xmlReadTo(t: *Thread) Err!Word {
     const n = arg(t, 1);
     const name = if (data.isSymbol(n)) data.symbolName(n) else data.toUtf8(try P.stringArg(t, 1));
     while (r.next() catch return xmlError(t, "xml-read-to failed: ", r)) {
-        if (r.event == .element and std.mem.eql(u8, r.local, name)) return rt.TRUE;
+        if (r.event == .element and (std.mem.eql(u8, r.local, name) or std.mem.eql(u8, r.name, name))) return rt.TRUE;
     }
     return rt.FALSE;
 }
@@ -417,8 +416,7 @@ fn xmlNodeType(t: *Thread) Err!Word {
         .text => data.intern("text"),
         .comment => data.intern("comment"),
         .pi => data.intern("pi"),
-        .doc => data.intern("doc"),
-        .doctype, .end_doc => rt.FALSE,
+        .doc, .doctype, .end_doc => rt.FALSE,
     };
 }
 pub const @"%xml-node-type" = WN("xml-node-type", xmlNodeType, 1, 1);
@@ -431,7 +429,7 @@ fn str(t: *Thread, s: []const u8) Word {
 fn xmlName(t: *Thread) Err!Word {
     const r = try readerArg(t);
     if (r.event == .element or r.event == .end_element) return str(t, r.name);
-    return data.intern(""); // the JVM returns a Java string: the empty symbol
+    return str(t, "");
 }
 pub const @"%xml-name" = WN("xml-name", xmlName, 1, 1);
 
@@ -448,7 +446,7 @@ fn xmlAttribute(t: *Thread) Err!Word {
     const n = arg(t, 1);
     const name = if (data.isSymbol(n)) data.symbolName(n) else data.toUtf8(try P.stringArg(t, 1));
     if (r.event != .element) return rt.FALSE;
-    for (r.attrs.items) |a| if (std.mem.eql(u8, a.local, name)) return str(t, a.value);
+    for (r.attrs.items) |a| if (std.mem.eql(u8, a.local, name) or std.mem.eql(u8, a.name, name)) return str(t, a.value);
     return rt.FALSE;
 }
 pub const @"%xml-attribute" = WN("xml-attribute", xmlAttribute, 2, 2);

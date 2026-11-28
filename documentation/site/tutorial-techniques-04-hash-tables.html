@@ -92,6 +92,16 @@
   <a href="tutorial-scm-store.html">(scm store): an indexed record store</a>
   <a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a>
   <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a>
+  <a href="tutorial-scm-json.html">(scm json simple) and (scm json): JSON</a>
+  <a href="tutorial-scm-xml.html">(scm xml) and (scm feed): XML and news feeds</a>
+  <a href="tutorial-scm-toml.html">(scm toml): configuration files</a>
+  <a href="tutorial-scm-markdown.html">(scm markdown): Markdown to HTML and beyond</a>
+  <a href="tutorial-scm-html.html">(scm html), builder and parser: writing and reading HTML</a>
+  <a href="tutorial-scm-excel.html">(scm ooxml excel) and friends: spreadsheets</a>
+  <a href="tutorial-scm-word.html">(scm ooxml word) and friends: Word and OpenDocument texts</a>
+  <a href="tutorial-scm-presentation.html">(scm ooxml presentation): PowerPoint slides</a>
+  <a href="tutorial-scm-pdf.html">(scm pdf) and (scm svg pdf): PDF documents</a>
+  <a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a>
   <h2><a href="index.html">Library reference</a></h2>
 </nav>
 
@@ -207,13 +217,9 @@
 (ways 100)                                   ;; =&gt; 573147844013817084101</code></pre>
 <h2 id="alists-or-hash-tables">Alists or hash tables?</h2>
 <ul>
-<li>An <strong>alist</strong> is simpler, keeps its order, is easy to print and to write</li>
+<li>An <strong>alist</strong> is simpler, keeps its order, is easy to print and to write as a literal, and is fast enough for a few dozen entries.</li>
+<li>A <strong>hash table</strong> stays fast with thousands of entries and supports in-place updates.</li>
 </ul>
-<p>as a literal, and is fast enough for a few dozen entries.</p>
-<ul>
-<li>A <strong>hash table</strong> stays fast with thousands of entries and supports</li>
-</ul>
-<p>in-place updates.</p>
 <p>Many programs build data as alists and convert with <code>alist-&gt;hash-table</code> when lookups become frequent.</p>
 <h2 id="srfi-125-comparators-and-more-operations">SRFI 125: comparators and more operations</h2>
 <p>SRFI 125 tables are made from a <em>comparator</em> (SRFI 128), which bundles equality and hashing. Its operation names differ a little:</p>
@@ -239,9 +245,8 @@
 <h2 id="where-next">Where next</h2>
 <ul>
 <li><a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>.</li>
-<li>Reference and tutorials: <a href="tutorial-srfi-69.html">SRFI 69</a>, <a href="tutorial-srfi-125.html">SRFI 125</a>,</li>
+<li>Reference and tutorials: <a href="tutorial-srfi-69.html">SRFI 69</a>, <a href="tutorial-srfi-125.html">SRFI 125</a>, <a href="srfi-128.html">SRFI 128</a>.</li>
 </ul>
-<p><a href="srfi-128.html">SRFI 128</a>.</p>
 </div>
 <p class="tutorial-libs">Reference: <a href="srfi-69.html"><code>(srfi 69)</code></a>, <a href="srfi-125.html"><code>(srfi 125)</code></a>, <a href="srfi-128.html"><code>(srfi 128)</code></a>, <a href="scm-dict.html"><code>(scm dict)</code></a></p>
 <nav class="prev-next">

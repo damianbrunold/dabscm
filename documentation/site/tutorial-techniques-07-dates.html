@@ -88,6 +88,16 @@
   <a href="tutorial-scm-store.html">(scm store): an indexed record store</a>
   <a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a>
   <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a>
+  <a href="tutorial-scm-json.html">(scm json simple) and (scm json): JSON</a>
+  <a href="tutorial-scm-xml.html">(scm xml) and (scm feed): XML and news feeds</a>
+  <a href="tutorial-scm-toml.html">(scm toml): configuration files</a>
+  <a href="tutorial-scm-markdown.html">(scm markdown): Markdown to HTML and beyond</a>
+  <a href="tutorial-scm-html.html">(scm html), builder and parser: writing and reading HTML</a>
+  <a href="tutorial-scm-excel.html">(scm ooxml excel) and friends: spreadsheets</a>
+  <a href="tutorial-scm-word.html">(scm ooxml word) and friends: Word and OpenDocument texts</a>
+  <a href="tutorial-scm-presentation.html">(scm ooxml presentation): PowerPoint slides</a>
+  <a href="tutorial-scm-pdf.html">(scm pdf) and (scm svg pdf): PDF documents</a>
+  <a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a>
   <h2><a href="index.html">Library reference</a></h2>
 </nav>
 
@@ -105,13 +115,9 @@
 <h1 id="dates-and-times">Dates and times</h1>
 <p>Two libraries cover dates:</p>
 <ul>
-<li><a class="xref" href="scm-datetime.html"><code>(scm datetime)</code></a> works with <em>epoch seconds</em> (seconds since 1970-01-01 UTC):</li>
+<li><a class="xref" href="scm-datetime.html"><code>(scm datetime)</code></a> works with <em>epoch seconds</em> (seconds since 1970-01-01 UTC): parsing and formatting ISO 8601 and RFC 822 timestamps, as found in logs, APIs and feeds;</li>
+<li><a class="xref" href="srfi-19.html"><code>(srfi 19)</code></a> has date records with fields, formatting with <code>~</code> directives, Julian days for date arithmetic, and time differences.</li>
 </ul>
-<p>parsing and formatting ISO 8601 and RFC 822 timestamps, as found in logs, APIs and feeds;</p>
-<ul>
-<li><a class="xref" href="srfi-19.html"><code>(srfi 19)</code></a> has date records with fields, formatting with <code>~</code> directives,</li>
-</ul>
-<p>Julian days for date arithmetic, and time differences.</p>
 <p><a class="xref" href="scm-duration.html"><code>(scm duration)</code></a> reads and writes durations like <code>90m</code> or <code>2d</code>.</p>
 <pre><code class="language-scheme">(import (scheme base) (srfi 19) (scm datetime) (scm duration))</code></pre>
 <h2 id="timestamps-as-epoch-seconds">Timestamps as epoch seconds</h2>
