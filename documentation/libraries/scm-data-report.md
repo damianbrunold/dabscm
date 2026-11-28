@@ -28,6 +28,30 @@ a footer with the title and page numbers.
 
 ## Exports
 
+### `df->html`
+
+```
+Syntax: (df->html df option ...)
+Library: (scm data report)
+Description: The data frame as an HTML table fragment (string); options as
+  for df->sxml. Style it with report-css.
+Example:
+  (df->html (tibble (x 1 2) (y "a" "b")))
+```
+
+### `df->sxml`
+
+```
+Syntax: (df->sxml df option ...)
+Library: (scm data report)
+Description: The data frame as an HTML table in SXML, the same as a
+  (table df option ...) report block: options (columns ...),
+  (total-row ...), (max-rows n) (default: all rows) and (caption s); numbers
+  right-aligned and formatted as in reports.
+Example:
+  (df->sxml (tibble (x 1 2) (y "a" "b")) '(max-rows 10))
+```
+
 ### `make-report`
 
 ```
@@ -86,6 +110,42 @@ Description: The report as a PDF document (bytevector): A4 pages with the
 Example:
   (call-with-port (open-binary-output-file "r.pdf")
     (lambda (o) (write-bytevector (report->pdf doc) o)))
+```
+
+### `report->sxml`
+
+```
+Syntax: (report->sxml report)
+Library: (scm data report)
+Description: The blocks of the report as a list of SXML elements (no page,
+  no table of contents), figures numbered from 1, for embedding a report
+  in another page styled by report-css.
+Example:
+  (html->string `(div (@ (class "report")) ,@(report->sxml doc)))
+```
+
+### `report-block->sxml`
+
+```
+Syntax: (report-block->sxml block [figure-number])
+Library: (scm data report)
+Description: One report block (see report) as SXML for (scm html builder),
+  styled by report-css. figure-number (default 1) is used in the caption
+  of a figure block.
+Example:
+  (html->string (report-block->sxml '(p "Hello " (b "world"))))
+```
+
+### `report-css`
+
+```
+Syntax: (report-css)
+Library: (scm data report)
+Description: The CSS of report->html pages including the chart classes
+  (plot-css), with a light and a dark theme, for pages that embed
+  report->sxml, df->sxml or report-block->sxml output.
+Example:
+  (report-css)
 ```
 
 ### `write-report`

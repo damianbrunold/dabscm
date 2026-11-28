@@ -269,9 +269,14 @@
           save-plot
           scatter-plot
           ;; (scm data report)
+          df->html
+          df->sxml
           make-report
           report
+          report-block->sxml
+          report-css
           report->html
+          report->sxml
           report->markdown
           report->pdf
           write-report)

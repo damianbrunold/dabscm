@@ -4,6 +4,7 @@
         (srfi 13)
         (scm data)
         (scm fs)
+        (scm html builder)
         (scm test))
 
 (test-runner-factory scm-test-runner)
@@ -60,6 +61,32 @@
     (test-assert (has? h "prefers-color-scheme: dark"))
     (test-assert (has? h "<aside class=\"note\">careful</aside>"))
     (test-assert (not (has? (report->html doc #f) "<nav class=\"toc\">")))))
+
+(test-group "fragments"
+  ;; embedding: blocks, frames and the css without a page around them
+  (let ((t (html->string (df->sxml pts '(max-rows 1) '(caption "c")))))
+    (test-assert (string-prefix? "<div class=\"table-wrap\"><table><caption>c</caption>" t))
+    (test-assert (has? t "<td class=\"txt\">BEW8</td>"))
+    (test-assert (not (has? t "GYN2")))
+    (test-assert (has? t "… 1 more rows")))
+  (test-equal (html->string (df->sxml pts)) (df->html pts))
+  (test-equal "<p>Hello <strong>world</strong></p>"
+              (html->string (report-block->sxml '(p "Hello " (b "world")))))
+  (test-assert (has? (html->string (report-block->sxml `(figure ,plot (caption "P")) 4))
+                     "Figure 4: "))
+  (let ((xs (report->sxml doc)))
+    (test-equal 14 (length xs))
+    (test-assert (not (has? (html->string `(div ,@xs)) "<nav")))
+    (test-assert (has? (html->string `(div ,@xs)) "Figure 1: ")))
+  ;; a figure from SVG text (a stored chart) instead of a plot
+  (let* ((svg (plot->svg-string plot))
+         (d (report (title "S") (figure ,svg (caption "stored")))))
+    (test-assert (has? (report->html d) "Figure 1: stored"))
+    (test-assert (has? (report->html d) "<svg"))
+    (test-assert (string-prefix? "%PDF-" (utf8->string (bytevector-copy (report->pdf d) 0 5))))
+    (test-assert (has? (report->markdown d (lambda (p n) (if (string? p) "s.svg" "x"))) "](s.svg)")))
+  (test-assert (has? (report-css) "prefers-color-scheme: dark"))
+  (test-assert (has? (report-css) "table-wrap")))
 
 (test-group "markdown"
   (let

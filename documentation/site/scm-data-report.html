@@ -23,12 +23,17 @@
 
 <nav class="toc">
   <h2>Bindings</h2>
-  <a href="#e0" data-name="make-report">make-report</a>
-  <a href="#e1" data-name="report">report</a>
-  <a href="#e2" data-name="report-&gt;html">report-&gt;html</a>
-  <a href="#e3" data-name="report-&gt;markdown">report-&gt;markdown</a>
-  <a href="#e4" data-name="report-&gt;pdf">report-&gt;pdf</a>
-  <a href="#e5" data-name="write-report">write-report</a>
+  <a href="#e0" data-name="df-&gt;html">df-&gt;html</a>
+  <a href="#e1" data-name="df-&gt;sxml">df-&gt;sxml</a>
+  <a href="#e2" data-name="make-report">make-report</a>
+  <a href="#e3" data-name="report">report</a>
+  <a href="#e4" data-name="report-&gt;html">report-&gt;html</a>
+  <a href="#e5" data-name="report-&gt;markdown">report-&gt;markdown</a>
+  <a href="#e6" data-name="report-&gt;pdf">report-&gt;pdf</a>
+  <a href="#e7" data-name="report-&gt;sxml">report-&gt;sxml</a>
+  <a href="#e8" data-name="report-block-&gt;sxml">report-block-&gt;sxml</a>
+  <a href="#e9" data-name="report-css">report-css</a>
+  <a href="#e10" data-name="write-report">write-report</a>
 </nav>
 
 <main>
@@ -46,7 +51,7 @@
 <p class="lib-tutorials">Tutorials: <a href="tutorial-scm-data-report.html">"(scm data report): reports in HTML, Markdown and PDF"</a></p>
 <div class="lib-preamble">
 <h2>Overview</h2>
-<p>Reports as data: <a class="xref" href="#e1"><code>report</code></a> quasiquotes a list of blocks (title, headings, paragraphs with inline markup, lists, notes, code, tables from data frames and figures from plots), rendered to a self-contained HTML page (light and dark theme, inline SVG charts, table of contents), to GitHub-flavoured Markdown with the figures written as PNG or SVG files next to it, or to PDF (<a class="xref" href="#e4"><code>report-&gt;pdf</code></a>): A4 pages with embedded fonts, tables whose header repeats after a page break, figures as vector graphics, the headings as bookmarks and a footer with the title and page numbers.</p>
+<p>Reports as data: <a class="xref" href="#e3"><code>report</code></a> quasiquotes a list of blocks (title, headings, paragraphs with inline markup, lists, notes, code, tables from data frames and figures from plots), rendered to a self-contained HTML page (light and dark theme, inline SVG charts, table of contents), to GitHub-flavoured Markdown with the figures written as PNG or SVG files next to it, or to PDF (<a class="xref" href="#e6"><code>report-&gt;pdf</code></a>): A4 pages with embedded fonts, tables whose header repeats after a page break, figures as vector graphics, the headings as bookmarks and a footer with the title and page numbers.</p>
 <h2>Common uses</h2>
 <pre><code class="language-scheme">(write-report
   (report (title "MFZO v1 vs v2") (date)
@@ -57,9 +62,29 @@
   "report.html")                    ; or "report.md", "report.pdf"</code></pre>
 </div>
 <div class="toolbar"><input type="search" id="export-filter" placeholder="Filter exports in this library&hellip;" autocomplete="off" spellcheck="false"></div>
-<p class="export-count">6 bindings</p>
+<p class="export-count">11 bindings</p>
 
-<div class="entry" id="e0" data-name="make-report">
+<div class="entry" id="e0" data-name="df-&gt;html">
+  <div class="entry-name">df-&gt;html</div>
+  <pre class="entry-doc">Syntax: (df-&gt;html df option ...)
+Library: (scm data report)
+Description: The data frame as an HTML table fragment (string); options as
+  for df-&gt;sxml. Style it with report-css.
+Example:
+  (df-&gt;html (tibble (x 1 2) (y "a" "b")))</pre>
+</div>
+<div class="entry" id="e1" data-name="df-&gt;sxml">
+  <div class="entry-name">df-&gt;sxml</div>
+  <pre class="entry-doc">Syntax: (df-&gt;sxml df option ...)
+Library: (scm data report)
+Description: The data frame as an HTML table in SXML, the same as a
+  (table df option ...) report block: options (columns ...),
+  (total-row ...), (max-rows n) (default: all rows) and (caption s); numbers
+  right-aligned and formatted as in reports.
+Example:
+  (df-&gt;sxml (tibble (x 1 2) (y "a" "b")) '(max-rows 10))</pre>
+</div>
+<div class="entry" id="e2" data-name="make-report">
   <div class="entry-name">make-report</div>
   <pre class="entry-doc">Syntax: (make-report blocks)
 Library: (scm data report)
@@ -68,11 +93,11 @@ Description: A report from a list of blocks (the procedure behind the
 Example:
   (make-report (list '(title "Hello") (list 'table df)))</pre>
 </div>
-<div class="entry" id="e1" data-name="report">
+<div class="entry" id="e3" data-name="report">
   <div class="entry-name">report</div>
   <div class="nodoc">(no documentation)</div>
 </div>
-<div class="entry" id="e2" data-name="report-&gt;html">
+<div class="entry" id="e4" data-name="report-&gt;html">
   <div class="entry-name">report-&gt;html</div>
   <pre class="entry-doc">Syntax: (report-&gt;html report [toc?])
 Library: (scm data report)
@@ -83,7 +108,7 @@ Description: The report as one self-contained HTML page (string): inline
 Example:
   (report-&gt;html doc)</pre>
 </div>
-<div class="entry" id="e3" data-name="report-&gt;markdown">
+<div class="entry" id="e5" data-name="report-&gt;markdown">
   <div class="entry-name">report-&gt;markdown</div>
   <pre class="entry-doc">Syntax: (report-&gt;markdown report [figure-writer])
 Library: (scm data report)
@@ -94,7 +119,7 @@ Description: The report as GitHub-flavoured Markdown (string). Figures are
 Example:
   (report-&gt;markdown doc)</pre>
 </div>
-<div class="entry" id="e4" data-name="report-&gt;pdf">
+<div class="entry" id="e6" data-name="report-&gt;pdf">
   <div class="entry-name">report-&gt;pdf</div>
   <pre class="entry-doc">Syntax: (report-&gt;pdf report [options])
 Library: (scm data report)
@@ -111,7 +136,37 @@ Example:
   (call-with-port (open-binary-output-file "r.pdf")
     (lambda (o) (write-bytevector (report-&gt;pdf doc) o)))</pre>
 </div>
-<div class="entry" id="e5" data-name="write-report">
+<div class="entry" id="e7" data-name="report-&gt;sxml">
+  <div class="entry-name">report-&gt;sxml</div>
+  <pre class="entry-doc">Syntax: (report-&gt;sxml report)
+Library: (scm data report)
+Description: The blocks of the report as a list of SXML elements (no page,
+  no table of contents), figures numbered from 1, for embedding a report
+  in another page styled by report-css.
+Example:
+  (html-&gt;string `(div (@ (class "report")) ,@(report-&gt;sxml doc)))</pre>
+</div>
+<div class="entry" id="e8" data-name="report-block-&gt;sxml">
+  <div class="entry-name">report-block-&gt;sxml</div>
+  <pre class="entry-doc">Syntax: (report-block-&gt;sxml block [figure-number])
+Library: (scm data report)
+Description: One report block (see report) as SXML for (scm html builder),
+  styled by report-css. figure-number (default 1) is used in the caption
+  of a figure block.
+Example:
+  (html-&gt;string (report-block-&gt;sxml '(p "Hello " (b "world"))))</pre>
+</div>
+<div class="entry" id="e9" data-name="report-css">
+  <div class="entry-name">report-css</div>
+  <pre class="entry-doc">Syntax: (report-css)
+Library: (scm data report)
+Description: The CSS of report-&gt;html pages including the chart classes
+  (plot-css), with a light and a dark theme, for pages that embed
+  report-&gt;sxml, df-&gt;sxml or report-block-&gt;sxml output.
+Example:
+  (report-css)</pre>
+</div>
+<div class="entry" id="e10" data-name="write-report">
   <div class="entry-name">write-report</div>
   <pre class="entry-doc">Syntax: (write-report report path [figure-format])
 Library: (scm data report)

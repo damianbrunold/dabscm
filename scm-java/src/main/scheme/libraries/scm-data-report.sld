@@ -16,9 +16,14 @@
           (scm pdf)
           (scm svg pdf)
           (scm truetype))
-  (export make-report
+  (export df->html
+          df->sxml
+          make-report
           report
+          report-block->sxml
+          report-css
           report->html
+          report->sxml
           report->markdown
           report->pdf
           write-report)
@@ -41,6 +46,7 @@
     ;; Blocks: (title s) (subtitle s) (date [s]) (h1 …) (h2 …) (h3 …)
     ;;   (p …) (ul item …) (ol item …) (note …) (pre "text") (hr)
     ;;   (page-break) (table df option …) (figure plot option …)
+    ;;   (a figure's plot may also be SVG text, e.g. a stored chart)
     ;; Inline: strings, numbers, (b …) (i …) (code s) (link url text …) (br)
     ;; table options: (columns (col [label [format [align]]]) …) with
     ;;   format a procedure or num, int, pct, pct1, dec1, dec2, text;
@@ -276,7 +282,7 @@ Example:
         ((figure)
          (let ((caption (opt (cddr b) 'caption #f))
                (p (cadr b)))
-           `(figure ,(plot->svg p)
+           `(figure ,(if (string? p) (raw p) (plot->svg p))
                     ,@(if caption
                           `((figcaption
                              ,(string-append "Figure "
@@ -321,6 +327,60 @@ nav.toc ol{padding-left:20px;margin:4px 0}
 .page-break{break-after:page}
 @media print{body{background:#fff}main{max-width:none;padding:0}}
 ")
+
+    (define (report-block->sxml b . fig-no)
+      "Syntax: (report-block->sxml block [figure-number])
+Library: (scm data report)
+Description: One report block (see report) as SXML for (scm html builder),
+  styled by report-css. figure-number (default 1) is used in the caption
+  of a figure block.
+Example:
+  (html->string (report-block->sxml '(p \"Hello \" (b \"world\"))))"
+      (block->sxml b (if (pair? fig-no) (car fig-no) 1)))
+
+    (define (report->sxml doc)
+      "Syntax: (report->sxml report)
+Library: (scm data report)
+Description: The blocks of the report as a list of SXML elements (no page,
+  no table of contents), figures numbered from 1, for embedding a report
+  in another page styled by report-css.
+Example:
+  (html->string `(div (@ (class \"report\")) ,@(report->sxml doc)))"
+      (let ((fig 0))
+        (map (lambda (b)
+               (when (eq? (car b) 'figure) (set! fig (+ fig 1)))
+               (block->sxml b fig))
+             (blocks doc))))
+
+    (define (df->sxml df . options)
+      "Syntax: (df->sxml df option ...)
+Library: (scm data report)
+Description: The data frame as an HTML table in SXML, the same as a
+  (table df option ...) report block: options (columns ...),
+  (total-row ...), (max-rows n) (default: all rows) and (caption s); numbers
+  right-aligned and formatted as in reports.
+Example:
+  (df->sxml (tibble (x 1 2) (y \"a\" \"b\")) '(max-rows 10))"
+      (block->sxml `(table ,df ,@options) 1))
+
+    (define (df->html df . options)
+      "Syntax: (df->html df option ...)
+Library: (scm data report)
+Description: The data frame as an HTML table fragment (string); options as
+  for df->sxml. Style it with report-css.
+Example:
+  (df->html (tibble (x 1 2) (y \"a\" \"b\")))"
+      (html->string (apply df->sxml df options)))
+
+    (define (report-css)
+      "Syntax: (report-css)
+Library: (scm data report)
+Description: The CSS of report->html pages including the chart classes
+  (plot-css), with a light and a dark theme, for pages that embed
+  report->sxml, df->sxml or report-block->sxml output.
+Example:
+  (report-css)"
+      (string-append page-css (plot-css)))
 
     (define (report->html doc . opts)
       "Syntax: (report->html report [toc?])
@@ -1018,7 +1078,7 @@ Example:
                 (set! y (- y 8))))))
         (define (figure! p opts)
           (set! fig (+ fig 1))
-          (let* ((svg (plot->svg p))
+          (let* ((svg (if (string? p) p (plot->svg p)))
                  (caption (opt opts 'caption #f))
                  (avail (- top bottom 30)))
             (let-values (((w h) (svg-size svg)))
@@ -1262,12 +1322,17 @@ Example:
                                       (string-append base "-fig"
                                                      (number->string n)
                                                      "."
-                                                     (symbol->string fmt)))
+                                                     (if (string? p)
+                                                         "svg"
+                                                         (symbol->string fmt))))
                                      (full
                                       (if (and dir (not (string=? dir "")))
                                           (join-path dir file)
                                           file)))
-                                (save-plot p full)
+                                (if (string? p)
+                                    (call-with-output-file full
+                                      (lambda (o) (write-string p o)))
+                                    (save-plot p full))
                                 file))))
                (call-with-output-file path
                  (lambda (o)
