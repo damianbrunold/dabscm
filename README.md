@@ -82,6 +82,21 @@ builder (the `(scm deb)` library) is pure Scheme and needs no `dpkg-deb`. A tree
 uncommitted changes is refused unless `--allow-dirty` is given (version gets
 `+dirty`); `--out <dir>` changes the output directory.
 
+The HTML documentation has a package of its own, for publishing it on a web
+server:
+
+```bash
+./builder.sh update-documentation.scm     # regenerate documentation/site, then commit
+./builder.sh package-deb-docs.scm         # -> dist/dabscm-docs_<VERSION>_all.deb
+sudo apt install ./dist/dabscm-docs_<VERSION>_all.deb
+```
+
+It installs the committed `documentation/site` under `/var/www/dabscm`
+(`--root <dir>` for another directory); an upgrade replaces the site and
+removes pages that no longer exist. The web server is configured separately,
+for example in nginx `location /dabscm/ { alias /var/www/dabscm/; }`.
+`--out` and `--allow-dirty` work as for the other packages.
+
 The native implementation has a package of its own, which can be installed next
 to the Java one:
 
