@@ -88,6 +88,10 @@ the JVM, .NET and native implementations, so the code works as shown.
 | handle an error and continue | [Errors and exceptions](basics-09-errors.md#catching-errors-with-guard) |
 | destructure data with patterns | [Macros and pattern matching](basics-11-macros.md#pattern-matching-with-match) |
 | write my own control construct | [Macros](basics-11-macros.md) |
+| format or lint my code | [Developer tools](scm-tooling.md) |
+| evaluate a formula a user typed, safely | [The R7RS libraries](r7rs-libraries.md#code-as-data-eval) |
+| read or write a binary file format | [Binary data](scm-binary.md) |
+| build a .deb package | [Debian packages](scm-deb.md) |
 
 ## Library tutorials
 
@@ -177,12 +181,25 @@ Guided tours of the individual libraries, each with worked examples.
 | [Clustering](scm-data-cluster.md) | similarity, Louvain communities, hierarchical clustering, k-means |
 | [R translation](scm-data-r.md) | tidyverse R to `(scm data)` and back |
 
-Tutorials for the remaining libraries follow. Until then, the
-[library reference](../index.md) has an overview and examples for every
-library.
+### More libraries
+
+| tutorial | covers |
+|---|---|
+| [Geodata](scm-geo.md) | features, polygons, GeoJSON, shapefiles, dissolving, TopoJSON |
+| [Fonts and text layout](scm-fonts.md) | built-in and installed fonts, measuring, subsetting, line breaking |
+| [Debian packages](scm-deb.md) | `.deb` files in pure Scheme, packaging web applications |
+| [Developer tools](scm-tooling.md) | `scm fmt`, `scm lint`, source trees, docstrings, REPL, profiler, reloader |
+| [Binary data](scm-binary.md) | multi-byte numbers, a WAV file, Latin-1, random-access files |
+| [The R7RS libraries](r7rs-libraries.md) | which library holds what; complex numbers, `eval`, `read`, `load`, time |
+
+Every library has a page in the [library reference](../index.md), with
+the documentation of each procedure.
 
 ## Running the examples yourself
 
 Copy a code block into a file, keep the `import` from the chapter's first
 block, and run it with `scm file.scm`. Lines ending in `;; => value` show
-what an expression returns; `;; prints:` shows what it writes.
+what an expression returns; `;; prints:` shows what it writes. Every
+example is run as a test on the JVM, .NET and native implementations;
+the few that need a library dabscm native lacks (the REPL support, the
+profiler) are tested on the JVM and .NET only.

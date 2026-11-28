@@ -38,6 +38,7 @@
 
 <div class="lib-title r7rs">(scheme repl)</div>
 <p class="lib-sub">REPL environment access</p>
+<p class="lib-tutorials">Tutorials: <a href="tutorial-r7rs-libraries.html">"The R7RS libraries: eval, read, load, time, complex numbers and more"</a></p>
 <div class="lib-preamble">
 <h2>Overview</h2>
 <p><a class="xref" href="scheme-repl.html"><code>(scheme repl)</code></a> provides <a class="xref" href="#e0"><code>interaction-environment</code></a> — the mutable environment the REPL evaluates in, suitable as the environment argument to <code>eval</code>.</p>
@@ -57,7 +58,9 @@ Library: (scheme repl)
 Description: Returns the environment specifier for the interactive REPL
 environment, which in this implementation is (user main). This environment
 includes all standard bindings and is the namespace in which the REPL
-evaluates expressions. The returned specifier can be passed to eval.
+evaluates expressions. In a program (a script run with scm), which has no
+REPL, it stands for the program's own top level, where load also defines.
+The returned specifier can be passed to eval.
 Example:
   (interaction-environment) =&gt; (user main)
   (eval '(+ 1 2) (interaction-environment)) =&gt; 3</pre>

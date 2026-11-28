@@ -78,25 +78,70 @@ Example:
 
 ### `qr-matrix-ec-level`
 
-*(no documentation)*
+```
+Syntax: (qr-matrix-ec-level qm)
+Library: (scm qr)
+Description: Returns the error-correction level of the QR code qm as a
+  number: 0 for L, 1 for M, 2 for Q, 3 for H (about 7, 15, 25 and 30 %
+  of the code may be damaged); qr-encode accepts these numbers as levels
+  too.
+Example:
+  (qr-matrix-ec-level (qr-encode "hello" 'H)) => 3
+```
 
 ### `qr-matrix-mask`
 
-*(no documentation)*
+```
+Syntax: (qr-matrix-mask qm)
+Library: (scm qr)
+Description: Returns the mask pattern (0 to 7) that qr-encode chose for the
+  QR code qm, the one with the lowest penalty score.
+Example:
+  (qr-matrix-mask (qr-encode "hello")) => 0
+```
 
 ### `qr-matrix-ref`
 
-*(no documentation)*
+```
+Syntax: (qr-matrix-ref qm y x)
+Library: (scm qr)
+Description: Returns 1 if the module in row y and column x of the QR code
+  qm is dark, 0 if it is light; rows and columns count from 0 at the top
+  left, without the quiet zone.
+Example:
+  (qr-matrix-ref (qr-encode "hello") 0 0) => 1   ; a finder pattern
+```
 
 ### `qr-matrix-size`
 
-*(no documentation)*
+```
+Syntax: (qr-matrix-size qm)
+Library: (scm qr)
+Description: Returns the number of modules along each side of the QR code
+  qm, without the quiet zone: 21 for version 1, 4 more for each version.
+Example:
+  (qr-matrix-size (qr-encode "hello")) => 21
+```
 
 ### `qr-matrix-version`
 
-*(no documentation)*
+```
+Syntax: (qr-matrix-version qm)
+Library: (scm qr)
+Description: Returns the version (1 to 40) of the QR code qm, the smallest
+  that holds its data at its error-correction level unless qr-encode was
+  given one.
+Example:
+  (qr-matrix-version (qr-encode "hello")) => 1
+```
 
 ### `qr-matrix?`
 
-*(no documentation)*
+```
+Syntax: (qr-matrix? x)
+Library: (scm qr)
+Description: Returns #t if x is a QR code made by qr-encode, #f otherwise.
+Example:
+  (qr-matrix? (qr-encode "hello")) => #t
+```
 

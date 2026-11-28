@@ -43,6 +43,7 @@
 
 <div class="lib-title srfi">(srfi 271 determinized chacha20)</div>
 <p class="lib-sub">SRFI-271 — Determinized random ports using ChaCha20</p>
+<p class="lib-tutorials">Tutorials: <a href="tutorial-srfi-271.html">SRFI 271: random ports</a></p>
 <div class="lib-preamble">
 <h2>Overview</h2>
 <p>The ChaCha20 implementation behind <a class="xref" href="srfi-271-determinized.html"><code>(srfi 271 determinized)</code></a>, under the name the SRFI suggests for algorithm-specific libraries. A port delivers the ChaCha20 keystream (20 rounds, all-zero nonce) of a 256-bit key; for the first 2^32 blocks it equals RFC 8439 ChaCha20 with an all-zero nonce. Its state is the vector <code>#(chacha20 key counter offset)</code>: the 32-byte key, the keystream block and the byte within that block that will be read next.</p>

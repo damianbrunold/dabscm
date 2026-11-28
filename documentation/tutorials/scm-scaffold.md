@@ -2,7 +2,7 @@
 title: "(scm scaffold): starting a web application with scm new-app"
 part: libraries
 order: 1031
-libraries: (scm scaffold)
+libraries: (scm scaffold) (scm scaffold starters)
 summary: The four starter applications and what each adds, creating one with scm new-app or new-app, how names are replaced, the layout of a generated app, running, testing, developing with auto-reload, configuration and deployment.
 ---
 # (scm scaffold): starting a web application with scm new-app

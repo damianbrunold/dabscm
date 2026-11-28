@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>"Developer tools: scm fmt, scm lint, (scm source), docs, REPL, profiling, reloading" — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <a href="tutorial-scm-string.html">(scm string): regular expressions and splitting</a>
+  <a href="tutorial-scm-list.html">(scm list) and (scm macro): small helpers</a>
+  <a href="tutorial-scm-match.html">(scm match): pattern matching</a>
+  <a href="tutorial-scm-io.html">(scm io): ports and formatting</a>
+  <a href="tutorial-scm-text.html">(scm text): Unix text tools in Scheme</a>
+  <a href="tutorial-scm-templating.html">(scm templating) and (scm uri): templates and URLs</a>
+  <a href="tutorial-scm-args.html">(scm args): command-line parsing</a>
+  <a href="tutorial-scm-terminal.html">(scm terminal) and (scm log): terminal output and logging</a>
+  <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a>
+  <a href="tutorial-scm-system.html">(scm system) and (scm sysadmin): processes and the system</a>
+  <a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a>
+  <a href="tutorial-scm-store.html">(scm store): an indexed record store</a>
+  <a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a>
+  <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a>
+  <a href="tutorial-scm-json.html">(scm json simple) and (scm json): JSON</a>
+  <a href="tutorial-scm-xml.html">(scm xml) and (scm feed): XML and news feeds</a>
+  <a href="tutorial-scm-toml.html">(scm toml): configuration files</a>
+  <a href="tutorial-scm-markdown.html">(scm markdown): Markdown to HTML and beyond</a>
+  <a href="tutorial-scm-html.html">(scm html), builder and parser: writing and reading HTML</a>
+  <a href="tutorial-scm-excel.html">(scm ooxml excel) and friends: spreadsheets</a>
+  <a href="tutorial-scm-word.html">(scm ooxml word) and friends: Word and OpenDocument texts</a>
+  <a href="tutorial-scm-presentation.html">(scm ooxml presentation): PowerPoint slides</a>
+  <a href="tutorial-scm-pdf.html">(scm pdf) and (scm svg pdf): PDF documents</a>
+  <a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a>
+  <a href="tutorial-scm-http-server.html">(scm net http server) and (scm net http route): web servers</a>
+  <a href="tutorial-scm-http-client.html">(scm net http client): HTTP requests</a>
+  <a href="tutorial-scm-web-app.html">"Web applications: forms, sessions, middleware, static files, uploads"</a>
+  <a href="tutorial-scm-websocket.html">(scm net sockets) and (scm net websocket): TCP and WebSockets</a>
+  <a href="tutorial-scm-email.html">(scm net email) and (scm net smtp): sending e-mail</a>
+  <a href="tutorial-scm-database.html">"(scm database postgres), sqlserver and migrations: SQL databases"</a>
+  <a href="tutorial-scm-scaffold.html">"(scm scaffold): starting a web application with scm new-app"</a>
+  <a href="tutorial-scm-net-remote.html">"(scm net-remote): ssh, scp, rsync, curl and wget from Scheme"</a>
+  <a href="tutorial-scm-data.html">"(scm data): data frames and verbs"</a>
+  <a href="tutorial-scm-data-reshape.html">"(scm data): joining and reshaping"</a>
+  <a href="tutorial-scm-data-stats.html">"(scm data stats) and (scm data format): describing data"</a>
+  <a href="tutorial-scm-data-tests.html">"(scm data tests): hypothesis tests and linear models"</a>
+  <a href="tutorial-scm-data-io.html">"(scm data io): reading and writing data"</a>
+  <a href="tutorial-scm-data-plot.html">"(scm data plot): charts and maps"</a>
+  <a href="tutorial-scm-data-report.html">"(scm data report): reports in HTML, Markdown and PDF"</a>
+  <a href="tutorial-scm-data-cluster.html">"(scm data cluster): similarity and clustering"</a>
+  <a href="tutorial-scm-data-r.html">"(scm data r): translating between R and (scm data)"</a>
+  <a href="tutorial-scm-geo.html">"(scm geo): features, polygons, shapefiles and TopoJSON"</a>
+  <a href="tutorial-scm-fonts.html">"(scm truetype), (scm fonts) and (scm text layout): fonts and text"</a>
+  <a href="tutorial-scm-deb.html">"(scm deb) and (scm deb webapp): Debian packages"</a>
+  <a href="tutorial-scm-tooling.html" class="active">"Developer tools: scm fmt, scm lint, (scm source), docs, REPL, profiling, reloading"</a>
+    <a class="sub" href="#scm-fmt">scm fmt</a>
+    <a class="sub" href="#scm-lint">scm lint</a>
+    <a class="sub" href="#reading-source-as-a-tree">Reading source as a tree</a>
+    <a class="sub" href="#docstrings-at-run-time">Docstrings at run time</a>
+    <a class="sub" href="#repl-and-editors">REPL and editors</a>
+    <a class="sub" href="#profiling">Profiling</a>
+    <a class="sub" href="#restarting-on-changes">Restarting on changes</a>
+    <a class="sub" href="#looking-at-compiled-code">Looking at compiled code</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-scm-binary.html">"(scm bytevector) and (scm random access): binary data"</a>
+  <a href="tutorial-r7rs-libraries.html">"The R7RS libraries: eval, read, load, time, complex numbers and more"</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">"Developer tools: scm fmt, scm lint, (scm source), docs, REPL, profiling, reloading"</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="developer-tools">Developer tools</h1>
+<p>dabscm comes with the tools a project needs besides the language:</p>
+<ul>
+<li><strong>Formatter:</strong> <code>scm fmt</code>.</li>
+<li><strong>Linter:</strong> <code>scm lint</code>.</li>
+<li><strong>Libraries underneath:</strong> for tools of your own.</li>
+<li><strong>Documentation:</strong> docstrings at run time.</li>
+<li><strong>Editors and the REPL:</strong> completion and Geiser.</li>
+<li><strong>Profiler.</strong></li>
+<li><strong>Development reloader:</strong> restarts a program when its files change.</li>
+</ul>
+<pre><code class="language-scheme">(import (scheme base) (scheme write)
+        (scm source) (scm source format) (scm source lint) (scm doc))
+
+(define messy "; prices\n(define (total items)   ; sum of prices\n  (if (null? items) 0\n  (+ (car (cdr (car items))) (total (cdr items)))))\n")</code></pre>
+<h2 id="scm-fmt">scm fmt</h2>
+<p><code>scm fmt</code> lays code out the way Emacs indents Scheme, within 78 columns, and sorts import and export lists:</p>
+<pre><code class="language-sh">scm fmt src/                # format every .scm and .sld below src, in place
+scm fmt --check .           # CI: list files that are not formatted, exit 1 if any
+scm fmt --diff app.scm      # show what would change</code></pre>
+<p>The same from Scheme, on text:</p>
+<pre><code class="language-scheme">(display (format-source-string messy))
+;; prints: ; prices
+;; prints: (define (total items) ; sum of prices
+;; prints:   (if (null? items) 0 (+ (car (cdr (car items))) (total (cdr items)))))
+
+(display (format-source-string "(import (scm fs) (scheme write) (scheme base))\n(define (f x)\n(if x\n1 2))"))
+;; prints: (import (scheme base)
+;; prints:         (scheme write)
+;; prints:         (scm fs))
+;; prints: (define (f x) (if x 1 2))</code></pre>
+<ul>
+<li>Comments stay where they were; strings and docstrings are copied verbatim.</li>
+<li>A form that fits on one line goes on one line; <code>--keep-breaks</code> keeps the line breaks of the source and only redoes the indentation.</li>
+<li>Imports are sorted <code>(scheme …)</code>, <code>(srfi …)</code>, <code>(scm …)</code>, then the rest, unless reordering could change which binding a name gets.</li>
+<li>Every result is checked: it must read back to the same code, and formatting it again must change nothing. Otherwise the file is left alone.</li>
+</ul>
+<h2 id="scm-lint">scm lint</h2>
+<p><code>scm lint</code> finds mistakes and simplifications: unbound names, unused imports and variables, wrong argument counts, unreachable clauses, and idioms with a simpler form:</p>
+<pre><code class="language-scheme">(define findings (lint-string (string-append "(import (scheme base) (scheme char))\n" messy) "prices.scm"))
+(display (lint-findings-&gt;text findings))
+;; prints: prices.scm:1:23: warning: [unused-import] (scheme char) is imported but not used
+;; prints: prices.scm:5:11: info: [cxr] use cdar
+(map lint-finding-rule (lint-string "(import (scheme base))\n(define (empty? lst) (if (= (length lst) 0) #t #f))\n" "a.scm"))
+;; =&gt; (if-boolean length-zero)</code></pre>
+<p>The findings have the <code>file:line:column</code> format compilers use, so editors jump to them. <code>cdar</code> and not <code>cadar</code> is suggested because <code>cadar</code> would need <a class="xref" href="scheme-cxr.html"><code>(scheme cxr)</code></a>, which the file does not import. Many findings can be corrected automatically:</p>
+<pre><code class="language-scheme">(define-values (fixed count) (lint-fix-string (string-append "(import (scheme base))\n" messy) "prices.scm"))
+count                                       ;; =&gt; 1
+(display fixed)
+;; prints: (import (scheme base))
+;; prints: ; prices
+;; prints: (define (total items)   ; sum of prices
+;; prints:   (if (null? items) 0
+;; prints:   (+ (car (cdar items)) (total (cdr items)))))</code></pre>
+<pre><code class="language-sh">scm lint src/                      # all files below src
+scm lint --fail-on warning .       # CI: exit 1 on warnings too
+scm lint --fix src/                # correct what can be corrected
+scm lint --list-rules              # every rule with its id</code></pre>
+<p>Both tools read their settings from the nearest <code>scm-tools.toml</code>, so a project configures them once:</p>
+<pre><code class="language-text">[format]
+width = 100
+library-path = ["src"]
+
+[lint]
+disable = ["cxr"]
+enable = ["unused-parameter"]</code></pre>
+<h2 id="reading-source-as-a-tree">Reading source as a tree</h2>
+<p><a class="xref" href="scm-source.html"><code>(scm source)</code></a> is the reader behind both tools. Unlike <code>read</code>, it keeps comments, the exact spelling of every atom and all whitespace, so a tool can change one place and write everything else back unchanged:</p>
+<pre><code class="language-scheme">(define tree (source-read-string messy))
+(map cst-kind (cst-children tree))          ;; =&gt; (comment list)
+(map (lambda (n) (list (cst-line n) (cst-col n))) (cst-children tree)) ;; =&gt; ((1 0) (2 0))
+(equal? (cst-&gt;string tree) messy)           ;; =&gt; #t
+(cst-&gt;datum (source-read-string "(a #;b c) ; done")) ;; =&gt; ((a c))</code></pre>
+<p>Read errors carry the file, line and column:</p>
+<pre><code class="language-scheme">(guard (e ((source-read-error-position e) =&gt; (lambda (pos) pos)))
+  (source-read-string "(define (f x)" "f.scm"))
+;; =&gt; ("f.scm" 1 0)</code></pre>
+<p><a class="xref" href="scm-source-lint.html#e16"><code>source-xref</code></a> gives the cross references the linter computes: every definition and use, and where each name is bound. Editor features like "go to definition" and "rename" are built on it:</p>
+<pre><code class="language-scheme">(map (lambda (x) (list (xref-role x) (xref-name x) (xref-target x)))
+     (source-xref "(import (scheme base))\n(define (f x) (car x))\n(f '(1))\n" "a.scm"))
+;; =&gt; ((definition f (here 2 9)) (local-definition x (here 2 11)) (reference car (import (scheme base) car)) (reference x (here 2 11)) (reference f (here 2 9)))</code></pre>
+<h2 id="docstrings-at-run-time">Docstrings at run time</h2>
+<p>A procedure's documentation string is available while the program runs:</p>
+<pre><code class="language-scheme">(display (procedure-doc 'car))
+;; prints: Syntax: (car pair)
+;; prints: Library: (scheme base)
+;; prints: Description: Returns the car of pair. It is an error if pair is not a pair.
+;; prints: Example:
+;; prints:   (car '(a b c)) =&gt; a
+;; prints:   (car '((a) b)) =&gt; (a)</code></pre>
+<p>Write docstrings in the same layout (<code>Syntax:</code>, <code>Library:</code>, <code>Description:</code>, <code>Example:</code>) as the first thing in a <a class="xref" href="scheme-base.html#e58"><code>define</code></a> body; the reference documentation of dabscm is generated from them, and <code>scm lint</code> checks that exported procedures of <code>(scm …)</code> libraries have one.</p>
+<h2 id="repl-and-editors">REPL and editors</h2>
+<p><code>scm</code> without arguments starts a REPL with completion. <a class="xref" href="scm-repl.html"><code>(scm repl)</code></a> gives the same information to programs (on the JVM and .NET):</p>
+<pre><code class="language-scheme not-native">(import (scm repl))
+(repl-completions "vector-m")               ;; =&gt; ("vector-map")
+(repl-info-line 'car)                       ;; =&gt; "car : (car pair) -- Returns the car of pair. It is an error if pair is not a pair."
+(and (member "define-record-type" repl-core-form-names) #t) ;; =&gt; #t</code></pre>
+<p>For Emacs, <a class="xref" href="scm-geiser.html"><code>(scm geiser)</code></a> implements the protocol of Geiser, the Scheme mode with evaluation in a running REPL, completion, documentation in the echo area and jumping to definitions:</p>
+<pre><code class="language-text">;; init.el, with geiser installed and emacs-geiser/ of the dabscm
+;; repository on the load-path (emacs-geiser/README.md has the details)
+(require 'geiser-dabscm)
+;; then: M-x run-dabscm</code></pre>
+<p>The Emacs side is <code>emacs-geiser/geiser-dabscm.el</code> in the dabscm repository; it starts <code>scm --geiser</code>, a REPL that loads <a class="xref" href="scm-geiser.html"><code>(scm geiser)</code></a>.</p>
+<h2 id="profiling">Profiling</h2>
+<p>Which procedures take the time? <a class="xref" href="scm-profiling.html"><code>(scm profiling)</code></a> counts calls and measures time per procedure of the libraries you name (on the JVM and .NET):</p>
+<pre><code class="language-scheme not-native">(import (scheme char) (scm profiling))
+
+(define (list-sort-by-name rows)            ; a small insertion sort by name
+  (let insert-all ((rows rows) (out '()))
+    (if (null? rows)
+        out
+        (insert-all (cdr rows)
+                    (let insert ((out out))
+                      (cond ((null? out) (list (car rows)))
+                            ((string&lt;? (car (car rows)) (car (car out))) (cons (car rows) out))
+                            (else (cons (car out) (insert (cdr out))))))))))
+
+(profile-reset!)
+(profile-instrument! '((scheme char) string-upcase string-downcase))
+(define (shout words) (map string-upcase words))
+(do ((i 0 (+ i 1))) ((= i 100)) (shout '("sencha" "assam")) (string-downcase "TEA"))
+(map (lambda (r) (list (car r) (cadr r))) (list-sort-by-name (profile-data)))
+;; =&gt; (("(scheme char):string-downcase" 100) ("(scheme char):string-upcase" 200))
+(profile-uninstrument!)</code></pre>
+<p><a class="xref" href="scm-profiling.html#e2"><code>profile-report</code></a> prints a table with calls, total and average milliseconds and the share of the time:</p>
+<pre><code class="language-text">Profile Report
+Name                                        Calls     Total ms     Avg ms      %
+--------------------------------------------------------------------------------
+(scheme char):string-upcase                   200        10.30       0.05  84.9%
+(scheme char):string-downcase                 100         1.83       0.02  15.1%</code></pre>
+<p>Instrument a whole library of your own with <code>(profile-instrument! '((my lib)))</code>.</p>
+<h2 id="restarting-on-changes">Restarting on changes</h2>
+<p><a class="xref" href="scm-reloader.html"><code>(scm reloader)</code></a> runs a program and restarts it whenever one of its files changes, the development server of the starter applications:</p>
+<pre><code class="language-scheme no-test">(import (scheme base) (scm reloader))
+
+(supervise (list "scm" "bin/server.scm" "config.scm")
+           (lambda () (cons "config.scm" (files-with-suffix "src" ".sld")))
+           '((label . "dev-server")))</code></pre>
+<p>The watch list is re-read on every check, so new files are picked up. A program that crashes is restarted after a growing pause, so an error does not spin.</p>
+<h2 id="looking-at-compiled-code">Looking at compiled code</h2>
+<p><a class="xref" href="scm-compile.html"><code>(scm compile)</code></a> shows what the JVM and .NET interpreters run (dabscm native compiles to machine code instead):</p>
+<pre><code class="language-scheme not-native">(import (scm compile))
+(list (primitive? car) (macro? car) (lambda? (lambda (x) x))) ;; =&gt; (#t #f #t)
+(symbol? (gensym))                          ;; =&gt; #t</code></pre>
+<pre><code class="language-text">&gt; (disassemble (lambda (x) (+ x 1)))
+env: #(())
+0:  ARGS 1
+1:  LVAR_ADD_IMM 0 1
+2:  RETURN</code></pre>
+<p>The adding of a constant to a local became a single instruction.</p>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-basics-01-getting-started.html">Getting started</a> for the REPL and running programs, <a href="tutorial-techniques-10-testing.html">testing</a>, <a href="tutorial-scm-scaffold.html">scaffold</a> for projects that use all of this.</li>
+<li>Reference: <a class="xref" href="scm-source.html"><code>(scm source)</code></a>, <a class="xref" href="scm-source-format.html"><code>(scm source format)</code></a>, <a class="xref" href="scm-source-lint.html"><code>(scm source lint)</code></a>, <a class="xref" href="scm-doc.html"><code>(scm doc)</code></a>, <a class="xref" href="scm-repl.html"><code>(scm repl)</code></a>, <a class="xref" href="scm-profiling.html"><code>(scm profiling)</code></a>, <a class="xref" href="scm-reloader.html"><code>(scm reloader)</code></a>, <a class="xref" href="scm-compile.html"><code>(scm compile)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scm-source.html"><code>(scm source)</code></a>, <a href="scm-source-format.html"><code>(scm source format)</code></a>, <a href="scm-source-lint.html"><code>(scm source lint)</code></a>, <a href="scm-doc.html"><code>(scm doc)</code></a>, <a href="scm-repl.html"><code>(scm repl)</code></a>, <a href="scm-geiser.html"><code>(scm geiser)</code></a>, <a href="scm-profiling.html"><code>(scm profiling)</code></a>, <a href="scm-reloader.html"><code>(scm reloader)</code></a>, <a href="scm-compile.html"><code>(scm compile)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-scm-deb.html">&larr; "(scm deb) and (scm deb webapp): Debian packages"</a>
+  <a class="next" href="tutorial-scm-binary.html">"(scm bytevector) and (scm random access): binary data" &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

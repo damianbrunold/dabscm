@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>"(scm bytevector) and (scm random access): binary data" — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <a href="tutorial-scm-string.html">(scm string): regular expressions and splitting</a>
+  <a href="tutorial-scm-list.html">(scm list) and (scm macro): small helpers</a>
+  <a href="tutorial-scm-match.html">(scm match): pattern matching</a>
+  <a href="tutorial-scm-io.html">(scm io): ports and formatting</a>
+  <a href="tutorial-scm-text.html">(scm text): Unix text tools in Scheme</a>
+  <a href="tutorial-scm-templating.html">(scm templating) and (scm uri): templates and URLs</a>
+  <a href="tutorial-scm-args.html">(scm args): command-line parsing</a>
+  <a href="tutorial-scm-terminal.html">(scm terminal) and (scm log): terminal output and logging</a>
+  <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a>
+  <a href="tutorial-scm-system.html">(scm system) and (scm sysadmin): processes and the system</a>
+  <a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a>
+  <a href="tutorial-scm-store.html">(scm store): an indexed record store</a>
+  <a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a>
+  <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a>
+  <a href="tutorial-scm-json.html">(scm json simple) and (scm json): JSON</a>
+  <a href="tutorial-scm-xml.html">(scm xml) and (scm feed): XML and news feeds</a>
+  <a href="tutorial-scm-toml.html">(scm toml): configuration files</a>
+  <a href="tutorial-scm-markdown.html">(scm markdown): Markdown to HTML and beyond</a>
+  <a href="tutorial-scm-html.html">(scm html), builder and parser: writing and reading HTML</a>
+  <a href="tutorial-scm-excel.html">(scm ooxml excel) and friends: spreadsheets</a>
+  <a href="tutorial-scm-word.html">(scm ooxml word) and friends: Word and OpenDocument texts</a>
+  <a href="tutorial-scm-presentation.html">(scm ooxml presentation): PowerPoint slides</a>
+  <a href="tutorial-scm-pdf.html">(scm pdf) and (scm svg pdf): PDF documents</a>
+  <a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a>
+  <a href="tutorial-scm-http-server.html">(scm net http server) and (scm net http route): web servers</a>
+  <a href="tutorial-scm-http-client.html">(scm net http client): HTTP requests</a>
+  <a href="tutorial-scm-web-app.html">"Web applications: forms, sessions, middleware, static files, uploads"</a>
+  <a href="tutorial-scm-websocket.html">(scm net sockets) and (scm net websocket): TCP and WebSockets</a>
+  <a href="tutorial-scm-email.html">(scm net email) and (scm net smtp): sending e-mail</a>
+  <a href="tutorial-scm-database.html">"(scm database postgres), sqlserver and migrations: SQL databases"</a>
+  <a href="tutorial-scm-scaffold.html">"(scm scaffold): starting a web application with scm new-app"</a>
+  <a href="tutorial-scm-net-remote.html">"(scm net-remote): ssh, scp, rsync, curl and wget from Scheme"</a>
+  <a href="tutorial-scm-data.html">"(scm data): data frames and verbs"</a>
+  <a href="tutorial-scm-data-reshape.html">"(scm data): joining and reshaping"</a>
+  <a href="tutorial-scm-data-stats.html">"(scm data stats) and (scm data format): describing data"</a>
+  <a href="tutorial-scm-data-tests.html">"(scm data tests): hypothesis tests and linear models"</a>
+  <a href="tutorial-scm-data-io.html">"(scm data io): reading and writing data"</a>
+  <a href="tutorial-scm-data-plot.html">"(scm data plot): charts and maps"</a>
+  <a href="tutorial-scm-data-report.html">"(scm data report): reports in HTML, Markdown and PDF"</a>
+  <a href="tutorial-scm-data-cluster.html">"(scm data cluster): similarity and clustering"</a>
+  <a href="tutorial-scm-data-r.html">"(scm data r): translating between R and (scm data)"</a>
+  <a href="tutorial-scm-geo.html">"(scm geo): features, polygons, shapefiles and TopoJSON"</a>
+  <a href="tutorial-scm-fonts.html">"(scm truetype), (scm fonts) and (scm text layout): fonts and text"</a>
+  <a href="tutorial-scm-deb.html">"(scm deb) and (scm deb webapp): Debian packages"</a>
+  <a href="tutorial-scm-tooling.html">"Developer tools: scm fmt, scm lint, (scm source), docs, REPL, profiling, reloading"</a>
+  <a href="tutorial-scm-binary.html" class="active">"(scm bytevector) and (scm random access): binary data"</a>
+    <a class="sub" href="#numbers-in-bytes">Numbers in bytes</a>
+    <a class="sub" href="#example-a-wav-file">Example: a WAV file</a>
+    <a class="sub" href="#text-in-bytes">Text in bytes</a>
+    <a class="sub" href="#files-at-any-position">Files at any position</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-r7rs-libraries.html">"The R7RS libraries: eval, read, load, time, complex numbers and more"</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">"(scm bytevector) and (scm random access): binary data"</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="scm-bytevector-and-scm-random-access-binary-data">(scm bytevector) and (scm random access): binary data</h1>
+<p>R7RS bytevectors hold bytes. Binary file formats store larger values in them: 16- and 32-bit integers and floating-point numbers, in one byte order or the other. <a class="xref" href="scm-bytevector.html"><code>(scm bytevector)</code></a> reads and writes those, and <a class="xref" href="scm-random-access.html"><code>(scm random access)</code></a> reads and writes files at any position, without reading them from the start.</p>
+<pre><code class="language-scheme">(import (scheme base) (scheme file) (scheme inexact) (scheme write) (scm fs) (scm bytevector) (scm random access))
+
+(define dir (mktempdir '(prefix . "binary")))
+(define (at name) (join-path dir name))</code></pre>
+<h2 id="numbers-in-bytes">Numbers in bytes</h2>
+<p>A number of several bytes can be stored lowest byte first (<em>little endian</em>, as x86 and ARM processors and most file formats do) or highest byte first (<em>big endian</em>, "network byte order"):</p>
+<pre><code class="language-scheme">(define bv (make-bytevector 8 0))
+(bytevector-u16-set! bv 0 513 'little)
+(bytevector-u16-set! bv 2 513 'big)
+bv                                          ;; =&gt; #u8(1 2 2 1 0 0 0 0)
+(bytevector-u16-ref bv 0 'little)           ;; =&gt; 513
+(bytevector-u16-ref bv 0 'big)              ;; =&gt; 258</code></pre>
+<p>Reading with the wrong byte order gives a wrong value, not an error, so check the format's specification. The procedures follow R6RS:</p>
+<table>
+<thead>
+<tr><th>procedure</th><th>value</th></tr>
+</thead>
+<tbody>
+<tr><td><a class="xref" href="scm-bytevector.html#e8"><code>bytevector-u16-ref</code></a> / <code>-s16-ref</code></td><td>unsigned / signed 16-bit integer</td></tr>
+<tr><td><a class="xref" href="scm-bytevector.html#e10"><code>bytevector-u32-ref</code></a> / <code>-s32-ref</code></td><td>unsigned / signed 32-bit integer</td></tr>
+<tr><td><a class="xref" href="scm-bytevector.html#e2"><code>bytevector-ieee-single-ref</code></a></td><td>32-bit float</td></tr>
+<tr><td><a class="xref" href="scm-bytevector.html#e0"><code>bytevector-ieee-double-ref</code></a></td><td>64-bit float</td></tr>
+</tbody>
+</table>
+<p>each with a <code>-set!</code>. The index is a byte position and need not be aligned:</p>
+<pre><code class="language-scheme">(bytevector-s16-set! bv 0 -2 'little)
+(bytevector-copy bv 0 2)                    ;; =&gt; #u8(254 255)
+(bytevector-u16-ref bv 0 'little)           ;; =&gt; 65534
+(bytevector-ieee-double-set! bv 0 3.5 'big)
+(bytevector-ieee-double-ref bv 0 'big)      ;; =&gt; 3.5</code></pre>
+<h2 id="example-a-wav-file">Example: a WAV file</h2>
+<p>A WAV sound file starts with a 44-byte header of tags and little-endian numbers, followed by the samples. One second of a 440 Hz tone, 8000 samples of 16 bits:</p>
+<pre><code class="language-scheme">(define rate 8000)
+
+(define (wav-bytes samples)                 ; samples: a vector of integers -32768..32767
+  (let* ((n (vector-length samples))
+         (data-size (* 2 n))
+         (bv (make-bytevector (+ 44 data-size) 0)))
+    (define (tag! pos s) (bytevector-copy! bv pos (string-&gt;utf8 s)))
+    (tag! 0 "RIFF") (bytevector-u32-set! bv 4 (+ 36 data-size) 'little)
+    (tag! 8 "WAVE")
+    (tag! 12 "fmt ") (bytevector-u32-set! bv 16 16 'little)
+    (bytevector-u16-set! bv 20 1 'little)                 ; PCM
+    (bytevector-u16-set! bv 22 1 'little)                 ; mono
+    (bytevector-u32-set! bv 24 rate 'little)              ; samples per second
+    (bytevector-u32-set! bv 28 (* 2 rate) 'little)        ; bytes per second
+    (bytevector-u16-set! bv 32 2 'little)                 ; bytes per sample
+    (bytevector-u16-set! bv 34 16 'little)                ; bits per sample
+    (tag! 36 "data") (bytevector-u32-set! bv 40 data-size 'little)
+    (do ((i 0 (+ i 1))) ((= i n) bv)
+      (bytevector-s16-set! bv (+ 44 (* 2 i)) (vector-ref samples i) 'little))))
+
+(define tone
+  (let ((v (make-vector rate)))
+    (do ((i 0 (+ i 1))) ((= i rate) v)
+      (vector-set! v i (exact (round (* 8000 (sin (/ (* 2 3.141592653589793 440 i) rate)))))))))
+
+(call-with-port (open-binary-output-file (at "tone.wav"))
+  (lambda (p) (write-bytevector (wav-bytes tone) p)))
+(file-size (at "tone.wav"))                 ;; =&gt; 16044</code></pre>
+<p>Reading the header back:</p>
+<pre><code class="language-scheme">(define header (call-with-port (open-binary-input-file (at "tone.wav"))
+                 (lambda (p) (read-bytevector 44 p))))
+(utf8-&gt;string (bytevector-copy header 8 12))  ;; =&gt; "WAVE"
+(list (bytevector-u16-ref header 22 'little)  ; channels
+      (bytevector-u32-ref header 24 'little)  ; sample rate
+      (bytevector-u16-ref header 34 'little)) ; bits
+;; =&gt; (1 8000 16)</code></pre>
+<h2 id="text-in-bytes">Text in bytes</h2>
+<p>Files from older systems are often in Latin-1 (ISO-8859-1) rather than UTF-8. <a class="xref" href="scm-bytevector.html#e14"><code>utf8-valid?</code></a> tells them apart, and <a class="xref" href="scm-bytevector.html#e12"><code>latin1-&gt;string</code></a> decodes the older ones:</p>
+<pre><code class="language-scheme">(define utf8-bytes (string-&gt;utf8 "Grüezi"))
+(define latin1-bytes (string-&gt;latin1 "Grüezi"))
+utf8-bytes                                  ;; =&gt; #u8(71 114 195 188 101 122 105)
+latin1-bytes                                ;; =&gt; #u8(71 114 252 101 122 105)
+
+(define (decode bv) (if (utf8-valid? bv) (utf8-&gt;string bv) (latin1-&gt;string bv)))
+(decode utf8-bytes)                         ;; =&gt; "Grüezi"
+(decode latin1-bytes)                       ;; =&gt; "Grüezi"
+(string-&gt;latin1 "5 €" 63)                   ;; =&gt; #u8(53 32 63)</code></pre>
+<p>The euro sign does not exist in Latin-1; the optional second argument is the byte written instead (63 is <code>?</code>), otherwise it is an error.</p>
+<h2 id="files-at-any-position">Files at any position</h2>
+<p>A port reads a file from the beginning. <a class="xref" href="scm-random-access.html"><code>(scm random access)</code></a> reads and writes at any byte offset, as databases do. A file of fixed-size records can then be updated in place: here a stock file with 16 bytes per tea, a 12-byte name and a 32-bit stock in grams:</p>
+<pre><code class="language-scheme">(define record-size 16)
+
+(define (encode name grams)
+  (let ((bv (make-bytevector record-size 32)))           ; padded with spaces
+    (bytevector-copy! bv 0 (string-&gt;utf8 name))
+    (bytevector-u32-set! bv 12 grams 'little)
+    bv))
+
+(define (decode-record bv)
+  (list (string-trim-spaces (utf8-&gt;string (bytevector-copy bv 0 12)))
+        (bytevector-u32-ref bv 12 'little)))
+
+(define (string-trim-spaces s)
+  (let loop ((e (string-length s)))
+    (if (and (&gt; e 0) (char=? (string-ref s (- e 1)) #\space)) (loop (- e 1)) (substring s 0 e))))
+
+(call-with-random-access-file (at "stock.dat") 'write
+  (lambda (f)
+    (for-each (lambda (i tea)
+                (random-access-file-write! f (* i record-size) (encode (car tea) (cadr tea))))
+              '(0 1 2)
+              '(("Sencha" 12500) ("Assam" 4000) ("Matcha" 800)))))
+(file-size (at "stock.dat"))                ;; =&gt; 48</code></pre>
+<p>Selling 250 g of Assam reads and rewrites only record 1:</p>
+<pre><code class="language-scheme">(define (record f i) (decode-record (random-access-file-read f (* i record-size) record-size)))
+
+(call-with-random-access-file (at "stock.dat") 'update
+  (lambda (f)
+    (let ((assam (record f 1)))
+      (random-access-file-write! f (* 1 record-size) (encode (car assam) (- (cadr assam) 250)))
+      (random-access-file-flush f)
+      (map (lambda (i) (record f i)) '(0 1 2)))))
+;; =&gt; (("Sencha" 12500) ("Assam" 3750) ("Matcha" 800))</code></pre>
+<ul>
+<li>The modes are <code>read</code>, <code>write</code> (creates or empties the file) and <code>update</code> (keeps it, creating it if needed).</li>
+<li><a class="xref" href="scm-random-access.html#e3"><code>random-access-file-flush</code></a> makes sure the data reached the disk, before telling a user that something was saved.</li>
+<li><a class="xref" href="scm-random-access.html#e5"><code>random-access-file-size</code></a> and <a class="xref" href="scm-random-access.html#e6"><code>random-access-file-truncate!</code></a> read and set the length, for example to drop the last record:</li>
+</ul>
+<pre><code class="language-scheme">(call-with-random-access-file (at "stock.dat") 'update
+  (lambda (f)
+    (random-access-file-truncate! f (* 2 record-size))
+    (random-access-file-size f)))
+;; =&gt; 32
+(rm dir 'recursive)</code></pre>
+<p><a class="xref" href="scm-store.html"><code>(scm store)</code></a> is built on this: a key-value store on disk with transactions (<a href="tutorial-scm-store.html">its tutorial</a>).</p>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-techniques-03-files.html#binary-files">Files</a> for binary ports, <a href="tutorial-scm-archive.html">archives</a> for compressed data, <a href="tutorial-scm-images.html">images</a> for PNG and JPEG.</li>
+<li>Reference: <a class="xref" href="scm-bytevector.html"><code>(scm bytevector)</code></a>, <a class="xref" href="scm-random-access.html"><code>(scm random access)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scm-bytevector.html"><code>(scm bytevector)</code></a>, <a href="scm-random-access.html"><code>(scm random access)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-scm-tooling.html">&larr; "Developer tools: scm fmt, scm lint, (scm source), docs, REPL, profiling, reloading"</a>
+  <a class="next" href="tutorial-r7rs-libraries.html">"The R7RS libraries: eval, read, load, time, complex numbers and more" &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

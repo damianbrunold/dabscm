@@ -92,6 +92,7 @@
     <a class="sub" href="#styles">Styles</a>
     <a class="sub" href="#headers-footers-page-numbers-contents">Headers, footers, page numbers, contents</a>
     <a class="sub" href="#example-letters-from-data">Example: letters from data</a>
+    <a class="sub" href="#document-properties">Document properties</a>
     <a class="sub" href="#reading">Reading</a>
     <a class="sub" href="#opendocument-texts">OpenDocument texts</a>
     <a class="sub" href="#where-next">Where next</a>
@@ -115,6 +116,12 @@
   <a href="tutorial-scm-data-report.html">"(scm data report): reports in HTML, Markdown and PDF"</a>
   <a href="tutorial-scm-data-cluster.html">"(scm data cluster): similarity and clustering"</a>
   <a href="tutorial-scm-data-r.html">"(scm data r): translating between R and (scm data)"</a>
+  <a href="tutorial-scm-geo.html">"(scm geo): features, polygons, shapefiles and TopoJSON"</a>
+  <a href="tutorial-scm-fonts.html">"(scm truetype), (scm fonts) and (scm text layout): fonts and text"</a>
+  <a href="tutorial-scm-deb.html">"(scm deb) and (scm deb webapp): Debian packages"</a>
+  <a href="tutorial-scm-tooling.html">"Developer tools: scm fmt, scm lint, (scm source), docs, REPL, profiling, reloading"</a>
+  <a href="tutorial-scm-binary.html">"(scm bytevector) and (scm random access): binary data"</a>
+  <a href="tutorial-r7rs-libraries.html">"The R7RS libraries: eval, read, load, time, complex numbers and more"</a>
   <h2><a href="index.html">Library reference</a></h2>
 </nav>
 
@@ -202,6 +209,25 @@
           customers)
 (map file-exists? (list (at "letter-ada.docx") (at "letter-alan.docx"))) ;; =&gt; (#t #t)</code></pre>
 <p><code>document-save-to-bytevector</code> gives the file as bytes, to attach it to an e-mail or send it as a download.</p>
+<h2 id="document-properties">Document properties</h2>
+<p><a class="xref" href="scm-ooxml-word.html#e13"><code>document-set-properties!</code></a> (and <a class="xref" href="scm-ooxml-excel.html#e22"><code>workbook-set-properties!</code></a> for Excel) sets what Word and Excel show under File › Info, and what search tools and document management index: title, subject, creator, keywords, description, category, and custom properties of your own, such as a classification:</p>
+<pre><code class="language-scheme">(import (scm zip) (scm ooxml docprops))
+(define (string-prefix-of? prefix s)
+  (and (&lt;= (string-length prefix) (string-length s)) (string=? prefix (substring s 0 (string-length prefix)))))
+
+(define memo (make-document))
+(paragraph-add-run! (document-add-paragraph! memo) "Prices for 2026.")
+(define props '((title . "Price list 2026") (category . "Internal")
+                (custom . (("Classification" . "Internal") ("Department" . "Purchasing")))))
+(docprops-valid? props)                     ;; =&gt; #t
+(document-set-properties! memo props)
+(document-save memo (at "memo.docx"))
+
+(define z (open-input-zip-file (at "memo.docx")))
+(filter (lambda (n) (string-prefix-of? "docProps/" n)) (zip-entry-names z))
+;; =&gt; ("docProps/core.xml" "docProps/app.xml" "docProps/custom.xml")
+(close-input-zip z)</code></pre>
+<p><a class="xref" href="scm-ooxml-docprops.html"><code>(scm ooxml docprops)</code></a> writes these parts for both formats. A property list it does not accept (<a class="xref" href="scm-ooxml-docprops.html#e4"><code>docprops-valid?</code></a> is <code>#f</code>, for example an unknown key) is refused by <a class="xref" href="scm-ooxml-word.html#e13"><code>document-set-properties!</code></a> with an error.</p>
 <h2 id="reading">Reading</h2>
 <p><a class="xref" href="scm-ooxml-word-reader.html"><code>(scm ooxml word-reader)</code></a> gives the text and the structure of a document, for indexing, checking or converting:</p>
 <pre><code class="language-scheme">(define d (read-document (at "offer.docx")))
@@ -237,7 +263,7 @@
 <li>Reference: <a class="xref" href="scm-ooxml-word.html"><code>(scm ooxml word)</code></a>, <a class="xref" href="scm-ooxml-word-reader.html"><code>(scm ooxml word-reader)</code></a>, <a class="xref" href="scm-odf-writer.html"><code>(scm odf writer)</code></a>.</li>
 </ul>
 </div>
-<p class="tutorial-libs">Reference: <a href="scm-ooxml-word.html"><code>(scm ooxml word)</code></a>, <a href="scm-ooxml-word-reader.html"><code>(scm ooxml word-reader)</code></a>, <a href="scm-odf-writer.html"><code>(scm odf writer)</code></a></p>
+<p class="tutorial-libs">Reference: <a href="scm-ooxml-word.html"><code>(scm ooxml word)</code></a>, <a href="scm-ooxml-word-reader.html"><code>(scm ooxml word-reader)</code></a>, <a href="scm-odf-writer.html"><code>(scm odf writer)</code></a>, <a href="scm-ooxml-docprops.html"><code>(scm ooxml docprops)</code></a></p>
 <nav class="prev-next">
   <a class="prev" href="tutorial-scm-excel.html">&larr; (scm ooxml excel) and friends: spreadsheets</a>
   <a class="next" href="tutorial-scm-presentation.html">(scm ooxml presentation): PowerPoint slides &rarr;</a>

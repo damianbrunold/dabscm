@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>"(scm truetype), (scm fonts) and (scm text layout): fonts and text" — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <a href="tutorial-scm-string.html">(scm string): regular expressions and splitting</a>
+  <a href="tutorial-scm-list.html">(scm list) and (scm macro): small helpers</a>
+  <a href="tutorial-scm-match.html">(scm match): pattern matching</a>
+  <a href="tutorial-scm-io.html">(scm io): ports and formatting</a>
+  <a href="tutorial-scm-text.html">(scm text): Unix text tools in Scheme</a>
+  <a href="tutorial-scm-templating.html">(scm templating) and (scm uri): templates and URLs</a>
+  <a href="tutorial-scm-args.html">(scm args): command-line parsing</a>
+  <a href="tutorial-scm-terminal.html">(scm terminal) and (scm log): terminal output and logging</a>
+  <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a>
+  <a href="tutorial-scm-system.html">(scm system) and (scm sysadmin): processes and the system</a>
+  <a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a>
+  <a href="tutorial-scm-store.html">(scm store): an indexed record store</a>
+  <a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a>
+  <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a>
+  <a href="tutorial-scm-json.html">(scm json simple) and (scm json): JSON</a>
+  <a href="tutorial-scm-xml.html">(scm xml) and (scm feed): XML and news feeds</a>
+  <a href="tutorial-scm-toml.html">(scm toml): configuration files</a>
+  <a href="tutorial-scm-markdown.html">(scm markdown): Markdown to HTML and beyond</a>
+  <a href="tutorial-scm-html.html">(scm html), builder and parser: writing and reading HTML</a>
+  <a href="tutorial-scm-excel.html">(scm ooxml excel) and friends: spreadsheets</a>
+  <a href="tutorial-scm-word.html">(scm ooxml word) and friends: Word and OpenDocument texts</a>
+  <a href="tutorial-scm-presentation.html">(scm ooxml presentation): PowerPoint slides</a>
+  <a href="tutorial-scm-pdf.html">(scm pdf) and (scm svg pdf): PDF documents</a>
+  <a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a>
+  <a href="tutorial-scm-http-server.html">(scm net http server) and (scm net http route): web servers</a>
+  <a href="tutorial-scm-http-client.html">(scm net http client): HTTP requests</a>
+  <a href="tutorial-scm-web-app.html">"Web applications: forms, sessions, middleware, static files, uploads"</a>
+  <a href="tutorial-scm-websocket.html">(scm net sockets) and (scm net websocket): TCP and WebSockets</a>
+  <a href="tutorial-scm-email.html">(scm net email) and (scm net smtp): sending e-mail</a>
+  <a href="tutorial-scm-database.html">"(scm database postgres), sqlserver and migrations: SQL databases"</a>
+  <a href="tutorial-scm-scaffold.html">"(scm scaffold): starting a web application with scm new-app"</a>
+  <a href="tutorial-scm-net-remote.html">"(scm net-remote): ssh, scp, rsync, curl and wget from Scheme"</a>
+  <a href="tutorial-scm-data.html">"(scm data): data frames and verbs"</a>
+  <a href="tutorial-scm-data-reshape.html">"(scm data): joining and reshaping"</a>
+  <a href="tutorial-scm-data-stats.html">"(scm data stats) and (scm data format): describing data"</a>
+  <a href="tutorial-scm-data-tests.html">"(scm data tests): hypothesis tests and linear models"</a>
+  <a href="tutorial-scm-data-io.html">"(scm data io): reading and writing data"</a>
+  <a href="tutorial-scm-data-plot.html">"(scm data plot): charts and maps"</a>
+  <a href="tutorial-scm-data-report.html">"(scm data report): reports in HTML, Markdown and PDF"</a>
+  <a href="tutorial-scm-data-cluster.html">"(scm data cluster): similarity and clustering"</a>
+  <a href="tutorial-scm-data-r.html">"(scm data r): translating between R and (scm data)"</a>
+  <a href="tutorial-scm-geo.html">"(scm geo): features, polygons, shapefiles and TopoJSON"</a>
+  <a href="tutorial-scm-fonts.html" class="active">"(scm truetype), (scm fonts) and (scm text layout): fonts and text"</a>
+    <a class="sub" href="#measuring-text">Measuring text</a>
+    <a class="sub" href="#installed-fonts">Installed fonts</a>
+    <a class="sub" href="#subsetting-for-embedding">Subsetting for embedding</a>
+    <a class="sub" href="#drawing-text-into-pixels">Drawing text into pixels</a>
+    <a class="sub" href="#breaking-paragraphs-into-lines">Breaking paragraphs into lines</a>
+    <a class="sub" href="#drawing-a-laid-out-paragraph">Drawing a laid-out paragraph</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-scm-deb.html">"(scm deb) and (scm deb webapp): Debian packages"</a>
+  <a href="tutorial-scm-tooling.html">"Developer tools: scm fmt, scm lint, (scm source), docs, REPL, profiling, reloading"</a>
+  <a href="tutorial-scm-binary.html">"(scm bytevector) and (scm random access): binary data"</a>
+  <a href="tutorial-r7rs-libraries.html">"The R7RS libraries: eval, read, load, time, complex numbers and more"</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">"(scm truetype), (scm fonts) and (scm text layout): fonts and text"</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="scm-truetype-scm-fonts-and-scm-text-layout-fonts-and-text">(scm truetype), (scm fonts) and (scm text layout): fonts and text</h1>
+<p>Charts, PDF reports and images need text that is measured and drawn exactly. Three layers do this:</p>
+<table>
+<thead>
+<tr><th>library</th><th>does</th></tr>
+</thead>
+<tbody>
+<tr><td><a class="xref" href="scm-truetype.html"><code>(scm truetype)</code></a></td><td>reads TrueType fonts, measures text, gives glyph outlines</td></tr>
+<tr><td><a class="xref" href="scm-fonts.html"><code>(scm fonts)</code></a></td><td>finds installed font families by weight and style</td></tr>
+<tr><td><a class="xref" href="scm-text-layout.html"><code>(scm text layout)</code></a></td><td>breaks paragraphs of styled text into lines</td></tr>
+</tbody>
+</table>
+<p>Three families are compiled into dabscm, so there is always a font without any files: <a class="xref" href="scm-fonts-dejavu.html"><code>(scm fonts dejavu)</code></a> (<a class="xref" href="scm-fonts-dejavu.html#e0"><code>dejavu-sans</code></a>, <a class="xref" href="scm-fonts-dejavu.html#e1"><code>dejavu-sans-bold</code></a>), <a class="xref" href="scm-fonts-inter.html"><code>(scm fonts inter)</code></a> (<a class="xref" href="scm-fonts-inter.html#e1"><code>inter-regular</code></a>, <a class="xref" href="scm-fonts-inter.html#e0"><code>inter-black</code></a>) and <a class="xref" href="scm-fonts-roboto-slab.html"><code>(scm fonts roboto-slab)</code></a> (<a class="xref" href="scm-fonts-roboto-slab.html#e1"><code>roboto-slab-regular</code></a>, <a class="xref" href="scm-fonts-roboto-slab.html#e0"><code>roboto-slab-bold</code></a>). They cover Latin, Greek and Cyrillic.</p>
+<pre><code class="language-scheme">(import (scheme base) (scheme write) (scm truetype) (scm fonts) (scm fonts inter)
+        (scm text layout) (scm raster) (scm image))
+
+(define (round2 x) (/ (round (* 100 x)) 100))</code></pre>
+<h2 id="measuring-text">Measuring text</h2>
+<pre><code class="language-scheme">(font? inter-regular)                       ;; =&gt; #t
+(round2 (font-text-width inter-regular 16 "Teashop")) ;; =&gt; 64.84
+(round2 (font-text-width inter-black 16 "Teashop"))   ;; =&gt; 69.27</code></pre>
+<p>The width is for a size in pixels (or points, or any unit) per em, the font's design square. Kerning is included: pairs like "AV" are moved closer than their glyphs' widths say:</p>
+<pre><code class="language-scheme">(font-units-per-em inter-regular)           ;; =&gt; 2048
+(font-kerning inter-regular #\A #\V)        ;; =&gt; -140
+(car (font-glyph inter-regular #\A))        ;; =&gt; 1413</code></pre>
+<p>A glyph is its advance width and its contours, in font units: at 16 pixels per em, Inter's "A" advances 1413 / 2048 × 16 ≈ 11 pixels. The ascent and descent tell how far the font reaches above and below the baseline:</p>
+<pre><code class="language-scheme">(list (font-ascent inter-regular) (font-descent inter-regular)) ;; =&gt; (1984 -494)</code></pre>
+<p>Measuring is what right-aligned table columns, centred titles and "does this label fit in the bar?" need.</p>
+<h2 id="installed-fonts">Installed fonts</h2>
+<p><a class="xref" href="scm-fonts.html"><code>(scm fonts)</code></a> looks for TrueType files along a search path (the user's <code>~/.local/share/dabscm/fonts</code>, then system directories) and picks a face by family, weight and style:</p>
+<pre><code class="language-scheme no-test">(font-families)               ; =&gt; ("IBM Plex Sans" "Inter" "JetBrains Mono" "Roboto" ...)
+(font-faces "JetBrains Mono") ; =&gt; ((400 #f) (700 #f) (400 #t) (700 #t))
+(define code-font (find-font "JetBrains Mono" 'bold 'italic))
+(font-license "JetBrains Mono")</code></pre>
+<p><a class="xref" href="scm-fonts.html#e0"><code>find-font</code></a> returns the nearest face, or <code>#f</code> when the family is missing, so a program can fall back to a built-in font:</p>
+<pre><code class="language-scheme">(define body-font (or (find-font "No Such Family") inter-regular))
+(eq? body-font inter-regular)               ;; =&gt; #t</code></pre>
+<p><a class="xref" href="scm-truetype.html#e11"><code>read-truetype</code></a> reads any <code>.ttf</code> file given as a bytevector, with OpenType features such as tabular figures (<code>'((features "tnum"))</code>); <a class="xref" href="scm-truetype.html#e12"><code>truetype-info</code></a> reads only its names.</p>
+<h2 id="subsetting-for-embedding">Subsetting for embedding</h2>
+<p><a class="xref" href="scm-truetype.html#e0"><code>font-&gt;truetype</code></a> writes a font as a TrueType file, optionally with only the characters needed. That is how a PDF embeds a few kilobytes instead of a whole font:</p>
+<pre><code class="language-scheme">(define subset (font-&gt;truetype inter-regular "Inter" "Regular" "Teashop"))
+(truetype-info subset)                      ;; =&gt; ((family . "Inter") (style . "Regular") (weight . 400) (italic . #f))
+(define back (read-truetype subset))
+(round2 (font-text-width back 16 "Teashop")) ;; =&gt; 65.94</code></pre>
+<p>The subset measures a little wider: it has no kerning table, because a PDF positions the glyphs itself with the kerning of the original font. <a class="xref" href="scm-pdf.html#e16"><code>pdf-embed-truetype-font</code></a> in <a class="xref" href="scm-pdf.html"><code>(scm pdf)</code></a> takes such a file.</p>
+<h2 id="drawing-text-into-pixels">Drawing text into pixels</h2>
+<p><a class="xref" href="scm-truetype.html#e6"><code>font-text-path</code></a> turns text into a path for <a class="xref" href="scm-raster.html"><code>(scm raster)</code></a>; filled, it gives anti-aliased text in an image:</p>
+<pre><code class="language-scheme">(define c (make-canvas 200 40 (rgba 255 255 255)))
+(canvas-fill-path! c (font-text-path inter-regular 24 10 30 "Teashop") (rgba 30 60 40))
+(image-info (canvas-&gt;png c))                ;; =&gt; ((format . png) (width . 200) (height . 40) (orientation . 1))</code></pre>
+<p>The text starts at x = 10 on the baseline y = 30; canvas y points down. This is how <a class="xref" href="scm-svg-raster.html"><code>(scm svg raster)</code></a> renders the text of SVG charts.</p>
+<h2 id="breaking-paragraphs-into-lines">Breaking paragraphs into lines</h2>
+<p><a class="xref" href="scm-text-layout.html"><code>(scm text layout)</code></a> does the step between measuring and drawing: it breaks a paragraph into lines that fit a width. A paragraph is a list of <em>runs</em>, pieces of text in one style, each with a procedure that measures it:</p>
+<pre><code class="language-scheme">(define (run text size . data)
+  (make-text-run text (lambda (s) (font-text-width inter-regular size s))
+                 size (* size 0.97) (* size 0.24) (if (pair? data) (car data) #f)))
+
+(define lines
+  (layout-paragraph
+   (list (run "Tea is the most consumed drink in the world after water, and it comes in many kinds." 12))
+   200))
+
+(map (lambda (l) (apply string-append (map item-text (line-items l)))) lines)
+;; =&gt; ("Tea is the most consumed drink in" "the world after water, and it comes" "in many kinds.")
+(map (lambda (l) (round2 (line-width l))) lines) ;; =&gt; (193.21 196.21 80.84)
+(round2 (layout-height lines))              ;; =&gt; 43.2</code></pre>
+<p>Each line holds <em>items</em>, pieces of text with their position from the start of the line, and has a height and a baseline. The line height is 1.2 times the font size by default, as in CSS (<code>(line-height . 1.5)</code> changes it). <code>(align . justify)</code> stretches the spaces, so every line but the last fills the width; its items are then single words, placed apart:</p>
+<pre><code class="language-scheme">(map (lambda (l) (map item-text (line-items l)))
+     (layout-paragraph (list (run "Tea is the most consumed drink in the world after water." 12)) 200
+                       '((align . justify))))
+;; =&gt; (("Tea" "is" "the" "most" "consumed" "drink" "in") ("the world after water."))</code></pre>
+<p>Runs of different styles share lines. The data given to a run (here the symbol <code>bold</code>) comes back with its items, to choose the font or colour when drawing; <code>"\n"</code> breaks a line:</p>
+<pre><code class="language-scheme">(define (bold text size)
+  (make-text-run text (lambda (s) (font-text-width inter-black size s)) size (* size 0.97) (* size 0.24) 'bold))
+
+(define mixed (layout-paragraph (list (run "Order " 12) (bold "now" 12) (run " and save.\nThanks!" 12)) 300))
+(map (lambda (l) (map (lambda (i) (list (item-text i) (text-run-data (item-run i)) (round2 (item-x i))))
+                      (line-items l)))
+     mixed)
+;; =&gt; ((("Order " #f 0) ("now" bold 35.58) ("and save." #f 64.5)) (("Thanks!" #f 0)))
+(map line-hard-break? mixed)                ;; =&gt; (#t #f)</code></pre>
+<h2 id="drawing-a-laid-out-paragraph">Drawing a laid-out paragraph</h2>
+<p>Drawing is a loop over the lines and their items, here into a canvas (the same loop with <a class="xref" href="scm-pdf.html#e13"><code>pdf-draw-text</code></a> fills a PDF page):</p>
+<pre><code class="language-scheme">(define (draw-paragraph! canvas lines left top)
+  (let loop ((lines lines) (y top))
+    (unless (null? lines)
+      (let ((l (car lines)))
+        (for-each (lambda (item)
+                    (let ((font (if (eq? (text-run-data (item-run item)) 'bold) inter-black inter-regular)))
+                      (canvas-fill-path! canvas
+                                         (font-text-path font (text-run-size (item-run item))
+                                                         (+ left (item-x item)) (+ y (line-baseline l))
+                                                         (item-text item))
+                                         (rgba 0 0 0))))
+                  (line-items l))
+        (loop (cdr lines) (+ y (line-height l)))))))
+
+(define card (make-canvas 320 60 (rgba 255 255 255)))
+(draw-paragraph! card mixed 10 10)
+(canvas-width card)                         ;; =&gt; 320</code></pre>
+<p>The layout follows the rules of a browser showing <code>white-space: pre-wrap</code> text, including CSS line heights, so a PDF can reproduce what a web page shows.</p>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-scm-pdf.html">PDF</a> for embedding fonts in documents, <a href="tutorial-scm-images.html">images</a> for <a class="xref" href="scm-raster.html"><code>(scm raster)</code></a> and SVG rendering, <a href="tutorial-scm-data-plot.html">charts</a> and <a href="tutorial-scm-data-report.html">reports</a>, which use all of this.</li>
+<li>Reference: <a class="xref" href="scm-truetype.html"><code>(scm truetype)</code></a>, <a class="xref" href="scm-fonts.html"><code>(scm fonts)</code></a>, <a class="xref" href="scm-text-layout.html"><code>(scm text layout)</code></a>, <a class="xref" href="scm-raster.html"><code>(scm raster)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scm-truetype.html"><code>(scm truetype)</code></a>, <a href="scm-fonts.html"><code>(scm fonts)</code></a>, <a href="scm-fonts-dejavu.html"><code>(scm fonts dejavu)</code></a>, <a href="scm-fonts-inter.html"><code>(scm fonts inter)</code></a>, <a href="scm-fonts-roboto-slab.html"><code>(scm fonts roboto-slab)</code></a>, <a href="scm-text-layout.html"><code>(scm text layout)</code></a>, <a href="scm-raster.html"><code>(scm raster)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-scm-geo.html">&larr; "(scm geo): features, polygons, shapefiles and TopoJSON"</a>
+  <a class="next" href="tutorial-scm-deb.html">"(scm deb) and (scm deb webapp): Debian packages" &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

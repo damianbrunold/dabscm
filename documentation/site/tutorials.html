@@ -108,6 +108,12 @@
   <a href="tutorial-scm-data-report.html">"(scm data report): reports in HTML, Markdown and PDF"</a>
   <a href="tutorial-scm-data-cluster.html">"(scm data cluster): similarity and clustering"</a>
   <a href="tutorial-scm-data-r.html">"(scm data r): translating between R and (scm data)"</a>
+  <a href="tutorial-scm-geo.html">"(scm geo): features, polygons, shapefiles and TopoJSON"</a>
+  <a href="tutorial-scm-fonts.html">"(scm truetype), (scm fonts) and (scm text layout): fonts and text"</a>
+  <a href="tutorial-scm-deb.html">"(scm deb) and (scm deb webapp): Debian packages"</a>
+  <a href="tutorial-scm-tooling.html">"Developer tools: scm fmt, scm lint, (scm source), docs, REPL, profiling, reloading"</a>
+  <a href="tutorial-scm-binary.html">"(scm bytevector) and (scm random access): binary data"</a>
+  <a href="tutorial-r7rs-libraries.html">"The R7RS libraries: eval, read, load, time, complex numbers and more"</a>
   <h2><a href="index.html">Library reference</a></h2>
 </nav>
 
@@ -197,6 +203,10 @@
 <tr><td>handle an error and continue</td><td><a href="tutorial-basics-09-errors.html#catching-errors-with-guard">Errors and exceptions</a></td></tr>
 <tr><td>destructure data with patterns</td><td><a href="tutorial-basics-11-macros.html#pattern-matching-with-match">Macros and pattern matching</a></td></tr>
 <tr><td>write my own control construct</td><td><a href="tutorial-basics-11-macros.html">Macros</a></td></tr>
+<tr><td>format or lint my code</td><td><a href="tutorial-scm-tooling.html">Developer tools</a></td></tr>
+<tr><td>evaluate a formula a user typed, safely</td><td><a href="tutorial-r7rs-libraries.html#code-as-data-eval">The R7RS libraries</a></td></tr>
+<tr><td>read or write a binary file format</td><td><a href="tutorial-scm-binary.html">Binary data</a></td></tr>
+<tr><td>build a .deb package</td><td><a href="tutorial-scm-deb.html">Debian packages</a></td></tr>
 </tbody>
 </table>
 <h2 id="library-tutorials">Library tutorials</h2>
@@ -300,9 +310,23 @@
 <tr><td><a href="tutorial-scm-data-r.html">R translation</a></td><td>tidyverse R to <a class="xref" href="scm-data.html"><code>(scm data)</code></a> and back</td></tr>
 </tbody>
 </table>
-<p>Tutorials for the remaining libraries follow. Until then, the <a href="index.html">library reference</a> has an overview and examples for every library.</p>
+<h3 id="more-libraries">More libraries</h3>
+<table>
+<thead>
+<tr><th>tutorial</th><th>covers</th></tr>
+</thead>
+<tbody>
+<tr><td><a href="tutorial-scm-geo.html">Geodata</a></td><td>features, polygons, GeoJSON, shapefiles, dissolving, TopoJSON</td></tr>
+<tr><td><a href="tutorial-scm-fonts.html">Fonts and text layout</a></td><td>built-in and installed fonts, measuring, subsetting, line breaking</td></tr>
+<tr><td><a href="tutorial-scm-deb.html">Debian packages</a></td><td><code>.deb</code> files in pure Scheme, packaging web applications</td></tr>
+<tr><td><a href="tutorial-scm-tooling.html">Developer tools</a></td><td><code>scm fmt</code>, <code>scm lint</code>, source trees, docstrings, REPL, profiler, reloader</td></tr>
+<tr><td><a href="tutorial-scm-binary.html">Binary data</a></td><td>multi-byte numbers, a WAV file, Latin-1, random-access files</td></tr>
+<tr><td><a href="tutorial-r7rs-libraries.html">The R7RS libraries</a></td><td>which library holds what; complex numbers, <code>eval</code>, <code>read</code>, <code>load</code>, time</td></tr>
+</tbody>
+</table>
+<p>Every library has a page in the <a href="index.html">library reference</a>, with the documentation of each procedure.</p>
 <h2 id="running-the-examples-yourself">Running the examples yourself</h2>
-<p>Copy a code block into a file, keep the <a class="xref" href="scm-module.html#e10"><code>import</code></a> from the chapter's first block, and run it with <code>scm file.scm</code>. Lines ending in <code>;; =&gt; value</code> show what an expression returns; <code>;; prints:</code> shows what it writes.</p><span id="basics"></span><span id="techniques"></span><span id="libraries"></span>
+<p>Copy a code block into a file, keep the <a class="xref" href="scm-module.html#e10"><code>import</code></a> from the chapter's first block, and run it with <code>scm file.scm</code>. Lines ending in <code>;; =&gt; value</code> show what an expression returns; <code>;; prints:</code> shows what it writes. Every example is run as a test on the JVM, .NET and native implementations; the few that need a library dabscm native lacks (the REPL support, the profiler) are tested on the JVM and .NET only.</p><span id="basics"></span><span id="techniques"></span><span id="libraries"></span>
 <h2 id="by-library">Tutorials by library</h2>
 <table>
 <thead>
@@ -312,13 +336,23 @@
 <tr><td><a href="scheme-base.html"><code>(scheme base)</code></a></td><td><a href="tutorial-basics-01-getting-started.html">Getting started</a>, <a href="tutorial-basics-02-values.html">Expressions and values</a>, <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>, <a href="tutorial-basics-04-lists.html">Pairs and lists</a>, <a href="tutorial-basics-05-control.html">Control flow and recursion</a>, <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>, <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>, <a href="tutorial-basics-08-records.html">Records</a>, <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>, <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>, <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>, <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>, <a href="tutorial-techniques-01-strings.html">Strings and text</a>, <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>, <a href="tutorial-techniques-03-files.html">Files and directories</a>, <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a></td></tr>
 <tr><td><a href="scheme-case-lambda.html"><code>(scheme case-lambda)</code></a></td><td><a href="tutorial-basics-03-procedures.html">Definitions and procedures</a></td></tr>
 <tr><td><a href="scheme-char.html"><code>(scheme char)</code></a></td><td><a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>, <a href="tutorial-techniques-01-strings.html">Strings and text</a>, <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a></td></tr>
+<tr><td><a href="scheme-complex.html"><code>(scheme complex)</code></a></td><td><a href="tutorial-r7rs-libraries.html">"The R7RS libraries: eval, read, load, time, complex numbers and more"</a></td></tr>
+<tr><td><a href="scheme-cxr.html"><code>(scheme cxr)</code></a></td><td><a href="tutorial-r7rs-libraries.html">"The R7RS libraries: eval, read, load, time, complex numbers and more"</a></td></tr>
+<tr><td><a href="scheme-eval.html"><code>(scheme eval)</code></a></td><td><a href="tutorial-r7rs-libraries.html">"The R7RS libraries: eval, read, load, time, complex numbers and more"</a></td></tr>
 <tr><td><a href="scheme-file.html"><code>(scheme file)</code></a></td><td><a href="tutorial-techniques-03-files.html">Files and directories</a></td></tr>
-<tr><td><a href="scheme-inexact.html"><code>(scheme inexact)</code></a></td><td><a href="tutorial-basics-02-values.html">Expressions and values</a></td></tr>
+<tr><td><a href="scheme-inexact.html"><code>(scheme inexact)</code></a></td><td><a href="tutorial-basics-02-values.html">Expressions and values</a>, <a href="tutorial-r7rs-libraries.html">"The R7RS libraries: eval, read, load, time, complex numbers and more"</a></td></tr>
 <tr><td><a href="scheme-lazy.html"><code>(scheme lazy)</code></a></td><td><a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a></td></tr>
+<tr><td><a href="scheme-load.html"><code>(scheme load)</code></a></td><td><a href="tutorial-r7rs-libraries.html">"The R7RS libraries: eval, read, load, time, complex numbers and more"</a></td></tr>
 <tr><td><a href="scheme-process-context.html"><code>(scheme process-context)</code></a></td><td><a href="tutorial-basics-01-getting-started.html">Getting started</a>, <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>, <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a></td></tr>
+<tr><td><a href="scheme-r5rs.html"><code>(scheme r5rs)</code></a></td><td><a href="tutorial-r7rs-libraries.html">"The R7RS libraries: eval, read, load, time, complex numbers and more"</a></td></tr>
+<tr><td><a href="scheme-read.html"><code>(scheme read)</code></a></td><td><a href="tutorial-r7rs-libraries.html">"The R7RS libraries: eval, read, load, time, complex numbers and more"</a></td></tr>
+<tr><td><a href="scheme-repl.html"><code>(scheme repl)</code></a></td><td><a href="tutorial-r7rs-libraries.html">"The R7RS libraries: eval, read, load, time, complex numbers and more"</a></td></tr>
+<tr><td><a href="scheme-time.html"><code>(scheme time)</code></a></td><td><a href="tutorial-r7rs-libraries.html">"The R7RS libraries: eval, read, load, time, complex numbers and more"</a></td></tr>
 <tr><td><a href="scheme-write.html"><code>(scheme write)</code></a></td><td><a href="tutorial-basics-01-getting-started.html">Getting started</a>, <a href="tutorial-basics-02-values.html">Expressions and values</a>, <a href="tutorial-basics-09-errors.html">Errors and exceptions</a></td></tr>
 <tr><td><a href="scm-archive.html"><code>(scm archive)</code></a></td><td><a href="tutorial-techniques-03-files.html">Files and directories</a>, <a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a></td></tr>
 <tr><td><a href="scm-args.html"><code>(scm args)</code></a></td><td><a href="tutorial-techniques-09-command-line.html">Command-line programs</a>, <a href="tutorial-scm-args.html">(scm args): command-line parsing</a></td></tr>
+<tr><td><a href="scm-bytevector.html"><code>(scm bytevector)</code></a></td><td><a href="tutorial-scm-binary.html">"(scm bytevector) and (scm random access): binary data"</a></td></tr>
+<tr><td><a href="scm-compile.html"><code>(scm compile)</code></a></td><td><a href="tutorial-scm-tooling.html">"Developer tools: scm fmt, scm lint, (scm source), docs, REPL, profiling, reloading"</a></td></tr>
 <tr><td><a href="scm-compression.html"><code>(scm compression)</code></a></td><td><a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a></td></tr>
 <tr><td><a href="scm-crypto-password.html"><code>(scm crypto password)</code></a></td><td><a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a></td></tr>
 <tr><td><a href="scm-crypto-token.html"><code>(scm crypto token)</code></a></td><td><a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a></td></tr>
@@ -341,11 +375,23 @@
 <tr><td><a href="scm-database-postgres.html"><code>(scm database postgres)</code></a></td><td><a href="tutorial-scm-database.html">"(scm database postgres), sqlserver and migrations: SQL databases"</a></td></tr>
 <tr><td><a href="scm-database-sqlserver.html"><code>(scm database sqlserver)</code></a></td><td><a href="tutorial-scm-database.html">"(scm database postgres), sqlserver and migrations: SQL databases"</a></td></tr>
 <tr><td><a href="scm-datetime.html"><code>(scm datetime)</code></a></td><td><a href="tutorial-techniques-07-dates.html">Dates and times</a>, <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a></td></tr>
+<tr><td><a href="scm-deb-webapp.html"><code>(scm deb webapp)</code></a></td><td><a href="tutorial-scm-deb.html">"(scm deb) and (scm deb webapp): Debian packages"</a></td></tr>
+<tr><td><a href="scm-deb.html"><code>(scm deb)</code></a></td><td><a href="tutorial-scm-deb.html">"(scm deb) and (scm deb webapp): Debian packages"</a></td></tr>
 <tr><td><a href="scm-dict.html"><code>(scm dict)</code></a></td><td><a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a></td></tr>
+<tr><td><a href="scm-doc.html"><code>(scm doc)</code></a></td><td><a href="tutorial-scm-tooling.html">"Developer tools: scm fmt, scm lint, (scm source), docs, REPL, profiling, reloading"</a></td></tr>
 <tr><td><a href="scm-duration.html"><code>(scm duration)</code></a></td><td><a href="tutorial-techniques-07-dates.html">Dates and times</a>, <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a></td></tr>
 <tr><td><a href="scm-feed.html"><code>(scm feed)</code></a></td><td><a href="tutorial-scm-xml.html">(scm xml) and (scm feed): XML and news feeds</a></td></tr>
+<tr><td><a href="scm-fonts-dejavu.html"><code>(scm fonts dejavu)</code></a></td><td><a href="tutorial-scm-fonts.html">"(scm truetype), (scm fonts) and (scm text layout): fonts and text"</a></td></tr>
+<tr><td><a href="scm-fonts-inter.html"><code>(scm fonts inter)</code></a></td><td><a href="tutorial-scm-fonts.html">"(scm truetype), (scm fonts) and (scm text layout): fonts and text"</a></td></tr>
+<tr><td><a href="scm-fonts-roboto-slab.html"><code>(scm fonts roboto-slab)</code></a></td><td><a href="tutorial-scm-fonts.html">"(scm truetype), (scm fonts) and (scm text layout): fonts and text"</a></td></tr>
+<tr><td><a href="scm-fonts.html"><code>(scm fonts)</code></a></td><td><a href="tutorial-scm-fonts.html">"(scm truetype), (scm fonts) and (scm text layout): fonts and text"</a></td></tr>
 <tr><td><a href="scm-fs-find.html"><code>(scm fs-find)</code></a></td><td><a href="tutorial-techniques-03-files.html">Files and directories</a>, <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a></td></tr>
 <tr><td><a href="scm-fs.html"><code>(scm fs)</code></a></td><td><a href="tutorial-techniques-03-files.html">Files and directories</a>, <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>, <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a></td></tr>
+<tr><td><a href="scm-geiser.html"><code>(scm geiser)</code></a></td><td><a href="tutorial-scm-tooling.html">"Developer tools: scm fmt, scm lint, (scm source), docs, REPL, profiling, reloading"</a></td></tr>
+<tr><td><a href="scm-geo-shapefile.html"><code>(scm geo shapefile)</code></a></td><td><a href="tutorial-scm-geo.html">"(scm geo): features, polygons, shapefiles and TopoJSON"</a></td></tr>
+<tr><td><a href="scm-geo-topojson.html"><code>(scm geo topojson)</code></a></td><td><a href="tutorial-scm-geo.html">"(scm geo): features, polygons, shapefiles and TopoJSON"</a></td></tr>
+<tr><td><a href="scm-geo-topology.html"><code>(scm geo topology)</code></a></td><td><a href="tutorial-scm-geo.html">"(scm geo): features, polygons, shapefiles and TopoJSON"</a></td></tr>
+<tr><td><a href="scm-geo.html"><code>(scm geo)</code></a></td><td><a href="tutorial-scm-geo.html">"(scm geo): features, polygons, shapefiles and TopoJSON"</a></td></tr>
 <tr><td><a href="scm-glob.html"><code>(scm glob)</code></a></td><td><a href="tutorial-techniques-03-files.html">Files and directories</a>, <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a></td></tr>
 <tr><td><a href="scm-html-builder.html"><code>(scm html builder)</code></a></td><td><a href="tutorial-scm-html.html">(scm html), builder and parser: writing and reading HTML</a></td></tr>
 <tr><td><a href="scm-html-parser.html"><code>(scm html parser)</code></a></td><td><a href="tutorial-scm-html.html">(scm html), builder and parser: writing and reading HTML</a></td></tr>
@@ -359,6 +405,7 @@
 <tr><td><a href="scm-macro.html"><code>(scm macro)</code></a></td><td><a href="tutorial-scm-list.html">(scm list) and (scm macro): small helpers</a></td></tr>
 <tr><td><a href="scm-markdown.html"><code>(scm markdown)</code></a></td><td><a href="tutorial-scm-markdown.html">(scm markdown): Markdown to HTML and beyond</a></td></tr>
 <tr><td><a href="scm-match.html"><code>(scm match)</code></a></td><td><a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>, <a href="tutorial-scm-match.html">(scm match): pattern matching</a></td></tr>
+<tr><td><a href="scm-math.html"><code>(scm math)</code></a></td><td><a href="tutorial-r7rs-libraries.html">"The R7RS libraries: eval, read, load, time, complex numbers and more"</a></td></tr>
 <tr><td><a href="scm-module.html"><code>(scm module)</code></a></td><td><a href="tutorial-basics-10-libraries.html">Libraries and programs</a></td></tr>
 <tr><td><a href="scm-net-email.html"><code>(scm net email)</code></a></td><td><a href="tutorial-scm-email.html">(scm net email) and (scm net smtp): sending e-mail</a></td></tr>
 <tr><td><a href="scm-net-http-client.html"><code>(scm net http client)</code></a></td><td><a href="tutorial-scm-http-client.html">(scm net http client): HTTP requests</a></td></tr>
@@ -378,6 +425,7 @@
 <tr><td><a href="scm-net-websocket.html"><code>(scm net websocket)</code></a></td><td><a href="tutorial-scm-websocket.html">(scm net sockets) and (scm net websocket): TCP and WebSockets</a></td></tr>
 <tr><td><a href="scm-odf-spreadsheet.html"><code>(scm odf spreadsheet)</code></a></td><td><a href="tutorial-scm-excel.html">(scm ooxml excel) and friends: spreadsheets</a></td></tr>
 <tr><td><a href="scm-odf-writer.html"><code>(scm odf writer)</code></a></td><td><a href="tutorial-scm-word.html">(scm ooxml word) and friends: Word and OpenDocument texts</a></td></tr>
+<tr><td><a href="scm-ooxml-docprops.html"><code>(scm ooxml docprops)</code></a></td><td><a href="tutorial-scm-word.html">(scm ooxml word) and friends: Word and OpenDocument texts</a></td></tr>
 <tr><td><a href="scm-ooxml-excel-reader.html"><code>(scm ooxml excel-reader)</code></a></td><td><a href="tutorial-scm-excel.html">(scm ooxml excel) and friends: spreadsheets</a></td></tr>
 <tr><td><a href="scm-ooxml-excel-template.html"><code>(scm ooxml excel template)</code></a></td><td><a href="tutorial-scm-excel.html">(scm ooxml excel) and friends: spreadsheets</a></td></tr>
 <tr><td><a href="scm-ooxml-excel.html"><code>(scm ooxml excel)</code></a></td><td><a href="tutorial-scm-excel.html">(scm ooxml excel) and friends: spreadsheets</a></td></tr>
@@ -386,8 +434,17 @@
 <tr><td><a href="scm-ooxml-word.html"><code>(scm ooxml word)</code></a></td><td><a href="tutorial-scm-word.html">(scm ooxml word) and friends: Word and OpenDocument texts</a></td></tr>
 <tr><td><a href="scm-pdf.html"><code>(scm pdf)</code></a></td><td><a href="tutorial-scm-pdf.html">(scm pdf) and (scm svg pdf): PDF documents</a></td></tr>
 <tr><td><a href="scm-png.html"><code>(scm png)</code></a></td><td><a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a></td></tr>
+<tr><td><a href="scm-profiling.html"><code>(scm profiling)</code></a></td><td><a href="tutorial-scm-tooling.html">"Developer tools: scm fmt, scm lint, (scm source), docs, REPL, profiling, reloading"</a></td></tr>
 <tr><td><a href="scm-qr.html"><code>(scm qr)</code></a></td><td><a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a></td></tr>
+<tr><td><a href="scm-random-access.html"><code>(scm random access)</code></a></td><td><a href="tutorial-scm-binary.html">"(scm bytevector) and (scm random access): binary data"</a></td></tr>
+<tr><td><a href="scm-raster.html"><code>(scm raster)</code></a></td><td><a href="tutorial-scm-fonts.html">"(scm truetype), (scm fonts) and (scm text layout): fonts and text"</a></td></tr>
+<tr><td><a href="scm-reloader.html"><code>(scm reloader)</code></a></td><td><a href="tutorial-scm-tooling.html">"Developer tools: scm fmt, scm lint, (scm source), docs, REPL, profiling, reloading"</a></td></tr>
+<tr><td><a href="scm-repl.html"><code>(scm repl)</code></a></td><td><a href="tutorial-scm-tooling.html">"Developer tools: scm fmt, scm lint, (scm source), docs, REPL, profiling, reloading"</a></td></tr>
+<tr><td><a href="scm-scaffold-starters.html"><code>(scm scaffold starters)</code></a></td><td><a href="tutorial-scm-scaffold.html">"(scm scaffold): starting a web application with scm new-app"</a></td></tr>
 <tr><td><a href="scm-scaffold.html"><code>(scm scaffold)</code></a></td><td><a href="tutorial-scm-scaffold.html">"(scm scaffold): starting a web application with scm new-app"</a></td></tr>
+<tr><td><a href="scm-source-format.html"><code>(scm source format)</code></a></td><td><a href="tutorial-scm-tooling.html">"Developer tools: scm fmt, scm lint, (scm source), docs, REPL, profiling, reloading"</a></td></tr>
+<tr><td><a href="scm-source-lint.html"><code>(scm source lint)</code></a></td><td><a href="tutorial-scm-tooling.html">"Developer tools: scm fmt, scm lint, (scm source), docs, REPL, profiling, reloading"</a></td></tr>
+<tr><td><a href="scm-source.html"><code>(scm source)</code></a></td><td><a href="tutorial-scm-tooling.html">"Developer tools: scm fmt, scm lint, (scm source), docs, REPL, profiling, reloading"</a></td></tr>
 <tr><td><a href="scm-store.html"><code>(scm store)</code></a></td><td><a href="tutorial-scm-store.html">(scm store): an indexed record store</a></td></tr>
 <tr><td><a href="scm-string.html"><code>(scm string)</code></a></td><td><a href="tutorial-techniques-01-strings.html">Strings and text</a>, <a href="tutorial-techniques-03-files.html">Files and directories</a>, <a href="tutorial-scm-string.html">(scm string): regular expressions and splitting</a></td></tr>
 <tr><td><a href="scm-svg-core.html"><code>(scm svg core)</code></a></td><td><a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a></td></tr>
@@ -398,8 +455,10 @@
 <tr><td><a href="scm-templating.html"><code>(scm templating)</code></a></td><td><a href="tutorial-techniques-01-strings.html">Strings and text</a>, <a href="tutorial-scm-templating.html">(scm templating) and (scm uri): templates and URLs</a></td></tr>
 <tr><td><a href="scm-terminal.html"><code>(scm terminal)</code></a></td><td><a href="tutorial-techniques-09-command-line.html">Command-line programs</a>, <a href="tutorial-scm-terminal.html">(scm terminal) and (scm log): terminal output and logging</a></td></tr>
 <tr><td><a href="scm-test.html"><code>(scm test)</code></a></td><td><a href="tutorial-techniques-10-testing.html">Testing your code</a>, <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a></td></tr>
+<tr><td><a href="scm-text-layout.html"><code>(scm text layout)</code></a></td><td><a href="tutorial-scm-fonts.html">"(scm truetype), (scm fonts) and (scm text layout): fonts and text"</a></td></tr>
 <tr><td><a href="scm-text.html"><code>(scm text)</code></a></td><td><a href="tutorial-scm-text.html">(scm text): Unix text tools in Scheme</a></td></tr>
 <tr><td><a href="scm-toml.html"><code>(scm toml)</code></a></td><td><a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>, <a href="tutorial-scm-toml.html">(scm toml): configuration files</a></td></tr>
+<tr><td><a href="scm-truetype.html"><code>(scm truetype)</code></a></td><td><a href="tutorial-scm-fonts.html">"(scm truetype), (scm fonts) and (scm text layout): fonts and text"</a></td></tr>
 <tr><td><a href="scm-uri.html"><code>(scm uri)</code></a></td><td><a href="tutorial-scm-templating.html">(scm templating) and (scm uri): templates and URLs</a></td></tr>
 <tr><td><a href="scm-xml.html"><code>(scm xml)</code></a></td><td><a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>, <a href="tutorial-scm-xml.html">(scm xml) and (scm feed): XML and news feeds</a></td></tr>
 <tr><td><a href="scm-zip.html"><code>(scm zip)</code></a></td><td><a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a></td></tr>
@@ -419,7 +478,9 @@
 <tr><td><a href="srfi-2.html"><code>(srfi 2)</code></a></td><td><a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a></td></tr>
 <tr><td><a href="srfi-26.html"><code>(srfi 26)</code></a></td><td><a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>, <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a></td></tr>
 <tr><td><a href="srfi-27.html"><code>(srfi 27)</code></a></td><td><a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a></td></tr>
+<tr><td><a href="srfi-271-determinized-chacha20.html"><code>(srfi 271 determinized chacha20)</code></a></td><td><a href="tutorial-srfi-271.html">SRFI 271: random ports</a></td></tr>
 <tr><td><a href="srfi-271-determinized.html"><code>(srfi 271 determinized)</code></a></td><td><a href="tutorial-srfi-271.html">SRFI 271: random ports</a></td></tr>
+<tr><td><a href="srfi-271-randomized.html"><code>(srfi 271 randomized)</code></a></td><td><a href="tutorial-srfi-271.html">SRFI 271: random ports</a></td></tr>
 <tr><td><a href="srfi-271.html"><code>(srfi 271)</code></a></td><td><a href="tutorial-srfi-271.html">SRFI 271: random ports</a></td></tr>
 <tr><td><a href="srfi-28.html"><code>(srfi 28)</code></a></td><td><a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a></td></tr>
 <tr><td><a href="srfi-39.html"><code>(srfi 39)</code></a></td><td><a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a></td></tr>

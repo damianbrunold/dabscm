@@ -159,13 +159,35 @@ fn primitiveDoc(name: []const u8) ?[]const u8 {
 /// implementation's), or #f
 fn procedureDoc(t: *Thread) Err!Word {
     const p = arg(t, 0);
-    if (!(rt.isPtr(p) and rt.objType(p) == rt.T_CLOSURE)) return rt.FALSE;
-    const doc = if (rt.isPrimitive(p))
-        primitiveDoc(data.symbolName(rt.ptr(p)[2])) orelse return rt.FALSE
+    const doc = (if (rt.isPtr(p) and rt.objType(p) == rt.T_SYMBOL)
+        symbolDoc(data.symbolName(p))
     else
-        docs.get(rt.ptr(p)[1]) orelse return rt.FALSE;
+        closureDoc(p)) orelse return rt.FALSE;
     t.reserve(data.stringWords(doc.len, true));
     return data.heapStringUtf8(t, doc);
+}
+
+fn closureDoc(p: Word) ?[]const u8 {
+    if (!(rt.isPtr(p) and rt.objType(p) == rt.T_CLOSURE)) return null;
+    return if (rt.isPrimitive(p))
+        primitiveDoc(data.symbolName(rt.ptr(p)[2]))
+    else
+        docs.get(rt.ptr(p)[1]);
+}
+
+/// (procedure-doc 'name), as on the JVM: the primitive of that name, else
+/// a global of the program named so ("<module>: name")
+fn symbolDoc(name: []const u8) ?[]const u8 {
+    if (primitiveDoc(name)) |d| return d;
+    for (global_cells.items) |g| {
+        const n = g.name;
+        if (n.len > name.len + 2 and std.mem.endsWith(u8, n, name) and
+            std.mem.eql(u8, n[n.len - name.len - 2 .. n.len - name.len], ": "))
+        {
+            if (closureDoc(g.cell.*)) |d| return d;
+        }
+    }
+    return null;
 }
 pub const @"%procedure-doc" = WN("procedure-doc", procedureDoc, 1, 1);
 

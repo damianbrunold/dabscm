@@ -40,6 +40,7 @@
 
 <div class="lib-title scm">(scm geo topojson)</div>
 <p class="lib-sub">TopoJSON: writing with shared arcs, simplification and quantization; reading</p>
+<p class="lib-tutorials">Tutorials: <a href="tutorial-scm-geo.html">"(scm geo): features, polygons, shapefiles and TopoJSON"</a></p>
 <div class="lib-preamble">
 <h2>Overview</h2>
 <p><a class="xref" href="scm-geo-topojson.html"><code>(scm geo topojson)</code></a> reads TopoJSON (<a class="xref" href="#e1"><code>topojson-&gt;features</code></a>, one layer at a time, <a class="xref" href="#e2"><code>topojson-layers</code></a> for their names) and writes polygon features as a TopoJSON topology: every border shared by two rings, in one layer or across layers, is stored once as an arc that both rings refer to. Borders are matched by exactly equal coordinates, as <a class="xref" href="scm-geo-topology.html"><code>(scm geo topology)</code></a> produces them.</p>

@@ -163,11 +163,15 @@ public class Modules
 
     public bool HasModule(string name) => modules.ContainsKey(name);
 
-    public Module? GetModule(string name) => modules.GetValueOrDefault(name);
+    // (interaction-environment) is (user main); in a program, which has no
+    // REPL module, it is the program's own top level (as natively)
+    public Module? GetModule(string name) =>
+        modules.GetValueOrDefault(name)
+        ?? (name == "user main" ? modules.GetValueOrDefault("user program") : null);
 
     public Module GetModuleRequired(SourcePos? pos, string name)
     {
-        var result = modules.GetValueOrDefault(name);
+        var result = GetModule(name);
         if (result == null)
         {
             throw new SchemeError(pos, "Modules: " + name + " not available");

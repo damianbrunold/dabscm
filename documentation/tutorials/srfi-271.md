@@ -2,7 +2,7 @@
 title: SRFI 271: random ports
 part: libraries
 order: 271
-libraries: (srfi 271) (srfi 271 determinized) (srfi 151)
+libraries: (srfi 271) (srfi 271 randomized) (srfi 271 determinized) (srfi 271 determinized chacha20) (srfi 151)
 summary: Cryptographically random bytes from a binary port, tokens and identifiers, reproducible byte streams with a saveable state.
 ---
 # SRFI 271: random ports
@@ -111,4 +111,5 @@ A seed of only zero bytes, or fewer than 32 bytes, is rejected:
 
 - [SRFI 27 and 194](srfi-27.md) for random numbers and distributions.
 - `(scm crypto token)` for signed, expiring tokens.
-- Reference: `(srfi 271)`, `(srfi 271 determinized)`.
+- Reference: `(srfi 271)`, `(srfi 271 determinized)`; the stream of the
+  determinized ports comes from `(srfi 271 determinized chacha20)`.

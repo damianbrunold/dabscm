@@ -43,9 +43,10 @@
 
 <div class="lib-title scm">(scm source format)</div>
 <p class="lib-sub">Source formatter behind scm fmt — Emacs indentation, import/export sorting</p>
+<p class="lib-tutorials">Tutorials: <a href="tutorial-scm-tooling.html">"Developer tools: scm fmt, scm lint, (scm source), docs, REPL, profiling, reloading"</a></p>
 <div class="lib-preamble">
 <h2>Overview</h2>
-<p><a class="xref" href="scm-source-format.html"><code>(scm source format)</code></a> is the formatter behind <code>scm fmt</code>. It reads a file with <a href="scm-source.md">(scm source)</a>, sorts the import and export lists and lays the code out again within a line width (78 by default) using Emacs scheme-mode indentation:</p>
+<p><a class="xref" href="scm-source-format.html"><code>(scm source format)</code></a> is the formatter behind <code>scm fmt</code>. It reads a file with <a href="scm-source.html">(scm source)</a>, sorts the import and export lists and lays the code out again within a line width (78 by default) using Emacs scheme-mode indentation:</p>
 <ul>
 <li>a form that fits on the rest of its line stays on one line, unless it is a body form with several body expressions, a <code>cond</code> or <code>case</code> with several clauses, a <a class="xref" href="scheme-base.html#e105"><code>let</code></a> whose bindings are calls, or an import/export list with several entries;</li>
 <li>body forms (<code>define...</code>, <a class="xref" href="scheme-base.html#e102"><code>lambda</code></a>, the <a class="xref" href="scheme-base.html#e105"><code>let</code></a> family, <a class="xref" href="scheme-base.html#e225"><code>when</code></a>, <code>case</code>, <code>do</code>, ...) keep their distinguished arguments on the first line and indent the body by 2; distinguished arguments that must break go to +4;</li>
@@ -63,7 +64,7 @@ scm fmt --check .           # CI: list files that would change, exit 1 if any
 scm fmt --diff lib.sld      # unified diff instead of writing
 scm fmt --keep-breaks app.scm
 scm fmt - &lt; in.scm &gt; out.scm   # filter (editor integration)</code></pre>
-<p>Options: <code>--width N</code>, <code>--no-sort</code>, <code>--no-sort-imports</code>, <code>--no-sort-exports</code>, <code>--keep-brackets</code>, <code>--exclude GLOB</code>, <code>--quiet</code>. Settings come from the <code>[format]</code> table of <code>scm-tools.toml</code> (see <a href="scm-source.md">(scm source)</a>). Exit codes: 0 ok, 1 files would change (<code>--check</code>/<code>--diff</code>) or a file could not be read, 2 usage error, 3 internal formatter error.</p>
+<p>Options: <code>--width N</code>, <code>--no-sort</code>, <code>--no-sort-imports</code>, <code>--no-sort-exports</code>, <code>--keep-brackets</code>, <code>--exclude GLOB</code>, <code>--quiet</code>. Settings come from the <code>[format]</code> table of <code>scm-tools.toml</code> (see <a href="scm-source.html">(scm source)</a>). Exit codes: 0 ok, 1 files would change (<code>--check</code>/<code>--diff</code>) or a file could not be read, 2 usage error, 3 internal formatter error.</p>
 <h2>Common uses</h2>
 <pre><code class="language-scheme">(import (scm source format))
 

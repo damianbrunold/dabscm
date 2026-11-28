@@ -2,7 +2,7 @@
 title: (scm ooxml word) and friends: Word and OpenDocument texts
 part: libraries
 order: 1021
-libraries: (scm ooxml word) (scm ooxml word-reader) (scm odf writer)
+libraries: (scm ooxml word) (scm ooxml word-reader) (scm odf writer) (scm ooxml docprops)
 summary: Writing .docx documents with headings, styled runs, paragraph styles, headers and page numbers, a table of contents; generating letters from data; reading the text and structure of Word files; OpenDocument .odt with the same API.
 ---
 # (scm ooxml word) and friends: Word and OpenDocument texts
@@ -113,6 +113,37 @@ One document per customer, from a template procedure:
 
 `document-save-to-bytevector` gives the file as bytes, to attach it to an
 e-mail or send it as a download.
+
+## Document properties
+
+`document-set-properties!` (and `workbook-set-properties!` for Excel)
+sets what Word and Excel show under File › Info, and what search tools
+and document management index: title, subject, creator, keywords,
+description, category, and custom properties of your own, such as a
+classification:
+
+```scheme
+(import (scm zip) (scm ooxml docprops))
+(define (string-prefix-of? prefix s)
+  (and (<= (string-length prefix) (string-length s)) (string=? prefix (substring s 0 (string-length prefix)))))
+
+(define memo (make-document))
+(paragraph-add-run! (document-add-paragraph! memo) "Prices for 2026.")
+(define props '((title . "Price list 2026") (category . "Internal")
+                (custom . (("Classification" . "Internal") ("Department" . "Purchasing")))))
+(docprops-valid? props)                     ;; => #t
+(document-set-properties! memo props)
+(document-save memo (at "memo.docx"))
+
+(define z (open-input-zip-file (at "memo.docx")))
+(filter (lambda (n) (string-prefix-of? "docProps/" n)) (zip-entry-names z))
+;; => ("docProps/core.xml" "docProps/app.xml" "docProps/custom.xml")
+(close-input-zip z)
+```
+
+`(scm ooxml docprops)` writes these parts for both formats. A property
+list it does not accept (`docprops-valid?` is `#f`, for example an
+unknown key) is refused by `document-set-properties!` with an error.
 
 ## Reading
 

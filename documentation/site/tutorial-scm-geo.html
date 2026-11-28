@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>"(scm geo): features, polygons, shapefiles and TopoJSON" — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <a href="tutorial-scm-string.html">(scm string): regular expressions and splitting</a>
+  <a href="tutorial-scm-list.html">(scm list) and (scm macro): small helpers</a>
+  <a href="tutorial-scm-match.html">(scm match): pattern matching</a>
+  <a href="tutorial-scm-io.html">(scm io): ports and formatting</a>
+  <a href="tutorial-scm-text.html">(scm text): Unix text tools in Scheme</a>
+  <a href="tutorial-scm-templating.html">(scm templating) and (scm uri): templates and URLs</a>
+  <a href="tutorial-scm-args.html">(scm args): command-line parsing</a>
+  <a href="tutorial-scm-terminal.html">(scm terminal) and (scm log): terminal output and logging</a>
+  <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a>
+  <a href="tutorial-scm-system.html">(scm system) and (scm sysadmin): processes and the system</a>
+  <a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a>
+  <a href="tutorial-scm-store.html">(scm store): an indexed record store</a>
+  <a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a>
+  <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a>
+  <a href="tutorial-scm-json.html">(scm json simple) and (scm json): JSON</a>
+  <a href="tutorial-scm-xml.html">(scm xml) and (scm feed): XML and news feeds</a>
+  <a href="tutorial-scm-toml.html">(scm toml): configuration files</a>
+  <a href="tutorial-scm-markdown.html">(scm markdown): Markdown to HTML and beyond</a>
+  <a href="tutorial-scm-html.html">(scm html), builder and parser: writing and reading HTML</a>
+  <a href="tutorial-scm-excel.html">(scm ooxml excel) and friends: spreadsheets</a>
+  <a href="tutorial-scm-word.html">(scm ooxml word) and friends: Word and OpenDocument texts</a>
+  <a href="tutorial-scm-presentation.html">(scm ooxml presentation): PowerPoint slides</a>
+  <a href="tutorial-scm-pdf.html">(scm pdf) and (scm svg pdf): PDF documents</a>
+  <a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a>
+  <a href="tutorial-scm-http-server.html">(scm net http server) and (scm net http route): web servers</a>
+  <a href="tutorial-scm-http-client.html">(scm net http client): HTTP requests</a>
+  <a href="tutorial-scm-web-app.html">"Web applications: forms, sessions, middleware, static files, uploads"</a>
+  <a href="tutorial-scm-websocket.html">(scm net sockets) and (scm net websocket): TCP and WebSockets</a>
+  <a href="tutorial-scm-email.html">(scm net email) and (scm net smtp): sending e-mail</a>
+  <a href="tutorial-scm-database.html">"(scm database postgres), sqlserver and migrations: SQL databases"</a>
+  <a href="tutorial-scm-scaffold.html">"(scm scaffold): starting a web application with scm new-app"</a>
+  <a href="tutorial-scm-net-remote.html">"(scm net-remote): ssh, scp, rsync, curl and wget from Scheme"</a>
+  <a href="tutorial-scm-data.html">"(scm data): data frames and verbs"</a>
+  <a href="tutorial-scm-data-reshape.html">"(scm data): joining and reshaping"</a>
+  <a href="tutorial-scm-data-stats.html">"(scm data stats) and (scm data format): describing data"</a>
+  <a href="tutorial-scm-data-tests.html">"(scm data tests): hypothesis tests and linear models"</a>
+  <a href="tutorial-scm-data-io.html">"(scm data io): reading and writing data"</a>
+  <a href="tutorial-scm-data-plot.html">"(scm data plot): charts and maps"</a>
+  <a href="tutorial-scm-data-report.html">"(scm data report): reports in HTML, Markdown and PDF"</a>
+  <a href="tutorial-scm-data-cluster.html">"(scm data cluster): similarity and clustering"</a>
+  <a href="tutorial-scm-data-r.html">"(scm data r): translating between R and (scm data)"</a>
+  <a href="tutorial-scm-geo.html" class="active">"(scm geo): features, polygons, shapefiles and TopoJSON"</a>
+    <a class="sub" href="#rings-and-polygons">Rings and polygons</a>
+    <a class="sub" href="#features-and-geojson">Features and GeoJSON</a>
+    <a class="sub" href="#shapefiles">Shapefiles</a>
+    <a class="sub" href="#dissolving-with-a-planar-graph">Dissolving with a planar graph</a>
+    <a class="sub" href="#topojson">TopoJSON</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-scm-fonts.html">"(scm truetype), (scm fonts) and (scm text layout): fonts and text"</a>
+  <a href="tutorial-scm-deb.html">"(scm deb) and (scm deb webapp): Debian packages"</a>
+  <a href="tutorial-scm-tooling.html">"Developer tools: scm fmt, scm lint, (scm source), docs, REPL, profiling, reloading"</a>
+  <a href="tutorial-scm-binary.html">"(scm bytevector) and (scm random access): binary data"</a>
+  <a href="tutorial-r7rs-libraries.html">"The R7RS libraries: eval, read, load, time, complex numbers and more"</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">"(scm geo): features, polygons, shapefiles and TopoJSON"</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="scm-geo-features-polygons-shapefiles-and-topojson">(scm geo): features, polygons, shapefiles and TopoJSON</h1>
+<p>The geo libraries handle the maps behind statistics: municipalities, cantons, sales regions.</p>
+<table>
+<thead>
+<tr><th>library</th><th>does</th></tr>
+</thead>
+<tbody>
+<tr><td><a class="xref" href="scm-geo.html"><code>(scm geo)</code></a></td><td>features, polygons, areas, point in polygon, GeoJSON</td></tr>
+<tr><td><a class="xref" href="scm-geo-shapefile.html"><code>(scm geo shapefile)</code></a></td><td>reads ESRI shapefiles</td></tr>
+<tr><td><a class="xref" href="scm-geo-topology.html"><code>(scm geo topology)</code></a></td><td>dissolves, overlays and cleans polygon layers</td></tr>
+<tr><td><a class="xref" href="scm-geo-topojson.html"><code>(scm geo topojson)</code></a></td><td>reads and writes TopoJSON, with shared borders stored once</td></tr>
+</tbody>
+</table>
+<p>Coordinates are plain planar numbers: metres in a national grid such as the Swiss LV95, or longitude and latitude. Nothing is projected. To draw maps, see <a href="tutorial-scm-data-plot.html">charts and maps</a>.</p>
+<pre><code class="language-scheme">(import (scheme base) (scheme write) (scm json simple)
+        (scm geo) (scm geo topology) (scm geo topojson))</code></pre>
+<h2 id="rings-and-polygons">Rings and polygons</h2>
+<p>A ring is a flat vector of coordinates, <code>#(x0 y0 x1 y1 …)</code>, closed by repeating the first point. Here a helper for squares, <a class="xref" href="srfi-111.html#e0"><code>box</code></a>:</p>
+<pre><code class="language-scheme">(define (box x y side)
+  (vector x y (+ x side) y (+ x side) (+ y side) x (+ y side) x y))
+
+(define plot (box 0 0 1000))             ; a 1 km square
+(ring-area plot)                            ;; =&gt; 1000000.0
+(ring-area (ring-reverse plot))             ;; =&gt; -1000000.0
+(ring-bbox plot)                            ;; =&gt; #(0 0 1000 1000)
+(point-in-ring? 500 250 plot)               ;; =&gt; #t
+(point-in-ring? 1500 250 plot)              ;; =&gt; #f</code></pre>
+<p>The sign of the area tells the orientation: positive for counter-clockwise rings. A polygon is a list of rings, and a point is inside when it is inside an odd number of them, so an inner ring is a hole:</p>
+<pre><code class="language-scheme">(define park (make-polygon (list (box 0 0 10) (box 3 3 4))))   ; a lake in the middle
+(geometry-type park)                        ;; =&gt; polygon
+(rings-area (geometry-parts park))          ;; =&gt; 84.0
+(point-in-rings? 1 1 (geometry-parts park)) ;; =&gt; #t
+(point-in-rings? 5 5 (geometry-parts park)) ;; =&gt; #f
+(polygon-inner-point (list (box 0 0 1000))) ;; =&gt; #(500.0 500.0)</code></pre>
+<p><a class="xref" href="scm-geo.html#e19"><code>polygon-inner-point</code></a> finds a point well inside a polygon, the place for a label (the centre of a U-shaped region lies outside it). <a class="xref" href="scm-geo.html#e16"><code>path-simplify</code></a> drops points that lie within a tolerance of the line (Douglas-Peucker), for smaller files and faster maps:</p>
+<pre><code class="language-scheme">(path-simplify #(0 0 1 0.1 2 0 3 5) 0.5)    ;; =&gt; #(0 0 2 0 3 5)</code></pre>
+<h2 id="features-and-geojson">Features and GeoJSON</h2>
+<p>A feature is a geometry with properties, keyed by strings as in JSON:</p>
+<pre><code class="language-scheme">(define municipalities
+  (list (make-feature '(("name" . "Aach") ("region" . "North")) (make-polygon (list (box 0 1000 1000))))
+        (make-feature '(("name" . "Bühl") ("region" . "North")) (make-polygon (list (box 1000 1000 1000))))
+        (make-feature '(("name" . "Calw") ("region" . "South")) (make-polygon (list (box 0 0 1000))))
+        (make-feature '(("name" . "Dorf") ("region" . "South")) (make-polygon (list (box 1000 0 1000))))))
+
+(feature-ref (car municipalities) "name")   ;; =&gt; "Aach"
+(feature-geometry (car municipalities))     ;; =&gt; (polygon #(0 1000 1000 1000 1000 2000 0 2000 0 1000))</code></pre>
+<p><a class="xref" href="scm-geo.html#e7"><code>features-&gt;geojson</code></a> and <a class="xref" href="scm-geo.html#e8"><code>geojson-&gt;features</code></a> convert to and from GeoJSON in the form of <a class="xref" href="scm-json-simple.html"><code>(scm json simple)</code></a>:</p>
+<pre><code class="language-scheme">(define gj (features-&gt;geojson (list (car municipalities))))
+(json-&gt;string gj)
+;; =&gt; "{\"type\":\"FeatureCollection\",\"features\":[{\"type\":\"Feature\",\"properties\":{\"name\":\"Aach\",\"region\":\"North\"},\"geometry\":{\"type\":\"Polygon\",\"coordinates\":[[[0,1000],[1000,1000],[1000,2000],[0,2000],[0,1000]]]}}]}"
+(map (lambda (f) (feature-ref f "name")) (geojson-&gt;features (json-parse (json-&gt;string gj)))) ;; =&gt; ("Aach")</code></pre>
+<h2 id="shapefiles">Shapefiles</h2>
+<p>Official boundaries usually come as shapefiles: a <code>.shp</code> file with the geometries, a <code>.dbf</code> table with the attributes and a <code>.cpg</code> naming its character set.</p>
+<pre><code class="language-scheme no-test">(import (scm geo shapefile) (scm zip))
+
+(define cantons (read-shapefile "swissBOUNDARIES3D_1_5_TLM_KANTONSGEBIET.shp"))
+(map (lambda (f) (feature-ref f "NAME")) cantons)   ; =&gt; ("Zürich" "Bern" ...)
+
+;; straight from the downloaded ZIP, without unpacking it
+(define cantons2
+  (call-with-input-zip "boundaries.zip"
+    (lambda (z)
+      (shapefile-&gt;features (zip-read-entry-bytevector z "cantons.shp")
+                           (zip-read-entry-bytevector z "cantons.dbf")
+                           'utf-8))))</code></pre>
+<p><code>read-sf</code> in <a class="xref" href="scm-data-io.html"><code>(scm data io)</code></a> reads the same files into a data frame.</p>
+<h2 id="dissolving-with-a-planar-graph">Dissolving with a planar graph</h2>
+<p>Statistics are often needed for regions that are made of smaller units: cantons from municipalities, sales regions from postcodes. Merging the polygons naively leaves slivers and double borders. <a class="xref" href="scm-geo-topology.html"><code>(scm geo topology)</code></a> builds the planar graph of the layer, the <em>faces</em> between all edges, and traces the borders between faces with different keys:</p>
+<pre><code class="language-scheme">(define g (make-planar-graph (list municipalities)))
+(planar-graph-face-count g)                 ;; =&gt; 5
+
+(define regions
+  (planar-graph-dissolve g
+    (lambda (face)
+      (let ((fs (planar-graph-face-features g face)))
+        (and (pair? fs) (feature-ref (car fs) "region"))))))
+
+(map car regions)                           ;; =&gt; ("North" "South")
+(map (lambda (r) (rings-area (cdr r))) regions) ;; =&gt; (2000000.0 2000000.0)</code></pre>
+<p>The five faces are the four squares plus the outside, which no feature covers and which gets the key <code>#f</code>. Each result is a key with its rings; the inner border between Aach and Bühl is gone:</p>
+<pre><code class="language-scheme">(cdr (car regions))
+;; =&gt; (#(0.0 1000.0 1000.0 1000.0 2000.0 1000.0 2000.0 2000.0 1000.0 2000.0 0.0 2000.0 0.0 1000.0))</code></pre>
+<p>The key procedure decides the operation:</p>
+<ul>
+<li>a dissolve uses an attribute;</li>
+<li>an overlay of two layers uses the pair of features covering a face;</li>
+<li>a clip gives a key only where the clipping layer is.</li>
+</ul>
+<p><a class="xref" href="scm-geo-topology.html#e7"><code>planar-graph-merge-faces!</code></a> hands gaps and slivers to the neighbour they share the longest border with, and <code>'((snap . 0.01))</code> merges vertices closer than a tolerance, for layers digitised separately.</p>
+<h2 id="topojson">TopoJSON</h2>
+<p>In GeoJSON every border between two neighbours is stored twice, once for each. TopoJSON stores it once as an <em>arc</em> that both polygons refer to, so the file is smaller and simplifying it leaves no gaps between neighbours:</p>
+<pre><code class="language-scheme">(define topo (features-&gt;topojson (list (cons "municipalities" municipalities))))
+(topojson-layers topo)                      ;; =&gt; ("municipalities")
+(vector-length (cdr (assoc "arcs" topo)))   ;; =&gt; 8
+(map (lambda (f) (feature-ref f "name")) (topojson-&gt;features topo "municipalities"))
+;; =&gt; ("Aach" "Bühl" "Calw" "Dorf")</code></pre>
+<p>Four squares have 16 sides but only 8 distinct borders. Options make the file smaller still: <code>(simplify . tolerance)</code> simplifies each arc once for both sides, <code>(quantization . 100000)</code> writes integer coordinates on a grid. A file with several layers (municipalities and cantons) shares borders between the layers too.</p>
+<pre><code class="language-scheme no-test">(call-with-output-file "regions.topo.json"
+  (lambda (p)
+    (write-string (json-&gt;string (features-&gt;topojson (list (cons "municipalities" municipalities))
+                                                     '((simplify . 20) (quantization . 100000))))
+                  p)))</code></pre>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-scm-data-plot.html">Charts and maps</a> to draw them, <a href="tutorial-scm-data-io.html#geometries">reading and writing data</a> for frames with geometries, <a href="tutorial-scm-json.html">JSON</a>.</li>
+<li>Reference: <a class="xref" href="scm-geo.html"><code>(scm geo)</code></a>, <a class="xref" href="scm-geo-shapefile.html"><code>(scm geo shapefile)</code></a>, <a class="xref" href="scm-geo-topology.html"><code>(scm geo topology)</code></a>, <a class="xref" href="scm-geo-topojson.html"><code>(scm geo topojson)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scm-geo.html"><code>(scm geo)</code></a>, <a href="scm-geo-shapefile.html"><code>(scm geo shapefile)</code></a>, <a href="scm-geo-topology.html"><code>(scm geo topology)</code></a>, <a href="scm-geo-topojson.html"><code>(scm geo topojson)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-scm-data-r.html">&larr; "(scm data r): translating between R and (scm data)"</a>
+  <a class="next" href="tutorial-scm-fonts.html">"(scm truetype), (scm fonts) and (scm text layout): fonts and text" &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

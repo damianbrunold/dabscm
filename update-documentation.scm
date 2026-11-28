@@ -717,6 +717,23 @@
                    (else target)))))))
 
 (define (rewrite-tutorial-links html)
+  (rewrite-hrefs html tutorial-link-target))
+
+;; href="x.md[#a]" in a library preamble (written for the Markdown
+;; reference, where the library pages are x.md) -> the site page: the
+;; library's page first (a tutorial may have the same id), else a tutorial
+(define (preamble-link-target target)
+  (let* ((hash (string-index target #\#))
+         (file (if hash (substring target 0 hash) target))
+         (frag (if hash (substring target hash (string-length target)) "")))
+    (if (and (string-suffix? ".md" file) (not (string-index file #\/)))
+        (let ((id (substring file 0 (- (string-length file) 3))))
+          (if (find (lambda (e) (string=? (lib-id (car e)) id)) lib-data)
+              (string-append id ".html" frag)
+              (tutorial-link-target target)))
+        target)))
+
+(define (rewrite-hrefs html target-of)
   (let loop ((s html) (acc '()))
     (let ((i (string-contains s "href=\"")))
       (if (not i)
@@ -727,7 +744,7 @@
                 (apply string-append (reverse (cons s acc)))
                 (loop (substring s (+ end 1) (string-length s))
                       (cons (string-append (substring s 0 start)
-                                           (tutorial-link-target (substring s start end))
+                                           (target-of (substring s start end))
                                            "\"")
                             acc))))))))
 
@@ -1346,7 +1363,7 @@
             (display "</p>\n" port)))
         (when preamble
           (display "<div class=\"lib-preamble\">\n" port)
-          (display (linkify-preamble (markdown->html preamble) id) port)
+          (display (linkify-preamble (rewrite-hrefs (markdown->html preamble) preamble-link-target) id) port)
           (display "\n</div>\n" port))
         (display
          "<div class=\"toolbar\"><input type=\"search\" id=\"export-filter\" placeholder=\"Filter exports in this library&hellip;\" autocomplete=\"off\" spellcheck=\"false\"></div>\n"

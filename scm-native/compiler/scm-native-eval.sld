@@ -95,7 +95,12 @@
         (scheme read) (scheme time) (scheme write)))
 
     (define (named-environment name)
-      (cond ((assoc name named-environments) => cdr)
+      (cond ((and (member name '((user main) (user program)))
+                  (or (current-eval-environment)
+                      (and (program-eval-module) (program-environment)))))
+            ;; (interaction-environment) in a program: its own top level, as
+            ;; on the JVM, so (load file) and eval see the same definitions
+            ((assoc name named-environments) => cdr)
             (else
              (let ((e (if (member name '((user main) (user program)))
                           (named-module-environment repl-libraries name)

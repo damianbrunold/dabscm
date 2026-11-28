@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>"The R7RS libraries: eval, read, load, time, complex numbers and more" — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <a href="tutorial-scm-string.html">(scm string): regular expressions and splitting</a>
+  <a href="tutorial-scm-list.html">(scm list) and (scm macro): small helpers</a>
+  <a href="tutorial-scm-match.html">(scm match): pattern matching</a>
+  <a href="tutorial-scm-io.html">(scm io): ports and formatting</a>
+  <a href="tutorial-scm-text.html">(scm text): Unix text tools in Scheme</a>
+  <a href="tutorial-scm-templating.html">(scm templating) and (scm uri): templates and URLs</a>
+  <a href="tutorial-scm-args.html">(scm args): command-line parsing</a>
+  <a href="tutorial-scm-terminal.html">(scm terminal) and (scm log): terminal output and logging</a>
+  <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a>
+  <a href="tutorial-scm-system.html">(scm system) and (scm sysadmin): processes and the system</a>
+  <a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a>
+  <a href="tutorial-scm-store.html">(scm store): an indexed record store</a>
+  <a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a>
+  <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a>
+  <a href="tutorial-scm-json.html">(scm json simple) and (scm json): JSON</a>
+  <a href="tutorial-scm-xml.html">(scm xml) and (scm feed): XML and news feeds</a>
+  <a href="tutorial-scm-toml.html">(scm toml): configuration files</a>
+  <a href="tutorial-scm-markdown.html">(scm markdown): Markdown to HTML and beyond</a>
+  <a href="tutorial-scm-html.html">(scm html), builder and parser: writing and reading HTML</a>
+  <a href="tutorial-scm-excel.html">(scm ooxml excel) and friends: spreadsheets</a>
+  <a href="tutorial-scm-word.html">(scm ooxml word) and friends: Word and OpenDocument texts</a>
+  <a href="tutorial-scm-presentation.html">(scm ooxml presentation): PowerPoint slides</a>
+  <a href="tutorial-scm-pdf.html">(scm pdf) and (scm svg pdf): PDF documents</a>
+  <a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a>
+  <a href="tutorial-scm-http-server.html">(scm net http server) and (scm net http route): web servers</a>
+  <a href="tutorial-scm-http-client.html">(scm net http client): HTTP requests</a>
+  <a href="tutorial-scm-web-app.html">"Web applications: forms, sessions, middleware, static files, uploads"</a>
+  <a href="tutorial-scm-websocket.html">(scm net sockets) and (scm net websocket): TCP and WebSockets</a>
+  <a href="tutorial-scm-email.html">(scm net email) and (scm net smtp): sending e-mail</a>
+  <a href="tutorial-scm-database.html">"(scm database postgres), sqlserver and migrations: SQL databases"</a>
+  <a href="tutorial-scm-scaffold.html">"(scm scaffold): starting a web application with scm new-app"</a>
+  <a href="tutorial-scm-net-remote.html">"(scm net-remote): ssh, scp, rsync, curl and wget from Scheme"</a>
+  <a href="tutorial-scm-data.html">"(scm data): data frames and verbs"</a>
+  <a href="tutorial-scm-data-reshape.html">"(scm data): joining and reshaping"</a>
+  <a href="tutorial-scm-data-stats.html">"(scm data stats) and (scm data format): describing data"</a>
+  <a href="tutorial-scm-data-tests.html">"(scm data tests): hypothesis tests and linear models"</a>
+  <a href="tutorial-scm-data-io.html">"(scm data io): reading and writing data"</a>
+  <a href="tutorial-scm-data-plot.html">"(scm data plot): charts and maps"</a>
+  <a href="tutorial-scm-data-report.html">"(scm data report): reports in HTML, Markdown and PDF"</a>
+  <a href="tutorial-scm-data-cluster.html">"(scm data cluster): similarity and clustering"</a>
+  <a href="tutorial-scm-data-r.html">"(scm data r): translating between R and (scm data)"</a>
+  <a href="tutorial-scm-geo.html">"(scm geo): features, polygons, shapefiles and TopoJSON"</a>
+  <a href="tutorial-scm-fonts.html">"(scm truetype), (scm fonts) and (scm text layout): fonts and text"</a>
+  <a href="tutorial-scm-deb.html">"(scm deb) and (scm deb webapp): Debian packages"</a>
+  <a href="tutorial-scm-tooling.html">"Developer tools: scm fmt, scm lint, (scm source), docs, REPL, profiling, reloading"</a>
+  <a href="tutorial-scm-binary.html">"(scm bytevector) and (scm random access): binary data"</a>
+  <a href="tutorial-r7rs-libraries.html" class="active">"The R7RS libraries: eval, read, load, time, complex numbers and more"</a>
+    <a class="sub" href="#numbers-inexact-and-complex">Numbers: inexact and complex</a>
+    <a class="sub" href="#accessors-scheme-cxr">Accessors: (scheme cxr)</a>
+    <a class="sub" href="#code-as-data-eval">Code as data: eval</a>
+    <a class="sub" href="#reading-data-read">Reading data: read</a>
+    <a class="sub" href="#loading-code-load">Loading code: load</a>
+    <a class="sub" href="#time-scheme-time">Time: (scheme time)</a>
+    <a class="sub" href="#r5rs-code">R5RS code</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">"The R7RS libraries: eval, read, load, time, complex numbers and more"</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="the-r7rs-libraries">The R7RS libraries</h1>
+<p>R7RS splits the standard procedures into libraries, so a program imports what it uses. Most of them appear throughout these tutorials; this chapter is the map, and covers the ones that have no chapter of their own.</p>
+<table>
+<thead>
+<tr><th>library</th><th>holds</th><th>see</th></tr>
+</thead>
+<tbody>
+<tr><td><a class="xref" href="scheme-base.html"><code>(scheme base)</code></a></td><td>the core: numbers, lists, strings, vectors, control, records, errors</td><td><a href="tutorial-basics-02-values.html">basics</a></td></tr>
+<tr><td><a class="xref" href="scheme-char.html"><code>(scheme char)</code></a></td><td>character classes, case conversion</td><td><a href="tutorial-techniques-02-characters.html">characters</a></td></tr>
+<tr><td><a class="xref" href="scheme-write.html"><code>(scheme write)</code></a>, <a class="xref" href="scheme-read.html"><code>(scheme read)</code></a></td><td><code>display</code>, <code>write</code>; <code>read</code></td><td>below</td></tr>
+<tr><td><a class="xref" href="scheme-file.html"><code>(scheme file)</code></a></td><td>opening files, <code>file-exists?</code>, <code>delete-file</code></td><td><a href="tutorial-techniques-03-files.html">files</a></td></tr>
+<tr><td><a class="xref" href="scheme-process-context.html"><code>(scheme process-context)</code></a></td><td><a class="xref" href="scheme-process-context.html#e0"><code>command-line</code></a>, <a class="xref" href="scheme-process-context.html#e2"><code>exit</code></a>, environment variables</td><td><a href="tutorial-techniques-09-command-line.html">command-line programs</a></td></tr>
+<tr><td><a class="xref" href="scheme-inexact.html"><code>(scheme inexact)</code></a></td><td><code>sin</code>, <code>sqrt</code>, <code>exp</code>, <code>log</code>, <a class="xref" href="scheme-inexact.html#e8"><code>nan?</code></a> …</td><td>below</td></tr>
+<tr><td><a class="xref" href="scheme-complex.html"><code>(scheme complex)</code></a></td><td>complex numbers</td><td>below</td></tr>
+<tr><td><a class="xref" href="scheme-cxr.html"><code>(scheme cxr)</code></a></td><td><code>caddr</code> and the other three- and four-letter accessors</td><td>below</td></tr>
+<tr><td><a class="xref" href="scheme-lazy.html"><code>(scheme lazy)</code></a></td><td><code>delay</code>, <code>force</code>, <a class="xref" href="scheme-lazy.html#e3"><code>make-promise</code></a></td><td><a href="tutorial-basics-12-continuations.html">continuations and laziness</a></td></tr>
+<tr><td><a class="xref" href="scheme-case-lambda.html"><code>(scheme case-lambda)</code></a></td><td><a class="xref" href="scheme-case-lambda.html#e0"><code>case-lambda</code></a></td><td><a href="tutorial-basics-03-procedures.html">procedures</a></td></tr>
+<tr><td><a class="xref" href="scheme-eval.html"><code>(scheme eval)</code></a>, <a class="xref" href="scheme-repl.html"><code>(scheme repl)</code></a></td><td><code>eval</code>, <a class="xref" href="scheme-eval.html#e0"><code>environment</code></a>, <code>interaction-environment</code></td><td>below</td></tr>
+<tr><td><a class="xref" href="scheme-load.html"><code>(scheme load)</code></a></td><td><code>load</code></td><td>below</td></tr>
+<tr><td><a class="xref" href="scheme-time.html"><code>(scheme time)</code></a></td><td><a class="xref" href="scheme-time.html#e1"><code>current-second</code></a>, <a class="xref" href="scheme-time.html#e0"><code>current-jiffy</code></a></td><td>below</td></tr>
+<tr><td><a class="xref" href="scheme-r5rs.html"><code>(scheme r5rs)</code></a></td><td>everything of R5RS, for old code</td><td>below</td></tr>
+</tbody>
+</table>
+<pre><code class="language-scheme">(import (scheme base) (scheme complex) (scheme cxr) (scheme eval) (scheme file)
+        (scheme inexact) (scheme load) (scheme read) (scheme repl) (scheme time)
+        (scheme write) (scm fs) (scm math))</code></pre>
+<h2 id="numbers-inexact-and-complex">Numbers: inexact and complex</h2>
+<p><a class="xref" href="scheme-inexact.html"><code>(scheme inexact)</code></a> has the functions of floating-point maths:</p>
+<pre><code class="language-scheme">(sqrt 16)                                   ;; =&gt; 4
+(sqrt 2.25)                                 ;; =&gt; 1.5
+(exp 0)                                     ;; =&gt; 1.0
+(/ (round (* 1000 (sin 1))) 1000)           ;; =&gt; 0.841
+(log 100 10)                                ;; =&gt; 2.0
+(nan? (/ 0.0 0.0))                          ;; =&gt; #t</code></pre>
+<p><code>sqrt</code> of an exact square stays exact; the others return inexact numbers. Complex numbers are written <code>3+4i</code>, or made from parts; <a class="xref" href="scheme-complex.html"><code>(scheme complex)</code></a> takes them apart:</p>
+<pre><code class="language-scheme">(define z (make-rectangular 3 4))
+z                                           ;; =&gt; 3+4i
+(list (real-part z) (imag-part z) (magnitude z)) ;; =&gt; (3 4 5.0)
+(* +i +i)                                   ;; =&gt; -1
+(sqrt -4)                                   ;; =&gt; 0.0+2.0i
+(/ (round (* 1000 (angle 1+i))) 1000)       ;; =&gt; 0.785</code></pre>
+<p>The magnitude of 3+4i is the length of the arrow from 0 to (3, 4); the angle of 1+i is 45 degrees, π/4. <a class="xref" href="scm-math.html"><code>(scm math)</code></a> adds the constants and a few helpers:</p>
+<pre><code class="language-scheme">(list PI E)                                 ;; =&gt; (3.141592653589793 2.718281828459045)
+(factorial 20)                              ;; =&gt; 2432902008176640000
+(factorial 25)                              ;; =&gt; 15511210043330985984000000
+(map sign '(-5 0 2.5))                      ;; =&gt; (-1 0 1)</code></pre>
+<p>Integers have no size limit, so <a class="xref" href="scm-math.html#e2"><code>factorial</code></a> does not overflow.</p>
+<h2 id="accessors-scheme-cxr">Accessors: (scheme cxr)</h2>
+<p><code>cadr</code> and the other two-letter combinations are in <a class="xref" href="scheme-base.html"><code>(scheme base)</code></a>; the three- and four-letter ones are in <a class="xref" href="scheme-cxr.html"><code>(scheme cxr)</code></a>. Read the letters from right to left: <code>caddr</code> is the car of the cdr of the cdr, the third element:</p>
+<pre><code class="language-scheme">(define order '("ada" ("Sencha" 2) ("Assam" 1)))
+(caddr order)                               ;; =&gt; ("Assam" 1)
+(caadr order)                               ;; =&gt; "Sencha"
+(cadadr order)                              ;; =&gt; 2</code></pre>
+<p>Past two letters, names often read better: <code>(list-ref order 2)</code>, or a record.</p>
+<h2 id="code-as-data-eval">Code as data: eval</h2>
+<p><code>eval</code> runs a datum as code, in an <em>environment</em> that says which bindings it may use. <a class="xref" href="scheme-eval.html#e0"><code>environment</code></a> makes one from library names:</p>
+<pre><code class="language-scheme">(eval '(+ 1 2) (environment '(scheme base))) ;; =&gt; 3
+(eval '(string-upcase "tea") (environment '(scheme base) '(scheme char))) ;; =&gt; "TEA"
+(eval '(string-upcase "tea") (environment '(scheme base))) ;; =&gt; error</code></pre>
+<p>The last fails because <code>string-upcase</code> is not in <a class="xref" href="scheme-base.html"><code>(scheme base)</code></a>. An environment is also a fence: an expression from outside, a formula in a spreadsheet or a pricing rule in a configuration file, can only use what it is given. A calculator that allows arithmetic and nothing else:</p>
+<pre><code class="language-scheme">(define allowed '(+ - * / min max round))
+
+(define (safe-expression? x)
+  (cond ((number? x) #t)
+        ((pair? x) (and (memq (car x) allowed) (list? x) (every-safe? (cdr x))))
+        (else #f)))
+(define (every-safe? xs) (or (null? xs) (and (safe-expression? (car xs)) (every-safe? (cdr xs)))))
+
+(define (calculate text)
+  (let ((x (read (open-input-string text))))
+    (if (safe-expression? x)
+        (eval x (environment '(scheme base)))
+        (error "not allowed" text))))
+
+(calculate "(* 2 (+ 3 4))")                 ;; =&gt; 14
+(calculate "(round (/ 7 2))")               ;; =&gt; 4
+(calculate "(delete-file \"orders.csv\")")  ;; =&gt; error</code></pre>
+<p>The check before <code>eval</code> is what makes it safe: even <a class="xref" href="scheme-base.html"><code>(scheme base)</code></a> holds procedures that should not run on untrusted input. Prefer data over code where possible; <code>eval</code> is for the cases where users really write expressions.</p>
+<h2 id="reading-data-read">Reading data: read</h2>
+<p><code>read</code> parses one datum from a port: the same syntax as code, but nothing runs. It is the simplest way to store Scheme data in files:</p>
+<pre><code class="language-scheme">(define p (open-input-string "(tea \"Sencha\" (kg 2)) 42 #(1 2) done"))
+(list (read p) (read p) (read p) (read p))  ;; =&gt; ((tea "Sencha" (kg 2)) 42 #(1 2) done)
+(eof-object? (read p))                      ;; =&gt; #t</code></pre>
+<p>A configuration file as a list of settings, read with <code>read</code>, is safe in a way that loading it as code is not:</p>
+<pre><code class="language-scheme">(define dir (mktempdir '(prefix . "r7rs")))
+(define config-file (join-path dir "shop.conf"))
+(call-with-output-file config-file
+  (lambda (out) (write-string "((port 8080) (shops \"Zurich\" \"Bern\") (vat 0.081))\n" out)))
+
+(define config (call-with-input-file config-file read))
+(cadr (assq 'port config))                  ;; =&gt; 8080
+(cdr (assq 'shops config))                  ;; =&gt; ("Zurich" "Bern")</code></pre>
+<h2 id="loading-code-load">Loading code: load</h2>
+<p><code>load</code> reads a file and evaluates its forms, as if they were written at that point of the program. Without an environment it uses the program's own top level, which <code>(interaction-environment)</code> from <a class="xref" href="scheme-repl.html"><code>(scheme repl)</code></a> also names:</p>
+<pre><code class="language-scheme">(call-with-output-file (join-path dir "pricing.scm")
+  (lambda (out) (write '(define (with-vat chf) (* chf 1.081)) out)))
+
+(load (join-path dir "pricing.scm"))
+(eval '(with-vat 100) (interaction-environment)) ;; =&gt; 108.1
+(rm dir 'recursive)</code></pre>
+<p><code>load</code> suits plug-ins and scripts that extend a program. For code of your own, libraries (<code>define-library</code> and <a class="xref" href="scm-module.html#e10"><code>import</code></a>) are better: they are checked when the program starts and say what they export (<a href="tutorial-basics-10-libraries.html">libraries and programs</a>).</p>
+<h2 id="time-scheme-time">Time: (scheme time)</h2>
+<pre><code class="language-scheme">(real? (current-second))                    ;; =&gt; #t
+(exact-integer? (current-jiffy))            ;; =&gt; #t
+
+(define (time-it thunk)                     ; seconds a thunk takes
+  (let ((start (current-jiffy)))
+    (thunk)
+    (/ (- (current-jiffy) start) (jiffies-per-second))))
+(&gt;= (time-it (lambda () (let loop ((i 0)) (when (&lt; i 10000) (loop (+ i 1)))))) 0) ;; =&gt; #t</code></pre>
+<p><a class="xref" href="scheme-time.html#e1"><code>current-second</code></a> is the wall-clock time in seconds since 1970, with a fraction; <a class="xref" href="scheme-time.html#e0"><code>current-jiffy</code></a> counts ticks of an unspecified clock that never jumps, the right one for measuring durations. Dates, time zones and formatting are in <a href="tutorial-techniques-07-dates.html">dates and times</a>.</p>
+<h2 id="r5rs-code">R5RS code</h2>
+<p><a class="xref" href="scheme-r5rs.html"><code>(scheme r5rs)</code></a> exports everything of the previous standard, including <a class="xref" href="scheme-r5rs.html#e136"><code>null-environment</code></a> and <a class="xref" href="scheme-r5rs.html#e160"><code>scheme-report-environment</code></a>, so old programs run with one import:</p>
+<pre><code class="language-scheme no-test">(import (scheme r5rs))
+(display (eval '(* 4 4) (scheme-report-environment 5)))
+(newline)</code></pre>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-basics-10-libraries.html">Libraries and programs</a> for <a class="xref" href="scm-module.html#e10"><code>import</code></a> and <code>define-library</code>, <a href="tutorial-basics-11-macros.html">macros</a> for code that writes code without <code>eval</code>.</li>
+<li>Reference: the pages of each <code>(scheme …)</code> library, and <a class="xref" href="scm-math.html"><code>(scm math)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scheme-complex.html"><code>(scheme complex)</code></a>, <a href="scheme-cxr.html"><code>(scheme cxr)</code></a>, <a href="scheme-eval.html"><code>(scheme eval)</code></a>, <a href="scheme-load.html"><code>(scheme load)</code></a>, <a href="scheme-read.html"><code>(scheme read)</code></a>, <a href="scheme-repl.html"><code>(scheme repl)</code></a>, <a href="scheme-time.html"><code>(scheme time)</code></a>, <a href="scheme-r5rs.html"><code>(scheme r5rs)</code></a>, <a href="scheme-inexact.html"><code>(scheme inexact)</code></a>, <a href="scm-math.html"><code>(scm math)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-scm-binary.html">&larr; "(scm bytevector) and (scm random access): binary data"</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

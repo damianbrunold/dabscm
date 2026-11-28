@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>"(scm deb) and (scm deb webapp): Debian packages" — Dabscm Tutorials</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><a href="index.html">Dabscm Library Reference</a></h1>
+    <a class="header-link" href="tutorials.html">Tutorials</a>
+  </div>
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Search identifiers&hellip;" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="tutorial-nav">
+  <h2><a href="tutorials.html">Tutorials</a></h2>
+  <h3>Basics</h3>
+  <a href="tutorial-basics-01-getting-started.html">Getting started</a>
+  <a href="tutorial-basics-02-values.html">Expressions and values</a>
+  <a href="tutorial-basics-03-procedures.html">Definitions and procedures</a>
+  <a href="tutorial-basics-04-lists.html">Pairs and lists</a>
+  <a href="tutorial-basics-05-control.html">Control flow and recursion</a>
+  <a href="tutorial-basics-06-data.html">Vectors, bytevectors and other data</a>
+  <a href="tutorial-basics-07-higher-order.html">Higher-order programming</a>
+  <a href="tutorial-basics-08-records.html">Records</a>
+  <a href="tutorial-basics-09-errors.html">Errors and exceptions</a>
+  <a href="tutorial-basics-10-libraries.html">Libraries and programs</a>
+  <a href="tutorial-basics-11-macros.html">Macros and pattern matching</a>
+  <a href="tutorial-basics-12-continuations.html">Continuations, generators and laziness</a>
+  <h3>Techniques</h3>
+  <a href="tutorial-techniques-01-strings.html">Strings and text</a>
+  <a href="tutorial-techniques-02-characters.html">Characters and Unicode</a>
+  <a href="tutorial-techniques-03-files.html">Files and directories</a>
+  <a href="tutorial-techniques-04-hash-tables.html">Hash tables and dictionaries</a>
+  <a href="tutorial-techniques-05-sorting.html">Sorting and searching</a>
+  <a href="tutorial-techniques-06-iteration.html">Iteration patterns</a>
+  <a href="tutorial-techniques-07-dates.html">Dates and times</a>
+  <a href="tutorial-techniques-08-structured-data.html">Structured data: JSON, XML, TOML, CSV</a>
+  <a href="tutorial-techniques-09-command-line.html">Command-line programs</a>
+  <a href="tutorial-techniques-10-testing.html">Testing your code</a>
+  <a href="tutorial-techniques-11-concurrency.html">Concurrency</a>
+  <a href="tutorial-techniques-12-system.html">The system: programs, environment, platform</a>
+  <h3>Libraries</h3>
+  <a href="tutorial-srfi-1.html">SRFI 1: lists</a>
+  <a href="tutorial-srfi-13.html">SRFI 13: strings</a>
+  <a href="tutorial-srfi-14.html">SRFI 14: character sets</a>
+  <a href="tutorial-srfi-18.html">SRFI 18: threads</a>
+  <a href="tutorial-srfi-19.html">SRFI 19: time and dates</a>
+  <a href="tutorial-srfi-26.html">SRFI 2, 8 and 26: small syntax helpers</a>
+  <a href="tutorial-srfi-27.html">SRFI 27 and 194: random numbers</a>
+  <a href="tutorial-srfi-48.html">SRFI 28 and 48: format</a>
+  <a href="tutorial-srfi-64.html">SRFI 64: unit tests</a>
+  <a href="tutorial-srfi-69.html">SRFI 69: hash tables</a>
+  <a href="tutorial-srfi-111.html">SRFI 9, 39, 98 and 111: small SRFIs</a>
+  <a href="tutorial-srfi-125.html">SRFI 125 and 128: comparators and hash tables</a>
+  <a href="tutorial-srfi-132.html">SRFI 132 and 95: sorting</a>
+  <a href="tutorial-srfi-133.html">SRFI 133: vectors</a>
+  <a href="tutorial-srfi-151.html">SRFI 151: bitwise operations</a>
+  <a href="tutorial-srfi-158.html">SRFI 158: generators and accumulators</a>
+  <a href="tutorial-srfi-271.html">SRFI 271: random ports</a>
+  <a href="tutorial-scm-string.html">(scm string): regular expressions and splitting</a>
+  <a href="tutorial-scm-list.html">(scm list) and (scm macro): small helpers</a>
+  <a href="tutorial-scm-match.html">(scm match): pattern matching</a>
+  <a href="tutorial-scm-io.html">(scm io): ports and formatting</a>
+  <a href="tutorial-scm-text.html">(scm text): Unix text tools in Scheme</a>
+  <a href="tutorial-scm-templating.html">(scm templating) and (scm uri): templates and URLs</a>
+  <a href="tutorial-scm-args.html">(scm args): command-line parsing</a>
+  <a href="tutorial-scm-terminal.html">(scm terminal) and (scm log): terminal output and logging</a>
+  <a href="tutorial-scm-fs.html">(scm fs), (scm fs-find), (scm glob): the file system</a>
+  <a href="tutorial-scm-system.html">(scm system) and (scm sysadmin): processes and the system</a>
+  <a href="tutorial-scm-archive.html">(scm archive), (scm zip), (scm compression): archives</a>
+  <a href="tutorial-scm-store.html">(scm store): an indexed record store</a>
+  <a href="tutorial-scm-crypto.html">(scm crypto): hashing, encryption, passwords, tokens</a>
+  <a href="tutorial-scm-datetime.html">(scm datetime) and (scm duration): timestamps and durations</a>
+  <a href="tutorial-scm-json.html">(scm json simple) and (scm json): JSON</a>
+  <a href="tutorial-scm-xml.html">(scm xml) and (scm feed): XML and news feeds</a>
+  <a href="tutorial-scm-toml.html">(scm toml): configuration files</a>
+  <a href="tutorial-scm-markdown.html">(scm markdown): Markdown to HTML and beyond</a>
+  <a href="tutorial-scm-html.html">(scm html), builder and parser: writing and reading HTML</a>
+  <a href="tutorial-scm-excel.html">(scm ooxml excel) and friends: spreadsheets</a>
+  <a href="tutorial-scm-word.html">(scm ooxml word) and friends: Word and OpenDocument texts</a>
+  <a href="tutorial-scm-presentation.html">(scm ooxml presentation): PowerPoint slides</a>
+  <a href="tutorial-scm-pdf.html">(scm pdf) and (scm svg pdf): PDF documents</a>
+  <a href="tutorial-scm-images.html">(scm image), (scm png), (scm qr), (scm svg raster): images</a>
+  <a href="tutorial-scm-http-server.html">(scm net http server) and (scm net http route): web servers</a>
+  <a href="tutorial-scm-http-client.html">(scm net http client): HTTP requests</a>
+  <a href="tutorial-scm-web-app.html">"Web applications: forms, sessions, middleware, static files, uploads"</a>
+  <a href="tutorial-scm-websocket.html">(scm net sockets) and (scm net websocket): TCP and WebSockets</a>
+  <a href="tutorial-scm-email.html">(scm net email) and (scm net smtp): sending e-mail</a>
+  <a href="tutorial-scm-database.html">"(scm database postgres), sqlserver and migrations: SQL databases"</a>
+  <a href="tutorial-scm-scaffold.html">"(scm scaffold): starting a web application with scm new-app"</a>
+  <a href="tutorial-scm-net-remote.html">"(scm net-remote): ssh, scp, rsync, curl and wget from Scheme"</a>
+  <a href="tutorial-scm-data.html">"(scm data): data frames and verbs"</a>
+  <a href="tutorial-scm-data-reshape.html">"(scm data): joining and reshaping"</a>
+  <a href="tutorial-scm-data-stats.html">"(scm data stats) and (scm data format): describing data"</a>
+  <a href="tutorial-scm-data-tests.html">"(scm data tests): hypothesis tests and linear models"</a>
+  <a href="tutorial-scm-data-io.html">"(scm data io): reading and writing data"</a>
+  <a href="tutorial-scm-data-plot.html">"(scm data plot): charts and maps"</a>
+  <a href="tutorial-scm-data-report.html">"(scm data report): reports in HTML, Markdown and PDF"</a>
+  <a href="tutorial-scm-data-cluster.html">"(scm data cluster): similarity and clustering"</a>
+  <a href="tutorial-scm-data-r.html">"(scm data r): translating between R and (scm data)"</a>
+  <a href="tutorial-scm-geo.html">"(scm geo): features, polygons, shapefiles and TopoJSON"</a>
+  <a href="tutorial-scm-fonts.html">"(scm truetype), (scm fonts) and (scm text layout): fonts and text"</a>
+  <a href="tutorial-scm-deb.html" class="active">"(scm deb) and (scm deb webapp): Debian packages"</a>
+    <a class="sub" href="#what-is-in-a-deb">What is in a .deb</a>
+    <a class="sub" href="#a-small-package">A small package</a>
+    <a class="sub" href="#looking-inside">Looking inside</a>
+    <a class="sub" href="#packaging-a-web-application">Packaging a web application</a>
+    <a class="sub" href="#where-next">Where next</a>
+  <a href="tutorial-scm-tooling.html">"Developer tools: scm fmt, scm lint, (scm source), docs, REPL, profiling, reloading"</a>
+  <a href="tutorial-scm-binary.html">"(scm bytevector) and (scm random access): binary data"</a>
+  <a href="tutorial-r7rs-libraries.html">"The R7RS libraries: eval, read, load, time, complex numbers and more"</a>
+  <h2><a href="index.html">Library reference</a></h2>
+</nav>
+
+<main class="tutorial">
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="tutorials.html">Tutorials</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="tutorials.html#libraries">Libraries</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">"(scm deb) and (scm deb webapp): Debian packages"</span>
+</nav>
+
+<div class="lib-preamble tutorial-body">
+<h1 id="scm-deb-and-scm-deb-webapp-debian-packages">(scm deb) and (scm deb webapp): Debian packages</h1>
+<p>A <code>.deb</code> file is how software is installed on Debian and Ubuntu: <code>apt install ./tool.deb</code> copies its files, runs its setup scripts and can remove it all again. <a class="xref" href="scm-deb.html"><code>(scm deb)</code></a> builds such files in pure Scheme, with no <code>dpkg-deb</code> needed, so packages can be built on any machine, Windows included. <a class="xref" href="scm-deb-webapp.html"><code>(scm deb webapp)</code></a> packages a whole dabscm web application.</p>
+<pre><code class="language-scheme">(import (scheme base) (scheme char) (scheme file) (scheme write)
+        (scm fs) (scm archive) (scm deb) (scm deb webapp))</code></pre>
+<h2 id="what-is-in-a-deb">What is in a .deb</h2>
+<p>A <code>.deb</code> is an <code>ar</code> archive with three members:</p>
+<ul>
+<li><code>debian-binary</code>, the format version <code>2.0</code>;</li>
+<li><code>control.tar.gz</code>, the package description and scripts;</li>
+<li><code>data.tar.gz</code>, the files to install, with their paths from <code>/</code>.</li>
+</ul>
+<p>The entries of both tar archives are lists <code>(path mode content)</code>.</p>
+<h2 id="a-small-package">A small package</h2>
+<p>A command-line tool, <code>teashop-report</code>, installed to <code>/usr/bin</code>, with its documentation:</p>
+<pre><code class="language-scheme">(define control-text "Package: teashop-report
+Version: 1.2.0
+Architecture: all
+Maintainer: Teashop IT &lt;it@tea.example&gt;
+Depends: dabscm
+Description: Monthly sales report for the tea shops
+ Reads the sales export and writes the monthly PDF report.
+")
+
+(define script "#!/usr/bin/env scm\n(import (scheme base) (scheme write))\n(display \"report written\\n\")\n")
+
+(define postinst "#!/bin/sh\nset -e\nmkdir -p /var/lib/teashop-report\n")
+
+(define deb
+  (deb-bytevector
+   (list (list "control" #o644 (string-&gt;utf8 control-text))
+         (list "postinst" #o755 (string-&gt;utf8 postinst)))
+   (list (list "usr/bin/teashop-report" #o755 (string-&gt;utf8 script))
+         (list "usr/share/doc/teashop-report/README" #o644 (string-&gt;utf8 "Run monthly.\n")))
+   1735689600))
+
+(utf8-&gt;string (bytevector-copy deb 0 8))    ;; =&gt; "!&lt;arch&gt;\n"</code></pre>
+<ul>
+<li><code>control</code> is the package description. The long description lines start with a space; <code>Depends</code> names packages that must be installed first.</li>
+<li><code>postinst</code> runs after installation (here creating a data directory); <code>prerm</code> and <code>postrm</code> run on removal.</li>
+<li>The modes are octal: <code>#o755</code> for programs and scripts, <code>#o644</code> for data.</li>
+<li>The last argument is the modification time of every entry, in seconds since 1970. With a fixed time, the same input gives the same bytes, so builds are reproducible and their checksums can be compared.</li>
+</ul>
+<h2 id="looking-inside">Looking inside</h2>
+<p>An <code>ar</code> archive is simple enough to read by hand: an 8-byte signature, then for each member a 60-byte header with the name and the size in decimal:</p>
+<pre><code class="language-scheme">(define (ar-members bv)
+  (let loop ((pos 8) (acc '()))
+    (if (&gt;= pos (bytevector-length bv))
+        (reverse acc)
+        (let* ((field (lambda (from to) (string-trim-blank (utf8-&gt;string (bytevector-copy bv (+ pos from) (+ pos to))))))
+               (name (let ((n (field 0 16)))          ; GNU ar ends names with /
+                       (if (string=? (substring n (- (string-length n) 1) (string-length n)) "/")
+                           (substring n 0 (- (string-length n) 1))
+                           n)))
+               (size (string-&gt;number (field 48 58)))
+               (data (bytevector-copy bv (+ pos 60) (+ pos 60 size))))
+          (loop (+ pos 60 size (modulo size 2)) (cons (cons name data) acc))))))
+
+(define (string-trim-blank s)
+  (let loop ((e (string-length s)))
+    (if (and (&gt; e 0) (char-whitespace? (string-ref s (- e 1)))) (loop (- e 1)) (substring s 0 e))))
+
+(map car (ar-members deb))                  ;; =&gt; ("debian-binary" "control.tar.gz" "data.tar.gz")
+(utf8-&gt;string (cdr (assoc "debian-binary" (ar-members deb)))) ;; =&gt; "2.0\n"</code></pre>
+<p>The data archive lists the files, with the parent directories added:</p>
+<pre><code class="language-scheme">(define dir (mktempdir '(prefix . "deb")))
+(define data-tar (join-path dir "data.tar"))
+(call-with-port (open-binary-output-file data-tar)
+  (lambda (p) (write-bytevector (gzip-decompress (cdr (assoc "data.tar.gz" (ar-members deb)))) p)))
+(tar-list data-tar)
+;; =&gt; ("./" "./usr/" "./usr/bin/" "./usr/bin/teashop-report" "./usr/share/" "./usr/share/doc/" "./usr/share/doc/teashop-report/" "./usr/share/doc/teashop-report/README")
+(rm dir 'recursive)</code></pre>
+<p>Written to a file named <code>&lt;package&gt;_&lt;version&gt;_&lt;architecture&gt;.deb</code>, the package installs as usual:</p>
+<pre><code class="language-sh">sudo apt install ./teashop-report_1.2.0_all.deb
+dpkg -L teashop-report          # the files it installed
+sudo apt remove teashop-report</code></pre>
+<p><a class="xref" href="scm-deb.html#e7"><code>tar-bytevector</code></a> and <a class="xref" href="scm-deb.html#e1"><code>ar-bytevector</code></a> build the two archive formats on their own, and <a class="xref" href="scm-deb.html#e0"><code>add-parent-dirs</code></a> and <a class="xref" href="scm-deb.html#e6"><code>sort-entries</code></a> prepare entry lists.</p>
+<h2 id="packaging-a-web-application">Packaging a web application</h2>
+<p><a class="xref" href="scm-deb-webapp.html"><code>(scm deb webapp)</code></a> packages a web application made from the starters (see <a href="tutorial-scm-scaffold.html">scaffold</a>) the way they are deployed:</p>
+<ul>
+<li>the code goes to <code>/opt/&lt;pkg&gt;/app</code>;</li>
+<li>the configuration to <code>/etc/&lt;pkg&gt;/config.scm</code>, kept on upgrades;</li>
+<li>the data goes to <code>/var/lib/&lt;pkg&gt;</code>;</li>
+<li>a system user is created;</li>
+<li>the systemd services and timers are installed and started.</li>
+</ul>
+<p>The application's <code>package-deb.scm</code> describes it:</p>
+<pre><code class="language-scheme no-test">(import (scheme base) (scheme process-context) (scm deb webapp))
+
+(webapp-deb-main
+ '((pkg . "tea-shop")
+   (summary . "Tea shop web application")
+   (description "Orders, stock and the monthly reports of the tea shops.")
+   (services "tea-shop.service")
+   (timers "tea-shop-health.timer" "tea-shop-restart.timer")
+   (trees "src" "static")
+   (data-subdirs "uploads")
+   (config-settings ("data-dir" . "\"/var/lib/tea-shop\"")
+                    ("secure-cookies?" . "#t"))
+   (depends "postgresql-client")
+   (maintainer . "Teashop IT &lt;it@tea.example&gt;"))
+ (cdr (command-line)))</code></pre>
+<pre><code class="language-sh">scm package-deb.scm                       # dist/tea-shop_2025.03.07.101500+g1a2b3c4_all.deb
+scm package-deb.scm --native              # compiled with dabscm native instead of the JVM</code></pre>
+<p>The version comes from the last commit, so every build sorts after the one before:</p>
+<pre><code class="language-scheme">(webapp-deb-version 1741342500 "1a2b3c4" #f) ;; =&gt; "2025.03.07.101500+g1a2b3c4"
+(webapp-deb-version 1741342500 "1a2b3c4" #t) ;; =&gt; "2025.03.07.101500+g1a2b3c4.dirty"</code></pre>
+<p>The installed configuration is the application's <code>config.example.scm</code> with the production values put in; a setting that the example does not define is an error, so a renamed setting cannot slip through with its development value:</p>
+<pre><code class="language-scheme">(define (string-search-forward pattern s)     ; position of pattern in s, or #f
+  (let loop ((i 0))
+    (cond ((&gt; (+ i (string-length pattern)) (string-length s)) #f)
+          ((string=? (substring s i (+ i (string-length pattern))) pattern) i)
+          (else (loop (+ i 1))))))
+
+(define example ";; tea-shop configuration\n(define http-port 8070)\n(define secure-cookies? #f)\n")
+(define installed (webapp-default-config example "tea-shop" '(("secure-cookies?" . "#t"))))
+(and (string-search-forward "(define secure-cookies? #t)" installed) #t) ;; =&gt; #t
+(webapp-default-config example "tea-shop" '(("no-such-setting" . "1"))) ;; =&gt; error</code></pre>
+<h2 id="where-next">Where next</h2>
+<ul>
+<li><a href="tutorial-scm-scaffold.html">Scaffold</a> for the applications to package, <a href="tutorial-scm-archive.html">archives</a> for tar, gzip and ZIP, <a href="tutorial-scm-net-remote.html">remote commands</a> for copying packages to servers.</li>
+<li>Reference: <a class="xref" href="scm-deb.html"><code>(scm deb)</code></a>, <a class="xref" href="scm-deb-webapp.html"><code>(scm deb webapp)</code></a>.</li>
+</ul>
+</div>
+<p class="tutorial-libs">Reference: <a href="scm-deb.html"><code>(scm deb)</code></a>, <a href="scm-deb-webapp.html"><code>(scm deb webapp)</code></a></p>
+<nav class="prev-next">
+  <a class="prev" href="tutorial-scm-fonts.html">&larr; "(scm truetype), (scm fonts) and (scm text layout): fonts and text"</a>
+  <a class="next" href="tutorial-scm-tooling.html">"Developer tools: scm fmt, scm lint, (scm source), docs, REPL, profiling, reloading" &rarr;</a>
+</nav>
+
+</main>
+</div>
+
+<script src="assets/search-index.js"></script>
+<script src="assets/search.js"></script>
+</body>
+</html>

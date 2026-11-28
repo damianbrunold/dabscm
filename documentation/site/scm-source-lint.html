@@ -61,9 +61,10 @@
 
 <div class="lib-title scm">(scm source lint)</div>
 <p class="lib-sub">Static checker behind scm lint — bindings, imports, arity, idioms, conventions</p>
+<p class="lib-tutorials">Tutorials: <a href="tutorial-scm-tooling.html">"Developer tools: scm fmt, scm lint, (scm source), docs, REPL, profiling, reloading"</a></p>
 <div class="lib-preamble">
 <h2>Overview</h2>
-<p><a class="xref" href="scm-source-lint.html"><code>(scm source lint)</code></a> is the static checker behind <code>scm lint</code>. It reads a file with <a href="scm-source.md">(scm source)</a> and walks the code with a scope analysis that knows the core and derived forms of R7RS. The global environment is what the file imports, with the exports of built-in libraries loaded and project libraries read statically from their <code>.sld</code> files (<code>[format] library-path</code> in <code>scm-tools.toml</code>, plus the file's own directory), and the file's own definitions.</p>
+<p><a class="xref" href="scm-source-lint.html"><code>(scm source lint)</code></a> is the static checker behind <code>scm lint</code>. It reads a file with <a href="scm-source.html">(scm source)</a> and walks the code with a scope analysis that knows the core and derived forms of R7RS. The global environment is what the file imports, with the exports of built-in libraries loaded and project libraries read statically from their <code>.sld</code> files (<code>[format] library-path</code> in <code>scm-tools.toml</code>, plus the file's own directory), and the file's own definitions.</p>
 <p>Uses of macros the linter does not know are not looked into: every identifier in them counts as used and none is reported as unbound, so they cause no false positives. When an imported library cannot be resolved, or the file includes, loads or requires other files, unbound identifiers are not reported. The names the compiler inlines (<code>car</code>, <code>cadr</code>, <code>+</code>, <code>vector-ref</code>, ...) count as bound in call position without an import, as they are at run time.</p>
 <p>Findings are printed as <code>file:line:column: severity: [rule] message</code>. Run <code>scm lint --list-rules</code> for the full list. The main groups are:</p>
 <table>

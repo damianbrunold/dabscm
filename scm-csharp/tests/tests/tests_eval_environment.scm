@@ -1,5 +1,10 @@
 (import (scheme base)
         (scheme eval)
+        (scheme file)
+        (scheme load)
+        (scheme repl)
+        (scheme write)
+        (scm fs)
         (scm test))
 
 (test-runner-factory scm-test-runner)
@@ -26,5 +31,21 @@
 (test-group "environments stay separate"
   (let ((other (environment '(scheme base) '(srfi 8))))
     (test-error (eval 'p other))))
+
+(define tea-price 4)
+
+(test-group "the interaction environment of a program"
+  ;; a program has no REPL module: (interaction-environment) is its own top
+  ;; level (the JVM and .NET once raised "user main not available"), and
+  ;; load defines there, so eval sees what a loaded file defined
+  (test-equal 3 (eval '(+ 1 2) (interaction-environment)))
+  (test-equal 8 (eval '(* 2 tea-price) (interaction-environment)))
+  (let* ((dir (mktempdir '(prefix . "eval-env")))
+         (file (join-path dir "lib.scm")))
+    (call-with-output-file file
+      (lambda (p) (write '(define (with-vat x) (* x 2)) p)))
+    (load file)
+    (test-equal 10 (eval '(with-vat 5) (interaction-environment)))
+    (rm dir 'recursive)))
 
 (test-end "eval-environment")

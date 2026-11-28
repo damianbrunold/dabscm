@@ -164,11 +164,15 @@ public class Modules {
     }
 
     public Module getModule(String name) {
-        return modules.get(name);
+        var result = modules.get(name);
+        // (interaction-environment) is (user main); in a program, which has
+        // no REPL module, it is the program's own top level (as natively)
+        if (result == null && "user main".equals(name)) result = modules.get("user program");
+        return result;
     }
 
     public Module getModuleRequired(SourcePos pos, String name) {
-        var result = modules.get(name);
+        var result = getModule(name);
         if (result == null) {
             throw new SchemeError(pos, "Modules: " + name + " not available");
         }
